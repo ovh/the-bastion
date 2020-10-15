@@ -1,0 +1,383 @@
+# vim: set filetype=sh ts=4 sw=4 sts=4 et:
+# shellcheck shell=bash
+# shellcheck disable=SC2086,SC2016,SC2046
+# below: convoluted way that forces shellcheck to source our caller
+# shellcheck source=tests/functional/launch_tests_on_instance.sh
+. "$(dirname "${BASH_SOURCE[0]}")"/dummy
+
+testsuite_mfa()
+{
+    grant accountCreate
+    grant accountModify
+
+    # create account4
+    success mfa a0_create_a4 $a0 --osh accountCreate --always-active --account $account4 --uid $uid4 --public-key "\"$(cat $account4key1file.pub)\""
+    json .error_code OK .command accountCreate .value null
+
+    # set account4 as mfa password required
+    success mfa a0_accountModify_passreq_a4 $a0 --osh accountModify --account $account4 --mfa-password-required yes
+    json .error_code OK .command accountModify .value.mfa_password_required.error_code OK
+
+    # set account4 as mfa password required (dupe)
+    success mfa a0_accountModify_passreq_a4_dupe $a0 --osh accountModify --account $account4 --mfa-password-required yes
+    json .error_code OK .command accountModify .value.mfa_password_required.error_code OK_NO_CHANGE
+
+    # now try to connect with account4
+    run mfa a4_connect_with_passreq $a4 --osh groupList
+    retvalshouldbe 122
+    json .error_code KO_MFA_PASSWORD_SETUP_REQUIRED
+
+    # setup our password, step1
+    run mfa a4_setup_pass_step1of2 $a4f --osh selfMFASetupPassword --yes
+    retvalshouldbe 124
+    contain 'enter this:'
+    a4_password_tmp=$(get_stdout | grep -Eo 'enter this: [a-zA-Z0-9_-]+' | sed -e 's/enter this: //')
+
+    # setup our password, step2
+    a4_password=']BkL>3x#T)g~~B#rLv^!T2&N'
+    script mfa a4_setup_pass_step2of2 "echo 'set timeout 30; \
+        spawn $a4 --osh selfMFASetupPassword --yes; \
+        expect \":\" { send \"$a4_password_tmp\\n\"; }; \
+        expect \":\" { send \"$a4_password\\n\"; }; \
+        expect \":\" { send \"$a4_password\\n\"; }; \
+        expect eof; \
+        lassign [wait] pid spawnid value value; \
+        exit \$value' | expect -f -"
+    retvalshouldbe 0
+    unset a4_password_tmp
+    nocontain 'enter this:'
+    nocontain 'unchanged'
+    nocontain 'sorry'
+    json .command selfMFASetupPassword .error_code OK
+
+    # now try to connect after we have a pass
+    run mfa a4_connect_after_pass $a4f --osh groupList
+    if [ "$HAS_MFA" = 1 ]; then
+        # now we need a password, we don't enter it so it'll timeout (124)
+        retvalshouldbe 124
+        contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
+        contain 'Password:'
+        nocontain 'JSON_OUTPUT'
+    else
+        # our system doesn't support MFA so it still works without asking for a password
+        retvalshouldbe 0
+        nocontain 'Multi-Factor Authentication enabled'
+        nocontain 'Password:'
+        json .command groupList .error_code OK_EMPTY
+    fi
+
+    if [ "$HAS_PAMTESTER" = 1 ]; then
+        grant groupCreate
+
+        success mfa a0_create_g3 $a0 --osh groupCreate --group $group3 --algo rsa --size 4096 --owner $account4
+
+        revoke groupCreate
+
+        # setup group to force JIT egress MFA
+        script mfa a4_modify_g3_egress_mfa "echo 'set timeout 30; \
+            spawn $a4 --osh groupModify --group $group3 --mfa-required any; \
+            expect \":\" { send \"$a4_password\\n\"; }; \
+            expect eof; \
+            lassign [wait] pid spawnid value value; \
+            exit \$value' | expect -f -"
+        retvalshouldbe 0
+        contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
+        contain 'Password:'
+        json .command groupModify .error_code OK
+
+        # check that the MFA is set for the group
+        script mfa a4_verify_g3_egress_mfa "echo 'set timeout 30; \
+            spawn $a4 --osh groupInfo --group $group3; \
+            expect \":\" { send \"$a4_password\\n\"; }; \
+            expect eof; \
+            lassign [wait] pid spawnid value value; \
+            exit \$value' | expect -f -"
+        retvalshouldbe 0
+        contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
+        contain 'Password:'
+        json .command groupInfo .error_code OK
+        json .value.mfa_required any
+
+        # add 127.7.7.7 to this group
+        script mfa a4_add_g3_server "echo 'set timeout 30; \
+            spawn $a4 --osh groupAddServer --group $group3 --host 127.7.7.7 --user-any --port-any --force; \
+            expect \":\" { send \"$a4_password\\n\"; }; \
+            expect eof; \
+            lassign [wait] pid spawnid value value; \
+            exit \$value' | expect -f -"
+        retvalshouldbe 0
+        contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
+        contain 'Password:'
+
+        # connect to 127.7.7.7 with MFA JIT, bad password
+        script mfa a4_connect_g3_server_badpass "echo 'set timeout 45; \
+            spawn $a4 root@127.7.7.7; \
+            expect \"word:\" { send \"$a4_password\\n\"; }; \
+            expect \"word:\" { send \"BADPASSWORD\\n\"; }; \
+            expect \"word:\" { send \"BADPASSWORD\\n\"; }; \
+            expect \"word:\" { send \"BADPASSWORD\\n\\n\"; }; \
+            expect eof; \
+            lassign [wait] pid spawnid value value; \
+            exit \$value' | expect -f -"
+        retvalshouldbe 125
+        contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
+        contain 'Password:'
+        contain 'pamtester: '
+        nocontain 'Permission denied'
+
+        # connect to 127.7.7.7 with MFA JIT, good password
+        script mfa a4_connect_g3_server_goodpass "echo 'set timeout 30; \
+            spawn $a4 root@127.7.7.7; \
+            expect \"word:\" { send \"$a4_password\\n\"; }; \
+            expect \"word:\" { send \"$a4_password\\n\"; }; \
+            expect eof; \
+            lassign [wait] pid spawnid value value; \
+            exit \$value' | expect -f -"
+        retvalshouldbe 255
+        contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
+        contain 'Password:'
+        contain 'pamtester: successfully authenticated'
+        contain 'Permission denied'
+
+        # create another account
+        success mfa a0_create_a3 $a0 --osh accountCreate --always-active --account $account3 --uid $uid3 --public-key "\"$(cat $account3key1file.pub)\""
+        json .error_code OK .command accountCreate .value null
+
+        # set the account as bypass
+        success mfa a0_set_a3_as_robot $a0 --osh accountModify --account $account3 --mfa-password-required bypass
+        json .command accountModify .error_code OK
+
+        # add to JIT MFA group
+        script mfa a0_add_a3_as_member "echo 'set timeout 30; \
+            spawn $a4 --osh groupAddMember --group $group3 --account $account3; \
+            expect \"word:\" { send \"$a4_password\\n\"; }; \
+            expect eof; \
+            lassign [wait] pid spawnid value value; \
+            exit \$value' | expect -f -"
+        json .command groupAddMember .error_code OK
+
+        # connect to 127.7.7.7 with MFA JIT, no MFA needed
+        run mfa a3_connect_g3_server_mfa_bypass $a3 root@127.7.7.7
+        retvalshouldbe 255
+        nocontain 'pamtester: successfully authenticated'
+        contain 'Permission denied'
+
+        # remove the account bypass
+        success mfa a0_unset_a3_as_robot $a0 --osh accountModify --account $account3 --mfa-password-required no
+        json .command accountModify .error_code OK
+
+        # connect to 127.7.7.7 with MFA JIT, password setup needed
+        run mfa a3_connect_mfa_jit_need_pass_setup $a3 root@127.7.7.7
+        json .error_code KO_MFA_ANY_SETUP_REQUIRED
+
+        grant groupDelete
+
+        script mfa a0_delete_g3 "$a0 --osh groupDelete --group $group3 <<< \"$group3\""
+
+        revoke groupDelete
+
+        grant accountDelete
+
+        script mfa a0_delete_a3 $a0 --osh accountDelete --account $account3 "<<< \"Yes, do as I say and delete $account3, kthxbye\""
+        retvalshouldbe 0
+        json .command accountDelete .error_code OK
+
+        revoke accountDelete
+    fi
+
+    # change our password
+    a4_password_new="rkw=*Ffyqs23"
+    if [ "$HAS_MFA" = 1 ]; then
+        script mfa a4_change_pass "echo 'set timeout 30; \
+            spawn $a4 --osh selfMFASetupPassword --yes; \
+            expect \":\" { send \"$a4_password\\n\"; }; \
+            expect \":\" { send \"$a4_password\\n\"; }; \
+            expect \":\" { send \"$a4_password_new\\n\"; }; \
+            expect \":\" { send \"$a4_password_new\\n\"; }; \
+            expect eof; \
+            lassign [wait] pid spawnid value value; \
+            exit \$value' | expect -f -"
+        retvalshouldbe 0
+        contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
+        contain 'Password:'
+    else
+        script mfa a4_change_pass "echo 'set timeout 30; \
+            spawn $a4 --osh selfMFASetupPassword --yes; \
+            expect \":\" { send \"$a4_password\\n\"; }; \
+            expect \":\" { send \"$a4_password_new\\n\"; }; \
+            expect \":\" { send \"$a4_password_new\\n\"; }; \
+            expect eof; \
+            lassign [wait] pid spawnid value value; \
+            exit \$value' | expect -f -"
+        retvalshouldbe 0
+        nocontain 'Multi-Factor Authentication enabled'
+    fi
+    nocontain 'enter this:'
+    nocontain 'unchanged'
+    json .command selfMFASetupPassword .error_code OK
+
+    a4_password="$a4_password_new"
+    unset a4_password_new
+
+    if [ "$HAS_MFA" = 1 ]; then
+        script mfa a4_connect_with_pass "echo 'set timeout 30; \
+            spawn $a4 --osh groupList; \
+            expect \":\" { send \"$a4_password\\n\"; }; \
+            expect eof; \
+            lassign [wait] pid spawnid value value; \
+            exit \$value' | expect -f -"
+        retvalshouldbe 0
+        contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
+        contain 'Password:'
+        json .command groupList .error_code OK_EMPTY
+    fi
+
+    # set account4 as mfa totp required
+    success mfa a0_accountModify_totpreq_a4 $a0 --osh accountModify --account $account4 --mfa-totp-required yes
+    json .error_code OK .command accountModify .value.mfa_totp_required.error_code OK
+
+    # set account4 as mfa totp required (dupe)
+    success mfa a0_accountModify_totpreq_a4_dupe $a0 --osh accountModify --account $account4 --mfa-totp-required yes
+    json .error_code OK .command accountModify .value.mfa_totp_required.error_code OK_NO_CHANGE
+
+    # now try to connect with account4
+    if [ "$HAS_MFA" = 1 ]; then
+        script mfa a4_connect_with_totpreq "echo 'set timeout 30; \
+            spawn $a4 --osh groupList; \
+            expect \":\" { send \"$a4_password\\n\"; }; \
+            expect eof; \
+            lassign [wait] pid spawnid value value; \
+            exit \$value' | expect -f -"
+    else
+        run mfa a4_connect_with_totpreq $a4 --osh groupList
+    fi
+    retvalshouldbe 123
+    json .error_code KO_MFA_TOTP_SETUP_REQUIRED
+
+    if [ "$HAS_MFA" = 1 ]; then
+        # setup totp
+        script mfa a4_setup_totp "echo 'set timeout 30; \
+            spawn $a4 --osh selfMFASetupTOTP --no-confirm; \
+            expect \"word:\" { send \"$a4_password\\n\"; }; \
+            expect \"word:\" { send \"$a4_password\\n\"; }; \
+            expect eof; \
+            lassign [wait] pid spawnid value value; \
+            exit \$value' | expect -f -"
+        retvalshouldbe 0
+        contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
+        contain 'Password:'
+
+        a4_totp_code_1=$(get_stdout | grep -A1 'Your emergency scratch codes are:' | tail -n1 | tr -d '[:space:]')
+        #a4_totp_code_2=$(get_stdout | grep -A2 'Your emergency scratch codes are:' | tail -n1 | tr -d '[:space:]')
+        #a4_totp_code_3=$(get_stdout | grep -A3 'Your emergency scratch codes are:' | tail -n1 | tr -d '[:space:]')
+        #a4_totp_code_4=$(get_stdout | grep -A4 'Your emergency scratch codes are:' | tail -n1 | tr -d '[:space:]')
+
+        # login and fail without totp (timeout)
+        script mfa a4_connect_after_totp_fail "echo 'set timeout 30; \
+            spawn $a4 --osh groupList; \
+            expect \"word:\" { send \"$a4_password\\n\"; }; \
+            expect eof; \
+            lassign [wait] pid spawnid value value; \
+            exit \$value' | expect -f -"
+        retvalshouldbe 124
+        contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
+        contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (OTP).'
+        contain 'Your password expires on'
+        contain 'in 14 days'
+        contain 'Password:'
+        contain 'Verification code:'
+        nocontain 'JSON_OUTPUT'
+
+        # success with password + totp
+        script mfa a4_connect_after_totp_ok "echo 'set timeout 30; \
+            spawn $a4 --osh groupList; \
+            expect \"word:\" { send \"$a4_password\\n\"; }; \
+            expect \"code:\" { send \"$a4_totp_code_1\\n\"; }; \
+            expect eof; \
+            lassign [wait] pid spawnid value value; \
+            exit \$value' | expect -f -"
+        retvalshouldbe 0
+        contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
+        contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (OTP).'
+        contain 'Password:'
+        contain 'Verification code:'
+        json .command groupList .error_code OK_EMPTY
+
+        # totp scratch codes don't work twice
+        script mfa a4_connect_after_totp_dupe "echo 'set timeout 30; \
+            spawn $a4 --osh groupList; \
+            expect \"word:\" { send \"$a4_password\\n\"; }; \
+            expect \"code:\" { send \"$a4_totp_code_1\\n\"; }; \
+            expect \"word:\" { exit 222; }; \
+            expect eof; \
+            lassign [wait] pid spawnid value value; \
+            exit \$value' | expect -f -"
+        retvalshouldbe 222
+        contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
+        contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (OTP).'
+        contain 'Password:'
+        contain 'Verification code:'
+        nocontain 'JSON_OUTPUT'
+
+        # set pam bypass on account4 (dupe)
+        success mfa a0_set_pambypass_a4 $a0 --osh accountModify --account $account4 --pam-auth-bypass yes
+        json .error_code OK .command accountModify .value.pam_auth_bypass.error_code OK
+
+        # set pam bypass on account4
+        success mfa a0_set_pambypass_a4_dupe $a0 --osh accountModify --account $account4 --pam-auth-bypass yes
+        json .error_code OK .command accountModify .value.pam_auth_bypass.error_code OK_NO_CHANGE
+
+        # we don't provide password or totp, it should work because bypass
+        success mfa a4_pam_auth_bypass $a4 --osh groupList
+        json .command groupList .error_code OK_EMPTY
+
+        # remove requirement of password and totp for account4, also remove bypass
+        success mfa a0_remove_mfa_req_a4 $a0 --osh accountModify --account $account4 --pam-auth-bypass no --mfa-totp-required no --mfa-password-required no
+        json .error_code OK .command accountModify .value.pam_auth_bypass.error_code OK .value.mfa_totp_required.error_code OK .value.mfa_password_required.error_code OK
+
+        # remove requirement of password and totp for account4, also remove bypass (dupe)
+        success mfa a0_remove_mfa_req_a4_dupe $a0 --osh accountModify --account $account4 --pam-auth-bypass no --mfa-totp-required no --mfa-password-required no
+        json .error_code OK .command accountModify .value.pam_auth_bypass.error_code OK_NO_CHANGE .value.mfa_totp_required.error_code OK_NO_CHANGE .value.mfa_password_required.error_code OK_NO_CHANGE
+
+    # FIXME
+    #   # reset totp
+    #    script mfa a4_reset_totp "echo 'set timeout 30; \
+    #        spawn $a4 --osh selfMFAResetTOTP; \
+    #        expect \"word:\" { send_user \"premier password\\n\"; send \"$a4_password\\n\"; }; \
+    #        expect \"code:\" { send_user \"premier code\\n\"; send \"$a4_totp_code_2\\n\"; }; \
+    #        expect \"word:\" { send_user \"second password\\n\"; send \"$a4_password\\n\"; }; \
+    #        expect \"code:\" { send_user \"second code\\n\"; send \"$a4_totp_code_3\\n\"; }; \
+    #        expect eof; \
+    #        lassign [wait] pid spawnid value value; \
+    #        exit \$value' | expect -f -"
+    #    retvalshouldbe 0
+    #    json .error_code OK .command selfMFAResetTOTP
+    #
+    #    # reset password
+    #    script mfa a4_reset_password "echo 'set timeout 30; \
+    #        spawn $a4 --osh selfMFAResetPassword; \
+    #        expect \"word:\" { send \"$a4_password\\n\"; }; \
+    #        expect eof; \
+    #        lassign [wait] pid spawnid value value; \
+    #        exit \$value' | expect -f -"
+    #    retvalshouldbe 0
+    #    json .error_code OK .command selfMFAResetPassword
+
+    #   # now we no longer need MFA
+    #    success mfa a4_mfa_deconfigured $a4 --osh groupList
+    #    json .command groupList .error_code OK_EMPTY
+    fi
+
+    grant accountRevokeCommand
+    revoke accountModify
+    grant accountDelete
+
+    # remove account
+    script mfa a0_delete_a4 $a0 --osh accountDelete --account $account4 "<<< \"Yes, do as I say and delete $account4, kthxbye\""
+    retvalshouldbe 0
+    json .command accountDelete .error_code OK
+
+    revoke accountDelete
+}
+
+testsuite_mfa

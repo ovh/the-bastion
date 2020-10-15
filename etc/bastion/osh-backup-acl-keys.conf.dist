@@ -1,0 +1,30 @@
+# THIS MUST BE A VALID SHELL SCRIPT
+#
+# LOGFILE: file where to put script logs, if not defined, will not log into a file
+#LOGFILE=/var/log/bastion/osh-backup-acl-keys.log
+#
+# LOG_FACILITY: will use syslog with the following facility to log, won't use syslog otherwise
+LOG_FACILITY=local6
+#
+# DESTDIR: directory where to put the .tar.gz files (it'll be created if needed)
+DESTDIR=/root/backups
+#
+# DAYSTOKEEP: number of days to keep backups for
+DAYSTOKEEP=90
+#
+# GPGKEYS: list of gpg keys to encrypt to (see gpg --list-keys), separated by spaces.
+# example: GPGKEYS="41FDB9C7 DA97EFD1 339483FF"
+# if omitted or empty, archives will NOT be encrypted
+GPGKEYS=""
+#
+# PUSH_REMOTE: scp remote host push backups to
+# example: "push@1.2.3.4:~/backup/"
+# important: this will ONLY be enabled if GPGKEYS is not empty above, because
+# we will never push unencrypted backups!
+# Also, don't forget to put a trailing / (except if you want to push to the
+# remote HOME, in which case ending with a simple : works)
+PUSH_REMOTE=""
+#
+# PUSH_OPTIONS: additional options to pass to scp
+# example: "-i $HOME/.ssh/id_backup"
+PUSH_OPTIONS=""

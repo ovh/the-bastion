@@ -1,0 +1,10 @@
+{
+    "interactive": [
+        "groupDelGatekeeper"                             , {"ac" : ["--account"]},
+        "groupDelGatekeeper --account"                   , {"ac" : ["<ACCOUNT>"]},
+        "groupDelGatekeeper --account \\S+"              , {"ac" : ["--group"]},
+        "groupDelGatekeeper --account \\S+ --group"      , {"ac" : ["<GROUP>"]},
+        "groupDelGatekeeper --account \\S+ --group \\S+" , {"pr" : ["<enter>"]}
+    ],
+    "master_only": true
+}

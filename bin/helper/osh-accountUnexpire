@@ -1,0 +1,95 @@
+#! /usr/bin/perl -T
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+# NEEDGROUP osh-accountUnexpire
+# SUDOERS %osh-accountUnexpire ALL=(%bastion-users) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountUnexpire *
+# FILEMODE 0755
+# FILEOWN root root
+
+#>HEADER
+use common::sense;
+use Getopt::Long;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../lib/perl';
+use OVH::Bastion;
+local $| = 1;
+
+#
+# Globals
+#
+$ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/pkg/bin';
+my ($self) = $ENV{'SUDO_USER'} =~ m{^([a-zA-Z0-9._-]+)$};
+if (not defined $self) {
+    if ($< == 0) {
+        $self = 'root';
+    }
+    else {
+        HEXIT('ERR_SUDO_NEEDED', msg => 'This command must be run under sudo');
+    }
+}
+
+# Fetch command options
+my $fnret;
+my ($result, @optwarns);
+my ($account);
+eval {
+    local $SIG{__WARN__} = sub { push @optwarns, shift };
+    $result = GetOptions("account=s" => sub { $account //= $_[1] });
+};
+if ($@) { die $@ }
+
+if (!$result) {
+    local $" = ", ";
+    HEXIT('ERR_BAD_OPTIONS', msg => "Error parsing options: @optwarns");
+}
+
+if (!$account) {
+    HEXIT('ERR_MISSING_PARAMETER', msg => "Missing argument 'account'");
+}
+
+#<HEADER
+
+#>RIGHTSCHECK
+if ($self eq 'root') {
+    osh_debug "Real root, skipping checks of permissions";
+}
+else {
+    # need to perform another security check
+    $fnret = OVH::Bastion::is_user_in_group(user => $self, group => "osh-accountUnexpire");
+    if (!$fnret) {
+        HEXIT('ERR_SECURITY_VIOLATION', msg => "You're not allowed to run this, dear $self");
+    }
+}
+
+# for this special helper, $account must be equal to $ENV{'USER'}
+if (OVH::Bastion::get_user_from_env()->value ne $account) {
+    HEXIT('ERR_SECURITY_VIOLATION', msg => "You're not allowed to run this on $account, dear $self");
+}
+
+#<RIGHTSCHECK
+
+#>PARAMS:ACCOUNT
+osh_debug("Checking account");
+$fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
+$fnret or HEXIT($fnret);
+$account = $fnret->value->{'account'};    # untainted
+
+#<PARAMS:ACCOUNT
+
+my $accounthome = $fnret->value->{'dir'};
+if (!-d $accounthome) {
+    HEXIT('ERR_INVALID_HOME', msg => "Invalid HOME directory for this account");
+}
+
+$fnret = OVH::Bastion::is_account_nonexpired(sysaccount => $account);
+$fnret->is_err and HEXIT($fnret);         # couldn't read file or other error
+$fnret->is_ok  and HEXIT($fnret);         # wasn't expired
+
+# is_ko: is expired
+my $days     = $fnret->value->{'days'};
+my $filepath = $fnret->value->{'filepath'};
+
+$fnret = OVH::Bastion::touch_file($filepath);
+$fnret or HEXIT($fnret);
+
+HEXIT('OK', value => {account => $account, days => $days});

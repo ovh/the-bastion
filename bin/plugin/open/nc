@@ -1,0 +1,89 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv     => \@ARGV,
+    header   => "netcat -z",
+    options  => {"w=i" => \my $timeout},
+    helptext => <<'EOF',
+Check whether a remote TCP port is open
+
+Usage: --osh SCRIPT_NAME [--host] HOST [--port] PORT [-w TIMEOUT]
+
+  --host HOST  Host or IP to attempt to connect to
+  --port PORT  TCP port to attempt to connect to
+  -w SECONDS   Timeout in seconds (default: 3)
+EOF
+);
+
+# be nice and try to guessify a host as first param and port as second param
+# if user said --osh nc mymachine.example.org 22
+if (    not $host
+    and not $ip
+    and not $port
+    and ref $remainingOptions eq 'ARRAY'
+    and @$remainingOptions == 2
+    and $remainingOptions->[0] =~ /^[a-zA-Z0-9][a-zA-Z0-9.-]{1,}$/
+    and $remainingOptions->[1] =~ /^\d+$/)
+{
+    ($host, $port) = @$remainingOptions;
+}
+
+#
+# code
+#
+my $fnret;
+
+if (not $host) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing required host parameter";
+}
+
+if (not $port) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing required port parameter";
+}
+
+$fnret = OVH::Bastion::is_valid_port(port => $port);
+if (!$fnret) {
+    help();
+    osh_exit $fnret;
+}
+
+my @command = qw{ nc -v -z -w };
+push @command, ($timeout and $timeout > 0 and $timeout <= 3600) ? $timeout : 3;
+push @command, $host;
+push @command, $port;
+
+osh_info "Checking wether TCP port $port of $host is reachable...";
+
+$fnret = OVH::Bastion::execute(cmd => \@command, noisy_stdout => 1, noisy_stderr => 1);
+$fnret or osh_exit $fnret;
+
+# try to guess what happened
+my $answer = 'unknown';
+if ($fnret->value->{'sysret'} == 0) {
+    $answer = 'open';
+}
+elsif (grep { /timeout|timed out/i } @{$fnret->value->{'stderr'}}) {
+    $answer = 'timeout';
+}
+elsif (grep { /refused/i } @{$fnret->value->{'stderr'}}) {
+    $answer = 'closed';
+}
+
+osh_ok {
+    sysret => $fnret->value->{'sysret'} + 0,
+    output => $fnret->value->{'stderr'},
+    host   => $host,
+    port   => $port + 0,
+    result => $answer
+};
+

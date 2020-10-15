@@ -1,0 +1,62 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+use OVH::Bastion::Plugin::groupSetRole;
+
+my ($account, $group);
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv     => \@ARGV,
+    header   => "transmit the ownership of a group",
+    options  => {"account=s", \$account, "group=s", \$group},
+    helptext => <<'EOF',
+Transmit your group ownership to somebody else
+
+Usage: --osh SCRIPT_NAME --group GROUP --account ACCOUNT
+
+  --group GROUP      which group to set ACCOUNT as an owner of
+  --account ACCOUNT  which account to set as an owner of GROUP
+
+Note that this command has the same net effect than using ``groupAddOwner``
+to add ACCOUNT as an owner, then removing yourself with ``groupDelOwner``
+EOF
+);
+
+if ($self eq $account) {
+    osh_exit(R('OK_NO_CHANGE', msg => "Nothing to do to transmit the ownership of the group to yourself"));
+}
+
+my $fnret = OVH::Bastion::Plugin::groupSetRole::act(
+    account        => $account,
+    group          => $group,
+    action         => 'add',
+    type           => 'owner',
+    sudo           => 0,
+    silentoverride => 0,
+    self           => $self,
+    scriptName     => $scriptName,
+    savedArgs      => $savedArgs
+);
+if (not $fnret) {
+    help();
+    osh_exit($fnret);
+}
+
+osh_exit(
+    OVH::Bastion::Plugin::groupSetRole::act(
+        account        => $self,
+        group          => $group,
+        action         => 'del',
+        type           => 'owner',
+        sudo           => 0,
+        silentoverride => 0,
+        self           => $self,
+        scriptName     => $scriptName,
+        savedArgs      => $savedArgs
+    )
+);

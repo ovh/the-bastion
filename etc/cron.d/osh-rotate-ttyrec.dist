@@ -1,0 +1,4 @@
+# Send a signal SIGUSR1 every day, to force rotation of ttyrec log
+31  5 * * * root /opt/bastion/bin/cron/osh-rotate-ttyrec.sh >/dev/null
+# And to big ttyrec files to ensure a user cat'ing /dev/urandom won't fill up our drives
+*/3 * * * * root /opt/bastion/bin/cron/osh-rotate-ttyrec.sh --big-only >/dev/null

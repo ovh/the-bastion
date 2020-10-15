@@ -1,0 +1,3 @@
+Defaults:proxyhttp env_keep += "PROXY_POST_DATA PROXY_ACCOUNT_PASSWORD REMOTE_ADDR REMOTE_PORT SERVER_ADDR SERVER_PORT REQUEST_URI HTTP_USER_AGENT"
+
+proxyhttp ALL=(%bastion-users) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/proxy/osh-http-proxy-worker *

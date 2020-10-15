@@ -1,0 +1,6 @@
+# This file will be sourced, IT MUST BE A VALID SHELL SCRIPT
+#
+DEV_ENCRYPTED=/dev/disk/by-id/dm-name-vg0-home
+UNLOCKED_NAME=home
+MOUNTPOINT=/home
+

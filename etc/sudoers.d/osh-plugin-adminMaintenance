@@ -1,0 +1,2 @@
+# to be able to set/remove maintenance mode
+%osh-admin ALL=(allowkeeper) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-adminMaintenance *

@@ -1,0 +1,5 @@
+%osh-selfAddPersonalAccess    ALL=(allowkeeper) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountModifyPersonalAccess --target self --action add *
+%osh-accountAddPersonalAccess ALL=(allowkeeper) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountModifyPersonalAccess --target any --action add *
+%osh-selfDelPersonalAccess    ALL=(allowkeeper) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountModifyPersonalAccess --target self --action del *
+%osh-accountDelPersonalAccess ALL=(allowkeeper) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountModifyPersonalAccess --target any --action del *
+

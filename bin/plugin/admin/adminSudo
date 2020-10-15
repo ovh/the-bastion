@@ -1,0 +1,73 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "launching a bastion command or connection, impersonating another user",
+    options => {
+        "sudo-as=s"  => \my $sudoAs,
+        "sudo-cmd=s" => \my $sudoCmd,
+    },
+    helptext => <<'EOF',
+Impersonate another user
+
+Usage: --osh SCRIPT_NAME -- --sudo-as ACCOUNT <--sudo-cmd PLUGIN -- [PLUGIN specific options...]>
+
+  --sudo-as ACCOUNT  Specify which bastion account we want to impersonate
+  --sudo-cmd PLUGIN  --osh command we want to launch as the user (see --osh help)
+
+Example::
+
+  --osh SCRIPT_NAME -- --sudo-as user12 --sudo-cmd info -- --name somebodyelse
+
+Don't forget the double-double-dash as seen in the example above: one after the plugin name,
+and another one to separate SCRIPT_NAME options from the options of the plugin to be called.
+EOF
+);
+
+my $fnret;
+
+if (not $sudoAs or not $sudoCmd) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing mandatory parameter 'sudo-as' or 'sudo-cmd'";
+}
+
+$fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $sudoAs);
+$fnret or osh_exit($fnret);
+
+$fnret = OVH::Bastion::can_account_execute_plugin(account => $sudoAs, plugin => $sudoCmd);
+$fnret or osh_exit($fnret);
+
+my @cmd = qw( sudo -n -u );
+push @cmd, $sudoAs;
+push @cmd, qw( -- /usr/bin/env perl );
+push @cmd, $OVH::Bastion::BASEPATH . '/bin/shell/osh.pl';
+push @cmd, '-c';
+
+my $stringified;
+$stringified = " --osh $sudoCmd" if $sudoCmd;
+$stringified .= " --host $host" if $host;
+$stringified .= " --port $port" if $port;
+$stringified .= " --user $user" if $user;
+$stringified .= " " . join(" ", @$remainingOptions) if ($remainingOptions and @$remainingOptions);
+
+push @cmd, $stringified;
+
+OVH::Bastion::syslogFormatted(
+    criticity => 'info',
+    type      => 'security',
+    fields    => [['type', 'admin-sudo'], ['account', $self], ['sudo-as', $sudoAs], ['plugin', ($sudoCmd ? $sudoCmd : 'ssh')], ['params', $stringified]]
+);
+
+osh_warn("ADMIN SUDO: $self, you'll now impersonate $sudoAs, this has been logged.");
+
+$fnret = OVH::Bastion::execute(cmd => \@cmd, noisy_stdout => 1, noisy_stderr => 1);
+
+osh_exit $fnret;

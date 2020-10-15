@@ -1,0 +1,10 @@
+/var/log/bastion/osh-backup-acl-keys.log {
+        notifempty
+        missingok
+        rotate 12
+        monthly
+        compress
+        delaycompress
+        create 0600 root root
+}
+

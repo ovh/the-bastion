@@ -1,0 +1,49 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "traceroute",
+    options => {
+        'report' => \my $report,
+    },
+    helptext => <<'EOF',
+Runs the mtr tool to traceroute a host
+
+Usage: --osh SCRIPT_NAME [--host] HOST [--report]
+
+  --report  Don't run mtr interactively, output a text report once done
+EOF
+);
+
+# be nice and try to guessify a host as first param
+# if user said --osh mtr mymachine.example.org
+if (not $host and not $ip and ref $remainingOptions eq 'ARRAY' and @$remainingOptions == 1 and $remainingOptions->[0] =~ /^([a-zA-Z0-9][a-zA-Z0-9.-]+)$/) {
+    $host = $remainingOptions->[0];
+}
+
+# code
+my $fnret;
+
+if (not $host) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing required host parameter";
+}
+
+my @command = qw{ mtr --show-ips --aslookup -n };
+push @command, ($report ? '--report' : '--curses');
+push @command, $host;
+
+osh_info "Tracing $host...";
+
+$fnret = OVH::Bastion::execute(cmd => \@command, noisy_stdout => 1, noisy_stderr => 1);
+$fnret or osh_exit $fnret;
+
+osh_ok {};

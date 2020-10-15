@@ -1,0 +1,194 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+use Term::ANSIColor;
+use POSIX ();
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "your past sessions list",
+    options => {
+        "detailed"   => \my $detailed,
+        "id=s"       => \my $id,
+        "type=s"     => \my $type,
+        "allowed"    => \my $allowed,
+        "denied"     => \my $denied,
+        "after=s"    => \my $after,
+        "before=s"   => \my $before,
+        "from=s"     => \my $from,
+        "via=s"      => \my $via,
+        "via-port=i" => \my $viaPort,
+        "to-port=i"  => \my $toPort,
+        "limit=i"    => \my $limit,
+    },
+    helptext => <<'EOF',
+List the few past sessions of your account
+
+Usage: --osh SCRIPT_NAME [OPTIONS]
+
+  --detailed             Display more informations about each session
+  --limit LIMIT          Limit to LIMIT results
+  --id ID                Only sessions having this ID
+  --type TYPE            Only sessions of specified type (ssh, osh, ...)
+  --allowed              Only sessions that have been allowed by the bastion
+  --denied               Only sessions that have been denied by the bastion
+  --after WHEN           Only sessions that started after WHEN,
+                           WHEN can be a TIMESTAMP, or YYYY-MM-DD[@HH:MM:SS]
+  --before WHEN          Only sessions that started before WHEN,
+                           WHEN can be a TIMESTAMP, or YYYY-MM-DD[@HH:MM:SS]
+  --host HOST            Only sessions connecting to remote HOST
+  --to-port PORT         Only sessions connecting to remote PORT
+  --user USER            Only sessions connecting using remote USER
+  --via HOST             Only sessions that connected through bastion IP HOST
+  --via-port PORT        Only sessions that connected through bastion PORT
+
+Note that only the sessions that happened on this precise bastion instance will be shown,
+not the sessions from its possible cluster siblings.
+EOF
+);
+
+#
+# code
+#
+my $fnret;
+
+sub makeTimestamp {
+    my ($data, $name) = @_;
+
+    if ($data =~ m'^(\d{4})[/-](\d\d)[/-](\d\d)(@(\d\d):(\d\d):(\d\d))?$') {
+        return POSIX::mktime($7, $6, $5, $3, $2 - 1, $1 - 1900);
+    }
+    osh_exit R('ERR_INVALID_PARAMETER', msg => "--$name: expected a date of the format YYYY-MM-DD or YYY-MM-DD\@HH:MM:SS or UNIXTIMESTAMP");
+}
+
+my ($afterTimestamp, $beforeTimestamp);
+$afterTimestamp  = makeTimestamp($after,  'after')  if $after;
+$beforeTimestamp = makeTimestamp($before, 'before') if $before;
+
+$limit = 100 if not defined $limit;
+if (defined $limit and $limit !~ /^\d+$/) {
+    osh_exit R('ERR_INVALID_PARAMETER', msg => "Expected a numeric limit");
+}
+
+my $allowedParam = undef;
+$allowedParam = 1 if $allowed;
+$allowedParam = 0 if $denied;
+
+$fnret = OVH::Bastion::log_access_get(
+    account     => $self,
+    uniqid      => $id,
+    cmdtype     => $type,
+    after       => $afterTimestamp,
+    before      => $beforeTimestamp,
+    allowed     => $allowedParam,
+    ipfrom      => $from,
+    ipto        => $host,
+    portto      => $toPort,
+    bastionip   => $via,
+    bastionport => $viaPort,
+    toPort      => $toPort,
+    user        => $user,
+    limit       => $limit
+);
+$fnret or osh_exit $fnret;
+
+if (not %{$fnret->value}) {
+    osh_ok R('OK_EMPTY', msg => "No session found");
+}
+else {
+    osh_info "The list of your" . ($limit ? " $limit" : "") . " past sessions follows:";
+    osh_info ' ';
+    my $list = $fnret->value;
+
+    my @result;
+    foreach my $id (sort { $list->{$b} <=> $list->{$a} } keys %{$list}) {
+        my $r = $list->{$id};
+        my $diff =
+          ($r->{timestampend} + $r->{timestampendusec} / 1_000_000) - ($r->{timestamp} + $r->{timestampusec} / 1_000_000);
+
+        my $delay = '-.-';
+        if ($r->{timestampend}) {
+            my $d = int($delay / 86400);
+            $delay -= $d * 86400;
+            my $h = int($delay / 3600);
+            $delay -= $h * 3600;
+            my $m = int($delay / 60);
+            $delay -= $m * 60;
+            my $s = int($delay);
+            $delay -= $s;
+            my $ds = int($delay * 10);
+
+            if ($d > 0) {
+                $delay = sprintf('%dd+%02d:%02d:%02d.%d', $d, $h, $m, $s, $ds);
+            }
+            elsif ($h > 0) {
+                $delay = sprintf('%02d:%02d:%02d.%d', $h, $m, $s, $ds);
+            }
+            elsif ($m > 0) {
+                $delay = sprintf('%02d:%02d.%d', $m, $s, $ds);
+            }
+            elsif ($s > 0) {
+                $delay = sprintf('%02d.%d', $s, $ds);
+            }
+            else {
+                $delay = sprintf('0.%d', $ds);
+            }
+        }
+        $delay = sprintf('%13s', $delay);
+
+        my $to =
+             $r->{user}
+          || $r->{ipto}
+          || $r->{portto}
+          || $r->{hostto} ? sprintf(' to %s@%s:%s(%s)', $r->{'user'}, $r->{'ipto'}, $r->{'portto'}, $r->{'hostto'}) : '';
+        $r->{params}      = undef         if ($r->{cmdtype} ne 'osh');
+        $r->{returnvalue} = $r->{comment} if $r->{returnvalue} < 0;
+
+        if ($detailed) {
+            printf "%s [%s - %s (%s)] type %s from %s:%s(%s) via %s@%s:%s%s returned %s%s\n",
+              $r->{uniqid}, POSIX::strftime("%Y/%m/%d@%H:%M:%S", localtime($r->{timestamp})),
+              $r->{timestampend} ? POSIX::strftime("%Y/%m/%d@%H:%M:%S", localtime($r->{timestampend})) : '????/??/??@??:??:??',
+              $delay,
+              $r->{'cmdtype'} . ($r->{'plugin'} ? '-' . $r->{'plugin'} : '') . ($r->{allowed} ? '' : '/DENIED'),
+              $r->{'ipfrom'}, $r->{'portfrom'}, $r->{'hostfrom'}, $r->{'account'}, $r->{'bastionip'}, $r->{'bastionport'},
+              $to, defined $r->{returnvalue} ? $r->{returnvalue} : 'null',
+              $r->{params} ? " params $r->{params}" : '';
+        }
+        else {
+            printf "%s [%s] %s%s%s\n",
+              $r->{uniqid}, POSIX::strftime("%Y/%m/%d@%H:%M:%S", localtime($r->{timestamp})),
+              $r->{'cmdtype'} . ($r->{'plugin'} ? '-' . $r->{'plugin'} : '') . ($r->{allowed} ? '' : '/DENIED'), $r->{params} ? ' ' . $r->{params} : '',
+              $to;
+        }
+        push @result,
+          {
+            id                => $r->{uniqid},
+            from              => {ip => $r->{ipfrom}, host => $r->{hostfrom}, port => $r->{portfrom}},
+            via               => {ip => $r->{bastionip}, port => $r->{bastionport}, user => $r->{account}},
+            to                => {ip => $r->{ipto}, port => $r->{portto}, host => $r->{hostto}},
+            timestamp_started => $r->{timestamp} + $r->{timestampusec} / 1_000_000,
+            timestamp_ended   => $r->{timestampend} + $r->{timestampendusec} / 1_000_000,
+            type              => $r->{cmdtype},
+            plugin            => $r->{plugin},
+            allowed           => $r->{allowed},
+            returned          => $r->{returnvalue},
+            params            => $r->{params},
+          };
+    }
+
+    if (@result == $limit) {
+        osh_info "\nResults limited to $limit, but there might be more matching the given criteria,";
+        osh_info "you might want to re-run with a higher limit, or with stricter criteria,";
+        osh_info "check the --help of this command for more information.";
+    }
+
+    osh_ok(\@result);
+}
+
+osh_exit 'ERR_INTERNAL';

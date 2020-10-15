@@ -1,0 +1,9 @@
+/var/log/bastion/osh-sync-watcher.log {
+        notifempty
+        missingok
+        rotate 52
+        weekly
+        compress
+        create 0600 root root
+}
+

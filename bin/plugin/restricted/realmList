@@ -1,0 +1,47 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "list bastion realms",
+    options => {
+        "realm=s" => \my $pRealm,
+    },
+    helptext => <<'EOF',
+List the bastions realms
+
+Usage: --osh SCRIPT_NAME [--realm REALM]
+
+  --realm REALM  Only list the specified realm (mainly: check if it exists)
+EOF
+);
+
+my $fnret;
+if ($pRealm) {
+    $pRealm =~ s{^realm_}{};
+    $fnret = OVH::Bastion::get_realm_list(realms => [$pRealm]);
+}
+else {
+    $fnret = OVH::Bastion::get_realm_list();
+}
+$fnret or osh_exit $fnret;
+my $realms = $fnret->value;
+
+my $result_hash = {};
+foreach my $realm (sort keys %$realms) {
+    $result_hash->{$realm}{'name'} = $realm;
+
+    osh_info $realm;
+}
+if (not %$realms) {
+    osh_info "No realm found";
+}
+
+osh_ok $result_hash;

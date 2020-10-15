@@ -1,0 +1,10 @@
+/home/proxyhttp/access.log {
+        notifempty
+        missingok
+        rotate 52
+        weekly
+        compress
+        copytruncate
+        dateext
+}
+

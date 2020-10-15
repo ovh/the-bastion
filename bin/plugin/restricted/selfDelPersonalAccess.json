@@ -1,0 +1,13 @@
+{
+    "interactive": [
+        "selfDelPersonalAccess"                      , {"ac" : ["--host"]},
+        "selfDelPersonalAccess --host"               , {"pr" : ["<HOST>", "<IP>", "<IP/MASK>"]},
+        "selfDelPersonalAccess --host \\S+"          , {"ac" : ["<enter>", "--user", "--port"]},
+        "selfDelPersonalAccess --host \\S+ .*--user" , {"pr" : ["<USER>"]},
+        "selfDelPersonalAccess --host \\S+ .*--port" , {"pr" : ["<PORT>"]},
+        "selfDelPersonalAccess --host \\S+ --user \\S+"                          , {"ac" : ["<enter>", "--port"]},
+        "selfDelPersonalAccess --host \\S+ --port \\S+"                          , {"ac" : ["<enter>", "--user"]},
+        "selfDelPersonalAccess --host \\S+ --(port|user) \\S+ --(port|user) \\S+" , {"pr" : ["<enter>"]}
+    ],
+    "master_only": true
+}

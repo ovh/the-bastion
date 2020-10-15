@@ -1,0 +1,3 @@
+# modify PIV policy of an account
+%osh-accountPIV ALL=(allowkeeper)    NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountPIV --step 1 --account *
+%osh-accountPIV ALL=(%bastion-users) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountPIV --step 2 --account *

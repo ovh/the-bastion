@@ -1,0 +1,95 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my %modify;
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "modify the configuration of an account",
+    options => {
+        "account=s"                         => \my $account,
+        "mfa-password-required=s"           => \$modify{'mfa-password-required'},
+        "mfa-totp-required=s"               => \$modify{'mfa-totp-required'},
+        "pam-auth-bypass=s"                 => \$modify{'pam-auth-bypass'},
+        "always-active=s"                   => \$modify{'always-active'},
+        "egress-strict-host-key-checking=s" => \$modify{'egress-strict-host-key-checking'},
+        "personal-egress-mfa-required=s"    => \$modify{'personal-egress-mfa-required'},
+        "idle-ignore=s"                     => \$modify{'idle-ignore'},
+    },
+    helptext => <<'EOF',
+Modify an account configuration
+
+Usage: --osh SCRIPT_NAME --account ACCOUNT [--option value [--option value [...]]]
+
+  --account ACCOUNT                          Bastion account to work on
+  --pam-auth-bypass yes|no                   Enable or disable PAM auth bypass for this account in addition to pubkey auth (default is 'no'),
+                                                in that case sshd will not rely at all on PAM auth and /etc/pam.d/sshd configuration. This
+                                                does not change the behaviour of the code, just the PAM auth handled by SSH itself
+  --mfa-password-required yes|no|bypass      Enable or disable UNIX password requirement for this account in addition to pubkey auth (default is 'no'),
+                                                this overrides the global bastion configuration 'accountMFAPolicy'. If 'bypass' is specified,
+                                                no password will ever be asked, even for groups or plugins explicitly requiring it
+  --mfa-totp-required yes|no|bypass          Enable or disable TOTP requirement for this account in addition to pubkey auth (default is 'no'),
+                                                this overrides the global bastion configuration 'accountMFAPolicy'. If 'bypass' is specified,
+                                                no OTP will ever be asked, even for groups or plugins explicitly requiring it
+  --egress-strict-host-key-checking POLICY   Modify the egress SSH behavior of this account regarding StrictHostKeyChecking (see man ssh_config),
+                                               POLICY can be 'yes', 'no', 'ask', 'default' or 'bypass'
+  --personal-egress-mfa-required POLICY      Enforce UNIX password requirement, or TOTP requirement, or any MFA requirement, when connecting to a server
+                                               using the personal keys of the account, POLICY can be 'password', 'totp', 'any' or 'none'
+  --always-active yes|no                     Set or unset the account as always active (i.e. disable the check of the 'active' status on this account)
+  --idle-ignore yes|no                       If enabled, this account is immune to the idleLockTimeout and idleKillTimeout bastion-wide policy
+EOF
+);
+
+my $fnret;
+
+if (!$account) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing mandatory parameter 'account'";
+}
+
+$fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account, localOnly => 1);
+$fnret or osh_exit $fnret;
+$account = $fnret->value->{'account'};
+
+if ((grep { defined } values %modify) == 0) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing mandatory parameter to modify account";
+}
+
+foreach my $key (qw{ mfa-password-required mfa-totp-required }) {
+    next unless $modify{$key};
+    if (not grep { $modify{$key} eq $_ } qw{ yes no bypass }) {
+        help();
+        osh_exit 'ERR_INVALID_PARAMETER', "Expected '--$key yes' or '--$key no' or '--$key bypass' instead of '--$key $modify{$key}'";
+    }
+}
+foreach my $key (qw{ always-active pam-auth-bypass idle-ignore }) {
+    next unless $modify{$key};
+    if (not grep { $modify{$key} eq $_ } qw{ yes no }) {
+        help();
+        osh_exit 'ERR_INVALID_PARAMETER', "Expected '--$key yes' or '--$key no' instead of '--$key $modify{$key}'";
+    }
+}
+if ($modify{'egress-strict-host-key-checking'} && !grep { $modify{'egress-strict-host-key-checking'} eq $_ } qw{ yes no ask default bypass }) {
+    help();
+    osh_exit 'ERR_INVALID_PARAMETER', "Expected option 'yes', 'no', 'ask', 'default' or 'bypass' to --egress-strict-host-key-checking";
+}
+if ($modify{'personal-egress-mfa-required'} && !grep { $modify{'personal-egress-mfa-required'} eq $_ } qw{ password totp any none }) {
+    help();
+    osh_exit 'ERR_INVALID_PARAMETER', "Expected option 'password', 'totp', 'any', 'none' to --personal-egress-mfa-required";
+}
+
+my @command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
+push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountModify';
+push @command, '--account', $account;
+foreach my $key (keys %modify) {
+    push @command, '--modify', $key . '=' . $modify{$key} if $modify{$key};
+}
+
+osh_exit OVH::Bastion::helper(cmd => \@command);

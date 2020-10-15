@@ -1,0 +1,47 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "unlock all your current sessions",
+    options => {
+        'report' => \my $report,
+    },
+    helptext => <<'EOF',
+Unlock all your current sessions
+
+Usage: --osh SCRIPT_NAME
+
+This command will unlock all your current sessions on this bastion instance,
+that were either locked for inactivity timeout or manually locked by you with ``lock``.
+Note that this only applies to the bastion instance you're launching this
+command on, not on the whole bastion cluster (if you happen to have one).
+EOF
+);
+
+# code
+my $fnret;
+my @command;
+
+@command = qw{ pkill -c --uid };
+push @command, $self;
+push @command, qw{ -USR2 ttyrec };
+
+osh_info "Unlocking all your sessions...";
+
+$fnret = OVH::Bastion::execute(cmd => \@command, noisy_stdout => 0, noisy_stderr => 1);
+$fnret or osh_exit $fnret;
+
+if ($fnret->value && $fnret->value->{'stdout'}) {
+    my $nb = $fnret->value->{'stdout'}->[0] / 2;
+    osh_info "Sent unlock signal to $nb session" . ($nb == 1 ? '' : 's');
+}
+
+osh_ok {};

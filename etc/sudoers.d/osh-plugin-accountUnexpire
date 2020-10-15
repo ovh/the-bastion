@@ -1,0 +1,1 @@
+%osh-accountUnexpire ALL=(%bastion-users) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountUnexpire *

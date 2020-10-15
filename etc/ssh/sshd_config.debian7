@@ -1,0 +1,125 @@
+# Hardened SSHD bastion config -- modify wisely!
+# Based on https://wiki.mozilla.org/Security/Guidelines/OpenSSH
+# With additional restrictions where applicable
+
+# -lo and -rt users only have local console login
+DenyUsers *-rt
+DenyUsers *-lo
+
+# hardened params follow. every non-needed feature is disabled by default,
+# following the principle of least rights and least features (more enabled
+# features mean a more important attack surface).
+
+# === FEATURES ===
+
+# disable non-needed sshd features
+AllowAgentForwarding no
+AllowTcpForwarding no
+X11Forwarding no
+PermitTunnel no
+PermitUserEnvironment no
+GatewayPorts no
+
+# === INFORMATION DISCLOSURE ===
+
+# don't yell to the world that we're running debian,
+# this disables the debian string version on the server hello message
+DebianBanner no
+
+# however, display a legal notice for each connection
+Banner /etc/ssh/banner
+
+# don't print the bastion MOTD on connection
+PrintMotd no
+
+# === CRYPTOGRAPHY ===
+
+# enforce the use of ssh version 2 protocol, version 1 is disabled.
+# all sshd_config options regarding protocol 1 are therefore omitted.
+Protocol 2
+
+# only use hostkeys with RSA
+HostKey /etc/ssh/ssh_host_rsa_key
+
+# list of allowed ciphers.
+# aes is a trusted standard, only allow it's ctr mode (cbc is not considered secure)
+# we deny arcfour(rc4), 3des, blowfish and cast
+Ciphers aes256-ctr,aes192-ctr,aes128-ctr
+
+# list of allowed message authentication code algorithms.
+# we prefer umac (has been proven secure) then sha2.
+# we deny md5 and sha1
+MACs umac-64@openssh.com,hmac-sha2-512,hmac-sha2-256
+
+# List of allowed key exchange algorithms.
+# we allow diffie hellman with group exchange using sha256 which is
+# the most secure dh-based kex.
+# we avoid algorithms based on the disputed NIST curves, and anything based
+# on sha1.
+KexAlgorithms diffie-hellman-group-exchange-sha256
+
+# === AUTHENTICATION ===
+
+# we allow only public key authentication ...
+PubkeyAuthentication yes
+# ... not password
+PasswordAuthentication no
+# ... keyboard interactive (needed for MFA through PAM)
+KbdInteractiveAuthentication yes
+# ... not kerberos
+KerberosAuthentication no
+# ... challenge-response (needed for MFA through PAM)
+ChallengeResponseAuthentication yes
+# ... not host-based
+HostbasedAuthentication no
+# ... and not gssapi auth.
+GSSAPIAuthentication no
+GSSAPIKeyExchange no
+
+# just in case, we also explicitely deny empty passwords
+PermitEmptyPasswords no
+
+# this needs to be set at "yes" to allow PAM keyboard-interactive authentication,
+# which is not a security issue because the AuthenticationMethods below force the use of
+# either publickey or publickey+keyboard-interactive, hence password-only login is never
+# possible, for root or any other account for that matter
+PermitRootLogin yes
+
+# === LOGIN ===
+
+# disconnect after 30 seconds if user didn't log in successfully
+LoginGraceTime 30
+
+# not more than 1 session per network connection (connection sharing with ssh client's master/shared mode)
+MaxSessions 1
+
+# maximum concurrent unauth connections to the sshd daemon
+MaxStartups 50:30:500
+
+# accept LANG and LC_* vars (also includes LC_BASTION)
+AcceptEnv LANG LC_*
+
+# === SYSTEM ===
+
+# Use kernel sandbox mechanisms where possible in unprivilegied processes (seccomp)
+UsePrivilegeSeparation sandbox
+
+# sshd log level at verbose in auth facility for auditing purposes
+LogLevel VERBOSE
+SyslogFacility AUTH
+
+# check sanity of user HOME dir before allowing user to login
+StrictModes yes
+
+# never use dns (slows down connections)
+UseDNS no
+
+# use PAM facility
+UsePAM yes
+
+# Debian 7 doesn't support the AuthenticationMethods, hence we can't benefit
+# from the bastion-nopam group (accountModify --pam-auth-bypass will not work)
+#Match Group bastion-nopam
+#	AuthenticationMethods publickey
+#Match All
+#	AuthenticationMethods publickey,keyboard-interactive:pam

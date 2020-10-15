@@ -1,0 +1,42 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "lock all your current sessions",
+    options => {
+        'report' => \my $report,
+    },
+    helptext => <<'EOF',
+Manually lock all your current sessions
+
+Usage: --osh SCRIPT_NAME
+EOF
+);
+
+# code
+my $fnret;
+my @command;
+
+@command = qw{ pkill -c --uid };
+push @command, $self;
+push @command, qw{ -URG ttyrec };
+
+osh_info "Locking all your sessions...";
+
+$fnret = OVH::Bastion::execute(cmd => \@command, noisy_stdout => 0, noisy_stderr => 1);
+$fnret or osh_exit $fnret;
+
+if ($fnret->value && $fnret->value->{'stdout'}) {
+    my $nb = $fnret->value->{'stdout'}->[0] / 2;
+    osh_info "Sent lock signal to $nb session" . ($nb == 1 ? '' : 's');
+}
+
+osh_ok {};

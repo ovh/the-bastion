@@ -1,0 +1,46 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+use Term::ANSIColor;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "maintenance",
+    options => {
+        "lock"      => \my $lock,
+        "unlock"    => \my $unlock,
+        "message=s" => \my $message,
+    },
+    helptext => <<'EOF',
+Manage the bastion maintenance mode
+
+Usage: --osh SCRIPT_NAME <--lock [--message "'reason for maintenance'"]|--unlock>
+
+  --lock             Set maintenance mode: new logins will be disallowed
+  --unlock           Unset maintenance mode: new logins are allowed and the bastion functions normally
+  --message MESSAGE  Optionally set a maintenance reason, if you're in a shell, quote it twice.
+EOF
+);
+
+if (!$lock && !$unlock) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Expected --lock or --unlock";
+}
+
+if ($lock && $unlock) {
+    help();
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "Got both --lock and --unlock, what are your trying to do exactly?";
+}
+
+my @command = qw{ sudo -n -u allowkeeper -- /usr/bin/env perl -T };
+push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-adminMaintenance';
+push @command, "--action", ($lock ? 'set' : 'unset');
+push @command, "--message", $message if $message;
+
+osh_exit OVH::Bastion::helper(cmd => \@command);

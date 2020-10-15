@@ -1,0 +1,44 @@
+verbose = %f: [%p] %m at line %l, column %c.\n
+severity = 2
+
+[TestingAndDebugging::RequireUseStrict]
+equivalent_modules = common::sense
+
+[TestingAndDebugging::RequireUseWarnings]
+equivalent_modules = common::sense
+
+[Variables::RequireLocalizedPunctuationVars]
+allow = %ENV %SIG $|
+
+[ValuesAndExpressions::RequireNumberSeparators]
+min_value = 100000
+
+[Subroutines::RequireFinalReturn]
+terminal_funcs = HEXIT osh_exit osh_ok
+
+[ControlStructures::ProhibitDeepNests]
+max_nests = 6
+
+[-BuiltinFunctions::ProhibitBooleanGrep]
+[-ControlStructures::ProhibitCascadingIfElse]
+[-ControlStructures::ProhibitPostfixControls]
+[-Documentation::RequirePodSections]
+[-ErrorHandling::RequireCarping]
+[-ErrorHandling::RequireCheckingReturnValueOfEval]
+[-InputOutput::ProhibitExplicitStdin]
+[-InputOutput::RequireBriefOpen]
+[-InputOutput::RequireCheckedClose]
+[-Modules::ProhibitExcessMainComplexity]
+[-Modules::RequireFilenameMatchesPackage]
+[-Modules::RequireVersionVar]
+[-References::ProhibitDoubleSigils]
+[-RegularExpressions::ProhibitComplexRegexes]
+[-RegularExpressions::RequireDotMatchAnything]
+[-RegularExpressions::RequireExtendedFormatting]
+[-RegularExpressions::RequireLineBoundaryMatching]
+[-Subroutines::ProhibitExcessComplexity]
+[-ValuesAndExpressions::ProhibitConstantPragma]
+[-ValuesAndExpressions::ProhibitEmptyQuotes]
+[-ValuesAndExpressions::ProhibitMagicNumbers]
+[-ValuesAndExpressions::ProhibitNoisyQuotes]
+[-Variables::ProhibitPunctuationVars]

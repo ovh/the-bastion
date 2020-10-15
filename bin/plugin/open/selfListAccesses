@@ -1,0 +1,43 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my ($hideGroups, $reverse);
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "your access list",
+    options => {
+        "hide-groups" => \$hideGroups,
+        "reverse-dns" => \$reverse,
+    },
+    helptext => <<'EOF',
+Show the list of servers you have access to
+
+Usage: --osh SCRIPT_NAME [--hide-groups] [--reverse-dns]
+
+  --hide-groups  Don't show the machines you have access to through group rights. In other words,
+                   list only your private accesses.
+
+  --reverse-dns  Attempt to resolve the reverse hostnames (SLOW!)
+EOF
+);
+
+my $fnret;
+
+$fnret = OVH::Bastion::get_acls(account => $self);
+$fnret or osh_exit $fnret;
+
+if (not @{$fnret->value}) {
+    osh_ok R('OK_EMPTY', msg => "Dear $self, you have no registered accesses to machines through this bastion yet");
+}
+
+osh_info "Dear $self, you have access to the following servers:\n";
+
+OVH::Bastion::print_acls(acls => $fnret->value, reverse => $reverse, hideGroups => $hideGroups);
+osh_ok($fnret);

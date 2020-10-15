@@ -1,0 +1,13 @@
+[Unit]
+Description=OVH::Bastion HTTP Proxy daemon
+
+[Service]
+ExecStart=/opt/bastion/bin/proxy/osh-http-proxy-daemon
+KillMode=process
+Restart=on-failure
+RestartSec=5s
+User=proxyhttp
+Group=proxyhttp
+
+[Install]
+WantedBy=multi-user.target

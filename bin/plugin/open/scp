@@ -1,0 +1,203 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use MIME::Base64;
+use IO::Compress::Gzip qw{ gzip };
+use Sys::Hostname ();
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT );
+
+my ($scpCmd);
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => undef,
+    options => {'scp-cmd=s' => \$scpCmd},
+    help    => \&help,
+);
+
+sub help {
+    osh_header("scp");
+    my $config = OVH::Bastion::load_configuration();
+    $config or osh_exit $config;
+    my $bastionCommand = $config->value->{'bastionCommand'};
+    my $bastionName    = $config->value->{'bastionName'};
+    $bastionCommand =~ s/USER|ACCOUNT/$self/g;
+    $bastionCommand =~ s/CACHENAME|BASTIONNAME/$bastionName/g;
+    my $hostname = Sys::Hostname::hostname();
+    $bastionCommand =~ s/HOSTNAME/$hostname/g;
+
+    # for scp, if the bastionCommand contains -t, we need to get rid of it
+    $bastionCommand =~ s/ -t( |$)/$1/;
+
+    # same thing for --
+    $bastionCommand =~ s/ --/ /;
+    my $script = <<"EOF";
+#! /bin/sh
+#scpwrapper v1.0
+while ! [ "\$1" = "--" ] ; do
+    if [ "\$1" = "-l" ] ; then
+        remoteuser="--user \$2"
+        shift 2
+    elif [ "\$1" = "-p" ] ; then
+        remoteport="--port \$2"
+        shift 2
+    else
+        sshcmdline="\$sshcmdline \$1"
+        shift
+    fi
+done
+host="\$2"
+scpcmd=`echo "\$3" | sed -e 's/#/##/g;s/ /#/g'`
+exec $bastionCommand -T \$sshcmdline -- \$remoteuser \$remoteport --host \$host --osh scp --scp-cmd "\$scpcmd"
+EOF
+    my $compressed = '';
+    gzip \$script => \$compressed;
+    my $base64 = encode_base64($compressed);
+    chomp $base64;
+    osh_info <<"EOF";
+Description:
+    Transfers files to/from a host through the bastion
+
+Usage:
+    To use scp through the bastion, you need a helper script to use with
+your scp client. It'll be specific to your account, don't share it with
+others! To download your customized script, copy/paste this command:
+EOF
+    print "\necho \"$base64\"|base64 -d|gunzip -c > ~/scp_$bastionName && chmod +x ~/scp_$bastionName\n\n";
+    osh_info <<"EOF";
+To use scp through this bastion, add `-S ~/scp_$bastionName` to your regular scp command.
+For example, to upload a file:
+\$ scp -S ~/scp_$bastionName localfile login\@server:/dest/folder/
+
+Or to recursively download a folder contents:
+\$ scp -S ~/scp_$bastionName -r login\@server:/src/folder/ /tmp/
+
+Please note that you need to be granted for uploading or downloading files
+with scp to/from the remote host, in addition to having the right to SSH to it.
+For a group, the right should be added with --scpup/--scpdown of the groupAddServer command.
+For a personal access, the right should be added with --scpup/--scpdown of the selfAddPersonalAccess command.
+EOF
+    osh_ok({script => $base64, "content-encoding" => 'base64-gzip'});
+    return 0;
+}
+
+#
+# code
+#
+my $fnret;
+
+if (not $host) {
+    help();
+    osh_exit;
+}
+
+my $machine = $ip;
+$machine = "$user\@$ip" if $user;
+$port ||= 22;       # scp uses 22 if not specified, so we need to test access to that port and not any port (aka undef)
+$user ||= $self;    # same for user
+$machine .= ":$port";
+
+# decode the passed scp command
+
+my $decoded = $scpCmd;
+$decoded =~ s/(?<!#)#(?!#)/ /g;
+$decoded =~ s/##/#/g;
+if ($decoded !~ /^(?:scp )(?:.*)-([tf]) (?:.+)$/) {
+
+    # security
+    die "not scp ($decoded)";
+}
+my $userToCheck = $1 eq 't' ? '!scpupload' : '!scpdownload';    ## no critic (CaptureWithoutTest) ## false positive
+
+my %keys;
+osh_debug("Checking access 1/2 of $self to $machine...");
+$fnret = OVH::Bastion::is_access_granted(account => $self, user => $user, ipfrom => $ENV{'OSH_IP_FROM'}, ip => $ip, port => $port, wantKeys => 1);
+if (not $fnret) {
+    my $msg = "Sorry, but you don't seem to have access to $machine";
+    print STDERR ">>>" . $msg . "\n";
+    osh_exit 'ERR_ACCESS_DENIED', $msg;
+}
+
+# get the keys we would try
+foreach my $access (@{$fnret->value || []}) {
+    foreach my $key (@{$access->{'sortedKeys'} || []}) {
+        my $keyfile = $access->{'keys'}{$key}{'fullpath'};
+        $keys{$keyfile}++ if -r $keyfile;
+        osh_debug("Checking access 1/2 keyfile: $keyfile");
+    }
+}
+
+osh_debug("Checking access 2/2 of $self to $userToCheck of $machine...");
+$fnret = OVH::Bastion::is_access_granted(account => $self, user => $userToCheck, ipfrom => $ENV{'OSH_IP_FROM'}, ip => $ip, port => $port, exactUserMatch => 1, wantKeys => 1);
+if (not $fnret) {
+    my $msg = "Sorry, but even if you have ssh access to $machine, you still need to be granted specifically for scp";
+    print STDERR ">>>" . $msg . "\n";
+    osh_exit 'ERR_ACCESS_DENIED', $msg;
+}
+
+# get the keys we would try too
+foreach my $access (@{$fnret->value || []}) {
+    foreach my $key (@{$access->{'sortedKeys'} || []}) {
+        my $keyfile = $access->{'keys'}{$key}{'fullpath'};
+        $keys{$keyfile}++ if -r $keyfile;
+        osh_debug("Checking access 2/2 keyfile: $keyfile");
+    }
+}
+
+# now build the command
+
+my @cmd = qw{ ssh -x -oForwardAgent=no -oPermitLocalCommand=no -oClearAllForwardings=yes };
+push @cmd, ('-p', $port) if $port;
+push @cmd, ('-l', $user) if $user;
+
+my $atleastonekey = 0;
+foreach my $keyfile (keys %keys) {
+
+    # only use the key if it has been seen in both allow_deny() calls, this is to avoid
+    # a security bypass where a user would have group access to a server, but not to the
+    # !scpupload special user, and we would add himself this access through selfAddPrivateAccess.
+    # in that case both allow_deny would return OK, but with different keys.
+    # we'll only use the keys that matched BOTH calls.
+    next unless $keys{$keyfile} == 2;
+    push @cmd, ('-i', $keyfile);
+    $atleastonekey = 1;
+}
+
+if (not $atleastonekey) {
+    osh_exit('KO_ACCESS_DENIED',
+"Sorry, you seem to have access through ssh and through scp but by different and distinct means (distinct keys). The intersection between your rights for ssh and for scp needs to be at least one."
+    );
+}
+
+push @cmd, "--", $ip, $decoded;
+
+=cut attempt to be more secure than even standard scp, but don't bother ...
+my ($additionalParams,$remoteFile) = ($2,$3);
+
+push @cmd, 'scp';
+if (defined $additionalParams)
+{
+    push @cmd, split(/ /, $additionalParams);
+}
+push @cmd, '-t', "\Q$remoteFile\E";
+=cut
+
+print STDERR ">>> Hello $self, transferring your file through the bastion " . ($userToCheck eq '!scpupload' ? 'to' : 'from') . " $machine...\n";
+
+#print STDERR join('^', @cmd)."\n";
+$fnret = OVH::Bastion::execute(cmd => \@cmd, expects_stdin => 1, is_binary => 1);
+if ($fnret->err ne 'OK') {
+    print STDERR ">>> Error launching transfer: " . $fnret->msg . "\n";
+    exit OVH::Bastion::EXIT_PLUGIN_ERROR;
+}
+print STDERR ">>> Done, " . $fnret->value->{'bytesnb'}{'stdin'} . " bytes uploaded, " . $fnret->value->{'bytesnb'}{'stdout'} . " bytes downloaded.\n";
+if ($fnret->value->{'sysret'} != 0) {
+    print STDERR ">>> On bastion side, scp exited with return code " . $fnret->value->{'sysret'} . ".\n";
+}
+exit OVH::Bastion::EXIT_OK;
+

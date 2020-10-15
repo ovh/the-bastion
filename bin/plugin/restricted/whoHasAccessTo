@@ -1,0 +1,134 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+use Term::ANSIColor;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my (@ignoreGroups, $ignorePersonal, $showWildcards);
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "who has access to this?",
+    options => {
+        "ignore-group=s"  => \@ignoreGroups,
+        "ignore-private"  => \$ignorePersonal,    # deprecated name
+        "ignore-personal" => \$ignorePersonal,
+        "show-wildcards"  => \$showWildcards,
+    },
+    helptext => <<'EOF',
+List the accounts that have access to a given server
+
+Usage: --osh SCRIPT_NAME --host SERVER [OPTIONS]
+
+  --host SERVER         List declared accesses to this server
+  --user USER           Remote user allowed (if not specified, ignore user specifications)
+  --port PORT           Remote port allowed (if not specified, ignore port specifications)
+  --ignore-personal     Don't check accounts' personal accesses (i.e. only check groups)
+  --ignore-group GROUP  Ignore accesses by this group, if you know GROUP public key is in fact
+                          not present on remote server but bastion thinks it is
+  --show-wildcards      Also list accesses that match because 0.0.0.0/0 is listed in a group or private access,
+                          this is disabled by default because this is almost always just noise (see Note below)
+
+Note: This list is what the bastion THINKS is true, which means that if some group has 0.0.0.0/0 in its list,
+then it'll show all the members of that group as having access to the machine you're specifying, through this group key.
+This is only true if the remote server does have the group key installed, of course, which the bastion
+can't tell without trying to connect "right now" (which it won't do).
+EOF
+);
+
+#
+# code
+#
+
+my $fnret;
+
+if (!$ip) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing parameter host (or it didn't resolve correctly)";
+}
+
+$fnret = OVH::Bastion::get_account_list();
+$fnret or osh_exit $fnret;
+
+osh_warn "IMPORTANT: read the --help of this command to understand what is shown here and why.";
+osh_info " ";
+
+my $result_hash = {};
+
+sub process_account {
+    my %params  = @_;
+    my $account = $params{'account'};
+
+    $fnret = OVH::Bastion::is_access_granted(
+        account    => $account,
+        user       => $user,
+        ip         => $ip,
+        ipfrom     => $ENV{'OSH_IP_FROM'},
+        port       => $port,
+        cache      => 1,
+        ignorePort => ($port ? 0 : 1),       # return accesses without checking for the specified port
+        ignoreUser => ($user ? 0 : 1),       # return accesses without checking for the specified remote user
+    );
+    if ($fnret) {
+        my $byPersonal = 0;
+        my %byGroups   = ();
+        foreach my $access (@{$fnret->value || []}) {
+            if (not $showWildcards and $access->{'size'} == 2**32) {
+                next;
+            }
+            if ($access->{'type'} =~ /^personal/ and not $ignorePersonal) {
+                $byPersonal++;
+            }
+            elsif ($access->{'type'} =~ /^group/ and not grep { $access->{'group'} eq $_ } @ignoreGroups) {
+                $byGroups{$access->{'group'} . '(' . $access->{'type'} . ')'} = 1;
+            }
+        }
+
+        my @shortGroups = sort keys %byGroups;
+        if ($byPersonal and keys %byGroups) {
+            osh_info "$account has access by his " . colored('personal', 'red') . " key and by the following groups: " . colored(join(' ', @shortGroups), "green");
+            $result_hash->{$account} = {personal_access => 1, group_access => [sort keys %byGroups]};
+        }
+        elsif ($byPersonal) {
+            osh_info "$account has access by his " . colored('personal', 'red') . " key only";
+            $result_hash->{$account} = {personal_access => 1, group_access => []};
+        }
+        elsif (keys %byGroups) {
+            osh_info "$account has access by the following groups: " . colored(join(' ', @shortGroups), "green");
+            $result_hash->{$account} = {personal_access => 0, group_access => [sort keys %byGroups]};
+        }
+        else {
+            ;    #osh_info "$account has access (I don't know how!!?)";
+        }
+    }
+
+    return 1;
+}
+
+my @accounts = sort keys %{$fnret->value};
+foreach my $account (@accounts) {
+    $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account, localOnly => 1);
+    if (!$fnret) {
+
+        # maybe it's a realm shared account ?
+        my ($realm) = $account =~ /^realm_(.+)$/;
+        $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account, accountType => "realm");
+        $fnret or next;
+
+        # it is. ok, get all the known remote accounts
+        $fnret = OVH::Bastion::get_remote_accounts_from_realm(realm => $account);
+        $fnret or next;
+        foreach my $remoteaccount (@{$fnret->value || []}) {
+            process_account(account => "$realm/$remoteaccount");
+        }
+    }
+    else {
+        process_account(account => $account);
+    }
+}
+
+osh_ok $result_hash;

@@ -1,0 +1,140 @@
+#! /usr/bin/perl -T
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+# KEYSUDOERS # as an owner, we can grant/revoke ownership
+# KEYSUDOERS SUPEROWNERS, %%GROUP%-owner      ALL=(root)        NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupSetRole --type owner --group %GROUP% *
+# KEYSUDOERS # as an owner, we can grant/revoke gatekeepership
+# KEYSUDOERS SUPEROWNERS, %%GROUP%-owner      ALL=(root)        NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupSetRole --type gatekeeper --group %GROUP% *
+# KEYSUDOERS # as an owner, we can grant/revoke aclkeepership
+# KEYSUDOERS SUPEROWNERS, %%GROUP%-owner      ALL=(root)        NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupSetRole --type aclkeeper --group %GROUP% *
+# KEYSUDOERS # as a gatekeeper, we can grant/revoke membership
+# KEYSUDOERS SUPEROWNERS, %%GROUP%-gatekeeper ALL=(root)        NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupSetRole --type member --group %GROUP% *
+# KEYSUDOERS # as a gatekeeper, we can grant/revoke a guest access
+# KEYSUDOERS SUPEROWNERS, %%GROUP%-gatekeeper ALL=(root)        NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupSetRole --type guest --group %GROUP% *
+# FILEMODE 0700
+# FILEOWN root root
+
+#>HEADER
+use common::sense;
+use Getopt::Long;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin::groupSetRole;
+local $| = 1;
+
+#
+# Globals
+#
+$ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/pkg/bin';
+my ($self) = $ENV{'SUDO_USER'} =~ m{^([a-zA-Z0-9._-]+)$};
+if (not defined $self) {
+    if ($< == 0) {
+        $self = 'root';
+    }
+    else {
+        HEXIT('ERR_SUDO_NEEDED', msg => 'This command must be run under sudo');
+    }
+}
+
+# Fetch command options
+Getopt::Long::Configure("no_auto_abbrev");
+my $fnret;
+my ($result, @optwarns);
+my ($account, $group, $action, $type);
+eval {
+    local $SIG{__WARN__} = sub { push @optwarns, shift };
+    $result = GetOptions(
+        "type=s"    => sub { $type    //= $_[1] },
+        "action=s"  => sub { $action  //= $_[1] },
+        "group=s"   => sub { $group   //= $_[1] },    # ignore subsequent --group on cmdline (anti-sudoers-override)
+        "account=s" => sub { $account //= $_[1] },
+    );
+};
+if ($@) { die $@ }
+
+if (!$result) {
+    local $" = ", ";
+    HEXIT('ERR_BAD_OPTIONS', msg => "Error parsing options: @optwarns");
+}
+
+osh_debug("groupSetRole: checking preconditions");
+$fnret = OVH::Bastion::Plugin::groupSetRole::preconditions(self => $self, account => $account, group => $group, action => $action, type => $type, sudo => 1, silentoverride => 1);
+osh_debug("groupSetRole: checking preconditions result: $fnret");
+$fnret or HEXIT($fnret);
+
+my $shortGroup;
+my %values = %{$fnret->value()};
+($group, $shortGroup, $account, $type) = @values{qw{ group shortGroup account type }};
+my ($sysaccount, $realm, $remoteaccount) = @values{qw{ sysaccount realm remoteaccount }};
+
+#<PARAMS:GROUP
+
+#>RIGHTSCHECK
+#done in Plugin::groupSetRole::preconditions
+#<RIGHTSCHECK
+
+#>CODE
+if ($type eq 'owner') {
+    $fnret = OVH::Bastion::is_group_owner(account => $account, group => $shortGroup, sudo => 1);
+}
+elsif ($type eq 'gatekeeper') {
+    $fnret = OVH::Bastion::is_group_gatekeeper(account => $account, group => $shortGroup, sudo => 1);
+}
+elsif ($type eq 'aclkeeper') {
+    $fnret = OVH::Bastion::is_group_aclkeeper(account => $account, group => $shortGroup, sudo => 1);
+}
+elsif ($type eq 'member') {
+    $fnret = OVH::Bastion::is_group_member(account => $account, group => $shortGroup, sudo => 1);
+}
+elsif ($type eq 'guest') {
+    $fnret = OVH::Bastion::is_group_guest(account => $account, group => $shortGroup, sudo => 1);
+}
+$fnret->is_err and HEXIT($fnret);
+
+if ($action eq 'add' && $fnret->is_ok) {
+    osh_debug("groupSetRole: Account $account was already a $type of group $shortGroup, nothing to do");
+    HEXIT('OK_NO_CHANGE', msg => "Account $account was already a $type of group $shortGroup, nothing to do");
+}
+elsif ($action eq 'del' && $fnret->is_ko) {
+    osh_debug("groupSetRole: Account $account was not a $type of group $shortGroup, nothing to do");
+    HEXIT('OK_NO_CHANGE', msg => "Account $account was not a $type of group $shortGroup, nothing to do");
+}
+
+# add/del from sysgroup
+my $groupName = ((grep { $type eq $_ } qw{ guest member }) ? $group : "$group-$type");
+
+osh_debug("going to $action account $account to/from $groupName");
+$fnret = R('OK', silent => 1);
+if ($action eq 'add') {
+
+    if (!OVH::Bastion::is_user_in_group(user => $sysaccount, group => $groupName)) {
+        $fnret = OVH::Bastion::sys_addmembertogroup(group => $groupName, user => $sysaccount, noisy_stderr => 1);
+    }
+}
+elsif ($action eq 'del') {
+
+    # for realms, maybe we must not delete the shared realm account from the group, if other remote users are still members
+    my $otherMembers = 0;
+    if ($realm) {
+        $fnret = OVH::Bastion::get_remote_accounts_from_realm(realm => $realm);
+        $fnret or HEXIT($fnret);
+        foreach my $pRemoteaccount (@{$fnret->value}) {
+            next if ($pRemoteaccount eq $remoteaccount);
+            $otherMembers++ if OVH::Bastion::is_group_member(account => "$realm/$pRemoteaccount", group => $shortGroup, sudo => 1);
+        }
+    }
+    if (!$otherMembers) {
+        $fnret = OVH::Bastion::sys_delmemberfromgroup(group => $groupName, user => $sysaccount, noisy_stderr => 1);
+    }
+}
+else {
+    HEXIT('ERR_INTERNAL');    # unreachable
+}
+if ($fnret->err ne 'OK') {
+    osh_debug('Unable to modify group: ' . $fnret->msg);
+    HEXIT('ERR_INTERNAL', msg => "Error while doing $action on account $account from $type list of $shortGroup");
+}
+osh_debug("groupSetRole: Account $action of $account done on $type list of $shortGroup");
+HEXIT('OK', msg => "Account $action of $account done on $type list of $shortGroup");

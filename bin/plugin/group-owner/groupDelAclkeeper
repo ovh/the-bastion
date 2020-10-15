@@ -1,0 +1,40 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+use OVH::Bastion::Plugin::groupSetRole;
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv     => \@ARGV,
+    header   => "revoke an account as aclkeeper of a group",
+    options  => {"account=s" => \my $account, "group=s" => \my $group},
+    helptext => <<'EOF',
+Remove the group aclkeeper role from an account
+
+Usage: --osh SCRIPT_NAME --group GROUP --account ACCOUNT
+
+  --group GROUP      which group to remove ACCOUNT as an aclkeeper of
+  --account ACCOUNT  which account to remove as an aclkeeper of GROUP
+
+The specified account will no longer be able to manage the server list of this group
+EOF
+);
+
+my $fnret = OVH::Bastion::Plugin::groupSetRole::act(
+    account        => $account,
+    group          => $group,
+    action         => 'del',
+    type           => 'aclkeeper',
+    sudo           => 0,
+    silentoverride => 0,
+    self           => $self,
+    scriptName     => $scriptName,
+    savedArgs      => $savedArgs
+);
+help() if not $fnret;
+osh_exit($fnret);

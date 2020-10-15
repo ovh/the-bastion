@@ -1,0 +1,111 @@
+#!/usr/bin/expect -f
+# vim: set filetype=expect ts=4 sw=4 sts=4 et:
+#strace 2
+set ::env(TERM) ""
+
+# we need 6 arguments
+if { [llength $argv] < 6 } {
+    puts "BASTION SAYS: autologin usage error, expected 5 args: <ssh|telnet> <login> <ip> <port> <file_with_password> <timeout> [passthrough arguments to ssh or telnet]"
+    exit 1
+}
+
+# name our arguments
+set arg_prog      [lindex $argv 0]
+set arg_login     [lindex $argv 1]
+set arg_ip        [lindex $argv 2]
+set arg_port      [lindex $argv 3]
+set arg_file      [lindex $argv 4]
+set arg_timeout   [lindex $argv 5]
+set arg_remaining [lrange $argv 6 end]
+
+# start the program
+if { $arg_prog == "ssh" } {
+    lappend spawn_args -l $arg_login -p $arg_port $arg_ip
+} elseif { $arg_prog == "telnet" } {
+    lappend spawn_args $arg_ip $arg_port
+} else {
+    puts "BASTION SAYS: autologin usage error, program must be either 'ssh' or 'telnet'"
+    exit 1
+}
+
+if { [llength $arg_remaining] > 0 } {
+    set spawn_args [concat $spawn_args $arg_remaining]
+}
+
+# set the interactive timeout for expect{} blocks
+set timeout $arg_timeout
+
+# if success, doesn't return (calls interact then exit 0)
+# if auth failed, return 100 (caller might retry with another password)
+# if other non-critical error, return 101
+# if critical error, exits
+proc attempt_to_login args {
+    set tryid      [lindex $args 0]
+    set prog       [lindex $args 1]
+    set login      [lindex $args 2]
+    set file       [lindex $args 3]
+    set spawn_args [lindex $args 4]
+
+    if { [file exists $file] == 0 } {
+        if { $tryid == 0 } { puts "BASTION SAYS: file $file does not exist" }
+        return 101
+    }
+    if { [file readable $file] == 0 } {
+        if { $tryid == 0 } { puts "BASTION SAYS: file $file is not readable with our current rights" }
+        return 101
+    }
+
+    if { $tryid > 0 } {
+        puts "BASTION SAYS: trying with fallback password..."
+    }
+
+    # reading password (256 chars max)
+    set pass_fh [open $file r]
+    set pass [read $pass_fh 256]
+    close $pass_fh
+
+    spawn -noecho $prog {*}$spawn_args
+
+    if { $prog == "telnet" } {
+        # send login (only for telnet)
+        expect {
+            -re "login:|Username:" { send -- "$login\n" }
+            eof     { puts "BASTION SAYS: connection failed"; exit 2 }
+            timeout { puts "BASTION SAYS: timed out while waiting for login prompt"; exit 2 }
+        }
+    }
+
+    # send password
+    expect {
+        -re "Password:|password:" { send -- "$pass" }
+        eof     { puts "BASTION SAYS: connection aborted"; exit 3 }
+        timeout { puts "BASTION SAYS: timed out while waiting for password prompt"; exit 3 }
+    }
+
+    # do we have a login success with interactive prompt?
+    expect {
+        "#" { interact; exit 0 }
+        ">" { interact; exit 0 }
+        "(enable)" { interact; exit 0 }
+        -re "Password:|password:|Authentication failed|Permission denied" {
+            if { $tryid == 0 } { puts "BASTION SAYS: authentication failed!" }
+            close
+            wait
+            return 100
+        }
+        eof     { puts "BASTION SAYS: connection aborted"; exit 4 }
+        timeout { puts "BASTION SAYS: timed out while waiting for interactive prompt on success login"; exit 4 }
+    }
+    # unreachable:
+    exit 5
+}
+
+# try to login with the main password file
+set tryid 0
+set last_attempt [attempt_to_login $tryid $arg_prog $arg_login $arg_file $spawn_args]
+while { $last_attempt == 100 && $tryid < 10 } {
+    # auth failed, might want to try with the fallback
+    incr tryid
+    set last_attempt [attempt_to_login $tryid $arg_prog $arg_login "$arg_file.$tryid" $spawn_args]
+}
+exit $last_attempt

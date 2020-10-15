@@ -1,0 +1,62 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+use Term::ANSIColor;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my ($all);
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv     => \@ARGV,
+    header   => "group list",
+    options  => {'all' => \$all},
+    helptext => <<'EOF',
+List the groups available on this bastion
+
+Usage: --osh SCRIPT_NAME [--all]
+
+  --all  List all groups, even those to which you don't have access
+EOF
+);
+
+my $fnret;
+
+$fnret = OVH::Bastion::get_group_list(groupType => "key");
+$fnret or osh_exit $fnret;
+
+my $result_hash = {};
+foreach my $name (sort keys %{$fnret->value}) {
+    my @flags;
+    push @flags, 'owner' if OVH::Bastion::is_group_owner(group => $name);
+    push @flags, 'gatekeeper' if OVH::Bastion::is_group_gatekeeper(group => $name);
+    push @flags, 'aclkeeper' if OVH::Bastion::is_group_aclkeeper(group => $name);
+    push @flags, 'member' if OVH::Bastion::is_group_member(group => $name);
+    push @flags, 'guest' if OVH::Bastion::is_group_guest(group => $name);
+    if (@flags or $all) {
+        push @flags, 'no-access' if not @flags;
+        my $line = sprintf "%18s", $name;
+        $line .= sprintf " %14s", colored(grep({ $_ eq 'owner' } @flags)      ? 'Owner'      : '-', 'red');
+        $line .= sprintf " %19s", colored(grep({ $_ eq 'gatekeeper' } @flags) ? 'GateKeeper' : '-', 'yellow');
+        $line .= sprintf " %18s", colored(grep({ $_ eq 'aclkeeper' } @flags)  ? 'ACLKeeper'  : '-', 'magenta');
+        $line .= sprintf " %15s", colored(grep({ $_ eq 'member' } @flags)     ? 'Member'     : '-', 'green');
+        $line .= sprintf " %14s", colored(grep({ $_ eq 'guest' } @flags)      ? 'Guest'      : '-', 'cyan');
+        osh_info $line;
+        $result_hash->{$name} = {flags => \@flags};
+    }
+}
+if (keys %$result_hash) {
+    osh_info "\nIf you want to see all the groups, even the ones you don't have access to, use --all" if not $all;
+}
+else {
+    if (not $all) {
+        osh_ok R('OK_EMPTY', msg => "You are not in any group yet! You can use --all to see all groups");
+    }
+    else {
+        osh_ok R('OK_EMPTY', msg => "No group has been created on this bastion yet!");
+    }
+}
+osh_ok $result_hash;

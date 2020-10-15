@@ -1,0 +1,96 @@
+###################################################################
+# Config for /opt/bastion/bin/admin/osh-encrypt-rsync.pl
+# This is a JSON file.
+###################################################################
+
+{
+# logfile (string)
+#   value: filename with full absolute path
+#    desc: file where the logs will be written to (don't forget to configure logrotate!)
+# default: none (won't log to any file)
+# optional
+# "logfile": "/var/log/bastion/osh-encrypt-rsync.log",
+
+# syslog_facility (string)
+#   value: syslog facility to log to
+#    desc: if not defined, we'll not use syslog
+# default: local6
+# optional
+"syslog_facility": "local6",
+
+# signing_key (string)
+#   value: GPG key ID (short or long)
+#    desc: ID of the key used to sign the ttyrec files (must be in the local keyring, cf gpg --list-secret-keys)
+# default: -
+# mandatory
+"signing_key": "FFFFFFFF",
+
+# signing_key_passphrase (string)
+#   value: the passphrase of the signing_key
+#    desc: will be used by the script to unlock the key and sign with it
+# default: -
+# mandatory
+"signing_key_passphrase": "configure_this_passphrase",
+
+# encryption_recipients (array of array of strings)
+#  value: strings must be GPG key IDs (short or long)
+#   desc: ttyrecs will be encrypted with those GPG keys, possibly using multi-layer GPG encryption.
+#         Each sub-array is a layer, the first sub-array being the first encryption layer (which is also the last one for decryption)
+#         To completely decrypt a ttyrec, one would need at least one key of each layer.
+#         To encrypt only to a single layer and to only one key, simply use [ [ "KEYID" ] ].
+#         To encrypt to a single layer but with 3 keys being able to decrypt the ttyrec, use [ [ "KEY1", "KEY2", "KEY3" ] ], etc.
+#         A common use of multi-layer encryption is to have the first layer composed of the auditors' GPG keys, and
+#         the second layer composed of the sysadmins' GPG keys. During an audit, the sysadmins would get the ttyrec encrypted file,
+#         decrypt the second encryption layer (the first for decryption), and handle the now only auditor-protected file to the auditors.
+#         All public keys must be in the local keyring (gpg --list-keys).
+#         Don't forget to trust those keys "ultimately" in your keyring, too (gpg --edit-key ID)
+# default: -
+# mandatory
+"recipients": [
+    [ "AAAAAAAA", "BBBBBBBB" ],
+    [ "CCCCCCCC", "DDDDDDDD" ]
+],
+
+# encrypt_and_move_to_directory (string)
+#   value: directory name (will be created if doesn't exist)
+#    desc: after encryption (and compression), move ttyrec files to subdirs of this directory
+# default: -
+# mandatory
+"encrypt_and_move_to_directory": "/home/.encrypt",
+
+# encrypt_and_move_delay_days (integer)
+#   value: int > 0
+#    desc: don't touch ttyrec files that have a modification time more recent than this
+# default: -
+# mandatory
+"encrypt_and_move_delay_days": 14,
+
+# rsync_destination (string)
+#   value: user@remotehost:/remote/dir/
+#    desc: string passed to rsync as a destination. If empty, will DISABLE rsync.
+# default: ""
+# example: user@remotebackup:/remote/dir
+# mandatory
+"rsync_destination": "",
+
+# rsync_rsh (string)
+#   value: any valid string that'll be passed to rsync's --rsh option
+#    desc: useful to specify an SSH key or an alternate SSH port for example. Not used if rsync is disabled.
+# example: ssh -p 222 -i /home/plop/.ssh/id_rsa_backup
+# default: none (--rsh won't be specified)
+# optional
+"rsync_rsh": "ssh -p 222 -i /root/.ssh/id_rsa_backup",
+
+# rsync_delay_before_remove_days (integer)
+#   value: int >= 0
+#    desc: after encryption/compression, and successful rsync to remote, wait for this amount of days before removing the files locally. Not used if rsync is disabled.
+# default: -
+# mandatory
+"rsync_delay_before_remove_days": 7
+}
+
+
+
+
+
+

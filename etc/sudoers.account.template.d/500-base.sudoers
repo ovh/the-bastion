@@ -1,0 +1,7 @@
+# I need to be able to set my own UNIX account password
+%ACCOUNT% ALL=(root) NOPASSWD:/usr/bin/env perl -T %BASEPATH%/bin/helper/osh-selfMFASetupPassword --account %ACCOUNT% --step ?
+# I need to be able to enroll TOTP
+%ACCOUNT% ALL=(root) NOPASSWD:/usr/bin/env perl -T %BASEPATH%/bin/helper/osh-selfMFASetupTOTP --account %ACCOUNT%
+# I need to be able to reset my own UNIX account password and TOTP
+%ACCOUNT% ALL=(root) NOPASSWD:/usr/bin/env perl -T %BASEPATH%/bin/helper/osh-accountMFAResetPassword --account %ACCOUNT%
+%ACCOUNT% ALL=(root) NOPASSWD:/usr/bin/env perl -T %BASEPATH%/bin/helper/osh-accountMFAResetTOTP --account %ACCOUNT%

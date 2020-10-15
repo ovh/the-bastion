@@ -1,0 +1,91 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "modify the PIV policy of an account",
+    options => {
+        "account=s" => \my $account,
+        "policy=s"  => \my $policy,
+        "ttl=s"     => \my $ttl,
+    },
+    helptext => <<'EOF',
+Modify the PIV policy for the ingress keys of an account
+
+Usage: --osh SCRIPT_NAME --account ACCOUNT --policy <none|enforce|grace --ttl SECONDS|DURATION>
+
+Options:
+  --account ACCOUNT             Bastion account to work on
+  --policy  none|enforce|grace  Changes the PIV policy of account. 'none' disables the PIV enforcement, any SSH key can be used
+                                  as long as it respects the bastion policy. 'enforce' enables the PIV enforcement, only PIV keys
+                                  can be added as ingress SSH keys. 'grace' enables temporary deactivation of PIV enforcement on
+                                  an account, only meaningful when policy is already set to 'enforce' for this account, 'grace'
+                                  requires the use of the --ttl option to specify how much time the policy will be relaxed for this
+                                  account before going back to 'enforce' automatically.
+  --ttl SECONDS|DURATION        For the 'grace' policy, amount of time after which the account will automatically go back to 'enforce'
+                                  policy (amount of seconds, or duration string such as "4d12h15m")
+EOF
+);
+
+my $fnret;
+
+if (!$account) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing mandatory parameter 'account'";
+}
+
+$fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account, localOnly => 1);
+$fnret or osh_exit $fnret;
+$account = $fnret->value->{'account'};
+
+if (not grep { $policy eq $_ } qw{ none enforce grace }) {
+    help();
+    osh_exit 'ERR_INVALID_PARAMETER', "Expected either 'none,' enforce' of 'grace' as a parameter to --policy";
+}
+
+if ($policy eq 'grace' && !defined $ttl) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "The use of 'grace' requires to specify the --ttl parameter as well";
+}
+
+if (defined $ttl) {
+    $fnret = OVH::Bastion::is_valid_ttl(ttl => $ttl);
+    $fnret or osh_exit $fnret;
+    $ttl = $fnret->value->{'seconds'};
+}
+
+my @command;
+
+osh_info "Changing account configuration...";
+
+@command = qw{ sudo -n -u allowkeeper -- /usr/bin/env perl -T };
+push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountPIV';
+push @command, '--step', '1';
+push @command, '--account', $account;
+push @command, '--policy', $policy;
+push @command, '--ttl', $ttl if defined $ttl;
+
+$fnret = OVH::Bastion::helper(cmd => \@command);
+$fnret or osh_exit $fnret;
+osh_info $fnret->msg;
+
+osh_info "Applying change to keys...";
+
+@command = qw{ sudo -n -u };
+push @command, $account;
+push @command, qw{ -- /usr/bin/env perl -T };
+push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountPIV';
+push @command, '--step', '2';
+push @command, '--account', $account;
+push @command, '--policy', $policy;
+push @command, '--ttl', $ttl if defined $ttl;
+
+$fnret = OVH::Bastion::helper(cmd => \@command);
+osh_exit $fnret;

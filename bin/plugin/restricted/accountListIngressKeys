@@ -1,0 +1,59 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+use Term::ANSIColor qw{ colored };
+use POSIX qw{ strftime };
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "public bastion key of an account",
+    options => {
+        "account=s" => \my $account,
+    },
+    helptext => <<'EOF',
+List the public ingress keys of an account
+
+Usage: --osh SCRIPT_NAME --account ACCOUNT
+
+  --account ACCOUNT  Account to list the keys of
+
+The keys listed are the public ingress SSH keys tied to this account.
+Their private counterpart should be detained only by this account's user,
+so that they can to authenticate themselves to this bastion.
+EOF
+);
+
+my $fnret;
+
+if (not $account) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing 'account' parameter";
+}
+
+$fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
+$fnret or osh_exit $fnret;
+$account = $fnret->value->{'account'};
+
+my @command = qw{ sudo -n -u keyreader -- /usr/bin/env perl -T };
+push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountListIngressKeys';
+push @command, ('--account', $account);
+
+$fnret = OVH::Bastion::helper(cmd => \@command);
+$fnret or osh_exit $fnret;
+
+my @result;
+foreach my $key (@{$fnret->value || []}) {
+    OVH::Bastion::print_public_key(key => $key, id => $key->{'index'}, err => $key->{'err'});
+    $key->{'validity'}  = delete $key->{'err'};
+    $key->{'id'}        = delete $key->{'index'};
+    $key->{'from_list'} = delete $key->{'fromList'};
+    push @result, $key;
+}
+
+osh_ok({keys => \@result, account => $account});

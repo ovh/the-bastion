@@ -1,0 +1,187 @@
+#! /usr/bin/perl -T
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+# NEEDGROUP osh-accountPIV
+# SUDOERS # modify PIV policy of an account
+# SUDOERS %osh-accountPIV ALL=(allowkeeper)    NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountPIV --step 1 --account *
+# SUDOERS %osh-accountPIV ALL=(%bastion-users) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountPIV --step 2 --account *
+# FILEMODE 0755
+# FILEOWN root root
+
+#>HEADER
+use common::sense;
+use Getopt::Long;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../lib/perl';
+use OVH::Bastion;
+use OVH::Result;
+local $| = 1;
+
+#
+# Globals
+#
+$ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/pkg/bin';
+my ($self) = $ENV{'SUDO_USER'} =~ m{^([a-zA-Z0-9._-]+)$};
+if (not defined $self) {
+    if ($< == 0) {
+        $self = 'root';
+    }
+    else {
+        HEXIT('ERR_SUDO_NEEDED', msg => 'This command must be run under sudo');
+    }
+}
+
+# Fetch command options
+Getopt::Long::Configure("no_auto_abbrev");
+my $fnret;
+my ($result, @optwarns);
+my ($account, $policy, $ttl, $step);
+eval {
+    local $SIG{__WARN__} = sub { push @optwarns, shift };
+    $result = GetOptions(
+        "account=s" => sub { $account //= $_[1] },
+        "policy=s"  => sub { $policy  //= $_[1] },
+        "step=i"    => sub { $step    //= $_[1] },
+        "ttl=i"     => sub { $ttl     //= $_[1] },
+    );
+};
+if ($@) { die $@ }
+
+if (!$result) {
+    local $" = ", ";
+    HEXIT('ERR_BAD_OPTIONS', msg => "Error parsing options: @optwarns");
+}
+
+if (!$account || !$policy || !$step) {
+    HEXIT('ERR_MISSING_PARAMETER', msg => "Missing argument 'account' or 'modify' or 'step'");
+}
+
+#<HEADER
+
+#>PARAMS:ACCOUNT
+$fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account, localOnly => 1);
+$fnret or HEXIT($fnret);
+
+# get returned untainted value
+$account = $fnret->value->{'account'};
+
+#<PARAMS:ACCOUNT
+
+#>PARAMS:POLICY
+if (not grep { $policy eq $_ } qw{ none enforce grace }) {
+    HEXIT('ERR_INVALID_PARAMETER', "Expected either 'none,' enforce' of 'grace' as a parameter to --policy");
+}
+
+#<PARAMS:POLICY
+
+#>PARAMS:TTL
+if ($policy eq 'grace' && !defined $ttl) {
+    HEXIT('ERR_MISSING_PARAMETER', "The use of 'grace' requires to specify the --ttl parameter as well");
+}
+
+#<PARAMS:TTL
+
+#>PARAMS:STEP
+if ($step ne '1' && $step ne '2') {
+    HEXIT('ERR_INVALID_PARAMETER', "Only 1 or 2 are allowed for --step");
+}
+
+#<PARAMS:STEP
+
+#>RIGHTSCHECK
+if ($self eq 'root') {
+    osh_debug "Real root, skipping checks of permissions";
+}
+$fnret = OVH::Bastion::is_user_in_group(user => $self, group => "osh-accountPIV");
+if (!$fnret) {
+    HEXIT('ERR_SECURITY_VIOLATION', msg => "You're not allowed to run this, dear $self");
+}
+
+if (OVH::Bastion::is_admin(account => $account, sudo => 1) && !OVH::Bastion::is_admin(account => $self, sudo => 1)) {
+    HEXIT('ERR_SECURITY_VIOLATION', msg => "You can't modify the account of an admin without being admin yourself");
+}
+
+#<RIGHTSCHECK
+
+#>CODE
+my $currentPolicy = OVH::Bastion::account_config(account => $account, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_POLICY, public => 1);
+if ($step == 1) {
+
+    # we're run under allowkeeper user, set config params where applicable
+    if ($policy eq 'enforce') {
+        if ($currentPolicy && $currentPolicy->value eq 'yes') {
+            HEXIT('OK_NO_CHANGE', msg => "PIV policy was already set to 'enforce' for this account, no change needed");
+        }
+        $fnret = OVH::Bastion::account_config(account => $account, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_POLICY, public => 1, value => 'yes');
+        $fnret or HEXIT($fnret);
+        $fnret = OVH::Bastion::account_config(account => $account, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_GRACE, public => 1, delete => 1);
+
+        # ignore error because maybe grace wasn't set
+        OVH::Bastion::syslogFormatted(
+            severity => 'info',
+            type     => 'account',
+            fields   => [['action', 'ingress-piv-policy'], ['account', $account], ['policy', 'enforce'],]
+        );
+        HEXIT('OK', msg => "PIV policy set to 'enforce' for this account");
+    }
+    elsif ($policy eq 'none') {
+        if (!$currentPolicy || $currentPolicy->value ne 'yes') {
+            HEXIT('OK_NO_CHANGE', msg => "PIV policy was already set to 'none' for this account, no change needed");
+        }
+        $fnret = OVH::Bastion::account_config(account => $account, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_POLICY, public => 1, delete => 1);
+        $fnret or HEXIT($fnret);
+        $fnret = OVH::Bastion::account_config(account => $account, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_GRACE, public => 1, delete => 1);
+
+        # ignore error because maybe grace wasn't set
+        OVH::Bastion::syslogFormatted(
+            severity => 'info',
+            type     => 'account',
+            fields   => [['action', 'ingress-piv-policy'], ['account', $account], ['policy', 'none'],]
+        );
+        HEXIT('OK', msg => "PIV policy set to 'none' for this account");
+    }
+    elsif ($policy eq 'grace') {
+        if (!$currentPolicy || $currentPolicy->value ne 'yes') {
+            HEXIT('OK_NO_CHANGE', msg => "PIV policy is not set to 'enforce' for this account, so no need for a grace period");
+        }
+        $fnret = OVH::Bastion::account_config(account => $account, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_GRACE, public => 1, value => (time() + $ttl));
+        $fnret or HEXIT($fnret);
+        my $human = OVH::Bastion::duration2human(seconds => $ttl)->value;
+        OVH::Bastion::syslogFormatted(
+            severity => 'info',
+            type     => 'account',
+            fields   => [['action', 'ingress-piv-policy'], ['account', $account], ['policy', 'grace'], ['duration', $human->{'duration'}],]
+        );
+        HEXIT('OK', msg => "PIV policy is now in grace mode for " . $human->{'duration'} . " (until " . $human->{'date'} . ")");
+    }
+
+    # unreachable
+    HEXIT('ERR_INTERNAL', msg => "Unknown policy specified (step 1)");
+}
+elsif ($step == 2) {
+
+    # now we're running under the own account's user, modify the authkeys file accordingly
+    my $pivAction;
+    if ($policy eq 'enforce') {
+        $pivAction = 'enable';
+    }
+    elsif ($policy eq 'none' || $policy eq 'grace') {
+        $pivAction = 'disable';
+    }
+    else {
+        # unreachable
+        HEXIT('ERR_INTERNAL', msg => "Unknown policy specified (step 2)");
+    }
+
+    $fnret = OVH::Bastion::ssh_ingress_keys_piv_apply(action => $pivAction, account => $account);
+    $fnret or HEXIT($fnret);
+    if ($pivAction eq 'enable') {
+        HEXIT('OK', msg => "All non-PIV account's ingress keys have been disabled");
+    }
+    else {
+        HEXIT('OK', msg => "Non-PIV account's ingress keys, if any, have been restored");
+    }
+}
+
+# unreachable
+HEXIT('ERR_INTERNAL', msg => "Unknown step specified");

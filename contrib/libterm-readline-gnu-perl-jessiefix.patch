@@ -1,0 +1,14 @@
+--- /usr/lib/x86_64-linux-gnu/perl5/5.20/Term/ReadLine/Gnu/XS.pm        2014-08-15 14:13:27.000000000 +0200
++++ /usr/lib/x86_64-linux-gnu/perl5/5.20/Term/ReadLine/Gnu/XS.pm        2011-11-15 04:36:04.000000000 +0100
+@@ -581,7 +580,10 @@
+        return undef unless defined $_matches[0];
+     }
+ 
+-    return $_matches[$_i];
++    for (; $_i <= $#_matches; $_i++) {
++        return $_matches[$_i] if ($_matches[$_i] =~ /^\Q$text/);
++    }
++    return undef;
+ }
+ 
+ 1;

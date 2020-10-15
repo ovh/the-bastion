@@ -1,0 +1,10 @@
+{
+    "interactive": [
+        "groupAddMember"                             , {"ac" : ["--account"]},
+        "groupAddMember --account"                   , {"ac" : ["<ACCOUNT>"]},
+        "groupAddMember --account \\S+"              , {"ac" : ["--group"]},
+        "groupAddMember --account \\S+ --group"      , {"ac" : ["<GROUP>"]},
+        "groupAddMember --account \\S+ --group \\S+" , {"pr" : ["<enter>"]}
+    ],
+    "master_only": true
+}

@@ -1,0 +1,63 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "granting access to a restricted osh command to an account",
+    options => {
+        "account=s" => \my $account,
+        "command=s" => \my $command,
+    },
+    helptext => <<'EOF',
+Grant access to a restricted command
+
+Usage: --osh SCRIPT_NAME --account ACCOUNT --command COMMAND
+
+  --account ACCOUNT  Bastion account to work on
+  --command COMMAND  The name of the OSH plugin to grant (omit to get the list)
+
+Note that SCRIPT_NAME being a restricted command as any other, you can grant it to somebody else,
+but then they'll be able to grant themselves or anybody else to this or any other restricted command.
+
+A specific command that can be granted is ``auditor``, it is not an osh plugin per-se, but activates
+more verbose output for several other commands, suitable to audit rights or grants without needing
+to be granted (e.g. to groups).
+EOF
+);
+
+my $fnret;
+
+if (!$command) {
+    $fnret = OVH::Bastion::get_plugin_list(restrictedOnly => 1);
+    help();
+    if ($fnret) {
+        my @plugins = keys %{$fnret->value};
+        push @plugins, 'auditor';
+        osh_info "\nList of possible commands to grant: " . join(" ", sort @plugins);
+    }
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing mandatory parameter 'command'";
+}
+
+if (!$account) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing mandatory parameter 'account'";
+}
+
+$fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account, localOnly => 1);
+$fnret or osh_exit $fnret;
+$account = $fnret->value->{'account'};
+
+my @command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
+push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountModifyCommand';
+push @command, '--action', 'grant';
+push @command, '--command', $command;
+push @command, '--account', $account;
+
+osh_exit OVH::Bastion::helper(cmd => \@command);

@@ -1,0 +1,2 @@
+# Backup locally critical files (keys, passwords, ACLs)
+%RANDOM1%0:59%    %RANDOM2%3:23% * * * root /opt/bastion/bin/cron/osh-backup-acl-keys.sh >/dev/null

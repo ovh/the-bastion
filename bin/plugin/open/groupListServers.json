@@ -1,0 +1,8 @@
+{
+    "interactive": [
+        "groupListServers"                            ,  {"ac" :  ["--group"]},
+        "groupListServers --group"                    ,  {"ac" :  ["<GROUP>"]},
+        "groupListServers --group \\S+"               ,  {"ac" :  ["<enter>", "--reverse-dns"]},
+        "groupListServers --group \\S+ --reverse-dns" ,  {"pr" :  ["<enter>"]}
+    ]
+}

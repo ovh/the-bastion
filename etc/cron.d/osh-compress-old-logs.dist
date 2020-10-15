@@ -1,0 +1,2 @@
+# compress sqlite databases > 1 month along with log files
+%RANDOM1%0:59% %RANDOM2%4:7% * * * root /opt/bastion/bin/cron/osh-compress-old-logs.sh >/dev/null

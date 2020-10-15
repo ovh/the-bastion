@@ -1,0 +1,106 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my ($list, $stepByStep, $noPauseOnFailure, $noConfirm, $noStdin, $command);
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "clush",
+    options => {
+        'list=s'              => \$list,
+        'step-by-step'        => \$stepByStep,
+        'no-pause-on-failure' => \$noPauseOnFailure,
+        'no-confirm'          => \$noConfirm,
+        'no-stdin'            => \$noStdin,
+        'command=s'           => \$command,
+    },
+    helptext => <<'EOF',
+Launch a remote command on several machines sequentially (clush-like)
+
+Usage: --osh SCRIPT_NAME [OPTIONS] --command '"remote command"'
+
+  --list HOSTLIST           Comma-separated list of the hosts to run the command on
+  --step-by-step            Pause before running the command on each host
+  --no-pause-on-failure     Don't pause if the remote command doesn't return failed (returned != 0)
+  --no-confirm              Skip confirmation of the host list and command
+  --command '"remote cmd"'  Command to be run on the remote hosts. If you're in a shell, quote it twice as shown.
+EOF
+);
+
+#
+# code
+#
+my $fnret;
+
+#
+# params check
+#
+
+if (not $list) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing mandatory parameter 'list'";
+}
+
+if (not $command) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing mandatory parameter 'command'";
+}
+
+#
+# and test external command call
+#
+my %hosts;
+foreach my $host (split /,/, $list) {
+    if ($host !~ /^[a-zA-Z0-9.-]+$/) {
+        osh_exit 'ERR_INVALID_PARAMETER', "This doesn't appear to be a valid host '$host'";
+    }
+    $hosts{$host} = 1;
+}
+my @hosts = keys %hosts;
+
+if (not @hosts) {
+    help();
+    osh_exit 'ERR_INVALID_PARAMETER', "Host list to execute the command on is empty";
+}
+
+osh_info "Will execute a command on " . scalar(@hosts) . " hosts ($list)";
+osh_info "The command to be executed is: $command";
+
+if (not $noConfirm) {
+    osh_info "Press ENTER to proceed, or CTRL+C to cancel.";
+    <STDIN>;
+}
+
+my %ret;
+foreach my $host (@hosts) {
+    osh_info "************************";
+    osh_info "Working on $host";
+    osh_info "************************";
+    if ($stepByStep) {
+        osh_info("Press ENTER to execute the command on this host");
+        <STDIN>;
+    }
+
+    my $shellc = $host;
+    $user and $shellc = "$user\@$host";
+    $port and $shellc .= " --port $port";
+
+    # relaunch the user's shell (aka osh.pl) to connect to the host
+    my @cmd = ($ENV{'SHELL'}, '-c', "--quiet $shellc -- $command");
+
+    $fnret = OVH::Bastion::execute(cmd => \@cmd, noisy_stderr => 1, noisy_stdout => 1, expects_stdin => $noStdin ? 0 : 1);
+    if ($fnret and $fnret->value() and $fnret->value()->{'sysret'} != 0 and not $noPauseOnFailure) {
+        osh_warn("Last command failed (return code: " . $fnret->value()->{'sysret'} . "), press ENTER to continue or CTRL+C to stop here");
+        <STDIN>;
+    }
+
+    $ret{$host} = {stderr => $fnret->value->{'stderr'}, stdout => $fnret->value->{'stdout'}, sysret => $fnret->value->{'sysret'}};
+}
+
+osh_ok(\%ret);

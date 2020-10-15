@@ -1,0 +1,6 @@
+{
+    "interactive": [
+        "groupList"       , {"ac" : ["<enter>", "--all"]},
+        "groupList --all" , {"pr" : ["<enter>"]}
+    ]
+}

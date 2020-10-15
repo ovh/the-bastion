@@ -1,0 +1,6 @@
+{
+    "interactive": [
+        "selfMFAResetTOTP" , {"pr" : ["<enter>"]}
+    ],
+    "master_only": true
+}

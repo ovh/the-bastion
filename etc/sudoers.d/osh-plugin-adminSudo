@@ -1,0 +1,1 @@
+%osh-admin ALL=(ALL) NOPASSWD:/usr/bin/env perl /opt/bastion/bin/shell/osh.pl -c *

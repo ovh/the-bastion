@@ -1,0 +1,14 @@
+{
+    "interactive": [
+        "groupAddServer"                    , {"ac" : ["--group"]},
+        "groupAddServer --group"            , {"ac" : ["<GROUP>"]},
+        "groupAddServer --group \\S+"        , {"ac" : ["--host"]},
+        "groupAddServer --group \\S+ --host" , {"pr" : ["<HOST>", "<IP>", "<IP/MASK>"]},
+        "groupAddServer --group \\S+ --host \\S+"                                     , {"ac" : ["--port",  "--port-any"]},
+        "groupAddServer --group \\S+ --host \\S+ --port"                              , {"pr" : ["<PORT>"]},
+        "groupAddServer --group \\S+ --host \\S+ --port(-any| \\d+)"                   , {"ac" : ["--user",  "--user-any"]},
+        "groupAddServer --group \\S+ --host \\S+ --port(-any| \\d+) --user"            , {"pr" : ["<USER>"]},
+        "groupAddServer --group \\S+ --host \\S+ --port(-any| \\d+) --user(-any| \\S+)" , {"pr" : ["<enter>", "--force"]}
+    ],
+    "master_only": true
+}

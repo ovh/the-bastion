@@ -1,0 +1,63 @@
+#! /bin/sh
+#
+# osh-http-proxy-daemon: The Bastion HTTPS proxy daemon
+#
+### BEGIN INIT INFO
+# Provides:          osh-http-proxy-daemon
+# Required-Start:    $network
+# Required-Stop:     $network
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Starts the bastion http proxy at boot time
+# Description:       Script to start/stop/reload the osh-http-proxy-daemon daemon
+### END INIT INFO
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+NAME=osh-http-proxy-daemon
+USER=proxyhttp
+DAEMON=/opt/bastion/bin/proxy/$NAME
+DESC="listens for HTTPS connections"
+SCRIPTNAME=/etc/init.d/$NAME
+# don't change the pidfile location because it's also in the script
+PIDFILE=/var/run/$NAME.pid
+
+# Load the VERBOSE setting and other rcS variables
+. /lib/init/vars.sh
+
+# Define LSB log_* functions.
+# Depend on lsb-base (>= 3.0-6) to ensure that this file is present.
+. /lib/lsb/init-functions
+
+test -x $DAEMON || exit 0
+
+case "$1" in
+    start)
+        echo -n "Starting osh-http-proxy-daemon daemon"
+        start-stop-daemon --start --background --chuid $USER --exec $DAEMON
+        echo "."
+        ;;
+    stop)
+        echo -n "Shutting down osh-http-proxy-daemon daemon... "
+        if pgrep -c -f $DAEMON >/dev/null ; then
+            pkill -f $DAEMON
+            echo done
+        else
+            echo "not running"
+        fi
+        ;;
+    force-reload|restart)
+        echo -n "Restarting osh-http-proxy-daemon daemon"
+        if pgrep -c -f $DAEMON >/dev/null ; then
+            pkill -f $DAEMON
+            echo done
+        else
+            echo "not running"
+        fi
+        start-stop-daemon --start --background --exec $DAEMON
+        echo "."
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|force-reload}"
+        exit 1
+esac
+exit 0

@@ -1,0 +1,29 @@
+name: Linux distros tests
+
+on:
+    pull_request:
+        types: [labeled, synchronize]
+
+jobs:
+    tests_full:
+        strategy:
+            matrix:
+                platform: [centos7, centos8, debian10, debian8, debian9, opensuse15, opensuse151, ubuntu1404, ubuntu1604, ubuntu1804, ubuntu2004]
+        runs-on: ubuntu-latest
+        if: contains(github.event.pull_request.labels.*.name, 'tests:full')
+        steps:
+        - uses: actions/checkout@v2
+        - name: run tests inside a ${{ matrix.platform }} docker
+          run: tests/functional/docker/docker_build_and_run_tests.sh ${{ matrix.platform }}
+          env:
+            DOCKER_TTY: false
+
+    tests_short:
+        runs-on: ubuntu-latest
+        if: contains(github.event.pull_request.labels.*.name, 'tests:short')
+        steps:
+        - uses: actions/checkout@v2
+        - name: run tests inside a debian10 docker
+          run: tests/functional/docker/docker_build_and_run_tests.sh debian10
+          env:
+            DOCKER_TTY: false

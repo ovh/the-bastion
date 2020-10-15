@@ -1,0 +1,74 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+# TODO move this from restricted/ to group-owner/
+
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "delete an existing bastion group",
+    options => {
+        'group=s'    => \my $group,
+        'no-confirm' => \my $noConfirm,
+    },
+    helptext => <<'EOF',
+Delete a group
+
+Usage: --osh SCRIPT_NAME --group GROUP
+
+  --group GROUP  Group name to delete
+  --no-confirm   Skip group name confirmation, but blame yourself if you deleted the wrong group!
+EOF
+);
+
+#
+# code
+#
+my $fnret;
+
+#
+# params check
+#
+
+if (!$group) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing 'group' parameter";
+}
+
+$fnret = OVH::Bastion::is_valid_group_and_existing(group => $group, groupType => "key");
+$fnret or osh_exit($fnret);
+
+# get returned untainted value
+$group = $fnret->value->{'group'};
+my $shortGroup = $fnret->value->{'shortGroup'};
+
+if (!$noConfirm) {
+    osh_info <<'EOS';
+!!!! WARNING !!!! WARNING !!!! WARNING !!!! WARNING !!!! WARNING !!!!
+!!!! WARNING !!!! WARNING !!!! WARNING !!!! WARNING !!!! WARNING !!!!
+!!!! WARNING !!!! WARNING !!!! WARNING !!!! WARNING !!!! WARNING !!!!
+
+You are about to DELETE a bastion group, to be sure you're not drunk,
+please type the name of the group you want to delete (won't be echoed):
+
+EOS
+    my $sentence = <STDIN>;
+    ## use critic
+    chomp $sentence;
+
+    if ($sentence ne $shortGroup) {
+        osh_exit 'ERR_OPERATOR_IS_DRUNK', "You're drunk, apparently, aborted.";
+    }
+}
+
+my @command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
+push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-groupDelete';
+push @command, "--group", $group;
+
+osh_exit OVH::Bastion::helper(cmd => \@command);

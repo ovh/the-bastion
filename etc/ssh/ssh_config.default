@@ -1,0 +1,114 @@
+# Hardened SSH bastion config -- modify wisely!
+# Based on https://wiki.mozilla.org/Security/Guidelines/OpenSSH
+# With modifications where applicable/needed
+
+# hardened params follow. every non-needed feature is disabled by default,
+# following the principle of least rights and least features (more enabled
+# features mean a more important attack surface).
+
+# === FEATURES ===
+
+# disable non-needed sshd features
+# mitigates CVE-0216-0778
+UseRoaming no
+# other unwanted features
+Tunnel no
+ForwardAgent no
+ForwardX11 no
+GatewayPorts no
+ControlMaster no
+
+# === CRYPTOGRAPHY ===
+
+# enforce the use of ssh version 2 protocol, version 1 is disabled.
+# all sshd_config options regarding protocol 1 are therefore omitted.
+Protocol 2
+
+# list of allowed ciphers.
+# chacha20-poly1305 is a modern cipher, considered very secure
+# aes is still the standard, we prefer gcm cipher mode, but also
+# allow ctr cipher mode for compatibility (ctr is considered secure)
+# we deny arcfour(rc4), 3des, blowfish and cast
+# for older remote servers (or esoteric hardware), we might need to add: aes256-cbc,aes192-cbc,aes128-cbc
+# known gotchas:
+# - BSD (https://lists.freebsd.org/pipermail/freebsd-bugs/2013-June/053005.html) needs aes256-gcm@openssh.com,aes128-gcm@openssh.com DISABLED
+# - Old Cisco IOS (such as v12.2) only supports aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc
+# - Ancient Debians (Sarge) and RedHats (7) only support aes128-cbc,3des-cbc,blowfish-cbc,cast128-cbc,arcfour,aes192-cbc,aes256-cbc,rijndael-cbc@lysator.liu.se,aes128-ctr,aes192-ctr,aes256-ctr
+Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+
+# list of allowed message authentication code algorithms.
+# etm (encrypt-then-mac) are considered the more secure, we
+# prefer umac (has been proven secure) then sha2.
+# for older remote servers, fallback to the non-etm version of
+# the algorithms. we deny md5 entirely.
+# for older remote servers (or esoteric hardware), we might need to add: hmac-sha1
+# Known gotchas:
+# - Old Cisco IOS (such as v12.2) only supports hmac-sha1,hmac-sha1-96,hmac-md5,hmac-md5-96
+# - Ancient Debians (Sarge) and RedHats (7) only support hmac-md5,hmac-sha1,hmac-ripemd160,hmac-ripemd160@openssh.com,hmac-sha1-96,hmac-md5-96
+MACs umac-128-etm@openssh.com,umac-64-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128@openssh.com,umac-64@openssh.com,hmac-sha2-512,hmac-sha2-256
+
+# List of allowed key exchange algorithms.
+# we prefer curve25519-sha256 which is considered the most modern/secure,
+# and still allow diffie hellman with group exchange using sha256 which is
+# the most secure dh-based kex.
+# we avoid algorithms based on the disputed NIST curves, and anything based
+# on sha1.
+# known gotchas:
+# - Windows needs diffie-hellman-group14-sha1 and also needs to NOT have diffie-hellman-group-exchange-sha1 present in the list AT ALL
+# - OmniOS 5.11 needs diffie-hellman-group1-sha1
+# - Old Cisco IOS (such as v12.2) only supports diffie-hellman-group1-sha1
+# - Ancient Debians (Sarge) and RedHats (7) only support diffie-hellman-group-exchange-sha1,diffie-hellman-group1-sha1
+KexAlgorithms curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256
+
+# === AUTHENTICATION ===
+
+# we allow only public key authentication ...
+PubkeyAuthentication yes
+# ... not password nor keyboard-interactive
+# ... (set to yes if sshpass is to be used)
+PasswordAuthentication no
+# ChallengeResponseAuthentication=yes forces KbdInteractiveAuthentication=yes in the openssh code!
+ChallengeResponseAuthentication no
+KbdInteractiveAuthentication no
+# ... not host-based
+HostbasedAuthentication no
+# now we specify the auth methods order we want for manual ssh calls.
+# NOTE1: as per the ssh source code, an auth method omitted hereafter
+# will not be used, even if set to "yes" above.
+# NOTE2: the bastion code (namely, ttyrec), will always set the proper
+# value explicitely on command-line (pubkey OR sshpass), so the value
+# specified hereafter will be ignored. if you want to force-disable
+# a method, set it to "no" in the list above, as those will never be
+# overriden by the code.
+PreferredAuthentications publickey
+
+# === LOGIN ###
+
+# disable escape character use
+EscapeChar none
+
+# detect if a hostkey changed due to DNS spoofing
+CheckHostIP yes
+
+# ignore ssh-agent, only use specified keys (-i)
+IdentitiesOnly yes
+# disable auto-lookup of ~/.ssh/id_rsa ~/.ssh/id_ecdsa etc.
+IdentityFile /dev/non/existent/file
+
+# carry those vars to the other side (includes LC_BASTION)
+SendEnv LANG LC_*
+
+# allow usage of SSHFP DNS records
+VerifyHostKeyDNS ask
+
+# yell if remote hostkey changed
+StrictHostKeyChecking ask
+
+# === SYSTEM ===
+
+# don't hash the users known_hosts files, in the context of a bastion, this adds no security
+HashKnownHosts no
+
+# send an ssh ping each 57 seconds to the client and disconnect after 5 no-replies
+ServerAliveInterval 57
+ServerAliveCountMax 5

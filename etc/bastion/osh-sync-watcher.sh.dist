@@ -1,0 +1,40 @@
+# this is a SHELL SCRIPT, it'll be sourced by osh-sync-watcher.sh
+#
+# timeout (integer)
+# this will be the maximum delay, in seconds, after which rsync will be launched even if no change was detected
+# example:
+#timeout=120
+timeout=120
+#
+# rshcmd (string)
+# this will be passed as the --rsh parameter of rsync (don't use -p to specify port, use the remotehostlist config instead)
+# example:
+#rshcmd="ssh -q -i /root/.ssh/id_master2slave"
+rshcmd="ssh -q -i /root/.ssh/id_master2slave"
+#
+# remoteuser (string)
+# remote user to connect as while rsyncing
+# example:
+#remoteuser=bastionsync
+remoteuser=bastionsync
+#
+# remotelist (space-separated list of strings, each string being either 'ip' or 'ip:port')
+# remote hosts to connect to while rsyncing (aka the list of the slave bastions)
+# example:
+#remotehostlist=192.0.2.17
+#remotehostlist='192.0.2.11 192.0.2.12'
+remotehostlist=___PLEASE_CONFIGURE_ME___
+#
+# enabled (integer)
+# if set to anything else than 1, the script will not run
+# set this to 1 when you've configured and tested the setup
+enabled=0
+#
+# logdir (string)
+# directory where to log output from the script
+# if unset, will NOT log to a file
+#logdir=/var/log/bastion
+#
+# syslog (string)
+# syslog facility to use, if unset, will NOT log to syslog
+syslog=local6

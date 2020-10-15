@@ -1,0 +1,15 @@
+{
+    "interactive": [
+        "accountDelPersonalAccess"                                     , {"ac" : ["--account"]},
+        "accountDelPersonalAccess --account"                           , {"ac" : ["<ACCOUNT>"]},
+        "accountDelPersonalAccess --account \\S+"                      , {"ac" : ["--host"]},
+        "accountDelPersonalAccess --account \\S+ --host"               , {"pr" : ["<HOST>", "<IP>", "<IP/MASK>"]},
+        "accountDelPersonalAccess --account \\S+ --host \\S+"          , {"ac" : ["<enter>", "--user", "--port"]},
+        "accountDelPersonalAccess --account \\S+ --host \\S+ .*--user" , {"pr" : ["<USER>"]},
+        "accountDelPersonalAccess --account \\S+ --host \\S+ .*--port" , {"pr" : ["<PORT>"]},
+        "accountDelPersonalAccess --account \\S+ --host \\S+ --user \\S+"                          , {"ac" : ["<enter>", "--port"]},
+        "accountDelPersonalAccess --account \\S+ --host \\S+ --port \\S+"                          , {"ac" : ["<enter>", "--user"]},
+        "accountDelPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+" , {"pr" : ["<enter>"]}
+    ],
+    "master_only": true
+}

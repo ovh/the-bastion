@@ -1,0 +1,12 @@
+{
+    "interactive": [
+        "accountPIV"                                         , {"ac": ["--account"]},
+        "accountPIV --account"                               , {"ac": ["<ACCOUNT>"]},
+        "accountPIV --account \\S+"                          , {"ac": ["--policy"]},
+        "accountPIV --account \\S+ --policy"                 , {"ac": ["none","enforce","grace"]},
+        "accountPIV --account \\S+ --policy (none|enforce)"  , {"pr": ["<enter>"]},
+        "accountPIV --account \\S+ --policy grace"           , {"ac": ["--ttl"]},
+        "accountPIV --account \\S+ --policy grace --ttl"     , {"pr": ["<duration>"]},
+        "accountPIV --account \\S+ --policy grace --ttl (.*)", {"pr": ["<enter>"]}
+    ]
+}

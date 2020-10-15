@@ -1,0 +1,151 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+use Term::ReadKey;
+use Term::ANSIColor;
+use POSIX qw{ strftime };
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "create a new group",
+    options => {
+        "group=s"   => \my $group,
+        "owner=s"   => \my $owner,
+        "algo=s"    => \my $algo,
+        "size=i"    => \my $size,
+        "encrypted" => \my $encrypted,
+        "no-key"    => \my $no_key,
+    },
+    help => \&help,
+);
+
+sub help {
+    require Term::ANSIColor;
+    my $fnret        = OVH::Bastion::get_supported_ssh_algorithms_list(way => 'egress');
+    my @algoList     = @{$fnret->value};
+    my $algos        = Term::ANSIColor::colored(uc join(' ', @algoList), 'green');
+    my $helpAlgoSize = '--algo rsa --size 4096';
+    if (grep { $_ eq 'ecdsa' } @algoList) {
+        $helpAlgoSize = '--algo ecdsa --size 521';
+    }
+    if (grep { $_ eq 'ed25519' } @algoList) {
+        $helpAlgoSize = '--algo ed25519';
+    }
+    osh_info <<"EOF";
+Usage       : --osh SCRIPT_NAME --group GROUP --owner ACCOUNT $helpAlgoSize [--encrypted] [--no-key]
+Description : creates group GROUP on the bastion with ACCOUNT as the owner
+Params      :
+
+    --group       Group name to create
+
+    --owner       Preexisting bastion account to assign as owner (can be you)
+
+    --encrypted   Add a passphrase to the key. Beware that you'll have to enter it for each use.
+                  Do NOT add the passphrase after this option, you'll be prompted interactively for it.
+
+    --algo        Specifies the algo of the key, either rsa, ecdsa or ed25519.
+    --size        Specifies the size of the key to be generated.
+                  For RSA, choose between 2048 and 8192 (4096 is good).
+                  For ECDSA, choose either 256, 384 or 521.
+                  For ED25519, size is always 256.
+
+    --no-key      Don't generate an egress SSH key at all for this group
+
+With the policy and SSH version on this bastion,
+the following algorithms are supported: $algos
+
+algo    size  strength   speed    compatibility
+------- ----  ---------- -------- -----------------------
+RSA     4096  good       slow     works everywhere
+ECDSA    521  strong     fast     debian7+ (OpenSSH 5.7+)
+ED25519  256  verystrong veryfast debian8+ (OpenSSH 6.5+)
+EOF
+    return 0;
+}
+
+#
+# code
+#
+my $fnret;
+
+#
+# params check
+#
+
+if (!$group || !$owner) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Group name or owner is missing";
+}
+
+if ($algo && !$size && lc($algo) eq 'ed25519') {
+    $size = 256;    # ed25519 size is always 256
+}
+
+if (!$no_key && (!$algo || !$size)) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Group algorithm or size is missing";
+}
+
+$fnret = OVH::Bastion::is_valid_group(group => $group, groupType => "key");
+$fnret or osh_exit($fnret);
+
+# get returned untainted value
+$group = $fnret->value->{'group'};
+my $shortGroup = $fnret->value->{'shortGroup'};
+
+# check if algo is supported by system
+if ($algo) {
+    $algo = lc($algo);
+    $fnret = OVH::Bastion::is_allowed_algo_and_size(algo => $algo, size => $size, way => 'egress');
+    $fnret or osh_exit $fnret;
+}
+
+#
+# Now create it
+#
+
+my @command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
+push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-groupCreate';
+push @command, "--group", $group, "--owner", $owner;
+push @command, "--algo", $algo if $algo;
+push @command, "--size", $size if $size;
+push @command, "--encrypted" if $encrypted;
+push @command, "--no-key"    if $no_key;
+
+ReadMode('noecho');
+$fnret = OVH::Bastion::helper(cmd => \@command, expects_stdin => 1);
+ReadMode('restore');
+$fnret or osh_exit $fnret;
+
+my $result_hash = $fnret->value;
+
+if ($no_key) {
+    osh_info 'Group creation complete!';
+}
+else {
+    osh_info 'Group creation complete! The public key of this group is:';
+    $fnret = OVH::Bastion::get_bastion_ips();
+    my $from;
+    if ($fnret) {
+        my @ips = @{$fnret->value};
+        $from = 'from="' . join(',', @ips) . '"';
+    }
+
+    $fnret = OVH::Bastion::get_group_keys(group => $group);
+    if ($fnret and $from) {
+        foreach my $keyfile (@{$fnret->value->{'sortedKeys'}}) {
+            my $key = $fnret->value->{'keys'}{$keyfile};
+            $key->{'prefix'} = $from;
+            OVH::Bastion::print_public_key(key => $key);
+            $result_hash->{'public_key'} = $key;
+        }
+    }
+}
+
+osh_ok $result_hash;

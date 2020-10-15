@@ -1,0 +1,67 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+use Term::ANSIColor;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "delete an existing bastion account",
+    options => {
+        'realm=s' => \my $wantedRealm,
+    },
+    helptext => <<'EOF',
+Delete a bastion realm
+
+Usage: --osh SCRIPT_NAME --realm REALM
+
+  --realm REALM  Name of the realm to delete
+EOF
+);
+
+#
+# code
+#
+my $fnret;
+
+#
+# params check
+#
+if (!$wantedRealm) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing 'realm' parameter";
+}
+
+my $pristineRealm = $wantedRealm;
+$wantedRealm = "realm_$wantedRealm";
+$fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $wantedRealm, accountType => "realm");
+$fnret or osh_exit $fnret;
+$wantedRealm = $fnret->value->{'account'};    # untaint
+
+osh_info "!!!! WARNING !!!! WARNING !!!! WARNING !!!! WARNING !!!! WARNING !!!!";
+osh_info "!!!! WARNING !!!! WARNING !!!! WARNING !!!! WARNING !!!! WARNING !!!!";
+osh_info "!!!! WARNING !!!! WARNING !!!! WARNING !!!! WARNING !!!! WARNING !!!!";
+osh_info " ";
+
+osh_info "You are about to DELETE a bastion realm, to be sure you're not drunk, type the following sentence:";
+osh_info " ";
+osh_info '  "Yes, do as I say and delete <insert_here_the_realm_name>, kthxbye"  ';
+osh_info " ";
+my $sentence = <STDIN>;
+chomp $sentence;
+
+if ($sentence ne "Yes, do as I say and delete $pristineRealm, kthxbye") {
+    osh_exit 'ERR_OPERATOR_IS_DRUNK', "You're drunk, apparently, aborted.";
+}
+osh_info "OK, proceeding...";
+
+my @command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
+push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountDelete';
+push @command, '--type', 'realm', '--account', $wantedRealm;
+
+osh_exit OVH::Bastion::helper(cmd => \@command);

@@ -1,0 +1,9 @@
+{
+    "interactive": [
+        "selfAddIngressKey"                         , {"ac" : ["--public-key \"","<enter>"]},
+        "selfAddIngressKey --public-key \""         , {"pr" : ["<ssh public key>"]},
+        "selfAddIngressKey --public-key \"[^\"]+"   , {"ac" : ["\""]},
+        "selfAddIngressKey --public-key \"[^\"]+\"" , {"pr" : ["<enter>"]}
+    ],
+    "master_only": true
+}

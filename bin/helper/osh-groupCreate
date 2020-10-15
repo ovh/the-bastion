@@ -1,0 +1,287 @@
+#! /usr/bin/perl -T
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+# NEEDGROUP osh-groupCreate
+# SUDOERS %osh-groupCreate ALL=(root) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-groupCreate *
+# FILEMODE 0700
+# FILEOWN root root
+
+#>HEADER
+use common::sense;
+use Getopt::Long;
+use Term::ReadKey;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../lib/perl';
+use OVH::Bastion;
+use OVH::Bastion::Plugin::groupSetRole;
+local $| = 1;
+
+#
+# Globals
+#
+$ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/pkg/bin';
+my ($self) = $ENV{'SUDO_USER'} =~ m{^([a-zA-Z0-9._-]+)$};
+if (not defined $self) {
+    if ($< == 0) {
+        $self = 'root';
+    }
+    else {
+        HEXIT('ERR_SUDO_NEEDED', msg => 'This command must be run under sudo');
+    }
+}
+
+# Fetch command options
+my $fnret;
+my ($result, @optwarns);
+my ($group, $owner, $algo, $size, $encrypted, $no_key, $comment);
+eval {
+    local $SIG{__WARN__} = sub { push @optwarns, shift };
+    $result = GetOptions(
+        "group=s"   => sub { $group     //= $_[1] },
+        "owner=s"   => sub { $owner     //= $_[1] },
+        "algo=s"    => sub { $algo      //= $_[1] },
+        "size=i"    => sub { $size      //= $_[1] },
+        "encrypted" => sub { $encrypted //= $_[1] },
+        "no-key"    => sub { $no_key    //= $_[1] },
+        "comment=s" => sub { $comment   //= $_[1] },
+    );
+};
+if ($@) { die $@ }
+
+if (!$result) {
+    local $" = ", ";
+    HEXIT('ERR_BAD_OPTIONS', msg => "Error parsing options: @optwarns");
+}
+
+if (!$group || !$owner) {
+    HEXIT('ERR_MISSING_PARAMETER', msg => "Missing argument 'group' or 'owner'");
+}
+if ($no_key && ($algo || $size || $encrypted)) {
+    EXIT('ERR_INVALID_PARAMETER', msg => "Can't specify 'no-key' along with 'algo', 'size' or 'encrypted'");
+}
+if (!$no_key && (!$algo || !$size)) {
+    HEXIT('ERR_MISSING_PARAMETER', msg => "Missing argument 'algo' or 'size'");
+}
+if ($comment) {
+    if ($comment =~ /^([a-zA-Z0-9=_,-]+)$/) {
+        $comment = $1;    # untaint
+    }
+    else {
+        HEXIT('ERR_INVALID_PARAMETER', msg => "Specified comment contains invalid characters");
+    }
+}
+
+#<HEADER
+
+#>RIGHTSCHECK
+if ($self eq 'root') {
+    osh_debug "Real root, skipping checks of permissions";
+}
+else {
+    # need to perform another security check
+    $fnret = OVH::Bastion::is_user_in_group(user => $self, group => "osh-groupCreate");
+    if (!$fnret) {
+        HEXIT('ERR_SECURITY_VIOLATION', msg => "You're not allowed to run this, dear $self");
+    }
+}
+
+#<RIGHTSCHECK
+
+#>PARAMS:ACCOUNT
+osh_debug("Checking owner");
+$fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $owner);
+$fnret or HEXIT($fnret);
+
+# get returned untainted value
+$owner = $fnret->value->{'account'};
+
+#<PARAMS:ACCOUNT
+
+#>PARAMS:GROUP
+osh_debug("checking group");
+$fnret = OVH::Bastion::is_valid_group(group => $group, groupType => "key");
+$fnret or HEXIT($fnret);
+
+# get returned untainted value
+$group = $fnret->value->{'group'};
+my $shortGroup = $fnret->value->{'shortGroup'};
+
+foreach my $test ($group, "$group-gatekeeper", "$group-owner") {
+    $fnret = OVH::Bastion::is_group_existing(group => $test);
+    $fnret->is_err and HEXIT($fnret);
+    my (undef, $displayGroup) = $test =~ m/^(key)?(.+)/;
+    $fnret->is_ok and HEXIT('KO_ALREADY_EXISTING', msg => "The group $displayGroup already exists");
+}
+
+$fnret = OVH::Bastion::is_account_existing(account => $group);
+$fnret->is_err and HEXIT($fnret);
+$fnret->is_ok and HEXIT('KO_ALREADY_EXISTING', msg => "The account $group already exists");
+
+#<PARAMS:GROUP
+
+#>PARAMS:ALGO/SIZE
+if (!$no_key) {
+    $algo = lc($algo);
+    $fnret = OVH::Bastion::is_allowed_algo_and_size(algo => $algo, size => $size, way => 'egress');
+    $fnret or HEXIT($fnret);
+
+    # if we're still here, it's valid, untaint those
+    ($algo) = $algo =~ m/(.+)/;
+    ($size) = $size =~ m/(.+)/;
+}
+
+#<PARAMS:ALGO/SIZE
+
+#>CODE
+my $passphrase = '';    # empty by default
+if ($encrypted) {
+    print STDERR "Please enter a passphrase for the new group key (not echoed): ";
+    ReadMode('noecho');
+    chomp(my $pass1 = <STDIN>);
+    if (length($pass1) < 5) {
+        ReadMode('restore');
+        HEXIT('ERR_PASSPHRASE_TOO_SMALL', msg => "Passphrase should have at least 5 chars");
+    }
+    print STDERR "\nPlease enter it again: ";
+    chomp(my $pass2 = <STDIN>);
+    print STDERR "\n";
+    ReadMode('restore');
+    if ($pass1 ne $pass2) {
+        HEXIT('ERR_PASSPHRASE_MISMATCH', msg => "Passphrases don't match, please try again");
+    }
+    ($passphrase) = $pass1 =~ /(.+)/;    # untaint
+}
+
+# First create group
+osh_info("Creating groups");
+foreach my $tocreate ($group, "$group-aclkeeper", "$group-gatekeeper", "$group-owner") {
+    $fnret = OVH::Bastion::sys_groupadd(group => $tocreate, noisy_stderr => 1);
+    $fnret->err eq 'OK'
+      or HEXIT('ERR_GROUPADD_FAILED', msg => "Error while running groupadd command for $tocreate (" . $fnret->msg . ")");
+}
+
+osh_debug("Creating directory");
+mkdir "/home/keykeeper/$group";
+chmod 0755, "/home/keykeeper/$group";
+
+osh_info("Creating user corresponding to group $shortGroup");
+
+# if a comment has been set, we'll store it as the user's GECOS corresponding to the group name
+# user is member of the group, cannot login and have no password
+$fnret = OVH::Bastion::sys_useradd(user => $group, gid => $group, shell => undef, comment => $comment, noisy_stderr => 1);
+$fnret->err eq 'OK'
+  or HEXIT('ERR_USERADD_FAILED', msg => "Error while adding corresponding user of group $shortGroup (" . $fnret->msg . ")");
+
+# Building /home/$group
+OVH::Bastion::touch_file("/home/$group/allowed.ip");
+
+osh_debug("Adding allowkeeper to group $group");
+$fnret = OVH::Bastion::add_user_to_group(group => $group, user => 'allowkeeper', groupType => 'key');
+$fnret or HEXIT($fnret);
+
+osh_info("Adding $owner to owner, gatekeeper, aclkeeper and main groups of $shortGroup");
+
+# temporarily set ourselves owner manually so that we can add the wanted owner properly
+# as owner/gatekeeper/member then revoke our own right
+$fnret = OVH::Bastion::sys_addmembertogroup(group => "$group-owner", user => $self, noisy_stderr => 1);
+$fnret or HEXIT($fnret);
+
+# special case: if we're setting ourselves as owner, we must not remove
+# our own rights after granting
+my @todoList = (
+    $owner eq $self
+    ? (
+        {action => 'add', type => 'owner',      account => $owner},
+        {action => 'add', type => 'aclkeeper',  account => $owner},
+        {action => 'add', type => 'gatekeeper', account => $owner},
+        {action => 'add', type => 'member',     account => $owner},
+      )
+    : (
+        {action => 'add', type => 'owner',      account => $owner},
+        {action => 'add', type => 'aclkeeper',  account => $owner},
+        {action => 'add', type => 'gatekeeper', account => $owner},
+        {action => 'add', type => 'gatekeeper', account => $self},
+        {action => 'add', type => 'member',     account => $owner},
+        {action => 'del', type => 'gatekeeper', account => $self},
+        {action => 'del', type => 'owner',      account => $self},
+    )
+);
+
+foreach my $todo (@todoList) {
+    $fnret = OVH::Bastion::Plugin::groupSetRole::act(
+        self           => $self,
+        account        => $todo->{'account'},
+        group          => $shortGroup,
+        action         => $todo->{'action'},
+        type           => $todo->{'type'},
+        sudo           => 1,
+        silentoverride => 1
+    );
+    $fnret or HEXIT($fnret);
+}
+
+my $keykeeper_uid = (getpwnam('keykeeper'))[2];
+my $group_gid     = (getgrnam($group))[2];
+chown $keykeeper_uid, $group_gid, "/home/keykeeper/$group";
+if (!$no_key) {
+    osh_info("Generating main group key, this might take a few seconds...");
+
+    $fnret = OVH::Bastion::generate_ssh_key(
+        prefix         => $shortGroup,
+        folder         => "/home/keykeeper/$group",
+        size           => $size,
+        algo           => $algo,
+        passphrase     => $passphrase,
+        uid            => $keykeeper_uid,
+        gid            => $group_gid,
+        group_readable => 1
+    );
+    $fnret or HEXIT($fnret);
+}
+
+osh_info("Adjusting permissions...");
+my $bigX = (OVH::Bastion::is_linux() ? 'X' : 'x');
+foreach my $command (
+    ['chown', '-R',               "$group:$group",            "/home/$group"],
+    ['chgrp', "$group-aclkeeper", "/home/$group/allowed.ip"],
+    ['chmod', '-R',               "o-rwx,g=r$bigX,u=rw$bigX", "/home/$group"],
+    ['chmod', '0664',             "/home/$group/allowed.ip"],
+  )
+{
+    $fnret = OVH::Bastion::execute(cmd => $command, noisy_stderr => 1);
+    $fnret->err eq 'OK'
+      or HEXIT('ERR_CHMOD_FAILED', msg => "Error while running chmod to adjust permissions (" . $fnret->msg . ")");
+}
+chmod 0751, "/home/$group" if !OVH::Bastion::has_acls();
+
+foreach my $gr ("$group-owner", "$group-gatekeeper", "$group-aclkeeper", "osh-whoHasAccessTo", "osh-auditor") {
+    OVH::Bastion::sys_setfacl(target => "/home/$group", perms => "g:$gr:x")
+      or HEXIT('ERR_SETFACL_FAILED', msg => "Error setting ACLs on group homedir");
+}
+
+# allowed to sudo for the group
+osh_info("Configuring sudoers for this group");
+my $sudoers_dir = OVH::Bastion::sys_getsudoersfolder();
+
+if (-e "$sudoers_dir/osh-group-$group") {
+    osh_debug "sudoers already in place, but overwriting it";
+}
+
+$fnret = OVH::Bastion::execute(cmd => [$OVH::Bastion::BASEPATH . '/bin/sudogen/generate-sudoers.sh', 'group', $group], must_succeed => 1, noisy_stdout => 1);
+$fnret or HEXIT('ERR_CANNOT_CREATE_SUDOERS', msg => "An error occurred while creating sudoers for this group");
+
+OVH::Bastion::syslogFormatted(
+    severity => 'info',
+    type     => 'group',
+    fields   => [
+        ['action',                   'create'],
+        ['group',                    $shortGroup],
+        ['owner',                    $owner],
+        ['egress_ssh_key_algorithm', $algo],
+        ['egress_ssh_key_size',      $size],
+        ['egress_ssh_key_encrypted', ($encrypted ? 'true' : 'false')],
+    ]
+);
+
+# done at last!
+HEXIT('OK', value => {group => $shortGroup, owner => $owner});

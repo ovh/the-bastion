@@ -1,0 +1,436 @@
+#! /usr/bin/perl -T
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+# NEEDGROUP osh-accountCreate
+# SUDOERS %osh-accountCreate ALL=(root) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountCreate --type normal *
+# FILEMODE 0700
+# FILEOWN root root
+
+#>HEADER
+use common::sense;
+use Getopt::Long;
+use Sys::Hostname ();
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../lib/perl';
+use OVH::Bastion;
+local $| = 1;
+
+#
+# Globals
+#
+$ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/pkg/bin';
+my ($self) = $ENV{'SUDO_USER'} =~ m{^([a-zA-Z0-9._-]+)$};
+if (not defined $self) {
+    if ($< == 0) {
+        $self = 'root';
+    }
+    else {
+        HEXIT('ERR_SUDO_NEEDED', msg => 'This command must be run under sudo');
+    }
+}
+
+# Fetch command options
+my $fnret;
+my ($result, @optwarns);
+my ($type, $account, $realmFrom, $uid, @pubKeys, $comment, $alwaysActive, $uidAuto, $oshOnly, $immutableKey, $ttl);
+eval {
+    local $SIG{__WARN__} = sub { push @optwarns, shift };
+    $result = GetOptions(
+        "type=s"        => sub { $type         //= $_[1] },
+        "from=s"        => sub { $realmFrom    //= $_[1] },
+        "uid=s"         => sub { $uid          //= $_[1] },
+        "account=s"     => sub { $account      //= $_[1] },
+        "always-active" => sub { $alwaysActive //= $_[1] },
+        "pubKey=s"      => \@pubKeys,
+        "comment=s"     => sub { $comment      //= $_[1] },
+        'uid-auto'      => sub { $uidAuto      //= $_[1] },
+        'osh-only'      => sub { $oshOnly      //= $_[1] },
+        'immutable-key' => sub { $immutableKey //= $_[1] },
+        'ttl=i'         => sub { $ttl          //= $_[1] },
+    );
+};
+if ($@) { die $@ }
+
+if (!$result) {
+    local $" = ", ";
+    HEXIT('ERR_BAD_OPTIONS', msg => "Error parsing options: @optwarns");
+}
+
+if (!$account || !$type) {
+    HEXIT('ERR_MISSING_PARAMETER', msg => "Missing argument 'account' or 'type'");
+}
+
+#<HEADER
+
+#>PARAMS:TYPE
+osh_debug("Checking type");
+if (not grep { $type eq $_ } qw{ normal realm }) {
+    HEXIT('ERR_INVALID_PARAMETER', "Expected type 'normal' or 'realm'");
+}
+
+#<PARAMS:TYPE
+
+#>PARAMS:ACCOUNT
+osh_debug("Checking account");
+$fnret = OVH::Bastion::is_account_valid(account => $account);
+$fnret or HEXIT($fnret);
+
+# get returned untainted value
+$account = $fnret->value->{'account'};
+
+$fnret = OVH::Bastion::is_account_existing(account => $account);
+$fnret->is_err and HEXIT($fnret);
+$fnret->is_ok and HEXIT('KO_ALREADY_EXISTING', msg => "The account $account already exists");
+
+$fnret = OVH::Bastion::is_group_existing(group => $account);
+$fnret->is_err and HEXIT($fnret);
+$fnret->is_ok and HEXIT('KO_ALREADY_EXISTING', msg => "The group $account already exists");
+
+if ($type eq 'realm') {
+    $account = "realm_$account";
+    $fnret = OVH::Bastion::is_account_valid(account => $account, accountType => "realm");
+    $fnret or HEXIT($fnret);
+
+    $fnret = OVH::Bastion::is_account_existing(account => $account, accountType => "realm");
+    $fnret->is_err and HEXIT($fnret);
+    $fnret->is_ok and HEXIT('KO_ALREADY_EXISTING', msg => "The realm $account already exists");
+
+    $fnret = OVH::Bastion::is_group_existing(group => $account);
+    $fnret->is_err and HEXIT($fnret);
+    $fnret->is_ok and HEXIT('KO_ALREADY_EXISTING', msg => "The group $account already exists");
+}
+
+#<PARAMS:ACCOUNT
+
+#>PARAMS:UID
+if (not $uidAuto and not defined $uid) {
+    HEXIT('ERR_MISSING_PARAMETER', msg => "Missing one of 'uid-auto' or 'uid' argument");
+}
+if (defined $uid and $uidAuto) {
+    HEXIT('ERR_INCOMPATIBLE_PARAMETERS', msg => "Incompatible parameters 'uid' and 'uid-auto' specified");
+}
+if (defined $uid) {
+    $fnret = OVH::Bastion::is_valid_uid(uid => $uid, type => 'user');
+    $fnret or HEXIT($fnret);
+    $uid = $fnret->value;
+    getpwuid($uid) and HEXIT('ERR_UID_COLLISION', msg => "This UID ($uid) is already taken");
+
+    $fnret = OVH::Bastion::is_valid_uid(uid => $uid, type => 'group');
+    $fnret or HEXIT($fnret);
+    getgrgid($uid) and HEXIT('ERR_GID_COLLISION', msg => "This GID ($uid) is already taken");
+}
+elsif ($uidAuto) {
+    $fnret = OVH::Bastion::get_next_available_uid();
+    $fnret or HEXIT($fnret);
+    $uid = $fnret->value();
+}
+
+#<PARAMS:UID
+
+#>PARAMS
+my $ttygroup = "$account-tty";
+$fnret = OVH::Bastion::is_group_existing(group => $ttygroup);
+$fnret and HEXIT('ERR_TTY_GROUP_ALREADY_EXISTS', msg => "The TTY group for this account ($ttygroup) already exists!");
+
+#<PARAMS
+
+#>RIGHTSCHECK
+if ($self eq 'root') {
+    osh_debug "Real root, skipping checks of permissions";
+}
+else {
+    # need to perform another security check
+    if ($type eq 'realm') {
+        $fnret = OVH::Bastion::is_user_in_group(user => $self, group => "osh-realmCreate");
+        $fnret or HEXIT('ERR_SECURITY_VIOLATION', msg => "You're not allowed to run this, dear $self");
+    }
+    else {
+        $fnret = OVH::Bastion::is_user_in_group(user => $self, group => "osh-accountCreate");
+        $fnret or HEXIT('ERR_SECURITY_VIOLATION', msg => "You're not allowed to run this, dear $self");
+    }
+}
+
+#<RIGHTSCHECK
+
+#>CODE
+$fnret = OVH::Bastion::load_configuration();
+$fnret or HEXIT($fnret);
+my $config = $fnret->value;
+
+my $ttygid = $uid + $config->{'ttyrecGroupIdOffset'};
+getgrgid($ttygid) and HEXIT('ERR_GID_COLLISION', msg => "This GID ($ttygid) is already taken");
+
+if ($uid < $config->{'accountUidMin'} or $uid > $config->{'accountUidMax'}) {
+    HEXIT('ERR_UID_INVALID_RANGE', msg => "UID must be < " . $config->{'accountUidMin'} . " and > " . $config->{'accountUidMax'});
+}
+
+my @vettedKeys;
+foreach my $key (@pubKeys) {
+    $fnret = OVH::Bastion::is_valid_public_key(pubKey => $key, way => 'ingress');
+    $fnret or HEXIT($fnret);
+
+    $key = $fnret->value->{'typecode'} . ' ' . $fnret->value->{'base64'};
+    if ($fnret->value->{'comment'}) {
+        $key .= ' ' . $fnret->value->{'comment'};
+    }
+    push @vettedKeys, $key;
+}
+
+my $prefix             = $fnret->value->{'prefix'};
+my @userProvidedIpList = ();
+if ($prefix) {
+    my ($fromString) = $prefix =~ m{from=["']([^"']+)["']};
+    if ($fromString) {
+        @userProvidedIpList = split /,/, $fromString;
+    }
+}
+
+$fnret = OVH::Bastion::get_from_for_user_key(userProvidedIpList => \@userProvidedIpList);
+$fnret or HEXIT($fnret);
+
+my $from    = $fnret->value->{'from'};
+my $ipList  = $fnret->value->{'ipList'};
+my $homedir = "/home/$account";
+
+osh_info "Creating group $account with GID $uid...";
+$fnret = OVH::Bastion::sys_groupadd(noisy_stderr => 1, gid => $uid, group => $account);
+$fnret->err eq 'OK'
+  or HEXIT('ERR_GROUPADD_FAILED', msg => "Error while running groupadd with UID $uid and group $account (" . $fnret->msg . ")");
+osh_debug('ok, group was created');
+
+osh_info "Creating user $account with UID $uid...";
+$fnret = OVH::Bastion::sys_useradd(
+    noisy_stderr => 1,
+    user         => $account,
+    uid          => $uid,
+    gid          => $uid,
+    shell        => $OVH::Bastion::BASEPATH . '/bin/shell/osh.pl',
+    home         => $homedir
+);
+$fnret->err eq 'OK'
+  or HEXIT('ERR_USERADD_FAILED', msg => "Error while running useradd for $account UID/GID $uid (" . $fnret->msg . ")");
+osh_debug('user created');
+
+chmod 0750, $homedir;
+
+mkdir $homedir . "/.ssh" if (!-d "$homedir/.ssh");
+chmod 0750, $homedir . "/.ssh";
+chown $uid, $uid, "$homedir/.ssh";
+
+if (!OVH::Bastion::touch_file("$homedir/.ssh/authorized_keys2")) {
+    HEXIT('ERR_CANNOT_CREATE_FILE', msg => "Failed to create authorized_keys file");
+}
+chmod 0640, $homedir . "/.ssh/authorized_keys2";
+chown $uid, $uid, "$homedir/.ssh/authorized_keys2";
+
+osh_info "Creating tty group of account...";
+$fnret = OVH::Bastion::sys_groupadd(noisy_stderr => 1, group => $ttygroup, gid => $ttygid);
+$fnret->err eq 'OK'
+  or HEXIT('ERR_GROUPADD_FAILED', msg => "Error while running groupadd with UID $ttygid and group $ttygroup (" . $fnret->msg . ")");
+osh_debug('ok, group was created');
+
+$fnret = OVH::Bastion::add_user_to_group(user => $account, group => $ttygroup, groupType => 'tty', accountType => ($type eq 'realm' ? 'realm' : 'normal'));
+$fnret or HEXIT($fnret);
+
+# adding account to bastion-users group
+$fnret = OVH::Bastion::add_user_to_group(user => $account, group => "bastion-users", accountType => ($type eq 'realm' ? 'realm' : 'normal'));
+$fnret or HEXIT($fnret);
+
+if ($type ne 'realm') {
+    osh_info "Adding account to potential supplementary groups...";
+    if ($config->{'accountCreateSupplementaryGroups'}) {
+        foreach my $suppGroup (@{$config->{'accountCreateSupplementaryGroups'}}) {
+            $fnret = OVH::Bastion::add_user_to_group(user => $account, group => $suppGroup, groupType => 'osh');
+            if ($fnret) {
+                osh_info "Account added to group $suppGroup";
+            }
+            else {
+                osh_warn "Couldn't add account $account to group $suppGroup";
+            }
+        }
+    }
+}
+
+osh_info "Creating needed files and directories with proper permissions in home...";
+my $ttyrecdir = $homedir . "/ttyrec";
+mkdir $ttyrecdir;
+if (!chown $uid, $uid, $ttyrecdir) {
+    HEXIT('ERR_CANNOT_CHOWN', msg => "Couldn't chown ttyrec directory ($!)");
+}
+if (!chmod 0700, $ttyrecdir) {
+    HEXIT('ERR_CANNOT_CHMOD', msg => "Couldn't chmod ttyrec directory ($!)");
+}
+
+osh_debug('applying an acl for group ' . $ttygroup);
+OVH::Bastion::sys_setfacl(target => $ttyrecdir, clear => 1, perms => "g:$ttygroup:rX")
+  or HEXIT('ERR_SETFACL_FAILED', msg => "Error setting ACL on $ttyrecdir");
+
+OVH::Bastion::sys_setfacl(target => $ttyrecdir, default => 1, perms => "g:$ttygroup:rX")
+  or HEXIT('ERR_SETFACL_FAILED', msg => "Error setting default ACL on $ttyrecdir");
+
+OVH::Bastion::sys_setfacl(target => $homedir, clear => 1, perms => "g:$ttygroup:x,g:osh-auditor:x")
+  or HEXIT('ERR_SETFACL_FAILED', msg => "Error setting ACL on $homedir");
+
+OVH::Bastion::sys_setfacl(target => "$homedir/.ssh", clear => 1, perms => "g:osh-auditor:x")
+  or HEXIT('ERR_SETFACL_FAILED', msg => "Error setting ACL on $homedir/.ssh");
+
+osh_info "Creating some more directories...";
+mkdir "/home/allowkeeper/$account";
+OVH::Bastion::touch_file("/home/allowkeeper/$account/allowed.ip");
+OVH::Bastion::touch_file("/home/allowkeeper/$account/allowed.private");
+
+osh_info "Applying proper ownerships...";
+$fnret = OVH::Bastion::execute(
+    cmd          => ['chown', 'allowkeeper:allowkeeper', "/home/allowkeeper/$account", "/home/allowkeeper/$account/allowed.ip", "/home/allowkeeper/$account/allowed.private"],
+    noisy_stderr => 1
+);
+$fnret->err eq 'OK' or HEXIT('ERR_CHMOD_FAILED', msg => "Error while running chmod on allowkeeper (" . $fnret->msg . ")");
+
+$fnret = OVH::Bastion::execute(cmd => ['chmod', '-R', 'o+rX', "/home/allowkeeper/$account"], noisy_stderr => 1);
+$fnret->err eq 'OK' or HEXIT('ERR_CHMOD_FAILED', msg => "Error while running chmod -R on allowkeeper (" . $fnret->msg . ")");
+
+if (ref $config->{'accountCreateDefaultPersonalAccesses'} eq 'ARRAY' && $type eq 'normal') {
+    foreach my $defAccess (@{$config->{'accountCreateDefaultPersonalAccesses'}}) {
+        my (undef, $user, $ip, undef, $port) = $defAccess =~ m{^(([^@]+)@)?([0-9./]+)(:(\d+))?$};
+        next unless $ip;
+        my @command = qw{ sudo -n -u allowkeeper -- };
+        push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountModifyPersonalAccess';
+        push @command, '--target', 'any';
+        push @command, '--action', 'add';
+        push @command, '--account', $account;
+        push @command, '--ip', $ip;
+        if ($user) {
+            push @command, '--user', ($user eq 'ACCOUNT' ? $account : $user);
+        }
+        $port and push @command, '--port', $port;
+        $fnret = OVH::Bastion::execute(cmd => \@command, noisy_stdout => 1, noisy_stderr => 1, is_helper => 1);
+        $fnret->err eq 'OK' or osh_warn("Couldn't add private access to account to $defAccess (" . $fnret->msg . ")");
+    }
+}
+
+if (not defined $comment) {
+    $comment = '(no_comment_provided)';
+}
+
+$comment = "CREATED_BY=$self\nBASTION_VERSION=" . $OVH::Bastion::VERSION . "\nCREATION_TIME=" . localtime() . "\nCREATION_TIMESTAMP=" . time() . "\nCOMMENT=" . $comment . "\n";
+
+if (open(my $fh_comment, '>>', $homedir . '/accountCreate.comment')) {
+    print $fh_comment $comment;
+    close $fh_comment;
+    chmod 0644, $homedir . '/accountCreate.comment';
+}
+
+$fnret = OVH::Bastion::account_config(account => $account, key => "creation_timestamp", value => time());
+if (!$fnret) {
+    osh_warn("Couldn't store creation timestamp (" . $fnret->msg . "), continuing anyway");
+}
+
+if ($ttl) {
+    $fnret = OVH::Bastion::duration2human(seconds => $ttl);
+    osh_info sprintf("Setting this account TTL (will expire in %s)", $fnret->value->{'human'});
+    $fnret = OVH::Bastion::account_config(account => $account, key => "account_ttl", value => $ttl);
+    if (!$fnret) {
+        osh_warn("Couldn't store account TTL (" . $fnret->msg . "), this account will NOT expire!! Continuing anyway");
+    }
+}
+
+if ($alwaysActive || $type eq 'realm') {
+    $fnret = OVH::Bastion::account_config(account => $account, key => OVH::Bastion::OPT_ACCOUNT_ALWAYS_ACTIVE, value => "yes", public => 1);
+    if (!$fnret) {
+        osh_warn("Couldn't store always_active flag (" . $fnret->msg . "), continuing anyway");
+    }
+}
+
+$fnret = OVH::Bastion::add_user_to_group(user => "keyreader", group => $account, accountType => 'group');
+$fnret or HEXIT($fnret);
+osh_debug('user keyreader added to group');
+
+my $finalPrefix = $realmFrom ? sprintf('from="%s"', $realmFrom) : $from;
+$finalPrefix .= ' ' if $finalPrefix;
+
+osh_info "Adding provided public key in authorized_keys...";
+my $allowedKeyFile = $homedir . '/.ssh/authorized_keys2';
+if (open(my $fh_keys, '>>', $allowedKeyFile)) {
+    foreach my $key (@vettedKeys) {
+        print $fh_keys $finalPrefix . $key . "\n";
+    }
+    close($fh_keys);
+}
+else {
+    HEXIT("ERR_CANNOT_ADD_KEY", msg => "Couldn't open $allowedKeyFile when trying to add provided public key");
+}
+
+# push this flag to prevent ssh/telnet usage
+if ($oshOnly) {
+    $fnret = OVH::Bastion::account_config(account => $account, key => "osh_only", value => "yes");
+    $fnret or HEXIT($fnret);
+}
+
+# chown to root so user can no longer touch it
+if ($immutableKey) {
+    chown 0, -1, $allowedKeyFile;
+}
+
+osh_info "Generating account personal bastion key...";
+$fnret = OVH::Bastion::generate_ssh_key(
+    folder => "$homedir/.ssh",
+    prefix => 'private',
+    name   => $account,
+    gid    => $uid,
+    uid    => $uid,
+    algo   => OVH::Bastion::config('defaultAccountEgressKeyAlgorithm')->value,
+    size   => OVH::Bastion::config('defaultAccountEgressKeySize')->value,
+);
+$fnret or HEXIT($fnret);
+
+osh_info "Account successfully created!";
+if ($realmFrom) {
+    osh_info "Realm will be able to connect from the following IPs: $realmFrom";
+}
+elsif (scalar(@$ipList) > 0) {
+    osh_info "Account will be able to connect from the following IPs: " . join(', ', @$ipList);
+}
+
+# allowed to sudo for the account
+osh_info("Configuring sudoers for this account");
+my $sudoers_dir = OVH::Bastion::sys_getsudoersfolder();
+
+if (-e "$sudoers_dir/osh-account-$account") {
+    osh_debug "sudoers already in place, but overwriting it";
+}
+
+$fnret = OVH::Bastion::execute(cmd => [$OVH::Bastion::BASEPATH . '/bin/sudogen/generate-sudoers.sh', 'account', $account], must_succeed => 1, noisy_stdout => 1);
+$fnret or HEXIT('ERR_CANNOT_CREATE_SUDOERS', msg => "An error occurred while creating sudoers for this account");
+
+my $bastionName    = $config->{'bastionName'};
+my $bastionCommand = $config->{'bastionCommand'};
+$bastionCommand =~ s/USER|ACCOUNT/$account/g;
+$bastionCommand =~ s/CACHENAME|BASTIONNAME/$bastionName/g;
+my $hostname = Sys::Hostname::hostname();
+$bastionCommand =~ s/HOSTNAME/$hostname/g;
+
+if ($type eq 'realm') {
+    osh_info "Realm has been created.";
+}
+else {
+    osh_info "==> alias $bastionName='$bastionCommand'";
+    osh_info "To test his access, ask this user to set the above alias in his .bash_aliases, then run `$bastionName --osh info'";
+}
+
+OVH::Bastion::syslogFormatted(
+    severity => 'info',
+    type     => 'account',
+    fields   => [
+        ['action',     'create'],
+        ['account',    $account],
+        ['uid',        $uid],
+        ['public_key', @vettedKeys ? $vettedKeys[0] : undef],
+        ['always_active', ($alwaysActive ? 'true' : 'false')],
+        ['uid_auto',      ($uidAuto      ? 'true' : 'false')],
+        ['osh_only',      ($oshOnly      ? 'true' : 'false')],
+        ['immutable_key', ($immutableKey ? 'true' : 'false')],
+        ['comment', $comment],
+    ]
+);
+
+HEXIT('OK');

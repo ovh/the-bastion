@@ -1,0 +1,22 @@
+{
+    "interactive": [
+        "accountAddPersonalAccess"                                     , {"ac" : ["--account"]},
+        "accountAddPersonalAccess --account"                           , {"ac" : ["<ACCOUNT>"]},
+        "accountAddPersonalAccess --account \\S+"                      , {"ac" : ["--host"]},
+        "accountAddPersonalAccess --account \\S+ --host"               , {"pr" : ["<HOST>", "<IP>", "<IP/MASK>"]},
+        "accountAddPersonalAccess --account \\S+ --host \\S+"          , {"ac" : ["<enter>", "--user", "--port"]},
+        "accountAddPersonalAccess --account \\S+ --host \\S+ .*--user" , {"pr" : ["<USER>"]},
+        "accountAddPersonalAccess --account \\S+ --host \\S+ .*--port" , {"pr" : ["<PORT>"]},
+        "accountAddPersonalAccess --account \\S+ --host \\S+ --user \\S+"                          , {"ac" : ["<enter>", "--port"]},
+        "accountAddPersonalAccess --account \\S+ --host \\S+ --port \\S+"                          , {"ac" : ["<enter>", "--user"]},
+        "accountAddPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+" , {"ac" : ["--force-key","--ttl","<enter>"]},
+        "accountAddPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --ttl" , {"pr" : ["<SECONDS>"]},
+        "accountAddPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --ttl \\S+" , {"ac" : ["--force-key","<enter>"]},
+        "accountAddPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --ttl \\S+ --force-key" , {"pr" : ["<enter>"]},
+        "accountAddPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --force-key" , {"pr" : ["<FINGERPRINT>"]},
+        "accountAddPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --force-key \\S+" , {"ac" : ["--ttl","<enter>"]},
+        "accountAddPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --force-key \\S+ --ttl" , {"pr" : ["<SECONDS>"]},
+        "accountAddPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --force-key \\S+ --ttl \\S+" , {"pr" : ["<enter>"]}
+    ],
+    "master_only": true
+}

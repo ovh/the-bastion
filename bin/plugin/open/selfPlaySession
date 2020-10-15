@@ -1,0 +1,99 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "replay a past session",
+    options => {
+        "id=s" => \my $id,
+    },
+    helptext => <<'EOF',
+Replay the ttyrec of a past session
+
+Usage: --osh SCRIPT_NAME --id ID
+
+  --id ID  ID of the session to replay, use ``selfListSessions`` to find it.
+EOF
+);
+
+#
+# code
+#
+my $fnret;
+
+if (not $id) {
+    help();
+    osh_exit R('ERR_MISSING_PARAMETER', msg => "Missing mandatory parameter ID");
+}
+
+$fnret = OVH::Bastion::log_access_get(account => $self, uniqid => $id);
+$fnret or osh_exit $fnret;
+
+my $hashkey = (keys %{$fnret->value})[0];
+my $r       = $fnret->value->{$hashkey};
+if (not defined $r) {
+    osh_exit R('ERR_NOT_FOUND', msg => "Found no session under this ID");
+}
+
+my $diff = ($r->{timestampend} + $r->{timestampendusec} / 1_000_000) - ($r->{timestamp} + $r->{timestampusec} / 1_000_000);
+$diff = 0 if not $r->{timestampend};
+my $delay = $diff;
+if (not $r->{timestampend}) {
+    $delay = 'n/a';
+}
+else {
+    my $d = int($delay / 86400);
+    $delay -= $d * 86400;
+    my $h = int($delay / 3600);
+    $delay -= $h * 3600;
+    my $m = int($delay / 60);
+    $delay -= $m * 60;
+    my $s = int($delay);
+    $delay -= $s;
+    my $ds = int($delay * 1_000_000);
+    $delay = sprintf('%dd+%02d:%02d:%02d.%06d', $d, $h, $m, $s, $ds);
+}
+$r->{params}      = undef         if ($r->{cmdtype} ne 'osh');
+$r->{returnvalue} = $r->{comment} if $r->{returnvalue} < 0;
+
+osh_info sprintf "%8s: %s\n", "ID",       $r->{uniqid};
+osh_info sprintf "%8s: %s\n", "Started",  POSIX::strftime("%Y/%m/%d %H:%M:%S", localtime($r->{timestamp}));
+osh_info sprintf "%8s: %s\n", "Ended",    $r->{timestampend} ? POSIX::strftime("%Y/%m/%d %H:%M:%S", localtime($r->{timestampend})) : 'n/a';
+osh_info sprintf "%8s: %s\n", "Duration", $delay;
+osh_info sprintf "%8s: %s\n", "Type",     $r->{'cmdtype'} . ($r->{'plugin'} ? '-' . $r->{'plugin'} : '') . ($r->{allowed} ? '' : '/DENIED');
+osh_info sprintf "%8s: %s:%s (%s)\n", "From", $r->{'ipfrom'},  $r->{'portfrom'},  $r->{'hostfrom'};
+osh_info sprintf "%8s: %s@%s:%s\n",   "Via",  $r->{'account'}, $r->{'bastionip'}, $r->{'bastionport'};
+if ($r->{user} || $r->{ipto} || $r->{portto} || $r->{hostto}) {
+    osh_info sprintf "%8s: %s@%s:%s (%s)\n", "To", $r->{'user'}, $r->{'ipto'}, $r->{'portto'}, $r->{'hostto'};
+}
+osh_info sprintf "%8s: %s%s\n", "RetCode", defined $r->{returnvalue} ? $r->{returnvalue} : 'n/a', $r->{params} ? " params $r->{params}" : '';
+osh_info "\n";
+
+my $ttyrecfile = $r->{'ttyrecfile'};
+if (!$ttyrecfile) {
+    osh_info "There were no terminal recording for this session";
+    osh_ok {};
+}
+
+# if we used on-the-fly compression, maybe the file ends in ".zst"
+$ttyrecfile .= ".zst" if !-r $ttyrecfile;
+
+if (!-r $ttyrecfile) {
+    osh_exit R('ERR_NOT_FOUND', msg => "Recorded session for ID $id couldn't be found, it might have been archived");
+}
+
+osh_warn "Press '+' to play faster";
+osh_warn "Press '-' to play slower";
+osh_warn "Press '1' to restore normal playing speed";
+osh_warn "\nWhen you're ready to replay session $id, press ENTER.";
+osh_warn "Starting from the next line, the Total Recall begins. Press CTRL+C to jolt awake.";
+<STDIN>;
+my $sysret = system('ttyplay', $ttyrecfile);
+osh_ok {};

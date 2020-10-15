@@ -1,0 +1,89 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "ping",
+    options => {
+        "c=i" => \my $count,
+        "s=i" => \my $packetsize,
+        "t=i" => \my $ttl,
+        "w=i" => \my $deadline,
+    },
+    helptext => <<'EOF',
+Ping a remote host from the bastion
+
+Usage: --osh SCRIPT_NAME [--host HOST] [-c COUNT] [-s PKTSZ] [-t TTL] [-w TIMEOUT]
+
+  --host HOST  Remote host to ping
+  -c COUNT     Number of pings to send (default: infinite)
+  -t TTL       TTL to set in the ICMP packet (default: OS dependent)
+  -w TIMEOUT   Exit unconditionally after this amount of seconds
+EOF
+);
+
+# be nice and try to guessify a host as first param
+# if user said --osh ping mymachine.example.org
+if (not $host and not $ip and ref $remainingOptions eq 'ARRAY' and @$remainingOptions == 1 and $remainingOptions->[0] =~ /^([a-zA-Z0-9][a-zA-Z0-9.-]{1,})$/) {
+    $host = $remainingOptions->[0];
+}
+
+#
+# code
+#
+my $fnret;
+
+if (not $host) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing required host parameter";
+}
+
+my @command = qw{ ping };
+if ($count and $count > 0) {
+    push @command, ('-c', $count);
+}
+if ($packetsize and $packetsize > 0 and $packetsize < 10000) {
+    push @command, ('-s', $packetsize);
+}
+if ($ttl and $ttl > 0 and $ttl < 256) {
+    push @command, ('-t', $ttl);
+}
+if ($deadline and $deadline > 0 and $deadline <= 3600) {
+    push @command, (OVH::Bastion::is_freebsd() ? '-t' : '-w', $deadline);
+}
+push @command, $host;
+
+osh_info "Pinging $host...";
+
+$fnret = OVH::Bastion::execute(cmd => \@command, noisy_stdout => 1, noisy_stderr => 1);
+$fnret or osh_exit $fnret;
+
+my $result_hash = {sysret => $fnret->value->{'sysret'}, host => $host};
+foreach (@{$fnret->value->{'stdout'}}) {
+
+    # '2 packets transmitted, 2 received, 0% packet loss, time 999ms',
+    # 'rtt min/avg/max/mdev = 0.018/0.038/0.059/0.021 ms'
+
+    # '2 packets transmitted, 2 packets received, 0.0% packet loss',
+    # 'round-trip min/avg/max/stddev = 0.057/0.073/0.089/0.000 ms',
+
+    ## no critic (ProhibitUnusedCapture) # false positive
+    if (
+m{(?<packets_transmitted>\d+) packets? transmitted, (?<packets_received>\d+)( packets)? received, (?<packets_loss_percentage>\d+)(\.\d+)?% packet loss(, time (?<ping_duration>\d+))?}
+      )
+    {
+        @$result_hash{keys %+} = values %+;
+    }
+    elsif (m{min/avg/max/(std|m)dev = (?<min>[0-9.]+)/(?<avg>[0-9.]+)/(?<max>[0-9.]+)/(?<mdev>[0-9.]+)}) {
+        @$result_hash{keys %+} = values %+;
+    }
+}
+
+osh_ok $result_hash;

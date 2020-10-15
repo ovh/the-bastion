@@ -1,0 +1,91 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../lib/perl';
+use OVH::Bastion;
+use OVH::Bastion::ProxyHTTP;
+
+$ENV{'FORCE_STDERR'} = 1;
+$ENV{'PATH'}         = '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/pkg/bin';
+
+my $fnret = OVH::Bastion::load_configuration_file(
+    file     => OVH::Bastion::main_configuration_directory() . "/osh-http-proxy.conf",
+    secure   => 1,
+    keywords => [qw{ enabled port ssl_key ssl_certificate }],
+);
+if (not $fnret) {
+    osh_warn "Error loading configuration: " . $fnret->msg;
+    exit 1;
+}
+
+my $config = $fnret->value();
+
+# config check
+
+if (not $config->{'enabled'}) {
+    osh_warn "The HTTP Proxy is disabled by configuration";
+    exit 0;    # exit with a success so that systemd doesn't try to restart us
+}
+
+$fnret = OVH::Bastion::is_valid_port(port => $config->{'port'});
+if (!$fnret) {
+    osh_warn "Bad configuration: " . $fnret->msg;
+    exit 1;
+}
+
+my %options;
+if ($config->{'ciphers'}) {
+    $options{'SSL_cipher_list'}        = $config->{'ciphers'};
+    $options{'SSL_honor_cipher_order'} = 1;
+}
+
+my $_normalize_config_integer = sub {
+    my ($param, $min, $max, $default) = @_;
+    if (!defined $config->{$param} || $config->{$param} !~ /^\d+$/ || $config->{$param} < $min || $config->{$param} > $max) {
+        $config->{$param} = $default;
+    }
+};
+$_normalize_config_integer->('timeout',           1, 3600, 120);
+$_normalize_config_integer->('min_servers',       1, 512,  8);
+$_normalize_config_integer->('max_servers',       1, 512,  32);
+$_normalize_config_integer->('min_spare_servers', 1, 512,  8);
+$_normalize_config_integer->('max_spare_servers', 1, 512,  16);
+
+foreach my $file ($config->{'ssl_key'}, $config->{'ssl_certificate'}) {
+    if (!(-r -f $file)) {
+        osh_warn "Bad configuration: file '$file' doesn't exist, is not readable, or is not a file";
+        exit 1;
+    }
+}
+
+OVH::Bastion::ProxyHTTP->new()->run(
+    %options,
+    port              => $config->{'port'} . '/ssl',
+    SSL_key_file      => $config->{'ssl_key'},
+    SSL_cert_file     => $config->{'ssl_certificate'},
+    ipv               => 4,
+    server_type       => 'PreFork',
+    max_requests      => 1,                                # DO NOT TOUCH, anything else that this seems to mix requests/answers (!?)
+    min_servers       => $config->{'min_servers'},
+    max_servers       => $config->{'max_servers'},
+    min_spare_servers => $config->{'min_spare_servers'},
+    max_spare_servers => $config->{'max_spare_servers'},
+    access_log_file   => "/home/proxyhttp/access.log",
+
+    # This is the max time allowed for http_process_request(), which is where we spawn our worker.
+    # This value is defined when the proxy starts and is only applicable to the master process, hence it can't be
+    # modified afterwards with X-Bastion-Timeout.
+    # So we set it to the max value allowed for X-Bastion-Timeout,
+    # which is also the max allowed value of the 'timeout' config param (see above).
+    timeout_idle => 3600,
+    proxy_config => {
+        insecure => $config->{'insecure'} ? 1 : 0,
+        timeout => $config->{'timeout'},    # our worker will wait for up to this amount of time for the egress connection to complete
+    },
+) or die "Proxy launch failed!";
+
+# not reachable
+osh_warn "Proxy exited!?";
+exit 1;

@@ -1,0 +1,334 @@
+#! /usr/bin/perl -T
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+# NEEDGROUP osh-accountModify
+# SUDOERS # modify parameters/policy of an account
+# SUDOERS %osh-accountModify ALL=(root) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountModify *
+# FILEMODE 0700
+# FILEOWN root root
+
+#>HEADER
+use common::sense;
+use Getopt::Long;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../lib/perl';
+use OVH::Bastion;
+use OVH::Result;
+local $| = 1;
+
+#
+# Globals
+#
+$ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/pkg/bin';
+my ($self) = $ENV{'SUDO_USER'} =~ m{^([a-zA-Z0-9._-]+)$};
+if (not defined $self) {
+    if ($< == 0) {
+        $self = 'root';
+    }
+    else {
+        HEXIT('ERR_SUDO_NEEDED', msg => 'This command must be run under sudo');
+    }
+}
+
+# Fetch command options
+Getopt::Long::Configure("no_auto_abbrev");
+my $fnret;
+my ($result,  @optwarns);
+my ($account, @modify);
+eval {
+    local $SIG{__WARN__} = sub { push @optwarns, shift };
+    $result = GetOptions(
+        "account=s" => sub { $account //= $_[1] },
+        "modify=s" => \@modify,
+    );
+};
+if ($@) { die $@ }
+
+if (!$result) {
+    local $" = ", ";
+    HEXIT('ERR_BAD_OPTIONS', msg => "Error parsing options: @optwarns");
+}
+
+if (!$account || !@modify) {
+    HEXIT('ERR_MISSING_PARAMETER', msg => "Missing argument 'account' or 'modify'");
+}
+
+#<HEADER
+
+#>PARAMS:ACCOUNT
+$fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account, localOnly => 1);
+$fnret or HEXIT($fnret);
+
+# get returned untainted value
+$account = $fnret->value->{'account'};
+
+#<PARAMS:ACCOUNT
+
+#>RIGHTSCHECK
+if ($self eq 'root') {
+    osh_debug "Real root, skipping checks of permissions";
+}
+$fnret = OVH::Bastion::is_user_in_group(user => $self, group => "osh-accountModify");
+if (!$fnret) {
+    HEXIT('ERR_SECURITY_VIOLATION', msg => "You're not allowed to run this, dear $self");
+}
+
+if (OVH::Bastion::is_admin(account => $account, sudo => 1) && !OVH::Bastion::is_admin(account => $self, sudo => 1)) {
+    HEXIT('ERR_SECURITY_VIOLATION', msg => "You can't modify the account of an admin without being admin yourself");
+}
+
+#<RIGHTSCHECK
+
+#>CODE
+my %result;
+
+# the TOTP and UNIX Password toggle codes are extremely similar, factorize it here
+sub _mfa_toggle {
+    my ($key, $value, $mfaName, $mfaGroup, $mfaGroupBypass) = @_;
+    my $jsonkey = $key;
+    $jsonkey =~ s/-/_/g;
+
+    # if the value is != bypass, remove the account from the bypass group
+    if ($value ne 'bypass') {
+        if (OVH::Bastion::is_user_in_group(user => $account, group => $mfaGroupBypass)) {
+            $fnret = OVH::Bastion::sys_delmemberfromgroup(user => $account, group => $mfaGroupBypass, noisy_stderr => 1);
+            if (!$fnret) {
+                osh_warn "... error while removing the bypass option for this account";
+                $result{$jsonkey} = R('ERR_REMOVING_FROM_GROUP');
+                return;
+            }
+        }
+    }
+
+    # if the value is == bypass, remove the account from the required group
+    elsif ($value eq 'bypass') {
+        if (OVH::Bastion::is_user_in_group(user => $account, group => $mfaGroup)) {
+            $fnret = OVH::Bastion::sys_delmemberfromgroup(user => $account, group => $mfaGroup, noisy_stderr => 1);
+            if (!$fnret) {
+                osh_warn "... error while removing the required option for this account";
+                $result{$jsonkey} = R('ERR_REMOVING_FROM_GROUP');
+                return;
+            }
+        }
+    }
+
+    $fnret = OVH::Bastion::is_user_in_group(user => $account, group => $mfaGroup);
+    if ($value eq 'yes') {
+        osh_info "Enforcing multi-factor authentication of type $mfaName for this account...";
+        if ($fnret) {
+            osh_info "... no change was required";
+            $result{$jsonkey} = R('OK_NO_CHANGE');
+            return;
+        }
+
+        $fnret = OVH::Bastion::sys_addmembertogroup(user => $account, group => $mfaGroup, noisy_stderr => 1);
+        if (!$fnret) {
+            osh_warn "... error while setting the enforce option";
+            $result{$jsonkey} = R('ERR_ADDING_TO_GROUP');
+            return;
+        }
+
+        osh_info "... done, this account is now required to setup a password with --osh selfMFASetup$mfaName on the next connection, before being allowed to do anything else";
+        $result{$jsonkey} = R('OK');
+    }
+    elsif ($value eq 'no') {
+        osh_info "Removing multi-factor authentication of type $mfaName requirement for this account...";
+        if (!$fnret) {
+            osh_info "... no change was required";
+            $result{$jsonkey} = R('OK_NO_CHANGE');
+            return;
+        }
+
+        $fnret = OVH::Bastion::sys_delmemberfromgroup(user => $account, group => $mfaGroup, noisy_stderr => 1);
+        if (!$fnret) {
+            osh_warn "... error while setting the enforce option";
+            $result{$jsonkey} = R('ERR_REMOVING_FROM_GROUP');
+            return;
+        }
+
+        osh_info
+"... done, this account is no longer required to setup a password, however if there's already a password configured, it'll still be required (if this is not expected, the password can be reset with --osh accountMFAResetPassword command)";
+        $result{$jsonkey} = R('OK');
+    }
+    elsif ($value eq 'bypass') {
+        osh_info "Bypassing multi-factor authentication of type $mfaName requirement for this account...";
+        $fnret = OVH::Bastion::is_user_in_group(user => $account, group => $mfaGroupBypass);
+        if ($fnret) {
+            osh_info "... no change was required";
+            $result{$jsonkey} = R('OK_NO_CHANGE');
+            return;
+        }
+
+        $fnret = OVH::Bastion::sys_addmembertogroup(user => $account, group => $mfaGroupBypass, noisy_stderr => 1);
+        if (!$fnret) {
+            osh_warn "... error while setting the enforce option";
+            $result{$jsonkey} = R('ERR_ADDING_TO_GROUP');
+            return;
+        }
+
+        osh_info
+"... done, this account will no longer have to setup a password, even if this is enforced by the default global policy.\nHowever if there's already a password configured, it'll still be required (if this is not expected, the password can be reset with --osh accountMFAResetPassword command)";
+        $result{$jsonkey} = R('OK');
+    }
+    return;
+}
+
+sub _toggle_yes_no {
+    my %params  = @_;
+    my $keyname = $params{'keyname'};
+    my $keyfile = $params{'keyfile'};
+    my $value   = $params{'value'};
+
+    $fnret = OVH::Bastion::account_config(account => $account, public => 1, key => $keyfile);
+    if ($value eq 'yes') {
+        osh_info "Setting this account as $keyname...";
+        if ($fnret) {
+            osh_info "... no change was required";
+            return R('OK_NO_CHANGE');
+        }
+
+        $fnret = OVH::Bastion::account_config(account => $account, public => 1, key => $keyfile, value => 'yes');
+        if (!$fnret) {
+            osh_warn "... error while setting the option";
+            return R('ERR_OPTION_CHANGE_FAILED');
+        }
+
+        osh_info "... done, this account is now $keyname";
+        return R('OK');
+    }
+    elsif ($value eq 'no') {
+        osh_info "Removing the $keyname flag from this account...";
+        if (!$fnret) {
+            osh_info "... no change was required";
+            return R('OK_NO_CHANGE');
+        }
+
+        $fnret = OVH::Bastion::account_config(account => $account, public => 1, key => $keyfile, delete => 1);
+        if (!$fnret) {
+            osh_warn "... error while removing the option";
+            return R('ERR_OPTION_CHANGE_FAILED');
+        }
+
+        osh_info "... done, this account has no longer the $keyname flag set";
+        return R('OK');
+    }
+    else {
+        return R('ERR_INVALID_PARAMETER', msg => "Invalid value passed to $keyfile");
+    }
+}
+
+foreach my $tuple (@modify) {
+    my ($key, $value) = $tuple =~ /^([a-zA-Z0-9-]+)=([a-zA-Z0-9-]+)$/;
+    next if (!$key || !$value);
+    my $jsonkey = $key;
+    $jsonkey =~ s/-/_/g;
+
+    osh_debug "working on tuple key=$key value=$value";
+    if ($key eq 'always-active') {
+        $result{$jsonkey} = _toggle_yes_no(value => $value, keyfile => OVH::Bastion::OPT_ACCOUNT_ALWAYS_ACTIVE, keyname => 'always-active');
+    }
+    elsif ($key eq 'idle-ignore') {
+        $result{$jsonkey} = _toggle_yes_no(value => $value, keyfile => OVH::Bastion::OPT_ACCOUNT_IDLE_IGNORE, keyname => 'idle-ignore');
+    }
+    elsif ($key eq 'pam-auth-bypass') {
+        $fnret = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::PAM_AUTH_BYPASS_GROUP);
+        if ($value eq 'yes') {
+            {
+                osh_info "Bypassing sshd PAM auth usage for this account...";
+                if ($fnret) {
+                    osh_info "... no change was required";
+                    $result{$jsonkey} = R('OK_NO_CHANGE');
+                    last;
+                }
+
+                $fnret = OVH::Bastion::sys_addmembertogroup(user => $account, group => OVH::Bastion::PAM_AUTH_BYPASS_GROUP, noisy_stderr => 1);
+                if (!$fnret) {
+                    osh_warn "... error while setting the bypass option";
+                    $result{$jsonkey} = R('ERR_ADDING_TO_GROUP');
+                    last;
+                }
+
+                osh_info "... done, this account will no longer use PAM for authentication";
+                $result{$jsonkey} = R('OK');
+            }
+        }
+        elsif ($value eq 'no') {
+            {
+                osh_info "Removing bypass of sshd PAM auth usage for this account...";
+                if (!$fnret) {
+                    osh_info "... no change was required";
+                    $result{$jsonkey} = R('OK_NO_CHANGE');
+                    last;
+                }
+
+                $fnret = OVH::Bastion::sys_delmemberfromgroup(user => $account, group => OVH::Bastion::PAM_AUTH_BYPASS_GROUP, noisy_stderr => 1);
+                if (!$fnret) {
+                    osh_warn "... error while removing the bypass option";
+                    $result{$jsonkey} = R('ERR_REMOVING_FROM_GROUP');
+                    last;
+                }
+
+                osh_info "... done, this account will no longer bypass PAM for authentication";
+                $result{$jsonkey} = R('OK');
+            }
+        }
+    }
+    elsif ($key eq 'mfa-password-required') {
+        _mfa_toggle($key, $value, 'Password', OVH::Bastion::MFA_PASSWORD_REQUIRED_GROUP, OVH::Bastion::MFA_PASSWORD_BYPASS_GROUP);
+    }
+    elsif ($key eq 'mfa-totp-required') {
+        _mfa_toggle($key, $value, 'TOTP', OVH::Bastion::MFA_TOTP_REQUIRED_GROUP, OVH::Bastion::MFA_TOTP_BYPASS_GROUP);
+    }
+    elsif ($key eq 'egress-strict-host-key-checking') {
+        osh_info "Changing the egress StrictHostKeyChecking option for this account...";
+        if (not grep { $value eq $_ } qw{ yes no ask default bypass }) {
+            osh_warn "Invalid parameter '$value', skipping";
+            $result{$jsonkey} = R('ERR_INVALID_PARAMETER');
+        }
+        else {
+            my $hostsFile;    # undef, aka remove UserKnownHostsFile option
+            if ($value eq 'bypass') {
+
+                # special case: for 'bypass', we set Strict to no and UserKnownHostsFile to /dev/null
+                $value     = 'no';
+                $hostsFile = '/dev/null';
+            }
+            elsif ($value eq 'default') {
+
+                # special case: for 'default', we actually remove the StrictHostKeyChecking option
+                undef $value;
+            }
+            $fnret = OVH::Bastion::account_ssh_config_set(account => $account, key => "StrictHostKeyChecking", value => $value);
+            $result{$jsonkey} = $fnret;
+            if ($fnret) {
+                $fnret = OVH::Bastion::account_ssh_config_set(account => $account, key => "UserKnownHostsFile", value => $hostsFile);
+                $result{$jsonkey} = $fnret;
+            }
+            if ($fnret) {
+                osh_info "... modification done";
+            }
+            else {
+                osh_warn "... error while setting StrictHostKeyChecking policy: " . $fnret->msg;
+            }
+        }
+    }
+    elsif ($key eq 'personal-egress-mfa-required') {
+        osh_info "Changing the MFA policy for egress connections using the personal access (and keys) of the account...";
+        if (not grep { $value eq $_ } qw{ password totp any none }) {
+            osh_warn "Invalid parameter '$value', skipping";
+            $result{$jsonkey} = R('ERR_INVALID_PARAMETER');
+        }
+        else {
+            $fnret = OVH::Bastion::account_config(account => $account, key => "personal_egress_mfa_required", value => $value);
+            $result{$jsonkey} = $fnret;
+            if ($fnret) {
+                osh_info "... modification done";
+            }
+            else {
+                osh_warn "... error while setting MFA policy: " . $fnret->msg;
+            }
+        }
+    }
+}
+
+HEXIT('OK', value => \%result);

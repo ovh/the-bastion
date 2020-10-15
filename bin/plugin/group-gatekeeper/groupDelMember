@@ -1,0 +1,46 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+use OVH::Bastion::Plugin::groupSetRole;
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "revoke an account as member of a group",
+    options => {
+        "account=s" => \my $account,
+        "group=s"   => \my $group,
+    },
+    helptext => <<'EOF',
+Remove an account from the members list
+
+Usage: --osh SCRIPT_NAME --group GROUP --account ACCOUNT
+
+  --group GROUP      which group to remove ACCOUNT as a member of
+  --account ACCOUNT  which account to remove as a member of GROUP
+
+The specified account will no longerr be able to access all present and future servers
+pertaining to this group.
+Note that if this account also had specific guest accesses to this group, they may
+still apply, see ``groupListGuestAccesses``
+EOF
+);
+
+my $fnret = OVH::Bastion::Plugin::groupSetRole::act(
+    account        => $account,
+    group          => $group,
+    action         => 'del',
+    type           => 'member',
+    sudo           => 0,
+    silentoverride => 0,
+    self           => $self,
+    scriptName     => $scriptName,
+    savedArgs      => $savedArgs
+);
+help() if not $fnret;
+osh_exit($fnret);

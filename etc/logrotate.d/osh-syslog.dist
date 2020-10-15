@@ -1,0 +1,15 @@
+/var/log/bastion/bastion*.log {
+        notifempty
+        missingok
+        rotate 365
+        daily
+        compress
+        delaycompress
+        create 0640 root adm
+        dateext
+        sharedscripts
+        postrotate
+           invoke-rc.d syslog-ng reload > /dev/null
+        endscript
+}
+

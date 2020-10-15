@@ -1,0 +1,126 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "adding private access to a server on your account",
+    options => {
+        "user-any"    => \my $userAny,
+        "port-any"    => \my $portAny,
+        "scpup"       => \my $scpUp,
+        "scpdown"     => \my $scpDown,
+        "force-key=s" => \my $forceKey,
+        "force"       => \my $force,
+        "ttl=s"       => \my $ttl,
+        "comment=s"   => \my $comment,
+    },
+    helptext => <<'EOF',
+Remove a personal server access from an account
+
+Usage: --osh SCRIPT_NAME --host HOST [OPTIONS]
+
+  --host IP|HOST|IP/MASK   Server to add access to
+  --user USER              Remote login to use, if you want to allow any login, use --user-any
+  --user-any               Allow access with any remote login
+  --port PORT              Remote SSH port to use, if you want to allow any port, use --port-any
+  --port-any               Allow access to all remote ports
+  --scpup                  Allow SCP upload, you--bastion-->server (omit --user in this case)
+  --scpdown                Allow SCP download, you<--bastion--server (omit --user in this case)
+  --force                  Add the access without checking that the public SSH key is properly installed remotely
+  --force-key FINGERPRINT  Only use the key with the specified fingerprint to connect to the server (cf selfListEgressKeys)
+  --ttl SECONDS|DURATION   Specify a number of seconds (or a duration string, such as "1d7h8m") after which the access will automatically expire
+  --comment "'ANY TEXT'"   Add a comment alongside this server. Quote it twice as shown if you're under a shell.
+EOF
+);
+
+my $fnret;
+
+if (!$ip) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing parameter 'host' or didn't resolve correctly";
+}
+
+if ($user and $userAny) {
+    help();
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "You specified both --user and --user-any, please check what you're doing";
+}
+if ($scpUp and $scpDown) {
+    help();
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "You specified both --scpup and --scpdown, if you want to grant both, please do it in two separate commands";
+}
+if (($scpUp or $scpDown) and ($user or $userAny)) {
+    help();
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS',
+"To grant SCP access, first ensure SSH access is granted to the machine (with the --user you need, or --user-any), then grant with --scpup and/or --scpdown, omitting --user/--user-any";
+}
+$user = '!scpupload'   if $scpUp;
+$user = '!scpdownload' if $scpDown;
+
+if (not $user and not $userAny) {
+    osh_warn "You didn't specify --user or --user-any, defaulting to --user-any, this will no longer be implicit in future versions";
+    $userAny = 1;
+
+    #help();
+    #osh_exit 'ERR_MISSING_PARAMETER', "No user specified, if you want to allow any remote user, use --user-any";
+}
+
+if ($port and $portAny) {
+    help();
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "You specified both --port and --port-any, please check what you're doing";
+}
+if (not $port and not $portAny) {
+    osh_warn "You didn't specify --port or --port-any, defaulting to --port-any, this will no longer be implicit in future versions";
+    $portAny = 1;
+
+    #help();
+    #osh_exit 'ERR_MISSING_PARAMETER', "No port specified, if you want to allow any remote port, use --port-any";
+}
+
+if (defined $ttl) {
+    $fnret = OVH::Bastion::is_valid_ttl(ttl => $ttl);
+    $fnret or osh_exit $fnret;
+    $ttl = $fnret->value->{'seconds'};
+}
+
+if ($forceKey) {
+    $fnret = OVH::Bastion::is_valid_fingerprint(fingerprint => $forceKey);
+    $fnret or osh_exit $fnret;
+    $forceKey = $fnret->value->{'fingerprint'};
+}
+
+if (not $force) {
+    $fnret = OVH::Bastion::ssh_test_access_way(account => $self, user => $user, port => $port, ip => $ip, forceKey => $forceKey);
+    if ($fnret->is_ok and $fnret->err ne 'OK') {
+
+        # we have something to say, say it
+        osh_info $fnret->msg;
+    }
+    elsif (not $fnret) {
+        osh_info "Note: if you still want to add this access even if it doesn't work, use --force";
+        osh_exit $fnret;
+    }
+}
+else {
+    osh_info "Forcing add as asked, we didn't test the SSH connection, maybe it won't work!";
+}
+
+my @command = qw{ sudo -n -u allowkeeper -- /usr/bin/env perl -T };
+push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountModifyPersonalAccess';
+push @command, '--target', 'self';
+push @command, '--action', 'add';
+push @command, '--account', $self;
+push @command, '--ip', $ip;
+push @command, '--user', $user if $user;
+push @command, '--port', $port if $port;
+push @command, '--force-key', $forceKey if $forceKey;
+push @command, '--ttl', $ttl if $ttl;
+push @command, '--comment', $comment if $comment;
+
+osh_exit OVH::Bastion::helper(cmd => \@command);

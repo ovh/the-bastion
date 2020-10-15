@@ -1,0 +1,113 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my ($lineNumberToDelete, $fingerprintToDelete);
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "Here are the public keys that allow you to connect to the bastion",
+    options => {
+        "line-number-to-delete|l=i" => \$lineNumberToDelete,
+        "fingerprint-to-delete|f=s" => \$fingerprintToDelete,
+    },
+    helptext => <<"EOF",
+Remove an ingress public key from your account
+
+Usage: --osh SCRIPT_NAME [--line-number-to-delete|-l NB] [--fingerprint-to-delete|-f FP]
+
+  -l, --line-number-to-delete NB  Directly specify the line number to delete (CAUTION!), you can get the line numbers with selfListIngressKeys
+  -f, --fingerprint-to-delete FP  Directly specify the fingerprint of the key to delete (CAUTION!)
+
+If none of these options are specified, you'll be prompted interactively.
+EOF
+);
+
+#
+# code
+#
+my $fnret;
+
+if ($fingerprintToDelete and defined $lineNumberToDelete) {
+    help();
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "You can't specify a line to delete AND a fingerprint to delete at the same time";
+}
+
+my $allowedKeyFile = "$HOME/.ssh/authorized_keys2";
+$fnret = OVH::Bastion::get_authorized_keys_from_file(file => $allowedKeyFile, includeInvalid => 1);
+$fnret or osh_exit $fnret;
+
+my %allowedLines;
+my %allowedFingerprints;
+my @validKeys;
+
+foreach my $key (@{$fnret->value || []}) {
+    OVH::Bastion::print_public_key(key => $key, id => $key->{'index'}, err => $key->{'err'});
+    $allowedLines{$key->{'index'}} = 1;
+    $allowedFingerprints{$key->{'fingerprint'}} = $key->{'index'} if (OVH::Bastion::is_valid_fingerprint(fingerprint => $key->{'fingerprint'}));
+    push @validKeys, $key->{'index'} if $key->{'err'} eq 'OK';
+}
+
+# Do we have anything to delete ?
+if (@validKeys == 0) {
+    osh_exit 'ERR_NO_KEY', "You have no key to delete (wait, how did you connect in the first place?!)";
+}
+elsif (not defined $lineNumberToDelete and not defined $fingerprintToDelete) {
+    osh_info "Type the key ID you want to delete then press ENTER (" . (join(',', sort { $a <=> $b } keys %allowedLines)) . "):";
+    $lineNumberToDelete = <STDIN>;
+    chomp $lineNumberToDelete;
+}
+
+if (defined $fingerprintToDelete) {
+    if (not exists($allowedFingerprints{$fingerprintToDelete})) {
+        osh_exit 'ERR_NO_MATCH', "Couldn't find any key matching this fingerprint";
+    }
+    $lineNumberToDelete = $allowedFingerprints{$fingerprintToDelete};
+}
+
+# here, either lineNumberToDelete has been specified or we just got it from STDIN
+
+if (defined $lineNumberToDelete) {
+    if ($lineNumberToDelete =~ /^(\d+)$/) {
+        $lineNumberToDelete = $1;    # untaint
+    }
+    else {
+        osh_exit 'ERR_INVALID_PARAMETER', "Invalid number specified";
+    }
+
+    if (not exists $allowedLines{$lineNumberToDelete}) {
+        osh_exit 'ERR_INVALID_ID', "Bad key ID";
+    }
+    if (@validKeys == 1 && $validKeys[0] == $lineNumberToDelete) {
+        osh_exit 'ERR_ONLY_ONE_KEY', "You can't delete the only valid key you have!";
+    }
+
+    my $fh;
+    if (not open($fh, '<', $allowedKeyFile)) {
+        osh_exit 'ERR_INTERNAL', "Couldn't open authorized_keys file for read to remove the key";
+    }
+    my @lines = <$fh>;
+    close($fh);
+
+    # remove specified line
+    splice @lines, $lineNumberToDelete - 1, 1;
+
+    if (not open($fh, '>', $allowedKeyFile)) {
+        osh_exit 'ERR_INTERNAL', "Couldn't open authorized_keys file for write to remove the key";
+    }
+
+    print $fh @lines;
+    close($fh);
+
+    osh_ok R('OK', msg => "Key ID $lineNumberToDelete successfully deleted");
+}
+else {
+    osh_exit 'ERR_MISSING_PARAMETER', "Line number to delete was not specified";
+}
+
+osh_exit 'ERR_INTERNAL';

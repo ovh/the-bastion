@@ -1,0 +1,98 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "removing personal access to a server from an account",
+    options => {
+        "account=s" => \my $account,
+        "user-any"  => \my $userAny,
+        "port-any"  => \my $portAny,
+        "scpup"     => \my $scpUp,
+        "scpdown"   => \my $scpDown,
+    },
+    helptext => <<'EOF',
+Remove a personal server access from an account
+
+Usage: --osh SCRIPT_NAME --account ACCOUNT --host HOST [OPTIONS]
+
+  --account               Bastion account to remove access from
+  --host IP|HOST|IP/MASK  Server to remove access from
+  --user USER             Remote user that was allowed, if any user was allowed, use --user-any
+  --user-any              Use if any remote login was allowed
+  --port PORT             Remote SSH port that was allowed, if any port was allowed, use --port-any
+  --port-any              Use if any remote port was allowed
+  --scpup                 Remove SCP upload right, you--bastion-->server (omit --user in this case)
+  --scpdown               Remove SCP download right, you<--bastion--server (omit --user in this case)
+EOF
+);
+
+my $fnret;
+
+if (!$ip) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing parameter 'host' or didn't resolve correctly";
+}
+
+if (not $account) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing mandatory parameter 'account'";
+}
+
+$fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
+$fnret or osh_exit $fnret;
+$account = $fnret->value->{'account'};
+
+if ($user and $userAny) {
+    help();
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "You specified both --user and --user-any, please check what you're doing";
+}
+if ($scpUp and $scpDown) {
+    help();
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "You specified both --scpup and --scpdown, if you want to grant both, please do it in two separate commands";
+}
+if (($scpUp or $scpDown) and ($user or $userAny)) {
+    help();
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS',
+"To grant SCP access, first ensure SSH access is granted to the machine (with the --user you need, or --user-any), then grant with --scpup and/or --scpdown, omitting --user/--user-any";
+}
+$user = '!scpupload'   if $scpUp;
+$user = '!scpdownload' if $scpDown;
+
+if (not $user and not $userAny) {
+    osh_warn "You didn't specify --user or --user-any, defaulting to --user-any, this will no longer be implicit in future versions";
+    $userAny = 1;
+
+    #help();
+    #osh_exit 'ERR_MISSING_PARAMETER', "No user specified, if you want to allow any remote user, use --user-any";
+}
+
+if ($port and $portAny) {
+    help();
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "You specified both --port and --port-any, please check what you're doing";
+}
+if (not $port and not $portAny) {
+    osh_warn "You didn't specify --port or --port-any, defaulting to --port-any, this will no longer be implicit in future versions";
+    $portAny = 1;
+
+    #help();
+    #osh_exit 'ERR_MISSING_PARAMETER', "No port specified, if you want to allow any remote port, use --port-any";
+}
+
+my @command = qw{ sudo -n -u allowkeeper -- /usr/bin/env perl -T };
+push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountModifyPersonalAccess';
+push @command, '--target', 'any';
+push @command, '--action', 'del';
+push @command, '--account', $account;
+push @command, '--ip', $ip;
+push @command, '--user', $user if $user;
+push @command, '--port', $port if $port;
+
+osh_exit OVH::Bastion::helper(cmd => \@command);

@@ -1,0 +1,40 @@
+- /home/oldkeeper/
+- /home/logkeeper/
+- /home/.*/
+- /home/backup*/
+- /home/admin/
+- /home/bastionsync/
+- /home/lost+found/
+- /home/allowkeeper/activeLogin.json
+- /home/allowkeeper/maintenance
+
++ /
+
++ /etc/
++ /etc/passwd
++ /etc/group
++ /etc/shadow
++ /etc/gshadow
++ /etc/sudoers.d/
++ /etc/sudoers.d/osh-*
++ /etc/ssh/
++ /etc/ssh/ssh_host_*_key
++ /etc/ssh/ssh_host_*_key.pub
+- /etc/**
+
++ /home/
+
++ /home/*/ttyrec/
+- /home/*/ttyrec/**
+- /home/*/.bash*
+- /home/*/*.db
+- /home/*/*.sqlite
+- /home/*/*.sqlite-*
+- /home/*/*.log
+- /home/*/*.gz
+- /home/*/lastlog
+- /home/*/.ssh/known_hosts
+
++ /home/*/***
+
+- *

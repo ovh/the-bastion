@@ -1,0 +1,78 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+use Time::HiRes ();
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv     => \@ARGV,
+    header   => "ping until host is alive",
+    options  => {},
+    helptext => <<'EOF',
+Ping a host and exist as soon as it answers
+
+This command can be used to monitor a host that is expected to go back online soon.
+Note that if you want to ssh to it afterwards, you can simply use the ``--wait`` main option.
+
+Usage: --osh SCRIPT_NAME [--host] HOSTNAME
+
+  --host HOSTNAME  hostname or IP to ping
+EOF
+);
+
+# be nice and try to guessify a user@host as first param
+# if user said --osh alive usah@mymachine.example.org
+if (    not $host
+    and not $ip
+    and not $user
+    and ref $remainingOptions eq 'ARRAY'
+    and @$remainingOptions == 1
+    and $remainingOptions->[0] =~ /^([a-zA-Z0-9_-]+\@)?([a-zA-Z0-9][a-zA-Z0-9.-]{1,})$/)
+{
+    $user = $1;
+    $host = $2;
+    $user =~ s/\@$//;
+}
+
+#
+# code
+#
+my $fnret;
+
+if (not $host) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing required host parameter";
+}
+
+osh_info "Waiting for $host to be alive...";
+my $startedat = Time::HiRes::gettimeofday();
+my $isFping   = 1;
+my @command   = qw{ fping -- };
+push @command, $host;
+while (1) {
+    $fnret = OVH::Bastion::execute(cmd => \@command, noisy_stdout => 1, noisy_stderr => 1);
+    if ($fnret->err eq 'ERR_EXEC_FAILED') {
+        osh_exit $fnret if $command[0] eq 'ping';
+        @command = qw{ ping -c 1 -w 1 -- };
+        push @command, $host;
+        $isFping = 0;
+        next;
+    }
+    $fnret or osh_exit $fnret;
+    if ($fnret->value->{'sysret'} == 0) {
+        my $delay = int(Time::HiRes::gettimeofday() - $startedat);
+        osh_info "Alive after waiting for $delay seconds, exiting!";
+        osh_ok {waited_for => $delay + 0};
+    }
+    elsif (($isFping && $fnret->value->{'sysret'} >= 3) || ($fnret->value->{'sysret'} > 0)) {
+        osh_exit 'ERR_INTERNAL', "Fatal error returned by (f)ping, aborting";
+    }
+    sleep 1;
+}
+
+osh_exit 'ERR_INTERNAL';

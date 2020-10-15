@@ -1,0 +1,75 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "setup TOTP for your account",
+    options => {
+        'no-confirm' => \my $noConfirm,
+    },
+    helptext => <<'EOF'
+Setup an additional credential (TOTP) to access your account
+
+Usage: --osh SCRIPT_NAME [--no-confirm]
+
+  --no-confirm  Bypass the confirmation step for TOTP enrollment phase
+EOF
+);
+
+my $fnret;
+my @command;
+
+if (OVH::Bastion::config('accountMFAPolicy')->value eq 'disabled') {
+    osh_exit('ERR_DISABLED_BY_POLICY', "Sorry, Multi-Factor Authentication has been disabled by policy on this bastion");
+}
+
+if ($ENV{'OSH_NO_INTERACTIVE'}) {
+    osh_exit('ERR_PRECONDITIONS_FAILED',
+        "For security reasons, this plugin can't be used in interactive mode.\nTo ensure you're the owner of the account, please call it the regular way (i.e. --osh $scriptName)");
+}
+
+# do the TOTP enrollment
+
+# first, check if the google-authenticator we have supports --issuer, if not, just omit it, it's not a deal-breaker
+$fnret = OVH::Bastion::execute(cmd => ['google-authenticator', '-h'], must_succeed => 1);
+$fnret or HEXIT($fnret);
+my @additional_params;
+if (grep { /--issuer/ } @{$fnret->value->{'stdout'}}) {
+    push @additional_params, "--issuer=" . OVH::Bastion::config('bastionName')->value;
+}
+if ($noConfirm && grep { /--no-confirm/ } @{$fnret->value->{'stdout'}}) {
+    push @additional_params, "--no-confirm";
+}
+
+@command = (
+    'script', '-q', '-c', "google-authenticator -f -t -Q UTF8 -r 3 -R 15 -w 2 -D " . join(" ", @additional_params) . " -l $self -s $HOME/" . OVH::Bastion::TOTP_FILENAME,
+    '/dev/null'
+);
+{
+    local $ENV{'SHELL'} = '/bin/sh';
+    $fnret = OVH::Bastion::execute(cmd => \@command, noisy_stderr => 1, noisy_stdout => 1, expects_stdin => 1, is_binary => 1, must_succeed => 1);
+}
+$fnret or osh_exit $fnret;
+
+if (!$fnret) {
+    osh_exit('ERR_TOTP_SETUP_FAILED', msg => "Couldn't setup TOTP for your account, try again!");
+}
+
+chmod 0400, $HOME . '/' . OVH::Bastion::TOTP_FILENAME;
+
+# it worked, add the account to the proper system group
+@command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
+push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-selfMFASetupTOTP';
+push @command, '--account', $self;
+
+$fnret = OVH::Bastion::helper(cmd => \@command);
+$fnret or osh_exit $fnret;
+
+osh_exit $fnret;

@@ -1,0 +1,162 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+use Term::ANSIColor;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv     => \@ARGV,
+    header   => "OSH help",
+    options  => {},
+    helptext => <<'EOF',
+I'm So Meta, Even This Acronym
+
+Usage: --osh SCRIPT_NAME
+EOF
+);
+
+#
+# code
+#
+my $fnret;
+
+my @knownPlugins = (
+    'MANAGE YOUR ACCOUNT' => [
+        'manage your ingress credentials (you->bastion)' => [
+            qw{ selfListIngressKeys selfResetIngressKeys selfAddIngressKey selfDelIngressKey
+              selfGenerateProxyPassword selfMFASetupPassword selfMFAResetPassword selfMFASetupTOTP selfMFAResetTOTP }
+        ],
+        'manage your egress credentials (bastion->server)' => [qw{ selfListEgressKeys selfGenerateEgressKey selfDelEgressKey selfGeneratePassword selfListPasswords }],
+        'manage your accesses to servers'                  => [qw{ selfListAccesses selfAddPersonalAccess selfDelPersonalAccess selfForgetHostKey }],
+        'manage your current sessions'                     => [qw{ lock unlock }],
+        'review past sessions'                             => [qw{ selfListSessions selfPlaySession }],
+        'other commands'                                   => [qw{ selfModify }],
+    ],
+    'MANAGE OTHER ACCOUNTS' => [
+        'manage bastion accounts'                              => [qw{ accountList accountCreate accountCreateOvh accountDelete accountUnexpire accountModify accountPIV }],
+        'manage accounts ingress credentials (them->bastion)'  => [qw{ accountListIngressKeys accountResetIngressKeys accountMFAResetPassword accountMFAResetTOTP }],
+        'manage accounts egress credentials (bastion->server)' => [qw{ accountListEgressKeys accountGeneratePassword accountListPasswords }],
+        'manage access to restricted commands'                 => [qw{ accountGrantCommand accountRevokeCommand accountInfo }],
+        'manage another account accesses to servers'           => [qw{ accountListAccesses accountAddPersonalAccess accountDelPersonalAccess whoHasAccessTo }],
+        'review past sessions'                                 => [qw{ accountListSessions globalListSessions }],
+    ],
+    'MANAGE GROUPS' => [
+        'information and lifecycle' => [qw{ groupInfo groupListServers groupList groupCreate groupDelete }],
+        'group owner commands'      => [
+            qw{ groupAddGatekeeper groupDelGatekeeper groupAddAclkeeper groupDelAclkeeper
+              groupAddOwner groupDelOwner groupTransmitOwnership groupGenerateEgressKey groupModify }
+        ],
+        'egress passwords commands'                  => [qw{ groupListPasswords groupGeneratePassword groupDelPassword }],
+        'gatekeeper commands to manage members'      => [qw{ groupAddMember groupDelMember groupAddGuestAccess groupDelGuestAccess }],
+        'gatekeeper commands to manage guests'       => [qw{ groupListGuestAccesses groupAddGuestAccess groupDelGuestAccess }],
+        'aclkeeper commands to manage group servers' => [qw{ groupAddServer groupDelServer }],
+    ],
+    'BASTION ADMIN' => [
+        'other commands' => [qw{ adminSudo adminMaintenance }],
+    ],
+    'MISC COMMANDS' => [
+        'basic commands'   => [qw{ help info }],
+        'utility commands' => [qw{ nc ping mtr alive clush scp batch }],
+        'realm commands'   => [qw{ realmList realmInfo realmCreate realmDelete }],
+        'audit commands'   => [qw{ rootListIngressKeys }],
+        'other specific commands',
+    ],
+);
+
+my %colorpanel = (
+    'open'             => 'green',
+    'restricted'       => 'cyan',
+    'group-aclkeeper'  => 'yellow',
+    'group-gatekeeper' => 'yellow',
+    'group-owner'      => 'magenta',
+    'admin'            => 'red',
+);
+
+# create a hash with all the plugins listed above
+my %alreadySeenPlugins;
+my $i = 1;
+while ($i < scalar @knownPlugins) {
+    my $j = 1;
+    while ($j < scalar @{$knownPlugins[$i]}) {
+        foreach (@{$knownPlugins[$i]->[$j]}) {
+            $alreadySeenPlugins{$_} = 1;
+        }
+        $j += 2;
+    }
+    $i += 2;
+}
+
+# then get the real list of this bastion
+$fnret = OVH::Bastion::get_plugin_list();
+$fnret or osh_exit $fnret;
+
+# and add plugins not listed above to the 'other specific commands' section
+my @otherPlugins;
+foreach my $plugin (sort keys %{$fnret->value}) {
+    next if exists $alreadySeenPlugins{$plugin};
+    osh_debug("an unknown but valid command $plugin in " . $fnret->value->{$plugin}{'dir'});
+    push @otherPlugins, $plugin;
+}
+$knownPlugins[-1][scalar(@{$knownPlugins[-1]})] = \@otherPlugins;
+
+$i = 0;
+while ($i < scalar @knownPlugins) {
+    my $mainCategoryName        = $knownPlugins[$i++];
+    my $mainCategoryArray       = $knownPlugins[$i++];
+    my $mainCategoryNamePrinted = 0;
+    my $j                       = 0;
+    while ($j < scalar @$mainCategoryArray) {
+        my $subCategoryName = $mainCategoryArray->[$j++];
+        my @plugins         = @{$mainCategoryArray->[$j++]};
+
+        osh_debug("working on cat [$mainCategoryName // $subCategoryName] with " . (scalar @plugins) . " commands");
+        osh_debug("plugins are: " . join('/', @plugins));
+
+        my @availableCommands;
+        my $curLen;
+        my $curIndex;
+        foreach my $cmd (@plugins) {
+            $fnret = OVH::Bastion::can_account_execute_plugin(account => $self, plugin => $cmd);
+            next unless $fnret;
+            if (($curLen + length($fnret->value->{'plugin'})) > 80) {
+                $curIndex++;
+                $curLen = 0;
+            }
+            $curLen += length($fnret->value->{'plugin'});
+            push @{$availableCommands[$curIndex]}, colored($fnret->value->{'plugin'}, $colorpanel{$fnret->value->{'type'}});
+        }
+        if (@availableCommands) {
+            if (not $mainCategoryNamePrinted) {
+                osh_info " > $mainCategoryName";
+                $mainCategoryNamePrinted = 1;
+            }
+            osh_info "   - $subCategoryName:";
+            osh_info "      " . join(' ', @$_) for @availableCommands;
+        }
+    }
+    osh_info ' ';
+}
+
+osh_info "\nUse --help to get extra help when entering a command";
+my $bastionName = OVH::Bastion::config('bastionName');
+if ($bastionName) {
+    $bastionName = $bastionName->value;
+    osh_info "i.e. $bastionName --osh info --help";
+}
+my $docURL = OVH::Bastion::config('documentationURL');
+if ($docURL && $docURL->value) {
+    osh_info "Documentation: " . $docURL->value;
+}
+
+if (OVH::Bastion::config('readOnlySlaveMode')->value) {
+    osh_warn "\nNOTICE: This bastion is part of a cluster, and this instance is a read-only one (slave), "
+      . "so only read-only compliant commands are available. If you need to use write/modify commands, "
+      . "please do it on the master of the cluster instead.";
+}
+
+osh_ok;

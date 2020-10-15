@@ -1,0 +1,11 @@
+[Unit]
+Description=OVH::Bastion master-slave synchronization daemon
+
+[Service]
+ExecStart=/opt/bastion/bin/admin/osh-sync-watcher.sh
+KillMode=process
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

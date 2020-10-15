@@ -1,0 +1,15 @@
+# This is the official list of people who can contribute
+# (and typically have contributed) code to the OVH::Bastion repository.
+#
+# Names should be added to this file only after verifying that
+# the individual or the individual's organization has agreed to
+# the appropriate CONTRIBUTING.md file.
+#
+# Names should be added to this file like so:
+# Individual's name <submission email address>
+# Individual's name <submission email address>
+#
+# Please keep the list sorted.
+#
+Adrien Barreau <adrien.barreau@ovhcloud.com>
+Stéphane Lesimple <stephane.lesimple@ovhcloud.com>

@@ -1,0 +1,100 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "removing a server from a group",
+    options => {
+        "group=s"  => \my $group,
+        "user-any" => \my $userAny,
+        "port-any" => \my $portAny,
+        "scpup"    => \my $scpUp,
+        "scpdown"  => \my $scpDown,
+        "force"    => \my $force,
+    },
+    helptext => <<'EOF',
+Remove an IP or IP block from a group's serrver list
+
+Usage: --osh SCRIPT_NAME --group GROUP [OPTIONS]
+
+  --group GROUP            Specify which group this machine should be removed from
+  --host HOST|IP|NET/CIDR  Host(s) we want to remove access to
+  --user USER              Remote user that was allowed, if any user was allowed, use --user-any
+  --user-any               Use if any remote login was allowed
+  --port PORT              Remote SSH port that was allowed, if any port was allowed, use --port-any
+  --port-any               Use if any remote port was allowed
+  --scpup                  Remove SCP upload right, you--bastion-->server (omit --user in this case)
+  --scpdown                Remove SCP download right, you<--bastion--server (omit --user in this case)
+EOF
+);
+
+my $fnret;
+
+if (not $group or not $ip) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing mandatory parameter 'host' or 'group' (or host didn't resolve correctly)";
+}
+
+if ($user and $userAny) {
+    help();
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "A user was specified, but --user-any used, these are incompatible, please think about what you're doing";
+}
+
+if ($scpUp and $scpDown) {
+    help();
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "You specified both --scpup and --scpdown, if you want to grant both, please do it in two separate commands";
+}
+
+if (($scpUp or $scpDown) and ($user or $userAny)) {
+    help();
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS',
+"To grant SCP access, first ensure SSH access is granted to the machine (with the --user you need, or --user-any), then grant with --scpup and/or --scpdown, omitting --user/--user-any";
+}
+$user = '!scpupload'   if $scpUp;
+$user = '!scpdownload' if $scpDown;
+
+if (not $user and not $userAny) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "No user specified, if you want to add this server with any user, add --user-any";
+}
+
+if ($portAny and $port) {
+    help();
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "A port was specified, but --port-any used, these are incompatible, please think about what you're doing";
+}
+
+if (not $port and not $portAny) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "No port specified, if you want to add this server with any port, add --port-any";
+}
+
+$fnret = OVH::Bastion::is_valid_group_and_existing(group => $group, groupType => "key");
+$fnret or osh_exit($fnret);
+
+# get returned untainted value
+$group = $fnret->value->{'group'};
+my $shortGroup = $fnret->value->{'shortGroup'};
+
+#
+# Now do it
+#
+
+$fnret = OVH::Bastion::is_group_aclkeeper(account => $self, group => $shortGroup, superowner => 1);
+$fnret or osh_exit 'ERR_NOT_GROUP_ACLKEEPER', "Sorry, you must be an aclkeeper of group $shortGroup to be able to delete servers from it";
+
+my @command = qw{ sudo -n -u };
+push @command, ($group, '--', '/usr/bin/env', 'perl', '-T', $OVH::Bastion::BASEPATH . '/bin/helper/osh-groupAddServer');
+push @command, '--group',  $group;
+push @command, '--action', 'del';
+push @command, '--ip',     $ip;
+push @command, '--user',   $user if $user;
+push @command, '--port',   $port if $port;
+
+osh_exit OVH::Bastion::helper(cmd => \@command);

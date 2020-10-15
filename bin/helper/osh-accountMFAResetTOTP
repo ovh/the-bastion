@@ -1,0 +1,91 @@
+#! /usr/bin/perl -T
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+# NEEDGROUP osh-accountMFAResetTOTP
+# SUDOERS %osh-accountMFAResetTOTP ALL=(root) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountMFAResetTOTP --account *
+# FILEMODE 0700
+# FILEOWN root root
+
+#>HEADER
+use common::sense;
+use Getopt::Long;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+local $| = 1;
+
+#
+# Globals
+#
+$ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/pkg/bin';
+my ($self) = $ENV{'SUDO_USER'} =~ m{^([a-zA-Z0-9._-]+)$};
+if (not defined $self) {
+    if ($< == 0) {
+        $self = 'root';
+    }
+    else {
+        HEXIT('ERR_SUDO_NEEDED', msg => 'This command must be run under sudo');
+    }
+}
+
+# Fetch command options
+my $fnret;
+my ($result, @optwarns);
+my ($account);
+eval {
+    local $SIG{__WARN__} = sub { push @optwarns, shift };
+    $result = GetOptions("account=s" => sub { $account //= $_[1] },);
+};
+if ($@) { die $@ }
+
+if (!$result) {
+    local $" = ", ";
+    HEXIT('ERR_BAD_OPTIONS', msg => "Error parsing options: @optwarns");
+}
+
+if (not $account) {
+    HEXIT('ERR_MISSING_PARAMETER', msg => "Missing argument 'account'");
+}
+
+#>PARAMS:ACCOUNT
+osh_debug("Checking account");
+$fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
+$fnret or HEXIT($fnret);
+$account = $fnret->value->{'account'};    # untainted
+my $home = $fnret->value->{'dir'};
+
+#<PARAMS:ACCOUNT
+
+#>RIGHTSCHECK
+if ($self eq 'root') {
+    osh_debug "Real root, skipping checks of permissions";
+}
+
+# special case for self: if account==self, then is ok
+elsif ($self ne $account) {
+    $fnret = OVH::Bastion::is_user_in_group(user => $self, group => "osh-accountMFAResetTOTP");
+    if (!$fnret) {
+        HEXIT('ERR_SECURITY_VIOLATION', msg => "You're not allowed to run this, dear $self");
+    }
+}
+
+#<RIGHTSCHECK
+
+# don't allow a non-admin to reset the TOTP of an admin
+if (OVH::Bastion::is_admin(account => $account, sudo => 1) && !OVH::Bastion::is_admin(account => $self, sudo => 1)) {
+    HEXIT('ERR_SECURITY_VIOLATION', msg => "You can't reset the TOTP of an admin without being admin yourself");
+}
+
+if (OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_TOTP_CONFIGURED_GROUP)) {
+    $fnret = OVH::Bastion::sys_delmemberfromgroup(user => $account, group => OVH::Bastion::MFA_TOTP_CONFIGURED_GROUP);
+    $fnret or HEXIT($fnret);
+}
+
+# remove the .otp file (non-fatal)
+if (!unlink($home . '/' . OVH::Bastion::TOTP_FILENAME)) {
+    osh_warn("Couldn't remove the TOTP file ($!), this is not fatal, continuing anyway");
+}
+
+osh_info "TOTP has been reset, " . ($account eq $self ? 'you' : $account) . " can re-enroll by using the `--osh selfMFASetupTOTP' command, if applicable";
+HEXIT('OK');

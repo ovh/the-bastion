@@ -1,0 +1,147 @@
+#! /usr/bin/perl -T
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+# KEYSUDOERS # as a gatekeeper, to be able to symlink in /home/allowkeeper/ACCOUNT the /home/%GROUP%/allowed.ip file
+# KEYSUDOERS SUPEROWNERS, %%GROUP%-gatekeeper ALL=(allowkeeper) NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupAddSymlinkToAccount --group %GROUP% *
+# FILEMODE 0750
+# FILEOWN root allowkeeper
+
+#>HEADER
+use common::sense;
+use Getopt::Long;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../lib/perl';
+use OVH::Bastion;
+local $| = 1;
+
+#
+# Globals
+#
+$ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/pkg/bin';
+my ($self) = $ENV{'SUDO_USER'} =~ m{^([a-zA-Z0-9._-]+)$};
+if (not defined $self) {
+    if ($< == 0) {
+        $self = 'root';
+    }
+    else {
+        HEXIT('ERR_SUDO_NEEDED', msg => 'This command must be run under sudo');
+    }
+}
+
+# Fetch command options
+my $fnret;
+my ($result, @optwarns);
+my ($account, $group, $action);
+eval {
+    local $SIG{__WARN__} = sub { push @optwarns, shift };
+    $result = GetOptions(
+        "account=s" => sub { $account //= $_[1] },
+        "group=s"   => sub { $group   //= $_[1] },    # ignore subsequent --group on cmdline (anti-sudoers-override)
+        "action=s"  => sub { $action  //= $_[1] },
+    );
+};
+if ($@) { die $@ }
+
+if (!$result) {
+    local $" = ", ";
+    HEXIT('ERR_BAD_OPTIONS', msg => "Error parsing options: @optwarns");
+}
+
+if (not $account or not $group or not $action) {
+    HEXIT('ERR_MISSING_PARAMETER', msg => "Missing argument 'account', 'group' or 'action'");
+}
+
+if (not grep { $action eq $_ } qw{ add del }) {
+    HEXIT('ERR_INVALID_PARAMETER', msg => "Argument action should be either 'add' or 'del'");
+}
+
+#<HEADER
+
+#>PARAMS:ACCOUNT
+osh_debug("Checking account");
+$fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
+$fnret or HEXIT($fnret);
+
+# get returned untainted value
+$account = $fnret->value->{'account'};
+my $sysaccount    = $fnret->value->{'sysaccount'};
+my $remoteaccount = $fnret->value->{'remoteaccount'};
+
+#<PARAMS:ACCOUNT
+
+#>PARAMS:GROUP
+# test if start by key, append if necessary
+if ($group !~ /^key/) {
+    $group = "key$group";
+}
+osh_debug("Checking group");
+$fnret = OVH::Bastion::is_valid_group_and_existing(group => $group, groupType => 'key');
+$fnret or HEXIT($fnret);
+
+# get returned untainted value
+$group = $fnret->value->{'group'};
+my $shortGroup = $fnret->value->{'shortGroup'};
+
+#<PARAMS:GROUP
+
+#>RIGHTSCHECK
+if ($self eq 'root') {
+    osh_debug "Real root, skipping checks of permissions";
+}
+else {
+    $fnret = OVH::Bastion::is_group_gatekeeper(account => $self, group => $shortGroup, superowner => 1, sudo => 1);
+    if (!$fnret) {
+        warn_syslog("$0: account $self is not a $shortGroup gatekeeper, refused to continue");
+        HEXIT('ERR_NOT_ALLOWED', msg => "Sorry, you're not a gatekeeper of group $shortGroup");
+    }
+}
+
+#<RIGHTSCHECK
+
+osh_debug("user -gatek or gatek");
+
+#>CODE
+my $msg;
+my $prefix = $remoteaccount ? "allowed_$remoteaccount" : "allowed";
+my $link = "/home/allowkeeper/$sysaccount/$prefix.ip.$shortGroup";
+if ($action eq 'del') {
+    osh_debug("Going to remove symlink");
+    if (-l $link || -e _) {
+        if (unlink $link) {
+            $msg = "Successfully removed $link";
+        }
+        else {
+            warn_syslog("$0: error while trying to remove symlink $link ($!)");
+            HEXIT('ERR_UNLINK_FAILED', msg => "Error while trying to remove symlink");
+        }
+    }
+    else {
+        HEXIT('OK_NO_CHANGE', msg => "Symlink was not existing as $link, nothing to do");
+    }
+}
+elsif ($action eq 'add') {
+    my $source = "/home/$group/allowed.ip";
+    osh_debug("symlinking $source to $link");
+
+    if (not -e $source) {
+        HEXIT('ERR_SOURCE_NOT_FOUND', msg => "Cannot create symlink as $source doesn't exist");
+    }
+    elsif (-e $link) {
+        HEXIT('OK_NO_CHANGE', msg => "Symlink $link is already there, nothing to do");
+    }
+    else {
+        if (symlink($source, $link)) {
+            $msg = "Account $account now has full access to $shortGroup servers";
+        }
+        else {
+            warn_syslog("$0: error while creating symlink $source to $link ($!)");
+            HEXIT('ERR_SYMLINK_FAILED', msg => "Error while creating symlink");
+        }
+    }
+}
+else {
+    warn_syslog("$0: unreachable code has been reached");
+    HEXIT('ERR_INTERNAL');    # unreachable
+}
+
+HEXIT("OK", msg => $msg);

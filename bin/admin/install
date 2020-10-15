@@ -1,0 +1,1294 @@
+#! /usr/bin/env bash
+# vim: set filetype=sh ts=4 sw=4 sts=4 et:
+set -e
+
+basedir=$(readlink -f "$(dirname "$0")"/../..)
+# shellcheck source=lib/shell/functions.inc
+. "$basedir"/lib/shell/functions.inc
+
+declare -A opt
+
+TTYREC_VERSION_NEEDED=1.1.6.1
+
+set_default_options()
+{
+    opt[modify-banner]=0
+    opt[modify-sshd-config]=0
+    opt[modify-ssh-config]=0
+    opt[modify-motd]=0
+    opt[modify-umask]=0
+    opt[modify-pam-sshd]=0
+    opt[modify-pam-lastlog]=0
+    opt[remove-weak-moduli]=0
+    opt[regen-hostkeys]=0
+    opt[logrotate]=1
+    opt[overwrite-logrotate]=1
+    # special case:
+    # If $autodetect_startup_system is 1, we'll autodetect whether we will install the
+    # systemd units (preferred) or the init.d files.
+    # Any specification of a --[no-]init or --[no]systemd-units option by the user inhibits
+    # this behavior. So even if both options below default to 0, one of those will in effect
+    # be set to 1 if $autodetect_startup_system is 1
+    autodetect_startup_system=1
+    opt[init]=0
+    opt[systemd-units]=0
+    # /special
+    opt[profile]=1
+    opt[cron]=1
+    opt[overwrite-cron]=1
+    opt[syslog-ng]=1
+    opt[overwrite-syslog-ng]=1
+    opt[migration-grant-aclkeeper-to-gatekeepers]=0
+    opt[wait]=1
+    opt[check-ttyrec]=1
+    opt[install-fake-ttyrec]=0
+}
+set_default_options
+
+show_help=0
+[ -z "$1" ] && show_help=1
+nothing=0
+
+while [ -n "$1" ]; do
+    if [ "$1" = "--new-install" ]; then
+        set_default_options
+        opt[modify-banner]=1
+        opt[modify-sshd-config]=1
+        opt[modify-ssh-config]=1
+        opt[modify-motd]=1
+        opt[modify-umask]=1
+        opt[modify-pam-sshd]=1
+        opt[modify-pam-lastlog]=1
+        opt[remove-weak-moduli]=1
+        opt[regen-hostkeys]=1
+    elif [ "$1" = "--minimal" ] || [ "$1" = "--nothing" ]; then
+        set_default_options
+        opt[logrotate]=0
+        opt[overwrite-logrotate]=0
+        autodetect_startup_system=0
+        opt[profile]=0
+        opt[cron]=0
+        opt[overwrite-cron]=0
+        opt[syslog-ng]=0
+        opt[overwrite-syslog-ng]=0
+        [ "$1" = "--nothing" ] && nothing=1
+    elif [ "$1" = "--managed-upgrade" ] || [ "$1" = "--puppet" ]; then
+        set_default_options
+        opt[logrotate]=1
+        opt[overwrite-logrotate]=0
+        autodetect_startup_system=1
+        opt[profile]=0
+        opt[cron]=1
+        opt[overwrite-cron]=1
+        opt[syslog-ng]=0
+        opt[overwrite-syslog-ng]=0
+    elif [ "$1" = "--upgrade" ]; then
+        set_default_options
+    else
+        foundoption=0
+        for allowedopt in modify-banner modify-sshd-config modify-ssh-config modify-motd modify-umask \
+            modify-pam-lastlog remove-weak-moduli regen-hostkeys overwrite-logrotate overwrite-cron \
+            overwrite-syslog-ng logrotate cron syslog-ng migration-grant-aclkeeper-to-gatekeepers \
+            init systemd-units profile modify-pam-sshd wait check-ttyrec install-fake-ttyrec
+        do
+            if [ "$1" = "--no-$allowedopt" ]; then
+                opt[$allowedopt]=0
+                foundoption=1
+            elif [ "$1" = "--$allowedopt" ]; then
+                opt[$allowedopt]=1
+                foundoption=1
+            fi
+            if [ "$1" = "init" ] || [ "$1" = "systemd-units" ]; then
+                # see "special case" comment above for more information
+                autodetect_startup_system=0
+            fi
+        done
+        if [ "$foundoption" != 1 ]; then
+            echo "$0: Unrecognized option '$1'"
+            show_help=1
+        fi
+    fi
+    shift
+done
+
+if [ "$show_help" = 1 ] ; then
+    cat <<EOF
+This script installs (or upgrades) the necessary files and settings on the system for a bastion server
+
+Usage:
+    You must specify one of the 5 modes below. Then possibly zero or more options:
+
+    MODES:
+
+    $0 --new-install
+        Will modify ssh/sshd, pam, default umask configs under $ETC_DIR/ and regenerate host keys.
+        Use this if you're installing a new bastion. This is the equivalent of specifying all
+        the options below that are tagged [N].
+        Mostly useful for new installations, avoid using if you already have users.
+        If your bastion system configuration is partly handled by another system such as Puppet/Chef/Ansible,
+        you might want to specify which parts you want this script to handle and which others to
+        avoid touching, by using --upgrade instead and eventually some of the options below. You
+        can also use --new-install but override some options with their --no-* form.
+
+    $0 --upgrade
+        Will avoid touching most non-bastion configuration under $ETC_DIR/, mainly useful when applying
+        a new code release, to ensure the potential modifications to bastion configuration is done
+        without touching the other parts of the system. This is the equivalent of specifying all
+        the options below that are tagged [U]. Recommended in most cases.
+
+    $0 --managed-upgrade
+        Use this when you're using some kind of software configuration manager such as Puppet/Chef/Ansible
+        to manage most of the system-related configuration of your bastion. This is a light --upgrade mode,
+        and the equivalent of specifying all the options below that are tagged [M].
+        These might change in the future.
+
+    $0 --minimal
+        Use when you want to prevent this script from touching anything not directly bastion-related.
+        This is the equivalent of disabling all the below options (you can then enable them one by one
+        where needed). You can see it as a yet lighter --upgrade mode. Useful if you want to handle
+        yourself satellite configuration files such as logrotate or cron.
+
+    $0 --nothing
+        Don't do anything at all, not even what we normally do when all below options are disabled (as
+        in the minimal mode). Can be useful if you want to do only one precise modification that you
+        can explicitely specify using the options below.
+
+    OPTIONS:
+
+    --[no-]modify-banner         install a default sshd banner [N]
+    --[no-]modify-sshd-config    apply a hardened ssh server config from our template [N]
+    --[no-]modify-ssh-config     apply a hardened ssh client config from our template [N]
+    --[no-]modify-motd           empty the motd file so that users don't get nagged [N]
+    --[no-]modify-umask          enforce a default umask of 077 on the system [N]
+    --[no-]modify-pam-sshd       overwrite current system PAM configuration for sshd with our template [N]
+    --[no-]modify-pam-lastlog    modify PAM configuration to write lastlog for bastion users [N]
+    --[no-]init                  copy satellite daemon scripts for startup in system init.d/ [N, M]
+    --[no-]systemd-units         copy satellite daemon systemd unit files for startup [N, M]
+    --[no-]profile               apply our hardened configuration in system profile.d/ [N]
+    --[no-]remove-weak-moduli    remove weak (<4096) moduli from the ssh server moduli file [N]
+    --[no-]regen-hostkeys        generate new host keys (and trash the old ones) for ssh server [N]
+
+    --[no-]logrotate             put our logrotate config files in system logrotate.d/ [N, U, M]
+    --[no-]overwrite-logrotate   overwrite possibly existing files in system logrotate.d/ with our templates [N, U]
+    --[no-]cron                  put our cron config files in system cron.d/ [N, U, M]
+    --[no-]overwrite-cron        overwrite possibly existing files in system cron.d/ with our templates [N, U]
+    --[no-]syslog-ng             put our syslog-ng config files in syslog-ng.d/ [N, U]
+    --[no-]overwrite-syslog-ng   overwrite possibly existing files in system syslog-ng.d/ with our templates [N, U]
+
+    --[no-]wait                  wait for 3 seconds to avoid race with master/slave sync daemon [N, U, M]
+    --[no-]check-ttyrec          verify that the ttyrec installed version is compatible with our code [N, U, M]
+    --[no-]install-fake-ttyrec   install a fake ttyrec binary if ttyrec is not present; useful mainly for tests,
+                                 or if you *really* don't want to use the real ttyrec
+
+    ONE-SHOT MIGRATION OPTIONS:
+
+    --migration-grant-aclkeeper-to-gatekeepers
+        Only useful when you're migrating from a version that doesn't implement the notion of aclkeeper (<2.21.00)
+        to a version that does (>=2.21.00): this option grants the aclkeeper right to all preexisting gatekeepers,
+        this helps ensuring a smooth transition from the users perspective
+
+EOF
+    exit 1
+fi
+
+if [ "${opt[wait]}" = 1 ]; then
+    action_doing "Touching lockfile to suspend sync, and waiting 3 seconds to ensure it has been picked up..."
+    # shellcheck disable=SC2064
+    trap "rm -f $LOCKFILE" EXIT HUP INT
+    touch "$LOCKFILE"
+    sleep 3
+    action_done
+fi
+
+if [ "${opt[install-fake-ttyrec]}" = 1 ]; then
+    action_doing "Installing fake ttyrec (use this only for tests!)"
+    if [ ! -e "/usr/bin/ttyrec" ]; then
+        install -o "$UID0" -g "$GID0" -m 0755 "$basedir/tests/functional/fake_ttyrec.sh" "/usr/bin/ttyrec"
+        action_done
+    else
+        action_na
+    fi
+fi
+
+if [ "${opt[modify-ssh-config]}" = 1 ] || [ "${opt[modify-sshd-config]}" = 1 ] ; then
+    action_doing "Find which ssh/sshd config templates to install on $OS_FAMILY $LINUX_DISTRO $DISTRO_VERSION"
+    short_suffix_name=$(echo "$LINUX_DISTRO$DISTRO_VERSION_MAJOR" | sed -re "s/[^a-z0-9]//")
+    filesuffix=default
+    if [ -e "$basedir/etc/ssh/sshd_config.$short_suffix_name" ] && [ -e "$basedir/etc/ssh/ssh_config.$short_suffix_name" ]; then
+        filesuffix=$short_suffix_name
+    elif [ "$OS_FAMILY" = Linux ]; then
+        if [ "$LINUX_DISTRO" = ubuntu ]; then
+            if [ "$DISTRO_VERSION_MAJOR" -le 14 ]; then
+                filesuffix=debian7
+            elif [ "$DISTRO_VERSION_MAJOR" -le 16 ]; then
+                filesuffix=debian8
+            else
+                filesuffix=debian10
+            fi
+        elif echo "$DISTRO_LIKE" | grep -q -w suse; then
+            filesuffix=opensuse15
+        fi
+    fi
+
+    action_done "Will use the $filesuffix templates"
+
+    if [ "${opt[modify-ssh-config]}" = 1 ] ; then
+        action_doing "Install hardened configuration for ssh to $SSH_DIR/ssh_config"
+        install -o "$UID0" -g "$GID0" -m 0644 "$basedir/etc/ssh/ssh_config.$filesuffix"  $SSH_DIR/ssh_config
+    fi
+    if [ "${opt[modify-sshd-config]}" = 1 ] ; then
+        action_doing "Install hardened configuration for sshd to $SSH_DIR/sshd_config"
+        install -o "$UID0" -g "$GID0" -m 0644 "$basedir/etc/ssh/sshd_config.$filesuffix" $SSH_DIR/sshd_config
+    fi
+    action_done
+fi
+
+if [ "${opt[modify-banner]}" = 1 ] ; then
+    action_doing "Install default sshd banner"
+    install -o "$UID0" -g "$GID0" -m 0644 "$basedir/etc/ssh/banner" $SSH_DIR/
+    action_done
+fi
+
+if [ "${opt[modify-motd]}" = 1 ] ; then
+    action_doing "Empty the /etc/motd file"
+    if [ -f /etc/motd ] && [ ! -s /etc/motd ] ; then
+        mv /etc/motd /etc/motd.bastion-backup
+        cat /dev/null > /etc/motd
+        chmod 644 /etc/motd
+        action_done
+    else
+        action_na "File already empty or non existing"
+    fi
+fi
+
+if [ "${opt[regen-hostkeys]}" = 1 ] ; then
+    action_doing "Change sshd host keys (this can cake a while)"
+    rm -f $SSH_DIR/ssh_host_{dsa,rsa,ecdsa,ed25519}_key{,.pub}
+    ssh-keygen -q -t rsa   -b 4096 -N '' -f $SSH_DIR/ssh_host_rsa_key >/dev/null
+    ssh-keygen -q -t ecdsa -b  521 -N '' -f $SSH_DIR/ssh_host_ecdsa_key >/dev/null || true
+    ssh-keygen -q -A >/dev/null || true
+    action_done
+
+    action_doing "Restart sshd"
+    set +e
+    ret=-1
+    if [ -e /etc/rc.d/sshd ] ; then
+        /etc/rc.d/sshd restart; ret=$?
+    elif [ -e /etc/init.d/ssh ] ; then
+        /etc/init.d/ssh restart; ret=$?
+    fi
+    if [ $ret -eq 0 ]; then
+        action_done
+    else
+        action_error "You might want to check if the sshd config is valid!"
+    fi
+    set -e
+fi
+
+if [ "$nothing" = 0 ]; then
+    action_doing "Add .ssh in /etc/skel if needed"
+    if [ ! -d /etc/skel/.ssh ] && [ -d /etc/skel ]; then
+        if mkdir /etc/skel/.ssh; then
+            action_done
+        else
+            action_error "Couldn't create /etc/skel/.ssh, nevermind, proceeding"
+        fi
+    else
+        action_na
+    fi
+
+    action_doing "Create $BASTION_ETC_DIR if needed"
+    if [ -d $BASTION_ETC_DIR ]; then
+        action_na
+    else
+        mkdir $BASTION_ETC_DIR
+        action_done
+    fi
+
+    chmod 751 $BASTION_ETC_DIR
+
+    # to make the otp pam module of our default config happy
+    action_doing "Create /var/otp if needed"
+    if [ ! -d /var/otp ]; then
+        if mkdir /var/otp; then
+            action_done
+        else
+            action_error
+        fi
+    else
+        action_na
+    fi
+
+    # remove obsolete logrotate files if needed
+    if [ "${opt[logrotate]}" = 1 ]; then
+        action_doing "Remove obsolete logrotate files..."
+        at_least_one_changed=0
+        for obsolete in osh-proxy-http osh-update-active-users
+        do
+            if [ -e "$ETC_DIR/logrotate.d/$obsolete" ]; then
+                at_least_one_changed=1
+                rm -f "$ETC_DIR/logrotate.d/$obsolete"
+            fi
+        done
+    fi
+    if [ "$at_least_one_changed" = 1 ]; then
+        action_done
+    else
+        action_na
+    fi
+
+    # remove obsolete cron files if needed
+    if [ "${opt[cron]}" = 1 ]; then
+        action_doing "Remove obsolete cron files..."
+        at_least_one_changed=0
+        for obsolete in osh-backupAclKeys osh-compressOldSqlite osh-encryptRsyncTtyrec \
+            osh-lingeringSessionsReaper osh-orphanedHomedir osh-pivGraceReaper \
+            osh-protectLogs osh-rotateTtyrec osh-activeUsers
+        do
+            if [ -e "$ETC_DIR/cron.d/$obsolete" ]; then
+                at_least_one_changed=1
+                rm -f "$ETC_DIR/cron.d/$obsolete"
+            fi
+        done
+    fi
+    if [ "$at_least_one_changed" = 1 ]; then
+        action_done
+    else
+        action_na
+    fi
+
+    action_doing "Move $BASTION_ETC_DIR/proxy-http.conf if needed"
+    if [ -f $BASTION_ETC_DIR/proxy-http.conf ] && ! [ -e $BASTION_ETC_DIR/osh-http-proxy.conf ]; then
+        mv $BASTION_ETC_DIR/proxy-http.conf $BASTION_ETC_DIR/osh-http-proxy.conf
+        action_done
+    else
+        action_na
+    fi
+
+    action_doing "Move $BASTION_ETC_DIR/sync-watcher-rsync.filter if needed"
+    if [ -f $BASTION_ETC_DIR/sync-watcher-rsync.filter ] && ! [ -e $BASTION_ETC_DIR/osh-sync-watcher.rsyncfilter ]; then
+        mv $BASTION_ETC_DIR/sync-watcher-rsync.filter $BASTION_ETC_DIR/osh-sync-watcher.rsyncfilter
+        action_done
+    else
+        action_na
+    fi
+
+    action_doing "Move $BASTION_ETC_DIR/sync-watcher.sh if needed"
+    if [ -f $BASTION_ETC_DIR/sync-watcher.sh ] && ! [ -e $BASTION_ETC_DIR/osh-sync-watcher.sh ]; then
+        mv $BASTION_ETC_DIR/sync-watcher.sh $BASTION_ETC_DIR/osh-sync-watcher.sh
+        action_done
+    else
+        action_na
+    fi
+
+    dirstocheck='bastion'
+    [ "${opt[logrotate]}" = 1 ] && dirstocheck="$dirstocheck logrotate.d"
+    [ "${opt[cron]}"      = 1 ] && dirstocheck="$dirstocheck cron.d"
+    [ "${opt[syslog-ng]}" = 1 ] && dirstocheck="$dirstocheck syslog-ng/conf.d"
+    for subdir in $dirstocheck
+    do
+        # don't try to copy file in nonexistent dirs (i.e. syslog-ng if rsyslog is installed)
+        # our own specific dirs have already been created above, so they exist
+        action_doing "Check files in $ETC_DIR/$subdir..."
+        [ -d "$ETC_DIR/$subdir" ] || continue
+
+        for file in "$basedir/etc/$subdir"/*.dist ; do
+            destfile="$ETC_DIR/$subdir/$(basename "$file" .dist)"
+            if [ -e "$destfile" ]; then
+                # if the target already exist, check if we're asked to overwrite it
+                if   [ "$subdir" = "logrotate.d"      ] && [ "${opt[overwrite-logrotate]}" = 1 ]; then
+                    : # we'll overwrite
+                elif [ "$subdir" = "cron.d"           ] && [ "${opt[overwrite-cron]}"      = 1 ]; then
+                    : # we'll overwrite
+                elif [ "$subdir" = "syslog-ng/conf.d" ] && [ "${opt[overwrite-syslog-ng]}" = 1 ]; then
+                    : # we'll overwrite
+                else
+                    # in all other cases, don't overwrite
+                    action_detail "... won't overwrite $destfile"
+                    continue
+                fi
+                action_detail "... we will overwrite $destfile"
+            elif [ "$(basename "$file")" = "osh-encrypt-rsync.conf.dist" ] || [ "$(basename "$file")" = "osh-backup-acl-keys.conf.dist" ]; then
+                # special case for those files: if we have the $file.d dir available, don't do anything
+                if [ -d "$destfile".d ]; then
+                    action_detail "... won't copy file to $destfile as we have $destfile.d"
+                    continue
+                fi
+            fi
+            # if the dest file didn't exist, or it does but we've been asked to overwrite it, do it
+            # copy our template .dist to proper location in system
+            action_detail "... create $destfile"
+            install -o "$UID0" -g "$GID0" -m 0644 -b "$file" "$destfile"
+            # actually don't do a backup for cron files: we would get double-executions...
+            [ "$subdir" = "cron.d" ] && rm -f "$destfile"\~
+
+            # special case if the file contains %RANDOMX%N:M%, with X between 1 and 9,
+            # we replace it by a random number between N and M (for crons)
+            if grep -qE '%RANDOM[1-9]%[0-9]+:[0-9]+%' "$destfile"; then
+                for i in $(seq 1 9)
+                do
+                    placeholder=$(grep -Eo "%RANDOM$i%[0-9]+:[0-9]+%" "$destfile" | head -n1)
+                    [ -n "$placeholder" ] || continue
+                    # we have a match, compute the random and do the replace
+                    n=$(echo "$placeholder" | cut -d% -f3 | cut -d: -f1)
+                    m=$(echo "$placeholder" | cut -d% -f3 | cut -d: -f2)
+                    if [ $(( m-n )) -eq 0 ]; then
+                        action_detail "... we would divide by zero! fallback to a non-random random, such as $n"
+                        random=$n
+                    else
+                        random=$(( ( 0x$(echo "$(hostname -f) $placeholder $file" | md5sum | cut -c1-4) % (m-n) ) + n ))
+                    fi
+                    action_detail "... in above file, replacing $placeholder by $random"
+                    sed_compat "s/$placeholder/$random/g" "$destfile"
+                done
+            fi
+        done
+    done
+
+    for base in osh-encrypt-rsync.conf osh-backup-acl-keys.conf; do
+        if [ -f "$BASTION_ETC_DIR/$base" ]; then
+            chmod 0600 "$BASTION_ETC_DIR/$base"
+        fi
+        if [ -d "$BASTION_ETC_DIR/$base.d" ]; then
+            chmod 0700 "$BASTION_ETC_DIR/$base.d"
+        fi
+    done
+
+    # ensure the includedir is present in global sudoers conf
+    action_doing "Add include directory in sudoers if needed"
+    if [ ! -e $SUDOERS_FILE ] ; then
+        action_error "$SUDOERS_DIR doesn't exist, is sudo installed?"
+    else
+        if grep -q "^#includedir $SUDOERS_DIR$" $SUDOERS_FILE ; then
+            action_na "sudoers.d already added in config"
+        else
+            echo '# added by the-bastion:'  >> $SUDOERS_FILE
+            echo "#includedir $SUDOERS_DIR" >> $SUDOERS_FILE
+            action_done
+        fi
+    fi
+
+    action_doing "Create sudoers.d if needed"
+    if [ ! -d "$SUDOERS_DIR" ]; then
+        mkdir -p "$SUDOERS_DIR"
+        action_done
+    else
+        action_na
+    fi
+
+    # delete all bastion sudoers file (pattern osh-*)
+    action_doing "Remove obsolete sudoers files"
+    find "$SUDOERS_DIR/" -name "osh-*" -type f -delete
+    action_done
+
+    # copy new sudoers files
+    action_doing "Copy sudoers files to $SUDOERS_DIR"
+    for file in "$basedir/etc/sudoers.d"/osh-*; do
+        action_detail "$file"
+        install -o "$UID0" -g "$GID0" -m 0440 "$file" "$SUDOERS_DIR/"
+    done
+    action_done
+
+    # regenerate all group sudoers files
+    "$basedir/bin/sudogen/generate-sudoers.sh" group
+
+    # regenerate all accounts sudoers files
+    "$basedir/bin/sudogen/generate-sudoers.sh" account
+
+    # create the bastionsync account (needed for master/slave)
+    action_doing "Creating the bastionsync account"
+    if getent passwd bastionsync >/dev/null 2>&1; then
+        action_na
+    else
+        if ! groupadd_compat bastionsync 333; then
+            action_error "Error while adding bastionsync group"
+        elif ! useradd_compat bastionsync 333 '' "$basedir/bin/shell/bastion-sync-helper.sh" 333; then
+            action_error "Error while adding bastionsync user"
+        else
+            action_done
+        fi
+    fi
+
+    # create some needed accounts
+    action_doing "Regenerating groups sudoers files from current template"
+    for i in keykeeper allowkeeper keyreader proxyhttp
+    do
+        action_doing "Create $i if needed"
+        if getent passwd $i >/dev/null ; then
+            action_na "this account already exists"
+        else
+            action_detail "account doesn't exist, creating"
+            useradd_compat "$i" "" "/home/$i" "/bin/false"
+            action_done
+        fi
+    done
+    chmod 0750 /home/keyreader /home/proxyhttp
+    chmod 0755 /home/allowkeeper /home/keykeeper
+
+    chmod 0755 "$basedir"/bin/admin/fixrights.sh
+    "$basedir"/bin/admin/fixrights.sh
+
+    # create passkeeper
+    action_doing "Create /home/passkeeper if needed"
+    if [ ! -d /home/passkeeper ] ; then
+        mkdir /home/passkeeper
+        action_done
+    else
+        action_na
+    fi
+    chmod 0755 /home/passkeeper
+
+    # rename potential old groups to new names
+    action_doing "Rename legacy group to new names"
+    at_least_one_changed=0
+    for i in accountListBastionKeys:accountListEgressKeys \
+        selfAddPrivateAccess:selfAddPersonalAccess \
+        selfDelPrivateAccess:selfDelPersonalAccess \
+        accountAddPrivateAccess:accountAddPersonalAccess \
+        accountDelPrivateAccess:accountDelPersonalAccess \
+        accountListKeys:accountListIngressKeys \
+        accountResetKeys:accountResetIngressKeys
+    do
+        old=osh-$(echo "$i" | cut -d: -f1)
+        new=osh-$(echo "$i" | cut -d: -f2)
+        if getent group "$old" >/dev/null ; then
+            at_least_one_changed=1
+            # old group exists, does the new one exist too?
+            action_detail "Old group $old found"
+            if getent group "$new" >/dev/null ; then
+                # weird, both groups exist, just delete the old one
+                if groupdel "$old" ; then
+                    action_detail "New group $new already existed, just deleted $old"
+                else
+                    action_error "Error while attempting to delete $old"
+                fi
+            else
+                if group_rename_compat "$old" "$new"; then
+                    action_detail "Renamed $old to $new"
+                else
+                    action_error "Error while attempting to rename $old to $new"
+                fi
+            fi
+        fi
+    done
+    if [ "$at_least_one_changed" = 1 ]; then
+        action_done
+    else
+        action_na
+    fi
+
+    # add groups for specific modules
+    action_doing "Create needed system groups"
+    at_least_one_changed=0
+    for i in superowner admin auditor \
+        $(find "$basedir/bin/plugin/restricted" -mindepth 1 -maxdepth 1 -type f -perm -u+x -print | sed -e "s=$basedir/bin/plugin/restricted/==")
+    do
+        i="osh-$i"
+        if getent group "$i" >/dev/null ; then
+            :
+        else
+            at_least_one_changed=1
+            groupadd_compat "$i"
+            action_detail "$i created"
+        fi
+    done
+    if [ "$at_least_one_changed" = 1 ]; then
+        action_done
+    else
+        action_na
+    fi
+
+    # fix bad authorized_keys2 contents created in some cases before v2.30.00
+    action_doing "Fixing potential buggy keys in authorized_keys2 contents"
+    at_least_one_changed=0
+    for account in $(getent passwd | grep ":$basedir/bin/shell/osh.pl$" | cut -d: -f1); do
+        test -f "/home/$account/.ssh/authorized_keys2" || continue
+        grep -Eq '^from="[^ ]+"(ssh-|ecdsa-)' "/home/$account/.ssh/authorized_keys2" || continue
+        at_least_one_changed=1
+        action_detail "... $account"
+        sed_compat 's/^(from="[^ ]+")(ssh-|ecdsa-)/\1 \2/g' "/home/$account/.ssh/authorized_keys2"
+    done
+    if [ "$at_least_one_changed" = 1 ]; then
+        action_done
+    else
+        action_na
+    fi
+
+    # lastoshuser
+    # ensures that users created without specifying IDs will be created
+    # with higher IDs than the lastoshuser UID
+
+    # first, we check if it exists with the old name
+    action_doing "Checking if user lastoshuser exists with a deprecated name"
+    if getent passwd lastovhuser >/dev/null; then
+        # yes, ok, do we have also the new name?
+        if getent passwd lastoshuser >/dev/null; then
+            # yes, ok, just delete the old name
+            action_detail "... yes, but also exists with the new name, deleting the old one"
+            if userdel lastovhuser; then
+                action_done
+            else
+                action_error
+            fi
+        else
+            # no, ok, rename it
+            action_detail "... no, renaming it to the new name"
+            if usermod -l lastoshuser lastovhuser; then
+                action_done
+            else
+                action_error
+            fi
+        fi
+    else
+        action_na
+    fi
+
+    # lastoshuser
+    # ... do the same for lastoshuser's main gid
+
+    # first, we check if it exists with the old name
+    action_doing "Checking if group lastoshuser exists with a deprecated name"
+    if getent group lastovhuser >/dev/null; then
+        # yes, ok, do we have also the new name?
+        if getent group lastoshuser >/dev/null; then
+            # yes, ok, just delete the old name
+            action_detail "... yes, but also exists with the new name, deleting the old one"
+            if groupdel lastovhuser; then
+                action_done
+            else
+                action_error
+            fi
+        else
+            # no, ok, rename it
+            action_detail "... no, renaming it to the new name"
+            if group_rename_compat lastovhuser lastoshuser; then
+                action_done
+            else
+                action_error
+            fi
+        fi
+    else
+        action_na
+    fi
+
+    # if user exists already, change its ID (old versions had uid 2999)
+    action_doing "Create user lastoshuser"
+    lastoshuseruid=$(getent passwd lastoshuser | cut -d: -f3)
+    if [ -n "$lastoshuseruid" ] && [ "$lastoshuseruid" != "10000" ] ; then
+        action_detail "user exists but with bad UID ($lastoshuseruid), fixing"
+        if usermod_changeuid_compat lastoshuser 10000; then
+            action_done
+        else
+            action_error "Error while attempting to change lastoshuser UID"
+        fi
+    elif [ -n "$lastoshuseruid" ] && [ "$lastoshuseruid" = "10000" ] ; then
+        action_na "user exists with proper UID"
+    else
+        action_detail "doesn't exist, creating it"
+        useradd_compat lastoshuser 10000 /nonexistent /bin/false
+        action_done
+    fi
+
+    # ensure lastoshuser main group has a gid of 10000
+    action_doing "Adjust gid of lastoshuser if needed"
+    lastoshgid=$(getent group lastoshuser | cut -d: -f3)
+    if [ -n "$lastoshgid" ] && [ "$lastoshgid" != "10000" ] ; then
+        action_detail "group exists but with bad GID ($lastoshgid), fixing"
+        if group_change_gid_compat lastoshuser 10000; then
+            action_done
+        else
+            action_error "Error while attempting to change lastoshuser GID"
+        fi
+    elif [ -n "$lastoshgid" ] && [ "$lastoshgid" = "10000" ] ; then
+        action_na "user exists with proper GID"
+    else
+        action_error "No group lastoshuser was found (!)"
+    fi
+
+    # log
+    action_doing "Create /home/osh.log"
+    if [ ! -e /home/osh.log ] ; then
+        touch /home/osh.log
+        chmod a+w /home/osh.log
+        if command -v chattr &>/dev/null; then
+            chattr +a /home/osh.log 2>/dev/null || true
+        fi
+        action_done
+    else
+        action_na
+    fi
+
+    action_doing "Create /var/log/bastion if needed"
+    if [ ! -d /var/log/bastion ] ; then
+        mkdir -p /var/log/bastion
+        action_done
+    else
+        action_na
+    fi
+
+    action_doing "Set proper rights on /var/log/bastion"
+    chown "$UID0":allowkeeper /var/log/bastion
+    chmod 0710 /var/log/bastion
+    action_done
+
+    # move old "always_active" flags to the new way
+    action_doing "Convert oldschool always_active flags if any"
+    at_least_one_changed=0
+    while IFS= read -r -d '' i
+    do
+        at_least_one_changed=1
+        account=$(echo "$i" | cut -d/ -f3 | cut -d. -f2)
+        if [ -z "$account" ] || ! [ -d "/home/$account" ] ; then
+            action_detail "unrecognized file, or account '$account' no longer existing, removing"
+        else
+            filename="/home/allowkeeper/$account/config.always_active"
+            echo yes > "$filename"
+            chmod 0644 "$filename"
+            chown allowkeeper:allowkeeper "$filename"
+            action_detail "converted $account"
+        fi
+        rm -v "$i"
+    done < <(find /home/ -mindepth 1 -maxdepth 1 -type f -name ".*.always_active" -print0)
+    if [ "$at_least_one_changed" = 1 ]; then
+        action_done
+    else
+        action_na
+    fi
+
+    # migration auto: ensure all groups have their corresponding aclkeeper group
+    action_doing "Creating missing aclkeeper groups where needed"
+        at_least_one_changed=0
+        for grp in $(getent group | cut -d: -f1 | grep -- '-gatekeeper$' | sed -e 's/-gatekeeper$//'); do
+            if ! getent group "$grp-aclkeeper" >/dev/null ; then
+                action_detail "... creating $grp-aclkeeper"
+                groupadd_compat "$grp-aclkeeper" HIGH
+                at_least_one_changed=1
+            fi
+        done
+    if [ "$at_least_one_changed" = 1 ]; then
+        action_done
+    else
+        action_na
+    fi
+
+    # ensuring proper ACLs on group homes
+    action_doing "Ensuring proper ACLs on group homes and allowed.ip"
+    for grp in $(getent group | cut -d: -f1 | grep -- '-gatekeeper$' | sed -e 's/-gatekeeper$//'); do
+        test -f "/home/$grp/allowed.ip" || continue
+        if [ "$OS_FAMILY" = "Linux" ] || [ "$OS_FAMILY" = "FreeBSD" ]; then
+            setfacl -m "group:osh-whoHasAccessTo:--x" "/home/$grp"
+            setfacl -m "group:osh-auditor:--x" "/home/$grp"
+            setfacl -m "group:$grp-gatekeeper:--x" "/home/$grp"
+            setfacl -m "group:$grp-aclkeeper:--x" "/home/$grp"
+            setfacl -m "group:$grp-owner:--x" "/home/$grp"
+        fi
+        chgrp "$grp-aclkeeper" "/home/$grp/allowed.ip"
+        chmod 0664 "/home/$grp/allowed.ip"
+    done
+    action_done
+
+    # ensuring proper ACLs on account homes
+    action_doing "Ensuring proper ACLs on account homes"
+    for accounthome in $(getent passwd | grep ":$basedir/bin/shell/osh.pl$" | cut -d: -f6); do
+        if test -d "$accounthome"; then
+            chmod 0750 "$accounthome"
+            setfacl -m g:osh-auditor:x "$accounthome"
+        fi
+        if test -d "$accounthome/.ssh"; then
+            setfacl -m g:osh-auditor:x "$accounthome/.ssh"
+        fi
+    done
+    action_done
+
+    # v2.27.02+ (bastion-users), v2.30.00+ (mfa-*)
+    action_doing "Creating missing system groups where needed"
+    at_least_one_changed=0
+    at_least_one_error=0
+    for group in bastion-users \
+      mfa-password-reqd mfa-password-bypass mfa-password-configd \
+      mfa-totp-reqd mfa-totp-bypass mfa-totp-configd bastion-nopam
+    do
+        if getent group "$group" >/dev/null 2>&1; then
+            :
+        else
+            action_detail "... $group"
+            if groupadd_compat "$group"; then
+                at_least_one_changed=1
+            else
+                at_least_one_error=1
+            fi
+        fi
+    done
+    if [ "$at_least_one_error" != 0 ]; then
+        action_error
+    elif [ "$at_least_one_changed" = 0 ]; then
+        action_na
+    else
+        action_done
+    fi
+
+    # create logkeeper
+    action_doing "Create /home/logkeeper if needed"
+    if [ ! -d /home/logkeeper ] ; then
+        mkdir /home/logkeeper
+        action_done
+    else
+        action_na
+    fi
+    chown root:bastion-users /home/logkeeper
+    chmod 0730 /home/logkeeper
+
+    # create the healthcheck account for the monitoring probe (doesn't harm even if not used)
+    action_doing "Creating the healthcheck account"
+    if getent passwd healthcheck >/dev/null 2>&1; then
+        action_na
+    else
+        ssh-keygen -q -t ed25519 -N '' -f "$UID0HOME/id_healthcheck" || \
+            ssh-keygen -q -t ecdsa -N '' -f "$UID0HOME/id_healthcheck" || \
+            ssh-keygen -q -t rsa -b 4096 -N '' -f "$UID0HOME/id_healthcheck"
+        if [ ! -e "$UID0HOME/id_healthcheck.pub" ]; then
+            action_error "Error while generating the SSH key"
+        else
+            chmod 0444 "$UID0HOME/id_healthcheck.pub"
+            USER="$UID0" HOME="$UID0HOME" "$basedir"/bin/plugin/restricted/accountCreate '' '' '' '' --account healthcheck --uid-auto --always-active --immutable-key --osh-only < "$UID0HOME/id_healthcheck.pub"
+            if ! getent passwd healthcheck >/dev/null 2>&1; then
+                action_error "Couldn't create the healthcheck account"
+            else
+                mv "$UID0HOME/id_healthcheck"     ~healthcheck/.ssh/id_healthcheck
+                mv "$UID0HOME/id_healthcheck.pub" ~healthcheck/.ssh/id_healthcheck.pub
+                chown healthcheck:healthcheck ~healthcheck/.ssh/id_healthcheck ~healthcheck/.ssh/id_healthcheck.pub
+                chmod 400 ~healthcheck/.ssh/id_healthcheck
+                action_done
+            fi
+        fi
+    fi
+
+    # ensure the system bastion accounts are in bastion-nopam group
+    at_least_one_changed=0
+    at_least_one_error=0
+    action_doing "Ensuring bastionsync and healthcheck are in bastion-nopam group"
+    for account in bastionsync healthcheck; do
+        if ! getent group bastion-nopam | grep -q -E "[:,]$account(,|$)"; then
+            if add_user_to_group_compat $account bastion-nopam; then
+                at_least_one_changed=1
+            else
+                at_least_one_error=1
+            fi
+        fi
+    done
+    if [ "$at_least_one_error" != 0 ]; then
+        action_error
+    elif [ "$at_least_one_changed" = 0 ]; then
+        action_na
+    else
+        action_done
+    fi
+
+    # create the master2slave ssh key (only needed for master, useless but not harmful for slaves)
+    action_doing "Generating the master/slave SSH key"
+    if [ -e "$UID0HOME/.ssh/id_master2slave" ]; then
+        action_na
+    else
+        ssh-keygen -q -t ed25519 -N '' -f "$UID0HOME/.ssh/id_master2slave" || \
+            ssh-keygen -q -t ecdsa -N '' -f "$UID0HOME/.ssh/id_master2slave" || \
+            ssh-keygen -q -t rsa -b 4096 -N '' -f "$UID0HOME/.ssh/id_master2slave"
+        if [ ! -e "$UID0HOME/.ssh/id_master2slave.pub" ]; then
+            action_error "Error while generating the SSH key"
+        else
+            action_done
+        fi
+    fi
+
+    # create the ssh key for backups
+    action_doing "Generating the backup SSH key"
+    if [ -e "$UID0HOME/.ssh/id_backup" ]; then
+        action_na
+    else
+        ssh-keygen -q -t ed25519 -N '' -f "$UID0HOME/.ssh/id_backup" || \
+            ssh-keygen -q -t ecdsa -N '' -f "$UID0HOME/.ssh/id_backup" || \
+            ssh-keygen -q -t rsa -b 4096 -N '' -f "$UID0HOME/.ssh/id_backup"
+        if [ ! -e "$UID0HOME/.ssh/id_backup.pub" ]; then
+            action_error "Error while generating the SSH key"
+        else
+            action_done
+        fi
+    fi
+
+    # grant the bastion admins to all the restricted commands, as we might have added new ones
+    action_doing "Granting all the restricted commands to the bastion admins"
+    admins=$(perl -I"$basedir/lib/perl" -MOVH::Bastion -e 'my $admins = OVH::Bastion::config("adminAccounts")->value; print join("\n", @{ $admins || [] })')
+    grant_status=0
+    for account in $(getent group osh-admin | cut -d: -f4 | tr "," " ")
+    do
+        # we must also check that this account is declared in bastion.conf (or it's not really an admin),
+        if ! echo "$admins" | grep -qw "$account"; then
+            action_detail "$account is not really an admin, skipping"
+            continue
+        fi
+        action_detail "$account"
+        _before_change=$(id "$account")
+        set +e
+        "$basedir/bin/admin/grant-all-restricted-commands-to.sh" "$account" >/dev/null; ret=$?
+        set -e
+        _after_change=$(id "$account")
+        if [ "$ret" -ne 0 ]; then
+            action_detail "... failed!"
+            grant_status=-1
+        elif [ "$_before_change" = "$_after_change" ]; then
+            action_detail "... nothing to do"
+        else
+            action_detail "... done"
+            [ "$grant_status" != -1 ] && grant_status=1
+        fi
+    done
+    if [ "$grant_status" = 0 ]; then
+        action_na
+    elif [ "$grant_status" = -1 ]; then
+        action_error
+    else
+        action_done
+    fi
+
+    action_doing "Ensuring all bastion accounts are in the bastion-users group"
+    bastion_users_members=$(getent group bastion-users | cut -d: -f4)
+    at_least_one_changed=0
+    at_least_one_error=0
+    for account in $(getent passwd | grep ":$basedir/bin/shell/osh.pl$" | cut -d: -f1) proxyhttp
+    do
+        if ! echo "$bastion_users_members" | tr "," "\\n" | grep -q -w "$account"; then
+            action_detail "... $account"
+            add_user_to_group_compat "$account" "bastion-users" || at_least_one_error=1
+            at_least_one_changed=1
+        fi
+    done
+    if [ "$at_least_one_error" != 0 ]; then
+        action_error
+    elif [ "$at_least_one_changed" = 0 ]; then
+        action_na
+    else
+        action_done
+    fi
+
+    action_doing "Archiving old account and group files"
+    at_least_one_changed=0
+    at_least_one_error=0
+    acls_param=''
+    [ "$OS_FAMILY" = "Linux"   ] && acls_param='--acls'
+    [ "$OS_FAMILY" = "FreeBSD" ] && acls_param='--acls'
+    while IFS= read -r -d '' dir
+    do
+        at_least_one_changed=1
+        if command -v chattr &>/dev/null; then
+            find "$dir" -name "*.log" -print0 | xargs -r0 chattr -a || true
+        fi
+        tarfile="$dir.tar.gz"
+        while [ -e "$tarfile" ]; do
+            # archive already exists? append some randomness to the name, we don't want to overwrite it!
+            tarfile="$dir.$(date +%s)-$RANDOM.tar.gz"
+        done
+        if tar czf "$tarfile" $acls_param --one-file-system -p --remove-files "$dir"; then
+            chmod 0 "$tarfile"
+        else
+            at_least_one_error=1
+        fi
+    done < <(find /home/oldkeeper/accounts/ /home/oldkeeper/groups/ -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null)
+    if [ "$at_least_one_error" != 0 ]; then
+        action_error
+    elif [ "$at_least_one_changed" = 0 ]; then
+        action_na
+    else
+        action_done
+    fi
+
+    action_doing "Removing potentially bogus directories"
+    if [ -d /nonexistent ]; then
+        rmdir /nonexistent 2>/dev/null || true
+        action_done
+    else
+        action_na
+    fi
+
+    action_doing "Replacing legacy o+w by bastion-users/g+w"
+    at_least_one_changed=0
+    for file in $(test -f /home/osh.log && find /home/osh.log -perm -o+w) $(find /home/logkeeper/ -mindepth 1 -maxdepth 1 -type f -name "global-log-????.sqlite" -perm -o+w)
+    do
+        if [ "$file" = /home/osh.log ]; then
+            if command -v chattr &>/dev/null; then
+                chattr -a /home/osh.log 2>/dev/null || true
+            fi
+        fi
+        chown root:bastion-users "$file"
+        chmod 660 "$file"
+        if [ "$file" = /home/osh.log ]; then
+            if command -v chattr &>/dev/null; then
+                chattr +a /home/osh.log 2>/dev/null || true
+            fi
+        fi
+        at_least_one_changed=1
+    done
+    if [ "$at_least_one_changed" = 0 ]; then
+        action_na
+    else
+        action_done
+    fi
+
+    action_doing "Ensuring symlinked plugins have their json config"
+    at_least_one_changed=0
+    at_least_one_error=0
+    while IFS= read -r -d '' plugin
+    do
+        if [ -e "${plugin}.json" ]; then
+            # the config is there, ok
+            continue
+        fi
+        # the config is not there, is there a corresponding .json at the other end of the symlink?
+        source=$(readlink "$plugin")
+        sourcecanon="$(dirname "$plugin")/$source"
+        sourcecanon="$(readlink -f "$sourcecanon")"
+        if [ -e "${sourcecanon}.json" ]; then
+            action_detail "... ${sourcecanon}.json found, symlinking"
+            ln -s "${source}.json" "${plugin}.json"; ret=$?
+            if [ $ret -ne 0 ]; then
+                at_least_one_error=1
+            else
+                at_least_one_changed=1
+            fi
+        fi
+    done < <(find "$basedir"/bin/plugin -type l ! -name "*.*" -print0)
+    if [ "$at_least_one_error" != 0 ]; then
+        action_error
+    elif [ "$at_least_one_changed" = 0 ]; then
+        action_na
+    else
+        action_done
+    fi
+
+    # checking whether we have things to install from the install.d directory
+    # shellcheck disable=SC2034
+    STARTED_BY_MAIN_INSTALL=1
+    while IFS= read -r -d '' installfile
+    do
+        action_doing "Starting module install ($installfile)..."
+        # shellcheck disable=SC1090
+        if . "$installfile"; then
+            action_done
+        else
+            action_error
+        fi
+    done < <(test -d "$basedir"/install/modules && find "$basedir"/install/modules -mindepth 2 -maxdepth 2 -name install -type f -print0)
+    unset STARTED_BY_MAIN_INSTALL
+fi
+
+if [ "${opt[syslog-ng]}" = 1 ] && [ "${opt[overwrite-syslog-ng]}" = 1 ]; then
+    if [ -e /etc/syslog-ng/syslog-ng.conf ] && ! grep -q s_src /etc/syslog-ng/syslog-ng.conf && grep -q s_sys /etc/syslog-ng/syslog-ng.conf ; then
+        sed_compat 's/s_src/s_sys/g' /etc/syslog-ng/conf.d/20-bastion.conf
+    fi
+fi
+
+if [ "$autodetect_startup_system" = 1 ]; then
+    action_doing "Autodetecting startup system..."
+    if command -v systemctl >/dev/null && [ -d "/var/run/systemd" ]; then
+        action_done "found systemd"
+        opt[systemd-units]=1
+        opt[init]=0
+    else
+        action_done "found sysV-style init"
+        opt[systemd-units]=0
+        opt[init]=1
+    fi
+fi
+
+if [ "${opt[init]}" = 1 ]; then
+    initd=rc.d
+    [ "$OS_FAMILY" = Linux ] && initd=init.d
+    action_doing "Copy init scripts to /etc/$initd"
+    for file in "$basedir/etc/init.d"/osh-*; do
+        servicename=$(basename "$file")
+        if [ -e "/etc/$initd/$servicename" ]; then
+            isnew=0
+        else
+            isnew=1
+        fi
+        if install -o "$UID0" -g "$GID0" -m 0755 "$file" "/etc/$initd/"; then
+            if [ "$isnew" = 1 ]; then
+                action_detail "$servicename installed, ${WHITE_ON_BLUE}please use \`update-rc.d $servicename defaults' if you want to enable this service${NOC}"
+            else
+                action_detail "$servicename updated"
+            fi
+        else
+            action_error "failed installing $file"
+        fi
+    done
+    action_done
+
+    # remove obsolete init.d files if needed
+    action_doing "Remove obsolete init.d files..."
+    at_least_one_changed=0
+    # shellcheck disable=SC2043
+    for obsolete in osh-proxy-http
+    do
+        if [ -e "/etc/$initd/$obsolete" ]; then
+            at_least_one_changed=1
+            action_detail "removing $obsolete"
+            update-rc.d -f $obsolete disable || true
+            rm -f "/etc/$initd/$obsolete"
+        fi
+    done
+    if [ "$at_least_one_changed" = 1 ]; then
+        action_done
+    else
+        action_na
+    fi
+fi
+
+if [ "${opt[systemd-units]}" = 1 ]; then
+    action_doing "Copy systemd unit files to /etc/systemd/system"
+    for file in "$basedir/etc/systemd"/osh-*.service; do
+        servicename="$(basename "$file")"
+        if [ -e "/etc/systemd/system/$servicename" ]; then
+            isnew=0
+        else
+            isnew=1
+        fi
+        if cp "$file" /etc/systemd/system/; then
+            if [ "$isnew" = 1 ]; then
+                action_detail "$servicename installed, ${WHITE_ON_BLUE}please use \`systemctl enable $servicename' if you want to enable this service${NOC}"
+            else
+                action_detail "$servicename updated"
+            fi
+        else
+            action_error "failed installing $file"
+        fi
+    done
+    systemctl daemon-reload || true
+    action_done
+fi
+
+if [ "${opt[profile]}" = 1 ]; then
+    action_doing "Copy profile.d files if applicable"
+    if [ -d $ETC_DIR/profile.d ]; then
+        for file in "$basedir/etc/profile.d"/*.sh; do
+            action_detail "$file"
+            install -o "$UID0" -g "$GID0" -m 0755 "$file" "$ETC_DIR/profile.d/"
+        done
+        action_done
+    else
+        action_na "$ETC_DIR/profile.d not found"
+    fi
+fi
+
+if [ "${opt[modify-umask]}" = 1 ]; then
+    # umask
+    action_doing "Adjust umask in /etc/login.defs if applicable"
+    if [ -e /etc/login.defs ]; then
+        sed_compat 's/^(\s*UMASK\s+).+/\1027/g' /etc/login.defs
+        action_done
+    else
+        action_na
+    fi
+
+    action_doing "Adjust umask in $ETC_DIR/pam.d/common-session if applicable"
+    if [ -e $ETC_DIR/pam.d/common-session ]; then
+        if ! grep -Eq '^\s*session\s+optional\s+pam_umask.so\s+umask=0?027' \
+                $ETC_DIR/pam.d/common-session ; then
+            action_detail "missing umask config in file, adjusting"
+            echo "# bastion config: umask needs to be at 0027" >> $ETC_DIR/pam.d/common-session
+            echo "session optional pam_umask.so umask=0027"    >> $ETC_DIR/pam.d/common-session
+            action_done
+        else
+            action_na "umask was already OK"
+        fi
+    else
+        action_na "no file found"
+    fi
+fi
+
+if [ "${opt[modify-pam-sshd]}" = 1 ]; then
+    action_doing "Use our template for pam.d/sshd"
+    if grep -Eiq '^[[:space:]]*AuthenticationMethods[[:space:]]+publickey,keyboard-interactive:pam' /etc/ssh/sshd_config; then
+        echo "$DISTRO_LIKE" | grep -q -w debian && pamsuffix=debian
+        echo "$DISTRO_LIKE" | grep -q -w rhel   && pamsuffix=rhel
+        if [ -n "$pamsuffix" ] && [ -e $ETC_DIR/pam.d/sshd ] && [ -e "$basedir/etc/pam.d/sshd.$pamsuffix" ]; then
+            cp -a "$ETC_DIR/pam.d/sshd" "$ETC_DIR/pam.d/sshd.backup_$(date +%s)"
+            cat "$basedir/etc/pam.d/sshd.$pamsuffix" > $ETC_DIR/pam.d/sshd
+            action_done
+        else
+            action_error "couldn't use our pam.d/sshd template"
+        fi
+    else
+        action_na "the currently installed sshd_config file doesn't have a forced 'AuthenticationMethods publickey', we can't install our pam.d template safely (it could turn this machine into an allow-all accesses without auth through ssh!)"
+    fi
+fi
+
+if [ "${opt[modify-pam-lastlog]}" = 1 ]; then
+    # pam.d lastlogin
+    action_doing "Adjust lastlog in pam.d/sshd if applicable"
+    if [ -e "$ETC_DIR/pam.d/sshd" ] ; then
+        if ! grep -Eq '^\s*session\s+optional\s+pam_lastlog.so' "$ETC_DIR/pam.d/sshd" ; then
+            action_detail "missing lastlog config in file, adjusting"
+            # shellcheck disable=SC1004
+            sed_compat '/^\s*@include\s+common-session/a\
+    # bastion config: lastlog needs to be updated on connection\nsession optional pam_lastlog.so silent' "$ETC_DIR/pam.d/sshd"
+            action_done
+        else
+            action_na "lastlog config was already ok"
+        fi
+    else
+        action_na "no file found"
+    fi
+fi
+
+if [ "${opt[remove-weak-moduli]}" = 1 ]; then
+    # remove low moduli
+    action_doing "Remove weak moduli"
+    if [ -e $SSH_DIR/moduli ] ; then
+        tmpmod=$(mktemp)
+        awk '$5 >= 4095' $SSH_DIR/moduli > "$tmpmod"
+        if cmp -s $SSH_DIR/moduli "$tmpmod"; then
+            action_na "no weak moduli found"
+        else
+            cat "$tmpmod" > $SSH_DIR/moduli
+            action_done
+        fi
+        rm -f "$tmpmod"
+    fi
+fi
+
+# optional migration: grant aclkeeper to gatekeepers
+if [ "${opt[migration-grant-aclkeeper-to-gatekeepers]}" = 1 ] ; then
+    action_doing "Migration: giving the aclkeeper right to all gatekeepers"
+        for grp in $(getent group | cut -d: -f1 | grep -- '-gatekeeper$' | sed -e 's/-gatekeeper$//'); do
+            action_detail "... checking group $grp"
+            for gatek in $(getent group "$grp-gatekeeper" | cut -d: -f4 | tr "," "\\n"); do
+                action_detail "... $grp: granting $gatek as aclkeeper"
+                add_user_to_group_compat "$gatek" "$grp-aclkeeper"; ret=$?
+                if [ $ret -ne 0 ]; then
+                    action_warn "Error while adding $gatek to $grp-aclkeeper!"
+                fi
+            done
+        done
+    action_done
+fi
+
+# lastly, check for ttyrec version and yell if it's not the proper one
+if [ "${opt[check-ttyrec]}" = 1 ] ; then
+    action_doing "Checking ttyrec version"
+    if ! command -v ttyrec >/dev/null 2>&1; then
+        action_error "ttyrec is not installed, the bastion will not work! Please either install ovh-ttyrec or run this script a second time with \`$0 --nothing --install-fake-ttyrec'"
+    else
+        ttyrec_version=$(ttyrec -V 2>/dev/null | grep -Eo 'ttyrec v[0-9.]+' | cut -c9-)
+        if [ -z "$ttyrec_version" ]; then
+            action_error "Incompatible ttyrec version installed, the bastion will not work! Please either install ovh-ttyrec or run this script again with \`$0 --nothing --install-fake-ttyrec'"
+        else
+            action_detail "found v$ttyrec_version"
+            action_detail "expected v$TTYREC_VERSION_NEEDED"
+            if [ "$(printf "%s\\n%s\\n" "$ttyrec_version" "$TTYREC_VERSION_NEEDED" | sort | head -1)" = "$TTYREC_VERSION_NEEDED" ]; then
+                action_done
+            else
+                action_error "The installed ttyrec version is too old, the bastion will not work! Please update ovh-ttyrec to at least v$TTYREC_VERSION_NEEDED"
+            fi
+        fi
+    fi
+fi
+
+echo All done.

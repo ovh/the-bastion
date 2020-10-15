@@ -1,0 +1,52 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my ($group, $account, $reverse);
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "lists partial access to group servers of a bastion account",
+    options => {
+        "group=s"     => \$group,
+        "account=s"   => \$account,
+        "reverse-dns" => \$reverse,
+    },
+    helptext => <<'EOF',
+List the guest accesses to servers of a group specifically granted to an account
+
+Usage: --osh SCRIPT_NAME --group GROUP --account ACCOUNT
+
+  --group GROUP      Look for accesses to servers of this GROUP
+  --account ACCOUNT  Which account to check
+EOF
+);
+
+my $fnret;
+
+if (not $group or not $account) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing mandatory parameter 'account' or 'group'";
+}
+
+$fnret = OVH::Bastion::is_valid_group_and_existing(group => $group, groupType => "key");
+$fnret or osh_exit $fnret;
+
+# get returned untainted value
+$group = $fnret->value->{'group'};
+my $shortGroup = $fnret->value->{'shortGroup'};
+
+$fnret = OVH::Bastion::get_acl_way(way => 'groupguest', group => $shortGroup, account => $account);
+$fnret or osh_exit $fnret;
+
+if (not @{$fnret->value}) {
+    osh_ok R('OK_EMPTY', msg => "This account doesn't seem to have any guest access to this group");
+}
+
+OVH::Bastion::print_acls(acls => [{type => 'group-guest', group => $shortGroup, acl => $fnret->value}], reverse => $reverse);
+osh_ok($fnret->value);

@@ -1,0 +1,2 @@
+# Check each 5 minutes that we don't have any expired grace period for PIV enforcement
+*/5 * * * * root /opt/bastion/bin/cron/osh-piv-grace-reaper.pl >/dev/null

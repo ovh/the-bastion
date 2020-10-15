@@ -1,0 +1,254 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+use Sys::Hostname ();
+use Term::ANSIColor;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+OVH::Bastion::Plugin::begin(
+    argv     => \@ARGV,
+    header   => "account information",
+    options  => {'account=s' => \my $account},
+    helptext => <<'EOF',
+Display some information about an account
+
+Usage: --osh SCRIPT_NAME --account ACCOUNT
+
+  --account ACCOUNT  The account name to work on
+EOF
+);
+
+my $fnret;
+
+$fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
+$fnret or osh_exit $fnret;
+
+$fnret = OVH::Bastion::get_plugin_list(restrictedOnly => 1);
+$fnret or osh_exit $fnret;
+
+my %ret;
+if (OVH::Bastion::is_admin(account => $account)) {
+    osh_info "$account is a bastion " . colored('admin', 'green');
+    $ret{'is_admin'} = 1;
+}
+if (OVH::Bastion::is_super_owner(account => $account)) {
+    osh_info "$account is a bastion " . colored('superowner', 'green');
+    $ret{'is_superowner'} = 1;
+}
+if (OVH::Bastion::is_auditor(account => $account)) {
+    osh_info "$account is a bastion " . colored('auditor', 'green');
+    $ret{'is_auditor'} = 1;
+}
+
+osh_info "$account has access to the following restricted commands:";
+my @granted;
+foreach my $plugin (sort keys %{$fnret->value}) {
+    $fnret = OVH::Bastion::is_user_in_group(user => $account, group => "osh-$plugin");
+    if ($fnret) {
+        push @granted, $plugin;
+        osh_info "- $plugin";
+    }
+}
+if (!@granted) {
+    osh_info "(none)";
+}
+$ret{'allowed_commands'} = \@granted;
+
+$fnret = OVH::Bastion::get_group_list(groupType => "key");
+$fnret or osh_exit $fnret;
+
+osh_info "\nThis account is part of the following groups:";
+
+my $result_hash = {};
+foreach my $name (sort keys %{$fnret->value}) {
+    my @flags;
+    push @flags, 'owner' if OVH::Bastion::is_group_owner(group => $name, account => $account);
+    push @flags, 'gatekeeper' if OVH::Bastion::is_group_gatekeeper(group => $name, account => $account);
+    push @flags, 'aclkeeper' if OVH::Bastion::is_group_aclkeeper(group => $name, account => $account);
+    push @flags, 'member' if OVH::Bastion::is_group_member(group => $name, account => $account);
+    push @flags, 'guest' if OVH::Bastion::is_group_guest(group => $name, account => $account);
+    if (@flags) {
+        my $line = sprintf "%18s", $name;
+        $line .= sprintf " %14s", colored(grep({ $_ eq 'owner' } @flags)      ? 'Owner'      : '-', 'red');
+        $line .= sprintf " %19s", colored(grep({ $_ eq 'gatekeeper' } @flags) ? 'GateKeeper' : '-', 'yellow');
+        $line .= sprintf " %18s", colored(grep({ $_ eq 'aclkeeper' } @flags)  ? 'ACLKeeper'  : '-', 'magenta');
+        $line .= sprintf " %15s", colored(grep({ $_ eq 'member' } @flags)     ? 'Member'     : '-', 'green');
+        $line .= sprintf " %14s", colored(grep({ $_ eq 'guest' } @flags)      ? 'Guest'      : '-', 'cyan');
+        osh_info $line;
+        $result_hash->{$name} = {flags => \@flags, name => $name};
+    }
+}
+if (not keys %$result_hash) {
+    osh_info "(none)";
+}
+
+$ret{'groups'} = $result_hash;
+
+my $canConnect = 1;
+$ret{'always_active'} = OVH::Bastion::account_config(account => $account, key => OVH::Bastion::OPT_ACCOUNT_ALWAYS_ACTIVE, public => 1) ? 1 : 0;
+if ($ret{'always_active'}) {
+    $ret{'is_active'} = 1;
+    osh_info "This account is " . colored('always', 'green') . " active";
+}
+else {
+    $fnret = OVH::Bastion::is_account_active(account => $account);
+    if ($fnret->is_ok) {
+        osh_info "\nThis account is " . colored('active', 'green');
+        $ret{'is_active'} = 1;
+    }
+    elsif ($fnret->is_ko) {
+        osh_info "\nThis account is " . colored('INACTIVE', 'red');
+        $canConnect = 0;
+        $ret{'is_active'} = 0;
+    }
+}
+
+if (OVH::Bastion::is_auditor(account => $self)) {
+    $fnret = OVH::Bastion::is_account_nonexpired(sysaccount => $account);
+    if ($fnret->is_ok) {
+        osh_info "This account is " . colored('not expired', 'green');
+        $ret{'is_expired'} = 0;
+    }
+    elsif ($fnret->is_ko) {
+        osh_info "This account is " . colored('EXPIRED', 'red');
+        $canConnect = 0;
+        $ret{'is_expired'} = 1;
+    }
+    else {
+        osh_warn "Error getting account expiration info (" . $fnret->msg . ")";
+    }
+
+    if (!$fnret->is_err) {
+        osh_info "As a consequence, this account " . ($canConnect ? colored("can", 'green') : colored("CANNOT", 'red')) . " connect to this bastion\n\n";
+        $ret{'can_connect'} = $canConnect;
+
+        my $seenBefore = 1;
+        if ($fnret->value->{'already_seen_before'}) {
+            osh_info "This account has already been used " . colored('at least once', 'green');
+            $ret{'already_seen_before'} = 1;
+        }
+        else {
+            osh_info "This account has " . colored('NEVER', 'red') . " been used (yet)";
+            $seenBefore = 0;
+            $ret{'already_seen_before'} = 0;
+        }
+
+        if (defined $fnret->value->{'seconds'}) {
+            $fnret = OVH::Bastion::duration2human(seconds => $fnret->value->{'seconds'}, tense => "past");
+            if ($fnret) {
+                my $seenBeforeStr = sprintf("%s on %s (%s ago)", $seenBefore ? "Last seen" : "Created", colored($fnret->value->{'date'}, 'magenta'), $fnret->value->{'duration'});
+                osh_info $seenBeforeStr;
+                $ret{'last_activity_date'} = $seenBeforeStr;
+            }
+        }
+    }
+
+    osh_info "\nAccount egress SSH config:";
+    $fnret = OVH::Bastion::account_ssh_config_get(account => $account);
+    if ($fnret->err eq 'OK_EMPTY') {
+        osh_info "- (default)";
+        $ret{'account_egress_ssh_config'}{'type'} = 'default';
+    }
+    elsif ($fnret->err eq 'ERR_FILE_LOCALLY_MODIFIED') {
+        osh_info "- (locally modified!)";
+        $ret{'account_egress_ssh_config'}{'type'} = 'locally_modified';
+    }
+    elsif ($fnret) {
+        $ret{'account_egress_ssh_config'}{'type'} = 'custom';
+        foreach my $key (sort keys %{$fnret->value}) {
+            osh_info "- $key " . $fnret->value->{$key};
+            $ret{'account_egress_ssh_config'}{'items'}{$key} = $fnret->value->{$key};
+        }
+    }
+    else {
+        $ret{'account_egress_ssh_config'}{'type'} = 'unknown';
+        osh_info "- (unknown: " . $fnret . ")";
+    }
+
+    $fnret = OVH::Bastion::account_config(account => $account, public => 1, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_POLICY);
+    $ret{'ingress_piv_enforced'} = ($fnret && $fnret->value eq 'yes') ? 1 : 0;
+    osh_info "\nPIV-enforced policy for ingress keys on this account is " . ($ret{'ingress_piv_enforced'} ? colored('enabled', 'green') : colored('disabled', 'blue'));
+    if ($ret{'ingress_piv_enforced'}) {
+
+        # if it's enabled, we might have a grace period for this account
+        $fnret = OVH::Bastion::account_config(account => $account, public => 1, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_GRACE);
+        if ($fnret && $fnret->value > time()) {
+            my $expiry = $fnret->value - time();
+            my $human = OVH::Bastion::duration2human(seconds => $expiry)->value;
+            osh_info "PIV grace period for this account is " . colored('set', 'green') . " and expires in " . $human->{'human'};
+            $ret{'ingress_piv_grace'} = {
+                enabled              => 1,
+                expiration_timestamp => $fnret->value,
+                seconds_remaining    => $expiry,
+                expiration_date      => $human->{'date'},
+                time_remaining       => $human->{'duration'},
+            };
+        }
+    }
+
+    osh_info "\nAccount Multi-Factor Authentication status:";
+    $ret{'mfa_password_required'}   = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_PASSWORD_REQUIRED_GROUP)   ? 1 : 0;
+    $ret{'mfa_password_bypass'}     = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_PASSWORD_BYPASS_GROUP)     ? 1 : 0;
+    $ret{'mfa_password_configured'} = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_PASSWORD_CONFIGURED_GROUP) ? 1 : 0;
+    osh_info "- Additional password authentication is " . ($ret{'mfa_password_required'} ? colored('required', 'green') : colored('not required', 'blue')) . " for this account";
+    osh_info "- Additional password authentication bypass is " . ($ret{'mfa_password_bypass'} ? colored('enabled', 'green') : colored('disabled', 'blue')) . " for this account";
+    osh_info "- Additional password authentication is " . ($ret{'mfa_password_configured'} ? colored('enabled and active', 'green') : colored('disabled', 'blue'));
+
+    $ret{'mfa_totp_required'}   = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_TOTP_REQUIRED_GROUP)   ? 1 : 0;
+    $ret{'mfa_totp_bypass'}     = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_TOTP_BYPASS_GROUP)     ? 1 : 0;
+    $ret{'mfa_totp_configured'} = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_TOTP_CONFIGURED_GROUP) ? 1 : 0;
+    osh_info "- Additional TOTP authentication is " .        ($ret{'mfa_totp_required'} ? colored('required', 'green') : colored('not required', 'blue')) . " for this account";
+    osh_info "- Additional TOTP authentication bypass is " . ($ret{'mfa_totp_bypass'}   ? colored('enabled',  'green') : colored('disabled',     'blue')) . " for this account";
+    osh_info "- Additional TOTP authentication is " . ($ret{'mfa_totp_configured'} ? colored('enabled and active', 'green') : colored('disabled', 'blue'));
+
+    $ret{'pam_auth_bypass'} = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::PAM_AUTH_BYPASS_GROUP) ? 1 : 0;
+    osh_info "- PAM authentication bypass is " . ($ret{'pam_auth_bypass'} ? colored('enabled', 'green') : colored('disabled', 'blue'));
+
+    $ret{'personal_egress_mfa_required'} = OVH::Bastion::account_config(account => $account, key => "personal_egress_mfa_required")->value;
+    $ret{'personal_egress_mfa_required'} ||= 'none';    # no config means no mfa
+    osh_info "- MFA policy on personal accesses (using personal keys) on egress side is: " . $ret{'personal_egress_mfa_required'};
+
+    $ret{'idle_ignore'} = OVH::Bastion::account_config(account => $account, key => OVH::Bastion::OPT_ACCOUNT_IDLE_IGNORE, public => 1) ? 1 : 0;
+    osh_info "\n- Account is immune to idle counter-measures: " . ($ret{'idle_ignore'} ? colored('yes', 'green') : colored('no', 'blue'));
+
+    my @command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
+    push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountGetPasswordInfo';
+    push @command, '--account', $account;
+    $fnret = OVH::Bastion::helper(cmd => \@command);
+    if ($fnret) {
+        $ret{'password'}{$_} = $fnret->value->{$_} for (keys %{$fnret->value});
+        osh_info "Account PAM UNIX password information (used for password MFA):";
+        if ($ret{'password'}{'password'} eq 'locked') {
+            osh_info "- No valid password is set";
+        }
+        else {
+            osh_info "- Password is " . $ret{'password'}{'password'};
+        }
+        osh_info "- Password was last changed on " . $ret{'password'}{'date_changed'};
+        if ($ret{'password'}{'max_days'} == -1) {
+            osh_info "- Password will never expire";
+        }
+        else {
+            osh_info "- Password must be changed every " . $ret{'password'}{'max_days'} . " days at least";
+            osh_info "- A warning is displayed " . $ret{'password'}{'warn_days'} . " days before expiration";
+        }
+        if ($ret{'password'}{'min_days'} != 0) {
+            osh_info "- The minimum time between two password changes is " . $ret{'password'}{'min_days'} . " days";
+        }
+        if ($ret{'password'}{'max_days'} != -1) {
+            if ($ret{'password'}{'inactive_days'} != -1) {
+                osh_info "- Account will be disabled " . $ret{'password'}{'inactive_days'} . " days after password expiration";
+            }
+            else {
+                osh_info "- Account will not be disabled after password expiration";
+            }
+        }
+    }
+}
+
+osh_ok(\%ret);

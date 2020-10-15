@@ -1,0 +1,29 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv     => \@ARGV,
+    header   => "remove the TOTP configuration of your account (MFA)",
+    options  => {},
+    helptext => <<'EOF'
+Remove the TOTP configuration of your account
+
+Usage: --osh SCRIPT_NAME
+
+Note that if your TOTP is set, you'll be prompted for it.
+Also note that this doesn't remove your TOTP requirement, if set (see accountModify for this).
+EOF
+);
+
+my @command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
+push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountMFAResetTOTP';
+push @command, "--account", $self;
+
+osh_exit(OVH::Bastion::helper(cmd => \@command));

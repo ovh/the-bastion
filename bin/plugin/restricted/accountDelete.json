@@ -1,0 +1,10 @@
+{
+    "interactive": [
+        "accountDelete"                             , {"ac" : ["--account"]},
+        "accountDelete --account"                   , {"ac" : ["<ACCOUNT>"]},
+        "accountDelete --account \\S+"               , {"ac" : ["<enter>", "--comment"]},
+        "accountDelete --account \\S+ --comment"     , {"pr" : ["<COMMENT_WITHOUT_SPACES>"]},
+        "accountDelete --account \\S+ --comment \\S+" , {"pr" : ["<enter>"]}
+    ],
+    "master_only": true
+}

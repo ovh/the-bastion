@@ -1,0 +1,113 @@
+#! /usr/bin/perl -T
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+# NEEDGROUP osh-admin
+# SUDOERS %osh-admin ALL=(allowkeeper) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-adminMaintenance *
+# FILEMODE 0750
+# FILEOWN root allowkeeper
+
+#>HEADER
+use common::sense;
+use Getopt::Long;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../lib/perl';
+use OVH::Bastion;
+local $| = 1;
+
+#
+# Globals
+#
+$ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/pkg/bin';
+my ($self) = $ENV{'SUDO_USER'} =~ m{^([a-zA-Z0-9._-]+)$};
+if (not defined $self) {
+    if ($< == 0) {
+        $self = 'root';
+    }
+    else {
+        HEXIT('ERR_SUDO_NEEDED', msg => 'This command must be run under sudo');
+    }
+}
+
+# Fetch command options
+my $fnret;
+my ($result, @optwarns);
+my ($action, $message);
+eval {
+    local $SIG{__WARN__} = sub { push @optwarns, shift };
+    $result = GetOptions(
+        "action=s"  => sub { $action  //= $_[1] },
+        "message=s" => sub { $message //= $_[1] },
+    );
+};
+if ($@) { die $@ }
+
+if (!$result) {
+    local $" = ", ";
+    HEXIT('ERR_BAD_OPTIONS', msg => "Error parsing options: @optwarns");
+}
+
+if (not $action) {
+    HEXIT('ERR_MISSING_PARAMETER', msg => "Missing argument 'action'");
+}
+
+if (not grep { $action eq $_ } qw{ set unset }) {
+    HEXIT('ERR_INVALID_PARAMETER', msg => "Expected action 'set' or 'unset'");
+}
+
+#<HEADER
+
+#>RIGHTSCHECK
+if ($self eq 'root') {
+    osh_debug "Real root, skipping checks of permissions";
+}
+else {
+    # need to perform another security check
+    $fnret = OVH::Bastion::is_user_in_group(user => $self, group => "osh-admin");
+    if (!$fnret) {
+        HEXIT('ERR_SECURITY_VIOLATION', msg => "You're not allowed to run this, dear $self");
+    }
+}
+
+#<RIGHTSCHECK
+
+#>CODE
+
+my $retmsg;
+if ($action eq 'set') {
+    if (-e '/home/allowkeeper/maintenance') {
+        HEXIT('OK_NO_CHANGE', msg => "Nothing to do, maintenance mode was already set");
+    }
+    $fnret = OVH::Bastion::touch_file('/home/allowkeeper/maintenance', 0644);    ## no critic (ProhibitLeadingZeros)
+    if (!$fnret) {
+        HEXIT('KO', msg => "Couldn't set the bastion to maintenance mode (" . $fnret->msg . ")");
+    }
+    $message = "(no reason given)" if not $message;
+    $message .= " [set by $self at " . localtime(time()) . "]";
+    if (open(my $fh, '>', '/home/allowkeeper/maintenance')) {
+        print $fh $message;
+    }
+    else {
+        osh_warn "Couldn't write the maintenance message ($!), but we're still setting the maintenance mode, users just won't see your maintenance message.";
+    }
+    $retmsg = "Maintenance mode is now enabled, new connections are disallowed (except for admins).\nGiven reason: $message";
+}
+elsif ($action eq 'unset') {
+    if (-e '/home/allowkeeper/maintenance') {
+        if (!unlink('/home/allowkeeper/maintenance')) {
+            HEXIT('KO', msg => "Couldn't unset the bastion maintenance mode ($!)");
+        }
+    }
+    else {
+        HEXIT('OK_NO_CHANGE', msg => "Nothing to do, maintenance mode was not set previously");
+    }
+    $retmsg = "Maintenance mode is now disabled, new connections are allowed.";
+}
+
+OVH::Bastion::syslogFormatted(
+    severity => 'info',
+    type     => 'maintenance',
+    fields   => [['action', $action], ['message', $message],]
+);
+
+# done at last!
+HEXIT('OK', value => {action => $action, message => $message}, msg => $retmsg);

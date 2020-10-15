@@ -1,0 +1,144 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "adding a server to a group",
+    options => {
+        "group=s"   => \my $group,
+        "user-any"  => \my $userAny,
+        "port-any"  => \my $portAny,
+        "scpup"     => \my $scpUp,
+        "scpdown"   => \my $scpDown,
+        "force"     => \my $force,      # for slashes, and/or for servers that are down (no connection test)
+        "force-key" => \my $forceKey,
+        "ttl=s"     => \my $ttl,
+        "comment=s" => \my $comment,
+    },
+    helptext => <<'EOF',
+Add an IP or IP block to a group's servers list
+
+Usage: --osh SCRIPT_NAME --group GROUP [OPTIONS]
+
+  --group GROUP            Specify which group this machine should be added to (it should have the public group key of course)
+  --host HOST|IP|NET/CIDR  Host(s) to add access to, either a HOST which will be resolved to an IP immediately, or an IP,
+                             or a whole network using the NET/CIDR notation
+  --user USER              Specify which remote user should be allowed (root, run, etc...)
+  --user-any               Allow any remote user (the remote user should still have the public group key in all cases)
+  --port PORT              Only allow access to this port (e.g. 22)
+  --port-any               Allow access to any port
+  --scpup                  Allow SCP upload, you--bastion-->server (omit --user in this case)
+  --scpdown                Allow SCP download, you<--bastion--server (omit --user in this case)
+  --force                  Don't try the ssh connection, just add the host to the group blindly
+  --force-key FINGERPRINT  Only use the key with the specified fingerprint to connect to the server (cf groupInfo)
+  --ttl SECONDS|DURATION   Specify a number of seconds (or a duration string, such as "1d7h8m") after which the access will automatically expire
+  --comment '"ANY TEXT'"   Add a comment alongside this server
+
+Examples::
+
+  --osh SCRIPT_NAME --group grp1 --host 203.0.113.0/24 --user-any --port-any --force --comment '"a whole network"'
+  --osh SCRIPT_NAME --group grp2 --host srv1.example.org --user root --port 22
+EOF
+);
+
+my $fnret;
+
+if (not $group or not $ip) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing mandatory parameter 'host' or 'group' (or host didn't resolve correctly)";
+}
+
+if ($user and $userAny) {
+    help();
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "A user was specified, but --user-any used, these are incompatible, please think about what you're doing";
+}
+
+if ($scpUp and $scpDown) {
+    help();
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "You specified both --scpup and --scpdown, if you want to grant both, please do it in two separate commands";
+}
+
+if (($scpUp or $scpDown) and ($user or $userAny)) {
+    help();
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS',
+"To grant SCP access, first ensure SSH access is granted to the machine (with the --user you need, or --user-any), then grant with --scpup and/or --scpdown, omitting --user/--user-any";
+}
+$user = '!scpupload'   if $scpUp;
+$user = '!scpdownload' if $scpDown;
+
+if (not $user and not $userAny) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "No user specified, if you want to add this server with any user, add --user-any";
+}
+
+if ($portAny and $port) {
+    help();
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "A port was specified, but --port-any used, these are incompatible, please think about what you're doing";
+}
+
+if (not $port and not $portAny) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "No port specified, if you want to add this server with any port, add --port-any";
+}
+
+$fnret = OVH::Bastion::is_valid_group_and_existing(group => $group, groupType => "key");
+$fnret or osh_exit($fnret);
+
+# get returned untainted value
+$group = $fnret->value->{'group'};
+my $shortGroup = $fnret->value->{'shortGroup'};
+
+if (defined $ttl) {
+    $fnret = OVH::Bastion::is_valid_ttl(ttl => $ttl);
+    $fnret or osh_exit $fnret;
+    $ttl = $fnret->value->{'seconds'};
+}
+
+if ($forceKey) {
+    $fnret = OVH::Bastion::is_valid_fingerprint(fingerprint => $forceKey);
+    $fnret or osh_exit $fnret;
+    $forceKey = $fnret->value->{'fingerprint'};
+}
+
+#
+# Now do it
+#
+
+$fnret = OVH::Bastion::is_group_aclkeeper(account => $self, group => $shortGroup, superowner => 1);
+$fnret or osh_exit 'ERR_NOT_GROUP_ACLKEEPER', "Sorry, you must be an aclkeeper of group $shortGroup to be able to add servers to it";
+
+if (not $force) {
+    $fnret = OVH::Bastion::ssh_test_access_way(group => $group, user => $user, port => $port, ip => $ip, forceKey => $forceKey);
+    if ($fnret->is_ok and $fnret->err ne 'OK') {
+
+        # we have something to say, say it
+        osh_info $fnret->msg;
+    }
+    elsif (not $fnret) {
+        osh_info "Note: if you still want to add this access even if it doesn't work, use --force";
+        osh_exit $fnret;
+    }
+}
+else {
+    osh_info "Forcing add as asked, we didn't test the SSH connection, maybe it won't work!";
+}
+
+my @command = qw{ sudo -n -u };
+push @command, ($group, '--', '/usr/bin/env', 'perl', '-T', $OVH::Bastion::BASEPATH . '/bin/helper/osh-groupAddServer');
+push @command, '--group',     $group;
+push @command, '--action',    'add';
+push @command, '--ip',        $ip;
+push @command, '--user',      $user if $user;
+push @command, '--port',      $port if $port;
+push @command, '--force-key', $forceKey if $forceKey;
+push @command, '--ttl',       $ttl if $ttl;
+push @command, '--comment',   $comment if $comment;
+
+osh_exit OVH::Bastion::helper(cmd => \@command);

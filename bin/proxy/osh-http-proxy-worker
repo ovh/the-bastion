@@ -1,0 +1,426 @@
+#! /usr/bin/perl -T
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+# FILEMODE 0755
+# FILEOWN root root
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+
+use Fcntl qw(:flock SEEK_END);
+use Getopt::Long;
+use HTTP::Message;
+use IO::Pipe;
+use IO::Select;
+use IO::Socket::SSL;
+use IO::Socket::SSL;
+use LWP::UserAgent;
+use MIME::Base64;
+use POSIX ();
+use Storable qw{ freeze thaw };
+use Time::HiRes ();
+
+$ENV{'FORCE_STDERR'} = 1;
+$ENV{'PATH'}         = '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/pkg/bin';
+
+my $uniqid;
+my $fnret;
+my %log_params = (
+    'cmdtype'     => 'proxyhttp_worker',
+    'uniq_id'     => $uniqid,
+    'bastionip'   => $ENV{'SERVER_ADDR'},
+    'bastionport' => $ENV{'SERVER_PORT'},
+    'ipfrom'      => $ENV{'REMOTE_ADDR'},
+    'portfrom'    => $ENV{'REMOTE_PORT'},
+    'custom'      => [[user_agent => $ENV{'HTTP_USER_AGENT'}]],
+);
+
+# to handle child timeout
+my $child_finished = 0;
+$SIG{'CHLD'} = sub { wait; $child_finished = 1 };
+
+my @headers;
+
+sub log_and_exit {
+    my ($code, $msg, $body, $params) = @_;
+
+    my %merged = (%log_params, %$params);
+
+    $merged{'allowed'} //= 0;
+
+    # custom data will only be logged to logfile and syslog, not sql (it's not in the generic schema)
+    push @{$merged{'custom'}}, ['code' => $code], ['msg' => $msg];
+    OVH::Bastion::log_access_insert(%merged);
+
+    push @headers, ["X-Bastion-Local-Status" => $code];
+    HEXIT('OK', value => {code => $code, msg => $msg, body => $body . "\n", headers => \@headers, allowed => $merged{'allowed'}});
+}
+
+my $pass = delete $ENV{'PROXY_ACCOUNT_PASSWORD'};
+my $content;
+
+GetOptions(
+    "account=s"       => \my $account,
+    "user=s"          => \my $user,
+    "group=s"         => \my $group,
+    "context=s"       => \my $context,
+    "host=s"          => \my $remotemachine,
+    "port=i"          => \my $remoteport,
+    "method=s"        => \my $method,
+    "path=s"          => \my $path,
+    "header=s"        => \my @client_headers,
+    "timeout=i"       => \my $timeout,
+    "insecure"        => \my $insecure,
+    "uniqid=s"        => \$uniqid,
+    "post-data-stdin" => \my $postDataStdin,
+    "allow-downgrade" => \my $allow_downgrade,
+    "monitoring"      => \my $monitoring,
+);
+push @headers, ["X-Bastion-Remote-IP" => $remotemachine];
+
+if (!$postDataStdin) {
+    $content = delete $ENV{'PROXY_POST_DATA'};
+    $content = decode_base64($content) if $content;
+}
+else {
+    local $/ = undef;
+    $content = <STDIN>;
+}
+push @headers, ["X-Bastion-Request-Length" => "" . length($content)];
+
+# if we're being called by the monitoring, just exit happily
+if ($monitoring) {
+    HEXIT('OK', value => {code => 200, msg => 'OK', body => $OVH::Bastion::VERSION, allowed => 1});
+}
+
+$fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);    # time: 20ms
+$fnret or log_and_exit(400, "Bad Request (bad account)", "Account name is invalid", {comment => "invalid_account"});
+$account               = $fnret->value->{'account'};                                  # untaint
+$log_params{'account'} = $account;
+$log_params{'user'}    = $user;
+$log_params{'hostto'}  = $remotemachine;
+$log_params{'params'}  = $path;
+$log_params{'plugin'}  = uc($method);
+push @{$log_params{'custom'}}, ['post_length' => length($content)];
+
+my $shortGroup;
+if ($group) {
+    $fnret = OVH::Bastion::is_valid_group_and_existing(group => $group, groupType => 'key');
+    $fnret or log_and_exit(400, "Bad Request (bad group)", "Group name is invalid", {comment => "invalid_group"});
+    $shortGroup = $fnret->value->{'shortGroup'};
+    $group      = $fnret->value->{'group'};
+}
+
+if (!OVH::Bastion::is_valid_port(port => $remoteport)) {
+    log_and_exit(400, "Bad Request (bad port number)", "Port number is out of range", {comment => "invalid_port_number"});
+}
+
+$log_params{'portto'} = $remoteport;
+
+if (!$timeout || $timeout !~ /^\d+$/ || $timeout < 1) {
+    $timeout = 10;
+}
+elsif ($timeout > 3600) {
+    $timeout = 3600;
+}
+
+if (not $pass) {
+    log_and_exit(400, "Bad Request (no password)", "No password", {comment => "missing_password"});
+}
+
+# convert the remotemachine into an IP if needed
+# if: avoid loading Net::IP and BigInt if there's no host specified
+if ($remotemachine !~ /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/) {
+    $fnret = OVH::Bastion::get_ip(host => $remotemachine);
+    if ($fnret && $fnret->value->{'ip'} =~ /^([0-9.:]+)$/) {
+        $remotemachine = $1;    # untaint
+    }
+    else {
+        log_and_exit(400, "Bad Request (host not resolved)", "Specified remote host couldn't be resolved through the DNS", {comment => "host_not_found"});
+    }
+}
+else {
+    # it's already an IP, get $1 for untaint
+    $remotemachine = $1;
+}
+
+delete $log_params{'hostto'};
+$log_params{'ipto'} = $remotemachine;
+
+# now check that the password we were given for account matches the hash we have stored for it
+# first get our stored hash
+$fnret = OVH::Bastion::account_config(account => $account, key => "proxyhttphash");
+if (not $fnret or not $fnret->value) {
+
+    # bad login because we couldn't open the proper file
+    log_and_exit(403, "Access Denied", "No password configured for you, $account", {comment => "no_password_for_login"});
+}
+my $storedhash = $fnret->value;
+chomp $storedhash;
+
+# extract the salt from the stored hash we have
+if ($storedhash !~ /^\$(?<cipher>[a-zA-Z0-9]{1,2})\$(?<salt>[^\$]+)\$[^\$]+$/) {
+
+    # the hash we have stored in the bastion is fucked :(
+    log_and_exit(500, "Internal Error (malformed hash)", "Please contact a bastion admin\n", {comment => "malformed_hash"});
+}
+
+if ($storedhash ne crypt($account . ':' . $pass, '$' . $+{'cipher'} . '$' . $+{'salt'})) {
+    log_and_exit(403, "Access Denied", "Incorrect username ($account) or password (#REDACTED#, length=" . length($pass) . ")", {comment => "bad_login_password"});
+}
+undef $pass;
+undef $storedhash;
+
+# read the password we must use
+# pseudoalgo:
+# if mode was explicitely specified to group, we look for a group password
+# elif mode was explicitely specified to self, we look for a self account password
+# elif the legacy file with the same name as $user exists in /home/passkeeper, use it
+# elif the specified $user happens to be a group name, look for this group password
+# else look for a self account password
+
+my $authmode;
+my $hint;
+if ($context eq 'group') {
+    $hint     = $shortGroup;
+    $authmode = 'group/explicit';
+}
+elsif ($context eq 'self') {
+    $hint     = $account;
+    $authmode = 'self/explicit';
+}
+elsif (-f "/home/passkeeper/$user") {
+    $hint     = $user;
+    $context  = 'legacy';
+    $authmode = 'legacy';
+}
+elsif (OVH::Bastion::is_valid_group_and_existing(group => $user, groupType => "key")) {
+    $hint     = $user;
+    $context  = 'group';
+    $authmode = 'group/guessed';
+}
+else {
+    $hint     = $account;
+    $context  = 'self';
+    $authmode = 'self/default';
+}
+push @headers,                 ["X-Bastion-Auth-Mode" => $authmode];
+push @{$log_params{'custom'}}, ['auth_mode'           => $authmode];
+
+# check if account or group has the right to access $user@$remotemachine, time: 50ms (to re-compute)
+$fnret = OVH::Bastion::is_access_granted(account => $account, user => $user, ipfrom => $ENV{'REMOTE_ADDR'}, ip => $remotemachine, port => $remoteport, listOnly => 1, sudo => 1);
+if (not $fnret) {
+    log_and_exit(403, "Access Denied (access denied to remote)", "This account doesn't have access to this user\@host tuple ($fnret)\n", {comment => "access_denied"});
+}
+else {
+    # check that the way we were asked to use (personal access, group access) is actually allowed for this account
+    my $isOk = 0;
+    if ($context ne 'legacy') {
+        foreach my $access (@{$fnret->value}) {
+            if ($access->{'type'} =~ /^group/ && $context eq 'group') {
+                $isOk = 1 if $access->{'group'} eq $hint;
+            }
+            elsif ($access->{'type'} =~ /^personal/ && $context eq 'self') {
+                $isOk = 1;
+            }
+        }
+    }
+    else {
+        # for legacy, we don't check: we didn't know how to differentiate back then
+        $isOk = 1;
+    }
+
+    if (!$isOk) {
+        log_and_exit(
+            403,
+            "Access Denied (access denied to remote this way)",
+            "This account doesn't have access to $user\@$remotemachine:$remoteport using this auth mode ($authmode)\n",
+            {comment => "access_denied_this_way"}
+        );
+    }
+}
+$log_params{'allowed'} = 1;
+
+$fnret = OVH::Bastion::get_passfile(hint => $hint, context => $context);
+if (!$fnret) {
+    log_and_exit(412, "Precondition Failed (egress password missing)", $fnret->msg, {comment => "no_password_found"});
+}
+my $device_password;
+if (open(my $pwdfile, '<', $fnret->value)) {
+    $device_password = <$pwdfile>;
+    close($pwdfile);
+    chomp $device_password;
+}
+else {
+    log_and_exit(500, "Internal Error (egress password unreadable)", "Couldn't read the $context '$user' egress password\n", {comment => "cannot_read_password"});
+}
+
+# Now build the UA for the request between bastion and remote device
+my $ua = LWP::UserAgent->new();
+$ua->agent("The Bastion " . $OVH::Bastion::VERSION);
+$ua->timeout($timeout);
+$ua->protocols_allowed(['https']);
+if ($insecure) {
+    $ua->ssl_opts('verify_hostname' => 0);
+    $ua->ssl_opts('SSL_verify_mode' => IO::Socket::SSL::SSL_VERIFY_NONE);
+}
+
+# set the remote URL
+my $req = HTTP::Request->new($method => "https://" . $remotemachine . ':' . $remoteport . $path);
+
+# add the content we get (passthru)
+$req->content($content);
+
+# passthru some tolerated headers from client->bastion to bastion->device req
+foreach my $key (qw{ accept content-type content-length content-encoding }) {
+    my @values = grep { /^\Q$key\E:/i } @client_headers;
+    next if not @values;
+    $values[0] =~ s/^\Q$key\E:\s*//i;
+    $req->header($key, $values[0]);
+}
+$req->header('Accept-Encoding' => scalar HTTP::Message::decodable());
+
+# set the header to auth ourselves to the remote device
+$req->header('Authorization', 'Basic ' . encode_base64($user . ':' . $device_password, ''));
+undef $device_password;    # no longer needed
+
+my $start_time = [Time::HiRes::gettimeofday()];
+
+# to handle timeout properly, we fork a child, he'll do the req, and we'll wait for it,
+# potentially killing it if the timeout fires
+my $pipe     = IO::Pipe->new;
+my $childpid = fork();
+if ($childpid == 0) {
+
+    # we are the child: make the req and return the result to our parent
+    $pipe->writer;
+    my $res;
+    my $downgraded = 0;
+
+    # do the req a first time with defaults
+    $res = $ua->request($req);
+
+    # if we get a HTTP/1.0 500 Can't connect to A.B.C.D:443 (SSL connect attempt failed error:1425F102:SSL routines:ssl_choose_client_version:unsupported protocol)
+    # ... then the device might be old and support TLS v1.0 maximum only. let's retry that silently if our caller allows
+    if ($allow_downgrade && $res && $res->code == 500 && $res->message =~ /ssl_choose_client_version:unsupported protocol/) {
+        $downgraded = 1;
+        $ua->ssl_opts('SSL_version' => 'TLSv1');
+        $res = $ua->request($req);
+    }
+    $pipe->print(freeze({res => $res, downgraded => $downgraded}));
+    exit;
+}
+
+# we are the parent: wait for our child but also consume the pipe to avoid blocking our child
+$pipe->reader;
+my $waiting_since  = time();
+my $remaining_wait = $timeout;
+my $child_data;
+my $timed_out = 0;
+
+while (1) {
+    $remaining_wait = $timeout - (time() - $waiting_since);
+
+    # we've waited long enough, bail out
+    if ($remaining_wait <= 0) {
+        $timed_out = 1;
+        last;
+    }
+
+    my $select = IO::Select->new($pipe->fileno);
+    my @ready  = $select->can_read($remaining_wait);
+
+    # we either have something to read or timed out
+    if (@ready) {
+
+        # we have something to read
+        my $newdata;
+        my $nbread = $pipe->read($newdata, 4096);
+        if (defined $nbread && $nbread > 0) {
+            $child_data .= $newdata;
+        }
+        else {
+            # 0 means EOF, undef means error
+            last;
+        }
+    }
+    else {
+        # we timed out, bail out
+        $timed_out = 1;
+        last;
+    }
+}
+
+my $res;
+my $downgraded;
+if (!$timed_out) {
+
+    # get the result of the request of our child
+    my $childresult = thaw($child_data);
+    if (ref $childresult eq 'HASH') {
+        $res        = $childresult->{'res'};
+        $downgraded = $childresult->{'downgraded'};
+    }
+
+}
+else {
+    # got a timeout, kill our child
+    kill(9, $childpid);
+}
+
+my $delay = Time::HiRes::tv_interval($start_time, [Time::HiRes::gettimeofday()]);
+
+# log what we got
+my $basedir = "/home/$account/ttyrec";
+-d $basedir || mkdir $basedir;
+
+my $finaldir = "$basedir/$remotemachine";
+-d $finaldir || mkdir $finaldir;
+
+my @now = Time::HiRes::gettimeofday();
+my @t   = localtime($now[0]);
+
+my $headers_as_string = $res ? join("", $res->{'_headers'}->as_string("\n")) : '';
+my $logfile = sprintf("%s/%s.txt", $finaldir, POSIX::strftime("%F", @t));
+my $logline = sprintf(
+"--- BASTION_REQUEST UNIQID=%s TIMESTAMP=%d.%06d DATE=%s ---\n%s\n--- DEVICE_ANSWER UNIQID=%s TIMESTAMP=%d.%06d DATE=%s ---\n%s\n--- END UNIQID=%s TIMESTAMP=%d.%06d DATE=%s ---\n\n",
+    $uniqid, $now[0], $now[1], POSIX::strftime("%Y/%m/%d.%H:%M:%S", @t), $req->as_string(),
+    $uniqid, $now[0], $now[1], POSIX::strftime("%Y/%m/%d.%H:%M:%S", @t),
+    ($res ? sprintf("%s %s\n%s\n%s", $res->protocol, $res->status_line, $headers_as_string, $res->decoded_content) : '(DEVICE TIMEOUT)'),
+    $uniqid, $now[0], $now[1], POSIX::strftime("%Y/%m/%d.%H:%M:%S", @t),
+);
+$logline =~ s/^(Authorization:).+/$1 (removed)/mgi;
+
+if (open(my $log, '>>', $logfile)) {
+    flock($log, LOCK_EX);
+    print $log $logline;
+    flock($log, LOCK_UN);
+    close($log);
+}
+else {
+    warn("Couldn't open $logfile for log write");
+}
+
+my @passthru_headers = qw{ content-type client-ssl-cert-subject client-ssl-cipher client-ssl-warning };
+if ($res) {
+    foreach my $key ($res->headers->header_field_names) {
+        next unless (grep { lc($key) eq $_ } @passthru_headers);
+        push @headers, [$key => $res->header($key)];
+    }
+}
+push @headers, ["X-Bastion-Local-Status" => ($res ? "200 OK" : "504 Device Timeout")];
+push @headers, ["X-Bastion-Remote-Status" => $res->code] if $res;
+push @headers, ["X-Bastion-Remote-Server" => $res->header('server')] if ($res && $res->header('server'));
+push @headers, ["X-Bastion-Egress-Timing" => sprintf("%d", $delay * 1_000_000)];
+push @headers, ["X-Bastion-Downgraded" => 1] if $downgraded;
+
+# custom data will only be logged to logfile and syslog, not sql (it's not in the generic schema)
+if ($res) {
+    push @{$log_params{'custom'}}, ['code' => $res->code], ['msg' => $res->message],;
+}
+OVH::Bastion::log_access_insert(%log_params);
+
+HEXIT('OK', value => {code => $res->code + 0, msg => $res->message, body => $res->decoded_content, headers => \@headers, allowed => 1}) if $res;
+HEXIT('OK', value => {code => 504, msg => "Device Timeout", body => "Device Timeout\n", headers => \@headers, allowed => 1});

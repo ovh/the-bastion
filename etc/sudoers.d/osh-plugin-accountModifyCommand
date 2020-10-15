@@ -1,0 +1,4 @@
+# grant access to a command
+%osh-accountGrantCommand  ALL=(root) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountModifyCommand --action grant *
+# revoke access to a command
+%osh-accountRevokeCommand ALL=(root) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountModifyCommand --action revoke *

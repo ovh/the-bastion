@@ -1,0 +1,55 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+use Term::ANSIColor qw{ colored };
+use POSIX qw{ strftime };
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv     => \@ARGV,
+    header   => "your account's public ingress keys",
+    options  => {},
+    helptext => <<'EOF',
+List the public egress keys of your account
+
+Usage: --osh SCRIPT_NAME
+
+The keys listed are the public egress SSH keys tied to your account.
+They can be used to gain access to another machine from this bastion,
+by putting one of those keys in the remote machine's ``authorized_keys`` file,
+and adding yourself access to this machine with ``selfAddPersonalAccess``.
+EOF
+);
+
+my $fnret;
+
+$fnret = OVH::Bastion::get_bastion_ips();
+$fnret or osh_exit $fnret;
+
+my $from = 'from="' . join(',', @{$fnret->value}) . '"';
+
+$fnret = OVH::Bastion::get_personal_account_keys(account => $sysself);
+$fnret or osh_exit $fnret;
+
+osh_info "You can copy one of those keys to a remote machine to get access to it through your account";
+osh_info "on this bastion, if it is listed in your private access list (check selfListAccesses)";
+osh_info " ";
+osh_info "Always include the $from part when copying the key to a server!";
+osh_info " ";
+
+my $result_hash = {};
+foreach my $keyfile (@{$fnret->value->{'sortedKeys'}}) {
+    my $key = $fnret->value->{'keys'}{$keyfile};
+    $key->{'prefix'} = $from;
+    undef $key->{'filename'};
+    undef $key->{'fullpath'};
+    OVH::Bastion::print_public_key(key => $key);
+    $result_hash->{$key->{'fingerprint'}} = $key;
+}
+
+osh_ok $result_hash;

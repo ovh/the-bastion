@@ -1,0 +1,2 @@
+# On slaves, remove sparse orphaned directories in /home due to deleted accounts/groups
+*/5 * * * * root /opt/bastion/bin/cron/osh-orphaned-homedir.sh >/dev/null

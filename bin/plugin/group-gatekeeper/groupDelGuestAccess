@@ -1,0 +1,84 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+use OVH::Bastion::Plugin::groupSetRole;
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "remove access from one server of a group from an account",
+    options => {
+        "group=s"   => \my $group,
+        "account=s" => \my $account,
+        "user-any"  => \my $userAny,
+        "port-any"  => \my $portAny,
+        "scpup"     => \my $scpUp,
+        "scpdown"   => \my $scpDown,
+    },
+    helptext => <<'EOF',
+Remove a specific group server access from an account
+
+Usage: --osh SCRIPT_NAME --group GROUP --account ACCOUNT [OPTIONS]
+
+  --group GROUP     group to remove guest access from
+  --account ACCOUNT name of the other bastion account to remove access from
+  --host HOST|IP    remove access from this HOST (which must belong to the GROUP)
+  --user USER       allow connecting to HOST only with remote login USER
+  --user-any        allow connecting to HOST with any remote login
+  --port PORT       allow connecting to HOST only to remote port PORT
+  --port-any        allow connecting to HOST with any remote port
+  --scpup           allow SCP upload, you--bastion-->server (omit --user in this case)
+  --scpdown         allow SCP download, you<--bastion--server (omit --user in this case)
+
+This command removes, from an existing bastion account, access to a given server, using the
+egress keys of the group. The list of such servers is given by ``groupListGuestAccesses``
+
+If you want to remove member access from an account to all the present and future servers
+of the group, using the group key, please use ``groupDelMember`` instead.
+
+If you want to remove access from an account from a group server but using his personal bastion
+key instead of the group key, please use ``accountDelPersonalAccess`` instead.
+
+This command is the opposite of ``groupAddGuestAccess``.
+EOF
+);
+
+if (not $ip and $host) {
+    osh_exit 'ERR_INVALID_HOST', "Specified host ($host) didn't resolve correctly, fix your DNS or specify the IP instead";
+}
+if ($scpUp and $scpDown) {
+    help();
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "You specified both --scpup and --scpdown, if you want to grant both, please do it in two separate commands";
+}
+if (($scpUp or $scpDown) and ($user or $userAny)) {
+    help();
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS',
+"To grant SCP access, first ensure SSH access is granted to the machine (with the --user you need, or --user-any), then grant with --scpup and/or --scpdown, omitting --user/--user-any";
+}
+
+my $realUser = $user;
+$realUser = '!scpupload'   if $scpUp;
+$realUser = '!scpdownload' if $scpDown;
+my $fnret = OVH::Bastion::Plugin::groupSetRole::act(
+    account        => $account,
+    group          => $group,
+    action         => 'del',
+    type           => 'guest',
+    user           => $realUser,
+    userAny        => $userAny,
+    port           => $port,
+    portAny        => $portAny,
+    host           => ($ip || $host),
+    sudo           => 0,
+    silentoverride => 0,
+    self           => $self,
+    scriptName     => $scriptName,
+    savedArgs      => $savedArgs
+);
+help() if not $fnret;
+osh_exit($fnret);

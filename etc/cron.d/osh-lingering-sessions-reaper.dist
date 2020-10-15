@@ -1,0 +1,2 @@
+# detect lingering sessions (for >1 day) with nobody on the other side (no tty), and kill them
+15 5    * * *   root    /opt/bastion/bin/cron/osh-lingering-sessions-reaper.sh >/dev/null

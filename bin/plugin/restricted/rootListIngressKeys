@@ -1,0 +1,46 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+use Term::ANSIColor qw{ colored };
+use POSIX qw{ strftime };
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv     => \@ARGV,
+    header   => "public keys to connect as root on this bastion",
+    options  => {},
+    helptext => <<'EOF',
+List the public keys to connect as root on this bastion
+
+Usage: --osh SCRIPT_NAME
+
+This command is mainly useful for auditability purposes.
+As it gives some information as to who can be root on the underlying system,
+please grant this command only to accounts that need to have this information.
+EOF
+);
+
+my $fnret;
+
+my @command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
+push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountListIngressKeys';
+push @command, '--account', 'root';
+
+$fnret = OVH::Bastion::helper(cmd => \@command);
+$fnret or osh_exit $fnret;
+
+my @result;
+foreach my $key (@{$fnret->value || []}) {
+    OVH::Bastion::print_public_key(key => $key, id => $key->{'index'}, err => $key->{'err'});
+    $key->{'validity'}  = delete $key->{'err'};
+    $key->{'id'}        = delete $key->{'index'};
+    $key->{'from_list'} = delete $key->{'fromList'};
+    push @result, $key;
+}
+
+osh_ok({keys => \@result, account => 'root'});

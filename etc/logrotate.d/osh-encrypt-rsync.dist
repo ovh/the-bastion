@@ -1,0 +1,10 @@
+/var/log/bastion/osh-encrypt-rsync.log {
+        notifempty
+        missingok
+        rotate 12
+        weekly
+        compress
+        delaycompress
+        create 0600 root root
+}
+

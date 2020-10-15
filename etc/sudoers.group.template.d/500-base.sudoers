@@ -1,0 +1,27 @@
+# as an owner, we can modify the group settings
+SUPEROWNERS, %%GROUP%-owner      ALL=(%GROUP%)     NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupModify --group %GROUP% *
+
+# as an owner, we can grant/revoke ownership
+SUPEROWNERS, %%GROUP%-owner      ALL=(root)        NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupSetRole --type owner --group %GROUP% *
+
+# as an owner, we can grant/revoke gatekeepership
+SUPEROWNERS, %%GROUP%-owner      ALL=(root)        NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupSetRole --type gatekeeper --group %GROUP% *
+
+# as an owner, we can grant/revoke aclkeepership
+SUPEROWNERS, %%GROUP%-owner      ALL=(root)        NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupSetRole --type aclkeeper --group %GROUP% *
+
+# as an owner, we can generate an egress password for the group
+SUPEROWNERS, %%GROUP%-owner      ALL=(%GROUP%)     NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupGeneratePassword --group %GROUP% *
+
+# as a gatekeeper, we can grant/revoke membership
+SUPEROWNERS, %%GROUP%-gatekeeper ALL=(root)        NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupSetRole --type member --group %GROUP% *
+# as a gatekeeper, to be able to symlink in /home/allowkeeper/ACCOUNT the /home/%GROUP%/allowed.ip file
+SUPEROWNERS, %%GROUP%-gatekeeper ALL=(allowkeeper) NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupAddSymlinkToAccount --group %GROUP% *
+
+# as a gatekeeper, we can grant/revoke a guest access
+SUPEROWNERS, %%GROUP%-gatekeeper ALL=(root)        NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupSetRole --type guest --group %GROUP% *
+# as a gatekeeper, to be able to add the servers to /home/allowkeeper/ACCOUNT/allowed.partial.%GROUP% file
+SUPEROWNERS, %%GROUP%-gatekeeper ALL=(allowkeeper) NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-accountAddGroupServer --group %GROUP% *
+
+# as an aclkeeper, we can add/del a server from the group server list in /home/%GROUP%/allowed.ip
+SUPEROWNERS, %%GROUP%-aclkeeper  ALL=(%GROUP%)     NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupAddServer --group %GROUP% *

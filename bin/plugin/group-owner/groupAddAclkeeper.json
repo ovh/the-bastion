@@ -1,0 +1,10 @@
+{
+    "interactive": [
+        "groupAddAclkeeper"                             , {"ac" : ["--account"]},
+        "groupAddAclkeeper --account"                   , {"ac" : ["<ACCOUNT>"]},
+        "groupAddAclkeeper --account \\S+"              , {"ac" : ["--group"]},
+        "groupAddAclkeeper --account \\S+ --group"      , {"ac" : ["<GROUP>"]},
+        "groupAddAclkeeper --account \\S+ --group \\S+" , {"pr" : ["<enter>"]}
+    ],
+    "master_only": true
+}

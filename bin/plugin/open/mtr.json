@@ -1,0 +1,7 @@
+{
+    "interactive": [
+        "mtr" , {"ac" : ["--host"]},
+        "mtr --host" , {"pr" : ["<HOST/IP>"]},
+        "mtr --host \\S+" , {"pr" : ["<enter>"]}
+    ]
+}

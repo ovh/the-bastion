@@ -1,0 +1,169 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+use Term::ANSIColor;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "list bastion accounts",
+    options => {
+        "inactive-only" => \my $inactiveOnly,
+        "realm-only"    => \my $realmOnly,
+        "account=s"     => \my $account,
+        "audit"         => \my $audit,
+    },
+    helptext => <<'EOF',
+List the bastion accounts
+
+Usage: --osh SCRIPT_NAME [--account ACCOUNT] [--inactive-only] [--audit]
+
+  --account ACCOUNT  Only list the specified account. This is an easy way to check whether the account exists
+  --inactive-only    Only list inactive accounts
+  --audit            Show more verbose information (SLOW!), you need to be a bastion auditor
+EOF
+);
+
+sub tristate2str {
+    my $v = shift;
+    my $r = shift;
+    return (defined $v ? ($v ? colored('yes', $r ? 'red' : 'green') : colored('no', $r ? 'green' : 'red')) : colored('-', 'blue'));
+}
+
+if ($realmOnly) {
+    osh_exit(R('ERR_INVALID_PARAMETER'), "Option --realm-only is no longer supported, use realmList instead");
+}
+
+my $fnret;
+if ($account) {
+    $fnret = OVH::Bastion::get_account_list(accounts => [$account]);
+}
+else {
+    $fnret = OVH::Bastion::get_account_list();
+}
+
+$fnret or osh_exit $fnret;
+my $accounts = $fnret->value;
+
+if ($audit && !OVH::Bastion::is_auditor(account => $self)) {
+    osh_exit(R('ERR_PERMISSION_DENIED', msg => "You need to be a bastion auditor to use --audit"));
+}
+
+my $fnretPassword;
+if ($audit) {
+
+    # get UNIX password info for all accounts
+    my @command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
+    push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountGetPasswordInfo', '--all';
+    $fnretPassword = OVH::Bastion::helper(cmd => \@command);
+}
+
+my $result_hash = {};
+foreach my $account (sort keys %$accounts) {
+    my %states;
+
+    $states{'is_active'} = undef;
+    $fnret = OVH::Bastion::is_account_active(account => $account);
+    if ($fnret->is_ok) {
+        next if $inactiveOnly;
+        $states{'is_active'} = 1;
+    }
+    elsif ($fnret->is_ko) {
+        $states{'is_active'} = 0;
+    }
+
+    if ($audit) {
+        $fnret = OVH::Bastion::is_account_nonexpired(sysaccount => $account);
+        $states{'is_expired'} = undef;
+        if ($fnret->is_ok) {
+            $states{'is_expired'} = 0;
+        }
+        elsif ($fnret->is_ko) {
+            $states{'is_expired'}   = 1;
+            $states{'expired_days'} = $fnret->value->{'days'};
+        }
+
+        $states{'already_seen_before'} = undef;
+        if ($fnret->value && defined $fnret->value->{'already_seen_before'}) {
+            $states{'already_seen_before'} = $fnret->value->{'already_seen_before'} ? 1 : 0;
+        }
+
+        $states{'last_activity'}           = undef;
+        $states{'last_activity_timestamp'} = undef;
+        my $seconds = $fnret->value->{'seconds'};
+        if (defined $seconds) {
+            $fnret = OVH::Bastion::duration2human(seconds => $seconds, tense => "past");
+            if ($fnret) {
+                $states{'last_activity_timestamp'} = time() - $seconds;
+                $states{'last_activity'}           = sprintf(
+                    "%s on %s (%s ago)",
+                    (defined $states{'already_seen_before'} ? ($states{'already_seen_before'} ? "Last seen" : "Created") : "Last activity"),
+                    $fnret->value->{'date'},
+                    $fnret->value->{'duration'}
+                );
+            }
+        }
+
+        $states{'can_connect'} = ($states{'is_active'} && !$states{'is_expired'}) ? 1 : 0;
+
+        $states{'mfa_password_required'}   = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_PASSWORD_REQUIRED_GROUP)   ? 1 : 0;
+        $states{'mfa_password_configured'} = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_PASSWORD_CONFIGURED_GROUP) ? 1 : 0;
+        $states{'mfa_password_bypass'}     = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_PASSWORD_BYPASS_GROUP)     ? 1 : 0;
+        $states{'mfa_totp_required'}       = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_TOTP_REQUIRED_GROUP)       ? 1 : 0;
+        $states{'mfa_totp_configured'}     = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_TOTP_CONFIGURED_GROUP)     ? 1 : 0;
+        $states{'mfa_totp_bypass'}         = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_TOTP_BYPASS_GROUP)         ? 1 : 0;
+        $states{'pam_auth_bypass'}         = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::PAM_AUTH_BYPASS_GROUP)         ? 1 : 0;
+
+        if ($fnretPassword) {
+            $states{"password_$_"} = $fnretPassword->value->{$account}{$_} for (keys %{$fnretPassword->value->{$account}});
+        }
+    }
+
+    $result_hash->{$account}         = \%states;
+    $result_hash->{$account}{'name'} = $account;
+    $result_hash->{$account}{'uid'}  = $accounts->{$account}{'uid'};
+
+    if ($audit) {
+        my @mfaPassword;
+        push @mfaPassword, 'required' if $states{'mfa_password_required'};
+        push @mfaPassword, 'enabled'  if $states{'mfa_password_configured'};
+        push @mfaPassword, 'bypass'   if $states{'mfa_password_bypass'};
+        my @mfaTOTP;
+        push @mfaTOTP, 'required' if $states{'mfa_totp_required'};
+        push @mfaTOTP, 'enabled'  if $states{'mfa_totp_configured'};
+        push @mfaTOTP, 'bypass'   if $states{'mfa_totp_bypass'};
+
+        osh_info sprintf(
+"%-18s %6d active:%-12s expired:%-12s can_connect:%-12s already_seen:%-12s mfa_password:%-25s mfa_totp:%-25s pam_bypass:%-12s pass_status:%-15s pass_changed:%-10s pass_min_days:%-3d pass_max_days:%-3d pass_warn_days:%-3d  %s\n",
+            $account,
+            $accounts->{$account}{'uid'},
+            tristate2str($states{'is_active'}),
+            tristate2str($states{'is_expired'}, 1),
+            tristate2str($states{'can_connect'}),
+            tristate2str($states{'already_seen_before'}),
+            @mfaPassword ? colored(join(',', @mfaPassword), 'green') : colored('-', 'blue'),
+            @mfaTOTP     ? colored(join(',', @mfaTOTP),     'green') : colored('-', 'blue'),
+            tristate2str($states{'pam_auth_bypass'}, 1),
+            (
+                $states{'password_password'} eq 'locked'
+                ? colored('locked', 'blue')
+                : ($states{'password_password'} eq 'set' ? colored('set', 'green') : colored($states{'password_password'}, 'red'))
+            ),
+            $states{'password_date_changed'},
+            $states{'password_min_days'},
+            $states{'password_max_days'},
+            $states{'password_warn_days'},
+            $states{'last_activity'},
+        );
+    }
+    else {
+        osh_info sprintf("%-18s %6d\n", $account, $accounts->{$account}{'uid'});
+    }
+}
+
+osh_ok $result_hash;

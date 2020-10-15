@@ -1,0 +1,6 @@
+{
+    "interactive": [
+        "alive" , {"pr" : ["<IP/HOST>"]},
+        "alive \\S+" , {"pr" : ["<enter>"]}
+    ]
+}

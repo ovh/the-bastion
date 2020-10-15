@@ -1,0 +1,94 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv     => \@ARGV,
+    header   => "remove a known hostkey",
+    options  => {},
+    helptext => <<'EOF',
+Forget a known host key from your bastion account
+
+Usage: --osh SCRIPT_NAME [--host HOST] [--port PORT]
+
+  --host HOST  Host to remove from the known_hosts file
+  --port PORT  Port to look for in the known_hosts file (default: 22)
+
+This command is useful to remove the man-in-the-middle warning when a key has changed,
+however please verify that the host key change is legit before using this command.
+The warning SSH gives is there for a reason.
+EOF
+);
+
+#
+# code
+#
+my $fnret;
+
+if (not $host and not $ip) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing argument 'host'";
+}
+
+my @toCheck;
+if ($port && $port ne '22') {
+    if ($host) {
+        push @toCheck, "[$host]:$port";
+    }
+    if ($ip and $host ne $ip) {
+        push @toCheck, "[$ip]:$port";
+    }
+}
+else {
+    if ($host) {
+        push @toCheck, $host;
+    }
+    if ($ip and $host ne $ip) {
+        push @toCheck, $ip;
+    }
+}
+
+my $result_hash = {};
+foreach my $item (@toCheck) {
+    next unless $item;
+    osh_info "Looking for keys in your known_hosts for $item";
+
+    # if the user's known_hosts doesn't exist, it makes ssh-keygen -F very angry
+    if (!-e "$HOME/.ssh/known_hosts") {
+        osh_ok(R('OK_NO_CHANGE', msg => "Your account didn't have any known_hosts file, nothing to do"));
+    }
+
+    my @command = qw{ ssh-keygen -F };
+    push @command, $item;
+    $fnret = OVH::Bastion::execute(cmd => \@command, noisy_stderr => 1, noisy_stdout => 1);
+    if ($fnret->err eq 'OK' || $fnret->value->{'sysret'} == 1) {
+        if (not @{$fnret->value->{'stdout'} || []}) {
+            $result_hash->{$item} = {action => 'OK_NO_MATCH'};
+            osh_info "... none found (maybe you forgot to specify --port ?)";
+            next;
+        }
+        osh_info "At least one key was found, deleting it...";
+        @command = qw{ ssh-keygen -R };
+        push @command, $item;
+        $fnret = OVH::Bastion::execute(cmd => \@command, noisy_stderr => 1, noisy_stdout => 1);
+        if ($fnret->err eq 'OK') {
+            $result_hash->{$item} = {action => 'OK_DELETED'};
+            osh_info "Key for '$item' deleted successfully";
+        }
+        else {
+            $result_hash->{$item} = {action => 'ERR_DELETE_FAILED'};
+            osh_crit "An error occurred while trying to delete the key (" . $fnret->msg . ")";
+        }
+    }
+    else {
+        osh_exit 'ERR_SSH_KEYGEN_FIND', "An error occurred while trying to look for the key (" . $fnret->msg . ")";
+    }
+}
+
+osh_ok $result_hash;

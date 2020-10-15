@@ -1,0 +1,65 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "modify the configuration of a group",
+    options => {
+        "group=s"           => \my $group,
+        "mfa-required=s"    => \my $mfaRequired,
+        "guest-ttl-limit=s" => \my $ttl,
+    },
+    helptext => <<'EOF',
+Modify the configuration of a group
+
+Usage: --osh SCRIPT_NAME --group GROUP [--mfa-required password|totp|any|none] [--guest-ttl-limit DURATION]
+
+  --group            GROUP                    Name of the group to modify
+  --mfa-required     password|totp|any|none   Enforce UNIX password requirement, or TOTP requirement, or any MFA requirement, when connecting to a server of the group
+  --guest-ttl-limit  DURATION                 This group will enforce TTL setting, on guest access creation, to be set, and not to a higher value than DURATION,
+                                                set to zero to allow guest accesses creation without any TTL set (default)
+EOF
+);
+
+my $fnret;
+
+if (!$group) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing mandatory parameter 'group'";
+}
+if (!$mfaRequired && !defined $ttl) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Nothing to modify";
+}
+if (defined $ttl) {
+    $fnret = OVH::Bastion::is_valid_ttl(ttl => $ttl);
+    $fnret or osh_exit $fnret;
+    $ttl = $fnret->value->{'seconds'};
+}
+
+$fnret = OVH::Bastion::is_valid_group_and_existing(group => $group, groupType => 'key');
+$fnret or osh_exit $fnret;
+$group = $fnret->value->{'group'};
+my $shortGroup = $fnret->value->{'shortGroup'};
+
+if (defined $mfaRequired && !grep { $mfaRequired eq $_ } qw{ password totp any none }) {
+    help();
+    osh_exit 'ERR_INVALID_PARAMETER', "Expected 'password', 'totp', 'any' or 'none' as parameter to --mfa-required";
+}
+
+my @command = qw{ sudo -n -u };
+push @command, $group;
+push @command, qw{ -- /usr/bin/env perl -T };
+push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-groupModify';
+push @command, '--group', $group;
+push @command, '--mfa-required', $mfaRequired if $mfaRequired;
+push @command, '--guest-ttl-limit', $ttl if defined $ttl;
+
+osh_exit OVH::Bastion::helper(cmd => \@command);

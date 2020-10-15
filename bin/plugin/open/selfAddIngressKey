@@ -1,0 +1,122 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my ($pubKey);
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "add a new public key to your account",
+    options => {
+        "pubKey=s",     \$pubKey,    # deprecated name, keep it to not break scripts or people
+        "public-key=s", \$pubKey,
+    },
+    helptext => <<'EOF',
+Add a new ingress public key to your account
+
+Usage: --osh SCRIPT_NAME [--public-key '"ssh key text"']
+
+  --public-key KEY  Your new ingress public SSH key to deposit on the bastion, use double-quoting if your're under a shell.
+
+If no option is specified, you'll be prompted interactively.
+EOF
+);
+
+# ugly hack for space-enabled parameter
+if (ref $remainingOptions eq 'ARRAY' and @$remainingOptions) {
+    $pubKey .= " " . join(" ", @$remainingOptions);
+}
+
+#
+# code
+#
+my $fnret;
+
+$fnret = OVH::Bastion::account_config(account => $self, public => 1, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_POLICY);
+if ($fnret && $fnret->value eq 'yes') {
+    osh_exit R('ERR_ACCESS_DENIED', msg => "PIV-only policy is enabled for your account, you can't add new keys this way");
+}
+
+my $allowedKeyFile = $HOME . '/.ssh/authorized_keys2';
+
+if (not defined $pubKey) {
+    $fnret = OVH::Bastion::get_supported_ssh_algorithms_list(way => 'ingress');
+    $fnret or osh_exit $fnret;
+    my @algoList = @{$fnret->value};
+    my $algos = join(' ', @algoList);
+    osh_info "Please paste the SSH key you want to add. This bastion supports the following algorithms:\n";
+    if (grep { 'ed25519' eq $_ } @algoList) {
+        osh_info "ED25519: strongness[#####] speed[#####], use `ssh-keygen -t ed25519' to generate one";
+    }
+    if (grep { 'ecdsa' eq $_ } @algoList) {
+        osh_info "ECDSA  : strongness[####.] speed[#####], use `ssh-keygen -t ecdsa -b 521' to generate one";
+    }
+    if (grep { 'rsa' eq $_ } @algoList) {
+        osh_info "RSA    : strongness[###..] speed[#....], use `ssh-keygen -t rsa -b 4096' to generate one";
+    }
+    osh_info "\nIn any case, don't save it without a passphrase.";
+    if (OVH::Bastion::config('ingressKeysFromAllowOverride')->value) {
+        osh_info 'You can prepend your key with a from="IP1,IP2,..." as this bastion policy allows ingress keys "from" override by users';
+    }
+    else {
+        osh_info 'Any from="IP1,IP2,..." you include will be ignored, as this bastion policy refuses ingress keys "from" override by users';
+    }
+    $pubKey = <STDIN>;
+}
+
+$fnret = OVH::Bastion::is_valid_public_key(pubKey => $pubKey, way => 'ingress');
+if (!$fnret) {
+
+    # maybe we decoded the key but for some reason we don't want/can't add it
+    # in that case, return the data of the key in the same format as when this
+    # call works (see last line with osh_ok)
+    $fnret->{'value'} = {key => $fnret->value} if $fnret->value;
+    osh_exit $fnret;
+}
+my $key = $fnret->value;
+
+if (checkExistKey($key->{'base64'})) {
+    osh_exit R('KO_DUPLICATE_KEY', msg => "This public key already exists on your account!", value => {key => $key});
+}
+
+$fnret = OVH::Bastion::get_from_for_user_key(userProvidedIpList => $key->{'fromList'}, key => $key);
+$fnret or osh_exit $fnret;
+
+if (open(my $fh_keyfile, '>>', $allowedKeyFile)) {
+    print $fh_keyfile $key->{'line'} . "\n";
+    close($fh_keyfile);
+}
+else {
+    osh_exit 'ERR_CANNOT_OPEN_FILE', "Error while trying to open file $allowedKeyFile for write ($!)";
+}
+osh_info "Public key successfully added";
+if (ref $key->{'fromList'} eq 'ARRAY' && @{$key->{'fromList'}}) {
+    osh_info "You will only be able to connect from: " . join(', ', @{$key->{'fromList'}});
+}
+
+sub checkExistKey {
+
+    # only pass the base64 part of the key here (returned by get_ssh_pub_key_info->{'base64'})
+    my $pubKeyB64 = shift;
+
+    open(my $fh_keys, '<', $allowedKeyFile) || die("can't read the $allowedKeyFile file!\n");
+    while (my $currentLine = <$fh_keys>) {
+        chomp $currentLine;
+        next if ($currentLine =~ /^\s*#/);
+        my $parsedResult = OVH::Bastion::get_ssh_pub_key_info(pubKey => $currentLine, way => "ingress");
+        if ($parsedResult && $parsedResult->value->{'base64'} eq $pubKeyB64) {
+            close($fh_keys);
+            return $currentLine;
+        }
+    }
+    close($fh_keys);
+    return 0;
+}
+
+$key->{'from_list'} = delete $key->{'fromList'};    # for json display
+osh_ok {connect_only_from => $key->{'from_list'}, key => $key};

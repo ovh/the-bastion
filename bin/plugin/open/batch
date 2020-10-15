@@ -1,0 +1,66 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv     => \@ARGV,
+    header   => "clush",
+    options  => {},
+    helptext => <<'EOF',
+Run a batch of osh commands fed through STDIN
+
+Usage: --osh SCRIPT_NAME
+
+**Examples:**
+
+(replace ``bssh`` by your bastion alias)
+
+- run 3 simple commands in a oneliner:
+
+::
+
+  printf "%b\n%b\n%b" info selfListIngressKeys selfListEgressKeys | bssh --osh batch
+
+- run a lot of commands written out line by line in a file:
+
+::
+
+  bssh --osh batch < cmdlist.txt
+
+- add 3 users to a group:
+
+::
+
+  for i in user1 user2 user3; do echo "groupAddMember --account $i --group grp4"; done | bssh --osh batch
+EOF
+);
+
+my $fnret;
+
+osh_info "Feed me osh commands line by line on stdin, I'll execute them sequentially.";
+osh_info "Use 'exit', 'quit' or ^D to stop.";
+osh_info "--- waiting for input";
+
+my @ret;
+while (my $line = <STDIN>) {
+    chomp $line;
+    last if (lc($line) eq 'exit' || lc($line) eq 'quit');
+
+    # we remove any json param, because we add --json ourselves so that we can decode
+    # what the osh plugin had to say, and add it to our global @ret json
+    $line =~ s/ --json[a-z-]*//g;
+    my @cmd = ($ENV{'SHELL'}, '-c', "--osh $line --json");
+    osh_info "--- launching command: $line";
+    $fnret = OVH::Bastion::helper(cmd => \@cmd);
+    if (!$fnret) {
+        osh_warn "--- command failed!";
+    }
+    push @ret, {command => $line, result => $fnret};
+}
+osh_ok(\@ret);

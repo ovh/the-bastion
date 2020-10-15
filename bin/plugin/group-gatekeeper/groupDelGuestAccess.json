@@ -1,0 +1,17 @@
+{
+    "interactive": [
+        "groupDelGuestAccess"                                               , {"ac" : ["--account"]},
+        "groupDelGuestAccess --account"                                     , {"ac" : ["<ACCOUNT>"]},
+        "groupDelGuestAccess --account \\S+"                                 , {"ac" : ["--group"]},
+        "groupDelGuestAccess --account \\S+ --group"                         , {"ac" : ["<GROUP>"]},
+        "groupDelGuestAccess --account \\S+ --group \\S+"                     , {"ac" : ["--host"]},
+        "groupDelGuestAccess --account \\S+ --group \\S+ --host"              , {"pr" : ["<HOST>", "<IP>", "<IP/MASK>"]},
+        "groupDelGuestAccess --account \\S+ --group \\S+ --host \\S+"          , {"ac" : ["<enter>", "--user", "--port"]},
+        "groupDelGuestAccess --account \\S+ --group \\S+ --host \\S+ .*--user" , {"pr" : ["<USER>"]},
+        "groupDelGuestAccess --account \\S+ --group \\S+ --host \\S+ .*--port" , {"pr" : ["<PORT>"]},
+        "groupDelGuestAccess --account \\S+ --group \\S+ --host \\S+ --user \\S+"                          , {"ac" : ["<enter>", "--port"]},
+        "groupDelGuestAccess --account \\S+ --group \\S+ --host \\S+ --port \\S+"                          , {"ac" : ["<enter>", "--user"]},
+        "groupDelGuestAccess --account \\S+ --group \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+" , {"pr" : ["<enter>"]}
+    ],
+    "master_only": true
+}

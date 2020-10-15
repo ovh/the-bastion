@@ -1,0 +1,14 @@
+{
+    "interactive": [
+        "accountCreate"                         , {"ac" : ["--account"]},
+        "accountCreate --account"               , {"pr" : ["<ACCOUNT>"]},
+        "accountCreate --account \\S+"           , {"ac" : ["--uid"]},
+        "accountCreate --account \\S+ --uid"     , {"pr" : ["<UID>"]},
+        "accountCreate --account \\S+ --uid \\S+" , {"ac" : ["<enter>", "--always-active", "--comment"]},
+        "accountCreate --account \\S+ --uid \\S+ --always-active"                                               , {"ac" : ["<enter>", "--comment"]},
+        "accountCreate --account \\S+ --uid \\S+ .*--comment"                                                   , {"pr" : ["<COMMENT_WITHOUT_SPACES>"]},
+        "accountCreate --account \\S+ --uid \\S+ (--always-active --comment \\S+|--comment \\S+ --always-active)" , {"pr" : ["<enter>"]}
+    ],
+    "master_only": true,
+    "terminal_mode": "raw"
+}

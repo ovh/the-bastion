@@ -1,0 +1,99 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+use Term::ANSIColor;
+use POSIX ();
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "delete an existing bastion account",
+    options => {
+        'account=s'                                                           => \my $account,
+        'i-am-a-robot-and-i-dont-know-how-to-answer-your-question|no-confirm' => \my $noConfirm,
+    },
+    helptext => <<'EOF',
+Delete an account from the bastion
+
+Usage: --osh SCRIPT_NAME --account ACCOUNT
+
+  --account ACCOUNT  Account name to delete
+  --no-confirm       Don't ask for confirmation, and blame yourself if you deleted the wrong account
+EOF
+);
+
+#
+# code
+#
+my $fnret;
+
+#
+# params check
+#
+if (!$account) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing 'account' parameter";
+}
+
+$fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
+$fnret or osh_exit $fnret;
+$account = $fnret->value->{'account'};    # untaint
+
+if (!$noConfirm) {
+    osh_info "!!!! WARNING !!!! WARNING !!!! WARNING !!!! WARNING !!!! WARNING !!!!";
+    osh_info "!!!! WARNING !!!! WARNING !!!! WARNING !!!! WARNING !!!! WARNING !!!!";
+    osh_info "!!!! WARNING !!!! WARNING !!!! WARNING !!!! WARNING !!!! WARNING !!!!";
+    osh_info " ";
+}
+
+$fnret = OVH::Bastion::is_account_active(account => $account);
+if ($fnret) {
+    osh_warn "Hint: account $account is currently ACTIVE (i.e. not disabled), think twice before removing it!";
+}
+elsif ($fnret->is_err) {
+    osh_warn "Hint: couldn't verify $account current validity, in any case, think twice before removing it!";
+}
+else {
+    osh_info("Hint: account $account is currently " . colored("inactive", "green") . ", so what you're doing is probably fine.");
+}
+
+osh_info " ";
+if (!$noConfirm) {
+    osh_info "You are about to DELETE a bastion account, to be sure you're not drunk, type the following sentence:";
+    osh_info " ";
+    osh_info '  "Yes, do as I say and delete <insert_here_the_account_name>, kthxbye"  ';
+    osh_info " ";
+    my $sentence = <STDIN>;
+    chomp $sentence;
+
+    if ($sentence ne "Yes, do as I say and delete $account, kthxbye") {
+        osh_exit 'ERR_OPERATOR_IS_DRUNK', "You're drunk, apparently, aborted.";
+    }
+    osh_info "OK, proceeding...";
+}
+
+my @command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
+push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountDelete';
+push @command, "--type", "normal", "--account", $account;
+
+# as the helper can take a long time to complete (because of tar), and caller in front
+# of his ssh console might close it's end without waiting, tar would get a SIGHUP and
+# stop. we don't want this: use setsid to be in our own session. we fork() first because
+# if we are a process group leader, setsid() would fail
+my $child = fork();
+if (!defined $child) {
+    osh_warn "Couldn't fork(), proceeding without forking...";
+}
+exit if $child;    # parent
+
+# here, I'm the child: call setsid()
+if (POSIX::setsid() == -1) {
+    osh_warn "Couldn't call setsid(), proceeding anyway...";
+}
+
+osh_exit OVH::Bastion::helper(cmd => \@command);

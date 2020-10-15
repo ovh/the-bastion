@@ -1,0 +1,54 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+OVH::Bastion::Plugin::begin(
+    argv     => \@ARGV,
+    header   => "realm information",
+    options  => {'realm=s' => \my $pRealm},
+    helptext => <<'EOF',
+Display informations about a bastion realm
+
+Usage: --osh SCRIPT_NAME --realm REALM
+
+  --realm REALM  Name of the realm to show info about
+EOF
+);
+
+my $fnret;
+
+if (!$pRealm) {
+    help();
+    osh_exit R('ERR_MISSING_PARAMETER', msg => "Missing argument 'realm'");
+}
+
+$fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => "realm_$pRealm", accountType => "realm");
+$fnret or osh_exit $fnret;
+
+$fnret = OVH::Bastion::get_remote_accounts_from_realm(realm => $pRealm);
+$fnret or osh_exit $fnret;
+
+my @accounts = sort @{$fnret->value};
+my %details;
+
+if (@accounts) {
+    osh_info "The following accounts from realm $pRealm are known:";
+    foreach my $account (@accounts) {
+        $fnret = OVH::Bastion::get_acls(account => "$pRealm/$account");
+        my $nb = $fnret ? scalar(@{$fnret->value}) : "?";
+        $details{$account} = {accesses => ($fnret ? scalar(@{$fnret->value}) : undef)};
+        osh_info sprintf("- %-18s [%s accesses]", $account, $nb);
+    }
+    osh_info "\nTo get their access list, use --osh accountListAccesses --account $pRealm/account_name_here";
+}
+else {
+    osh_info "No remote accounts from realm $pRealm have accesses yet.";
+}
+
+osh_ok({realm => $pRealm, accounts => \@accounts, account_details => \%details});

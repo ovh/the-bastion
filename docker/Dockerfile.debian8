@@ -1,0 +1,32 @@
+FROM debian:jessie
+LABEL maintainer="stephane.lesimple+bastion@ovhcloud.com"
+
+# cache builds efficiently: just copy the needed script to build ttyrec first
+COPY bin/admin/build-and-install-ttyrec.sh /opt/bastion/bin/admin/
+COPY lib/shell                             /opt/bastion/lib/shell/
+RUN ["/opt/bastion/bin/admin/build-and-install-ttyrec.sh"]
+
+# then just some more bits to install the packages
+COPY bin/admin/packages-check.sh /opt/bastion/bin/admin/
+RUN ["/opt/bastion/bin/admin/packages-check.sh","-i","-d","-s"]
+
+# handle locales
+RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen && locale-gen
+
+# disable /dev/kmsg handling by syslog-ng and explicitely enable /dev/log
+RUN test -e /etc/syslog-ng/syslog-ng.conf && \
+    sed -i -re 's=system\(\);=unix-stream("/dev/log");=' /etc/syslog-ng/syslog-ng.conf
+
+# at each modification of our code, we'll start from here thanks to build cache
+COPY . /opt/bastion
+
+# tests that the environment works
+RUN ["/opt/bastion/bin/dev/perl-check.sh"]
+
+# setup ssh/sshd config and setup bastion install
+RUN ["/opt/bastion/bin/admin/install","--new-install","--no-wait"]
+
+# start at entrypoint
+ENTRYPOINT /opt/bastion/docker/entrypoint.sh
+
+# TESTENV HAS_ED25519=1 HAS_BLACKLIST=0 HAS_MFA=1 HAS_PAMTESTER=1

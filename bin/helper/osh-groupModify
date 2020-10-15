@@ -1,0 +1,128 @@
+#! /usr/bin/perl -T
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+# KEYSUDOERS # as an owner, we can modify the group settings
+# KEYSUDOERS SUPEROWNERS, %%GROUP%-owner      ALL=(%GROUP%)     NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupModify --group %GROUP% *
+# FILEMODE 0755
+# FILEOWN root root
+
+#>HEADER
+use common::sense;
+use Getopt::Long;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../lib/perl';
+use OVH::Bastion;
+use OVH::Result;
+local $| = 1;
+
+#
+# Globals
+#
+$ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/pkg/bin';
+my ($self) = $ENV{'SUDO_USER'} =~ m{^([a-zA-Z0-9._-]+)$};
+if (not defined $self) {
+    if ($< == 0) {
+        $self = 'root';
+    }
+    else {
+        HEXIT('ERR_SUDO_NEEDED', msg => 'This command must be run under sudo');
+    }
+}
+
+# Fetch command options
+Getopt::Long::Configure("no_auto_abbrev");
+my $fnret;
+my ($result, @optwarns);
+my ($group, $mfaRequired, $ttl);
+eval {
+    local $SIG{__WARN__} = sub { push @optwarns, shift };
+    $result = GetOptions(
+        "group=s"           => sub { $group //= $_[1] },
+        "mfa-required=s"    => \$mfaRequired,
+        "guest-ttl-limit=i" => \$ttl,
+    );
+};
+if ($@) { die $@ }
+
+if (!$result) {
+    local $" = ", ";
+    HEXIT('ERR_BAD_OPTIONS', msg => "Error parsing options: @optwarns");
+}
+
+if (!$group) {
+    HEXIT('ERR_MISSING_PARAMETER', msg => "Missing argument 'group'");
+}
+
+if (!$mfaRequired && !defined $ttl) {
+    HEXIT('ERR_MISSING_PARAMETER', msg => "Missing argument 'mfa-required' or 'guest-ttl-limit'");
+}
+
+#<HEADER
+
+#>PARAMS:ACCOUNT
+$fnret = OVH::Bastion::is_valid_group_and_existing(group => $group, groupType => "key");
+$fnret or HEXIT($fnret);
+
+# get returned untainted value
+$group = $fnret->value->{'group'};
+my $shortGroup = $fnret->value->{'shortGroup'};
+
+#<PARAMS:ACCOUNT
+
+#>RIGHTSCHECK
+if ($self eq 'root') {
+    osh_debug "Real root, skipping checks of permissions";
+}
+$fnret = OVH::Bastion::is_group_owner(account => $self, group => $shortGroup, superowner => 1, sudo => 1);
+if (!$fnret) {
+    HEXIT('ERR_SECURITY_VIOLATION', msg => "You're not allowed to run this, dear $self");
+}
+
+#<RIGHTSCHECK
+
+#>CODE
+my %result;
+
+if (defined $mfaRequired) {
+    osh_info "Modifying mfa-required policy of group...";
+    if (grep { $mfaRequired eq $_ } qw{ password totp any none }) {
+        $fnret = OVH::Bastion::group_config(group => $group, key => "mfa_required", value => $mfaRequired);
+        if ($fnret) {
+            osh_info "... done, policy is now: $mfaRequired";
+        }
+        else {
+            osh_warn "... error while changing mfa-required policy (" . $fnret->msg . ")";
+        }
+        $result{'mfa_required'} = $fnret;
+    }
+    else {
+        osh_warn "... invalid option '$mfaRequired'";
+        $result{'mfa_required'} = R('ERR_INVALID_PARAMETER');
+    }
+}
+
+if (defined $ttl) {
+    osh_info "Modifying guest TTL limit policy of group...";
+    if ($ttl > 0) {
+        $fnret = OVH::Bastion::group_config(group => $group, key => "guest_ttl_limit", value => $ttl);
+        if ($fnret) {
+            osh_info "... done, guest accesses must now have a TTL set on creation, with maximum allowed duration of "
+              . OVH::Bastion::duration2human(seconds => $ttl)->value->{'human'};
+        }
+        else {
+            osh_warn "... error while setting guest-ttl-limit (" . $fnret->msg . ")";
+        }
+    }
+    else {
+        $fnret = OVH::Bastion::group_config(group => $group, key => "guest_ttl_limit", delete => 1);
+        if ($fnret) {
+            osh_info "... done, guest accesses no longer need to have a TTL set";
+        }
+        else {
+            osh_warn "... error while removing guest-ttl-limit (" . $fnret->msg . ")";
+        }
+    }
+    $result{'guest_ttl_limit'} = $fnret;
+}
+
+HEXIT('OK', value => \%result);

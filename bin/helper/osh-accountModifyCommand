@@ -1,0 +1,141 @@
+#! /usr/bin/perl -T
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+# NEEDGROUP osh-accountGrantCommand
+# NEEDGROUP osh-accountRevokeCommand
+# SUDOERS # grant access to a command
+# SUDOERS %osh-accountGrantCommand  ALL=(root) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountModifyCommand --action grant *
+# SUDOERS # revoke access to a command
+# SUDOERS %osh-accountRevokeCommand ALL=(root) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountModifyCommand --action revoke *
+# FILEMODE 0755
+# FILEOWN root root
+
+#>HEADER
+use common::sense;
+use Getopt::Long;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../lib/perl';
+use OVH::Bastion;
+local $| = 1;
+
+#
+# Globals
+#
+$ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/pkg/bin';
+my ($self) = $ENV{'SUDO_USER'} =~ m{^([a-zA-Z0-9._-]+)$};
+if (not defined $self) {
+    if ($< == 0) {
+        $self = 'root';
+    }
+    else {
+        HEXIT('ERR_SUDO_NEEDED', msg => 'This command must be run under sudo');
+    }
+}
+
+# Fetch command options
+Getopt::Long::Configure("no_auto_abbrev");
+my $fnret;
+my ($result, @optwarns);
+my ($action, $account, $command);
+eval {
+    local $SIG{__WARN__} = sub { push @optwarns, shift };
+    $result = GetOptions(
+        "action=s"  => sub { $action  //= $_[1] },
+        "account=s" => sub { $account //= $_[1] },
+        "command=s" => sub { $command //= $_[1] },
+    );
+};
+if ($@) { die $@ }
+
+if (!$result) {
+    local $" = ", ";
+    HEXIT('ERR_BAD_OPTIONS', msg => "Error parsing options: @optwarns");
+}
+
+if (not $account or not $command or not $action) {
+    HEXIT('ERR_MISSING_PARAMETER', msg => "Missing argument 'account', 'command' or 'action'");
+}
+
+#<HEADER
+
+#>PARAMS:ACCOUNT
+$fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account, localOnly => 1);
+$fnret or HEXIT($fnret);
+
+# get returned untainted value
+$account = $fnret->value->{'account'};
+
+#<PARAMS:ACCOUNT
+
+#>PARAMS:ACTION
+if ($action ne 'grant' && $action ne 'revoke') {
+    HEXIT('ERR_INVALID_PARAMETER', msg => "Parameter 'action' must be 'grant' or 'revoke'");
+}
+
+#<PARAMS:ACTION
+
+#>PARAMS:COMMAND
+if ($command =~ m{^([a-z0-9]+)$}i) {
+    $command = $1;    # untaint
+}
+else {
+    HEXIT('ERR_INVALID_PARAMETER', msg => "Specified command is invalid ($command)");
+}
+
+#<PARAMS:COMMAND
+
+#>RIGHTSCHECK
+if ($self eq 'root') {
+    osh_debug "Real root, skipping checks of permissions";
+}
+elsif ($action eq 'grant') {
+    $fnret = OVH::Bastion::is_user_in_group(user => $self, group => "osh-accountGrantCommand");
+    if (!$fnret) {
+        HEXIT('ERR_SECURITY_VIOLATION', msg => "You're not allowed to run this, dear $self");
+    }
+}
+elsif ($action eq 'revoke') {
+    $fnret = OVH::Bastion::is_user_in_group(user => $self, group => "osh-accountRevokeCommand");
+    if (!$fnret) {
+        HEXIT('ERR_SECURITY_VIOLATION', msg => "You're not allowed to run this, dear $self");
+    }
+}
+
+#<RIGHTSCHECK
+
+#>CODE
+$fnret = OVH::Bastion::get_plugin_list(restrictedOnly => 1);
+$fnret or HEXIT($fnret);
+my @plugins = sort keys %{$fnret->value};
+push @plugins, 'auditor';
+
+if (!grep { $command eq $_ } @plugins) {
+    HEXIT('ERR_INVALID_PARAMETER', msg => "Specified command ($command) is not in the restricted plugins list");
+}
+if (grep { $command eq $_ } qw{ admin superowner }) {
+    HEXIT('ERR_SECURITY_VIOLATION', msg => "Specified command ($command) can't be granted this way for security reasons");
+}
+if (grep { $command eq $_ } qw{ accountGrantCommand accountRevokeCommand } && !OVH::Bastion::is_admin(sudo => 1)) {
+    HEXIT('ERR_SECURITY_VIOLATION', msg => "Specified command ($command) can only be granted by bastion admins for security reasons");
+}
+
+my $msg;
+$fnret = OVH::Bastion::is_user_in_group(user => $account, group => "osh-$command");
+if ($action eq 'grant') {
+    HEXIT('OK_NO_CHANGE', msg => "Account $account already has the right to use the $command plugin, no change required") if $fnret;
+
+    $fnret = OVH::Bastion::sys_addmembertogroup(user => $account, group => "osh-$command", noisy_stderr => 1);
+    $fnret or HEXIT($fnret);
+
+    $msg = "Successfully granted use of restricted command $command to $account";
+}
+elsif ($action eq 'revoke') {
+    HEXIT('OK_NO_CHANGE', msg => "Account $account did not have the right to use the $command plugin, no change required") if !$fnret;
+
+    $fnret = OVH::Bastion::sys_delmemberfromgroup(user => $account, group => "osh-$command", noisy_stderr => 1);
+    $fnret or HEXIT($fnret);
+
+    $msg = "Successfully revoked use of restricted command $command from $account";
+}
+
+HEXIT('OK', msg => $msg);

@@ -1,0 +1,8 @@
+{
+    "interactive": [
+        "selfListAccesses"               , {"ac" : ["<enter>", "--hide-groups", "--reverse-dns"]},
+        "selfListAccesses --hide-groups" , {"ac" : ["<enter>", "--reverse-dns"]},
+        "selfListAccesses --reverse-dns" , {"ac" : ["<enter>", "--hide-groups"]},
+        "selfListAccesses --(reverse-dns|hide-groups) --(reverse-dns|hide-groups)" , {"pr" : ["<enter>"]}
+    ]
+}

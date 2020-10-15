@@ -1,0 +1,64 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my ($hideGroups, $reverse, $account);
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "access list of a bastion account",
+    options => {
+        "hide-groups" => \$hideGroups,
+        "reverse-dns" => \$reverse,
+        "account=s"   => \$account,
+    },
+    helptext => <<'EOF',
+View the expanded access list of a given bastion account
+
+Usage: --osh SCRIPT_NAME --account ACCOUNT [--hide-groups] [--reverse-dns]
+
+  --account ACCOUNT  The account to work on
+
+  --hide-groups      Don't show the machines the accouns has access to through group rights.
+                       In other words, list only the account's private accesses.
+
+  --reverse-dns      Attempt to resolve the reverse hostnames (SLOW!)
+EOF
+);
+
+my $fnret;
+
+if (not $account) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "missing mandatory parameter account";
+}
+
+$fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
+$fnret or osh_exit $fnret;
+$account = $fnret->value->{'account'};
+
+# FIXME won't be able to see group accesses caller is not a member of
+my $accessListResult = OVH::Bastion::get_acls(account => $account);
+$accessListResult or osh_exit $accessListResult;
+
+if (not @{$accessListResult->value}) {
+    osh_ok R('OK_EMPTY', msg => "This account has no registered accesses to machines through this bastion yet");
+}
+else {
+    osh_info "NOTE: KNOWN LIMITATION in this version: you won't be able to";
+    osh_info "see access lists of group you're not yourself a member of.";
+    osh_info "For such cases, an error 'unable to access' will be printed.";
+    osh_info ' ';
+    osh_info "This account has access to the following servers:";
+    osh_info ' ';
+
+    OVH::Bastion::print_acls(acls => $accessListResult->value, reverse => $reverse, hideGroups => $hideGroups);
+    osh_ok($accessListResult);
+}
+
+osh_exit 'ERR_INTERNAL';

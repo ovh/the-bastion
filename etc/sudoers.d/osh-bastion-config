@@ -1,0 +1,7 @@
+Defaults env_keep += "PLUGIN_DEBUG OSH_DEBUG ANSI_COLORS_DISABLED UNIQID OSH_KBD_INTERACTIVE OSH_IP_FROM SSH_CONNECTION"
+
+User_Alias SUPEROWNERS = %osh-admin, %osh-superowner
+
+# Prevent arbitrary code execution as your user when sudoing to another
+# user due to TTY hijacking via TIOCSTI ioctl.
+Defaults use_pty

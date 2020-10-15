@@ -1,0 +1,56 @@
+#%PAM-1.0
+# PAM configuration for the Secure Shell service
+
+# We have to disable pam_nologin as, for some reason, at least with the official CentOS docker images,
+# pam_nologin always disable login even when no /etc/nologin is present.
+#auth       requisite                                pam_nologin.so
+
+# --- PASSWORD CHECK SECTION
+# proceed in this section ONLY if the user is in group mfa-password-configd, skip it entirely otherwise
+auth       [success=ignore ignore=ignore default=4] pam_succeed_if.so quiet user ingroup mfa-password-configd
+auth       optional                                 pam_echo.so       Your account has Multi-Factor Authentication enabled, an additional authentication factor is required (password).
+auth       optional                                 pam_exec.so       quiet debug stdout /opt/bastion/bin/shell/pam_exec_pwd_info.sh
+# lock account after 6 failures, for 5 minutes
+# ... but disabled, as at least the official CentOS docker images don't seem to have pam_tally nor pam_tally2
+#auth       required                                 pam_tally2.so     onerr=fail deny=6 unlock_time=300
+# then check password
+auth       required                                 pam_unix.so
+
+# --- TOTP CHECK SECTION
+# if root, force TOTP check, we don't specify nullok so TOTP *has* to be configured for uid 0
+auth   [success=ignore ignore=ignore default=1]                                          pam_succeed_if.so             quiet uid eq 0
+# [success=ok new_authtok_reqd=ok ignore=ignore default=bad module_unknown=ignore] == required + module_unknown:ignore
+# if you have a recent enough libpam-google-authenticator, you can customize the prompt with the following option: [authtok_prompt=Verification Code (OTP): ]
+# you can also add "debug" for more verbose logs (requires a not too old version of the pam module)
+auth   [success=ok new_authtok_reqd=ok ignore=ignore default=bad module_unknown=ignore]  pam_google_authenticator.so   nullok secret=/var/otp/root
+# if root, TOTP check has already been done just above, so skip this subsection
+auth   [success=3 ignore=ignore default=ignore]                                          pam_succeed_if.so             quiet uid eq 0
+# else (if not root), proceed in this section ONLY if the user is in group mfa-totp-configd, skip it entirely otherwise
+auth   [success=ignore ignore=ignore default=2]                                          pam_succeed_if.so             quiet user ingroup mfa-totp-configd
+auth   optional                                                                          pam_echo.so                   Multi-Factor Authentication enabled, an additional authentication factor is required (OTP).
+auth   [success=ok new_authtok_reqd=ok ignore=ignore default=bad module_unknown=ignore]  pam_google_authenticator.so   secret=~/.otp
+
+
+account    required     pam_sepermit.so
+# We have to disable pam_nologin as, for some reason, at least with the official CentOS docker images,
+# pam_nologin always disable login even when no /etc/nologin is present.
+#account    required     pam_nologin.so
+# Reset counter if auth succeeded
+# ... but disabled, as at least the official CentOS docker images don't seem to have pam_tally nor pam_tally2
+#account    required     pam_tally2.so
+account    include      password-auth
+
+
+password   include      password-auth
+
+
+# pam_selinux.so close should be the first session rule
+session    required     pam_selinux.so close
+session    required     pam_loginuid.so
+# pam_selinux.so open should only be followed by sessions to be executed in the user context
+session    required     pam_selinux.so open env_params
+session    required     pam_namespace.so
+session    optional     pam_keyinit.so force revoke
+session    optional     pam_motd.so
+session    include      password-auth
+session    include      postlogin

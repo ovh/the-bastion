@@ -1,0 +1,10 @@
+{
+    "interactive": [
+        "groupDelMember"                             , {"ac" : ["--account"]},
+        "groupDelMember --account"                   , {"ac" : ["<ACCOUNT>"]},
+        "groupDelMember --account \\S+"              , {"ac" : ["--group"]},
+        "groupDelMember --account \\S+ --group"      , {"ac" : ["<GROUP>"]},
+        "groupDelMember --account \\S+ --group \\S+" , {"pr" : ["<enter>"]}
+    ],
+    "master_only": true
+}
