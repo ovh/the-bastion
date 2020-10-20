@@ -6,10 +6,10 @@ Bastions are a cluster of machines used as the unique entry point by operational
 Bastions provides mechanisms for authentication, authorization, traceability and auditability for the whole infrastructure.
 
 Learn more by reading the blog post series that announced the release:
-- [https://www.ovh.com/blog/the-ovhcloud-bastion-part-1/](Part 1 - Genesis)
-- [https://www.ovh.com/blog/the-ovhcloud-ssh-bastion-part-2-delegation-dizziness/](Part 2 - Delegation Dizziness)
-- [https://www.ovh.com/blog/the-bastion-part-3-security-at-the-core/](Part 3 - Security at the Core)
-- [https://www.ovh.com/blog/the-bastion-part-4-open-sourcing/](Part 4 - Open Sourcing)
+- [Part 1 - Genesis](https://www.ovh.com/blog/the-ovhcloud-bastion-part-1/)
+- [Part 2 - Delegation Dizziness](https://www.ovh.com/blog/the-ovhcloud-ssh-bastion-part-2-delegation-dizziness/)
+- [Part 3 - Security at the Core](https://www.ovh.com/blog/the-bastion-part-3-security-at-the-core/)
+- [Part 4 - Open Sourcing](https://www.ovh.com/blog/the-bastion-part-4-open-sourcing/)
 
 ## Installing, upgrading, using The Bastion
 
