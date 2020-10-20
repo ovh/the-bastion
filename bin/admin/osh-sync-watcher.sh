@@ -108,8 +108,12 @@ do
         _log "Starting sync!"
         # shellcheck disable=SC2154
         [ -z "$remotehostlist" ] && remotehostlist="$remotehost"
-        for remote in $remotehostlist
+        # shellcheck disable=SC2206
+        remotehosts=( $remotehostlist )
+        remotehostslen=${#remotehosts[@]}
+        for i in "${!remotehosts[@]}"
         do
+            remote=${remotehosts[i]}
             if echo "$remote" | grep -q ':'; then
                 remoteport=$(echo "$remote" | cut -d: -f2)
                 remote=$(echo "$remote" | cut -d: -f1)
@@ -117,19 +121,19 @@ do
                 remoteport=22
             fi
             if [ -e "$LOCKFILE" ] && [ $(( $(date +%s) - $(stat -c %Y "$LOCKFILE") )) -le 300 ]; then
-                _log "$remote: [1/3] syncing needed data postponed for next run (upgrade lockfile present)"
+                _log "$remote: [Server $(($+1))/$remotehostslen - Step 1/3] syncing needed data postponed for next run (upgrade lockfile present)"
             else
-                _log "$remote: [1/3] syncing needed data..."
+                _log "$remote: [Server $((i+1))/$remotehostslen - Step 1/3] syncing needed data..."
                 rsync -vaA --numeric-ids --delete --filter "merge $rsyncfilterfile" --rsh "$rshcmd -p $remoteport" / "$remoteuser@$remote:/"
-                _log "$remote: [1/3] sync ended with return value $?"
+                _log "$remote: [Server $((i+1))/$remotehostslen - Step 1/3] sync ended with return value $?"
             fi
 
-            _log "$remote: [2/3] syncing lastlog files from master to slave, only if master version is newer..."
+            _log "$remote: [Server $((i+1))/$remotehostslen - Step 2/3] syncing lastlog files from master to slave, only if master version is newer..."
             rsync -vaA --numeric-ids --update --include '/' --include '/home/' --include '/home/*/' --include '/home/*/lastlog' --exclude='*' --rsh "$rshcmd -p $remoteport" / "$remoteuser@$remote:/"
-            _log "$remote: [2/3] sync ended with return value $?"
+            _log "$remote: [Server $((i+1))/$remotehostslen - Step 2/3] sync ended with return value $?"
 
-            _log "$remote: [3/3] syncing lastlog files from slave to master, only if slave version is newer..."
+            _log "$remote: [Server $((i+1))/$remotehostslen - Step 3/3] syncing lastlog files from slave to master, only if slave version is newer..."
             find /home -mindepth 2 -maxdepth 2 -type f -name lastlog | rsync -vaA --numeric-ids --update --prune-empty-dirs --include='/' --include='/home' --include='/home/*/' --include-from=- --exclude='*' --rsh "$rshcmd -p $remoteport" "$remoteuser@$remote:/" /
-            _log "$remote: [3/3] sync ended with return value $?"
+            _log "$remote: [Server $((i+1))/$remotehostslen - Step 3/3] sync ended with return value $?"
         done
 done
