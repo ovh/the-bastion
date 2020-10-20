@@ -43,7 +43,8 @@ else
     exit 1
 fi
 
-# shellcheck disable=SC2034 # those vars are also used in all our modules
+# those vars are also used in all our modules
+# shellcheck disable=SC2034
 {
     account1="testu_Ser1-"
     account2="tesT-user2_"
@@ -386,7 +387,9 @@ runtests()
             continue
         fi
         echo "### RUNNING MODULE $module"
-        # shellcheck disable=SC1090 # as this is a loop, we do the check in a reversed way, see any included module
+
+        # as this is a loop, we do the check in a reversed way, see any included module for more info:
+        # shellcheck disable=SC1090
         source "$module" || true
     done
 
