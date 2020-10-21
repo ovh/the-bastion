@@ -134,6 +134,10 @@ Even with the most conservative, precautionous and paranoid coding process, code
     * local `sqlite3` databases for easy searching
 * This code is used in production in several PCI-DSS, ISO 27001, SOC1 and SOC2 certified environments
 
+## Related
+
+- [ovh-ttyrec](https://github.com/ovh/ovh-ttyrec) - A terminal (tty) recorder
+
 ## License
 
 Licensed under the Apache License, Version 2.0 (the "License");
