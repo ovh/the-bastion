@@ -410,7 +410,7 @@ while (my ($name, $passwd, $uid, $gid, $quota, $comment, $gcos, $home, $shell, $
         $usersbyid{$uid} = {name => $name, uid => $uid, gid => $gid, shell => $shell};
     }
 
-    # TODO check qui a un shell access
+    # TODO check who has shell access
 }
 info "found " . (scalar keys %users) . " bastion users";
 

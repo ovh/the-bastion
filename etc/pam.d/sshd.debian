@@ -13,11 +13,13 @@ auth       required                                 pam_tally2.so     onerr=fail
 auth       required                                 pam_unix.so
 
 # --- TOTP CHECK SECTION
-# if root, force TOTP check, we don't specify nullok so TOTP *has* to be configured for uid 0
+# if root, enable TOTP check
 auth   [success=ignore ignore=ignore default=1]                                          pam_succeed_if.so             quiet uid eq 0
 # [success=ok new_authtok_reqd=ok ignore=ignore default=bad module_unknown=ignore] == required + module_unknown:ignore
 # if you have a recent enough libpam-google-authenticator, you can customize the prompt with the following option: [authtok_prompt=Verification Code (OTP): ]
 # you can also add "debug" for more verbose logs (requires a not too old version of the pam module)
+# note the nullok parameter, instructing that if TOTP is not configured for root, it shouldn't be asked
+# if you know you've configured TOTP for root and prefer blocking access if there is a problem with the secret file, remove `nullok'
 auth   [success=ok new_authtok_reqd=ok ignore=ignore default=bad module_unknown=ignore]  pam_google_authenticator.so   nullok secret=/var/otp/root
 # if root, TOTP check has already been done just above, so skip this subsection
 auth   [success=3 ignore=ignore default=ignore]                                          pam_succeed_if.so             quiet uid eq 0
