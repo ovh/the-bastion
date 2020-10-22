@@ -21,10 +21,9 @@ Please see the online documentation ([https://ovh.github.io/the-bastion](https:/
 
 ### Testing it with Docker
 
-Let's build the docker image and run it
+Let's run the docker image
 
-    docker build -f docker/Dockerfile.debian10 -t bastion:debian10 .
-    docker run -d -p 22 --name bastiontest bastion:debian10
+    docker run -d -p 22 --name bastiontest ovhcom/the-bastion:sandbox-latest
 
 Configure the first administrator account (get your public SSH key ready)
 
