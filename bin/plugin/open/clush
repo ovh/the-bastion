@@ -27,7 +27,7 @@ Usage: --osh SCRIPT_NAME [OPTIONS] --command '"remote command"'
 
   --list HOSTLIST           Comma-separated list of the hosts to run the command on
   --step-by-step            Pause before running the command on each host
-  --no-pause-on-failure     Don't pause if the remote command doesn't return failed (returned != 0)
+  --no-pause-on-failure     Don't pause if the remote command failed (returned exit code != 0)
   --no-confirm              Skip confirmation of the host list and command
   --command '"remote cmd"'  Command to be run on the remote hosts. If you're in a shell, quote it twice as shown.
 EOF
