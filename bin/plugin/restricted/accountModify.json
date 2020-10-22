@@ -1,4 +1,5 @@
 {
+    "master_only": true,
     "interactive": [
         "accountModify"                                                                       , {"ac": ["--account"]},
         "accountModify --account"                                                             , {"ac": ["<ACCOUNT>"]},
