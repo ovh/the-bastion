@@ -138,12 +138,14 @@ Also verify that the extension is ``.gpg``, as seen above, which indicates that 
 Logs/Syslog
 ===========
 
-TODO
+It is advised to use syslog for The Bastion application logs. This can be configured in ``/etc/bastion/bastion.conf`` with the parameter ``enableSyslog``.
+
+There is a default ``syslog-ng`` configuration provided, if you happen to use it. The file can be found as ``etc/syslog-ng/conf.d/20-bastion.conf.dist`` in the repository. Please read the comments in the file to know how to integrate it properly in your system.
 
 Clustering (High Availability)
 ==============================
 
-The bastions can work in a cluster, with N instances. In that case, there is one *master* instance, where any modification command can be used (creating accounts, deleting groups, granting accesses), and N-1 *slave* instances, where only *readonly* actions are permitted. Note that any instance can be used to connect to infrastructures, so in effect all instances can always be used at the same time.
+The bastions can work in a cluster, with N instances. In that case, there is one *master* instance, where any modification command can be used (creating accounts, deleting groups, granting accesses), and N-1 *slave* instances, where only *readonly* actions are permitted. Note that any instance can be used to connect to infrastructures, so in effect all instances can always be used at the same time. You may set up a DNS round-robin hostname, with all the instances IPs declared, so that clients automatically choose a random instance, without having to rely on another external component such as a load-balancer. Note that if you do this, you'll need all the instances to share the same SSH host keys.
 
 Setting up a slave bastion
 **************************
@@ -259,7 +261,7 @@ You can use this script:
 
 Note that this script doesn't check everything, just a few items. If you want a complete audit of your SSH configuration, there are other tools available. Using our SSH templates is also a good start.
 
-The script also supports generating custom moduli for your installation. The following command will generate moduli of 8192 bits size. Not that it'll take several hours:
+The script also supports generating custom moduli for your installation. The following command will generate moduli of 8192 bits size. Note that it'll take several hours:
 
 .. code-block:: shell
 
@@ -275,7 +277,7 @@ The bastion supports TOTP (Time-based One Time Password), to further secure high
     script -c "google-authenticator -t -Q UTF8 -r 3 -R 15 -s /var/otp/root -w 2 -e 4 -D" /root/qrcode
 
 Of course, you can check the ``--help`` and adjust the options accordingly. The example given above has sane defaults, but you might want to adjust if needed.
-Now, flash this QR code with your phone. You might want to copy the QR code somewhere safe in case you need to flash it on some other phone, by exporting the ``base64`` version of it:
+Now, flash this QR code with your phone, using a TOTP application. You might want to copy the QR code somewhere safe in case you need to flash it on some other phone, by exporting the ``base64`` version of it:
 
 .. code-block:: shell
 
@@ -283,8 +285,32 @@ Now, flash this QR code with your phone. You might want to copy the QR code some
 
 Copy this in your password manager (for example). You can then delete the ``/root/qrcode`` file.
 
-TODO FIXME
+You have then two configuration adjustments to do.
 
-Then try to login again to the bastion as root. It should ask you a TOTP code in addition to the SSH key verification.
+- First, ensure you have installed the provided ``/etc/pam.d/sshd`` file, or at least the corresponding line to enable the TOTP pam plugin in your configuration.
 
-In case something has gone wrong, be sure to keep your already opened existing connection to be able to fix the problem without falling back to console access.
+- Second, ensure that your ``/etc/ssh/sshd_config`` file calls PAM for root authentication. In the provided templates, there is a commented snippet to do it. The uncommented snippet looks like this:
+
+.. code-block:: shell
+
+    # 2FA has been configured for root, so we force pubkey+PAM for it
+    Match User root
+        AuthenticationMethods publickey,keyboard-interactive:pam
+
+Note that first, the usual publickey method will be used, then control will be passed to PAM. This is where the ``/etc/pam.d/sshd`` configuration will apply.
+
+Now, you should be asked for the TOTP the next time you try to login through ssh as root.
+In case something goes wrong with the new configuration, be sure to keep your already opened existing connection to be able to fix the problem without falling back to console access.
+
+Once this has been tested, you can (and probably should) also protect the direct root console access to your machine with TOTP, including a snippet similar to this one:
+
+.. code-block:: shell
+
+    # TOTP config
+    auth    [success=1 default=ignore]  pam_google_authenticator.so secret=/var/otp/${USER}
+    auth    requisite                   pam_deny.so
+    # End of TOTP Config
+
+inside your ``/etc/pam.d/login`` file.
+
+Of course, when using TOTP, this is paramount to ensure your server is properly synchronized through NTP.
