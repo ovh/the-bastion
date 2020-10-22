@@ -2,7 +2,7 @@ name: Linux distros tests
 
 on:
     pull_request:
-        types: [labeled, synchronize]
+        types: [created, labeled, synchronize]
 
 jobs:
     tests_full:
