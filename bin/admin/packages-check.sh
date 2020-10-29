@@ -40,7 +40,7 @@ if echo "$DISTRO_LIKE" | grep -q -w debian; then
                 libwww-perl libdigest-sha-perl libnet-ssleay-perl \
                 libnet-server-perl cryptsetup mosh expect openssh-server locales \
                 coreutils netcat bash libcgi-pm-perl iputils-ping"
-    [ "$opt_dev" = 1 ] && wanted_list="$wanted_list libperl-critic-perl perltidy"
+    [ "$opt_dev" = 1 ] && wanted_list="$wanted_list libperl-critic-perl perltidy shellcheck"
     if { [ "$LINUX_DISTRO" = debian ] && [ "$DISTRO_VERSION_MAJOR" -lt 9 ]; } ||
        { [ "$LINUX_DISTRO" = ubuntu ] && [ "$DISTRO_VERSION_MAJOR" -le 16 ]; }; then
         wanted_list="$wanted_list openssh-blacklist openssh-blacklist-extra"
