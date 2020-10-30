@@ -11,11 +11,11 @@ Learn more by reading the blog post series that announced the release:
 - [Part 1 - Genesis](https://www.ovh.com/blog/the-ovhcloud-bastion-part-1/)
 - [Part 2 - Delegation Dizziness](https://www.ovh.com/blog/the-ovhcloud-ssh-bastion-part-2-delegation-dizziness/)
 - [Part 3 - Security at the Core](https://www.ovh.com/blog/the-bastion-part-3-security-at-the-core/)
-- [Part 4 - Open Sourcing](https://www.ovh.com/blog/the-bastion-part-4-open-sourcing/)
+- [Part 4 - A new era](https://www.ovh.com/blog/the-ovhcloud-ssh-bastion-announcement/)
 
 ## Installing, upgrading, using The Bastion
 
-Please see the online documentation ([https://ovh.github.io/the-bastion](https://ovh.github.io/the-bastion)), or the corresponding text-based documentation which can be found in the `doc/` folder.
+Please see the online documentation ([https://ovh.github.io/the-bastion](https://ovh.github.io/the-bastion/)), or the corresponding text-based documentation which can be found in the `doc/` folder.
 
 ## TL;DR
 
@@ -56,7 +56,7 @@ Note that you can connect directly without using interactive mode, with:
 
     bastion <remote_account_name>@<remote_machine_host_or_ip>
 
-That's it! Additional documentation is available under the `doc/` folder and online ([https://ovh.github.io/the-bastion](https://ovh.github.io/the-bastion)).
+That's it! Additional documentation is available under the `doc/` folder and online ([https://ovh.github.io/the-bastion](https://ovh.github.io/the-bastion/)).
 Be sure to check the help of the bastion (`bastion --help`) and the help of each osh plugin (`bastion --osh command --help`)
 Also don't forget to customize your `bastion.conf` file, which can be found in `/etc/bastion/bastion.conf` (for Linux)
 
