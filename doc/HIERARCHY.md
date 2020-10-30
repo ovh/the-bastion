@@ -21,7 +21,7 @@ The OVH::Bastion directory hierarchy is organized as follows:
   - bin/other: other helper scripts for various tasks
 - contrib: placeholder directory with a readme file that references other repositories of interest when integrating the bastion in your company
 - doc: sysadmin-proof documentation folder, the main Markdown files you need are there, just one `view` appart
-  - doc/sphinx: more complete documentation using the `sphinx` documentation system, the built version is viewable on https://ovh.github.io/bastion
+  - doc/sphinx: more complete documentation using the `sphinx` documentation system, the built version is viewable on https://ovh.github.io/the-bastion/
 - docker: where the Dockerfiles reside
 - etc: contains all the template configuration files that will be installed on your system (depending on your `install` options)
 - install: where optional modules can push their install script to be called by the main install script

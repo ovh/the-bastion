@@ -11,7 +11,7 @@ Learn more by reading the blog post series that announced the release:
 - [Part 1 - Genesis](https://www.ovh.com/blog/the-ovhcloud-bastion-part-1/)
 - [Part 2 - Delegation Dizziness](https://www.ovh.com/blog/the-ovhcloud-ssh-bastion-part-2-delegation-dizziness/)
 - [Part 3 - Security at the Core](https://www.ovh.com/blog/the-bastion-part-3-security-at-the-core/)
-- [Part 4 - A new era](https://www.ovh.com/blog/the-ovhcloud-ssh-bastion-announcement/)
+- [Part 4 - A new era](https://www.ovh.com/blog/the-bastion-part-4-a-new-era/)
 
 ## Installing, upgrading, using The Bastion
 
