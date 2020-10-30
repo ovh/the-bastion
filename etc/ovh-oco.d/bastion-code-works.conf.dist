@@ -1,7 +1,0 @@
-enabled = false
-host = 127.0.0.1
-port = 22
-account = healthcheck
-keyfile = /home/healthcheck/.ssh/id_healthcheck
-kbdinteractive = yes
-
