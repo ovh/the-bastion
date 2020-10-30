@@ -360,6 +360,6 @@
 #
 # documentationURL (string)
 #     DESC: The URL of the documentation where users will be pointed to, for example when displaying help. If you have some internal documentation about the bastion, you might want to advertise it here.
-#  DEFAULT: "https://ovh.github.io/bastion/"
+#  DEFAULT: "https://ovh.github.io/the-bastion/"
 "documentationURL": "https://ovh.github.io/the-bastion/"
 }

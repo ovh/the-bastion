@@ -236,7 +236,7 @@ sub load_configuration {
         map { s/[^a-zA-Z0-9_-]//g; $_ } @{$C->{'adminAccounts'}}
     ];
 
-    $C->{'documentationURL'} ||= "https://ovh.github.io/bastion/";
+    $C->{'documentationURL'} ||= "https://ovh.github.io/the-bastion/";
 
     # we've checked everything. now forcibly untaint all of it.
     foreach my $key (keys %$C) {
