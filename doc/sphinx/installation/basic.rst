@@ -114,8 +114,8 @@ If you used ``--upgrade``, then you are **warmly** advised to harden the configu
 
 .. code-block:: shell
 
-    vimdiff /opt/bastion/etc/ssh/ssh_config.deb10 /etc/ssh/ssh_config
-    vimdiff /opt/bastion/etc/ssh/sshd_config.deb10 /etc/ssh/sshd_config
+    vimdiff /opt/bastion/etc/ssh/ssh_config.debian10 /etc/ssh/ssh_config
+    vimdiff /opt/bastion/etc/ssh/sshd_config.debian10 /etc/ssh/sshd_config
 
 There are other templates available in the same directory, for the other supported distros.
 
