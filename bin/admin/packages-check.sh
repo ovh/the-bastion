@@ -70,7 +70,7 @@ elif echo "$DISTRO_LIKE" | grep -q -w rhel; then
             perl-libwww-perl perl-Digest perl-Net-Server cryptsetup mosh \
             expect openssh-server nc bash perl-CGI perl(Test::More) passwd \
             cracklib-dicts perl-Time-Piece perl-Time-HiRes which \
-            perl-Sys-Syslog pamtester google-authenticator"
+            perl-Sys-Syslog pamtester google-authenticator qrencode-libs"
     if [ "$DISTRO_VERSION_MAJOR" = 7 ]; then
         wanted_list="$wanted_list fortune-mod coreutils"
     fi
