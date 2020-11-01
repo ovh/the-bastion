@@ -13,19 +13,23 @@ Learn more by reading the blog post series that announced the release:
 - [Part 3 - Security at the Core](https://www.ovh.com/blog/the-bastion-part-3-security-at-the-core/)
 - [Part 4 - A new era](https://www.ovh.com/blog/the-bastion-part-4-a-new-era/)
 
+## Quick connection and replay example
+
+[![asciicast](https://asciinema.org/a/369555.png)](https://asciinema.org/a/369555?autoplay=1)
+
 ## Installing, upgrading, using The Bastion
 
-Please see the online documentation ([https://ovh.github.io/the-bastion](https://ovh.github.io/the-bastion/)), or the corresponding text-based documentation which can be found in the `doc/` folder.
+Please see the [online documentation](https://ovh.github.io/the-bastion/), or the corresponding text-based version found in the `doc/` folder.
 
-## TL;DR
+## TL;DR: disposable sandbox using Docker
 
-### Testing it with Docker
+This is a good way to test The Bastion within seconds, but [read the FAQ](https://ovh.github.io/the-bastion/faq.html#can-i-run-it-under-docker-in-production) if you're serious about using this in production.
 
-Let's run the docker image
+OK, let's run the docker image:
 
     docker run -d -p 22 --name bastiontest ovhcom/the-bastion:sandbox-latest
 
-Configure the first administrator account (get your public SSH key ready)
+Get your public SSH key at hand, then configure the first administrator account:
 
     docker exec -it bastiontest /opt/bastion/bin/admin/setup-first-admin-account.sh poweruser auto
 
@@ -56,9 +60,9 @@ Note that you can connect directly without using interactive mode, with:
 
     bastion <remote_account_name>@<remote_machine_host_or_ip>
 
-That's it! Additional documentation is available under the `doc/` folder and online ([https://ovh.github.io/the-bastion](https://ovh.github.io/the-bastion/)).
-Be sure to check the help of the bastion (`bastion --help`) and the help of each osh plugin (`bastion --osh command --help`)
-Also don't forget to customize your `bastion.conf` file, which can be found in `/etc/bastion/bastion.conf` (for Linux)
+That's it! Additional documentation is available under the `doc/` folder and [online](https://ovh.github.io/the-bastion/).
+Be sure to check the help of the bastion (`bastion --help`) and the help of each osh plugin (`bastion --osh command --help`).
+Also don't forget to customize your `bastion.conf` file, which can be found in `/etc/bastion/bastion.conf` (for Linux).
 
 ## Compatibility
 
@@ -90,7 +94,7 @@ When hell is breaking loose on all your infrastructures and/or your network, bas
 * The bastion is engineered to be self-sufficient: less dependencies such as databases, other daemons, or other machines, statistically means less downtime
 * High availability can be setup so that multiple bastion instances form a cluster of several instances, with any instance usable at all times (active/active scheme)
 
-# Code quality
+## Code quality
 
 * The code is ran under `perltidy`
 * The code is also ran under `perlcritic`
