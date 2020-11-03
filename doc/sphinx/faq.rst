@@ -39,7 +39,7 @@ What are the recommended hardware specifications?
 
 They're actually quite low. Down to its basics, the bastion is merely a fancy wrapper around ``ssh``, so if you have a device that handles ``ssh`` well, it'll handle the bastion just fine.
 
-Now to give you some data points, we've observed that 1000 concurrent users take up FIXME Gb of RAM (including the operating system's own footprint, and the usual daemons such as auditd, syslog, etc.). If you expect to get to at least hundreds of simultaneous sessions, it's advised to use SSD drives however, as the bastion workload pattern for disk I/O is a lot of random seeks, and mechanical hard drives are very bad at this.
+Now to give you some data points, we've observed that 250 concurrent users take up 2.5 Gb of RAM (including the operating system's own footprint, and the usual daemons such as auditd, syslog, etc.). So a rule of thumb would be 1 Gb per 100 simultaneous sessions. If you expect to get a lot of new connections per minute (not necessarily long-lived), it's advised to use SSD drives however, as the bastion workload pattern for disk I/O is a lot of random seeks to write logs and ttyrecs. Mechanical hard drives are very bad at this.
 
 Can I run it under Docker in production?
 ========================================
@@ -47,6 +47,17 @@ Can I run it under Docker in production?
 Technically you can, but you have to think about what are the implications (this is true regardless of the containerization technology). What's important to understand is that it adds another layer of abstraction, and can give you a false sense of security. If you either have the complete control of the host running Docker (and hardened it properly), or you fully trust whoever is running the host for you, then this is fine. Otherwise, *somebody* might have access to all your keys and you have no way to know or block it.
 
 Note that the provided Dockerfiles are a good start, but no volumes are defined. To ensure that all the accounts don't disappear on a ``docker rm``, you would at least need to ensure that ``/home``, ``/etc/passwd``, ``/etc/shadow``, ``/etc/group``, ``/etc/gshadow`` are stored in a volume, in addition to ``/etc/bastion`` and ``/root/.gpg``. You'll also need an SSH server, obviously, and probably a ``syslog-ng`` daemon.
+
+.. _faq_existing_server:
+
+Can I install it on my already existing server?
+===============================================
+
+This is discouraged if your server is already doing something else, such as hosting a website, handling your e-mails or running a database.
+
+From a security standpoint, it's a bad idea because if your server gets hacked due to one of the other services you're hosting, the SSH keys could get compromised even if The Bastion itself has no security issue.
+
+This is also discouraged due to the design of The Bastion: being deeply intertwined with the OS it's running on, it might make changes that seem intrusive from the point of view of other running services. Such as creating and deleting system accounts and groups from time to time, modifying the PAM configuration, or hardening the SSH client and server configurations system-wide, which could break other services or workflows that expect to be running on a default (non-hardened) SSH configuration.
 
 .. _faq_jumphost:
 
