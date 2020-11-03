@@ -24,9 +24,9 @@ copyright = '2020, OVHcloud'
 author = 'The Bastion Authors'
 
 # The short X.Y version
-version = '3.00.00'
+version = '__VERSION__'
 # The full version, including alpha/beta/rc tags
-release = '3.00.00'
+release = '__VERSION__'
 
 
 # -- General configuration ---------------------------------------------------

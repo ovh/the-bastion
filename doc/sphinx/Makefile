@@ -7,9 +7,13 @@ SPHINXBUILD   = sphinx-build
 SOURCEDIR     = .
 BUILDDIR      = _build
 
+VERSION_FILES = conf.py installation/basic.rst
+VERSION      := $(shell perl -e 'require "../../lib/perl/OVH/Bastion.pm"; print $$OVH::Bastion::VERSION')
+
 all: plugins default
 
 default: Makefile
+	@sed -i -e "s/__VERSION__/$(VERSION)/g" $(VERSION_FILES)
 	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 	@rsync -a --delete _build/html/ ../../docs/
 	@echo "HTML documentation copied to ../../docs/"
