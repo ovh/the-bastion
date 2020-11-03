@@ -7,6 +7,10 @@ If you are just upgrading from a previous version, please read :doc:`upgrading<u
 1. Operating system
 ===================
 
+.. warning::
+
+   The Bastion expects to be the only main service runnning on the server, please see :ref:`this FAQ entry <faq_existing_server>` for more information.
+
 The following Linux distros are tested with each release, but as this is a security product, you are *warmly* advised to run it on the latest up-to-date stable version of your favorite OS:
 
 - Debian 10 (Buster), 9 (Stretch), 8 (Jessie)
@@ -52,7 +56,7 @@ Get the tarball of the latest release, which can be found `here <https://github.
 .. code-block:: shell
 
   test -d /opt/bastion || mkdir -p /opt/bastion
-  tar -C /opt/bastion v3.00.00.tar.gz
+  tar -C /opt/bastion v__VERSION__.tar.gz
 
 The code supports being hosted somewhere else on the filesystem hierarchy, but this is discouraged as you might need to adjust a lot of configuration files (notably sudoers.d, cron.d, init.d) that needs an absolute path.
 You should end up with directories such as ``bin``, ``lib``, etc. directly under ``/opt/bastion``.
