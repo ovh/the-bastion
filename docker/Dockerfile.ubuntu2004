@@ -1,14 +1,11 @@
 FROM ubuntu:20.04
 LABEL maintainer="stephane.lesimple+bastion@ovhcloud.com"
 
-# cache builds efficiently: just copy the needed script to build ttyrec first
-COPY bin/admin/build-and-install-ttyrec.sh /opt/bastion/bin/admin/
-COPY lib/shell                             /opt/bastion/lib/shell/
-RUN ["/opt/bastion/bin/admin/build-and-install-ttyrec.sh"]
-
-# then just some more bits to install the packages
-COPY bin/admin/packages-check.sh /opt/bastion/bin/admin/
+# cache builds efficiently: just copy the scripts to install packages first
+COPY bin/admin/install-ttyrec.sh bin/admin/packages-check.sh /opt/bastion/bin/admin/
+COPY lib/shell                                               /opt/bastion/lib/shell/
 RUN ["/opt/bastion/bin/admin/packages-check.sh","-i","-d","-s"]
+RUN ["/opt/bastion/bin/admin/install-ttyrec.sh","-d"]
 
 # handle locales
 RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen && locale-gen
