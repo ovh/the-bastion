@@ -71,7 +71,7 @@ Linux distros below are tested with each release, but as this is a security prod
 - Debian 10 (Buster), 9 (Stretch), 8 (Jessie)
 - RHEL/CentOS 8, 7
 - Ubuntu LTS 20.04, 18.04, 16.04, 14.04*
-- OpenSUSE Leap 15.1*, 15*
+- OpenSUSE Leap 15.2*, 15.1*, 15.0*
 
 *: Note that these versions have no MFA support.
 Any other so-called "modern" Linux version are not tested with each release, but should work with no or minor adjustments.
