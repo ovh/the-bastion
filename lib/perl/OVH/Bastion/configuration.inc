@@ -504,7 +504,7 @@ sub json_load {
 
     #   Clean file content
 
-    # Remove bloc comment
+    # Remove block comment
     $rawConf =~ s/\/\*\*.+?\*\///sgm;
 
     # Add {} if needed

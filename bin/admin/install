@@ -151,7 +151,7 @@ Usage:
     $0 --nothing
         Don't do anything at all, not even what we normally do when all below options are disabled (as
         in the minimal mode). Can be useful if you want to do only one precise modification that you
-        can explicitely specify using the options below.
+        can explicitly specify using the options below.
 
     OPTIONS:
 

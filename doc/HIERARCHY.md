@@ -15,12 +15,12 @@ The OVH::Bastion directory hierarchy is organized as follows:
     - bin/plugin/group-gatekeeper: plugins that can only be launched by group gatekeepers
     - bin/plugin/group-owner: plugins that can only be launched by group owners
     - bin/plugin/open: plugins that can be launched by any user
-    - bin/plugin/restricted: plugins that can be launched only by users that are explicitely granted on said plugins
+    - bin/plugin/restricted: plugins that can be launched only by users that are explicitly granted on said plugins
   - bin/shell: where resides the main script that is declared as the shell of the bastion users, with some of its helpers
   - bin/sudogen: where resides the helper script that generate group and account sudoers files
   - bin/other: other helper scripts for various tasks
 - contrib: placeholder directory with a readme file that references other repositories of interest when integrating the bastion in your company
-- doc: sysadmin-proof documentation folder, the main Markdown files you need are there, just one `view` appart
+- doc: sysadmin-proof documentation folder, the main Markdown files you need are there, just one `view` apart
   - doc/sphinx: more complete documentation using the `sphinx` documentation system, the built version is viewable on https://ovh.github.io/the-bastion/
 - docker: where the Dockerfiles reside
 - etc: contains all the template configuration files that will be installed on your system (depending on your `install` options)

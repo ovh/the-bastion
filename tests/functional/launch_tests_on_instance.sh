@@ -164,7 +164,7 @@ run()
         printf "%b%b%b\\n" "$WHITE_ON_BLUE" "[INFO] returned json follows" "$NOC"
         grep "^JSON_OUTPUT=" -- $outdir/$basename.log | cut -d= -f2- | $jq .
         if [ "$nocc" != 1 ]; then
-            printf "%b%b%b\\n" "$WHITE_ON_BLUE" "[INFO] consistency check folows" "$NOC"
+            printf "%b%b%b\\n" "$WHITE_ON_BLUE" "[INFO] consistency check follows" "$NOC"
             cat "$outdir/$basename.cc"
         fi
         if test -t 0 && [ "$nowait" != 1 ]; then

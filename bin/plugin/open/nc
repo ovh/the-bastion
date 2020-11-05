@@ -62,7 +62,7 @@ push @command, ($timeout and $timeout > 0 and $timeout <= 3600) ? $timeout : 3;
 push @command, $host;
 push @command, $port;
 
-osh_info "Checking wether TCP port $port of $host is reachable...";
+osh_info "Checking whether TCP port $port of $host is reachable...";
 
 $fnret = OVH::Bastion::execute(cmd => \@command, noisy_stdout => 1, noisy_stderr => 1);
 $fnret or osh_exit $fnret;

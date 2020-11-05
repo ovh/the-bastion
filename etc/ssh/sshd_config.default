@@ -79,7 +79,7 @@ ChallengeResponseAuthentication no
 # ... not host-based
 HostbasedAuthentication no
 
-# just in case, we also explicitely deny empty passwords
+# just in case, we also explicitly deny empty passwords
 PermitEmptyPasswords no
 
 # root login is allowed only with public keys, not passwords

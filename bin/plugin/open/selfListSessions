@@ -32,7 +32,7 @@ List the few past sessions of your account
 
 Usage: --osh SCRIPT_NAME [OPTIONS]
 
-  --detailed             Display more informations about each session
+  --detailed             Display more information about each session
   --limit LIMIT          Limit to LIMIT results
   --id ID                Only sessions having this ID
   --type TYPE            Only sessions of specified type (ssh, osh, ...)

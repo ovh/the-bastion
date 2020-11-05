@@ -146,19 +146,19 @@ sub act {
             if (-e "$base.$n") {
                 osh_debug "renaming $base.$n to $base.$next";
                 if (!rename "$base.$n", "$base.$next") {
-                    HEXIT('ERR_INTERNAL', msg => "Coudn't rename '$base.$n' to '$base.$next' ($!)");
+                    HEXIT('ERR_INTERNAL', msg => "Couldn't rename '$base.$n' to '$base.$next' ($!)");
                 }
                 if (-e "$base.$n.metadata" && !rename "$base.$n.metadata", "$base.$next.metadata") {
-                    HEXIT('ERR_INTERNAL', msg => "Coudn't rename '$base.$n.metadata' to '$base.$next.metadata' ($!)");
+                    HEXIT('ERR_INTERNAL', msg => "Couldn't rename '$base.$n.metadata' to '$base.$next.metadata' ($!)");
                 }
             }
         }
         osh_debug "renaming $base to $base.1";
         if (!rename "$base", "$base.1") {
-            HEXIT('ERR_INTERNAL', msg => "Coudn't rename '$base' to '$base.1' ($!)");
+            HEXIT('ERR_INTERNAL', msg => "Couldn't rename '$base' to '$base.1' ($!)");
         }
         if (-e "$base.metadata" && !rename "$base.metadata", "$base.1.metadata") {
-            HEXIT('ERR_INTERNAL', msg => "Coudn't rename '$base.metadata' to '$base.1.metadata' ($!)");
+            HEXIT('ERR_INTERNAL', msg => "Couldn't rename '$base.metadata' to '$base.1.metadata' ($!)");
         }
     }
     if (open(my $fdout, '>', $base)) {

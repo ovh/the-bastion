@@ -39,7 +39,7 @@ Create a new bastion group
 
 .. option:: --no-key
 
-   No egress keypair will be generated. In that case, omit ``--algo`` and ``--size``.
+   No egress key pair will be generated. In that case, omit ``--algo`` and ``--size``.
 
 Algorithms guideline
 ====================

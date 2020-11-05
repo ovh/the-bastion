@@ -16,7 +16,7 @@ List the few past sessions of your account
 
 .. option:: --detailed           
 
-   Display more informations about each session
+   Display more information about each session
 
 .. option:: --limit LIMIT        
 

@@ -9,7 +9,7 @@ If you are just upgrading from a previous version, please read :doc:`upgrading<u
 
 .. warning::
 
-   The Bastion expects to be the only main service runnning on the server, please see :ref:`this FAQ entry <faq_existing_server>` for more information.
+   The Bastion expects to be the only main service running on the server, please see :ref:`this FAQ entry <faq_existing_server>` for more information.
 
 The following Linux distros are tested with each release, but as this is a security product, you are *warmly* advised to run it on the latest up-to-date stable version of your favorite OS:
 

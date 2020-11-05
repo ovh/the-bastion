@@ -27,7 +27,7 @@ Then, from another machine, run:
 
     ``test/functional/launch_tests_on_instance.sh <IP> <port> <remote_user_name> <ssh_key_path> [outdir]``
 
-Where ``IP`` and ``port`` are the informations needed to connect to the remote server to test, ``remote_user_name`` is the name of the account created on the remote bastion to use for the tests, and ``ssh_key_path`` is the private SSH key path used to connect to the account. The ``outdir`` parameter is optional, if you want to keep the raw output of each test.
+Where ``IP`` and ``port`` are the information needed to connect to the remote server to test, ``remote_user_name`` is the name of the account created on the remote bastion to use for the tests, and ``ssh_key_path`` is the private SSH key path used to connect to the account. The ``outdir`` parameter is optional, if you want to keep the raw output of each test.
 
 This script is also the script used by the Docker client instance, so you're sure to get the proper results even without using Docker.
 

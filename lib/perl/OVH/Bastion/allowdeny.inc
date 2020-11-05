@@ -68,9 +68,9 @@ sub get_group_keys {
 sub is_access_way_granted {
     my %params = @_;
 
-    my $exactIpMatch   = $params{'exactIpMatch'};      # $ip must be explicitely allowed (not given through a wider slash or a 0.0.0.0/0 in grantfile)
-    my $exactPortMatch = $params{'exactPortMatch'};    # $port must be explicitely allowed (port wildcards in grantfile will be ignored)
-    my $exactUserMatch = $params{'exactUserMatch'};    # $user must be explicitely allowed (user wildcards in grantfile will be ignored)
+    my $exactIpMatch   = $params{'exactIpMatch'};      # $ip must be explicitly allowed (not given through a wider slash or a 0.0.0.0/0 in grantfile)
+    my $exactPortMatch = $params{'exactPortMatch'};    # $port must be explicitly allowed (port wildcards in grantfile will be ignored)
+    my $exactUserMatch = $params{'exactUserMatch'};    # $user must be explicitly allowed (user wildcards in grantfile will be ignored)
     my $exactMatch     = $params{'exactMatch'};        # sets exactIpMatch exactPortMatch and exactUserMatch
 
     my $ignoreUser = $params{'ignoreUser'};            # ignore remote user COMPLETELY (plop@, or root@, or <nil>@ will all match)
@@ -332,7 +332,7 @@ sub ip2host {
     return R('OK', value => $host);
 }
 
-# Return an array containings the groups for which user is a member of
+# Return an array containing the groups for which user is a member of
 my %_cache_get_user_groups;
 
 sub get_user_groups {

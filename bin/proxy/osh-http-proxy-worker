@@ -175,8 +175,8 @@ undef $storedhash;
 
 # read the password we must use
 # pseudoalgo:
-# if mode was explicitely specified to group, we look for a group password
-# elif mode was explicitely specified to self, we look for a self account password
+# if mode was explicitly specified to group, we look for a group password
+# elif mode was explicitly specified to self, we look for a self account password
 # elif the legacy file with the same name as $user exists in /home/passkeeper, use it
 # elif the specified $user happens to be a group name, look for this group password
 # else look for a self account password

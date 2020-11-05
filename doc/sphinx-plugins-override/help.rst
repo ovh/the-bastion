@@ -7,7 +7,7 @@ Note that if you want some help about the bastion (and not specifically about th
 Colors
 ======
 
-You'll notice that plugins are hilighted in different colors, these indicate the access level needed to run the plugin. Note that plugins you don't have access to are simply omitted.
+You'll notice that plugins are highlighted in different colors, these indicate the access level needed to run the plugin. Note that plugins you don't have access to are simply omitted.
 
 - green (``open``): these plugins can be called by anybody
 - blue (``restricted``): these plugins can only be called by users having the specific right to call them. This right is granted per plugin by the ``accountGrantCommand`` plugin

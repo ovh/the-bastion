@@ -49,7 +49,7 @@ generate_account_sudoers()
             perl -pe "s!%ACCOUNT%!$account!g;s!%NORMACCOUNT%!$normalized_account!g;s!%BASEPATH%!$basedir!g" "$template"
         done
     } > "${dst}.tmp"
-    # then move the file to its final name (potentially overwritting a previous file of the same name)
+    # then move the file to its final name (potentially overwriting a previous file of the same name)
     mv -f "${dst}.tmp" "$dst"
     return 0
 }
@@ -84,7 +84,7 @@ generate_group_sudoers()
             perl -pe "s!%GROUP%!$group!g;s!%BASEPATH%!$basedir!g" "$template"
         done
     } > "${dst}.tmp"
-    # then move the file to its final name (potentially overwritting a previous file of the same name)
+    # then move the file to its final name (potentially overwriting a previous file of the same name)
     mv -f "${dst}.tmp" "$dst"
     return 0
 }

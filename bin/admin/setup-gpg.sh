@@ -136,6 +136,6 @@ fi
 
 echo "Usage: $0 <--import|--generate>"
 echo
-echo "Use --generate to generate a new GPG keypair for bastion signing"
+echo "Use --generate to generate a new GPG key pair for bastion signing"
 echo "Use --import to import the administrator GPG key you've generated on your desk (ttyrecs, keys and acls backups will be encrypted to it)"
 exit 0

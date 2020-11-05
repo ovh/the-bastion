@@ -139,7 +139,7 @@ osh_info "The networks I'm able to connect you to on the egress side are: " . co
 $ret{'allowed_networks_list'} = \@allowedNets;
 
 my @forbiddenNets = @{$config->{'forbiddenNetworks'}};
-osh_info "The networks that are explicitely forbidden on the egress side are: " . colored(@forbiddenNets ? join(", ", @forbiddenNets) : "none", "magenta");
+osh_info "The networks that are explicitly forbidden on the egress side are: " . colored(@forbiddenNets ? join(", ", @forbiddenNets) : "none", "magenta");
 $ret{'forbidden_networks_list'} = \@forbiddenNets;
 
 $fnret = OVH::Bastion::get_bastion_ips();
