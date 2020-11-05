@@ -1274,18 +1274,18 @@ fi
 if [ "${opt[check-ttyrec]}" = 1 ] ; then
     action_doing "Checking ttyrec version"
     if ! command -v ttyrec >/dev/null 2>&1; then
-        action_error "ttyrec is not installed, the bastion will not work! Please either install ovh-ttyrec or run this script a second time with \`$0 --nothing --install-fake-ttyrec'"
+        action_error "ttyrec is not installed, the bastion will not work! Please either install ovh-ttyrec (/opt/bastion/bin/admin/install-ttyrec.sh) or run this script a second time with \`$0 --nothing --no-wait --install-fake-ttyrec'"
     else
         ttyrec_version=$(ttyrec -V 2>/dev/null | grep -Eo 'ttyrec v[0-9.]+' | cut -c9-)
         if [ -z "$ttyrec_version" ]; then
-            action_error "Incompatible ttyrec version installed, the bastion will not work! Please either install ovh-ttyrec or run this script again with \`$0 --nothing --install-fake-ttyrec'"
+            action_error "Incompatible ttyrec version installed, the bastion will not work! Please either install ovh-ttyrec (/opt/bastion/bin/admin/install-ttyrec.sh) or run this script again with \`$0 --nothing --no-wait --install-fake-ttyrec'"
         else
             action_detail "found v$ttyrec_version"
             action_detail "expected v$TTYREC_VERSION_NEEDED"
             if [ "$(printf "%s\\n%s\\n" "$ttyrec_version" "$TTYREC_VERSION_NEEDED" | sort | head -1)" = "$TTYREC_VERSION_NEEDED" ]; then
                 action_done
             else
-                action_error "The installed ttyrec version is too old, the bastion will not work! Please update ovh-ttyrec to at least v$TTYREC_VERSION_NEEDED"
+                action_error "The installed ttyrec version is too old, the bastion will not work! Please update ovh-ttyrec to at least v$TTYREC_VERSION_NEEDED (/opt/bastion/bin/admin/install-ttyrec.sh can help)"
             fi
         fi
     fi
