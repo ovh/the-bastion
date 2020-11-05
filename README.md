@@ -1,4 +1,4 @@
-![](https://user-images.githubusercontent.com/218502/96882661-d3b21e80-147f-11eb-8d89-a69e37a5870b.png)
+![The Bastion Logo](https://user-images.githubusercontent.com/218502/96882661-d3b21e80-147f-11eb-8d89-a69e37a5870b.png)
 
 The Bastion
 ===========
@@ -134,14 +134,15 @@ Even with the most conservative, precautionous and paranoid coding process, code
 ## Auditability
 
 - Bastion administrators must use the bastion's logic to connect to itself to administer it (or better, use another bastion to do so), this ensures auditability in all cases
-* Every access and action (wether allowed or denied) is logged with:
+* Every access and action (whether allowed or denied) is logged with:
     * `syslog`, which should also be sent to a remote syslog server to ensure even bastion administrators can't tamper their tracks, and/or
     * local `sqlite3` databases for easy searching
+* Every session is recorded with `ttyrec`, helper scripts are provided to encrypt and push these records on a remote escrow filer
 * This code is used in production in several PCI-DSS, ISO 27001, SOC1 and SOC2 certified environments
 
 ## Related
 
-- [ovh-ttyrec](https://github.com/ovh/ovh-ttyrec) - A terminal (tty) recorder
+- [ovh-ttyrec](https://github.com/ovh/ovh-ttyrec) - An enhanced but compatible version of ttyrec, a terminal (tty) recorder
 
 ## License
 
