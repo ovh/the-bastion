@@ -76,10 +76,10 @@ HostbasedAuthentication no
 # NOTE1: as per the ssh source code, an auth method omitted hereafter
 # will not be used, even if set to "yes" above.
 # NOTE2: the bastion code (namely, ttyrec), will always set the proper
-# value explicitely on command-line (pubkey OR sshpass), so the value
+# value explicitly on command-line (pubkey OR sshpass), so the value
 # specified hereafter will be ignored. if you want to force-disable
 # a method, set it to "no" in the list above, as those will never be
-# overriden by the code.
+# overridden by the code.
 PreferredAuthentications publickey
 
 # === LOGIN ###

@@ -9,7 +9,7 @@ Update between a previous `ZZ` version is supposed to be frictionless.
 - The `YY` part is considered a major update, potentially with new features (and new bugs!).
 Be sure to read the UPGRADE.md documentation which might contain instructions for a smoother update.
 If no specific instruction can be found, it means there's no specific action to be taken,
-appart from following the usual update process.
+apart from following the usual update process.
 If the change introduces an incompatibility between a `master` and its `slave`s,
 it'll be detailed in the UPGRADE.md file.
 

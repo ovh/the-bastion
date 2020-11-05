@@ -324,7 +324,7 @@ if ($realOptions =~ /^(.*?) -- (.*)$/) {
 }
 else {
     # we have no -- delimiter, either there was no remote command (that's fine),
-    # or it's indistiguishable from the bastion options, in that case GetOptionsFromString
+    # or it's indistinguishable from the bastion options, in that case GetOptionsFromString
     # will leave what it doesn't recognize, will also fuck up "" and '', but users are warned
     # to always use -- anyway, and we'll use that as a remote command
     $beforeOptions = $realOptions;
@@ -790,7 +790,7 @@ if ($osh_command) {
         $log_db_name   = $logret->value->{'db_name'};
     }
     else {
-        warn_syslog("Failed to insert accesss log: " . $logret->msg);
+        warn_syslog("Failed to insert access log: " . $logret->msg);
         if ($ip eq '127.0.0.1') {
             osh_warn("Would deny access on out of space condition but you're root\@127.0.0.1, I hope you're here to fix me!");
         }
@@ -802,10 +802,10 @@ if ($osh_command) {
     if ($fnret) {
         my @cmd = ($fnret->value->{'fullpath'}, $user, $ip, $host, $optPort, @$remainingOptions);
 
-        # is plugin explicitely disabled?
+        # is plugin explicitly disabled?
         my $isDisabled = OVH::Bastion::plugin_config(plugin => $osh_command, key => "disabled");
 
-        # plugin is enabled by default if not explicitely disabled
+        # plugin is enabled by default if not explicitly disabled
         if ($isDisabled and $isDisabled->value() =~ /yes/) {
             main_exit OVH::Bastion::EXIT_RESTRICTED_COMMAND, "plugin_disabled", "Sorry, this plugin has been disabled by policy.";
         }
@@ -1160,7 +1160,7 @@ else {
     if (not $quiet) {
         $fnret = OVH::Bastion::account_config(account => $self, key => OVH::Bastion::OPT_ACCOUNT_IDLE_IGNORE, public => 1);
         if ($fnret && $fnret->value =~ /yes/) {
-            osh_debug("Acccount is immune to idle");
+            osh_debug("Account is immune to idle");
         }
         else {
             if ($config->{'idleLockTimeout'}) {
@@ -1441,7 +1441,7 @@ Usage (osh cmd): $bastionName --osh [OSH_COMMAND] [OSH_OPTIONS]
     --verbose,  -v       Enable verbose ssh
     --tty,      -t       Force tty allocation
     --no-tty,   -T       Prevent tty allocation
-    --use-key      FP    Explicitely specify the fingerprint of the egress key you want to use
+    --use-key      FP    Explicitly specify the fingerprint of the egress key you want to use
     --kbd-interactive    Enable the keyboard-interactive authentication scheme on egress connection
     --netconf            Request to use netconf subsystem
 

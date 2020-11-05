@@ -2,7 +2,7 @@
 realmInfo
 ==========
 
-Display informations about a bastion realm
+Display information about a bastion realm
 ==========================================
 
 

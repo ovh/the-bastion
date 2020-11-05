@@ -39,7 +39,7 @@ Output example
   ~ I have 42 registered accounts and 46 groups
   ~ I am a MASTER, which means I accept modifications
   ~ The networks I'm able to connect you to on the egress side are: all
-  ~ The networks that are explicitely forbidden on the egress side are: none
+  ~ The networks that are explicitly forbidden on the egress side are: none
   ~ My egress connection IP to remote servers is 192.0.2.45/32
   ~ ...don't forget to whitelist me in your firewalls!
   ~ 

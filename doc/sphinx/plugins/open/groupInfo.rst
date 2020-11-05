@@ -37,7 +37,7 @@ Output example
   ~ keyline follows, please copy the *whole* line:
   from="203.0.113.4/32,192.0.2.0/26" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILdD60bA3NgaOpRLgcACWfKcAMRQQRyFMppwp5GpHLTB mygroup@testbastion:1523886640
 
-The first paragraph of the output lists the differents roles along with the people having these roles.
+The first paragraph of the output lists the different roles along with the people having these roles.
 
 You can also see the public egress key of this group, i.e. the key that needs to be added to the remote servers' ``authorized_keys`` files, so that ``members`` of this group can access these servers.
 

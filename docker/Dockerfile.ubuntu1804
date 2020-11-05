@@ -10,7 +10,7 @@ RUN ["/opt/bastion/bin/admin/install-ttyrec.sh","-d"]
 # handle locales
 RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen && locale-gen
 
-# disable /dev/kmsg handling by syslog-ng and explicitely enable /dev/log
+# disable /dev/kmsg handling by syslog-ng and explicitly enable /dev/log
 RUN test -e /etc/syslog-ng/syslog-ng.conf && \
     sed -i -re 's=system\(\);=unix-stream("/dev/log");=' /etc/syslog-ng/syslog-ng.conf
 

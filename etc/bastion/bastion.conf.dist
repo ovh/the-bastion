@@ -30,13 +30,13 @@
 "defaultLogin": "",
 #
 # adminAccounts (list of accounts names), deprecated alias: adminLogins
-#     DESC: The list of accounts that are Admins of the bastion. Admins can't be deleted or have their ingress keys resetted by non-admins. They also gain access to special dangerous/sensitive --osh commands. Note that an admin is also always considered as a Super Owner, which means they can override allchecks of group administrative commands. Don't forget to add them to the osh-admin group too, or they won't really be considered as admins (additional security measure). Tule of thumb: only add here people that have root@localhost access to the bastion
+#     DESC: The list of accounts that are Admins of the bastion. Admins can't be deleted or have their ingress keys reset by non-admins. They also gain access to special dangerous/sensitive --osh commands. Note that an admin is also always considered as a Super Owner, which means they can override allchecks of group administrative commands. Don't forget to add them to the osh-admin group too, or they won't really be considered as admins (additional security measure). Tule of thumb: only add here people that have root@localhost access to the bastion
 #  DEFAULT: []
 "adminAccounts": [],
 #
 # superOwnerAccounts (list of account names)
 #    VALUE: list of accounts that are considered as super group owners
-#     DESC: The list of accounts that are considered as "Super Group Owners". They can run all group administrative commands, exactly as if they were owners of all the groups. Super Owners are only here as a last resort when the owners/gatekeepers/aclkeepers of a group are not available. Every command run by a Super Owner that would have failed if the account was not a Super Owner is logged explicitely as "Super Owner Override". You can see it as a "sudo" for group management. Don't add here accounts that are bastion Admins, they already inherit the Super Owner role.
+#     DESC: The list of accounts that are considered as "Super Group Owners". They can run all group administrative commands, exactly as if they were owners of all the groups. Super Owners are only here as a last resort when the owners/gatekeepers/aclkeepers of a group are not available. Every command run by a Super Owner that would have failed if the account was not a Super Owner is logged explicitly as "Super Owner Override". You can see it as a "sudo" for group management. Don't add here accounts that are bastion Admins, they already inherit the Super Owner role.
 #  DEFAULT: []
 "superOwnerAccounts": [],
 #
@@ -51,7 +51,7 @@
 "forbiddenNetworks": [],
 #
 # ingressToEgressRules (array of arrays of rules, a rule being a 3-uple of {array, array, string})
-#     DESC: Fine-grained rules (a la netfilter) to apply global restrictions to possible egress destinations given ingress IPs. Rules here are enforced at all times and can NOT be overriden by users or admins.
+#     DESC: Fine-grained rules (a la netfilter) to apply global restrictions to possible egress destinations given ingress IPs. Rules here are enforced at all times and can NOT be overridden by users or admins.
 #  DEFAULT: [], which means no restriction
 #  DETAILS: A rule is a 3-uple of {array of ingress networks, array of egress networks, policy to apply}.
 #           Each rule will be processed IN ORDER. The first rule to match will be applied and no other rule will be checked.
@@ -70,7 +70,7 @@
 #                but not any other machine from the wider 192.168.0.0/16 network (rule #3). It can however
 #                access any other machine outside of this block (implicit allow catch-all rule, as there is
 #                no corresponding DENY rule, and rule #2 is ALLOW and not ALLOW-EXCLUSIVE)
-#          - The 192.168.0.0/16 network (except 192.168.42.0/16) can accesss any machine except one from its own network (rule #3)
+#          - The 192.168.0.0/16 network (except 192.168.42.0/16) can access any machine except one from its own network (rule #3)
 #          - All the other networks can access any other network (including egress 10.20.0.0/16 or egress 192.168.0.0/16)
 #          In any case, all the personal and group accesses still apply in addition to these global rules
 "ingressToEgressRules": [],
@@ -113,7 +113,7 @@
 "accountExternalValidationProgram": "",
 #
 # accountExternalValidationDenyOnFailure (boolean-int, aka 0 or 1)
-#    DESC: If we can't validate an account using the above configured program, for example because the path doesn't exist, the file is not executable, or because the program returns the exit code 4 (see above for more informaton), this configuration option indicates whether we should deny or allow access. Note that the bastion admins will always be allowed if the accountExternalValidationProgram doesn't work correctly, because they're expected to be able to fix it. They would be denied, as any other account, if accountExternalValidationProgram works correctly and denies them access, however. If you're still testing your account validation procedure, and don't want to break your users workflow while you're not 100% sure it works correctly, you can say 0 ("false") here, and return 4 instead of 1 in your accountExternalValidationProgram when you would want to deny access.
+#    DESC: If we can't validate an account using the above configured program, for example because the path doesn't exist, the file is not executable, or because the program returns the exit code 4 (see above for more information), this configuration option indicates whether we should deny or allow access. Note that the bastion admins will always be allowed if the accountExternalValidationProgram doesn't work correctly, because they're expected to be able to fix it. They would be denied, as any other account, if accountExternalValidationProgram works correctly and denies them access, however. If you're still testing your account validation procedure, and don't want to break your users workflow while you're not 100% sure it works correctly, you can say 0 ("false") here, and return 4 instead of 1 in your accountExternalValidationProgram when you would want to deny access.
 # DEFAULT: 1
 "accountExternalValidationDenyOnFailure": 1,
 #
@@ -238,7 +238,7 @@
 "MFAPostCommand": [],
 #
 # remoteCommandEscapeByDefault (boolean-int, i.e. 0 or 1)
-#     DESC: If set to 0, will not escape simple quotes in remote commands by default. Leave it to 0 if possible. Will escape simple quotes otherwise (legacy "broken" behavior). Can be overriden at runtime with --never-escape and --always-escape
+#     DESC: If set to 0, will not escape simple quotes in remote commands by default. Leave it to 0 if possible. Will escape simple quotes otherwise (legacy "broken" behavior). Can be overridden at runtime with --never-escape and --always-escape
 #  DEFAULT: 0
 "remoteCommandEscapeByDefault": 0,
 #

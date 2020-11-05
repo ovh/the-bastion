@@ -27,7 +27,7 @@ For the remaining of this documentation, we'll assume your bastion alias is `bss
 
 You can do to categories of things on the bastion:
 
-- Connect to infrastructures throught it
+- Connect to infrastructures through it
 - Interact with the bastion itself, for example to manage your account, and/or groups, through so-called *plugins*, also named *osh commands*
 
 Plugins
@@ -156,7 +156,7 @@ Now that you have it, you can push this public key (the line starting with the *
    --------------------------------------------------------------------------------
    ~ Testing connection to root@198.51.100.42, please wait...
    Warning: Permanently added '198.51.100.42' (ECDSA) to the list of known hosts.
-   ~ Access to root@198.51.100.42:22 succesfully added
+   ~ Access to root@198.51.100.42:22 successfully added
    -----------------------------------------------------</selfAddPersonalAccess>---
    bssh(master)> 
 

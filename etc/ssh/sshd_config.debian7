@@ -76,7 +76,7 @@ HostbasedAuthentication no
 GSSAPIAuthentication no
 GSSAPIKeyExchange no
 
-# just in case, we also explicitely deny empty passwords
+# just in case, we also explicitly deny empty passwords
 PermitEmptyPasswords no
 
 # this needs to be set at "yes" to allow PAM keyboard-interactive authentication,

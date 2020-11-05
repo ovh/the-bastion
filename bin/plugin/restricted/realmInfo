@@ -13,7 +13,7 @@ OVH::Bastion::Plugin::begin(
     header   => "realm information",
     options  => {'realm=s' => \my $pRealm},
     helptext => <<'EOF',
-Display informations about a bastion realm
+Display information about a bastion realm
 
 Usage: --osh SCRIPT_NAME --realm REALM
 

@@ -26,7 +26,7 @@ BEGIN {
         my $criticity = ($type eq 'die' ? 'err' : 'warning');
 
         # Net::Server can be noisy if the client fails to establish the SSL connection,
-        # transform thoses die into info to avoid triggering SIEM alerts
+        # transform those die into info to avoid triggering SIEM alerts
         $criticity = 'info' if (defined $msg and $msg =~ m{^Could not finalize SSL connection with client handle});
 
         require Carp;
@@ -156,7 +156,7 @@ sub AUTOLOAD {    ## no critic (AutoLoading)
     die "AUTOLOAD FAILED: $AUTOLOAD";
 }
 
-# checks wether an account is expired (inactivity) if that's configured on this bastion
+# checks whether an account is expired (inactivity) if that's configured on this bastion
 sub is_account_nonexpired {
     my %params        = @_;
     my $sysaccount    = $params{'sysaccount'};
@@ -499,7 +499,7 @@ sub is_valid_ip {
     my %params        = @_;
     my $ip            = $params{'ip'};
     my $allowPrefixes = $params{'allowPrefixes'};    # if not, a /24 or /32 notation is rejected
-    my $fast          = $params{'fast'};             # fast mode: avoid instanciating Net::IP... except if ipv6
+    my $fast          = $params{'fast'};             # fast mode: avoid instantiating Net::IP... except if ipv6
 
     if ($fast and $ip !~ m{:}) {
 
