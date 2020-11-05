@@ -1,6 +1,8 @@
 name: dockerhub publish
 
 on:
+  release:
+    types: published
   repository_dispatch:
     types: dockerhub
 
@@ -26,7 +28,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          file: docker/Dockerfile.debian10
+          file: docker/Dockerfile.sandbox
           tags: ovhcom/the-bastion:sandbox-latest
       -
         name: Image digest
