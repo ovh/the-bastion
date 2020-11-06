@@ -42,7 +42,17 @@ Note that this is done automatically for bastion admins.
 Version-specific upgrade instructions
 =====================================
 
+v3.00.01
+********
+
+If you previously installed ``ttyrec`` using the now deprecated ``build-and-install-ttyrec.sh`` script, you might want to know that since this version, the script has been replaced by ``install-ttyrec.sh``, which no longer builds in-place, but prefers downloading and installing prebuild ``rpm`` or ``deb`` packages.
+
+If you previously built and installed ``ttyrec`` manually, and want to use the new packages instead, you might want to manually uninstall your previously built ttyrec program (remove the binaries that were installed in ``/usr/local/bin``), and call ``install-ttyrec.sh -a`` to download and install the proper package instead.
+
+This is not mandatory and doesn't change anything from the software point of view.
+
+
 v3.00.00
 ********
 
-Initial public version, no specific upgrade instructions
+Initial public version, no specific upgrade instructions.

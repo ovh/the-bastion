@@ -1,3 +1,0 @@
-# Specific upgrade instructions
-
-(none)
