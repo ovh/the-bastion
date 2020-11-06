@@ -68,7 +68,7 @@ For the supported Linux distros (see above), you can simply run:
 
 .. code-block:: shell
 
-    /opt/bastion/bin/admin/packages-check.sh -i
+   /opt/bastion/bin/admin/packages-check.sh -i
 
 You can add other parameters to install optional packages, depending on your environment:
 
@@ -76,7 +76,13 @@ You can add other parameters to install optional packages, depending on your env
 - ``-d`` to install packages needed for developing the software (useless in production)
 - ``-t`` to install ``ovh-ttyrec``
 
-Note that ``-t`` makes the assumption that you have made available ``ovh-ttyrec`` to your distro repositories. If you haven't omit the ``-t`` and check the `ovh-ttyrec code repository <https://github.com/ovh/ovh-ttyrec>`_'s readme section titled "*build a .deb package*" for instructions on how to do so (spoiler: it's a oneliner).
+Note that ``-t`` makes the assumption that you have compiled and made available ``ovh-ttyrec`` to your distro repositories. If you haven't, you can use the following helper:
+
+.. code-block:: shell
+
+   /opt/bastion/bin/admin/install-ttyrec.sh -a
+
+This will detect your distro, then download and either install the ``.deb`` or ``.rpm`` package for `ovh-ttyrec <https://github.com/ovh/ovh-ttyrec>`_. If your distro doesn't handle those package types, it'll fallback to installing precompiled static binaries. Of course you can package it yourself and make it available to your own internal repositories instead of installing it this way.
 
 4. Encrypt /home
 ================
