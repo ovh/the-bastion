@@ -44,19 +44,24 @@ set_download_url() {
         exit 1
     fi
 
-    action_doing "Getting latest release..."
+    action_doing "Getting latest release for arch $arch..."
     if command -v jq >/dev/null; then
         # If we have jq, we can do it properly
-        url=$(_apicall $RELEASE_API_URL | jq -r '.[0].assets|.[]|.browser_download_url' | grep -F "$pattern")
+        url=$(_apicall $RELEASE_API_URL | jq -r '.[0].assets|.[]|.browser_download_url' | grep -F "$pattern" | head -n1)
     elif perl -MJSON -e 1 2>/dev/null; then
         # If we don't, there's a good chance we have Perl with the JSON module, use it
-        url=$(_apicall $RELEASE_API_URL | perl -MJSON -e 'undef $/; $d=decode_json(<>); foreach(@{ $d->[0]{assets} || [] }) { $_=$_->{browser_download_url}; /\Q'"$pattern"'\E/ && print && exit }')
+        url=$(_apicall $RELEASE_API_URL | perl -MJSON -e 'undef $/; $d=decode_json(<>); foreach(@{ $d->[0]{assets} || [] }) { $_=$_->{browser_download_url}; /\Q'"$pattern"'\E/ && print && exit }' | head -n1)
     else
         # Otherwise, go the ugly way, don't bother the user in installing jq just for this need
         url=$(_apicall $RELEASE_API_URL | grep -Eo 'https://[a-z0-9./_-]+' | grep -F "$pattern" | head -n1)
     fi
 
-    action_detail "$url"
+    if [ -n "$url" ]; then
+        action_detail "$url"
+    else
+        action_error "Couldn't find a proper URL for your architecture ($arch), looked for pattern '$pattern'. You may have to compile ovh-ttyrec yourself!"
+        exit 1
+    fi
 }
 
 prepare_temp_folder() {
@@ -67,7 +72,15 @@ prepare_temp_folder() {
 }
 
 action_static() {
-    set_download_url "linux-static-binary.tar.gz"
+    if command -v dpkg >/dev/null; then
+        set_arch_from_deb
+    elif command -v rpm >/dev/null; then
+        set_arch_from_rpm
+    else
+        arch=$(uname -m)
+    fi
+
+    set_download_url "_$arch-linux-static-binary.tar.gz"
     prepare_temp_folder
 
     _download "$url"
@@ -93,8 +106,17 @@ action_static() {
     cd /
 }
 
+set_arch_from_deb() {
+    arch=$(dpkg --print-architecture)
+}
+
 action_debian() {
-    set_download_url ".deb"
+    if ! command -v dpkg >/dev/null; then
+        echo "Couldn't find dpkg, aborting" >&2
+        exit 1
+    fi
+    set_arch_from_deb
+    set_download_url "_$arch.deb"
     prepare_temp_folder
 
     _download "$url"
@@ -110,8 +132,24 @@ action_debian() {
     cd /
 }
 
+set_arch_from_rpm() {
+    arch=$(rpm -E '%{_arch}')
+
+    # in some cases, %{_arch} is not defined, so the macro isn't expanded.
+    # In that case, find it ourselves
+    if [ "$arch" = "%{_arch}" ]; then
+        arch=$(rpm --showrc | grep "^install arch" | awk '{print $4}')
+    fi
+}
+
 action_rpm() {
-    set_download_url ".rpm"
+    if ! command -v rpm >/dev/null; then
+        echo "Couldn't find rpm, aborting" >&2
+        exit 1
+    fi
+    set_arch_from_rpm
+
+    set_download_url ".$arch.rpm"
     prepare_temp_folder
 
     _download "$url"
@@ -148,6 +186,11 @@ action_auto() {
             fi;;
     esac
 }
+
+if [ "$OS_FAMILY" != "Linux" ]; then
+    echo "Sorry, your OS ($OS_FAMILY) is not supported." >&2
+    exit 1
+fi
 
 while getopts :sdrah arg; do
     case "$arg" in
