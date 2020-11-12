@@ -9,7 +9,7 @@ else
 fi
 
 if [ "$1" = "--sandbox" ]; then
-    "The Bastion sandbox container is running, you can now connect to its port 22 (probably remapped to another port on the host)"
+    echo "The Bastion sandbox container is running, you can now connect to its port 22 (probably remapped to another port on the host)"
 fi
 while : ; do
     sleep 3600
