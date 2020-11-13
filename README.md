@@ -27,7 +27,7 @@ This is a good way to test The Bastion within seconds, but [read the FAQ](https:
 
 OK, let's run the docker image:
 
-    docker run -d -p 22 --name bastiontest ovhcom/the-bastion:sandbox-latest
+    docker run -d -p 22 --name bastiontest ovhcom/the-bastion:sandbox
 
 Get your public SSH key at hand, then configure the first administrator account:
 

@@ -22,38 +22,42 @@ EOF
 set_download_url() {
     pattern="$1"
 
-    action_doing "Checking for prerequisites..."
-    if command -v curl >/dev/null; then
-        action_done curl
-        _apicall() {
-            curl -sL -H 'Accept: application/vnd.github.v3+json' "$1"
-        }
-        _download() {
-            curl -sL -O "$1"
-        }
-    elif command -v wget >/dev/null; then
+    action_doing "Looking for download tool..."
+    if command -v wget >/dev/null; then
         action_done wget
         _apicall() {
-            wget -q -O - --header="Accept: application/vnd.github.v3+json" "$1"
+            wget -q -O - --header="Accept: application/vnd.github.v3+json" "$1" || true
         }
         _download() {
             wget -q "$1"
+        }
+    elif command -v curl >/dev/null; then
+        action_done curl
+        _apicall() {
+            curl -sL -H 'Accept: application/vnd.github.v3+json' "$1" || true
+        }
+        _download() {
+            curl -sL -O "$1"
         }
     else
         action_error "Couldn't find wget nor curl"
         exit 1
     fi
-
     action_doing "Getting latest release for arch $arch..."
+    payload=$(mktemp)
+    # shellcheck disable=SC2064
+    trap "rm -f $payload" EXIT
+
+    _apicall $RELEASE_API_URL > "$payload"
     if command -v jq >/dev/null; then
         # If we have jq, we can do it properly
-        url=$(_apicall $RELEASE_API_URL | jq -r '.[0].assets|.[]|.browser_download_url' | grep -F "$pattern" | head -n1)
+        url=$(jq -r '.[0].assets|.[]|.browser_download_url' < "$payload" | grep -F "$pattern" | head -n1)
     elif perl -MJSON -e 1 2>/dev/null; then
         # If we don't, there's a good chance we have Perl with the JSON module, use it
-        url=$(_apicall $RELEASE_API_URL | perl -MJSON -e 'undef $/; $d=decode_json(<>); foreach(@{ $d->[0]{assets} || [] }) { $_=$_->{browser_download_url}; /\Q'"$pattern"'\E/ && print && exit }' | head -n1)
+        url=$(perl -MJSON -e 'undef $/; $d=decode_json(<>); foreach(@{ $d->[0]{assets} || [] }) { $_=$_->{browser_download_url}; /\Q'"$pattern"'\E/ && print && exit }' "$payload" | head -n1)
     else
         # Otherwise, go the ugly way, don't bother the user in installing jq just for this need
-        url=$(_apicall $RELEASE_API_URL | grep -Eo 'https://[a-z0-9./_-]+' | grep -F "$pattern" | head -n1)
+        url=$(grep -Eo 'https://[a-z0-9./_-]+' "$payload" | grep -F "$pattern" | head -n1)
     fi
 
     if [ -n "$url" ]; then
