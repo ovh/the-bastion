@@ -68,6 +68,6 @@ OVH::Bastion::syslogFormatted(
 
 osh_warn("ADMIN SUDO: $self, you'll now impersonate $sudoAs, this has been logged.");
 
-$fnret = OVH::Bastion::execute(cmd => \@cmd, noisy_stdout => 1, noisy_stderr => 1);
+$fnret = OVH::Bastion::execute(cmd => \@cmd, noisy_stdout => 1, noisy_stderr => 1, expects_stdin => 1);
 
 osh_exit $fnret;
