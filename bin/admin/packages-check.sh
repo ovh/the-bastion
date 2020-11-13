@@ -40,6 +40,11 @@ if echo "$DISTRO_LIKE" | grep -q -w debian; then
                 libwww-perl libdigest-sha-perl libnet-ssleay-perl \
                 libnet-server-perl cryptsetup mosh expect openssh-server locales \
                 coreutils netcat bash libcgi-pm-perl iputils-ping"
+    # workaround for debian/armhf: curl fails to validate some SSL certificates,
+    # whereas wget succeeds; this is needed for e.g. install-ttyrec.sh
+    if [ "$(uname -m)" = armv7l ]; then
+        wanted_list="$wanted_list wget"
+    fi
     [ "$opt_dev" = 1 ] && wanted_list="$wanted_list libperl-critic-perl perltidy shellcheck"
     if { [ "$LINUX_DISTRO" = debian ] && [ "$DISTRO_VERSION_MAJOR" -lt 9 ]; } ||
        { [ "$LINUX_DISTRO" = ubuntu ] && [ "$DISTRO_VERSION_MAJOR" -le 16 ]; }; then
