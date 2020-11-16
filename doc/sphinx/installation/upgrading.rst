@@ -42,6 +42,11 @@ Note that this is done automatically for bastion admins.
 Version-specific upgrade instructions
 =====================================
 
+v3.00.02
+********
+
+No specific upgrade instructions.
+
 v3.00.01
 ********
 

@@ -23,9 +23,11 @@ Please see the [online documentation](https://ovh.github.io/the-bastion/), or th
 
 ## TL;DR: disposable sandbox using Docker
 
-This is a good way to test The Bastion within seconds, but [read the FAQ](https://ovh.github.io/the-bastion/faq.html#can-i-run-it-under-docker-in-production) if you're serious about using this in production.
+This is a good way to test The Bastion within seconds, but [read the FAQ](https://ovh.github.io/the-bastion/faq.html#can-i-run-it-under-docker-in-production) if you're serious about using containerization in production.
 
-OK, let's run the docker image:
+The sandbox image is available for the following architectures: linux/386, linux/amd64, linux/arm/v6, linux/arm/v7, linux/arm64, linux/ppc64le, linux/s390x.
+
+Let's run the docker image:
 
     docker run -d -p 22 --name bastiontest ovhcom/the-bastion:sandbox
 
@@ -60,7 +62,7 @@ Note that you can connect directly without using interactive mode, with:
 
     bastion <remote_account_name>@<remote_machine_host_or_ip>
 
-That's it! Additional documentation is available under the `doc/` folder and [online](https://ovh.github.io/the-bastion/).
+That's it! Of course, there is a lot more to it, documentation is available under the `doc/` folder and [online](https://ovh.github.io/the-bastion/).
 Be sure to check the help of the bastion (`bastion --help`) and the help of each osh plugin (`bastion --osh command --help`).
 Also don't forget to customize your `bastion.conf` file, which can be found in `/etc/bastion/bastion.conf` (for Linux).
 
@@ -73,12 +75,14 @@ Linux distros below are tested with each release, but as this is a security prod
 - Ubuntu LTS 20.04, 18.04, 16.04, 14.04*
 - OpenSUSE Leap 15.2*, 15.1*, 15.0*
 
-*: Note that these versions have no MFA support.
+*: Note that these versions have no out-of-the-box MFA support, as they lack packaged versions of `pamtester`, `pam-google-authenticator`, or both. Of course, you may compile those yourself.
 Any other so-called "modern" Linux version are not tested with each release, but should work with no or minor adjustments.
 
 The code is also known to work correctly under:
 
-- FreeBSD 10+ / HardenedBSD [no MFA support]
+- FreeBSD 10+ / HardenedBSD**
+
+**: Note that FreeBSD has partial MFA support, due to its reduced set of available `pam` plugins. You can set it up to support an additional password or TOTP factor, but not both.
 
 Other BSD variants partially work but are unsupported and discouraged as they have a severe limitation over the maximum number of supplementary groups (causing problems for group membership and restricted commands checks), no filesystem-level ACL support and missing MFA:
 
