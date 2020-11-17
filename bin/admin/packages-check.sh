@@ -125,10 +125,17 @@ elif echo "$DISTRO_LIKE" | grep -q -w suse; then
     installed="FIXME"
     install_cmd="zypper install"
 elif [ "$OS_FAMILY" = FreeBSD ]; then
+    wanted_list="rsync bash sudo p5-JSON p5-JSON-XS p5-common-sense p5-Net-IP p5-GnuPG p5-DBD-SQLite p5-Net-Netmask p5-Term-ReadKey expect fping p5-Net-Server p5-CGI p5-LWP-Protocol-https"
     if [ "$opt_install" = 1 ]; then
-        pkg install -y rsync bash sudo p5-JSON p5-JSON-XS p5-common-sense p5-Net-IP p5-GnuPG p5-DBD-SQLite p5-Net-Netmask p5-Term-ReadKey expect fping p5-Net-Server p5-CGI p5-LWP-Protocol-https
+        pkg install -y $wanted_list
         exit $?
     fi
+
+    installed=""
+    for wanted in $wanted_list; do
+        pkg info -e $wanted && installed+=" $wanted"
+    done;
+    install_cmd="pkg install"
 else
     echo "This script doesn't support this OS yet ($DISTRO_LIKE)" >&2
     exit 1
