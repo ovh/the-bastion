@@ -125,8 +125,18 @@ elif echo "$DISTRO_LIKE" | grep -q -w suse; then
     installed="FIXME"
     install_cmd="zypper install"
 elif [ "$OS_FAMILY" = FreeBSD ]; then
+    wanted_list="base64 coreutils rsync bash sudo pamtester p5-JSON p5-JSON-XS p5-common-sense p5-Net-IP p5-GnuPG p5-DBD-SQLite p5-Net-Netmask p5-Term-ReadKey expect fping p5-Net-Server p5-CGI p5-LWP-Protocol-https"
+    install_cmd="pkg add"
+    installed=""
+    for i in $wanted_list
+    do
+        if pkg info -e "$i"; then
+                installed="$installed $i"
+        fi
+    done
     if [ "$opt_install" = 1 ]; then
-        pkg install -y rsync bash sudo p5-JSON p5-JSON-XS p5-common-sense p5-Net-IP p5-GnuPG p5-DBD-SQLite p5-Net-Netmask p5-Term-ReadKey expect fping p5-Net-Server p5-CGI p5-LWP-Protocol-https
+        # shellcheck disable=SC2086
+        pkg install -y $wanted_list
         exit $?
     fi
 else
