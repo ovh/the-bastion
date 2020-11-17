@@ -67,6 +67,26 @@ if [ ! -e "$SSH_DIR" ]; then
     SSH_DIR=/etc/ssh
 fi
 
+# set PAM_DIR
+PAM_DIR=$ETC_DIR/pam.d
+if [ ! -e "$PAM_DIR" ]; then
+    PAM_DIR=/etc/pam.d
+fi
+
+# set PAM_SSHD
+# under FreeBSD, both /usr/local/etc/pam.d and /etc/pam.d can exist
+PAM_SSHD="/etc/pam.d/sshd"
+if [ -e "/usr/local/etc/pam.d/sshd" ]; then
+    # shellcheck disable=SC2034
+    PAM_SSHD="/usr/local/etc/pam.d/sshd"
+fi
+
+# set CRON_DIR
+CRON_DIR=$ETC_DIR/cron.d
+if [ ! -e "$CRON_DIR" ]; then
+    CRON_DIR=/etc/cron.d
+fi
+
 action_doing()
 {
     printf '\r*** %b\n' "$*"

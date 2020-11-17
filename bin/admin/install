@@ -347,9 +347,9 @@ if [ "$nothing" = 0 ]; then
             osh-lingeringSessionsReaper osh-orphanedHomedir osh-pivGraceReaper \
             osh-protectLogs osh-rotateTtyrec osh-activeUsers
         do
-            if [ -e "$ETC_DIR/cron.d/$obsolete" ]; then
+            if [ -e "$CRON_DIR/$obsolete" ]; then
                 at_least_one_changed=1
-                rm -f "$ETC_DIR/cron.d/$obsolete"
+                rm -f "$CRON_DIR/$obsolete"
             fi
         done
     fi
@@ -383,26 +383,33 @@ if [ "$nothing" = 0 ]; then
         action_na
     fi
 
-    dirstocheck='bastion'
-    [ "${opt[logrotate]}" = 1 ] && dirstocheck="$dirstocheck logrotate.d"
-    [ "${opt[cron]}"      = 1 ] && dirstocheck="$dirstocheck cron.d"
-    [ "${opt[syslog-ng]}" = 1 ] && dirstocheck="$dirstocheck syslog-ng/conf.d"
-    for subdir in $dirstocheck
+    list="bastion"
+    [ "${opt[logrotate]}" = 1 ] && list="$list logrotate"
+    [ "${opt[cron]}"      = 1 ] && list="$list cron"
+    [ "${opt[syslog-ng]}" = 1 ] && list="$list syslog"
+    for todo in $list
     do
+        case "$todo" in
+            bastion)   subdir="bastion";          destdir="$BASTION_ETC_DIR";;
+            logrotate) subdir="logrotate.d";      destdir="$ETC_DIR/logrotate.d";;
+            cron)      subdir="cron.d";           destdir="$CRON_DIR";;
+            syslog)    subdir="syslog-ng/conf.d"; destdir="$ETC_DIR/syslog-ng/conf.d";;
+            *)         continue;;
+        esac
         # don't try to copy file in nonexistent dirs (i.e. syslog-ng if rsyslog is installed)
         # our own specific dirs have already been created above, so they exist
-        action_doing "Check files in $ETC_DIR/$subdir..."
-        [ -d "$ETC_DIR/$subdir" ] || continue
+        action_doing "Check files in $destdir..."
+        [ -d "$destdir" ] || continue
 
         for file in "$basedir/etc/$subdir"/*.dist ; do
-            destfile="$ETC_DIR/$subdir/$(basename "$file" .dist)"
+            destfile="$destdir/$(basename "$file" .dist)"
             if [ -e "$destfile" ]; then
                 # if the target already exist, check if we're asked to overwrite it
-                if   [ "$subdir" = "logrotate.d"      ] && [ "${opt[overwrite-logrotate]}" = 1 ]; then
+                if   [ "$todo" = "logrotate" ] && [ "${opt[overwrite-logrotate]}" = 1 ]; then
                     : # we'll overwrite
-                elif [ "$subdir" = "cron.d"           ] && [ "${opt[overwrite-cron]}"      = 1 ]; then
+                elif [ "$todo" = "cron"      ] && [ "${opt[overwrite-cron]}"      = 1 ]; then
                     : # we'll overwrite
-                elif [ "$subdir" = "syslog-ng/conf.d" ] && [ "${opt[overwrite-syslog-ng]}" = 1 ]; then
+                elif [ "$todo" = "syslog"    ] && [ "${opt[overwrite-syslog-ng]}" = 1 ]; then
                     : # we'll overwrite
                 else
                     # in all other cases, don't overwrite
@@ -422,7 +429,7 @@ if [ "$nothing" = 0 ]; then
             action_detail "... create $destfile"
             install -o "$UID0" -g "$GID0" -m 0644 -b "$file" "$destfile"
             # actually don't do a backup for cron files: we would get double-executions...
-            [ "$subdir" = "cron.d" ] && rm -f "$destfile"\~
+            [ "$todo" = "cron" ] && rm -f "$destfile"\~
 
             # special case if the file contains %RANDOMX%N:M%, with X between 1 and 9,
             # we replace it by a random number between N and M (for crons)
@@ -462,7 +469,7 @@ if [ "$nothing" = 0 ]; then
     if [ ! -e $SUDOERS_FILE ] ; then
         action_error "$SUDOERS_DIR doesn't exist, is sudo installed?"
     else
-        if grep -q "^#includedir $SUDOERS_DIR$" $SUDOERS_FILE ; then
+        if grep -Eq "^[#@]includedir $SUDOERS_DIR$" $SUDOERS_FILE ; then
             action_na "sudoers.d already added in config"
         else
             echo '# added by the-bastion:'  >> $SUDOERS_FILE
@@ -1190,13 +1197,13 @@ if [ "${opt[modify-umask]}" = 1 ]; then
         action_na
     fi
 
-    action_doing "Adjust umask in $ETC_DIR/pam.d/common-session if applicable"
-    if [ -e $ETC_DIR/pam.d/common-session ]; then
+    action_doing "Adjust umask in $PAM_DIR/common-session if applicable"
+    if [ -e $PAM_DIR/common-session ]; then
         if ! grep -Eq '^\s*session\s+optional\s+pam_umask.so\s+umask=0?027' \
-                $ETC_DIR/pam.d/common-session ; then
+                $PAM_DIR/common-session ; then
             action_detail "missing umask config in file, adjusting"
-            echo "# bastion config: umask needs to be at 0027" >> $ETC_DIR/pam.d/common-session
-            echo "session optional pam_umask.so umask=0027"    >> $ETC_DIR/pam.d/common-session
+            echo "# bastion config: umask needs to be at 0027" >> $PAM_DIR/common-session
+            echo "session optional pam_umask.so umask=0027"    >> $PAM_DIR/common-session
             action_done
         else
             action_na "umask was already OK"
@@ -1208,15 +1215,16 @@ fi
 
 if [ "${opt[modify-pam-sshd]}" = 1 ]; then
     action_doing "Use our template for pam.d/sshd"
-    if grep -Eiq '^[[:space:]]*AuthenticationMethods[[:space:]]+publickey,keyboard-interactive:pam' /etc/ssh/sshd_config; then
-        echo "$DISTRO_LIKE" | grep -q -w debian && pamsuffix=debian
-        echo "$DISTRO_LIKE" | grep -q -w rhel   && pamsuffix=rhel
-        if [ -n "$pamsuffix" ] && [ -e $ETC_DIR/pam.d/sshd ] && [ -e "$basedir/etc/pam.d/sshd.$pamsuffix" ]; then
-            cp -a "$ETC_DIR/pam.d/sshd" "$ETC_DIR/pam.d/sshd.backup_$(date +%s)"
-            cat "$basedir/etc/pam.d/sshd.$pamsuffix" > $ETC_DIR/pam.d/sshd
+    if grep -Eiq '^[[:space:]]*AuthenticationMethods[[:space:]]+publickey,keyboard-interactive:pam' "$SSH_DIR/sshd_config"; then
+        echo "$DISTRO_LIKE" | grep -q -w debian  && pamsuffix=debian
+        echo "$DISTRO_LIKE" | grep -q -w rhel    && pamsuffix=rhel
+        [ "$OS_FAMILY" = FreeBSD ] && pamsuffix=freebsd
+        if [ -n "$pamsuffix" ] && [ -e $PAM_SSHD ] && [ -e "$basedir/etc/pam.d/sshd.$pamsuffix" ]; then
+            cp -a "$PAM_SSHD" "$PAM_SSHD.backup_$(date +%s)"
+            cat "$basedir/etc/pam.d/sshd.$pamsuffix" > $PAM_SSHD
             action_done
         else
-            action_error "couldn't use our pam.d/sshd template"
+            action_error "couldn't use our pam.d/sshd template (no template for $OS_FAMILY/$DISTRO_LIKE)"
         fi
     else
         action_na "the currently installed sshd_config file doesn't have a forced 'AuthenticationMethods publickey', we can't install our pam.d template safely (it could turn this machine into an allow-all accesses without auth through ssh!)"
@@ -1226,12 +1234,12 @@ fi
 if [ "${opt[modify-pam-lastlog]}" = 1 ]; then
     # pam.d lastlogin
     action_doing "Adjust lastlog in pam.d/sshd if applicable"
-    if [ -e "$ETC_DIR/pam.d/sshd" ] ; then
-        if ! grep -Eq '^\s*session\s+optional\s+pam_lastlog.so' "$ETC_DIR/pam.d/sshd" ; then
+    if [ -e "$PAM_SSHD" ] ; then
+        if ! grep -Eq '^\s*session\s+optional\s+pam_lastlog.so' "$PAM_SSHD" ; then
             action_detail "missing lastlog config in file, adjusting"
             # shellcheck disable=SC1004
             sed_compat '/^\s*@include\s+common-session/a\
-    # bastion config: lastlog needs to be updated on connection\nsession optional pam_lastlog.so silent' "$ETC_DIR/pam.d/sshd"
+    # bastion config: lastlog needs to be updated on connection\nsession optional pam_lastlog.so silent' "$PAM_SSHD"
             action_done
         else
             action_na "lastlog config was already ok"
