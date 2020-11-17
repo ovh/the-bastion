@@ -42,8 +42,16 @@ generate_account_sudoers()
     chmod 0440 "${dst}.tmp"
     {
         echo "# generated from install script"
-        for template in $(find "$basedir/etc/sudoers.account.template.d/" -type f | sort)
+        for template in $(find "$basedir/etc/sudoers.account.template.d/" -type f -name "*.sudoers" | sort)
         do
+            # if $template has two dots, then it's of the form XXX-name.$os.sudoers,
+            # in that case we only include this template if $os is our current OS
+            if [ "$(echo "$template" | cut -d. -f3)" = "sudoers" ]; then
+                if [ "$(echo "$template" | cut -d. -f2 | tr '[:upper:]' '[:lower:]')" != "$(echo "$OS_FAMILY" | tr '[:upper:]' '[:lower:]')" ]; then
+                    # not the same OS, skip it
+                    continue
+                fi
+            fi
             echo
             echo "# $template:"
             perl -pe "s!%ACCOUNT%!$account!g;s!%NORMACCOUNT%!$normalized_account!g;s!%BASEPATH%!$basedir!g" "$template"

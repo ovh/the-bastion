@@ -1,0 +1,2 @@
+# under FreeBSD, non-root accounts can't read /etc/spwd.db and there's no helper for pam_unix.so to authenticate users
+%ACCOUNT% ALL=(root) NOPASSWD:/usr/bin/env pamtester sshd %ACCOUNT% authenticate
