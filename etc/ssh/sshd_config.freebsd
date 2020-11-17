@@ -1,0 +1,136 @@
+# Hardened SSHD bastion config -- modify wisely!
+# Based on https://wiki.mozilla.org/Security/Guidelines/OpenSSH
+# With additional restrictions where applicable
+
+# -lo and -rt users only have local console login
+DenyUsers *-rt
+DenyUsers *-lo
+
+# hardened params follow. every non-needed feature is disabled by default,
+# following the principle of least rights and least features (more enabled
+# features mean a more important attack surface).
+
+# === FEATURES ===
+
+# disable non-needed sshd features
+AllowAgentForwarding no
+AllowTcpForwarding no
+AllowStreamLocalForwarding no
+X11Forwarding no
+PermitTunnel no
+PermitUserEnvironment no
+PermitUserRC no
+GatewayPorts no
+
+# === INFORMATION DISCLOSURE ===
+
+# however, display a legal notice for each connection
+Banner /etc/ssh/banner
+
+# don't print the bastion MOTD on connection
+PrintMotd no
+
+# === CRYPTOGRAPHY ===
+
+# enforce the use of ssh version 2 protocol, version 1 is disabled.
+# all sshd_config options regarding protocol 1 are therefore omitted.
+Protocol 2
+
+# only use hostkeys with secure algorithms, and omit the ones using NIST curves
+HostKey /etc/ssh/ssh_host_ed25519_key
+HostKey /etc/ssh/ssh_host_rsa_key
+
+# list of allowed ciphers.
+# chacha20-poly1305 is a modern cipher, considered very secure
+# aes is still the standard, we prefer gcm cipher mode, but also
+# allow ctr cipher mode for compatibility (ctr is still considered secure)
+# we deny arcfour(rc4), 3des, blowfish and cast
+Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+
+# list of allowed message authentication code algorithms.
+# etm (encrypt-then-mac) are considered the more secure, we
+# prefer umac (has been proven secure) then sha2.
+# for older ssh client, fallback to the non-etm version of
+# the algorithms.
+# we deny md5 and sha1
+MACs umac-128-etm@openssh.com,umac-64-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128@openssh.com,umac-64@openssh.com,hmac-sha2-512,hmac-sha2-256
+
+# List of allowed key exchange algorithms.
+# we prefer curve25519-sha256 which is considered the most modern/secure,
+# and still allow diffie hellman with group exchange using sha256 which is
+# the most secure dh-based kex.
+# we avoid algorithms based on the disputed NIST curves, and anything based
+# on sha1.
+KexAlgorithms curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256
+
+# force rekey every 512M of data or 6 hours of connection, whichever comes first
+RekeyLimit 512M 6h
+
+# === AUTHENTICATION ===
+
+# we allow only public key authentication ...
+PubkeyAuthentication yes
+# ... not password
+PasswordAuthentication no
+# ... keyboard interactive (needed for MFA through PAM)
+KbdInteractiveAuthentication yes
+# ... not kerberos
+KerberosAuthentication no
+# ... challenge-response (needed for MFA through PAM)
+ChallengeResponseAuthentication yes
+# ... not host-based
+HostbasedAuthentication no
+
+# just in case, we also explicitly deny empty passwords
+PermitEmptyPasswords no
+
+# this needs to be set at "yes" to allow PAM keyboard-interactive authentication,
+# which is not a security issue because the AuthenticationMethods below force the use of
+# either publickey or publickey+keyboard-interactive, hence password-only login is never
+# possible, for root or any other account for that matter
+PermitRootLogin yes
+
+# === LOGIN ===
+
+# disconnect after 30 seconds if user didn't log in successfully
+LoginGraceTime 30
+
+# not more than 1 session per network connection (connection sharing with ssh client's master/shared mode)
+MaxSessions 1
+
+# maximum concurrent unauth connections to the sshd daemon
+MaxStartups 50:30:500
+
+# accept LANG and LC_* vars (also includes LC_BASTION)
+AcceptEnv LANG LC_*
+
+# === SYSTEM ===
+
+# sshd log level at verbose in auth facility for auditing purposes
+LogLevel VERBOSE
+SyslogFacility AUTH
+
+# check sanity of user HOME dir before allowing user to login
+StrictModes yes
+
+# never use dns (slows down connections)
+UseDNS no
+
+# use PAM facility
+UsePAM yes
+
+# === AuthenticationMethods vs potential root OTP vs potential user MFA ===
+# 2FA has been configured for root, so we force pubkey+PAM for it
+#Match User root
+#    AuthenticationMethods publickey,keyboard-interactive:pam
+# Unconditionally skip PAM auth for members of the bastion-nopam group
+Match Group bastion-nopam
+    AuthenticationMethods publickey
+# if in one of the mfa groups, use pam
+Match Group mfa-totp-configd
+    AuthenticationMethods publickey,keyboard-interactive:pam
+Match Group mfa-password-configd
+    AuthenticationMethods publickey,keyboard-interactive:pam
+# by default, always ask the publickey (no PAM)
+Match All
+    AuthenticationMethods publickey

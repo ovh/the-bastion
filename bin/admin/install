@@ -228,6 +228,8 @@ if [ "${opt[modify-ssh-config]}" = 1 ] || [ "${opt[modify-sshd-config]}" = 1 ] ;
         elif echo "$DISTRO_LIKE" | grep -q -w suse; then
             filesuffix=opensuse15
         fi
+    elif [ "$OS_FAMILY" = FreeBSD ]; then
+        filesuffix=freebsd
     fi
 
     action_done "Will use the $filesuffix templates"
