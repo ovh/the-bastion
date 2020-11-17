@@ -901,29 +901,27 @@ if ($osh_command) {
         }
 
         OVH::Bastion::set_terminal_mode_for_plugin(plugin => $osh_command, action => 'set');
-        if (OVH::Bastion::is_bsd() && $osh_command eq 'selfMFASetupPassword') {
-            system(@cmd);
-            $fnret = R('OK', value => {sysret => $?});
-        }
-        else {
-            # some plugins need to be called with system() instead of ::execute
-            my $is_binary;
-            my $system;
+
+        # get the execution mode required by the plugin
+        my $is_binary;
+        my $system;
+        $fnret = OVH::Bastion::plugin_config(plugin => $osh_command, key => "execution_mode_on_$^O");
+        if (!$fnret || !$fnret->value) {
             $fnret = OVH::Bastion::plugin_config(plugin => $osh_command, key => "execution_mode");
-            if ($fnret && $fnret->value) {
-                $system    = 1 if $fnret->value eq 'system';
-                $is_binary = 1 if $fnret->value eq 'binary';
-            }
-            $ENV{'OSH_IP_FROM'} = $ipfrom;    # used in some plugins for is_access_granted()
-            $fnret = OVH::Bastion::execute(
-                cmd           => \@cmd,
-                noisy_stdout  => 1,
-                noisy_stderr  => 1,
-                expects_stdin => 1,
-                system        => $system,
-                is_binary     => $is_binary,
-            );
         }
+        if ($fnret && $fnret->value) {
+            $system    = 1 if $fnret->value eq 'system';
+            $is_binary = 1 if $fnret->value eq 'binary';
+        }
+        $ENV{'OSH_IP_FROM'} = $ipfrom;    # used in some plugins for is_access_granted()
+        $fnret = OVH::Bastion::execute(
+            cmd           => \@cmd,
+            noisy_stdout  => 1,
+            noisy_stderr  => 1,
+            expects_stdin => 1,
+            system        => $system,
+            is_binary     => $is_binary,
+        );
         OVH::Bastion::set_terminal_mode_for_plugin(plugin => $osh_command, action => 'restore');
 
         if (defined $log_insert_id and defined $log_db_name) {
