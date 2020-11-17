@@ -39,8 +39,16 @@ set_download_url() {
         _download() {
             curl -sL -O "$1"
         }
+    elif command -v fetch >/dev/null; then
+        action_done fetch
+        _apicall() {
+            fetch -o - "$1" || true
+        }
+        _download() {
+            fetch "$1"
+        }
     else
-        action_error "Couldn't find wget nor curl"
+        action_error "Couldn't find wget, curl nor fetch"
         exit 1
     fi
     action_doing "Getting latest release for arch $arch..."
@@ -83,8 +91,9 @@ action_static() {
     else
         arch=$(uname -m)
     fi
+    os=$(uname -s | tr '[:upper:]' '[:lower:]')
 
-    set_download_url "_$arch-linux-static-binary.tar.gz"
+    set_download_url "_$arch-$os-static-binary.tar.gz"
     prepare_temp_folder
 
     _download "$url"
@@ -191,7 +200,7 @@ action_auto() {
     esac
 }
 
-if [ "$OS_FAMILY" != "Linux" ]; then
+if [ "$OS_FAMILY" != "Linux" ] && [ "$OS_FAMILY" != "FreeBSD" ]; then
     echo "Sorry, your OS ($OS_FAMILY) is not supported." >&2
     exit 1
 fi
