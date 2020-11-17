@@ -436,7 +436,8 @@ if [ "$nothing" = 0 ]; then
                         action_detail "... we would divide by zero! fallback to a non-random random, such as $n"
                         random=$n
                     else
-                        random=$(( ( 0x$(echo "$(hostname -f) $placeholder $file" | md5sum | cut -c1-4) % (m-n) ) + n ))
+                        # shellcheck disable=SC2119
+                        random=$(( ( 0x$(echo "$(hostname -f) $placeholder $file" | md5sum_compat | cut -c1-4) % (m-n) ) + n ))
                     fi
                     action_detail "... in above file, replacing $placeholder by $random"
                     sed_compat "s/$placeholder/$random/g" "$destfile"

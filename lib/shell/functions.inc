@@ -108,6 +108,15 @@ sed_compat()
     fi
 }
 
+md5sum_compat()
+{
+    if command -v gmd5sum >/dev/null; then
+        gmd5sum "$@"; return $?
+    else
+        md5sum "$@"; return $?
+    fi
+}
+
 useradd_compat()
 {
     local _user="$1" _uid="" _home="" _shell="" _gid="" _extra=""
