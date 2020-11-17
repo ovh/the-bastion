@@ -196,6 +196,11 @@ if [ "$OS_FAMILY" != "Linux" ]; then
     exit 1
 fi
 
+if [ "$OS_FAMILY" != "Linux" ]; then
+    echo "Sorry, your OS ($(uname -s)) is not supported." >&2
+    exit 1
+fi
+
 while getopts :sdrah arg; do
     case "$arg" in
         s) action_static; exit 0;;
