@@ -875,7 +875,13 @@ if ($osh_command) {
             # use system() instead of OVH::Bastion::execute() because we need it to grab the term
             my $pamtries = 3;
             while (1) {
-                my $pamsysret = system('pamtester', 'sshd', $sysself, 'authenticate');
+                y $pamsysret;
+                if (OVH::Bastion::is_freebsd()) {
+                    $pamsysret = system('sudo', '-n', '-u', 'root', '--', '/usr/bin/env', 'pamtester', 'sshd', $sysself, 'authenticate');
+                }
+                else {
+                    $pamsysret = system('pamtester', 'sshd', $sysself, 'authenticate');
+                }
                 if ($pamsysret < 0) {
                     main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', "MFA is required for this plugin, but this bastion is missing the `pamtester' tool, aborting");
                 }
@@ -1307,7 +1313,13 @@ if ($JITMFARequired) {
         # use system() instead of OVH::Bastion::execute() because we need it to grab the term
         my $pamtries = 3;
         while (1) {
-            my $pamsysret = system('pamtester', 'sshd', $sysself, 'authenticate');
+            my $pamsysret;
+            if (OVH::Bastion::is_freebsd()) {
+                $pamsysret = system('sudo', '-n', '-u', 'root', '--', '/usr/bin/env', 'pamtester', 'sshd', $sysself, 'authenticate');
+            }
+            else {
+                $pamsysret = system('pamtester', 'sshd', $sysself, 'authenticate');
+            }
             if ($pamsysret < 0) {
                 main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', "MFA is required for this host, but this bastion is missing the `pamtester' tool, aborting");
             }
