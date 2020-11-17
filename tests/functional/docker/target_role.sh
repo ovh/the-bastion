@@ -3,15 +3,18 @@
 # This entrypoint is ONLY for instances to run functional tests on
 # DO NOT USE IN PROD (check docker/ under main dir for that)
 set -e
-set -u
 
 basedir=$(readlink -f "$(dirname "$0")"/../../..)
 # shellcheck source=lib/shell/functions.inc
 . "$basedir"/lib/shell/functions.inc
 
 # do we have a key?
-[ -n "$USER_PUBKEY_B64" ] && user_pubkey=$(base64 -d <<< "$USER_PUBKEY_B64")
-[ -n "$ROOT_PUBKEY_B64" ] && root_pubkey=$(base64 -d <<< "$ROOT_PUBKEY_B64")
+if [ -n "$USER_PUBKEY_B64" ]; then
+    user_pubkey=$(base64 -d <<< "$USER_PUBKEY_B64")
+fi
+if [ -n "$ROOT_PUBKEY_B64" ]; then
+    root_pubkey=$(base64 -d <<< "$ROOT_PUBKEY_B64")
+fi
 if [ -z "$user_pubkey" ] ; then
     echo "Missing ENV user_pubkey (or USER_PUBKEY_B64), aborting" >&2
     exit 1
@@ -37,7 +40,9 @@ echo "Port 226"                 >> /etc/ssh/sshd_config
 [ -d "$UID0HOME/.ssh" ] || mkdir "$UID0HOME/.ssh"
 echo "$root_pubkey" >> "$UID0HOME/.ssh/authorized_keys"
 # also unlock the root account, which can sometimes prevent us connecting through SSH (CentOS 8)
-usermod -U "$UID0"
+if [ "$OS_FAMILY" = Linux ]; then
+    usermod -U "$UID0"
+fi
 
 HOME="$UID0HOME" USER="$UID0" "$basedir"/bin/plugin/restricted/accountCreate       '' '' '' '' --uid 5000 --account "$TARGET_USER" --public-key "$user_pubkey FOR_TESTS_ONLY"
 HOME="$UID0HOME" USER="$UID0" "$basedir"/bin/plugin/restricted/accountGrantCommand '' '' '' '' --account "$TARGET_USER" --command accountGrantCommand
@@ -70,7 +75,7 @@ fi
 
 # now OS-specific things
 
-if [ "$(uname -s)" = Linux ] ; then
+if [ "$OS_FAMILY" = Linux ] ; then
 
     test -x /etc/init.d/ssh       && /etc/init.d/ssh start
     test -x /etc/init.d/syslog-ng && /etc/init.d/syslog-ng start
@@ -89,7 +94,7 @@ if [ "$(uname -s)" = Linux ] ; then
         /usr/sbin/syslog-ng
     fi
 
-elif [ "$(uname -s)" = OpenBSD ] || [  "$(uname -s)" = FreeBSD ] || [ "$(uname -s)" = NetBSD ] ; then
+elif [ "$OS_FAMILY" = OpenBSD ] || [  "$OS_FAMILY" = FreeBSD ] || [ "$OS_FAMILY" = NetBSD ] ; then
 
     # setup some 127.0.0.x IPs (needed for our tests)
     # this automatically works under Linux on lo
@@ -108,6 +113,10 @@ elif [ "$(uname -s)" = OpenBSD ] || [  "$(uname -s)" = FreeBSD ] || [ "$(uname -
         test -x /usr/local/etc/rc.d/syslog-ng && /usr/local/etc/rc.d/syslog-ng $st
     done
     set -e
+fi
+
+if [ -n "$NO_SLEEP" ]; then
+    exit 0
 fi
 
 echo "Now sleeping forever (docker mode)"
