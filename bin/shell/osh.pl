@@ -875,7 +875,7 @@ if ($osh_command) {
             # use system() instead of OVH::Bastion::execute() because we need it to grab the term
             my $pamtries = 3;
             while (1) {
-                y $pamsysret;
+                my $pamsysret;
                 if (OVH::Bastion::is_freebsd()) {
                     $pamsysret = system('sudo', '-n', '-u', 'root', '--', '/usr/bin/env', 'pamtester', 'sshd', $sysself, 'authenticate');
                 }
