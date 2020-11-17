@@ -19,15 +19,15 @@ jobs:
           set -ex
           freebsd-version
           mount -o acls /
-          pkg install -y bash unzip rsync ca_root_nss jq fping screen flock
+          pkg install -y bash unzip rsync ca_root_nss jq fping screen flock gmake
           mkdir -p /opt/bastion
           rsync -a . /opt/bastion/
           fetch https://github.com/ovh/ovh-ttyrec/archive/master.zip
           unzip master.zip
           cd ovh-ttyrec-master/
           ./configure
-          make
-          make install
+          gmake
+          gmake install
           cd ..
           /opt/bastion/bin/admin/packages-check.sh -i
           /opt/bastion/bin/admin/install --new-install --no-wait

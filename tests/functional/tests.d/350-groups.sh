@@ -883,6 +883,7 @@ EOS
     success groupModify guest_ttl_limit $a1 --osh groupModify --group $group1 --guest-ttl-limit 0
     json .command groupModify .error_code OK
 
+    # if we're just counting the number of tests, don't sleep
     [ "$COUNTONLY" != 1 ] && sleep 1
 
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2() servers(127.0.0.10,127.0.0.11)

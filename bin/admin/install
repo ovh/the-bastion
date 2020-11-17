@@ -202,8 +202,8 @@ fi
 
 if [ "${opt[install-fake-ttyrec]}" = 1 ]; then
     action_doing "Installing fake ttyrec (use this only for tests!)"
-    if [ ! -e "/usr/bin/ttyrec" ]; then
-        install -o "$UID0" -g "$GID0" -m 0755 "$basedir/tests/functional/fake_ttyrec.sh" "/usr/bin/ttyrec"
+    if [ ! -e "/usr/bin/ttyrec" ] && [ ! -e "/usr/local/bin/ttyrec" ]; then
+        install -o "$UID0" -g "$GID0" -m 0755 "$basedir/tests/functional/fake_ttyrec.sh" "/usr/local/bin/ttyrec"
         action_done
     else
         action_na

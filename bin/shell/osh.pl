@@ -872,38 +872,8 @@ if ($osh_command) {
         if ($MFArequiredForPlugin ne 'none' && !$skipMFA) {
             print "As this is required to run this plugin, entering MFA phase.\n";
 
-            # use system() instead of OVH::Bastion::execute() because we need it to grab the term
-            my $pamtries = 3;
-            while (1) {
-                my $pamsysret;
-                if (OVH::Bastion::is_freebsd()) {
-                    $pamsysret = system('sudo', '-n', '-u', 'root', '--', '/usr/bin/env', 'pamtester', 'sshd', $sysself, 'authenticate');
-                }
-                else {
-                    $pamsysret = system('pamtester', 'sshd', $sysself, 'authenticate');
-                }
-                if ($pamsysret < 0) {
-                    main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', "MFA is required for this plugin, but this bastion is missing the `pamtester' tool, aborting");
-                }
-                elsif ($pamsysret != 0) {
-                    if (--$pamtries <= 0) {
-                        main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', "Sorry, but Multi-Factor Authentication failed, aborting");
-                    }
-                    next;
-                }
-
-                # success, if we are configured to launch a external command on pamtester success, do it.
-                # see the bastion.conf.dist file for usage example.
-                my $MFAPostCommand = OVH::Bastion::config('MFAPostCommand')->value;
-                if (ref $MFAPostCommand eq 'ARRAY' && @$MFAPostCommand) {
-                    s/%ACCOUNT%/$self/g for @$MFAPostCommand;
-                    $fnret = OVH::Bastion::execute(cmd => $MFAPostCommand, must_succeed => 1);
-                    if (!$fnret) {
-                        warn_syslog("MFAPostCommand returned a non-zero value: " . $fnret->msg);
-                    }
-                }
-                last;
-            }
+            $fnret = OVH::Bastion::do_pamtester(self => $self, sysself => $sysself);
+            $fnret or main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', $fnret->msg);
         }
 
         OVH::Bastion::set_terminal_mode_for_plugin(plugin => $osh_command, action => 'set');
@@ -1310,38 +1280,8 @@ if ($JITMFARequired) {
         print "... skipping as your account is exempt from MFA\n";
     }
     else {
-        # use system() instead of OVH::Bastion::execute() because we need it to grab the term
-        my $pamtries = 3;
-        while (1) {
-            my $pamsysret;
-            if (OVH::Bastion::is_freebsd()) {
-                $pamsysret = system('sudo', '-n', '-u', 'root', '--', '/usr/bin/env', 'pamtester', 'sshd', $sysself, 'authenticate');
-            }
-            else {
-                $pamsysret = system('pamtester', 'sshd', $sysself, 'authenticate');
-            }
-            if ($pamsysret < 0) {
-                main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', "MFA is required for this host, but this bastion is missing the `pamtester' tool, aborting");
-            }
-            elsif ($pamsysret != 0) {
-                if (--$pamtries <= 0) {
-                    main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', "Sorry, but Multi-Factor Authentication failed, I can't connect you to this host");
-                }
-                next;
-            }
-
-            # success, if we are configured to launch a external command on pamtester success, do it.
-            # see the bastion.conf.dist file for usage example.
-            my $MFAPostCommand = OVH::Bastion::config('MFAPostCommand')->value;
-            if (ref $MFAPostCommand eq 'ARRAY' && @$MFAPostCommand) {
-                s/%ACCOUNT%/$self/g for @$MFAPostCommand;
-                $fnret = OVH::Bastion::execute(cmd => $MFAPostCommand, must_succeed => 1);
-                if (!$fnret) {
-                    warn_syslog("MFAPostCommand returned a non-zero value: " . $fnret->msg);
-                }
-            }
-            last;
-        }
+        $fnret = OVH::Bastion::do_pamtester(self => $self, sysself => $sysself);
+        $fnret or main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', $fnret->msg);
     }
 }
 

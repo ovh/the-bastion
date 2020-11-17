@@ -56,7 +56,7 @@ cat /home/"$TARGET_USER"/.ssh/id_*.pub > ~test-shell_/.ssh/authorized_keys
 add_user_to_group_compat test-shell_ bastion-nopam
 
 # install a fake ttyrec just so that our connection tests work
-if [ ! -e /usr/bin/ttyrec ] ; then
+if ! command -v ttyrec >/dev/null; then
     "$basedir"/bin/admin/install --nothing --no-wait --install-fake-ttyrec
 fi
 
