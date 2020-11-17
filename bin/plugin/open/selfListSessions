@@ -107,7 +107,7 @@ else {
     my $list = $fnret->value;
 
     my @result;
-    foreach my $id (sort { $list->{$b} <=> $list->{$a} } keys %{$list}) {
+    foreach my $id (sort { $list->{$a}->{'id'} <=> $list->{$b}->{'id'} } keys %{$list}) {
         my $r = $list->{$id};
         my $diff =
           ($r->{timestampend} + $r->{timestampendusec} / 1_000_000) - ($r->{timestamp} + $r->{timestampusec} / 1_000_000);
