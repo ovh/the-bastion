@@ -3,7 +3,7 @@
 # NEEDGROUP osh-accountUnexpire
 # SUDOERS %osh-accountUnexpire ALL=(%bastion-users) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountUnexpire *
 # FILEMODE 0755
-# FILEOWN root root
+# FILEOWN 0 0
 
 #>HEADER
 use common::sense;

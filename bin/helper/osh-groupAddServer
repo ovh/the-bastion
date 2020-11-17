@@ -3,7 +3,7 @@
 # KEYSUDOERS # as an aclkeeper, we can add/del a server from the group server list in /home/%GROUP%/allowed.ip
 # KEYSUDOERS SUPEROWNERS, %%GROUP%-aclkeeper  ALL=(%GROUP%)     NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupAddServer --group %GROUP% *
 # FILEMODE 0755
-# FILEOWN root root
+# FILEOWN 0 0
 
 #>HEADER
 use common::sense;

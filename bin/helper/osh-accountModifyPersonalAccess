@@ -3,22 +3,22 @@
 # NEEDGROUP osh-selfAddPersonalAccess
 # SUDOERS %osh-selfAddPersonalAccess    ALL=(allowkeeper) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountModifyPersonalAccess --target self --action add *
 # FILEMODE 0750
-# FILEOWN root allowkeeper
+# FILEOWN 0 allowkeeper
 #
 # NEEDGROUP osh-accountAddPersonalAccess
 # SUDOERS %osh-accountAddPersonalAccess ALL=(allowkeeper) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountModifyPersonalAccess --target any --action add *
 # FILEMODE 0750
-# FILEOWN root allowkeeper
+# FILEOWN 0 allowkeeper
 #
 # NEEDGROUP osh-selfDelPersonalAccess
 # SUDOERS %osh-selfDelPersonalAccess    ALL=(allowkeeper) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountModifyPersonalAccess --target self --action del *
 # FILEMODE 0750
-# FILEOWN root allowkeeper
+# FILEOWN 0 allowkeeper
 #
 # NEEDGROUP osh-accountDelPersonalAccess
 # SUDOERS %osh-accountDelPersonalAccess ALL=(allowkeeper) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountModifyPersonalAccess --target any --action del *
 # FILEMODE 0750
-# FILEOWN root allowkeeper
+# FILEOWN 0 allowkeeper
 
 #>HEADER
 use common::sense;

@@ -3,7 +3,7 @@
 # NEEDGROUP osh-admin
 # SUDOERS %osh-admin ALL=(allowkeeper) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-adminMaintenance *
 # FILEMODE 0750
-# FILEOWN root allowkeeper
+# FILEOWN 0 allowkeeper
 
 #>HEADER
 use common::sense;
