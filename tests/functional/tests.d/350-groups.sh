@@ -690,11 +690,11 @@ EOS
 
     success selfListAccesses a3_list_own_accesses $a3 --osh selfListAccesses
     json .command selfListAccesses .error_code OK
-    contain REGEX '77\.66\.55\.0/24\s+\(any\)\s+\(any\)\s+personal\s+'$account0'\s'
-    contain REGEX '1\.2\.3\.4\s+\(any\)\s+\(any\)\s+personal\s+'$account0'\s'
-    contain REGEX '77\.66\.55\.4\s+\(any\)\s+\(any\)\s+personal\s+'$account0'\s'
-    contain REGEX '127\.0\.0\.1\s+22\s+g1\s+'$group1'\(group-guest\)\s+'$account2'\s'
-    contain REGEX '10\.20\.0\.0/17\s+\(any\)\s+\(any\)\s+'$group3'\(group-member\)\s+'$account3'\s'
+    contain REGEX '77\.66\.55\.0/24[[:space:]]+\(any\)[[:space:]]+\(any\)[[:space:]]+personal[[:space:]]+'$account0'[[:space:]]'
+    contain REGEX '1\.2\.3\.4[[:space:]]+\(any\)[[:space:]]+\(any\)[[:space:]]+personal[[:space:]]+'$account0'[[:space:]]'
+    contain REGEX '77\.66\.55\.4[[:space:]]+\(any\)[[:space:]]+\(any\)[[:space:]]+personal[[:space:]]+'$account0'[[:space:]]'
+    contain REGEX '127\.0\.0\.1[[:space:]]+22[[:space:]]+g1[[:space:]]+'$group1'\(group-guest\)[[:space:]]+'$account2'[[:space:]]'
+    contain REGEX '10\.20\.0\.0/17[[:space:]]+\(any\)[[:space:]]+\(any\)[[:space:]]+'$group3'\(group-member\)[[:space:]]+'$account3'[[:space:]]'
     contain "5 accesses listed"
 
     run accountDelete notingroup $a1 --osh accountDelete --account $account2
@@ -826,11 +826,11 @@ EOS
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2() servers(127.0.0.10,127.0.0.11,127.0.0.12-TTL)
     success groupListServers list   $a1 --osh groupListServers --group $group1
     json .command groupListServers .error_code OK
-    contain REGEX '127\.0\.0\.1\s+22\s+g1\s+'$group1'\(group\)\s+'$account2'\s'
-    contain REGEX '127\.0\.0\.2\s+22\s+g2\s+'$group1'\(group\)\s+'$account2'\s'
-    contain REGEX '127\.0\.0\.10\s+\(any\)\s+\(any\)\s+'$group1'\(group\)\s+'$account1'\s'
-    contain REGEX '127\.0\.0\.11\s+\(any\)\s+\(any\)\s+'$group1'\(group\)\s+'$account1'\s'
-    contain REGEX '127\.0\.0\.12\s+\(any\)\s+\(any\)\s+'$group1'\(group\)\s+'$account1'\s+\S+\s+00:00:[01][0123456789]'
+    contain REGEX '127\.0\.0\.1[[:space:]]+22[[:space:]]+g1[[:space:]]+'$group1'\(group\)[[:space:]]+'$account2'[[:space:]]'
+    contain REGEX '127\.0\.0\.2[[:space:]]+22[[:space:]]+g2[[:space:]]+'$group1'\(group\)[[:space:]]+'$account2'[[:space:]]'
+    contain REGEX '127\.0\.0\.10[[:space:]]+\(any\)[[:space:]]+\(any\)[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
+    contain REGEX '127\.0\.0\.11[[:space:]]+\(any\)[[:space:]]+\(any\)[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
+    contain REGEX '127\.0\.0\.12[[:space:]]+\(any\)[[:space:]]+\(any\)[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]+\S+[[:space:]]+00:00:[01][0123456789]'
     contain '5 accesses listed'
 
     # wait for the access to expire
@@ -839,11 +839,11 @@ EOS
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2() servers(127.0.0.10,127.0.0.11)
     success groupListServers listttlexpired   $a1 --osh groupListServers --group $group1
     json .command groupListServers .error_code OK
-    contain REGEX '127\.0\.0\.1\s+22\s+g1\s+'$group1'\(group\)\s+'$account2'\s'
-    contain REGEX '127\.0\.0\.2\s+22\s+g2\s+'$group1'\(group\)\s+'$account2'\s'
-    contain REGEX '127\.0\.0\.10\s+\(any\)\s+\(any\)\s+'$group1'\(group\)\s+'$account1'\s'
-    contain REGEX '127\.0\.0\.11\s+\(any\)\s+\(any\)\s+'$group1'\(group\)\s+'$account1'\s'
-    nocontain REGEX '127\.0\.0\.12\s+\(any\)\s+\(any\)\s+'$group1'\(group\)\s+'$account1'\s'
+    contain REGEX '127\.0\.0\.1[[:space:]]+22[[:space:]]+g1[[:space:]]+'$group1'\(group\)[[:space:]]+'$account2'[[:space:]]'
+    contain REGEX '127\.0\.0\.2[[:space:]]+22[[:space:]]+g2[[:space:]]+'$group1'\(group\)[[:space:]]+'$account2'[[:space:]]'
+    contain REGEX '127\.0\.0\.10[[:space:]]+\(any\)[[:space:]]+\(any\)[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
+    contain REGEX '127\.0\.0\.11[[:space:]]+\(any\)[[:space:]]+\(any\)[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
+    nocontain REGEX '127\.0\.0\.12[[:space:]]+\(any\)[[:space:]]+\(any\)[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
     contain '4 accesses listed'
 
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2() servers(127.0.0.10,127.0.0.11)
@@ -882,6 +882,8 @@ EOS
     # remove ttl policy
     success groupModify guest_ttl_limit $a1 --osh groupModify --group $group1 --guest-ttl-limit 0
     json .command groupModify .error_code OK
+
+    [ "$COUNTONLY" != 1 ] && sleep 1
 
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2() servers(127.0.0.10,127.0.0.11)
     success groupAddGuestAccess works $a1 --osh groupAddGuestAccess --group $group1 --account $account2 --port-any --user-any --host 127.0.0.10

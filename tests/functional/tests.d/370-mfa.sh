@@ -37,9 +37,9 @@ testsuite_mfa()
     a4_password=']BkL>3x#T)g~~B#rLv^!T2&N'
     script mfa a4_setup_pass_step2of2 "echo 'set timeout 30; \
         spawn $a4 --osh selfMFASetupPassword --yes; \
-        expect \":\" { send \"$a4_password_tmp\\n\"; }; \
-        expect \":\" { send \"$a4_password\\n\"; }; \
-        expect \":\" { send \"$a4_password\\n\"; }; \
+        expect \":\" { sleep 0.2; send \"$a4_password_tmp\\n\"; }; \
+        expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
+        expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
         expect eof; \
         lassign [wait] pid spawnid value value; \
         exit \$value' | expect -f -"
@@ -52,17 +52,17 @@ testsuite_mfa()
 
     # now try to connect after we have a pass
     run mfa a4_connect_after_pass $a4f --osh groupList
-    if [ "$HAS_MFA" = 1 ]; then
+    if [ "$HAS_MFA" = 1 ] || [ "$HAS_MFA_PASSWORD" = 1 ]; then
         # now we need a password, we don't enter it so it'll timeout (124)
         retvalshouldbe 124
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
-        contain 'Password:'
+        contain REGEX 'Password:|Password for'
         nocontain 'JSON_OUTPUT'
     else
         # our system doesn't support MFA so it still works without asking for a password
         retvalshouldbe 0
         nocontain 'Multi-Factor Authentication enabled'
-        nocontain 'Password:'
+        nocontain REGEX 'Password:|Password for'
         json .command groupList .error_code OK_EMPTY
     fi
 
@@ -76,66 +76,71 @@ testsuite_mfa()
         # setup group to force JIT egress MFA
         script mfa a4_modify_g3_egress_mfa "echo 'set timeout 30; \
             spawn $a4 --osh groupModify --group $group3 --mfa-required any; \
-            expect \":\" { send \"$a4_password\\n\"; }; \
+            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
             lassign [wait] pid spawnid value value; \
             exit \$value' | expect -f -"
         retvalshouldbe 0
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
-        contain 'Password:'
+        contain REGEX 'Password:|Password for'
         json .command groupModify .error_code OK
 
         # check that the MFA is set for the group
         script mfa a4_verify_g3_egress_mfa "echo 'set timeout 30; \
             spawn $a4 --osh groupInfo --group $group3; \
-            expect \":\" { send \"$a4_password\\n\"; }; \
+            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
             lassign [wait] pid spawnid value value; \
             exit \$value' | expect -f -"
         retvalshouldbe 0
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
-        contain 'Password:'
+        contain REGEX 'Password:|Password for'
         json .command groupInfo .error_code OK
         json .value.mfa_required any
 
         # add 127.7.7.7 to this group
         script mfa a4_add_g3_server "echo 'set timeout 30; \
             spawn $a4 --osh groupAddServer --group $group3 --host 127.7.7.7 --user-any --port-any --force; \
-            expect \":\" { send \"$a4_password\\n\"; }; \
+            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
             lassign [wait] pid spawnid value value; \
             exit \$value' | expect -f -"
         retvalshouldbe 0
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
-        contain 'Password:'
+        contain REGEX 'Password:|Password for'
 
         # connect to 127.7.7.7 with MFA JIT, bad password
         script mfa a4_connect_g3_server_badpass "echo 'set timeout 45; \
             spawn $a4 root@127.7.7.7; \
-            expect \"word:\" { send \"$a4_password\\n\"; }; \
-            expect \"word:\" { send \"BADPASSWORD\\n\"; }; \
-            expect \"word:\" { send \"BADPASSWORD\\n\"; }; \
-            expect \"word:\" { send \"BADPASSWORD\\n\\n\"; }; \
+            expect \"is required (password)\" { sleep 0.1; }; \
+            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
+            expect \"is required (password)\" { sleep 0.1; }; \
+            expect \":\" { sleep 0.2; send \"BADPASSWORD\\n\"; }; \
+            expect \"is required (password)\" { sleep 0.1; }; \
+            expect \":\" { sleep 0.2; send \"BADPASSWORD\\n\"; }; \
+            expect \"is required (password)\" { sleep 0.1; }; \
+            expect \":\" { sleep 0.2; send \"BADPASSWORD\\n\\n\"; }; \
             expect eof; \
             lassign [wait] pid spawnid value value; \
             exit \$value' | expect -f -"
         retvalshouldbe 125
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
-        contain 'Password:'
+        contain REGEX 'Password:|Password for'
         contain 'pamtester: '
         nocontain 'Permission denied'
 
         # connect to 127.7.7.7 with MFA JIT, good password
         script mfa a4_connect_g3_server_goodpass "echo 'set timeout 30; \
             spawn $a4 root@127.7.7.7; \
-            expect \"word:\" { send \"$a4_password\\n\"; }; \
-            expect \"word:\" { send \"$a4_password\\n\"; }; \
+            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
+            expect \"is required (password)\" { sleep 0.1; }; \
+            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
             lassign [wait] pid spawnid value value; \
             exit \$value' | expect -f -"
         retvalshouldbe 255
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
-        contain 'Password:'
+        contain REGEX 'Password:|Password for'
         contain 'pamtester: successfully authenticated'
         contain 'Permission denied'
 
@@ -150,7 +155,7 @@ testsuite_mfa()
         # add to JIT MFA group
         script mfa a0_add_a3_as_member "echo 'set timeout 30; \
             spawn $a4 --osh groupAddMember --group $group3 --account $account3; \
-            expect \"word:\" { send \"$a4_password\\n\"; }; \
+            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
             lassign [wait] pid spawnid value value; \
             exit \$value' | expect -f -"
@@ -187,25 +192,25 @@ testsuite_mfa()
 
     # change our password
     a4_password_new="rkw=*Ffyqs23"
-    if [ "$HAS_MFA" = 1 ]; then
+    if [ "$HAS_MFA" = 1 ] || [ "$HAS_MFA_PASSWORD" = 1 ]; then
         script mfa a4_change_pass "echo 'set timeout 30; \
             spawn $a4 --osh selfMFASetupPassword --yes; \
-            expect \":\" { send \"$a4_password\\n\"; }; \
-            expect \":\" { send \"$a4_password\\n\"; }; \
-            expect \":\" { send \"$a4_password_new\\n\"; }; \
-            expect \":\" { send \"$a4_password_new\\n\"; }; \
+            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
+            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
+            expect \":\" { sleep 0.2; send \"$a4_password_new\\n\"; }; \
+            expect \":\" { sleep 0.2; send \"$a4_password_new\\n\"; }; \
             expect eof; \
             lassign [wait] pid spawnid value value; \
             exit \$value' | expect -f -"
         retvalshouldbe 0
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
-        contain 'Password:'
+        contain REGEX 'Password:|Password for'
     else
         script mfa a4_change_pass "echo 'set timeout 30; \
             spawn $a4 --osh selfMFASetupPassword --yes; \
-            expect \":\" { send \"$a4_password\\n\"; }; \
-            expect \":\" { send \"$a4_password_new\\n\"; }; \
-            expect \":\" { send \"$a4_password_new\\n\"; }; \
+            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
+            expect \":\" { sleep 0.2; send \"$a4_password_new\\n\"; }; \
+            expect \":\" { sleep 0.2; send \"$a4_password_new\\n\"; }; \
             expect eof; \
             lassign [wait] pid spawnid value value; \
             exit \$value' | expect -f -"
@@ -219,16 +224,16 @@ testsuite_mfa()
     a4_password="$a4_password_new"
     unset a4_password_new
 
-    if [ "$HAS_MFA" = 1 ]; then
+    if [ "$HAS_MFA" = 1 ] || [ "$HAS_MFA_PASSWORD" = 1 ]; then
         script mfa a4_connect_with_pass "echo 'set timeout 30; \
             spawn $a4 --osh groupList; \
-            expect \":\" { send \"$a4_password\\n\"; }; \
+            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
             lassign [wait] pid spawnid value value; \
             exit \$value' | expect -f -"
         retvalshouldbe 0
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
-        contain 'Password:'
+        contain REGEX 'Password:|Password for'
         json .command groupList .error_code OK_EMPTY
     fi
 
@@ -241,10 +246,10 @@ testsuite_mfa()
     json .error_code OK .command accountModify .value.mfa_totp_required.error_code OK_NO_CHANGE
 
     # now try to connect with account4
-    if [ "$HAS_MFA" = 1 ]; then
+    if [ "$HAS_MFA" = 1 ] || [ "$HAS_MFA_PASSWORD" = 1 ]; then
         script mfa a4_connect_with_totpreq "echo 'set timeout 30; \
             spawn $a4 --osh groupList; \
-            expect \":\" { send \"$a4_password\\n\"; }; \
+            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
             lassign [wait] pid spawnid value value; \
             exit \$value' | expect -f -"
@@ -258,14 +263,14 @@ testsuite_mfa()
         # setup totp
         script mfa a4_setup_totp "echo 'set timeout 30; \
             spawn $a4 --osh selfMFASetupTOTP --no-confirm; \
-            expect \"word:\" { send \"$a4_password\\n\"; }; \
-            expect \"word:\" { send \"$a4_password\\n\"; }; \
+            expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; }; \
+            expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
             lassign [wait] pid spawnid value value; \
             exit \$value' | expect -f -"
         retvalshouldbe 0
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
-        contain 'Password:'
+        contain REGEX 'Password:|Password for'
 
         a4_totp_code_1=$(get_stdout | grep -A1 'Your emergency scratch codes are:' | tail -n1 | tr -d '[:space:]')
         #a4_totp_code_2=$(get_stdout | grep -A2 'Your emergency scratch codes are:' | tail -n1 | tr -d '[:space:]')
@@ -275,7 +280,7 @@ testsuite_mfa()
         # login and fail without totp (timeout)
         script mfa a4_connect_after_totp_fail "echo 'set timeout 30; \
             spawn $a4 --osh groupList; \
-            expect \"word:\" { send \"$a4_password\\n\"; }; \
+            expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
             lassign [wait] pid spawnid value value; \
             exit \$value' | expect -f -"
@@ -284,30 +289,30 @@ testsuite_mfa()
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (OTP).'
         contain 'Your password expires on'
         contain 'in 14 days'
-        contain 'Password:'
+        contain REGEX 'Password:|Password for'
         contain 'Verification code:'
         nocontain 'JSON_OUTPUT'
 
         # success with password + totp
         script mfa a4_connect_after_totp_ok "echo 'set timeout 30; \
             spawn $a4 --osh groupList; \
-            expect \"word:\" { send \"$a4_password\\n\"; }; \
-            expect \"code:\" { send \"$a4_totp_code_1\\n\"; }; \
+            expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; }; \
+            expect \"code:\" { sleep 0.2; send \"$a4_totp_code_1\\n\"; }; \
             expect eof; \
             lassign [wait] pid spawnid value value; \
             exit \$value' | expect -f -"
         retvalshouldbe 0
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (OTP).'
-        contain 'Password:'
+        contain REGEX 'Password:|Password for'
         contain 'Verification code:'
         json .command groupList .error_code OK_EMPTY
 
         # totp scratch codes don't work twice
         script mfa a4_connect_after_totp_dupe "echo 'set timeout 30; \
             spawn $a4 --osh groupList; \
-            expect \"word:\" { send \"$a4_password\\n\"; }; \
-            expect \"code:\" { send \"$a4_totp_code_1\\n\"; }; \
+            expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; }; \
+            expect \"code:\" { sleep 0.2; send \"$a4_totp_code_1\\n\"; }; \
             expect \"word:\" { exit 222; }; \
             expect eof; \
             lassign [wait] pid spawnid value value; \
@@ -315,7 +320,7 @@ testsuite_mfa()
         retvalshouldbe 222
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (OTP).'
-        contain 'Password:'
+        contain REGEX 'Password:|Password for'
         contain 'Verification code:'
         nocontain 'JSON_OUTPUT'
 

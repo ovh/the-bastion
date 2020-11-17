@@ -15,16 +15,19 @@ account0="$3"
 user_ssh_key_path="$4"
 root_ssh_key_path="$5"
 osh_etc="$6"
+remote_basedir="$7"
 [ -n "$osh_etc" ] || osh_etc=/etc/bastion
+[ -n "$remote_basedir" ] || remote_basedir="$basedir"
 
-[ -z "$HAS_ED25519"   ] && HAS_ED25519=1
-[ -z "$HAS_BLACKLIST" ] && HAS_BLACKLIST=0
-[ -z "$HAS_MFA"       ] && HAS_MFA=1
-[ -z "$HAS_PAMTESTER" ] && HAS_PAMTESTER=1
-[ -z "$nocc"          ] && nocc=0
-[ -z "$nowait"        ] && nowait=0
-[ -z "$TARGET"        ] && TARGET=''
-[ -z "$TEST_SCRIPT"   ] && TEST_SCRIPT=''
+[ -z "$HAS_ED25519"      ] && HAS_ED25519=1
+[ -z "$HAS_BLACKLIST"    ] && HAS_BLACKLIST=0
+[ -z "$HAS_MFA"          ] && HAS_MFA=1
+[ -z "$HAS_MFA_PASSWORD" ] && HAS_MFA_PASSWORD=0
+[ -z "$HAS_PAMTESTER"    ] && HAS_PAMTESTER=1
+[ -z "$nocc"             ] && nocc=0
+[ -z "$nowait"           ] && nowait=0
+[ -z "$TARGET"           ] && TARGET=''
+[ -z "$TEST_SCRIPT"      ] && TEST_SCRIPT=''
 
 # die if using an unset var
 set -u
@@ -103,7 +106,7 @@ cat >"$mytmpdir/ssh_config" <<EOF
    PasswordAuthentication no
    RequestTTY yes
 EOF
-if [ "$HAS_MFA" = 1 ]; then
+if [ "$HAS_MFA" = 1 ] || [ "$HAS_MFA_PASSWORD" = 1 ]; then
         cat >>"$mytmpdir/ssh_config" <<EOF
            ChallengeResponseAuthentication yes
            KbdInteractiveAuthentication yes
@@ -230,7 +233,7 @@ script() {
         return
     fi
 
-    tmpscript=$(mktemp -p $outdir)
+    tmpscript=$(mktemp)
     echo "#! /usr/bin/env bash" > "$tmpscript"
     echo "$*" >> "$tmpscript"
     chmod 755 "$tmpscript"
@@ -399,7 +402,7 @@ runtests()
 
 COUNTONLY=0
 echo === running unit tests ===
-if ! $r0 perl "$basedir/tests/unit/run.pl"; then
+if ! $r0 perl "$remote_basedir/tests/unit/run.pl"; then
     printf "%b%b%b\\n" "$WHITE_ON_RED" "Unit tests failed :(" "$NOC"
     exit 1
 fi
