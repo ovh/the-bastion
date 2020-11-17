@@ -920,4 +920,49 @@ sub build_ttyrec_cmdline {
     return R('OK', value => {saveFile => $saveFile, cmd => \@ttyrec});
 }
 
+sub do_pamtester {
+    my %params  = @_;
+    my $sysself = $params{'sysself'};
+    my $self    = $params{'self'};
+    my $fnret;
+
+    if (!$sysself || !$self) {
+        return R('ERR_MISSING_PARAMETER', msg => "Missing mandatory arguments 'sysself' or 'self'");
+    }
+
+    # use system() instead of OVH::Bastion::execute() because we need it to grab the term
+    my $pamtries = 3;
+    while (1) {
+        my $pamsysret;
+        if (OVH::Bastion::is_freebsd()) {
+            $pamsysret = system('sudo', '-n', '-u', 'root', '--', '/usr/bin/env', 'pamtester', 'sshd', $sysself, 'authenticate');
+        }
+        else {
+            $pamsysret = system('pamtester', 'sshd', $sysself, 'authenticate');
+        }
+        if ($pamsysret < 0) {
+            return R('KO_MFA_FAILED', msg => "MFA is required for this host, but this bastion is missing the `pamtester' tool, aborting");
+        }
+        elsif ($pamsysret != 0) {
+            if (--$pamtries <= 0) {
+                return R('KO_MFA_FAILED', msg => "Sorry, but Multi-Factor Authentication failed, I can't connect you to this host");
+            }
+            next;
+        }
+
+        # success, if we are configured to launch a external command on pamtester success, do it.
+        # see the bastion.conf.dist file for usage example.
+        my $MFAPostCommand = OVH::Bastion::config('MFAPostCommand')->value;
+        if (ref $MFAPostCommand eq 'ARRAY' && @$MFAPostCommand) {
+            s/%ACCOUNT%/$self/g for @$MFAPostCommand;
+            $fnret = OVH::Bastion::execute(cmd => $MFAPostCommand, must_succeed => 1);
+            if (!$fnret) {
+                warn_syslog("MFAPostCommand returned a non-zero value: " . $fnret->msg);
+            }
+        }
+        last;
+    }
+    return R('OK_MFA_SUCCESS');
+}
+
 1;

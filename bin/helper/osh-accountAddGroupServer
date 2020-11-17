@@ -3,7 +3,7 @@
 # KEYSUDOERS # as a gatekeeper, to be able to add the servers to /home/allowkeeper/ACCOUNT/allowed.partial.%GROUP% file
 # KEYSUDOERS SUPEROWNERS, %%GROUP%-gatekeeper ALL=(allowkeeper) NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-accountAddGroupServer --group %GROUP% *
 # FILEMODE 0750
-# FILEOWN root allowkeeper
+# FILEOWN 0 allowkeeper
 
 #>HEADER
 use common::sense;

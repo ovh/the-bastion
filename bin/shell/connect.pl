@@ -100,7 +100,12 @@ else {
 }
 
 # in any case, force this
-$command[0] = '/usr/bin/ttyrec';
+if (-e '/usr/local/bin/ttyrec') {
+    $command[0] = '/usr/local/bin/ttyrec';
+}
+else {
+    $command[0] = '/usr/bin/ttyrec';
+}
 
 # then finally launch the command !
 my $sysret = system(@command);

@@ -5,6 +5,17 @@ on:
         types: [labeled, synchronize]
 
 jobs:
+    tests_short:
+        name: Short (Debian 10 only)
+        runs-on: ubuntu-latest
+        if: contains(github.event.pull_request.labels.*.name, 'tests:short')
+        steps:
+        - uses: actions/checkout@v2
+        - name: run tests inside a debian10 docker
+          run: tests/functional/docker/docker_build_and_run_tests.sh debian10
+          env:
+            DOCKER_TTY: false
+
     tests_full:
         name: Full
         strategy:
@@ -16,16 +27,5 @@ jobs:
         - uses: actions/checkout@v2
         - name: run tests inside a ${{ matrix.platform }} docker
           run: tests/functional/docker/docker_build_and_run_tests.sh ${{ matrix.platform }}
-          env:
-            DOCKER_TTY: false
-
-    tests_short:
-        name: Full on Debian 10
-        runs-on: ubuntu-latest
-        if: contains(github.event.pull_request.labels.*.name, 'tests:short')
-        steps:
-        - uses: actions/checkout@v2
-        - name: run tests inside a debian10 docker
-          run: tests/functional/docker/docker_build_and_run_tests.sh debian10
           env:
             DOCKER_TTY: false

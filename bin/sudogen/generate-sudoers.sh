@@ -32,7 +32,7 @@ generate_account_sudoers()
     normalized_account=$(sed -re 's/[^A-Z0-9_]/_/gi' <<< "$account")
     # as we're reducing the amount of possible chars in normalized_account
     # we could have collisions: use MD5 to generate a uniq suffix
-    account_suffix=$(md5sum - <<< "$account" | cut -c1-6)
+    account_suffix=$(md5sum_compat - <<< "$account" | cut -c1-6)
     normalized_account="${normalized_account}_${account_suffix}"
     # lowercase is prohibited
     normalized_account=$(tr '[:lower:]' '[:upper:]' <<< "$normalized_account")
@@ -42,8 +42,16 @@ generate_account_sudoers()
     chmod 0440 "${dst}.tmp"
     {
         echo "# generated from install script"
-        for template in $(find "$basedir/etc/sudoers.account.template.d/" -type f | sort)
+        for template in $(find "$basedir/etc/sudoers.account.template.d/" -type f -name "*.sudoers" | sort)
         do
+            # if $template has two dots, then it's of the form XXX-name.$os.sudoers,
+            # in that case we only include this template if $os is our current OS
+            if [ "$(echo "$template" | cut -d. -f3)" = "sudoers" ]; then
+                if [ "$(echo "$template" | cut -d. -f2 | tr '[:upper:]' '[:lower:]')" != "$(echo "$OS_FAMILY" | tr '[:upper:]' '[:lower:]')" ]; then
+                    # not the same OS, skip it
+                    continue
+                fi
+            fi
             echo
             echo "# $template:"
             perl -pe "s!%ACCOUNT%!$account!g;s!%NORMACCOUNT%!$normalized_account!g;s!%BASEPATH%!$basedir!g" "$template"

@@ -3,7 +3,7 @@
 # NEEDGROUP osh-accountMFAResetTOTP
 # SUDOERS %osh-accountMFAResetTOTP ALL=(root) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountMFAResetTOTP --account *
 # FILEMODE 0700
-# FILEOWN root root
+# FILEOWN 0 0
 
 #>HEADER
 use common::sense;

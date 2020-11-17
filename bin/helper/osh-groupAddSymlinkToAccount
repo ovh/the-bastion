@@ -3,7 +3,7 @@
 # KEYSUDOERS # as a gatekeeper, to be able to symlink in /home/allowkeeper/ACCOUNT the /home/%GROUP%/allowed.ip file
 # KEYSUDOERS SUPEROWNERS, %%GROUP%-gatekeeper ALL=(allowkeeper) NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupAddSymlinkToAccount --group %GROUP% *
 # FILEMODE 0750
-# FILEOWN root allowkeeper
+# FILEOWN 0 allowkeeper
 
 #>HEADER
 use common::sense;

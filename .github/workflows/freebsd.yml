@@ -1,0 +1,37 @@
+name: FreeBSD tests
+
+on:
+    pull_request:
+        types: [labeled, synchronize]
+
+jobs:
+  freebsd:
+    runs-on: macos-latest
+    name: FreeBSD
+    if: contains(github.event.pull_request.labels.*.name, 'tests:full')
+    steps:
+    - uses: actions/checkout@v2
+    - name: Functional tests under FreeBSD
+      uses: vmactions/freebsd-vm@v0.0.8
+      with:
+        usesh: true
+        run: |
+          set -ex
+          freebsd-version
+          mount -o acls /
+          pkg install -y bash unzip rsync ca_root_nss jq fping screen flock gmake
+          mkdir -p /opt/bastion
+          rsync -a . /opt/bastion/
+          fetch https://github.com/ovh/ovh-ttyrec/archive/master.zip
+          unzip master.zip
+          cd ovh-ttyrec-master/
+          ./configure
+          gmake
+          gmake install
+          cd ..
+          /opt/bastion/bin/admin/packages-check.sh -i
+          /opt/bastion/bin/admin/install --new-install --no-wait
+          ssh-keygen -t ed25519 -f id_user
+          ssh-keygen -t ed25519 -f id_root
+          NO_SLEEP=1 user_pubkey=$(cat id_user.pub) root_pubkey=$(cat id_root.pub) TARGET_USER=user5000 /opt/bastion/tests/functional/docker/target_role.sh
+          HAS_MFA=0 HAS_MFA_PASSWORD=1 HAS_PAMTESTER=1 nocc=1 /opt/bastion/tests/functional/launch_tests_on_instance.sh 127.0.0.1 22 user5000 id_user id_root /usr/local/etc/bastion

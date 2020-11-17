@@ -11,7 +11,7 @@
 # KEYSUDOERS # as a gatekeeper, we can grant/revoke a guest access
 # KEYSUDOERS SUPEROWNERS, %%GROUP%-gatekeeper ALL=(root)        NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupSetRole --type guest --group %GROUP% *
 # FILEMODE 0700
-# FILEOWN root root
+# FILEOWN 0 0
 
 #>HEADER
 use common::sense;

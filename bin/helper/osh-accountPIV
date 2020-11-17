@@ -5,7 +5,7 @@
 # SUDOERS %osh-accountPIV ALL=(allowkeeper)    NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountPIV --step 1 --account *
 # SUDOERS %osh-accountPIV ALL=(%bastion-users) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountPIV --step 2 --account *
 # FILEMODE 0755
-# FILEOWN root root
+# FILEOWN 0 0
 
 #>HEADER
 use common::sense;

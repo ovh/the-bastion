@@ -3,7 +3,7 @@
 # NEEDGROUP osh-accountListEgressKeys
 # SUDOERS %osh-accountListEgressKeys ALL=(keyreader) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountListEgressKeys *
 # FILEMODE 0750
-# FILEOWN root keyreader
+# FILEOWN 0 keyreader
 
 #>HEADER
 use common::sense;

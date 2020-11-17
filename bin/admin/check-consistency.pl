@@ -542,13 +542,16 @@ sub _tocheck {
         my $gid       = $stat[5];
         my $wantuser  = (split / /, $tocheck{'FILEOWN'}[0])[0];
         my $wantgroup = (split / /, $tocheck{'FILEOWN'}[0])[1];
-        $wantuser  = $UID0 if $wantuser eq 'root';
-        $wantgroup = $GID0 if $wantgroup eq 'root';
-        if ($uid ne getpwnam($wantuser)) {
-            _err "bad owner on file $file (got $uid but wanted $wantuser)";
+        $wantuser  = $UID0 if ($wantuser eq 'root'  || $wantuser eq '0');
+        $wantgroup = $GID0 if ($wantgroup eq 'root' || $wantgroup eq '0');
+        my $wantuid = getpwnam($wantuser);
+        my $wantgid = getgrnam($wantgroup);
+
+        if ($uid ne $wantuid) {
+            _err "bad owner on file $file (got $uid but wanted $wantuid aka $wantuser)";
         }
-        if ($gid ne getgrnam($wantgroup)) {
-            _err "bad group on file $file (got $gid but wanted $wantgroup)";
+        if ($gid ne $wantgid) {
+            _err "bad group on file $file (got $gid but wanted $wantgid aka $wantgroup)";
         }
     }
     if (exists $tocheck{'SUDOERS'}) {

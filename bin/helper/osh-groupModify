@@ -3,7 +3,7 @@
 # KEYSUDOERS # as an owner, we can modify the group settings
 # KEYSUDOERS SUPEROWNERS, %%GROUP%-owner      ALL=(%GROUP%)     NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupModify --group %GROUP% *
 # FILEMODE 0755
-# FILEOWN root root
+# FILEOWN 0 0
 
 #>HEADER
 use common::sense;
