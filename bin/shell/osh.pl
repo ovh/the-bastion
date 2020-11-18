@@ -230,10 +230,9 @@ my $result = GetOptions(
     "c=s"   => \$realOptions,    # user command under -c '...'
     "debug" => \$opt_debug,
 );
-
-if (not $result or not $realOptions) {
+if (not $result) {
     help();
-    main_exit OVH::Bastion::EXIT_UNKNOWN_COMMAND, "unknown_command", "Bad or empty command";
+    main_exit OVH::Bastion::EXIT_UNKNOWN_COMMAND, "unknown_command", "Bad command";
 }
 
 $osh_debug = 1 if $opt_debug;    # osh_debug was already 1 if specified in config file
@@ -258,7 +257,7 @@ my @toExecute;
 
 # special case: mosh, in that case we have something like this in $realOptions
 # mosh-server 'new' '-s' '-c' '256' '-l' 'LANG=en_US.UTF-8' '-l' 'LANGUAGE=en_US' '--' '--osh' 'info'
-if ($realOptions =~ /^mosh-server (.+?) '--' (.*)/) {
+if (defined $realOptions && $realOptions =~ /^mosh-server (.+?) '--' (.*)/) {
     osh_debug("MOSH DETECTED (with params)");
 
     # remove mosh stuff and save it for later
@@ -294,7 +293,7 @@ if ($realOptions =~ /^mosh-server (.+?) '--' (.*)/) {
         main_exit OVH::Bastion::EXIT_MOSH_DISABLED, "mosh_disabled", "Mosh support has been disabled on this bastion";
     }
 }
-elsif ($realOptions =~ /^mosh-server /) {
+elsif (defined $realOptions && $realOptions =~ /^mosh-server /) {
     osh_debug("MOSH DETECTED (without any param)");
 
     # we won't really use mosh, as we'll exit later with the bastion help anyway
@@ -307,7 +306,7 @@ elsif ($realOptions =~ /^mosh-server /) {
 my $beforeOptions;
 my $afterOptions;
 
-if ($realOptions =~ /^(.*?) -- (.*)$/) {
+if (defined $realOptions && $realOptions =~ /^(.*?) -- (.*)$/) {
     $beforeOptions = $1;
     $afterOptions  = $2;
     osh_debug("before <$beforeOptions> after <$afterOptions>");
@@ -362,6 +361,17 @@ my $remainingOptions;
     "use-key=s"       => \my $useKey,
     "kbd-interactive" => \my $userKbdInteractive,
 );
+if (not defined $realOptions) {
+    help();
+    if (OVH::Bastion::config('interactiveModeByDefault')->value) {
+        # nothing specified by the user, let's drop them to the interactive mode
+        osh_warn("No command specified, entering interactive mode by default");
+        $interactive = 1;
+    }
+    else {
+        main_exit OVH::Bastion::EXIT_UNKNOWN_COMMAND, "unknown_command", "Missing command";
+    }
+}
 
 if (!$quiet && $realm && !$ENV{'OSH_NO_INTERACTIVE'}) {
     my $welcome =

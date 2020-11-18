@@ -257,6 +257,11 @@
 #  DEFAULT: 60
 "interactiveModeTimeout": 60,
 #
+# interactiveModeByDefault (boolean-int)
+#     DESC: If true (1), drops the user to interactive mode if nothing is specified on the command line. If false (0), displays the help and exits with an error. Note that for `true' to have the expected effect, interactive mode must be enabled (see the `ìnteractiveModeAllowed' option above).
+#  DEFAULT: 1
+"interactiveModeByDefault": 1,
+#
 # enableSyslog (boolean-int)
 #     DESC: If set to 0, syslog will be disabled. If set to 1, we'll send logs through syslog (don't forget to setup your syslogd)
 #  DEFAULT: 1
