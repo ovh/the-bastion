@@ -78,11 +78,11 @@ Linux distros below are tested with each release, but as this is a security prod
 *: Note that these versions have no out-of-the-box MFA support, as they lack packaged versions of `pamtester`, `pam-google-authenticator`, or both. Of course, you may compile those yourself.
 Any other so-called "modern" Linux version are not tested with each release, but should work with no or minor adjustments.
 
-The code is also known to work correctly under:
+The following OS are also tested with each release:
 
-- FreeBSD 10+ / HardenedBSD**
+- FreeBSD/HardenedBSD 12.1**
 
-**: Note that FreeBSD has partial MFA support, due to its reduced set of available `pam` plugins. You can set it up to support an additional password or TOTP factor, but not both.
+**: Note that these have partial MFA support, due to their reduced set of available `pam` plugins. Support for either an additional password or TOTP factor can be configured, but not both at the same time. The code is actually known to work on FreeBSD/HardenedBSD 10+, but it's only regularly tested under 12.1.
 
 Other BSD variants partially work but are unsupported and discouraged as they have a severe limitation over the maximum number of supplementary groups (causing problems for group membership and restricted commands checks), no filesystem-level ACL support and missing MFA:
 

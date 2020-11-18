@@ -19,17 +19,11 @@ jobs:
           set -ex
           freebsd-version
           mount -o acls /
-          pkg install -y bash unzip rsync ca_root_nss jq fping screen flock gmake
+          pkg install -y bash rsync ca_root_nss jq fping screen flock
           mkdir -p /opt/bastion
           rsync -a . /opt/bastion/
-          fetch https://github.com/ovh/ovh-ttyrec/archive/master.zip
-          unzip master.zip
-          cd ovh-ttyrec-master/
-          ./configure
-          gmake
-          gmake install
-          cd ..
           /opt/bastion/bin/admin/packages-check.sh -i
+          /opt/bastion/bin/admin/install-ttyrec.sh -s
           /opt/bastion/bin/admin/install --new-install --no-wait
           ssh-keygen -t ed25519 -f id_user
           ssh-keygen -t ed25519 -f id_root
