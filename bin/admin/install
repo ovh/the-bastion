@@ -191,6 +191,20 @@ EOF
     exit 1
 fi
 
+# if we're under FreeBSD, we must have ACLs enabled on /home (or whatever partition contains it),
+# so check for that first
+
+if [ "$OS_FAMILY" = FreeBSD ]; then
+    action_doing "Running under FreeBSD, verifying if /home is mounted with ACLs..."
+    home_mp="$(df /home | awk '{ if(NR==2) {print $6;exit} }')"
+    if ! mount | awk '{ if($3=="'"$home_mp"'"){print;exit} }' | grep -q -w acls; then
+        action_error "No. Please modify your /etc/fstab accordingly, and run \`mount -u -o acls $home_mp' to apply the change on-the-fly."
+        exit 1
+    else
+        action_done
+    fi
+fi
+
 if [ "${opt[wait]}" = 1 ]; then
     action_doing "Touching lockfile to suspend sync, and waiting 3 seconds to ensure it has been picked up..."
     # shellcheck disable=SC2064
