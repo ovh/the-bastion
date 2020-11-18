@@ -23,6 +23,7 @@ set_default_options()
     opt[regen-hostkeys]=0
     opt[logrotate]=1
     opt[overwrite-logrotate]=1
+
     # special case:
     # If $autodetect_startup_system is 1, we'll autodetect whether we will install the
     # systemd units (preferred) or the init.d files.
@@ -33,6 +34,16 @@ set_default_options()
     opt[init]=0
     opt[systemd-units]=0
     # /special
+
+    # special case 2:
+    # If $autodetect_selinux is 1, we'll autodetect whether we're running on a system
+    # supporting SELinux, and if yes, we'll proceed in deploying the module to make it
+    # possible to use TOTP MFA on those systems.
+    # Any specification of --[no-]install-selinux-module will inhibit this behavior
+    autodetect_selinux=1
+    opt[install-selinux-module]=0
+    # /special case 2
+
     opt[profile]=1
     opt[cron]=1
     opt[overwrite-cron]=1
@@ -66,6 +77,7 @@ while [ -n "$1" ]; do
         opt[logrotate]=0
         opt[overwrite-logrotate]=0
         autodetect_startup_system=0
+        autodetect_selinux=0
         opt[profile]=0
         opt[cron]=0
         opt[overwrite-cron]=0
@@ -77,6 +89,7 @@ while [ -n "$1" ]; do
         opt[logrotate]=1
         opt[overwrite-logrotate]=0
         autodetect_startup_system=1
+        autodetect_selinux=1
         opt[profile]=0
         opt[cron]=1
         opt[overwrite-cron]=1
@@ -89,7 +102,8 @@ while [ -n "$1" ]; do
         for allowedopt in modify-banner modify-sshd-config modify-ssh-config modify-motd modify-umask \
             modify-pam-lastlog remove-weak-moduli regen-hostkeys overwrite-logrotate overwrite-cron \
             overwrite-syslog-ng logrotate cron syslog-ng migration-grant-aclkeeper-to-gatekeepers \
-            init systemd-units profile modify-pam-sshd wait check-ttyrec install-fake-ttyrec
+            init systemd-units profile modify-pam-sshd wait check-ttyrec install-fake-ttyrec \
+            install-selinux-module
         do
             if [ "$1" = "--no-$allowedopt" ]; then
                 opt[$allowedopt]=0
@@ -101,6 +115,10 @@ while [ -n "$1" ]; do
             if [ "$1" = "init" ] || [ "$1" = "systemd-units" ]; then
                 # see "special case" comment above for more information
                 autodetect_startup_system=0
+            fi
+            if [ "$1" = "install-selinux-module" ]; then
+                # see "special case 2" comment above for more information
+                autodetect_selinux=0
             fi
         done
         if [ "$foundoption" != 1 ]; then
@@ -1186,6 +1204,34 @@ if [ "${opt[systemd-units]}" = 1 ]; then
     done
     systemctl daemon-reload || true
     action_done
+fi
+
+if [ "$autodetect_selinux" = 1 ]; then
+    action_doing "Autodetecting SELinux..."
+    if command -v setenforce >/dev/null; then
+        action_done "found"
+        opt[install-selinux-module]=1
+    else
+        action_done "not found"
+        opt[install-selinux-module]=0
+    fi
+fi
+
+if [ "${opt[install-selinux-module]}" = 1 ]; then
+    action_doing "Installing SELinux module"
+    if ! command -v semodule >/dev/null; then
+        action_error "Missing \`semodule' tool, please install it (it's usually found in the 'policycoreutils' package)"
+    else
+        if semodule -l | grep -q the-bastion; then
+            action_na "module is already installed"
+        else
+            if semodule -i "$basedir/etc/selinux/the-bastion.pp"; then
+                action_done "module installed"
+            else
+                action_error "semodule returned an error"
+            fi
+        fi
+    fi
 fi
 
 if [ "${opt[profile]}" = 1 ]; then

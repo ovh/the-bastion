@@ -30,7 +30,7 @@
 "defaultLogin": "",
 #
 # adminAccounts (list of accounts names), deprecated alias: adminLogins
-#     DESC: The list of accounts that are Admins of the bastion. Admins can't be deleted or have their ingress keys reset by non-admins. They also gain access to special dangerous/sensitive --osh commands. Note that an admin is also always considered as a Super Owner, which means they can override allchecks of group administrative commands. Don't forget to add them to the osh-admin group too, or they won't really be considered as admins (additional security measure). Tule of thumb: only add here people that have root@localhost access to the bastion
+#     DESC: The list of accounts that are Admins of the bastion. Admins can't be deleted or have their ingress keys reset by non-admins. They also gain access to special dangerous/sensitive --osh commands. Note that an admin is also always considered as a Super Owner, which means they can override allchecks of group administrative commands. Don't forget to add them to the osh-admin group too, or they won't really be considered as admins (additional security measure). Rule of thumb: only add here people that have root@localhost access to the bastion
 #  DEFAULT: []
 "adminAccounts": [],
 #

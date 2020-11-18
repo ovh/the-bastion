@@ -1,0 +1,15 @@
+module the-bastion 1.0;
+
+require {
+type var_t;
+type sshd_t;
+type user_home_t;
+type user_home_dir_t;
+class file { create getattr rename setattr unlink open read write };
+}
+
+# needed for user TOTP (~/.totp and ~/.totp~XXXXXX temporary file)
+allow sshd_t user_home_dir_t:file { create getattr rename setattr unlink open read write };
+allow sshd_t user_home_t:file     unlink;
+# needed for root TOTP (/var/otp/root and /var/otp/root~XXXXXX temporary file)
+allow sshd_t var_t:file           { create getattr rename setattr unlink open read write };
