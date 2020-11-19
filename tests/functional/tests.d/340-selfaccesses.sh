@@ -74,6 +74,18 @@ testsuite_selfaccesses()
     contain "Access denied for"
     json .command    null .error_code KO_ACCESS_DENIED
 
+    run ssh invalid_host $a1 127.0./0.1 -- id
+    retvalshouldbe 102
+    json .error_code KO_HOST_NOT_FOUND
+
+    run ssh invalid_host $a1 127.0.%0.1 -- id
+    retvalshouldbe 128
+    json .error_code KO_INVALID_REMOTE_HOST
+
+    run ssh invalid_user $a1 ro/ot@127.0.0.1 -- id
+    retvalshouldbe 127
+    json .error_code KO_INVALID_REMOTE_USER
+
     grant selfAddPersonalAccess
     grant selfDelPersonalAccess
 

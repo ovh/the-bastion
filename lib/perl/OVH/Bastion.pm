@@ -90,6 +90,8 @@ use constant {
     EXIT_MFA_ANY_SETUP_REQUIRED      => 124,
     EXIT_MFA_FAILED                  => 125,
     EXIT_TTYREC_CMDLINE_FAILED       => 126,
+    EXIT_INVALID_REMOTE_USER         => 127,
+    EXIT_INVALID_REMOTE_HOST         => 128,
 };
 
 use constant {

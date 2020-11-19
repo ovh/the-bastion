@@ -364,6 +364,7 @@ my $remainingOptions;
 if (not defined $realOptions) {
     help();
     if (OVH::Bastion::config('interactiveModeByDefault')->value) {
+
         # nothing specified by the user, let's drop them to the interactive mode
         osh_warn("No command specified, entering interactive mode by default");
         $interactive = 1;
@@ -545,6 +546,15 @@ else {
         $command .= join(' ', @$remainingOptions);
         osh_debug("Going to add extra command $command");
     }
+}
+
+if ($user && !OVH::Bastion::is_valid_remote_user(user => $user)) {
+    main_exit OVH::Bastion::EXIT_INVALID_REMOTE_USER, 'invalid_remote_user', "Remote user name '$user' seems invalid";
+}
+if ($host && $host !~ m{^[a-zA-Z0-9._/:-]+$}) {
+
+    # can be an IP (v4 or v6), hostname, or prefix (with a /)
+    main_exit OVH::Bastion::EXIT_INVALID_REMOTE_HOST, 'invalid_remote_host', "Remote host name '$host' seems invalid";
 }
 
 # Get real ip from host
