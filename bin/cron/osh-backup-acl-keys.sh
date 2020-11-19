@@ -59,7 +59,7 @@ _log "Starting backup..."
 tarfile="$DESTDIR/backup-$(date +'%Y-%m-%d').tar.gz"
 _log "Creating $tarfile..."
 supp_entries=""
-for entry in /root/.gnupg /var/otp
+for entry in /root/.gnupg /root/.ssh /var/otp
 do
     [ -e "$entry" ] && supp_entries="$supp_entries $entry"
 done
@@ -71,7 +71,7 @@ tar czf "$tarfile" -p --xattrs --acls --one-file-system --numeric-owner \
     --exclude="*.sqlite" \
     --exclude="*.log" \
     --exclude="*.ttyrec" \
-    --exclude="*.gpg" \
+    --exclude="*.ttyrec.*" \
     --exclude="*.gz" \
     --exclude="*.zst" \
     /home/ /etc/passwd /etc/group /etc/shadow /etc/gshadow /etc/bastion /etc/ssh $supp_entries 2>/dev/null; ret=$?
