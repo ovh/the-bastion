@@ -235,7 +235,7 @@ sub potentially_work_on_this_file {
 
     # file must be a ttyrec file or an osh_http_proxy_ttyrec-ish file
     my $filetype;
-    $filetype = 'ttyrec'   if m{^/home/[^/]+/ttyrec/[^/]+/[A-Za-z0-9._-]+(\.ttyrec(\.zst)?)?$};
+    $filetype = 'ttyrec'   if m{^/home/[^/]+/ttyrec/[^/]+/[^/]+(\.ttyrec(\.zst)?)?$};
     $filetype = 'proxylog' if m{^/home/[^/]+/ttyrec/[^/]+/\d+-\d+-\d+\.txt$};
     $filetype or return;
 
