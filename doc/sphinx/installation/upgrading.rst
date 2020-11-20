@@ -42,6 +42,13 @@ Note that this is done automatically for bastion admins.
 Version-specific upgrade instructions
 =====================================
 
+v3.01.00
+********
+
+A new bastion.conf option was introduced: *interactiveModeByDefault*. If not present in your config file, its value defaults to 1 (true), which changes the behavior of The Bastion when a user connects without specifying any command. When this happens, it'll now display the help then drop the user into interactive mode (if this mode is enabled), instead of displaying the help and aborting with an error message. Set it to 0 (false) if you want to keep the previous behavior.
+
+An SELinux module has been added in this version, to ensure TOTP MFA works correctly under systems where SELinux is on enforcing mode. This module will be installed automatically whenever SELinux is detected on the system. If you don't want to use this module, specify `--no-install-selinux-module` on your `/opt/bastion/bin/admin/install` upgrade call (please refer to the generic upgrade instructions for more details).
+
 v3.00.02
 ********
 
