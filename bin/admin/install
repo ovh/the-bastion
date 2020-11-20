@@ -214,7 +214,11 @@ fi
 
 if [ "$OS_FAMILY" = FreeBSD ]; then
     action_doing "Running under FreeBSD, verifying if /home is mounted with ACLs..."
-    home_mp="$(df /home | awk '{ if(NR==2) {print $6;exit} }')"
+    home_mp="$(df /home 2>/dev/null | awk '{ if(NR==2) {print $6;exit} }')"
+    if [ -z "$home_mp" ]; then
+        # no /home? nevermind, / will probably do
+        home_mp=/
+    fi
     if ! mount | awk '{ if($3=="'"$home_mp"'"){print;exit} }' | grep -q -w acls; then
         action_error "No. Please modify your /etc/fstab accordingly, and run \`mount -u -o acls $home_mp' to apply the change on-the-fly."
         exit 1

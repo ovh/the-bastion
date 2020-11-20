@@ -201,10 +201,13 @@ sub load_configuration {
     $C->{'idleLockTimeout'} = 0 if ($C->{'idleKillTimeout'} <= $C->{'idleLockTimeout'});
 
     # booleans that can only be 0 or 1 and default to 1
-    foreach my $key (qw{
+    foreach my $key (
+        qw{
         enableSyslog enableGlobalAccessLog enableAccountAccessLog enableGlobalSqlLog enableAccountSqlLog displayLastLogin
         interactiveModeByDefault
-        }) {
+        }
+      )
+    {
         $C->{$key} = 1 if (not defined $C->{$key} or $C->{$key} !~ /^\d+$/);
         $C->{$key} > 1 and $C->{$key} = 1;
     }
