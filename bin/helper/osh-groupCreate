@@ -121,7 +121,7 @@ $fnret->is_ok and HEXIT('KO_ALREADY_EXISTING', msg => "The account $group alread
 
 #>PARAMS:ALGO/SIZE
 if (!$no_key) {
-    $algo = lc($algo);
+    $algo  = lc($algo);
     $fnret = OVH::Bastion::is_allowed_algo_and_size(algo => $algo, size => $size, way => 'egress');
     $fnret or HEXIT($fnret);
 

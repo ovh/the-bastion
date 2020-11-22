@@ -16,7 +16,7 @@ sub _get_key_from_password {
     my $salt       = 'JPYWrLpoXcXFA46m9DUI5z02SqUd2baG';
     my $iterations = 10_000;
 
-    my $hash = hmac_sha256($salt . pack('N', 0), $password);
+    my $hash   = hmac_sha256($salt . pack('N', 0), $password);
     my $result = $hash;
 
     for my $iter (2 .. $iterations) {

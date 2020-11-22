@@ -101,7 +101,7 @@ my $shortGroup = $fnret->value->{'shortGroup'};
 
 # check if algo is supported by system
 if ($algo) {
-    $algo = lc($algo);
+    $algo  = lc($algo);
     $fnret = OVH::Bastion::is_allowed_algo_and_size(algo => $algo, size => $size, way => 'egress');
     $fnret or osh_exit $fnret;
 }

@@ -52,7 +52,7 @@ foreach my $account (%{$fnret->value}) {
 
     # we have PIV grace set for this account
     my $expiry = $fnret->value;
-    my $human = OVH::Bastion::duration2human(seconds => ($expiry - time()))->value;
+    my $human  = OVH::Bastion::duration2human(seconds => ($expiry - time()))->value;
     _log "Account $account has PIV grace expiry set to $expiry (" . $human->{'human'} . ")";
 
     # is PIV grace TTL expired?

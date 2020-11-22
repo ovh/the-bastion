@@ -91,7 +91,7 @@ if (not $d{ciphers} or not $d{kexalgorithms} or not $d{macs}) {
 }
 
 my @myciphers = split /,/, $h{ciphers}[0];
-my %ciphers = (
+my %ciphers   = (
     "3des-cbc"                       => 1,
     "blowfish-cbc"                   => 1,
     "cast128-cbc"                    => 1,
@@ -130,7 +130,7 @@ $list{'highon'} and ok "ciphers: found enabled high-grade ciphers " . join(',', 
 $list{'highoff'} and wrn "ciphers: found disabled high-grade ciphers " . join(',', @{$list{'highoff'}});
 
 my @mymacs = split /,/, $h{macs}[0];
-my %macs = (
+my %macs   = (
     "hmac-sha1"                       => 1,
     "hmac-sha1-96"                    => 1,
     "hmac-sha2-256"                   => 2,
@@ -179,7 +179,7 @@ $list{'highon'} and ok "macs: found enabled high-grade MACs " . join(',', @{$lis
 $list{'highoff'} and wrn "macs: found disabled high-grade MACs " . join(',', @{$list{'highoff'}});
 
 my @mykexs = split /,/, $h{kexalgorithms}[0];
-my %kexs = (
+my %kexs   = (
     "diffie-hellman-group1-sha1"           => 1,
     "diffie-hellman-group14-sha1"          => 1,
     "diffie-hellman-group-exchange-sha1"   => 1,
@@ -290,7 +290,7 @@ while (<$fh_myself>) {
 }
 close($fh_myself);
 my $decoded = decode_base64(join("\n", @xz));
-my $pid = open2(\*CHLD_OUT, \*CHLD_IN, 'unxz', '-c');    #TODO get rid of this call
+my $pid     = open2(\*CHLD_OUT, \*CHLD_IN, 'unxz', '-c');    #TODO get rid of this call
 print CHLD_IN $decoded;
 close(CHLD_IN);
 my $rawlist;

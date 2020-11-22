@@ -95,7 +95,7 @@ sub test_config {
             my $gpgtest = GnuPG->new(trace => $config{'trace'});
 
             # then, check we can encrypt to each of the recipients
-            my $outfile = File::Temp->new(UNLINK => 1, TMPDIR => 1);
+            my $outfile        = File::Temp->new(UNLINK => 1, TMPDIR => 1);
             my $recipientparam = $isoldversion ? $recipient : [$recipient, $recipient];
             $gpgtest->encrypt(plaintext => $input . "", output => $outfile . "", recipient => $recipientparam);
             if (not -s $outfile) {
@@ -118,7 +118,7 @@ sub test_config {
         my $gpgtest = GnuPG->new(trace => $config{'trace'});
 
         # then, encrypt to all the recipients, sign, and check the signature
-        my $outfile = File::Temp->new(UNLINK => 1, TMPDIR => 1);
+        my $outfile        = File::Temp->new(UNLINK => 1, TMPDIR => 1);
         my $recipientparam = $isoldversion ? (keys %recipients_uniq)[0] : [keys %recipients_uniq];
         $gpgtest->encrypt(
             plaintext    => $input . "",

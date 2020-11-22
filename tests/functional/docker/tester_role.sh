@@ -7,18 +7,6 @@ basedir=$(readlink -f "$(dirname "$0")"/../../..)
 # shellcheck source=lib/shell/colors.inc
 . "$basedir"/lib/shell/colors.inc
 
-
-if [ "$TEST_QUICK" = 0 ]; then
-    printf '%b>>> %b <<<%b\n' "$BOLD_CYAN" "SHELL CHECK" "$NOC"
-    "$(dirname "$0")"/../../../bin/dev/shell-check.sh || exit 254
-
-    printf '%b>>> %b <<<%b\n' "$BOLD_CYAN" "PERL CRITIC" "$NOC"
-    "$(dirname "$0")"/../../../bin/dev/perl-critic.sh || exit 254
-
-    printf '%b>>> %b <<<%b\n' "$BOLD_CYAN" "PERL TIDY" "$NOC"
-    "$(dirname "$0")"/../../../bin/dev/perl-tidy.sh test || exit 254
-fi
-
 printf '%b>>> %b <<<%b\n' "$BOLD_CYAN" "SETTING UP KEYS" "$NOC"
 base64 -d <<< "$USER_PRIVKEY_B64" > /root/user.privkey
 chmod 400 /root/user.privkey

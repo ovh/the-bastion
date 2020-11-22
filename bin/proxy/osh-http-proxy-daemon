@@ -82,7 +82,7 @@ OVH::Bastion::ProxyHTTP->new()->run(
     timeout_idle => 3600,
     proxy_config => {
         insecure => $config->{'insecure'} ? 1 : 0,
-        timeout => $config->{'timeout'},    # our worker will wait for up to this amount of time for the egress connection to complete
+        timeout  => $config->{'timeout'},            # our worker will wait for up to this amount of time for the egress connection to complete
     },
 ) or die "Proxy launch failed!";
 

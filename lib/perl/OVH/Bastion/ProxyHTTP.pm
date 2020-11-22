@@ -117,7 +117,7 @@ sub log_and_exit {
     my $basedir = "/home/proxyhttp/ttyrec";
     -d $basedir || mkdir $basedir;
 
-    my $srcip = 'src_' . ($ENV{'REMOTE_ADDR'} || '0.0.0.0');
+    my $srcip    = 'src_' . ($ENV{'REMOTE_ADDR'} || '0.0.0.0');
     my $finaldir = "$basedir/$srcip";
     -d $finaldir || mkdir $finaldir;
 
@@ -174,7 +174,7 @@ sub configure_hook {    ## no critic (RequireFinalReturn)
     $self->{'server'}{'log_function'} = sub {
         my ($level, $msg) = @_;
         warn_syslog("osh-http-proxy-daemon: level $level: $msg");
-      }
+    }
 }
 
 # overrides parent func
@@ -301,7 +301,7 @@ sub process_http_request {
     }
     my ($account, $user_expression, $remotemachine, $remoteport) = ($1, $2, $3, $5);    ## no critic (ProhibitCaptureWithoutTest)
     undef $loginpart;                                                                   # no longer needed
-    $remoteport = 443 if not defined $remoteport;
+    $remoteport               = 443 if not defined $remoteport;
     $self->{'_log'}{'hostto'} = $remotemachine;
     $self->{'_log'}{'portto'} = $remoteport;
 
@@ -399,7 +399,8 @@ sub process_http_request {
     push @cmd, "--group",   $group   if $group;
     push @cmd, "--timeout", $timeout if $timeout;
     push @cmd, "--allow-downgrade" if $allow_downgrade;
-    push @cmd, "--insecure" if ($self->{'proxy_config'}{'insecure'} && !$enforce_secure);
+    push @cmd, "--insecure"        if ($self->{'proxy_config'}{'insecure'} && !$enforce_secure);
+
     foreach my $key (qw{ accept content-type connection }) {
         push @cmd, "--header", $key . ':' . $req_headers->{$key} if (defined $req_headers->{$key});
     }

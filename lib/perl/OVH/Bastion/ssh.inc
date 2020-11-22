@@ -91,7 +91,7 @@ sub get_authorized_keys_from_file {
             $key->{'info'}                      = $info if $info;
             if ($pivAttestationCertificate && $pivKeyCertificate) {
                 $fnret = OVH::Bastion::verify_piv(key => $key->{'line'}, attestationCertificate => $pivAttestationCertificate, keyCertificate => $pivKeyCertificate);
-                $key->{'isPiv'} = ($fnret ? 1 : 0);
+                $key->{'isPiv'}   = ($fnret ? 1 : 0);
                 $key->{'pivInfo'} = $fnret->value if $fnret;
             }
             if ($includePivDisabled && $pivDisabled) {
@@ -226,7 +226,7 @@ sub get_ssh_pub_key_info {
 
     # put that in a tempfile for ssh-keygen inspection
     if (not $noexec) {
-        my $fh = File::Temp->new(UNLINK => 1);
+        my $fh       = File::Temp->new(UNLINK => 1);
         my $filename = $fh->filename;
         print {$fh} $typecode . " " . $base64;
         close($fh);
@@ -388,7 +388,7 @@ sub get_from_for_user_key {
     # if we have a $key, modify it accordingly
     if ($key) {
         $key->{'prefix'} = $from;
-        $key->{'line'} = ($from ? $from . " " : "") . $key->{'typecode'} . " " . $key->{'base64'};
+        $key->{'line'}   = ($from ? $from . " " : "") . $key->{'typecode'} . " " . $key->{'base64'};
         $key->{'line'} .= " " . $key->{'comment'} if $key->{'comment'};
         $key->{'fromList'} = \@ipListVerified;
     }
@@ -460,7 +460,7 @@ sub generate_ssh_key {
     $fnret->err eq 'OK' or return R('ERR_SSH_KEYGEN_FAILED', msg => "Error while generating group key (" . $fnret->msg . ")");
 
     my %files = (
-        $sshKeyName => ($group_readable ? 0440 : 0400),
+        $sshKeyName          => ($group_readable ? 0440 : 0400),
         $sshKeyName . '.pub' => 0444,
     );
     while (my ($file, $chmod) = each(%files)) {

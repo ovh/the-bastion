@@ -95,7 +95,7 @@ sub preconditions {
         my $neededright = 'unknown';
         if (grep { $type eq $_ } qw{ owner gatekeeper aclkeeper }) {
             $neededright = "owner";
-            $fnret = OVH::Bastion::is_group_owner(account => $self, group => $shortGroup, superowner => 1, sudo => $sudo);
+            $fnret       = OVH::Bastion::is_group_owner(account => $self, group => $shortGroup, superowner => 1, sudo => $sudo);
             if (!$fnret) {
                 osh_debug("user $self not an owner of $shortGroup");
                 return R('ERR_NOT_GROUP_OWNER', msg => "Sorry, you're not an owner of group $shortGroup, which is needed to change its $type list");
@@ -108,7 +108,7 @@ sub preconditions {
         }
         elsif (grep { $type eq $_ } qw{ member guest }) {
             $neededright = "gatekeeper";
-            $fnret = OVH::Bastion::is_group_gatekeeper(account => $self, group => $shortGroup, superowner => 1, sudo => $sudo);
+            $fnret       = OVH::Bastion::is_group_gatekeeper(account => $self, group => $shortGroup, superowner => 1, sudo => $sudo);
             if (!$fnret) {
                 osh_debug("user $self not a gk of $shortGroup");
                 return R('ERR_NOT_GROUP_GATEKEEPER', msg => "Sorry, you're not a gatekeeper of group $shortGroup, which is needed to change its $type list");
@@ -171,6 +171,7 @@ sub act {
         push @command, '--action', $action;
         $fnret = OVH::Bastion::helper(cmd => \@command);
         $fnret or return $fnret;
+
         if ($fnret->err eq 'OK_NO_CHANGE') {
 
             # make the error msg user friendly

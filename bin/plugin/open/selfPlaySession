@@ -63,13 +63,13 @@ else {
 $r->{params}      = undef         if ($r->{cmdtype} ne 'osh');
 $r->{returnvalue} = $r->{comment} if $r->{returnvalue} < 0;
 
-osh_info sprintf "%8s: %s\n", "ID",       $r->{uniqid};
-osh_info sprintf "%8s: %s\n", "Started",  POSIX::strftime("%Y/%m/%d %H:%M:%S", localtime($r->{timestamp}));
-osh_info sprintf "%8s: %s\n", "Ended",    $r->{timestampend} ? POSIX::strftime("%Y/%m/%d %H:%M:%S", localtime($r->{timestampend})) : 'n/a';
-osh_info sprintf "%8s: %s\n", "Duration", $delay;
-osh_info sprintf "%8s: %s\n", "Type",     $r->{'cmdtype'} . ($r->{'plugin'} ? '-' . $r->{'plugin'} : '') . ($r->{allowed} ? '' : '/DENIED');
-osh_info sprintf "%8s: %s:%s (%s)\n", "From", $r->{'ipfrom'},  $r->{'portfrom'},  $r->{'hostfrom'};
-osh_info sprintf "%8s: %s@%s:%s\n",   "Via",  $r->{'account'}, $r->{'bastionip'}, $r->{'bastionport'};
+osh_info sprintf "%8s: %s\n",         "ID",       $r->{uniqid};
+osh_info sprintf "%8s: %s\n",         "Started",  POSIX::strftime("%Y/%m/%d %H:%M:%S", localtime($r->{timestamp}));
+osh_info sprintf "%8s: %s\n",         "Ended",    $r->{timestampend} ? POSIX::strftime("%Y/%m/%d %H:%M:%S", localtime($r->{timestampend})) : 'n/a';
+osh_info sprintf "%8s: %s\n",         "Duration", $delay;
+osh_info sprintf "%8s: %s\n",         "Type",     $r->{'cmdtype'} . ($r->{'plugin'} ? '-' . $r->{'plugin'} : '') . ($r->{allowed} ? '' : '/DENIED');
+osh_info sprintf "%8s: %s:%s (%s)\n", "From",     $r->{'ipfrom'}, $r->{'portfrom'}, $r->{'hostfrom'};
+osh_info sprintf "%8s: %s@%s:%s\n",   "Via",      $r->{'account'}, $r->{'bastionip'}, $r->{'bastionport'};
 if ($r->{user} || $r->{ipto} || $r->{portto} || $r->{hostto}) {
     osh_info sprintf "%8s: %s@%s:%s (%s)\n", "To", $r->{'user'}, $r->{'ipto'}, $r->{'portto'}, $r->{'hostto'};
 }

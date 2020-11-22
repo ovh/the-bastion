@@ -82,7 +82,7 @@ if (not $ok) {
     osh_exit 'ERR_INVALID_ALGORITHM', "Only the following list of algorithms is allowed: " . join(' ', @algoList);
 }
 
-$size = 256 if (not $size and $algo eq 'ed25519');
+$size  = 256 if (not $size and $algo eq 'ed25519');
 $fnret = OVH::Bastion::is_allowed_algo_and_size(algo => $algo, size => $size, way => 'egress');
 $fnret or osh_exit $fnret;
 

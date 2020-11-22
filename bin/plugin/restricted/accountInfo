@@ -179,7 +179,7 @@ if (OVH::Bastion::is_auditor(account => $self)) {
         $fnret = OVH::Bastion::account_config(account => $account, public => 1, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_GRACE);
         if ($fnret && $fnret->value > time()) {
             my $expiry = $fnret->value - time();
-            my $human = OVH::Bastion::duration2human(seconds => $expiry)->value;
+            my $human  = OVH::Bastion::duration2human(seconds => $expiry)->value;
             osh_info "PIV grace period for this account is " . colored('set', 'green') . " and expires in " . $human->{'human'};
             $ret{'ingress_piv_grace'} = {
                 enabled              => 1,

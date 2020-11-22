@@ -111,7 +111,7 @@ my $osh_debug   = $config->{'debug'};
 # and the real remote account name (which doesn't have an account here because it's from another realm)
 # is passed through LC_BASTION
 if ($self =~ /^realm_([a-zA-Z0-9_.-]+)/) {
-    $self = sprintf("%s/%s", $1, $ENV{'LC_BASTION'});
+    $self  = sprintf("%s/%s", $1, $ENV{'LC_BASTION'});
     $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $self, realmOnly => 1);
     $fnret or main_exit(OVH::Bastion::EXIT_ACCOUNT_INVALID, "account_invalid", "The realm-scoped account '$self' is invalid (" . $fnret->msg . ")");
 }
@@ -203,7 +203,7 @@ my $lastlog_filepath = $fnret->value->{'filepath'};
 my $lastlogmsg = sprintf("Welcome to $bastionName, $self, this is your first connection");
 if ($fnret && $fnret->value && $fnret->value->{'seconds'}) {
     my $lastloginfo = $fnret->value->{'info'} ? " from " . $fnret->value->{'info'} : "";
-    $fnret = OVH::Bastion::duration2human(seconds => $fnret->value->{'seconds'}, tense => "past");
+    $fnret      = OVH::Bastion::duration2human(seconds => $fnret->value->{'seconds'}, tense => "past");
     $lastlogmsg = sprintf("Welcome to $bastionName, $self, your last login was %s ago (%s)%s", $fnret->value->{'duration'}, $fnret->value->{'date'}, $lastloginfo);
 }
 
@@ -644,6 +644,7 @@ my $isMfaPasswordRequired   = OVH::Bastion::is_user_in_group(account => $sysself
 my $hasMfaPasswordBypass    = OVH::Bastion::is_user_in_group(account => $sysself, group => OVH::Bastion::MFA_PASSWORD_BYPASS_GROUP);
 my $isMfaTOTPRequired       = OVH::Bastion::is_user_in_group(account => $sysself, group => OVH::Bastion::MFA_TOTP_REQUIRED_GROUP);
 my $hasMfaTOTPBypass        = OVH::Bastion::is_user_in_group(account => $sysself, group => OVH::Bastion::MFA_TOTP_BYPASS_GROUP);
+
 if ($mfaPolicy ne 'disabled' && !grep { $osh_command eq $_ } qw{ selfMFASetupPassword selfMFASetupTOTP help info }) {
 
     if (($mfaPolicy eq 'password-required' && !$hasMfaPasswordBypass) || $isMfaPasswordRequired) {
