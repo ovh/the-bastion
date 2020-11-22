@@ -561,7 +561,7 @@ sub is_valid_group {
     elsif ($group =~ /^(key)?(private|root|user|self|legacy|osh)(-(gatekeeper|aclkeeper|owner))?$/) {
         return R('KO_FORBIDDEN_NAME', msg => 'Forbidden group name');
     }
-    elsif ($group =~ m/^([a-zA-Z0-9_-]+)$/) {
+    elsif ($group =~ m/^([a-zA-Z0-9._-]+)$/) {
         $group = $1;    # untainted
         if ($groupType eq 'key' and $group !~ m/^key/) {
             return R('KO_MISSING_PREFIX', msg => "The group $group should have a prefix (group type $groupType)");
@@ -968,7 +968,7 @@ sub get_remote_accounts_from_realm {
     my %accounts;
     if (opendir(my $dh, "/home/allowkeeper/$sysaccount")) {
         while (my $filename = readdir($dh)) {
-            next if $filename !~ /allowed_([a-zA-Z0-9_-]+)\./;
+            next if $filename !~ /allowed_([a-zA-Z0-9._-]+)\.(ip|partial|private)/;
             $accounts{$1} = 1;
         }
         closedir($dh);
