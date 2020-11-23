@@ -149,6 +149,13 @@ EOM
                             next;
                         }
                     }
+                    elsif ($_ eq '<COMMAND>') {
+                        my $fnret = OVH::Bastion::get_plugin_list();
+                        if ($fnret) {
+                            push @autocomplete, sort keys %{$fnret->value()};
+                            next;
+                        }
+                    }
                     push @autocomplete, $_;
                 }
                 return @autocomplete;
