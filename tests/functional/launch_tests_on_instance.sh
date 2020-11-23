@@ -49,7 +49,7 @@ fi
 # those vars are also used in all our modules
 # shellcheck disable=SC2034
 {
-    account1="testu_Ser1-"
+    account1="testu_Ser.1-"
     account2="tesT-user2_"
     account3=teStuser3
     account4=TeStUsEr4
