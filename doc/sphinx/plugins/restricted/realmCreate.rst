@@ -9,7 +9,7 @@ Declare and create a new trusted realm
 .. admonition:: usage
    :class: cmdusage
 
-   --osh realmCreate --realm REALM [OPTIONS]
+   --osh realmCreate --realm REALM --from IP1,IP2 [OPTIONS]
 
 .. program:: realmCreate
 
