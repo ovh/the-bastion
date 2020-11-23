@@ -506,7 +506,7 @@ sub print_acls {
             my $addedDate = $entry->{'addedDate'} || '(unknown)';
             $addedDate = substr($addedDate, 0, 10);
             my $forceKey = $entry->{'forceKey'} || '-';
-            my $expiry = $entry->{'expiry'} ? (duration2human(seconds => ($entry->{'expiry'} - time()))->value->{'human'}) : '-';
+            my $expiry   = $entry->{'expiry'} ? (duration2human(seconds => ($entry->{'expiry'} - time()))->value->{'human'}) : '-';
 
             # type => member ('full'), guest ('partial'), personal or legacy
             my $ipReverse = OVH::Bastion::ip2host($entry->{'ip'})->value if $reverse;
@@ -726,11 +726,11 @@ sub is_access_granted {
             undef $fnret;
             my $mfaFnret;
             if ($access->{'type'} =~ /^group/ and $access->{'group'}) {
-                $fnret = OVH::Bastion::get_group_keys(group => $access->{'group'}, listOnly => $listOnly, noexec => $noexec, forceKey => $access->{'forceKey'});
+                $fnret    = OVH::Bastion::get_group_keys(group => $access->{'group'}, listOnly => $listOnly, noexec => $noexec, forceKey => $access->{'forceKey'});
                 $mfaFnret = OVH::Bastion::group_config(key => "mfa_required", group => $access->{'group'});
             }
             elsif ($access->{'type'} =~ /^personal/) {
-                $fnret = OVH::Bastion::get_personal_account_keys(account => $sysaccount, listOnly => $listOnly, noexec => $noexec, forceKey => $access->{'forceKey'});
+                $fnret    = OVH::Bastion::get_personal_account_keys(account => $sysaccount, listOnly => $listOnly, noexec => $noexec, forceKey => $access->{'forceKey'});
                 $mfaFnret = OVH::Bastion::account_config(key => "personal_egress_mfa_required", account => $sysaccount);
             }
             else {

@@ -39,7 +39,7 @@ eval {
     local $SIG{__WARN__} = sub { push @optwarns, shift };
     $result = GetOptions(
         "account=s" => sub { $account //= $_[1] },
-        "modify=s" => \@modify,
+        "modify=s"  => \@modify,
     );
 };
 if ($@) { die $@ }

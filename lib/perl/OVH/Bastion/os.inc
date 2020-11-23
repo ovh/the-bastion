@@ -233,9 +233,9 @@ sub sys_addmembertogroup {
     }
 
     if (is_openbsd() || is_netbsd()) {
-        my $fnret = OVH::Bastion::execute(cmd => ["groups", $user], must_succeed => 1);
+        my $fnret  = OVH::Bastion::execute(cmd => ["groups", $user], must_succeed => 1);
         my @stdout = @{$fnret->value->{'stdout'} || []};
-        my @cur = split(/ /, $stdout[0]);
+        my @cur    = split(/ /, $stdout[0]);
         return R('ERR_SYSTEM_LIMIT_REACHED') if @cur >= 16;
     }
 
@@ -351,7 +351,7 @@ sub sys_changepassword {
         $stdin_str = "$user:$password";
     }
     elsif (is_freebsd()) {
-        @cmd = ('pw', 'usermod', $user, '-h', '0');
+        @cmd       = ('pw', 'usermod', $user, '-h', '0');
         $stdin_str = $password;
     }
     elsif (is_openbsd() || is_netbsd()) {
@@ -391,7 +391,7 @@ sub sys_neutralizepassword {
     my $stdin_str;
 
     if (is_linux()) {
-        @cmd = ('chpasswd', '-e');
+        @cmd       = ('chpasswd', '-e');
         $stdin_str = "$user:*";
     }
     elsif (is_freebsd()) {
@@ -492,7 +492,7 @@ sub sys_getpasswordinfo {
     }
     require POSIX;
     $ret{'date_changed_timestamp'} = 86400 * delete($ret{'epoch_changed_days'}) + 0;
-    $ret{'date_changed'} = $ret{'date_changed_timestamp'} ? POSIX::strftime("%Y-%m-%d", localtime($ret{'date_changed_timestamp'})) : undef;
+    $ret{'date_changed'}           = $ret{'date_changed_timestamp'} ? POSIX::strftime("%Y-%m-%d", localtime($ret{'date_changed_timestamp'})) : undef;
     $ret{'min_days'} += 0;
     $ret{'max_days'} += 0;
     $ret{'max_days'} = -1 if $ret{'max_days'} >= 9999;
@@ -500,7 +500,7 @@ sub sys_getpasswordinfo {
     $ret{'inactive_days'} = -1 if $ret{'inactive_days'} eq '';
     $ret{'inactive_days'} += 0;
     $ret{'date_disabled_timestamp'} = 86400 * delete($ret{'epoch_disabled_days'}) + 0;
-    $ret{'date_disabled'} = $ret{'date_disabled_timestamp'} ? POSIX::strftime("%Y-%m-%d", localtime($ret{'date_disabled_timestamp'})) : undef;
+    $ret{'date_disabled'}           = $ret{'date_disabled_timestamp'} ? POSIX::strftime("%Y-%m-%d", localtime($ret{'date_disabled_timestamp'})) : undef;
     return R('OK', value => \%ret);
 }
 
@@ -553,7 +553,7 @@ sub sys_setfacl {
             }
 
             # apply the default ACL
-            @cmd = ('setfacl', '-d', '-m', join(',', @perms), $target);
+            @cmd   = ('setfacl', '-d', '-m', join(',', @perms), $target);
             $fnret = OVH::Bastion::execute(cmd => \@cmd, must_succeed => 1, noisy_stderr => 1);
             $fnret or return R('ERR_SETFACL_FAILED_FREEBSD', msg => "Couldn't set the prerequisite default ACL");
         }

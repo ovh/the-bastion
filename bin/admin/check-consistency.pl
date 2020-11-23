@@ -269,7 +269,7 @@ sub check_file_rights {
     chomp @out;
     my $lineno = -1;
     $expectedOutput = [sort @$expectedOutput];
-    @out = grep { /./ } sort @out;
+    @out            = grep { /./ } sort @out;
     foreach my $outLine (@out) {
         next if not $outLine;
         $lineno++;

@@ -287,13 +287,13 @@ $req->header('Accept-Encoding' => scalar HTTP::Message::decodable());
 $req->header('Authorization', 'Basic ' . encode_base64($user . ':' . $device_password, ''));
 undef $device_password;    # no longer needed
 
-$req->header('X-Bastion-Auth-Mode', $authmode);
-$req->header('X-Bastion-Ingress-Client-IP', $ENV{'REMOTE_ADDR'});
-$req->header('X-Bastion-Ingress-Client-Port', $ENV{'REMOTE_PORT'});
+$req->header('X-Bastion-Auth-Mode',                 $authmode);
+$req->header('X-Bastion-Ingress-Client-IP',         $ENV{'REMOTE_ADDR'});
+$req->header('X-Bastion-Ingress-Client-Port',       $ENV{'REMOTE_PORT'});
 $req->header('X-Bastion-Ingress-Client-User-Agent', $ENV{'HTTP_USER_AGENT'});
-$req->header('X-Bastion-Ingress-Account', $account);
-$req->header('X-Bastion-UniqID', $uniqid);
-$req->header('X-Bastion-Instance', Sys::Hostname::hostname());
+$req->header('X-Bastion-Ingress-Account',           $account);
+$req->header('X-Bastion-UniqID',                    $uniqid);
+$req->header('X-Bastion-Instance',                  Sys::Hostname::hostname());
 
 my $start_time = [Time::HiRes::gettimeofday()];
 
@@ -392,11 +392,11 @@ my @now = Time::HiRes::gettimeofday();
 my @t   = localtime($now[0]);
 
 my $headers_as_string = $res ? join("", $res->{'_headers'}->as_string("\n")) : '';
-my $logfile = sprintf("%s/%s.txt", $finaldir, POSIX::strftime("%F", @t));
-my $logline = sprintf(
-    "--- BASTION_REQUEST UNIQID=%s TIMESTAMP=%d.%06d DATE=%s ---\n%s\n".
-    "--- DEVICE_ANSWER UNIQID=%s TIMESTAMP=%d.%06d DATE=%s ---\n%s\n".
-    "--- END UNIQID=%s TIMESTAMP=%d.%06d DATE=%s ---\n\n",
+my $logfile           = sprintf("%s/%s.txt", $finaldir, POSIX::strftime("%F", @t));
+my $logline           = sprintf(
+    "--- BASTION_REQUEST UNIQID=%s TIMESTAMP=%d.%06d DATE=%s ---\n%s\n"
+      . "--- DEVICE_ANSWER UNIQID=%s TIMESTAMP=%d.%06d DATE=%s ---\n%s\n"
+      . "--- END UNIQID=%s TIMESTAMP=%d.%06d DATE=%s ---\n\n",
     $uniqid, $now[0], $now[1], POSIX::strftime("%Y/%m/%d.%H:%M:%S", @t), $req->as_string(),
     $uniqid, $now[0], $now[1], POSIX::strftime("%Y/%m/%d.%H:%M:%S", @t),
     ($res ? sprintf("%s %s\n%s\n%s", $res->protocol, $res->status_line, $headers_as_string, $res->decoded_content) : '(DEVICE TIMEOUT)'),
@@ -422,7 +422,7 @@ if ($res) {
     }
 }
 push @headers, ["X-Bastion-Local-Status" => ($res ? "200 OK" : "504 Device Timeout")];
-push @headers, ["X-Bastion-Remote-Status" => $res->code] if $res;
+push @headers, ["X-Bastion-Remote-Status" => $res->code]             if $res;
 push @headers, ["X-Bastion-Remote-Server" => $res->header('server')] if ($res && $res->header('server'));
 push @headers, ["X-Bastion-Egress-Timing" => sprintf("%d", $delay * 1_000_000)];
 push @headers, ["X-Bastion-Downgraded" => 1] if $downgraded;

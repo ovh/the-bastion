@@ -95,8 +95,8 @@ sub get_next_available_uid {
         last if not scalar(getpwuid($next));
         $next--;
     }
-    return R('OK', value => $next) if not scalar(getpwuid($next));
-    return R('ERR_UID_COLLISION', msg => "No available UID in the allowed range");
+    return R('OK',                value => $next) if not scalar(getpwuid($next));
+    return R('ERR_UID_COLLISION', msg   => "No available UID in the allowed range");
 }
 
 sub is_bastion_account_valid_and_existing {
