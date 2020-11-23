@@ -103,7 +103,7 @@ osh_debug("user -gatek or gatek");
 #>CODE
 my $msg;
 my $prefix = $remoteaccount ? "allowed_$remoteaccount" : "allowed";
-my $link = "/home/allowkeeper/$sysaccount/$prefix.ip.$shortGroup";
+my $link   = "/home/allowkeeper/$sysaccount/$prefix.ip.$shortGroup";
 if ($action eq 'del') {
     osh_debug("Going to remove symlink");
     if (-l $link || -e _) {

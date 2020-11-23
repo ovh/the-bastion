@@ -175,17 +175,17 @@ sub load_configuration {
 
     $C->{'interactiveModeTimeout'} = 15
       if (not defined $C->{'interactiveModeTimeout'} or $C->{'interactiveModeTimeout'} !~ /^\d+$/);
-    $C->{'syslogFacility'}    = 'local7'  if (not defined $C->{'syslogFacility'}    or $C->{'syslogFacility'} !~ /^\S+$/);
+    $C->{'syslogFacility'}    = 'local7'  if (not defined $C->{'syslogFacility'}    or $C->{'syslogFacility'}    !~ /^\S+$/);
     $C->{'syslogDescription'} = 'bastion' if (not defined $C->{'syslogDescription'} or $C->{'syslogDescription'} !~ /^\S+$/);
 
     $C->{'moshTimeoutNetwork'} = 86400 if (not defined $C->{'moshTimeoutNetwork'} or $C->{'moshTimeoutNetwork'} !~ /^\d+$/);
-    $C->{'moshTimeoutSignal'}  = 30    if (not defined $C->{'moshTimeoutSignal'}  or $C->{'moshTimeoutSignal'} !~ /^\d+$/);
+    $C->{'moshTimeoutSignal'}  = 30    if (not defined $C->{'moshTimeoutSignal'}  or $C->{'moshTimeoutSignal'}  !~ /^\d+$/);
     $C->{'moshCommandLine'}    = ""    if (not defined $C->{'moshCommandLine'});
 
     $C->{'ttyrecFilenameFormat'} = '%Y-%m-%d.%H-%M-%S.#usec#.&uniqid.ttyrec' if (not $C->{'ttyrecFilenameFormat'});
 
-    $C->{'idleLockTimeout'}       = 0 if (not defined $C->{'idleLockTimeout'}       or $C->{'idleLockTimeout'} !~ /^\d+$/);
-    $C->{'idleKillTimeout'}       = 0 if (not defined $C->{'idleKillTimeout'}       or $C->{'idleKillTimeout'} !~ /^\d+$/);
+    $C->{'idleLockTimeout'}       = 0 if (not defined $C->{'idleLockTimeout'}       or $C->{'idleLockTimeout'}       !~ /^\d+$/);
+    $C->{'idleKillTimeout'}       = 0 if (not defined $C->{'idleKillTimeout'}       or $C->{'idleKillTimeout'}       !~ /^\d+$/);
     $C->{'warnBeforeLockSeconds'} = 0 if (not defined $C->{'warnBeforeLockSeconds'} or $C->{'warnBeforeLockSeconds'} !~ /^\d+$/);
     $C->{'warnBeforeKillSeconds'} = 0 if (not defined $C->{'warnBeforeKillSeconds'} or $C->{'warnBeforeKillSeconds'} !~ /^\d+$/);
 
@@ -193,9 +193,9 @@ sub load_configuration {
         $C->{'accountMFAPolicy'} = 'enabled';
     }
     $C->{'MFAPasswordInactiveDays'} = -1 if (!defined $C->{'MFAPasswordInactiveDays'} || $C->{'MFAPasswordInactiveDays'} !~ /^-\d+$/);
-    $C->{'MFAPasswordMinDays'}      = 0  if (!defined $C->{'MFAPasswordMinDays'}      || $C->{'MFAPasswordMinDays'} !~ /^-?\d+$/);
-    $C->{'MFAPasswordMaxDays'}      = 90 if (!defined $C->{'MFAPasswordMaxDays'}      || $C->{'MFAPasswordMaxDays'} !~ /^-?\d+$/);
-    $C->{'MFAPasswordWarnDays'}     = 15 if (!defined $C->{'MFAPasswordWarnDays'}     || $C->{'MFAPasswordWarnDays'} !~ /^-?\d+$/);
+    $C->{'MFAPasswordMinDays'}      = 0  if (!defined $C->{'MFAPasswordMinDays'}      || $C->{'MFAPasswordMinDays'}      !~ /^-?\d+$/);
+    $C->{'MFAPasswordMaxDays'}      = 90 if (!defined $C->{'MFAPasswordMaxDays'}      || $C->{'MFAPasswordMaxDays'}      !~ /^-?\d+$/);
+    $C->{'MFAPasswordWarnDays'}     = 15 if (!defined $C->{'MFAPasswordWarnDays'}     || $C->{'MFAPasswordWarnDays'}     !~ /^-?\d+$/);
 
     # if kill timeout is lower than lock timeout, just unset lock timeout
     $C->{'idleLockTimeout'} = 0 if ($C->{'idleKillTimeout'} <= $C->{'idleLockTimeout'});
@@ -239,7 +239,7 @@ sub load_configuration {
     }
     $C->{'adminAccounts'} = [
         grep { OVH::Bastion::is_bastion_account_valid_and_existing(account => $_) }
-        map { s/[^a-zA-Z0-9_-]//g; $_ } @{$C->{'adminAccounts'}}
+        map  { s/[^a-zA-Z0-9_-]//g; $_ } @{$C->{'adminAccounts'}}
     ];
 
     $C->{'documentationURL'} ||= "https://ovh.github.io/the-bastion/";
@@ -302,7 +302,7 @@ sub account_config {
     if (!-d $rootdir) {
         return R('ERR_DIRECTORY_NOT_FOUND', msg => "Home directory of $account ($rootdir) doesn't exist");
     }
-    my $prefix = $remoteaccount ? "config_$remoteaccount" : "config";
+    my $prefix   = $remoteaccount ? "config_$remoteaccount" : "config";
     my $filename = "$rootdir/$prefix.$key";
 
     if ($delete) {
@@ -480,7 +480,7 @@ sub json_load {
     my %params = @_;
 
     # Check params
-    my $file = $params{'file'};
+    my $file     = $params{'file'};
     my $keywords = $params{'keywords'} || [];
 
     if (!$file) {

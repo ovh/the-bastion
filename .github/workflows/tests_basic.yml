@@ -5,7 +5,7 @@ on: [push, pull_request]
 jobs:
     test:
         name: perlcritic, perltidy & shellcheck
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-20.04
         steps:
         - uses: actions/checkout@v2
         - name: install prerequisites
@@ -17,4 +17,4 @@ jobs:
         - name: perl critic
           run: bin/dev/perl-critic.sh
         - name: perl tidy
-          run: bin/dev/perl-tidy.sh
+          run: bin/dev/perl-tidy.sh test

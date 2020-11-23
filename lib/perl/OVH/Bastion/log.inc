@@ -358,7 +358,7 @@ sub log_access_insert {
     $params{'timestamp'}     = $timestamp;
     $params{'timestampusec'} = $timestampusec;
 
-    my @localtime = localtime(time());
+    my @localtime      = localtime(time());
     my $sqlfile_global = sprintf("/home/logkeeper/global-log-%04d.sqlite", $localtime[5] + 1900);
     my $sqlfile_account =
       sprintf("/home/%s/%s-log-%04d%02d.sqlite", $params{'loghome'}, $remoteaccount || $loghome, $localtime[5] + 1900, $localtime[4] + 1);

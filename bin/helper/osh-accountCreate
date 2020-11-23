@@ -88,7 +88,7 @@ $fnret->is_ok and HEXIT('KO_ALREADY_EXISTING', msg => "The group $account alread
 
 if ($type eq 'realm') {
     $account = "realm_$account";
-    $fnret = OVH::Bastion::is_account_valid(account => $account, accountType => "realm");
+    $fnret   = OVH::Bastion::is_account_valid(account => $account, accountType => "realm");
     $fnret or HEXIT($fnret);
 
     $fnret = OVH::Bastion::is_account_existing(account => $account, accountType => "realm");
@@ -299,6 +299,7 @@ if (ref $config->{'accountCreateDefaultPersonalAccesses'} eq 'ARRAY' && $type eq
         push @command, '--action', 'add';
         push @command, '--account', $account;
         push @command, '--ip', $ip;
+
         if ($user) {
             push @command, '--user', ($user eq 'ACCOUNT' ? $account : $user);
         }

@@ -39,7 +39,7 @@ if (!$wantedRealm) {
 
 my $pristineRealm = $wantedRealm;
 $wantedRealm = "realm_$wantedRealm";
-$fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $wantedRealm, accountType => "realm");
+$fnret       = OVH::Bastion::is_bastion_account_valid_and_existing(account => $wantedRealm, accountType => "realm");
 $fnret or osh_exit $fnret;
 $wantedRealm = $fnret->value->{'account'};    # untaint
 

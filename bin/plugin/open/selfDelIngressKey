@@ -48,7 +48,7 @@ my @validKeys;
 
 foreach my $key (@{$fnret->value || []}) {
     OVH::Bastion::print_public_key(key => $key, id => $key->{'index'}, err => $key->{'err'});
-    $allowedLines{$key->{'index'}} = 1;
+    $allowedLines{$key->{'index'}}              = 1;
     $allowedFingerprints{$key->{'fingerprint'}} = $key->{'index'} if (OVH::Bastion::is_valid_fingerprint(fingerprint => $key->{'fingerprint'}));
     push @validKeys, $key->{'index'} if $key->{'err'} eq 'OK';
 }
