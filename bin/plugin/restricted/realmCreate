@@ -20,7 +20,7 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
     helptext => <<'EOF',
 Declare and create a new trusted realm
 
-Usage: --osh SCRIPT_NAME --realm REALM [OPTIONS]
+Usage: --osh SCRIPT_NAME --realm REALM --from IP1,IP2 [OPTIONS]
 
   --realm   REALM   Realm name to create
   --comment STRING  An optional comment when creating the realm. Double-quote if you're under a shell.
