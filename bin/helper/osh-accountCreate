@@ -9,6 +9,7 @@
 use common::sense;
 use Getopt::Long;
 use Sys::Hostname ();
+use JSON;
 
 use File::Basename;
 use lib dirname(__FILE__) . '/../../lib/perl';
@@ -310,20 +311,22 @@ if (ref $config->{'accountCreateDefaultPersonalAccesses'} eq 'ARRAY' && $type eq
     }
 }
 
-if (not defined $comment) {
-    $comment = '(no_comment_provided)';
-}
+# store some metadata
+my %metadata = (
+    by => $self,
+    bastion_version => $OVH::Bastion::VERSION,
+    time => "".localtime(),
+    timestamp => time(),
+    comment => $comment,
+);
+$fnret = OVH::Bastion::account_config(account => $account, key => "creation_info", value => encode_json(\%metadata));
+$fnret or osh_warn("Couldn't set creation_info account metadata");
+warn_syslog("While creating account '$account', couldn't set creation_info metadata: ".$fnret->msg);
 
-$comment = "CREATED_BY=$self\nBASTION_VERSION=" . $OVH::Bastion::VERSION . "\nCREATION_TIME=" . localtime() . "\nCREATION_TIMESTAMP=" . time() . "\nCOMMENT=" . $comment . "\n";
-
-if (open(my $fh_comment, '>>', $homedir . '/accountCreate.comment')) {
-    print $fh_comment $comment;
-    close $fh_comment;
-    chmod 0644, $homedir . '/accountCreate.comment';
-}
-
+# also store the bare creation timestamp by itself, it's used by osh.pl for TTL accounts
 $fnret = OVH::Bastion::account_config(account => $account, key => "creation_timestamp", value => time());
 if (!$fnret) {
+    warn_syslog("While creating account '$account', couldn't store creaation timestamp: ".$fnret->msg);
     osh_warn("Couldn't store creation timestamp (" . $fnret->msg . "), continuing anyway");
 }
 
@@ -332,7 +335,8 @@ if ($ttl) {
     osh_info sprintf("Setting this account TTL (will expire in %s)", $fnret->value->{'human'});
     $fnret = OVH::Bastion::account_config(account => $account, key => "account_ttl", value => $ttl);
     if (!$fnret) {
-        osh_warn("Couldn't store account TTL (" . $fnret->msg . "), this account will NOT expire!! Continuing anyway");
+        osh_warn("Couldn't store account TTL (" . $fnret->msg . "), this account will NOT expire, continuing anyway");
+        warn_syslog("Couldn't store account TTL (" . $fnret->msg . ") while creating account '$account', this account will NOT expire, continuing anyway");
     }
 }
 
@@ -340,6 +344,7 @@ if ($alwaysActive || $type eq 'realm') {
     $fnret = OVH::Bastion::account_config(account => $account, key => OVH::Bastion::OPT_ACCOUNT_ALWAYS_ACTIVE, value => "yes", public => 1);
     if (!$fnret) {
         osh_warn("Couldn't store always_active flag (" . $fnret->msg . "), continuing anyway");
+        warn_syslog("Couldn't store always_active flag (" . $fnret->msg . ") while creating account '$account', continuing anyway");
     }
 }
 
@@ -409,7 +414,7 @@ if ($type eq 'realm') {
 }
 else {
     osh_info "==> alias $bastionName='$bastionCommand'";
-    osh_info "To test his access, ask this user to set the above alias in his .bash_aliases, then run `$bastionName --osh info'";
+    osh_info "To test his access, ask this user to set the above alias in their .bash_aliases, then run `$bastionName --osh info'";
 }
 
 OVH::Bastion::syslogFormatted(
