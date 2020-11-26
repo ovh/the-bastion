@@ -84,8 +84,8 @@ do
                 test -e "$grouphome/allowed.ip" && echo "$grouphome/allowed.ip"
             done
             # all authorized_keys files of bastion accounts:
-            for accountssh in $(getent passwd | grep ":$basedir/bin/shell/osh.pl\$" | cut -d: -f1 | sed 's=^=/home/=;s=$=/.ssh/='); do
-                find "$accountssh" -mindepth 1 -maxdepth 1 -name 'authorized_keys*' ! -name "*.backup*" -type f -print
+            for accounthome in $(getent passwd | grep ":$basedir/bin/shell/osh.pl\$" | cut -d: -f6); do
+                test -f "$accounthome/$AK_FILE" && echo "$accounthome/$AK_FILE"
             done
         } | head -"$maxfiles" | timeout "$timeout" inotifywait -e close_write -e moved_to -e create -e delete -e delete_self --quiet --recursive --csv --fromfile - ; ret=$?
         if [ "$ret" = 124 ] ; then

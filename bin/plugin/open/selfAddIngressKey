@@ -42,7 +42,7 @@ if ($fnret && $fnret->value eq 'yes') {
     osh_exit R('ERR_ACCESS_DENIED', msg => "PIV-only policy is enabled for your account, you can't add new keys this way");
 }
 
-my $allowedKeyFile = $HOME . '/.ssh/authorized_keys2';
+my $allowedKeyFile = $HOME . '/' . OVH::Bastion::AK_FILE;
 
 if (not defined $pubKey) {
     $fnret = OVH::Bastion::get_supported_ssh_algorithms_list(way => 'ingress');

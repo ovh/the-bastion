@@ -24,7 +24,7 @@ EOF
 
 my $fnret;
 
-$fnret = OVH::Bastion::get_authorized_keys_from_file(file => "$HOME/.ssh/authorized_keys2", includeInvalid => 1);
+$fnret = OVH::Bastion::get_authorized_keys_from_file(file => $HOME . '/' . OVH::Bastion::AK_FILE, includeInvalid => 1);
 $fnret or osh_exit $fnret;
 
 my @result;

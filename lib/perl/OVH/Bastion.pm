@@ -106,6 +106,10 @@ use constant {
     TOTP_FILENAME => '.otp',
     TOTP_BASEDIR  => '/var/otp',
 
+    # authorized_keys file, relative to the user's HOME directory.
+    # if you change this, also change it in lib/shell/functions.inc
+    AK_FILE => '.ssh/authorized_keys2',
+
     OPT_ACCOUNT_INGRESS_PIV_POLICY => 'ingress_piv_policy',
     OPT_ACCOUNT_INGRESS_PIV_GRACE  => 'ingress_piv_grace',
     OPT_ACCOUNT_ALWAYS_ACTIVE      => 'always_active',

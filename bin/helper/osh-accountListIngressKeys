@@ -80,7 +80,7 @@ else {
 #<PARAMS:ACCOUNT
 
 my @keys;
-foreach my $file ("$accounthome/.ssh/authorized_keys2", "$accounthome/.ssh/authorized_keys") {
+foreach my $file ($accounthome . '/' . OVH::Bastion::AK_FILE) {
     $fnret = OVH::Bastion::get_authorized_keys_from_file(file => $file);
     push @keys, @{$fnret->value} if ($fnret && $fnret->value);
 }
