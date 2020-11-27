@@ -645,14 +645,14 @@ if [ "$nothing" = 0 ]; then
     fi
 
     # fix bad authorized_keys2 contents created in some cases before v2.30.00
-    action_doing "Fixing potential buggy keys in authorized_keys2 contents"
+    action_doing "Fixing potential buggy keys in $AK_FILE contents"
     at_least_one_changed=0
     for account in $(getent passwd | grep ":$basedir/bin/shell/osh.pl$" | cut -d: -f1); do
-        test -f "/home/$account/.ssh/authorized_keys2" || continue
-        grep -Eq '^from="[^ ]+"(ssh-|ecdsa-)' "/home/$account/.ssh/authorized_keys2" || continue
+        test -f "/home/$account/$AK_FILE" || continue
+        grep -Eq '^from="[^ ]+"(ssh-|ecdsa-)' "/home/$account/$AK_FILE" || continue
         at_least_one_changed=1
         action_detail "... $account"
-        sed_compat 's/^(from="[^ ]+")(ssh-|ecdsa-)/\1 \2/g' "/home/$account/.ssh/authorized_keys2"
+        sed_compat 's/^(from="[^ ]+")(ssh-|ecdsa-)/\1 \2/g' "/home/$account/$AK_FILE"
     done
     if [ "$at_least_one_changed" = 1 ]; then
         action_done

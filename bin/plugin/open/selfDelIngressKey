@@ -38,7 +38,7 @@ if ($fingerprintToDelete and defined $lineNumberToDelete) {
     osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "You can't specify a line to delete AND a fingerprint to delete at the same time";
 }
 
-my $allowedKeyFile = "$HOME/.ssh/authorized_keys2";
+my $allowedKeyFile = $HOME . '/' . OVH::Bastion::AK_FILE;
 $fnret = OVH::Bastion::get_authorized_keys_from_file(file => $allowedKeyFile, includeInvalid => 1);
 $fnret or osh_exit $fnret;
 

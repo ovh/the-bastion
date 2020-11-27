@@ -4,6 +4,11 @@
 # shellcheck source=lib/shell/colors.inc disable=SC2128
 . "$(dirname "$BASH_SOURCE")"/colors.inc
 
+# authorized_keys file, relative to the user's HOME directory.
+# if you change this, also change it in lib/perl/OVH/Bastion.pm
+# shellcheck disable=SC2034
+AK_FILE=".ssh/authorized_keys2"
+
 OS_FAMILY=$(uname -s)
 LINUX_DISTRO=unknown
 DISTRO_VERSION=''

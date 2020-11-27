@@ -217,11 +217,12 @@ mkdir $homedir . "/.ssh" if (!-d "$homedir/.ssh");
 chmod 0750, $homedir . "/.ssh";
 chown $uid, $uid, "$homedir/.ssh";
 
-if (!OVH::Bastion::touch_file("$homedir/.ssh/authorized_keys2")) {
+my $akfile = $homedir . '/' . OVH::Bastion::AK_FILE;
+if (!OVH::Bastion::touch_file($akfile)) {
     HEXIT('ERR_CANNOT_CREATE_FILE', msg => "Failed to create authorized_keys file");
 }
-chmod 0640, $homedir . "/.ssh/authorized_keys2";
-chown $uid, $uid, "$homedir/.ssh/authorized_keys2";
+chmod 0640, $akfile;
+chown $uid, $uid, $akfile;
 
 osh_info "Creating tty group of account...";
 $fnret = OVH::Bastion::sys_groupadd(noisy_stderr => 1, group => $ttygroup, gid => $ttygid);
@@ -349,16 +350,15 @@ osh_debug('user keyreader added to group');
 my $finalPrefix = $realmFrom ? sprintf('from="%s"', $realmFrom) : $from;
 $finalPrefix .= ' ' if $finalPrefix;
 
-osh_info "Adding provided public key in authorized_keys...";
-my $allowedKeyFile = $homedir . '/.ssh/authorized_keys2';
-if (open(my $fh_keys, '>>', $allowedKeyFile)) {
+osh_info "Adding provided public key in authorized_keys file...";
+if (open(my $fh_keys, '>>', $akfile)) {
     foreach my $key (@vettedKeys) {
         print $fh_keys $finalPrefix . $key . "\n";
     }
     close($fh_keys);
 }
 else {
-    HEXIT("ERR_CANNOT_ADD_KEY", msg => "Couldn't open $allowedKeyFile when trying to add provided public key");
+    HEXIT("ERR_CANNOT_ADD_KEY", msg => "Couldn't open $akfile when trying to add provided public key");
 }
 
 # push this flag to prevent ssh/telnet usage
@@ -369,7 +369,7 @@ if ($oshOnly) {
 
 # chown to root so user can no longer touch it
 if ($immutableKey) {
-    chown 0, -1, $allowedKeyFile;
+    chown 0, -1, $akfile;
 }
 
 osh_info "Generating account personal bastion key...";

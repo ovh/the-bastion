@@ -765,7 +765,7 @@ sub ssh_ingress_keys_piv_apply {
     $account = $fnret->value->{'account'};
     my $dir = $fnret->value->{'dir'};
 
-    $fnret = OVH::Bastion::get_authorized_keys_from_file(account => $account, file => "$dir/.ssh/authorized_keys2", includePivDisabled => 1);
+    $fnret = OVH::Bastion::get_authorized_keys_from_file(account => $account, file => $dir . '/' . OVH::Bastion::AK_FILE(), includePivDisabled => 1);
     $fnret or return $fnret;
 
     my $keys = $fnret->value();
@@ -808,7 +808,7 @@ sub ssh_ingress_keys_piv_apply {
         return R('ERR_INVALID_PARAMETER', msg => "Argument 'action' must be either 'enable' or 'disable'");
     }
 
-    $fnret = OVH::Bastion::put_authorized_keys_to_file(account => $account, file => "$dir/.ssh/authorized_keys2", data => \@keysToWrite);
+    $fnret = OVH::Bastion::put_authorized_keys_to_file(account => $account, file => $dir . '/' . OVH::Bastion::AK_FILE(), data => \@keysToWrite);
     $fnret or return $fnret;
 
     OVH::Bastion::syslogFormatted(
