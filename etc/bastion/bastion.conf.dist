@@ -219,10 +219,10 @@
 # DEFAULT: 90
 "MFAPasswordMaxDays": 90,
 #
-# MFAPasswordMaxDays (int >= 0)
+# MFAPasswordWarnDays (int >= 0)
 #    DESC: For the PAM UNIX password MFA, sets the number of days before expiration on which the user will be warned to change his password (see `chage -W')
 # DEFAULT: 15
-"MFAPasswordMaxDays": 15,
+"MFAPasswordWarnDays": 15,
 #
 # MFAPasswordInactiveDays (int >= -1)
 #    DESC: For the PAM UNIX password MFA, the account will be blocked after the password is expired (and not renewed) for this amount of days (see `chage -E'). -1 disables this feature. Note that this is different from the accountMaxInactiveDays option above, that is handled by the bastion software itself instead of PAM
