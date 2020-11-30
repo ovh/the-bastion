@@ -4,6 +4,19 @@ Basic Installation
 
 If you are just upgrading from a previous version, please read :doc:`upgrading<upgrading>` instead.
 
+0. Got Puppet?
+==============
+
+We published a Puppet module to handle The Bastion configuration and prerequisites. The GitHub repo is `here <https://github.com/ovh/puppet-thebastion>`_ and our module has been published to `the Puppet forge <https://forge.puppet.com/modules/goldenkiwi/thebastion>`_. Of course, its usage is completely optional, but if you choose to use it, some of the below steps will be done by Puppet. Hence, you might want to only consider the following steps:
+
+- :ref:`install-basic_operating-system`
+- :ref:`install-basic_get-the-code`
+- :ref:`install-basic_encrypt-home`
+- (Run Puppet)
+- :ref:`install-basic_first-account`
+
+.. _install-basic_operating-system:
+
 1. Operating system
 ===================
 
@@ -15,19 +28,19 @@ The following Linux distros are tested with each release, but as this is a secur
 
 - Debian 10 (Buster), 9 (Stretch), 8 (Jessie)
 - RHEL/CentOS 8, 7
-- Ubuntu LTS 20.04, 18.04, 16.04, 14.04*
-- OpenSUSE Leap 15.2*, 15.1*, 15.0*
+- Ubuntu LTS 20.04, 18.04, 16.04, 14.04\*
+- OpenSUSE Leap 15.2\*, 15.1\*, 15.0\*
 
-\*: Note that these versions have no MFA support.
+\*: Note that these versions have no out-of-the-box MFA support, as they lack packaged versions of ``pamtester``, ``pam-google-authenticator``, or both. Of course, you may compile those yourself.
+Any other so-called `modern` Linux version are not tested with each release, but should work with no or minor adjustments.
 
-If you're unsure or don't care, Debian is advised, as this is what we use in production at OVHcloud, hence is the most field-tested.
-Any other so-called "modern" Linux distro should work with no or minor adjustments.
+The following OS are also tested with each release:
 
-The code is also known to work correctly under:
+- FreeBSD/HardenedBSD 12.1\*\*
 
-- FreeBSD 10+ / HardenedBSD [no MFA support]
+\*\*: Note that these have partial MFA support, due to their reduced set of available ``pam`` plugins. Support for either an additional password or TOTP factor can be configured, but not both at the same time. The code is actually known to work on FreeBSD/HardenedBSD 10+, but it's only regularly tested under 12.1.
 
-Other BSD variants partially work, but are unsupported and discouraged as they have a severe limitation over the maximum number of supplementary groups (causing problems for group membership and restricted commands checks), no filesystem-level ACL support and missing MFA:
+Other BSD variants partially work but are unsupported and discouraged as they have a severe limitation over the maximum number of supplementary groups (causing problems for group membership and restricted commands checks), no filesystem-level ACL support and missing MFA:
 
 - OpenBSD 5.4+
 - NetBSD 7+
@@ -36,13 +49,15 @@ In any case, you are expected to install this on a properly secured machine (inc
 
 Great care has been taken to write secure, tested code, but of course this is worthless if your machine is a hacker highway. Ensuring that all the layers below the bastion code (the operating system and the hardware it's running on) is your job.
 
+.. _install-basic_get-the-code:
+
 2. Get the code
 ===============
 
 The bastion code usually lives under ``/opt/bastion``.
 You can either use ``git clone`` directly, or get the tarball of the latest release.
 
-- Using git:
+- Using :command:`git`:
 
 .. code-block:: shell
 
@@ -60,6 +75,8 @@ Get the tarball of the latest release, which can be found `here <https://github.
 
 The code supports being hosted somewhere else on the filesystem hierarchy, but this is discouraged as you might need to adjust a lot of configuration files (notably sudoers.d, cron.d, init.d) that needs an absolute path.
 You should end up with directories such as ``bin``, ``lib``, etc. directly under ``/opt/bastion``.
+
+.. _install-basic_install-packages:
 
 3. Install the needed packages
 ==============================
@@ -84,6 +101,8 @@ Note that ``-t`` makes the assumption that you have compiled and made available 
 
 This will detect your distro, then download and either install the ``.deb`` or ``.rpm`` package for `ovh-ttyrec <https://github.com/ovh/ovh-ttyrec>`_. If your distro doesn't handle those package types, it'll fallback to installing precompiled static binaries. Of course you can package it yourself and make it available to your own internal repositories instead of installing it this way.
 
+.. _install-basic_encrypt-home:
+
 4. Encrypt /home
 ================
 
@@ -102,6 +121,8 @@ If you get a cryptsetup error, you might need to add ``--type luks1`` to the ``c
 .. warning::
 
     Once you have setup encryption, **do not forget** to ensure that the keys backup script has encryption enabled, otherwise the backups will be stored unencrypted in ``/root/backups``, which would make your ``/home`` encryption moot. This is not covered here because you can do it later, just don't forget it: it's in the :doc:`advanced installation<advanced>` section.
+
+.. _install-basic_setup:
 
 5. Setup bastion and system configuration
 =========================================
@@ -135,6 +156,8 @@ There are other templates available in the same directory, for the other support
 
     /opt/bastion/bin/admin/install --help
 
+.. _install-basic_review-config:
+
 6. Review the configuration
 ===========================
 
@@ -144,6 +167,8 @@ Base configuration files have been copied, you should review the main configurat
 
     vim /etc/bastion/bastion.conf
 
+.. _install-basic_perl-check:
+
 7. Check that the code works on your machine
 ============================================
 
@@ -152,6 +177,8 @@ This script will verify that all required modules are installed:
 .. code-block:: shell
 
     /opt/bastion/bin/dev/perl-check.sh
+
+.. _install-basic_first-account:
 
 8. Manually create our first bastion account
 ============================================

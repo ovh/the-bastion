@@ -146,7 +146,14 @@ Even with the most conservative, precautionous and paranoid coding process, code
 
 ## Related
 
-- [ovh-ttyrec](https://github.com/ovh/ovh-ttyrec) - An enhanced but compatible version of ttyrec, a terminal (tty) recorder
+### Dependencies
+
+- [ovh-ttyrec](https://github.com/ovh/ovh-ttyrec) - an enhanced but compatible version of ttyrec, a terminal (tty) recorder
+
+### Optional tools
+
+- [yubico-piv-checker](https://github.com/ovh/yubico-piv-checker) - a self-contained go binary to check the validity of PIV keys and certificates. Optional, to enable The Bastion PIV-aware functionalities.
+- [puppet-thebastion](https://forge.puppet.com/modules/goldenkiwi/thebastion) ([GitHub](https://github.com/ovh/puppet-thebastion)) - a Puppet module to automate and maintain the configuration of The Bastion machines
 
 ## License
 
