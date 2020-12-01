@@ -10,7 +10,7 @@ use OVH::Bastion::Plugin qw( :DEFAULT help );
 
 my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,
-    header  => "adding private access to a server on your account",
+    header  => "adding personal access to a server on your account",
     options => {
         "user-any"    => \my $userAny,
         "port-any"    => \my $portAny,
@@ -22,7 +22,7 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
         "comment=s"   => \my $comment,
     },
     helptext => <<'EOF',
-Remove a personal server access from an account
+Add a personal server access on your account
 
 Usage: --osh SCRIPT_NAME --host HOST [OPTIONS]
 
