@@ -20,9 +20,19 @@ sub interactive {
     my $interactiveModeTimeout = OVH::Bastion::config('interactiveModeTimeout')->value() || 0;
     my $slaveOrMaster          = (OVH::Bastion::config('readOnlySlaveMode')->value() ? 'slave' : 'master');
 
-    my $term = Term::ReadLine->new('Bastion Interactive');
-    my $prompt =
-"\001\033[0m\033[33m$self\033[1;35m@\033[32m\002$bastionName\001\033[1;35m\002(\001\033[0m\033[36m\002$slaveOrMaster\001\033[1;35m\002)\001\033[0m\033[32m\002>\001\033[0m\002 ";
+    my $term   = Term::ReadLine->new('Bastion Interactive');
+    my $prompt = ""
+      . "\001\033[0m\033[33m\002"
+      . $self
+      . "\001\033[1;35m\002" . "@"
+      . "\001\033[32m\002"
+      . $bastionName
+      . "\001\033[1;35m\002" . "("
+      . "\001\033[0m\033[36m\002"
+      . $slaveOrMaster
+      . "\001\033[1;35m\002" . ")"
+      . "\001\033[0m\033[32m\002" . ">"
+      . "\001\033[0m\002" . " ";
 
     my $prompt_non_readline = $prompt;
     $prompt_non_readline =~ s=\001|\002==g;
