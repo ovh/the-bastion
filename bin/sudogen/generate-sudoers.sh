@@ -46,8 +46,8 @@ generate_account_sudoers()
         do
             # if $template has two dots, then it's of the form XXX-name.$os.sudoers,
             # in that case we only include this template if $os is our current OS
-            if [ "$(echo "$template" | cut -d. -f3)" = "sudoers" ]; then
-                if [ "$(echo "$template" | cut -d. -f2 | tr '[:upper:]' '[:lower:]')" != "$(echo "$OS_FAMILY" | tr '[:upper:]' '[:lower:]')" ]; then
+            if [ "$(basename "$template" | cut -d. -f3)" = "sudoers" ]; then
+                if [ "$(basename "$template" | cut -d. -f2 | tr '[:upper:]' '[:lower:]')" != "$(echo "$OS_FAMILY" | tr '[:upper:]' '[:lower:]')" ]; then
                     # not the same OS, skip it
                     continue
                 fi
