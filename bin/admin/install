@@ -536,10 +536,10 @@ if [ "$nothing" = 0 ]; then
     action_done
 
     # regenerate all group sudoers files
-    "$basedir/bin/sudogen/generate-sudoers.sh" group
+    "$basedir/bin/sudogen/generate-sudoers.sh" create group
 
     # regenerate all accounts sudoers files
-    "$basedir/bin/sudogen/generate-sudoers.sh" account
+    "$basedir/bin/sudogen/generate-sudoers.sh" create account
 
     # create the bastionsync account (needed for master/slave)
     action_doing "Creating the bastionsync account"

@@ -261,13 +261,7 @@ foreach my $gr ("$group-owner", "$group-gatekeeper", "$group-aclkeeper", "osh-wh
 
 # allowed to sudo for the group
 osh_info("Configuring sudoers for this group");
-my $sudoers_dir = OVH::Bastion::sys_getsudoersfolder();
-
-if (-e "$sudoers_dir/osh-group-$group") {
-    osh_debug "sudoers already in place, but overwriting it";
-}
-
-$fnret = OVH::Bastion::execute(cmd => [$OVH::Bastion::BASEPATH . '/bin/sudogen/generate-sudoers.sh', 'group', $group], must_succeed => 1, noisy_stdout => 1);
+$fnret = OVH::Bastion::execute(cmd => [$OVH::Bastion::BASEPATH . '/bin/sudogen/generate-sudoers.sh', 'create', 'group', $group], must_succeed => 1, noisy_stdout => 1);
 $fnret or HEXIT('ERR_CANNOT_CREATE_SUDOERS', msg => "An error occurred while creating sudoers for this group");
 
 OVH::Bastion::syslogFormatted(
