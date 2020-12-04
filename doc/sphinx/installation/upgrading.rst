@@ -24,6 +24,11 @@ Note that if you're using an infrastructure automation tool such as Puppet, Ansi
 Version-specific upgrade instructions
 =====================================
 
+v3.01.01
+********
+
+No specific upgrade instructions.
+
 v3.01.00
 ********
 
