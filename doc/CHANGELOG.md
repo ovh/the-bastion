@@ -1,3 +1,12 @@
+## v3.01.01 - 2020/12/04
+- fix: interactive mode: mark non-printable chars as such to avoid readline quirks
+- fix: osh-encrypt-rsync: remove 'logfile' as mandatory parameter
+- fix: typo in MFAPasswordWarnDays parameter in bastion.conf.dist
+- enh: interactive mode: better autocompletion for accountCreate and adminSudo
+- enh: allow dot in group name as it is allowed in account, and adjust sudogen accordingly
+- doc: add information about puppet-thebastion and yubico-piv-checker + some adjustments
+- chore: tests: fail the tests when code is not tidy
+
 ## v3.01.00 - 2020/11/20
 - feat: add FreeBSD 12.1 to automated tests, and multiple fixes to get back proper FreeBSD compatibility/experience
 - feat: partial MFA support for FreeBSD

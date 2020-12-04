@@ -68,34 +68,40 @@ Also don't forget to customize your `bastion.conf` file, which can be found in `
 
 ## Compatibility
 
-Linux distros below are tested with each release, but as this is a security product, you are *warmly* advised to run it on the latest up-to-date stable version of your favorite OS:
+### Supported OS for installation
+
+Linux distros below are tested with each release, but as this is a security product, you are **warmly** advised to run it on the latest up-to-date stable version of your favorite OS:
 
 - Debian 10 (Buster), 9 (Stretch), 8 (Jessie)
 - RHEL/CentOS 8, 7
-- Ubuntu LTS 20.04, 18.04, 16.04, 14.04*
-- OpenSUSE Leap 15.2*, 15.1*, 15.0*
+- Ubuntu LTS 20.04, 18.04, 16.04, 14.04\*
+- OpenSUSE Leap 15.2\*, 15.1\*, 15.0\*
 
-*: Note that these versions have no out-of-the-box MFA support, as they lack packaged versions of `pamtester`, `pam-google-authenticator`, or both. Of course, you may compile those yourself.
+\*: Note that these versions have no out-of-the-box MFA support, as they lack packaged versions of `pamtester`, `pam-google-authenticator`, or both. Of course, you may compile those yourself.
 Any other so-called "modern" Linux version are not tested with each release, but should work with no or minor adjustments.
 
 The following OS are also tested with each release:
 
-- FreeBSD/HardenedBSD 12.1**
+- FreeBSD/HardenedBSD 12.1\*\*
 
-**: Note that these have partial MFA support, due to their reduced set of available `pam` plugins. Support for either an additional password or TOTP factor can be configured, but not both at the same time. The code is actually known to work on FreeBSD/HardenedBSD 10+, but it's only regularly tested under 12.1.
+\*\*: Note that these have partial MFA support, due to their reduced set of available `pam` plugins. Support for either an additional password or TOTP factor can be configured, but not both at the same time. The code is actually known to work on FreeBSD/HardenedBSD 10+, but it's only regularly tested under 12.1.
 
 Other BSD variants partially work but are unsupported and discouraged as they have a severe limitation over the maximum number of supplementary groups (causing problems for group membership and restricted commands checks), no filesystem-level ACL support and missing MFA:
 
 - OpenBSD 5.4+
 - NetBSD 7+
 
-## Reliability
+### Zero assumption on your environment
 
-When hell is breaking loose on all your infrastructures and/or your network, bastions still need to be the last component standing because you need them to access the rest of your infrastructure... to be able to actually fix the problem. Hence reliability is key.
+Nothing fancy is needed either on the ingress or the egress side of The Bastion to make it work.
+
+In other words, only your good old `ssh` client is needed to connect through it, and on the other side, any standard `sshd` server will do the trick. This includes, for example, network devices on which you may not have the possibility to install any custom software.
+
+## Reliability
 
 * The KISS principle is used where possible for design and code: less complicated code means more auditability and less bugs
 * Only a few well-known libraries are used, less third party code means a tinier attack surface
-* The bastion is engineered to be self-sufficient: less dependencies such as databases, other daemons, or other machines, statistically means less downtime
+* The bastion is engineered to be self-sufficient: no dependencies such as databases, other daemons, other machines, or third-party cloud services, statistically means less downtime
 * High availability can be setup so that multiple bastion instances form a cluster of several instances, with any instance usable at all times (active/active scheme)
 
 ## Code quality
@@ -134,6 +140,8 @@ Even with the most conservative, precautionous and paranoid coding process, code
     - Perl tainted mode (`-T`) is used for all code running under `sudo`, preventing any user-input to interfere with the logic, by halting execution immediately
     - Code running under `sudo` doesn't trust its caller and re-checks every input
     - Communication between unprivileged and privileged-code are done using JSON
+
+- A protocol break is operated between the ingress and the egress side, rendering most protocol-based vulnerabilities ineffective
 
 ## Auditability
 
