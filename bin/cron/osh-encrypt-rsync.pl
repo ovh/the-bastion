@@ -394,7 +394,11 @@ sub main {
 
     # ensure the various config files defined all the keywords we need
     foreach my $keyword (
-        qw{ logfile signing_key signing_key_passphrase recipients encrypt_and_move_to_directory encrypt_and_move_delay_days rsync_destination rsync_delay_before_remove_days })
+        qw{
+        signing_key signing_key_passphrase recipients encrypt_and_move_to_directory
+        encrypt_and_move_delay_days rsync_destination rsync_delay_before_remove_days
+        }
+      )
     {
         next if defined $config{$keyword};
         _err "Missing mandatory configuration item '$keyword', aborting";
