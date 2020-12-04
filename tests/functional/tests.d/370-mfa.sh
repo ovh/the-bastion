@@ -288,7 +288,7 @@ testsuite_mfa()
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (OTP).'
         contain 'Your password expires on'
-        contain 'in 14 days'
+        contain 'in 89 days'
         contain REGEX 'Password:|Password for'
         contain 'Verification code:'
         nocontain 'JSON_OUTPUT'

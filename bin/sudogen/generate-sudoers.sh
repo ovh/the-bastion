@@ -7,34 +7,48 @@ basedir=$(readlink -f "$(dirname "$0")"/../..)
 # shellcheck source=lib/shell/functions.inc
 . "$basedir"/lib/shell/functions.inc
 
-type="$1"
-name="$2"
+action="$1"
+type="$2"
+name="$3"
 
 die_usage() {
-    echo "Usage: $0 <account|group> [name]" >&2
+    echo "Usage: $0 <create|delete> <account|group> [name]" >&2
     exit 1
 }
 
-generate_account_sudoers()
+manage_account_sudoers()
 {
-    account="$1"
+    todo="$1"
+    account="$2"
     if ! getent passwd "$account" | grep -q ":$basedir/bin/shell/osh.pl$"; then
         action_error "$account is not a bastion account"
         return 1
     fi
-    dst="$SUDOERS_DIR/osh-account-$account"
-    if [ -e "$dst" ]; then
-        action_detail "... overwriting $dst"
-    else
-        action_detail "... generating $dst"
-    fi
-    # normalized account only contain [A-Z0-9_], case sensitive
+
+    # for accounts containing a ".", we need to do a little transformation
+    # as files containing a dot are ignored by sudo
     normalized_account=$(sed -re 's/[^A-Z0-9_]/_/gi' <<< "$account")
     # as we're reducing the amount of possible chars in normalized_account
     # we could have collisions: use MD5 to generate a uniq suffix
     account_suffix=$(md5sum_compat - <<< "$account" | cut -c1-6)
     normalized_account="${normalized_account}_${account_suffix}"
-    # lowercase is prohibited
+    dst="$SUDOERS_DIR/osh-account-$normalized_account"
+
+    if [ "$todo" = delete ]; then
+        action_detail "... deleting $dst"
+        rm -f "$dst"
+        return $?
+    fi
+
+    # or create
+    if [ -e "$dst" ]; then
+        action_detail "... overwriting $dst"
+    else
+        action_detail "... generating $dst"
+    fi
+
+    # within the sudoers file, for variables, lowercase is prohibited,
+    # names can only contain [A-Z0-9_], case sensitive, so we got a step further
     normalized_account=$(tr '[:lower:]' '[:upper:]' <<< "$normalized_account")
     # to avoid race conditions between this generation and master/slave sync,
     # first prepare our file as a .tmp (sudo ignores files containing a '.')
@@ -42,12 +56,13 @@ generate_account_sudoers()
     chmod 0440 "${dst}.tmp"
     {
         echo "# generated from install script"
+        echo "# ACCOUNTNAME=$account"
         for template in $(find "$basedir/etc/sudoers.account.template.d/" -type f -name "*.sudoers" | sort)
         do
             # if $template has two dots, then it's of the form XXX-name.$os.sudoers,
             # in that case we only include this template if $os is our current OS
-            if [ "$(echo "$template" | cut -d. -f3)" = "sudoers" ]; then
-                if [ "$(echo "$template" | cut -d. -f2 | tr '[:upper:]' '[:lower:]')" != "$(echo "$OS_FAMILY" | tr '[:upper:]' '[:lower:]')" ]; then
+            if [ "$(basename "$template" | cut -d. -f3)" = "sudoers" ]; then
+                if [ "$(basename "$template" | cut -d. -f2 | tr '[:upper:]' '[:lower:]')" != "$(echo "$OS_FAMILY" | tr '[:upper:]' '[:lower:]')" ]; then
                     # not the same OS, skip it
                     continue
                 fi
@@ -62,9 +77,10 @@ generate_account_sudoers()
     return 0
 }
 
-generate_group_sudoers()
+manage_group_sudoers()
 {
-    group="$1"
+    todo="$1"
+    group="$2"
     if ! test -f "/home/$group/allowed.ip"; then
         action_error "$group doesn't seem to be a valid bastion group"
         return 1
@@ -73,18 +89,39 @@ generate_group_sudoers()
         action_error "$group doesn't have a $group-gatekeeper counterpart"
         return 1
     fi
-    dst="$SUDOERS_DIR/osh-group-$group"
+
+    # for groups containing a ".", we need to do a little transformation
+    # as files containing a dot are ignored by sudo
+    normalized_group=$(sed -re 's/[^A-Z0-9_]/_/gi' <<< "$group")
+    # as we're reducing the amount of possible chars in normalized_group
+    # we could have collisions: use MD5 to generate a uniq suffix
+    group_suffix=$(md5sum_compat - <<< "$group" | cut -c1-6)
+    normalized_group="${normalized_group}_${group_suffix}"
+    dst="$SUDOERS_DIR/osh-group-$normalized_group"
+
+    if [ "$todo" = delete ]; then
+        action_detail "... deleting $dst"
+        rm -f "$dst"
+        return $?
+    fi
+
+    # or create
     if [ -e "$dst" ]; then
         action_detail "... overwriting $dst"
     else
         action_detail "... generating $dst"
     fi
+
+    # within the sudoers file, for variables, lowercase is prohibited,
+    # names can only contain [A-Z0-9_], case sensitive, so we got a step further
+    normalized_group=$(tr '[:lower:]' '[:upper:]' <<< "$normalized_group")
     # to avoid race conditions between this generation and master/slave sync,
     # first prepare our file as a .tmp (sudo ignores files containing a '.')
     touch "${dst}.tmp"
     chmod 0440 "${dst}.tmp"
     {
         echo "# generated from install script"
+        echo "# GROUPNAME=$group"
         for template in $(find "$basedir/etc/sudoers.group.template.d/" -type f | sort)
         do
             echo
@@ -104,13 +141,23 @@ fi
 nbfailed=0
 if [ "$type" = group ]; then
     if [ -z "$name" ]; then
-        action_doing "Regenerating all groups sudoers files from templates"
-        for group in $(getent group | cut -d: -f1 | grep -- '-gatekeeper$' | sed -e 's/-gatekeeper$//'); do
-            generate_group_sudoers "$group" || nbfailed=$((nbfailed + 1))
-        done
+        if [ "$action" = create ]; then
+            action_doing "Regenerating all groups sudoers files from templates"
+            for group in $(getent group | cut -d: -f1 | grep -- '-gatekeeper$' | sed -e 's/-gatekeeper$//'); do
+                manage_group_sudoers create "$group" || nbfailed=$((nbfailed + 1))
+            done
+        elif [ "$action" = delete ]; then
+            echo "Cowardly refusing to delete all group sudoers, a man needs a name" >&2
+            die_usage
+        fi
     else
-        action_doing "Regenerating group '$name' sudoers file from templates"
-        generate_group_sudoers "$name" || nbfailed=$((nbfailed + 1))
+        if [ "$action" = create ]; then
+            action_doing "Regenerating group '$name' sudoers file from templates"
+            manage_group_sudoers create "$name" || nbfailed=$((nbfailed + 1))
+        elif [ "$action" = delete ]; then
+            action_doing "Deleting group '$name' sudoers file"
+            manage_group_sudoers delete "$name"
+        fi
     fi
     if [ "$nbfailed" != 0 ]; then
         action_error "Failed generating $nbfailed sudoers"
@@ -120,13 +167,23 @@ if [ "$type" = group ]; then
     exit $nbfailed
 elif [ "$type" = account ]; then
     if [ -z "$name" ]; then
-        action_doing "Regenerating all accounts sudoers files from templates"
-        for account in $(getent passwd | grep ":$basedir/bin/shell/osh.pl$" | cut -d: -f1); do
-            generate_account_sudoers "$account"|| nbfailed=$((nbfailed + 1))
-        done
+        if [ "$action" = create ]; then
+            action_doing "Regenerating all accounts sudoers files from templates"
+            for account in $(getent passwd | grep ":$basedir/bin/shell/osh.pl$" | cut -d: -f1); do
+                manage_account_sudoers create "$account"|| nbfailed=$((nbfailed + 1))
+            done
+        elif [ "$action" = delete ]; then
+            echo "Cowardly refusing to delete all account sudoers, a man needs a name" >&2
+            die_usage
+        fi
     else
-        action_doing "Regenerating account '$name' sudoers file from templates"
-        generate_account_sudoers "$name"|| nbfailed=$((nbfailed + 1))
+        if [ "$action" = create ]; then
+            action_doing "Regenerating account '$name' sudoers file from templates"
+            manage_account_sudoers create "$name"|| nbfailed=$((nbfailed + 1))
+        elif [ "$action" = delete ]; then
+            action_doing "Deleting account '$name' sudoers file"
+            manage_account_sudoers delete "$name"
+        fi
     fi
     if [ "$nbfailed" != 0 ]; then
         action_error "Failed generating $nbfailed sudoers"
@@ -134,6 +191,9 @@ elif [ "$type" = account ]; then
         action_done
     fi
     exit $nbfailed
+else
+    echo "Invalid type specified" >&2
+    die_usage
 fi
 
 die_usage

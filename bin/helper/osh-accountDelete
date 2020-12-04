@@ -154,7 +154,10 @@ move("/home/allowkeeper/$account", "$fulldir/allowkeeper");
 $fnret = OVH::Bastion::execute(cmd => ['find', "$fulldir/$account-home", '-maxdepth', '1', '-name', "*.log", '-exec', 'chattr', '-a', '{}', ';']);
 
 # remove sudoers if it's there
-unlink(OVH::Bastion::sys_getsudoersfolder() . "/osh-account-$account");
+$fnret = OVH::Bastion::execute(cmd => [$OVH::Bastion::BASEPATH . '/bin/sudogen/generate-sudoers.sh', 'delete', 'account', $account], must_succeed => 1, noisy_stdout => 1);
+if (!$fnret) {
+    warn_syslog("Error during account deletion of '$account', couldn't delete sudoers file: $fnret->msg");
+}
 
 # add a text file with all the groups the user was a member of
 $fnret = OVH::Bastion::get_user_groups(account => $account, extra => 1);

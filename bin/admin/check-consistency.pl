@@ -686,9 +686,12 @@ if (1) {
 
         # TODO check 0440
         # TODO check there's a matching group (and the other way around)
+
+        # the unescaped group should be present in the file (see GROUPNAME below),
+        # but to backwards compatible, try to guess it by ourselves if it's not
         my $group = $sudoersfile;
         $group =~ s/^.*osh-group-key//;
-        $seensudogroupfile{$group} = 1;
+
         my $fh_sudoers;
         if (!open($fh_sudoers, '<', $sudoersfile)) {
             _err "can't open $sudoersfile file to check: $!";
@@ -698,12 +701,17 @@ if (1) {
         close($fh_sudoers);
         chomp @contents;
 
+        # now try to get it from the file
+        foreach (@contents) {
+            /^# GROUPNAME=key(.+)/ and $group = $1;
+        }
+        $seensudogroupfile{$group} = 1;
+
         my @expected = @template;
         do { s/%GROUP%/key$group/g; s=%BASEPATH%=/opt/bastion=g; }
           for @expected;
 
-        foreach (@expected) {
-            my $wantedline = $_;    # copy
+        foreach my $wantedline (@expected) {
             if (not grep { $_ eq $wantedline } @contents) {
                 _err "missing line in $sudoersfile: $wantedline";
             }
