@@ -182,7 +182,7 @@ sub load_configuration {
     $C->{'moshTimeoutSignal'}  = 30    if (not defined $C->{'moshTimeoutSignal'}  or $C->{'moshTimeoutSignal'}  !~ /^\d+$/);
     $C->{'moshCommandLine'}    = ""    if (not defined $C->{'moshCommandLine'});
 
-    $C->{'ttyrecFilenameFormat'} = '%Y-%m-%d.%H-%M-%S.#usec#.&uniqid.ttyrec' if (not $C->{'ttyrecFilenameFormat'});
+    $C->{'ttyrecFilenameFormat'} = '%Y-%m-%d.%H-%M-%S.#usec#.&uniqid.&account.&user.&ip.&port.ttyrec' if (not $C->{'ttyrecFilenameFormat'});
 
     $C->{'idleLockTimeout'}       = 0 if (not defined $C->{'idleLockTimeout'}       or $C->{'idleLockTimeout'}       !~ /^\d+$/);
     $C->{'idleKillTimeout'}       = 0 if (not defined $C->{'idleKillTimeout'}       or $C->{'idleKillTimeout'}       !~ /^\d+$/);
