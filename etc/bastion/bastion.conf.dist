@@ -88,8 +88,8 @@
 # ingressKeysFromAllowOverride (boolean-int, i.e. 0 or 1), aliases: ipWhiteListAllowOverride (deprecated)
 #    DESC: If set to 0 (false), any from="..." specified in user keys (selfAddIngressKey or accountCreate) are ignored and replaced by the IPs in the ingressKeysFrom configuration option (if any).
 #          If set to 1 (true), any from="..." specified in user keys (selfAddIngressKey or accountCreate) will override the value set in ingressKeysFrom (if any). When no user-specified from="..." appears, the value of ingressKeysFrom is still used, regardless of this option.
-# DEFAULT: 1
-"ingressKeysFromAllowOverride": 1,
+# DEFAULT: 0
+"ingressKeysFromAllowOverride": 0,
 #
 # accountUidMin (int)
 #     DESC: minimum allowed UID for accounts on this bastion. Hardcoded > 1000 even if configured for less
@@ -135,8 +135,8 @@
 #
 # minimumIngressRsaKeySize (int), deprecated alias: minimumRsaKeySize
 #     DESC: The minimum allowed size for ingress RSA keys (user->bastion). Sane values range from 2048 to 4096.
-#  DEFAULT: 4096
-"minimumIngressRsaKeySize": 4096,
+#  DEFAULT: 2048
+"minimumIngressRsaKeySize": 2048,
 #
 # maximumIngressRsaKeySize (int)
 #     DESC: The maximum allowed size for ingress RSA keys (user->bastion). Too big values (>8192) are extremely CPU intensive and don't really add that much security.
@@ -145,8 +145,8 @@
 #
 # minimumEgressRsaKeySize (int), deprecated alias: minimumRsaKeySize
 #     DESC: The minimum allowed size for egress RSA keys (bastion->server). Sane values range from 2048 to 4096.
-#  DEFAULT: 4096
-"minimumEgressRsaKeySize": 4096,
+#  DEFAULT: 2048
+"minimumEgressRsaKeySize": 2048,
 #
 # maximumEgressRsaKeySize (int)
 #     DESC: The maximum allowed size for ingress RSA keys (bastion->server). Too big values (>8192) are extremely CPU intensive and don't really add that much security.
