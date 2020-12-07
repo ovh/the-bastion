@@ -203,9 +203,9 @@
 #  DEFAULT: enabled
 #  OPTIONS:
 #   disabled: the commands to setup TOTP and UNIX account password are disabled, nobody can setup MFA for himself or others. Already configured MFA still applies, unless the sshd configuration is modified to no longer call PAM on the authentication phase
-#   password-enforced: for all accounts, a UNIX account password is required in addition to the ingress SSH public key. On first connection with his SSH key, the user is forced to setup a password for his account, and can't disable it afterwards
-#   totp-enforced: for all accounts, a TOTP is required in addition to the ingress SSH public key. On first connection with his SSH key, the user is forced to setup a TOTP for his account, and can't disable it afterwards
-#   any-enforced: for all accounts, either a TOTP or an UNIX account password is required in addition to the ingress SSH public key. On first connection with his SSH key, the user is forced to setup either of those, as he sees fit, and can't disable it afterwards
+#   password-required: for all accounts, a UNIX account password is required in addition to the ingress SSH public key. On first connection with his SSH key, the user is forced to setup a password for his account, and can't disable it afterwards
+#   totp-required: for all accounts, a TOTP is required in addition to the ingress SSH public key. On first connection with his SSH key, the user is forced to setup a TOTP for his account, and can't disable it afterwards
+#   any-required: for all accounts, either a TOTP or an UNIX account password is required in addition to the ingress SSH public key. On first connection with his SSH key, the user is forced to setup either of those, as he sees fit, and can't disable it afterwards
 #   enabled: for all accounts, TOTP and UNIX account password are available as opt-in features as the users see fit. Some accounts can be forced to setup either TOTP or password-based MFA if they're flagged accordingly (with the accountModify command)
 "accountMFAPolicy": "enabled",
 #
