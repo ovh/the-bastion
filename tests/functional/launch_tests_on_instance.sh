@@ -101,7 +101,7 @@ revoke() { success prereq revokecmd $a0 --osh accountRevokeCommand --account $ac
 
 cat >"$mytmpdir/ssh_config" <<EOF
    StrictHostKeyChecking no
-   SendEnv LC_BASTION
+   SendEnv LC_*
    PubkeyAuthentication yes
    PasswordAuthentication no
    RequestTTY yes

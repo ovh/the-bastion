@@ -12,6 +12,7 @@ use Getopt::Long qw(GetOptionsFromString :config pass_through no_ignore_case);
 use Sys::Hostname;
 use POSIX qw(strftime);
 use Term::ANSIColor;
+use JSON;
 
 $ENV{'LANG'} = 'C';
 $| = 1;
@@ -645,6 +646,26 @@ my $hasMfaPasswordBypass    = OVH::Bastion::is_user_in_group(account => $sysself
 my $isMfaTOTPRequired       = OVH::Bastion::is_user_in_group(account => $sysself, group => OVH::Bastion::MFA_TOTP_REQUIRED_GROUP);
 my $hasMfaTOTPBypass        = OVH::Bastion::is_user_in_group(account => $sysself, group => OVH::Bastion::MFA_TOTP_BYPASS_GROUP);
 
+# MFA information from a potential ingress realm:
+my $remoteMfaValidated = 0;
+my $remoteMfaPassword  = 0;
+my $remoteMfaTOTP      = 0;
+
+# if we're coming from a realm, we're receiving a connection from another bastion, keep all the traces:
+my @previous_bastion_details;
+if ($realm && $ENV{'LC_BASTION_DETAILS'}) {
+    my $decoded_details;
+    eval { $decoded_details = decode_json($ENV{'LC_BASTION_DETAILS'}); };
+    if (!$@) {
+        @previous_bastion_details = @$decoded_details;
+
+        # if the remote bastion did validate MFA, trust it
+        $remoteMfaValidated = $decoded_details->[0]{'mfa'}{'validated'}        ? 1 : 0;
+        $remoteMfaPassword  = $decoded_details->[0]{'mfa'}{'type'}{'password'} ? 1 : 0;
+        $remoteMfaTOTP      = $decoded_details->[0]{'mfa'}{'type'}{'totp'}     ? 1 : 0;
+    }
+}
+
 if ($mfaPolicy ne 'disabled' && !grep { $osh_command eq $_ } qw{ selfMFASetupPassword selfMFASetupTOTP help info }) {
 
     if (($mfaPolicy eq 'password-required' && !$hasMfaPasswordBypass) || $isMfaPasswordRequired) {
@@ -750,6 +771,9 @@ if ($sshAs) {
 
     exec(@cmd) or main_exit(OVH::Bastion::EXIT_EXEC_FAILED, "ssh_as_failed", "Couldn't start a session under the account $sshAs ($!)");
 }
+
+# This will be filled with details we might want to pass on to the remote machine as a json-encoded envvar
+my %bastion_details;
 
 #
 #   First case. We have an OSH command
@@ -895,6 +919,16 @@ if ($osh_command) {
 
             $fnret = OVH::Bastion::do_pamtester(self => $self, sysself => $sysself);
             $fnret or main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', $fnret->msg);
+
+            # so that the remote server, which can be a bastion in case we're chaining, can enforce its own policy:
+            $bastion_details{'mfa'} = {
+                validated => \1,
+                reason    => 'mfa_required_for_plugin',
+                type      => {
+                    password => $isMfaPasswordConfigured ? \1 : \0,
+                    totp     => $isMfaTOTPConfigured     ? \1 : \0,
+                }
+            };
         }
 
         OVH::Bastion::set_terminal_mode_for_plugin(plugin => $osh_command, action => 'set');
@@ -1192,8 +1226,18 @@ else {
     }
 }
 
-# add remoteUser as LC_BASTION to be passed via ssh
+# add current account name as LC_BASTION to be passed via ssh
 $ENV{'LC_BASTION'} = $self;
+
+$bastion_details{'mfa'}{'validated'}        //= \0;
+$bastion_details{'mfa'}{'type'}{'password'} //= \0;
+$bastion_details{'mfa'}{'type'}{'totp'}     //= \0;
+$bastion_details{'from'} = {addr => $ipfrom,    host => $hostfrom,    port => $portfrom + 0};
+$bastion_details{'via'}  = {addr => $bastionip, host => $bastionhost, port => $bastionport + 0};
+$bastion_details{'to'}   = {addr => $ip,        host => $hostto,      port => $port + 0, user => $user};
+$bastion_details{'account'} = $self;
+$bastion_details{'uniqid'}  = $log_uniq_id;
+$bastion_details{'version'} = $OVH::Bastion::VERSION;
 
 if (!@command) {
     main_exit OVH::Bastion::EXIT_UNKNOWN_COMMAND, "empty_command", "Found no command to execute!";
@@ -1303,8 +1347,27 @@ if ($JITMFARequired) {
     else {
         $fnret = OVH::Bastion::do_pamtester(self => $self, sysself => $sysself);
         $fnret or main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', $fnret->msg);
+
+        # so that the remote server, which can be a bastion in case we're chaining, can enforce its own policy
+        $bastion_details{'mfa'} = {
+            validated => \1,
+            reason    => 'mfa_required_for_host',
+            type      => {
+                password => $isMfaPasswordConfigured ? \1 : \0,
+                totp     => $isMfaTOTPConfigured     ? \1 : \0,
+            }
+        };
     }
 }
+
+# now that we're about to connect, convert the bastion_details to a json envvar:
+my @details_json = (\%bastion_details);
+
+# if we have data from a previous bastion (due to a realm connection), include it on top:
+push @details_json, @previous_bastion_details if @previous_bastion_details;
+
+# then convert to json:
+$ENV{'LC_BASTION_DETAILS'} = encode_json(\@details_json);
 
 # here is a nice hack to drastically improve the memory footprint of an
 # heavily used bastion. we exec() another script that is way lighter, see
