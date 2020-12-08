@@ -24,3 +24,4 @@ RUN ["/opt/bastion/bin/admin/install","--new-install","--no-wait"]
 ENTRYPOINT /opt/bastion/docker/entrypoint.sh
 
 # TESTENV HAS_ED25519=1 HAS_BLACKLIST=0 HAS_MFA=1 HAS_PAMTESTER=1
+# TESTFROM centos:7.9.2009 centos:7.8.2003 centos:7.7.1908

@@ -69,12 +69,12 @@ if echo "$DISTRO_LIKE" | grep -q -w debian; then
     install_cmd="apt-get install"
 elif echo "$DISTRO_LIKE" | grep -q -w rhel; then
     wanted_list="perl-JSON perl-Net-Netmask perl-Net-IP \
-            perl-Net-DNS perl-DBD-SQLite perl-TermReadKey perl-DateTime \
-            sudo fping xz sqlite binutils acl perl-TimeDate gnupg rsync \
+            perl-Net-DNS perl-DBD-SQLite perl-TermReadKey \
+            sudo fping xz sqlite binutils acl gnupg rsync \
             perl-JSON-XS inotify-tools lsof curl perl-Term-ReadLine-Gnu \
             perl-libwww-perl perl-Digest perl-Net-Server cryptsetup mosh \
             expect openssh-server nc bash perl-CGI perl(Test::More) passwd \
-            cracklib-dicts perl-Time-Piece perl-Time-HiRes which \
+            cracklib-dicts perl-Time-Piece perl-Time-HiRes diffutils \
             perl-Sys-Syslog pamtester google-authenticator qrencode-libs"
     if [ "$DISTRO_VERSION_MAJOR" = 7 ]; then
         wanted_list="$wanted_list fortune-mod coreutils"
@@ -102,14 +102,14 @@ elif echo "$DISTRO_LIKE" | grep -q -w rhel; then
     install_cmd="yum install"
 elif echo "$DISTRO_LIKE" | grep -q -w suse; then
     wanted_list="perl-common-sense perl-JSON perl-Net-Netmask perl-Net-IP \
-            perl-Net-DNS perl-DBD-SQLite perl-TermReadKey perl-DateTime \
+            perl-Net-DNS perl-DBD-SQLite perl-TermReadKey \
             fortune sudo fping \
-            xz sqlite binutils acl perl-TimeDate              gnupg rsync \
+            xz sqlite binutils acl gnupg rsync \
             perl-JSON-XS inotify-tools lsof curl perl-TermReadLine-Gnu \
             perl-libwww-perl perl-Digest perl-IO-Socket-SSL \
             perl-Net-Server cryptsetup mosh expect openssh \
             coreutils netcat-openbsd bash perl-CGI iputils \
-            perl-Time-HiRes which perl-Unix-Syslog hostname"
+            perl-Time-HiRes perl-Unix-Syslog hostname"
         wanted_list="$wanted_list google-authenticator-libpam"
             # perl-GnuPG
     [ "$opt_syslogng" = 1 ] && wanted_list="$wanted_list syslog-ng"

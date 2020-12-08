@@ -175,6 +175,26 @@ $fnret->err eq 'OK'
 # Building /home/$group
 OVH::Bastion::touch_file("/home/$group/allowed.ip");
 
+osh_info("Adjusting permissions...");
+my $bigX = (OVH::Bastion::is_linux() ? 'X' : 'x');
+foreach my $command (
+    ['chown', '-R',               "$group:$group",            "/home/$group"],
+    ['chgrp', "$group-aclkeeper", "/home/$group/allowed.ip"],
+    ['chmod', '-R',               "o-rwx,g=r$bigX,u=rw$bigX", "/home/$group"],
+    ['chmod', '0664',             "/home/$group/allowed.ip"],
+  )
+{
+    $fnret = OVH::Bastion::execute(cmd => $command, noisy_stderr => 1);
+    $fnret->err eq 'OK'
+      or HEXIT('ERR_CHMOD_FAILED', msg => "Error while running chmod to adjust permissions (" . $fnret->msg . ")");
+}
+chmod 0751, "/home/$group" if !OVH::Bastion::has_acls();
+
+foreach my $gr ("$group-owner", "$group-gatekeeper", "$group-aclkeeper", "osh-whoHasAccessTo", "osh-auditor") {
+    OVH::Bastion::sys_setfacl(target => "/home/$group", perms => "g:$gr:x")
+      or HEXIT('ERR_SETFACL_FAILED', msg => "Error setting ACLs on group homedir");
+}
+
 osh_debug("Adding allowkeeper to group $group");
 $fnret = OVH::Bastion::add_user_to_group(group => $group, user => 'allowkeeper', groupType => 'key');
 $fnret or HEXIT($fnret);
@@ -237,26 +257,6 @@ if (!$no_key) {
         group_readable => 1
     );
     $fnret or HEXIT($fnret);
-}
-
-osh_info("Adjusting permissions...");
-my $bigX = (OVH::Bastion::is_linux() ? 'X' : 'x');
-foreach my $command (
-    ['chown', '-R',               "$group:$group",            "/home/$group"],
-    ['chgrp', "$group-aclkeeper", "/home/$group/allowed.ip"],
-    ['chmod', '-R',               "o-rwx,g=r$bigX,u=rw$bigX", "/home/$group"],
-    ['chmod', '0664',             "/home/$group/allowed.ip"],
-  )
-{
-    $fnret = OVH::Bastion::execute(cmd => $command, noisy_stderr => 1);
-    $fnret->err eq 'OK'
-      or HEXIT('ERR_CHMOD_FAILED', msg => "Error while running chmod to adjust permissions (" . $fnret->msg . ")");
-}
-chmod 0751, "/home/$group" if !OVH::Bastion::has_acls();
-
-foreach my $gr ("$group-owner", "$group-gatekeeper", "$group-aclkeeper", "osh-whoHasAccessTo", "osh-auditor") {
-    OVH::Bastion::sys_setfacl(target => "/home/$group", perms => "g:$gr:x")
-      or HEXIT('ERR_SETFACL_FAILED', msg => "Error setting ACLs on group homedir");
 }
 
 # allowed to sudo for the group
