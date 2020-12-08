@@ -11,22 +11,54 @@ namespace=the-bastion-test
 target="$1"
 test_script="$2"
 
+get_supported_targets() {
+    local target targets subtarget
+    for dockerfile in "$(dirname "$0")"/../../../docker/Dockerfile.*; do
+        if grep -q '^# TESTENV ' "$dockerfile"; then
+            target=$(basename $dockerfile)
+            target=${target/Dockerfile./}
+            # if the file has a TESTFROM entry, then it's actually multiple similar targets
+            if grep -q '^# TESTFROM ' "$dockerfile"; then
+                for testfrom in $(grep '^# TESTFROM ' "$dockerfile" | cut -d' ' -f3-); do
+                    subtarget="$target@$testfrom"
+                    targets="$targets $subtarget"
+                done
+            fi
+            targets="$targets $target"
+        fi
+    done
+    echo $targets
+}
+
+print_supported_targets() {
+    local target
+    for target in $(get_supported_targets | tr " " "\n" | sort); do
+        echo "- $target"
+    done
+    echo
+}
+
 if [ -z "$target" ] || [ "$target" = "--list-targets" ]; then
-    targets=$(grep -l '^# TESTENV' "$(dirname "$0")"/../../../docker/Dockerfile.* | sed -re 's=^.+/Dockerfile\.==')
     if [ -z "$target" ]; then
         echo "Usage: $0 <TARGET>" >&2
-        echo -n "Supported targets are: " >&2
-        grep -l '^# TESTENV' "$(dirname "$0")"/../../../docker/Dockerfile.* | sed -re 's=^.+/Dockerfile\.==' | tr '\n' " " >&2
-        echo >&2
+        echo "Supported targets are: " >&2
+        print_supported_targets >&2
         exit 1
     else
         # shellcheck disable=SC2086
-        echo $targets
+        print_supported_targets
         exit 0
     fi
 fi
 
-target_dockerfile="$(dirname "$0")"/../../../docker/Dockerfile."$target"
+if echo "$target" | grep -q '@'; then
+    subtarget=$(echo "$target" | cut -d@ -f2)
+    target_dockerfile=$(echo "$target" | cut -d@ -f1)
+else
+    subtarget=''
+    target_dockerfile="$target"
+fi
+target_dockerfile="$(dirname "$0")"/../../../docker/Dockerfile."$target_dockerfile"
 if [ ! -f "$target_dockerfile" ] ; then
     echo "Couldn't find a Dockerfile for $target ($target_dockerfile)" >&2
     exit 1
@@ -37,9 +69,34 @@ echo "Building test environment"
 testenv_dockerfile="$(dirname "$0")/../../../docker/Dockerfile.tester"
 docker build -f "$testenv_dockerfile" -t "$namespace:tester" "$(dirname "$0")"/../../..
 
+# if we have a subtarget, we need to override the FROM of the target_dockerfile
+# don't do this in place however, create a tempfile for this
+if [ -n "$subtarget" ]; then
+    dockerfiletmp=$(mktemp)
+    trap 'rm -f $dockerfiletmp' EXIT
+    sed -re "s/^FROM .+/FROM $subtarget/" "$target_dockerfile" > "$dockerfiletmp"
+    target_dockerfile="$dockerfiletmp"
+fi
+
 # build target
 echo "Building target environment"
+target=$(echo "$target" | sed -re 's/[^a-zA-Z0-9_-]/_/g')
 docker build -f "$target_dockerfile" -t "$namespace:$target" --build-arg "TEST_QUICK=$TEST_QUICK" "$(dirname "$0")"/../../..
+
+# get the target environment we want from the dockerfile
+varstoadd=''
+privileged=''
+for var in $(grep '^# TESTENV' "$target_dockerfile" | tail -n1 | sed -re 's/^# TESTENV//')
+do
+    echo "$var" | grep -Eq '^[A-Z0-9_]+=[01]$' && varstoadd="$varstoadd -e $var "
+    [ "$var" = "PRIVILEGED=1" ] && privileged='--privileged'
+done
+
+# cleanup the dockerfile temp if applicable
+if [ -n "$subtarget" ]; then
+    rm -f "$dockerfiletmp"
+    trap - EXIT
+fi
 
 # create temp key
 echo "Create user and root SSH keys"
@@ -53,14 +110,6 @@ ROOT_PRIVKEY_B64=$(base64 -w0 < "$privdir"/rootkey)
 ROOT_PUBKEY_B64=$(base64 -w0 < "$privdir"/rootkey.pub)
 rm -rf "$privdir"
 trap - EXIT
-
-varstoadd=''
-privileged=''
-for var in $(grep '^# TESTENV' "$target_dockerfile" | tail -n1 | sed -re 's/^# TESTENV//')
-do
-    echo "$var" | grep -Eq '^[A-Z0-9_]+=[01]$' && varstoadd="$varstoadd -e $var "
-    [ "$var" = "PRIVILEGED=1" ] && privileged='--privileged'
-done
 
 echo "Configuring network"
 docker rm -f "bastion_${target}_target" 2>/dev/null || true
