@@ -1,3 +1,9 @@
+## v3.01.02 - 2020/12/08
+- fix: is_valid_remote_user: extend allowed size from 32 to 128
+- feat: add support for CentOS 8.3
+- doc: bastion.conf.dist: accountMFAPolicy wrong options values in comment
+- chore: tests: now test the 3 more recent minor versions of CentOS 7 and CentOS 8
+
 ## v3.01.01 - 2020/12/04
 - fix: interactive mode: mark non-printable chars as such to avoid readline quirks
 - fix: osh-encrypt-rsync: remove 'logfile' as mandatory parameter
