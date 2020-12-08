@@ -85,8 +85,12 @@ elif echo "$DISTRO_LIKE" | grep -q -w rhel; then
 
     if [ "$opt_install" = 1 ]; then
             if [ "$DISTRO_VERSION_MAJOR" = 8 ]; then
-                sed -i -e 's/enabled=.*/enabled=1/g' /etc/yum.repos.d/CentOS-PowerTools.repo
-                sed -i -e 's/enabled=.*/enabled=1/g' /etc/yum.repos.d/CentOS-Extras.repo
+                # in December 2020, they added "-Linux" to their repo name, so trying both combinations
+                for repo in CentOS-PowerTools CentOS-Extras CentOS-Linux-PowerTools CentOS-Linux-Extras
+                do
+                    test -f /etc/yum.repos.d/$repo.repo || continue
+                    sed -i -e 's/enabled=.*/enabled=1/g' /etc/yum.repos.d/$repo.repo
+                done
             fi
             yum install -y epel-release
             # shellcheck disable=SC2086
