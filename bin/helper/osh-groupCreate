@@ -195,7 +195,6 @@ foreach my $gr ("$group-owner", "$group-gatekeeper", "$group-aclkeeper", "osh-wh
       or HEXIT('ERR_SETFACL_FAILED', msg => "Error setting ACLs on group homedir");
 }
 
-
 osh_debug("Adding allowkeeper to group $group");
 $fnret = OVH::Bastion::add_user_to_group(group => $group, user => 'allowkeeper', groupType => 'key');
 $fnret or HEXIT($fnret);

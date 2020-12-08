@@ -15,10 +15,11 @@ get_supported_targets() {
     local target targets subtarget
     for dockerfile in "$(dirname "$0")"/../../../docker/Dockerfile.*; do
         if grep -q '^# TESTENV ' "$dockerfile"; then
-            target=$(basename $dockerfile)
+            target=$(basename "$dockerfile")
             target=${target/Dockerfile./}
             # if the file has a TESTFROM entry, then it's actually multiple similar targets
             if grep -q '^# TESTFROM ' "$dockerfile"; then
+                # shellcheck disable=SC2013
                 for testfrom in $(grep '^# TESTFROM ' "$dockerfile" | cut -d' ' -f3-); do
                     subtarget="$target@$testfrom"
                     targets="$targets $subtarget"
@@ -27,6 +28,7 @@ get_supported_targets() {
             targets="$targets $target"
         fi
     done
+    # shellcheck disable=SC2086
     echo $targets
 }
 
