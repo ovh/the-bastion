@@ -73,7 +73,7 @@ Also don't forget to customize your `bastion.conf` file, which can be found in `
 Linux distros below are tested with each release, but as this is a security product, you are **warmly** advised to run it on the latest up-to-date stable version of your favorite OS:
 
 - Debian 10 (Buster), 9 (Stretch), 8 (Jessie)
-- RHEL/CentOS 8, 7
+- RHEL/CentOS 8.x (8.3.2011, 8.2.2004, 8.1.1911), 7.x (7.9.2009, 7.8.2003, 7.7.1908)
 - Ubuntu LTS 20.04, 18.04, 16.04, 14.04\*
 - OpenSUSE Leap 15.2\*, 15.1\*, 15.0\*
 
