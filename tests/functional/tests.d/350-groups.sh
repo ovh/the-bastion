@@ -81,6 +81,8 @@ testsuite_groups()
 
     # now create g1
 
+    grant groupCreate
+
     run groupCreate a2_fail_to_create_g1_with_a1_as_owner_because_not_granted $a2 --osh groupCreate --group $group1 --algo rsa --size 2048 --owner $account1
     retvalshouldbe 106
     contain "you to be specifically granted"
@@ -126,6 +128,8 @@ EOS
     json .value.public_key.family ECDSA .value.public_key.typecode ecdsa-sha2-nistp256 .value.public_key.size 256
     #g3_pubkey=$(get_json | $jq .value.public_key.line)
     #g3_fp=$(    get_json | $jq .value.public_key.fingerprint)
+
+    revoke groupCreate
 
     success groupInfo   a0_info_on_g3_after_create $a0 --osh groupInfo --group $group3
     json .error_code OK .command groupInfo .value.group $group3
@@ -527,10 +531,31 @@ EOS
     retvalshouldbe 107
     json .error_code KO_ACCESS_DENIED
 
+    # try to add a3 as a guest of g1, should not work because already a member
+    plgfail groupAddGuestAccess a1_add_a3_guest_of_g1_fail_already_member $a1 --osh groupAddGuestAccess --group $group1 --account $account3 --user g2 --host 127.0.0.2 --port 22
+    json .command groupAddGuestAccess .error_code ERR_MEMBER_CANNOT_BE_GUEST
+
     # now remove membership of a3
 
     success groupDelMember a2_del_a3_as_g1_member $a2 --osh groupDelMember --group $group1 --account $account3
     json .command groupDelMember .error_code OK .value null
+
+    # add a guest access to a3...
+    success groupAddGuestAccess a1_add_a3_guest_of_g1 $a1 --osh groupAddGuestAccess --group $group1 --account $account3 --user g2 --host 127.0.0.2 --port 22
+    json .command groupAddGuestAccess .error_code OK
+
+    # ... then add it as member again: it should remove the guest access we've added just above...
+    success groupAddMember a1_add_a3_member_of_g1 $a1 --osh groupAddMember --group $group1 --account $account3
+    contain "Cleaning these guest accesses"
+    json .command groupAddMember .error_code OK
+
+    # ... then remove its membership
+    success groupDelMember a2_del_a3_as_g1_member_2 $a2 --osh groupDelMember --group $group1 --account $account3
+    json .command groupDelMember .error_code OK .value null
+
+    # ... and verify there's no ghost guest access remaining
+    success groupListGuestAccesses a2_list_a3_guest_access_g1_empty $a2 --osh groupListGuestAccesses --group $group1 --account $account3
+    json .command groupListGuestAccesses .error_code OK_EMPTY .value null
 
     # new state: g1[a1(ow,gk,acl,member) a2(gk) acl(g1@127.0.0.1:22,g2@127.0.0.2:22)] g3[a0,a2,a3(ow,gk,acl,member)]
 
@@ -579,6 +604,8 @@ EOS
     # now we want to try selfListAccesses, work with a3 that has a groupguest access to g1: add a server to g3 (he's a member of it), and a personal access
 
     success groupAddServer a3_add_server_to_g3 $a3 --osh groupAddServer --group $group3 --host 10.20.0.0/17 --port-any --user-any
+
+    grant accountAddPersonalAccess
 
     run accountAddPersonalAccess a0_add_personal_access_to_a3_works_slash $a0 --osh accountAddPersonalAccess --account $account3 --host 77.66.55.0/24
     json .command accountAddPersonalAccess .error_code OK .value null

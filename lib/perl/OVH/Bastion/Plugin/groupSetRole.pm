@@ -163,7 +163,44 @@ sub act {
 
     if ($type eq 'member') {
 
-        # in that case, we also need to handle the symlink
+        if ($action eq 'add' && OVH::Bastion::is_group_guest(group => $shortGroup, account => $account)) {
+
+            # if the user is a guest, must remove all his guest accesses first
+            $fnret = OVH::Bastion::get_acl_way(way => 'groupguest', group => $shortGroup, account => $account);
+            if ($fnret && $fnret->value) {
+                osh_warn("This account was previously a guest of this group, with the following accesses:");
+                my @acl = @{$fnret->value};
+                OVH::Bastion::print_acls(acls => [{type => 'group-guest', group => $shortGroup, acl => \@acl}]);
+
+                osh_info("\nCleaning these guest accesses before granting membership...");
+
+                # foreach guest access, delete
+                foreach my $access (@acl) {
+                    my $machine = $access->{'ip'};
+                    $machine .= ':' . $access->{'port'} if defined $access->{'port'};
+                    $machine = $access->{'user'} . '@' . $machine if defined $access->{'user'};
+                    $fnret   = OVH::Bastion::Plugin::groupSetRole::act(
+                        account => $account,
+                        group   => $shortGroup,
+                        action  => 'del',
+                        type    => 'guest',
+                        user    => $access->{'user'},
+                        userAny => (defined $access->{'user'} ? 0 : 1),
+                        port    => $access->{'port'},
+                        portAny => (defined $access->{'port'} ? 0 : 1),
+                        host    => $access->{'ip'},
+                        self    => $self,
+                    );
+                    if (!$fnret) {
+                        osh_warn("Failed removing guest access to $machine, proceeding anyway...");
+                        warn_syslog("Failed removing guest access to $machine in group $shortGroup for $account, before granting this account full membership on behalf of $self: "
+                              . $fnret->msg);
+                    }
+                }
+            }
+        }
+
+        # then, for add and del, we need to handle the symlink
         @command = qw{ sudo -n -u allowkeeper -- /usr/bin/env perl -T };
         push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-groupAddSymlinkToAccount';
         push @command, '--group', $group;                                                      # must be first params, forced in sudoers.d
@@ -202,6 +239,11 @@ sub act {
                     msg => "The group $shortGroup doesn't have access to $machine, so you can't add a guest group access "
                       . "to it (first add it to the group if applicable, with groupAddServer)");
             }
+        }
+
+        # If the account is already a member, can't add/del them as guest
+        if (OVH::Bastion::is_group_member(group => $shortGroup, account => $account)) {
+            return R('ERR_MEMBER_CANNOT_BE_GUEST', msg => "Can't $action $account as a guest of group $shortGroup, they're already a member!");
         }
 
         # Add/Del user access to user@host:port with group key
