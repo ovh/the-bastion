@@ -397,6 +397,10 @@ configchg()
 
 runtests()
 {
+    # ensure syslog is clean
+    ignorecodewarn 'Configuration error' # previous unit tests can provoke this
+    success bastion syslog_cleanup $r0 "\": > /var/log/bastion/bastion.log\""
+
     # backup the original default configuration on target side
     now=$(date +%s)
     success bastion backupconfig $r0 "dd if=$osh_etc/bastion.conf of=$osh_etc/bastion.conf.bak.$now"
