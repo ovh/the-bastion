@@ -20,10 +20,6 @@ manage_account_sudoers()
 {
     todo="$1"
     account="$2"
-    if ! getent passwd "$account" | grep -q ":$basedir/bin/shell/osh.pl$"; then
-        action_error "$account is not a bastion account"
-        return 1
-    fi
 
     # for accounts containing a ".", we need to do a little transformation
     # as files containing a dot are ignored by sudo
@@ -34,13 +30,20 @@ manage_account_sudoers()
     normalized_account="${normalized_account}_${account_suffix}"
     dst="$SUDOERS_DIR/osh-account-$normalized_account"
 
+    # for delete, don't check if account is valid:
+    # our caller might be in the process of deleting it
     if [ "$todo" = delete ]; then
         action_detail "... deleting $dst"
         rm -f "$dst"
         return $?
     fi
 
-    # or create
+    # otherwise, for create, we expect the account to exist
+    if ! getent passwd "$account" | grep -q ":$basedir/bin/shell/osh.pl$"; then
+        action_error "$account is not a bastion account"
+        return 1
+    fi
+
     if [ -e "$dst" ]; then
         action_detail "... overwriting $dst"
     else
@@ -81,14 +84,6 @@ manage_group_sudoers()
 {
     todo="$1"
     group="$2"
-    if ! test -f "/home/$group/allowed.ip"; then
-        action_error "$group doesn't seem to be a valid bastion group"
-        return 1
-    fi
-    if ! getent group "$group-gatekeeper" >/dev/null; then
-        action_error "$group doesn't have a $group-gatekeeper counterpart"
-        return 1
-    fi
 
     # for groups containing a ".", we need to do a little transformation
     # as files containing a dot are ignored by sudo
@@ -99,13 +94,20 @@ manage_group_sudoers()
     normalized_group="${normalized_group}_${group_suffix}"
     dst="$SUDOERS_DIR/osh-group-$normalized_group"
 
+    # for delete, don't check if the group is valid:
+    # our caller might be in the process of deleting it
     if [ "$todo" = delete ]; then
         action_detail "... deleting $dst"
         rm -f "$dst"
         return $?
     fi
 
-    # or create
+    # for create, we expect the group to exist
+    if ! test -f "/home/$group/allowed.ip"; then
+        action_error "$group doesn't seem to be a valid bastion group"
+        return 1
+    fi
+
     if [ -e "$dst" ]; then
         action_detail "... overwriting $dst"
     else

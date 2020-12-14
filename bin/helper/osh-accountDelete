@@ -97,6 +97,7 @@ if (!getgrnam($ttygroup)) {
     $ttygroup = substr($account, 0, 5) . '-tty';
     if (!getgrnam($ttygroup)) {
         osh_warn("Couldn't find out which is the tty group of this account, will still delete it anyway");
+        warn_syslog("Couldn't find out the name of the tty group of acount $account ($ttygroup doesn't exist), deleting anyway");
         $ttygroup = undef;
     }
 }
@@ -156,7 +157,7 @@ $fnret = OVH::Bastion::execute(cmd => ['find', "$fulldir/$account-home", '-maxde
 # remove sudoers if it's there
 $fnret = OVH::Bastion::execute(cmd => [$OVH::Bastion::BASEPATH . '/bin/sudogen/generate-sudoers.sh', 'delete', 'account', $account], must_succeed => 1, noisy_stdout => 1);
 if (!$fnret) {
-    warn_syslog("Error during account deletion of '$account', couldn't delete sudoers file: $fnret->msg");
+    warn_syslog("Error during account deletion of '$account', couldn't delete sudoers file: " . $fnret->msg);
 }
 
 # add a text file with all the groups the user was a member of
