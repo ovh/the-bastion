@@ -157,6 +157,9 @@ prefix()
 
 run()
 {
+    # display verbose output about the previous test if it was bad
+    # we do this here because this way we're sure that all checks have been done for it
+    # at this stage (retvalshouldbe, json, ...)
     if [ "$isbad" = 1 ]; then
         if [ -f "$outdir/$basename.script" ]; then
             printf "%b%b%b\\n" "$WHITE_ON_BLUE" "[INFO] test script follows" "$NOC"
@@ -177,6 +180,7 @@ run()
     fi
     isbad=0
 
+    # now prepare for the current test
     testno=$(( testno + 1 ))
     [ "$COUNTONLY" = 1 ] && return
     name=$1
@@ -184,20 +188,25 @@ run()
     case=$1
     shift
     basename=$(printf '%03d-%s-%s' $testno $name $case | sed -re "s=/=_=g")
+
+    # if we're about to run a script, keep a copy there
     if [ -x "$1" ] && [ "$#" -eq 1 ]; then
         cp "$1" "$outdir/$basename.script"
     fi
+
     printf '%b %b*** [%03d/%03d] %b::%b %s(%b)\n' "$(prefix)" "$BOLD_CYAN" "$testno" "$testcount" "$name" "$case" "$NOC" "$*"
+
+    # special case for scp: we need to wait a bit before terminating the test
     sleepafter=0
     [ "$name" = "scp" ] && sleepafter=2
-    $screen "$outdir/$basename.log" -D -m -fn -ln flock "$outdir/$basename.log" bash -c "$* ; echo \$? > $outdir/$basename.retval ; sleep $sleepafter"
-    antiloop=30
-    while [ ! -e "$outdir/$basename.retval" ] && [ $antiloop -gt 0 ]; do
-        sleep 0.1
-        flock "$outdir/$basename.log" true
-        antiloop=$((antiloop - 1))
-    done
-    test -e $outdir/$basename.retval || echo -1 > $outdir/$basename.retval
+
+    # put an invalid value in this file, should be overwritten. we also use it as a lock file.
+    echo -1 > $outdir/$basename.retval
+    # run the test
+    flock "$outdir/$basename.retval" $screen "$outdir/$basename.log" -D -m -fn -ln bash -c "$* ; echo \$? > $outdir/$basename.retval ; sleep $sleepafter"
+    flock "$outdir/$basename.retval" true
+
+    # look for generally bad strings in the output
     _bad='at /usr/share/perl|compilation error|compilation aborted|BEGIN failed|gonna crash|/opt/bastion/|sudo:|ontinuing anyway|MAKETESTFAIL'
     _badexclude='/etc/shells'
     # shellcheck disable=SC2126
@@ -205,21 +214,27 @@ run()
         nbfailedgeneric=$(( nbfailedgeneric + 1 ))
         fail "BAD STRING" "(generic known-bad string found in output)"
     fi
+
+    # now run consistency check on the target, unless configured otherwise
     if [ "$nocc" != 1 ]; then
-        $screen "$outdir/$basename.cc" -D -m -fn -ln flock "$outdir/$basename.cc" bash -c "$r0 /opt/bastion/bin/admin/check-consistency.pl ; echo \$? > $outdir/$basename.ccret ; $r0 test -s /var/log/bastion/bastion-warn.log ; echo \$? > $outdir/$basename.warnret ; $r0 test -s /var/log/bastion/bastion-die.log ; echo \$? > $outdir/$basename.dieret"
-        sleep 0.2
-        flock "$outdir/$basename.cc" true
-        ccret=$(< $outdir/$basename.ccret)
-        warnret=$(< $outdir/$basename.warnret)
-        dieret=$(< $outdir/$basename.dieret)
+        flock "$outdir/$basename.retval" $screen "$outdir/$basename.cc" -D -m -fn -ln $r0 '
+                /opt/bastion/bin/admin/check-consistency.pl ; echo _RETVAL_CC=$?= ;
+                grep -Fw -e warn -e die -e code-warning /var/log/bastion/bastion.log | grep -Fv "'"${code_warn_exclude:-__none__}"'" | sed "s/^/_SYSLOG=/" ;
+                : > /var/log/bastion/bastion.log
+            '
+        flock "$outdir/$basename.retval" true
+        ccret=$(     grep _RETVAL_CC= "$outdir/$basename.cc" | cut -d= -f2)
+        syslogline=$(grep _SYSLOG=    "$outdir/$basename.cc" | cut -d= -f2-)
         if [ "$ccret" != 0 ]; then
             nbfailedcon=$(( nbfailedcon + 1 ))
             fail "CONSISTENCY CHECK"
         fi
-        if [ "$warnret" != 1 ] || [ $dieret != 1 ]; then
+        if [ -n "$syslogline" ]; then
             nbfailedlog=$(( nbfailedlog + 1 ))
-            fail "WARN/DIE TRIGGERED"
+            fail "WARN/DIE/CODE-WARN TRIGGERED"
         fi
+        # reset this for the next test
+        unset code_warn_exclude
     fi
 }
 
@@ -272,6 +287,11 @@ plgfail()
 {
     run "$@"
     retvalshouldbe 100
+}
+
+ignorecodewarn()
+{
+    code_warn_exclude="$*"
 }
 
 get_json()
