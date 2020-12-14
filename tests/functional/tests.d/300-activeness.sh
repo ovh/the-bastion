@@ -24,6 +24,7 @@ testsuite_activeness()
 
     success activeness test_invalid_config_but_always_active $a3 --osh info
 
+    ignorecodewarn 'is not readable+executable'
     run activeness test_invalid_config $a1 --osh info
     retvalshouldbe 101
 
