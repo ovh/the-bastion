@@ -97,7 +97,7 @@ if (!getgrnam($ttygroup)) {
     $ttygroup = substr($account, 0, 5) . '-tty';
     if (!getgrnam($ttygroup)) {
         osh_warn("Couldn't find out which is the tty group of this account, will still delete it anyway");
-        warn_syslog("Couldn't find out the name of the tty group of acount $account ($ttygroup doesn't exist), deleting anyway");
+        warn_syslog("Couldn't find out the name of the tty group of account $account ($ttygroup doesn't exist), deleting anyway");
         $ttygroup = undef;
     }
 }
