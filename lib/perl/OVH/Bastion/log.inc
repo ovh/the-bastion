@@ -38,6 +38,7 @@ sub syslog_close {
         Sys::Syslog::closelog();
         $_syslog_inited = 0;
     }
+    return;
 }
 
 END {
@@ -135,7 +136,8 @@ sub _sql_update_db {
         # create table
         $result = $dbh->do(
             $sqltype eq 'local'
-            ? "CREATE TABLE IF NOT EXISTS connections(
+            ? <<'EOS'
+            CREATE TABLE IF NOT EXISTS connections(
                 id        INTEGER PRIMARY KEY,
                 timestamp INTEGER,
                 timestampusec INTEGER,
@@ -159,8 +161,10 @@ sub _sql_update_db {
                 timestampendusec INTEGER,
                 returnvalue  INTEGER,
                 comment TEXT,
-                uniqid  TEXT)"
-            : "CREATE TABLE IF NOT EXISTS connections_summary(
+                uniqid  TEXT)
+EOS
+            : <<'EOS'
+            CREATE TABLE IF NOT EXISTS connections_summary(
                     id        INTEGER PRIMARY KEY,
                     timestamp INTEGER,
                     account   TEXT,
@@ -171,7 +175,8 @@ sub _sql_update_db {
                     portto    INTEGER,
                     user      TEXT,
                     plugin    TEXT,
-                    uniqid    TEXT)"
+                    uniqid    TEXT)
+EOS
         );
         return R('KO', msg => "creating table ($sqltype)") if not $result;
 
@@ -235,7 +240,7 @@ sub _sql_log_insert_file {
 
         # create the file ourselves, and set it rw rw rw (for global log)
         # -journal -shm and -wal files are created with same perms by sqlite
-        OVH::Bastion::touch_file($file, 0666);
+        OVH::Bastion::touch_file($file, oct(666));
     }
 
     # big db-related retry block:
@@ -249,7 +254,7 @@ sub _sql_log_insert_file {
     foreach my $retry (0 .. 19) {
 
         # if we're retrying, sleep a bit before, to ease concurrency
-        select(undef, undef, undef, $retry / 50 + rand() / 10) if $retry;
+        sleep($retry / 50 + rand() / 10) if $retry;
 
         # on each retry, clean those vars (undef $dbh disconnects if connected)
         undef $dbh;
@@ -274,17 +279,17 @@ sub _sql_log_insert_file {
         my $prepare;
         my @execute;
         if ($sqltype eq 'local') {
-            $prepare = "INSERT INTO connections
-(uniqid,timestamp,timestampusec,account,cmdtype,allowed,hostfrom,ipfrom,portfrom,bastionip,bastionport,hostto,ipto,portto,user,plugin,params,comment,ttyrecfile)
-VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+            $prepare =
+                "INSERT INTO connections"
+              . "(uniqid,timestamp,timestampusec,account,cmdtype,allowed,hostfrom,ipfrom,portfrom,bastionip,bastionport,hostto,ipto,portto,user,plugin,params,comment,ttyrecfile)"
+              . "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
             @execute = (
                 $uniqid,      $timestamp, $timestampusec, $account, $cmdtype, $allowed, $hostfrom, $ipfrom,  $portfrom, $bastionip,
                 $bastionport, $hostto,    $ipto,          $portto,  $user,    $plugin,  $params,   $comment, $ttyrecfile
             );
         }
         elsif ($sqltype eq 'global') {
-            $prepare = "INSERT INTO connections_summary (uniqid,timestamp,account,cmdtype,allowed,ipfrom,ipto,portto,user,plugin)
-VALUES (?,?,?,?,?,?,?,?,?,?)";
+            $prepare = "INSERT INTO connections_summary (uniqid,timestamp,account,cmdtype,allowed,ipfrom,ipto,portto,user,plugin)" . "VALUES (?,?,?,?,?,?,?,?,?,?)";
             @execute = ($uniqid, $timestamp, $account, $cmdtype, $allowed, $ipfrom, $ipto, $portto, $user, $plugin);
         }
 
@@ -457,7 +462,7 @@ sub _sql_log_update_file {
     foreach my $retry (0 .. 19) {
 
         # if we're retrying, sleep a bit before, to ease concurrency
-        select(undef, undef, undef, $retry / 50 + rand() / 10) if $retry;
+        sleep($retry / 50 + rand() / 10) if $retry;
 
         # on each retry, clean those vars (undef $dbh disconnects if connected)
         undef $dbh;
@@ -517,7 +522,7 @@ sub _sql_log_update_file {
         foreach my $retry (0 .. 19) {
 
             # if we're retrying, sleep a bit before, to ease concurrency
-            select(undef, undef, undef, $retry / 50 + rand() / 10) if $retry;
+            sleep($retry / 50 + rand() / 10) if $retry;
 
             # on each retry, clean those vars (undef $dbh disconnects if connected)
             undef $dbh;
@@ -533,12 +538,13 @@ sub _sql_log_update_file {
             }
 
             $sth = $dbh->prepare(
-                "CREATE TABLE IF NOT EXISTS plugincalls(
-                    id        INTEGER PRIMARY KEY,
-                    connection_id INTEGER UNIQUE,
-                    stdout    TEXT,
-                    stderr    TEXT)
-                "
+                <<'EOS'
+                CREATE TABLE IF NOT EXISTS plugincalls(
+                   id        INTEGER PRIMARY KEY,
+                   connection_id INTEGER UNIQUE,
+                   stdout    TEXT,
+                   stderr    TEXT)
+EOS
             );
             if (!$sth) {
                 $doing = "creating plugins table (prepare)";
@@ -635,8 +641,9 @@ sub log_access_get {
 
     # first, check in account sql file
     if (OVH::Bastion::config('enableAccountSqlLog')->value()) {
-        $params{'file'} = sprintf("/home/%s/%s-log-%04d%02d.sqlite", $params{'account'}, $params{'account'}, $localtime[5] + 1900, $localtime[4] + 1), $params{'sqltype'} = 'local';
-        $fnret = _sql_log_fetch_from_file(%params);
+        $params{'file'}    = sprintf("/home/%s/%s-log-%04d%02d.sqlite", $params{'account'}, $params{'account'}, $localtime[5] + 1900, $localtime[4] + 1);
+        $params{'sqltype'} = 'local';
+        $fnret             = _sql_log_fetch_from_file(%params);
         return $fnret;
     }
 
@@ -644,8 +651,8 @@ sub log_access_get {
 
 =cut not now, too slow and table columns differ
     if (OVH::Bastion::config('enableGlobalSqlLog')->value()) {
-        $params{'file'}    = sprintf("/home/logkeeper/global-log-%04d.sqlite", $localtime[5] + 1900),
-        $params{'sqltype'} = 'global',
+        $params{'file'}    = sprintf("/home/logkeeper/global-log-%04d.sqlite", $localtime[5] + 1900);
+        $params{'sqltype'} = 'global';
         $fnret             = _sql_log_fetch_from_file(%params);
         return $fnret;
     }
@@ -764,7 +771,7 @@ sub _sql_log_fetch_from_file {
     foreach my $retry (0 .. 19) {
 
         # if we're retrying, sleep a bit before, to ease concurrency
-        select(undef, undef, undef, $retry / 50 + rand() / 10) if $retry;
+        sleep($retry / 50 + rand() / 10) if $retry;
 
         # on each retry, clean those vars (undef $dbh disconnects if connected)
         undef $dbh;

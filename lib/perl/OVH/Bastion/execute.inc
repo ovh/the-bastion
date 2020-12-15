@@ -38,6 +38,7 @@ sub _sysret2human {
     }
 }
 
+## no critic(ControlStructures::ProhibitDeepNests)
 sub execute {
     my %params           = @_;
     my $cmd              = $params{'cmd'};                 # command to execute, must be an array ref (with possible parameters)
@@ -69,13 +70,12 @@ sub execute {
     #=cut only to debug tainted stuff
     require Scalar::Util;
     foreach (@$cmd) {
-        if (Scalar::Util::tainted($_)) {
+        if (Scalar::Util::tainted($_) && /(.+)/) {
 
             # to be able to warn under -T; untaint it. we're going to crash right after anyway.
-            my ($untainted) = $_ =~ /(.+)/;
             require Carp;
-            warn(Carp::longmess("would exec <" . join('^', @$cmd) . "> but param '$untainted' is tainted!"));
-            osh_warn("about to execute a cmd but param '$untainted' is tainted, I'm gonna crash!");
+            warn(Carp::longmess("would exec <" . join('^', @$cmd) . "> but param '$1' is tainted!"));
+            osh_warn("about to execute a cmd but param '$1' is tainted, I'm gonna crash!");
         }
     }
 
@@ -85,7 +85,7 @@ sub execute {
         my $child_exit_status = system(@$cmd);
         $fnret = _sysret2human($child_exit_status);
         return R(
-            $child_exit_status eq 0 ? 'OK' : ($must_succeed ? 'ERR_NON_ZERO_EXIT' : 'OK_NON_ZERO_EXIT'),
+            $child_exit_status == 0 ? 'OK' : ($must_succeed ? 'ERR_NON_ZERO_EXIT' : 'OK_NON_ZERO_EXIT'),
             value => {
                 sysret   => $child_exit_status + 0,
                 status   => $fnret->value->{'status'},
@@ -137,7 +137,7 @@ sub execute {
     }
 
     # then, while we still have fh to monitor
-    while ($select->count() > 1 || ($select->count() == 1 && not $select->exists(\*STDIN))) {
+    while ($select->count() > 1 || ($select->count() == 1 && !$select->exists(\*STDIN))) {
 
         # block only for 50ms, before checking if child is dead
         my @ready = $select->can_read(0.05);
@@ -314,7 +314,7 @@ sub execute {
     $fnret = _sysret2human($child_exit_status);
     osh_debug("cmd returned with " . $fnret->msg);
     return R(
-        $fnret->value->{'status'} eq 0 ? 'OK' : ($must_succeed ? 'ERR_NON_ZERO_EXIT' : 'OK_NON_ZERO_EXIT'),
+        $fnret->value->{'status'} == 0 ? 'OK' : ($must_succeed ? 'ERR_NON_ZERO_EXIT' : 'OK_NON_ZERO_EXIT'),
         value => {
             sysret   => $child_exit_status >> 8,
             stdout   => $output{stdout},

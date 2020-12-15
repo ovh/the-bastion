@@ -201,12 +201,13 @@ sub get_ssh_pub_key_info {
         return R('KO_PRIVATE_KEY');
     }
 
-    if ($pubKey !~ m{^\s*((\S+)\s+)?(ssh-dss|ssh-rsa|ecdsa-sha\d+-nistp\d+|ssh-ed\d+)\s+([a-zA-Z0-9/=+]+)(\s+(.{1,128}))?$}
-        || length($pubKey) > 3000)
-    {
+    my ($prefix, $typecode, $base64, $comment);
+    if ($pubKey =~ m{^\s*((\S+)\s+)?(ssh-dss|ssh-rsa|ecdsa-sha\d+-nistp\d+|ssh-ed\d+)\s+([a-zA-Z0-9/=+]+)(\s+(.{1,128})?)?$} && length($pubKey) <= 3000) {
+        ($prefix, $typecode, $base64, $comment) = ($2, $3, $4, $6);
+    }
+    else {
         return R('KO_NOT_A_KEY', value => {line => $pubKey});
     }
-    my ($prefix, $typecode, $base64, $comment) = ($2, $3, $4, $6);
     my $line = "$typecode $base64";
     $prefix = '' if not defined $prefix;
     $line .= " " . $comment if $comment;
@@ -231,7 +232,7 @@ sub get_ssh_pub_key_info {
         print {$fh} $typecode . " " . $base64;
         close($fh);
         $fnret = OVH::Bastion::execute(cmd => ['ssh-keygen', '-l', '-f', $filename]);
-        if ($fnret->is_err || not $fnret->value || ($fnret->value->{'sysret'} != 0 && $fnret->value->{'sysret'} != 1)) {
+        if ($fnret->is_err || !$fnret->value || ($fnret->value->{'sysret'} != 0 && $fnret->value->{'sysret'} != 1)) {
 
             # sysret == 1 means ssh-keygen didn't recognize this key, handled below.
             return R('ERR_SSH_KEYGEN_FAILED', msg => "Couldn't read the fingerprint of $filename (" . $fnret->msg . ")");
@@ -258,8 +259,8 @@ sub get_ssh_pub_key_info {
             if (grep { "$family-$size" eq $_ } @blacklistfiles) {
 
                 # check for vulnkeys
-                my $file = '/usr/share/ssh/blacklist.' . $family . '-' . $size;
-                if (-r $file && open(my $fh_blacklist, '<', $file)) {
+                my $blfile = '/usr/share/ssh/blacklist.' . $family . '-' . $size;
+                if (-r $blfile && open(my $fh_blacklist, '<', $blfile)) {
                     my $shortfp = $fingerprint;
                     $shortfp =~ s/://g;
                     $shortfp =~ s/^.{12}//;
@@ -277,7 +278,7 @@ sub get_ssh_pub_key_info {
             # check allowed algos and key size
             my $allowedSshAlgorithms = OVH::Bastion::config("allowed${way}SshAlgorithms");
             my $minimumRsaKeySize    = OVH::Bastion::config("minimum${way}RsaKeySize");
-            if ($allowedSshAlgorithms && not grep { lc($return{'family'}) eq $_ } @{$allowedSshAlgorithms->value}) {
+            if ($allowedSshAlgorithms && !grep { lc($return{'family'}) eq $_ } @{$allowedSshAlgorithms->value}) {
                 return R('KO_FORBIDDEN_ALGORITHM', value => \%return);
             }
             if ($minimumRsaKeySize && lc($return{'family'}) eq 'rsa' && $minimumRsaKeySize->value > $return{'size'}) {
@@ -312,19 +313,19 @@ sub is_valid_public_key {
     if ($fnret->err eq 'KO_PRIVATE_KEY') {
 
         # n00b check
-        $fnret->{'msg'} = <<EOS;
+        $fnret->{'msg'} = <<'EOS';
 HOLY SH*T, did you just paste your PRIVATE KEY?!! You have no idea what you are doing, do you? No matter what, don't do that ever again.
 Hint: in 'private key', the most important word is 'private', which means, well, you know, NOT PUBLIC.
 EOS
     }
     elsif ($fnret->err eq 'KO_NOT_A_KEY') {
-        $fnret->{'msg'} = <<EOS;
+        $fnret->{'msg'} = <<'EOS';
 This doesn't look like an SSH public key, accepted formats are RSA (>= 2048 bits)
 and if supported by the OS, ECDSA and Ed25519.
 EOS
     }
     elsif ($fnret->err eq 'KO_VULNERABLE_KEY') {
-        $fnret->{'msg'} = <<EOS;
+        $fnret->{'msg'} = <<'EOS';
 This key is COMPROMISED due to tue Debian OpenSSL 2008 debacle (aka CVE-2008-0166).
 ***********************************************
 DO NOT USE THIS KEY ANYWHERE, IT IS VULNERABLE!
@@ -460,8 +461,8 @@ sub generate_ssh_key {
     $fnret->err eq 'OK' or return R('ERR_SSH_KEYGEN_FAILED', msg => "Error while generating group key (" . $fnret->msg . ")");
 
     my %files = (
-        $sshKeyName          => ($group_readable ? 0440 : 0400),
-        $sshKeyName . '.pub' => 0444,
+        $sshKeyName          => ($group_readable ? oct(440) : oct(400)),
+        $sshKeyName . '.pub' => oct(444),
     );
     while (my ($file, $chmod) = each(%files)) {
         if (not -e $file) {
@@ -580,7 +581,7 @@ sub is_allowed_algo_and_size {
             return R('KO_KEY_SIZE_INVALID', msg => "For the selected algorithm, valid key sizes are 256, 384, 521");
         }
     }
-    elsif ($algo eq 'ed25519' and $size and $size ne 256) {
+    elsif ($algo eq 'ed25519' && $size && $size ne '256') {
         return R('KO_KEY_SIZE_INVALID', msg => "For the selected algorithm, key size must be 256");
     }
     return R('OK');
@@ -649,6 +650,7 @@ sub print_public_key {
     osh_info(Term::ANSIColor::colored('keyline', 'red') . ' follows, please copy the *whole* line:');
     print($line. "\n");
     osh_info(' ');
+    return;
 }
 
 sub account_ssh_config_get {
@@ -678,7 +680,7 @@ sub account_ssh_config_get {
         }
 
         # remove empty lines & comments
-        my @lines = grep { /./ && !/^\s*#/ } split("\n", $sshconfig_data);
+        my @lines = grep { /./ && !/^\s*#/ } split(/\n/, $sshconfig_data);
 
         # lowercase all keys
         my %keys = map { m/^(\S+)\s+(.+)$/ ? (lc($1) => $2) : () } @lines;

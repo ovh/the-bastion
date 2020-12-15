@@ -13,7 +13,7 @@ sub is_user_in_group {
     my $user   = $params{'user'} || OVH::Bastion::get_user_from_env()->value;
 
     # mandatory keys
-    if (!$user or !$group) {
+    if (!$user || !$group) {
         return R('ERR_MISSING_PARAMETER', msg => "Missing parameter 'user' or 'group'");
     }
 
@@ -80,9 +80,12 @@ sub is_valid_uid {
         return R('KO_BAD_RANGE', msg => "Parameter 'uid' should be between $low and $high");
     }
 
-    $uid =~ m/^(\d+)$/;    # Untaint
-
-    return R('OK', value => $1);
+    # untaint
+    if ($uid =~ m/^(\d+)$/) {
+        return R('OK', value => $1);
+    }
+    warn_syslog("Got an invalid uid ('$uid')");
+    return R('ERR_INVALID_UID', msg => "Got an invalid uid ('$uid')");
 }
 
 sub get_next_available_uid {
@@ -316,8 +319,12 @@ sub access_modify {
     }
 
     if ($ttl) {
-        return R('ERR_INVALID_PARAMETER', msg => "The TTL must be numeric") if ($ttl !~ /^(\d+)$/);
-        $ttl = $1;
+        if ($ttl =~ /^(\d+)$/) {
+            $ttl = $1;
+        }
+        else {
+            return R('ERR_INVALID_PARAMETER', msg => "The TTL must be numeric");
+        }
     }
 
     # check if the caller has the right to make the change he's asking
@@ -342,18 +349,20 @@ sub access_modify {
         push @one_should_succeed, OVH::Bastion::is_user_in_group(user => $requester, group => 'osh-account' . ucfirst($action) . 'PersonalAccess', sudo => 1);
     }
     elsif ($way eq 'group') {
-        $expected_running_as = "$group-aclkeeper";
+        $expected_running_as = $group;
         push @one_should_succeed, OVH::Bastion::is_group_aclkeeper(account => $requester, group => $shortGroup, superowner => 1, sudo => 1);
     }
     elsif ($way eq 'groupguest') {
         push @one_should_succeed, OVH::Bastion::is_group_gatekeeper(account => $requester, group => $shortGroup, superowner => 1, sudo => 1);
     }
 
-    if (not defined $expected_running_as || $running_as ne $expected_running_as) {
+    if ($running_as ne $expected_running_as) {
+        warn_syslog("Security violation: current running user ($running_as) unexpected (wanted $expected_running_as)");
         return R('ERR_SECURITY_VIOLATION', msg => "Current running user unexpected");
     }
 
     if (grep({ $_ } @one_should_succeed) == 0 && $requester ne 'root') {
+        warn_syslog("Security violation: requesting user '$requester' doesn't have the right to do that (way=$way, group=" . ($shortGroup ? '<u>' : $shortGroup) . ")");
         return R('ERR_SECURITY_VIOLATION', msg => "You're not allowed to do that");
     }
 
@@ -393,7 +402,7 @@ sub access_modify {
         if (!(-e $file)) {
 
             # it doesn't exist yet, create it
-            OVH::Bastion::touch_file($file, 0644);
+            OVH::Bastion::touch_file($file, oct(644));
             if (!(-e $file)) {
                 return R('ERR_CANNOT_CREATE_FILE', msg => "File '$file' is missing and couldn't be created");
             }
@@ -654,7 +663,7 @@ sub get_group_list {
         my ($name, $passwd, $gid, $members) = @nextgroup;
         if (    $groupType eq 'key'
             and $name =~ /^key/
-            and $name !~ /-(owner|gatekeeper|aclkeeper)$/
+            and $name !~ /-(?:owner|gatekeeper|aclkeeper)$/
             and not grep { $name eq $_ } qw{ keykeeper keyreader })
         {
             $name =~ s/^key//;
@@ -727,7 +736,7 @@ sub get_realm_list {
 
 # check if account is a bastion admin (gives access to adminXyz commands)
 # hint: an admin is also always a superowner
-sub is_admin {
+sub is_admin {    ## no critic(Subroutines::RequireArgUnpacking)
     my %params  = @_;
     my $sudo    = $params{'sudo'};      # we're run under sudo
     my $account = $params{'account'};
@@ -761,7 +770,7 @@ sub is_admin {
 
 # check if account is a superowner
 # hint: an admin is also always a superowner
-sub is_super_owner {
+sub is_super_owner {    ## no critic(Subroutines::RequireArgUnpacking)
     my %params  = @_;
     my $sudo    = $params{'sudo'};      # we're run under sudo
     my $account = $params{'account'};
@@ -796,7 +805,7 @@ sub is_super_owner {
 }
 
 # check if account is an auditor
-sub is_auditor {
+sub is_auditor {    ## no critic(Subroutines::RequireArgUnpacking)
     my %params  = @_;
     my $sudo    = $params{'sudo'};      # we're run under sudo
     my $account = $params{'account'};
@@ -825,13 +834,14 @@ sub is_auditor {
 }
 
 # used by funcs below
-sub _has_group_role {
+sub _has_group_role {    ## no critic(Subroutines::RequireArgUnpacking)
     my %params     = @_;
     my $account    = $params{'account'};
     my $shortGroup = $params{'group'};
     my $role       = $params{'role'};          # regular or gatekeeper or owner
     my $superowner = $params{'superowner'};    # allow superowner (will always return yes if so)
     my $sudo       = $params{'sudo'};          # are we run under sudo ?
+    my $fnret;
 
     if (not $account) {
         $account = $sudo ? $ENV{'SUDO_USER'} : OVH::Bastion::get_user_from_env()->value;
@@ -860,12 +870,12 @@ sub _has_group_role {
     }
 
     # for the realm case, we need to test sysaccount and not just account
-    my $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
+    $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
     $fnret or return $fnret;
 
     my $sysaccount = $fnret->value->{'sysaccount'};
 
-    my $fnret = OVH::Bastion::is_user_in_group(user => $sysaccount, group => $group);
+    $fnret = OVH::Bastion::is_user_in_group(user => $sysaccount, group => $group);
     osh_debug("is <$sysaccount> in <$group> ? => " . ($fnret ? 'yes' : 'no'));
     if ($fnret) {
         $fnret->{'value'} = {account => $account, sysaccount => $sysaccount};
@@ -968,8 +978,9 @@ sub get_remote_accounts_from_realm {
     my %accounts;
     if (opendir(my $dh, "/home/allowkeeper/$sysaccount")) {
         while (my $filename = readdir($dh)) {
-            next if $filename !~ /allowed_([a-zA-Z0-9._-]+)\.(ip|partial|private)/;
-            $accounts{$1} = 1;
+            if ($filename =~ /allowed_([a-zA-Z0-9._-]+)\.(ip|partial|private)/) {
+                $accounts{$1} = 1;
+            }
         }
         closedir($dh);
     }

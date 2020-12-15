@@ -20,7 +20,8 @@ sub interactive {
     my $interactiveModeTimeout = OVH::Bastion::config('interactiveModeTimeout')->value() || 0;
     my $slaveOrMaster          = (OVH::Bastion::config('readOnlySlaveMode')->value() ? 'slave' : 'master');
 
-    my $term   = Term::ReadLine->new('Bastion Interactive');
+    my $term = Term::ReadLine->new('Bastion Interactive');
+    ## no critic(ValuesAndExpressions::ProhibitEscapedCharacters)
     my $prompt = ""
       . "\001\033[0m\033[33m\002"
       . $self
@@ -37,7 +38,7 @@ sub interactive {
     my $prompt_non_readline = $prompt;
     $prompt_non_readline =~ s=\001|\002==g;
 
-    print <<EOM;
+    print <<"EOM";
 
 Welcome to $bastionName interactive mode, type `help' for available commands.
 You can use <tab> and <tab><tab> for autocompletion.
@@ -51,7 +52,7 @@ EOM
     $fnret or return ();
     my $pluginList = $fnret->value;
 
-    my @cmdlist = ('exit', 'ssh');
+    my @cmdlist = qw{ exit ssh };
     foreach my $plugin (sort keys %$pluginList) {
         $fnret = OVH::Bastion::can_account_execute_plugin(plugin => $plugin, account => $self);
         next if !$fnret;
@@ -113,9 +114,9 @@ EOM
             return @validcmds;
         }
 
-        for (my $i = 0 ; $i < @rules ; $i += 2) {
-            my $re   = $rules[$i];
-            my $item = $rules[$i + 1];
+        foreach my $i (0 .. $#rules) {
+            my $re   = $rules[$i++];
+            my $item = $rules[$i++];
 
             next unless ($line =~ m{^$re\s*$} or $line =~ m{^$re\s\Q$word\E\s*$});
 
@@ -132,35 +133,35 @@ EOM
                 my @autocomplete;
                 foreach (@{$item->{'ac'}}) {
                     if ($_ eq '<ACCOUNT>') {
-                        my $fnret = OVH::Bastion::get_account_list(cache => 1);
+                        $fnret = OVH::Bastion::get_account_list(cache => 1);
                         if ($fnret) {
                             push @autocomplete, sort keys %{$fnret->value()};
                             next;
                         }
                     }
                     elsif ($_ eq '<GROUP>') {
-                        my $fnret = OVH::Bastion::get_group_list(cache => 1, groupType => 'key');
+                        $fnret = OVH::Bastion::get_group_list(cache => 1, groupType => 'key');
                         if ($fnret) {
                             push @autocomplete, sort keys %{$fnret->value()};
                             next;
                         }
                     }
                     elsif ($_ eq '<REALM>') {
-                        my $fnret = OVH::Bastion::get_realm_list();
+                        $fnret = OVH::Bastion::get_realm_list();
                         if ($fnret) {
                             push @autocomplete, sort keys %{$fnret->value()};
                             next;
                         }
                     }
                     elsif ($_ eq '<RESTRICTED_COMMAND>') {
-                        my $fnret = OVH::Bastion::get_plugin_list(restrictedOnly => 1);
+                        $fnret = OVH::Bastion::get_plugin_list(restrictedOnly => 1);
                         if ($fnret) {
                             push @autocomplete, 'auditor', sort keys %{$fnret->value()};
                             next;
                         }
                     }
                     elsif ($_ eq '<COMMAND>') {
-                        my $fnret = OVH::Bastion::get_plugin_list();
+                        $fnret = OVH::Bastion::get_plugin_list();
                         if ($fnret) {
                             push @autocomplete, sort keys %{$fnret->value()};
                             next;
@@ -230,7 +231,7 @@ EOM
             chomp $fnret->value->{'stdout'}->[0];
             %after = map { $_ => 1 } split(/ /, $fnret->value->{'stdout'}->[0]);
         }
-        my @newgroups = grep { !exists $before{$_} && $_ !~ /^mfa-/ } keys %after;
+        my @newgroups = grep { !exists $before{$_} && !/^mfa-/ } keys %after;
         if (@newgroups) {
             osh_warn("IMPORTANT: You have been added to new groups since the session started.");
             osh_warn("You'll need to logout/login again from this interactive session to have");
