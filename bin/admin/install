@@ -751,19 +751,6 @@ if [ "$nothing" = 0 ]; then
         action_error "No group lastoshuser was found (!)"
     fi
 
-    # log
-    action_doing "Create /home/osh.log"
-    if [ ! -e /home/osh.log ] ; then
-        touch /home/osh.log
-        chmod a+w /home/osh.log
-        if command -v chattr &>/dev/null; then
-            chattr +a /home/osh.log 2>/dev/null || true
-        fi
-        action_done
-    else
-        action_na
-    fi
-
     action_doing "Create /var/log/bastion if needed"
     if [ ! -d /var/log/bastion ] ; then
         mkdir -p /var/log/bastion
@@ -1056,19 +1043,15 @@ if [ "$nothing" = 0 ]; then
 
     action_doing "Replacing legacy o+w by bastion-users/g+w"
     at_least_one_changed=0
-    for file in $(test -f /home/osh.log && find /home/osh.log -perm -o+w) $(find /home/logkeeper/ -mindepth 1 -maxdepth 1 -type f -name "global-log-????.sqlite" -perm -o+w)
+    for file in $(test -f /home/osh.log && find /home/osh.log -perm -o+w) $(find /home/logkeeper/ -mindepth 1 -maxdepth 1 -type f -name "global-log-*" -perm -o+w)
     do
-        if [ "$file" = /home/osh.log ]; then
-            if command -v chattr &>/dev/null; then
-                chattr -a /home/osh.log 2>/dev/null || true
-            fi
+        if echo "$file" | grep -Eq '\.log$' && command -v chattr &>/dev/null; then
+            chattr -a "$file" 2>/dev/null || true
         fi
         chown root:bastion-users "$file"
         chmod 660 "$file"
-        if [ "$file" = /home/osh.log ]; then
-            if command -v chattr &>/dev/null; then
-                chattr +a /home/osh.log 2>/dev/null || true
-            fi
+        if echo "$file" | grep -Eq '\.log$' && command -v chattr &>/dev/null; then
+            chattr +a "$file" 2>/dev/null || true
         fi
         at_least_one_changed=1
     done

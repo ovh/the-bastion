@@ -6,7 +6,7 @@ use common::sense;
 # that is launching us. we don't use GetOpts or such, as this is not
 # user-modifiable anyway. We're mainly passing parameters we will need
 # in this short script. some of them can sometimes be undef. this is normal.
-my ($ip, $sshClientHasOptionE, $userPasswordClue, $saveFile, $insert_id, $db_name, $uniq_id, @command) = @ARGV;
+my ($ip, $sshClientHasOptionE, $userPasswordClue, $saveFile, $insert_id, $db_name, $uniq_id, $self, @command) = @ARGV;
 
 # on signal (HUP happens a lot), still try to log in db
 sub exit_sig {
@@ -21,11 +21,11 @@ sub exit_sig {
 
         # and log
         OVH::Bastion::log_access_update(
-            insert_id   => $insert_id,
-            db_name     => $db_name,
-            uniq_id     => $uniq_id,
-            returnvalue => -9999,
-            comment     => 'signal_' . $sig
+            account   => $self,
+            insert_id => $insert_id,
+            db_name   => $db_name,
+            uniq_id   => $uniq_id,
+            signal    => $sig,
         );
     }
 
@@ -205,6 +205,7 @@ else {
 
 # update our sql line if we successfully inserted it back in osh.pl
 OVH::Bastion::log_access_update(
+    account          => $self,
     insert_id        => $insert_id,
     db_name          => $db_name,
     uniq_id          => $uniq_id,
@@ -212,7 +213,6 @@ OVH::Bastion::log_access_update(
     comment          => @comments ? join(' ', @comments) : undef,
     timestampend     => $timestamp,
     timestampendusec => $timestampusec,
-    ttyrecsize       => (stat($saveFile))[7],                       # FIXME we miss ttyrec rotations, need to fix a bug in ovh-ttyrec before ...
 );
 
 if ($sysret == -1) {

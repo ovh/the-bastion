@@ -15,7 +15,7 @@ use Config;
 my %signum2string;
 @signum2string{split ' ', $Config{sig_num}} = map { "SIG$_" } split ' ', $Config{sig_name};
 
-sub _sysret2human {
+sub sysret2human {
     my $sysret = shift;
     if ($sysret == -1) {
         return R('OK', msg => "error: failed to execute ($!)");
@@ -28,13 +28,13 @@ sub _sysret2human {
             value => {
                 coredump => $coredump ? \1 : \0,
                 signal   => $signum2string{$signal} || $signal,
-                status   => 0,
+                status   => undef,
             },
             msg => sprintf("signal %d (%s)%s", $signal, $signum2string{$signal}, $coredump ? ' and coredump' : '')
         );
     }
     else {
-        return R('OK', value => {coredump => \0, signal => 0, status => $sysret >> 8}, msg => sprintf("status %d", $sysret >> 8));
+        return R('OK', value => {coredump => \0, signal => undef, status => $sysret >> 8}, msg => sprintf("status %d", $sysret >> 8));
     }
 }
 
@@ -83,7 +83,7 @@ sub execute {
 
     if ($system) {
         my $child_exit_status = system(@$cmd);
-        $fnret = _sysret2human($child_exit_status);
+        $fnret = sysret2human($child_exit_status);
         return R(
             $child_exit_status == 0 ? 'OK' : ($must_succeed ? 'ERR_NON_ZERO_EXIT' : 'OK_NON_ZERO_EXIT'),
             value => {
@@ -92,7 +92,7 @@ sub execute {
                 coredump => $fnret->value->{'coredump'},
                 signal   => $fnret->value->{'signal'},
             },
-            msg => "Command exited with " . _sysret2human($child_exit_status)->msg,
+            msg => "Command exited with " . sysret2human($child_exit_status)->msg,
         );
     }
 
@@ -311,20 +311,21 @@ sub execute {
     waitpid($pid, 0);
     my $child_exit_status = $?;
 
-    $fnret = _sysret2human($child_exit_status);
+    $fnret = sysret2human($child_exit_status);
     osh_debug("cmd returned with " . $fnret->msg);
     return R(
         $fnret->value->{'status'} == 0 ? 'OK' : ($must_succeed ? 'ERR_NON_ZERO_EXIT' : 'OK_NON_ZERO_EXIT'),
         value => {
-            sysret   => $child_exit_status >> 8,
-            stdout   => $output{stdout},
-            stderr   => $output{stderr},
-            bytesnb  => \%bytesnb,
-            status   => $fnret->value->{'status'},
-            coredump => $fnret->value->{'coredump'},
-            signal   => $fnret->value->{'signal'},
+            sysret     => $child_exit_status >> 8,
+            sysret_raw => $child_exit_status,
+            stdout     => $output{stdout},
+            stderr     => $output{stderr},
+            bytesnb    => \%bytesnb,
+            status     => $fnret->value->{'status'},
+            coredump   => $fnret->value->{'coredump'},
+            signal     => $fnret->value->{'signal'},
         },
-        msg => "Command exited with " . _sysret2human($child_exit_status)->msg,
+        msg => "Command exited with " . sysret2human($child_exit_status)->msg,
     );
 }
 
