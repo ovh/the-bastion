@@ -187,7 +187,7 @@ foreach my $todelete ("$group-owner", "$group-aclkeeper", "$group-gatekeeper", $
 # remove sudoers if it's there
 $fnret = OVH::Bastion::execute(cmd => [$OVH::Bastion::BASEPATH . '/bin/sudogen/generate-sudoers.sh', 'delete', 'group', $group], must_succeed => 1, noisy_stdout => 1);
 if (!$fnret) {
-    warn_syslog("Error during group deletion of '$group', couldn't delete sudoers file: $fnret->msg");
+    warn_syslog("Error during group deletion of '$group', couldn't delete sudoers file: " . $fnret->msg);
 }
 
 OVH::Bastion::syslogFormatted(
