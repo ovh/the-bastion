@@ -1,3 +1,10 @@
+## v3.01.03 - 2020/12/15
+- fix: sudogen: don't check for account/groups validity too much when deleting them (fixes #86)
+- fix: guests: get rid of ghost guest accesses in corner cases (fixes internal ticket)
+- fix: osh.pl: plugin_config 'disabled' key is a boolean
+- chore: speedup tests by ~20%
+- chore: osh-accountDelete: fix typo
+
 ## v3.01.02 - 2020/12/08
 - fix: is_valid_remote_user: extend allowed size from 32 to 128
 - feat: add support for CentOS 8.3
