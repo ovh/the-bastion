@@ -8,8 +8,8 @@ open plugins
    batch
    clush
    groupInfo
-   groupListPasswords
    groupList
+   groupListPasswords
    groupListServers
    help
    info

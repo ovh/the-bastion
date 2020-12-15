@@ -6,16 +6,16 @@ restricted plugins
 
    accountAddPersonalAccess
    accountCreate
-   accountDelete
    accountDelPersonalAccess
+   accountDelete
    accountGeneratePassword
    accountGrantCommand
    accountInfo
+   accountList
    accountListAccesses
    accountListEgressKeys
    accountListIngressKeys
    accountListPasswords
-   accountList
    accountMFAResetPassword
    accountMFAResetTOTP
    accountModify

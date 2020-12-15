@@ -24,7 +24,7 @@ Launch a remote command on several machines sequentially (clush-like)
 
 .. option:: --no-pause-on-failure   
 
-   Don't pause if the remote command doesn't return failed (returned != 0)
+   Don't pause if the remote command failed (returned exit code != 0)
 
 .. option:: --no-confirm            
 

@@ -67,7 +67,7 @@ cat >>"$pluginindex" <<EOF
 
 EOF
 
-for section in $(find doc/sphinx/plugins -mindepth 1 -maxdepth 1 -type d)
+for section in $(find doc/sphinx/plugins -mindepth 1 -maxdepth 1 -type d | LC_ALL=C sort)
 do
     indexfile="$section/index.rst"
     section=$(basename "$section")
@@ -78,7 +78,7 @@ do
 .. toctree::
 
 EOF
-    for plugin in $(find doc/sphinx/plugins/$section -type f -name "*.rst" ! -name "index.rst" | sort)
+    for plugin in $(find doc/sphinx/plugins/$section -type f -name "*.rst" ! -name "index.rst" | LC_ALL=C sort)
     do
         echo "   $(basename $plugin .rst)" >> "$indexfile"
     done
