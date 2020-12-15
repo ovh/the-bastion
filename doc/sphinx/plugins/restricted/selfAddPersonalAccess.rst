@@ -2,8 +2,8 @@
 selfAddPersonalAccess
 ======================
 
-Remove a personal server access from an account
-===============================================
+Add a personal server access on your account
+============================================
 
 
 .. admonition:: usage

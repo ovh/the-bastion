@@ -3,7 +3,7 @@ realmInfo
 ==========
 
 Display information about a bastion realm
-==========================================
+=========================================
 
 
 .. admonition:: usage
