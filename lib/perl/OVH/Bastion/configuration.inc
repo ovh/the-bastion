@@ -401,6 +401,15 @@ sub plugin_config {
             }
         }
 
+        # compat: we previously expected "yes" as a value for the 'disabled' option, instead of a boolean.
+        # To keep compatibility we still consider "yes" as a true value (as any non-empty string is),
+        # however we check that the user was not confused and didn't try to enable the plugin by using
+        # a string such as "no" or "false" instead of a real false boolean:
+        if (defined $config{'disabled'} && $config{'disabled'} =~ /no|false/) {
+            warn_syslog("Configuration error for plugin $plugin on the 'disabled' key: expected a boolean, casted '" . $config{'disabled'} . "' into false");
+            $config{'disabled'} = 0;
+        }
+
         $_plugin_config_cache{$plugin} = \%config;
     }
 

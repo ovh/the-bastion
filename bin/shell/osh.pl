@@ -827,7 +827,7 @@ if ($osh_command) {
         my $isDisabled = OVH::Bastion::plugin_config(plugin => $osh_command, key => "disabled");
 
         # plugin is enabled by default if not explicitly disabled
-        if ($isDisabled and $isDisabled->value() =~ /yes/) {
+        if ($isDisabled and $isDisabled->value()) {
             main_exit OVH::Bastion::EXIT_RESTRICTED_COMMAND, "plugin_disabled", "Sorry, this plugin has been disabled by policy.";
         }
         if ($isDisabled->is_err && $isDisabled->err ne 'KO_NO_SUCH_FILE') {
