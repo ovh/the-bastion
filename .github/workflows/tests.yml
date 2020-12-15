@@ -20,7 +20,7 @@ jobs:
         name: Full
         strategy:
             matrix:
-                platform: ['centos7@centos:7.7.1908', 'centos7@centos:7.8.2003', 'centos7@centos:7.9.2009', 'centos8@centos:8.1.1911', 'centos8@centos:8.2.2004', 'centos8@centos:8.3.2011', debian10, debian8, debian9, opensuse150, opensuse151, opensuse152, ubuntu1404, ubuntu1604, ubuntu1804, ubuntu2004]
+                platform: ['centos7@centos:7.7.1908', 'centos7@centos:7.8.2003', 'centos7@centos:7.9.2009', 'centos8@centos:8.1.1911', 'centos8@centos:8.2.2004', 'centos8@centos:8.3.2011', debian10, debian8, debian9, opensuse151, opensuse152, ubuntu1404, ubuntu1604, ubuntu1804, ubuntu2004]
         runs-on: ubuntu-latest
         if: contains(github.event.pull_request.labels.*.name, 'tests:full')
         steps:
