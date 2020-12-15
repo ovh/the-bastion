@@ -349,7 +349,6 @@ sub get_user_groups {
 
         # build cache, it'll be faster than even one exec `id -nG` anyway
         setgrent();
-        my %users;
         while (my ($name, $passwd, $gid, $members) = getgrent()) {
             foreach my $member (split / /, $members) {
                 push @{$_cache_get_user_groups{$member}}, $name;
@@ -509,7 +508,8 @@ sub print_acls {
             my $expiry   = $entry->{'expiry'} ? (duration2human(seconds => ($entry->{'expiry'} - time()))->value->{'human'}) : '-';
 
             # type => member ('full'), guest ('partial'), personal or legacy
-            my $ipReverse = OVH::Bastion::ip2host($entry->{'ip'})->value if $reverse;
+            my $ipReverse;
+            $ipReverse = OVH::Bastion::ip2host($entry->{'ip'})->value if $reverse;
             $entry->{'reverseDns'} = $ipReverse;
 
             push @flatArray, $entry;
@@ -602,7 +602,7 @@ sub is_access_granted {
     # 0c/3 check if there are more complex "ingressToEgressRules" defined, and potentially bail out whether needed
     $fnret = OVH::Bastion::config('ingressToEgressRules');
     my @rules = @{$fnret->value || []};
-    for (my $ruleNb = 0 ; $ruleNb < @rules ; $ruleNb++) {
+    foreach my $ruleNb (0 .. $#rules) {
         my ($inNets, $outNets, $policy) = @{$rules[$ruleNb]};
 
         $fnret = _is_in_any_net(ip => $ipfrom, networks => $inNets);
@@ -850,20 +850,18 @@ sub ssh_test_access_way {
     $fnret = OVH::Bastion::execute(cmd => \@command, noisy_stderr => 1);
     $fnret or return $fnret;
 
-    no strict 'subs';
-    if (grep { $fnret->value->{'sysret'} eq $_ } (0, OVH::Bastion::EXIT_ACCOUNT_INVALID, OVH::Bastion::EXIT_HOST_NOT_FOUND)) {
+    if (grep { $fnret->value->{'sysret'} eq $_ } (0, OVH::Bastion::EXIT_ACCOUNT_INVALID(), OVH::Bastion::EXIT_HOST_NOT_FOUND())) {
         return R('OK');
     }
-    use strict 'subs';
 
     my $hint;
 
     # 124 is the return code from the timeout system command when it times out
     # tested on Linux, NetBSD
-    if ($fnret->value->{'sysret'} == 124 || grep { $_ =~ /timed out/i } @{$fnret->value->{'stderr'} || []}) {
+    if ($fnret->value->{'sysret'} == 124 || grep { /timed out/i } @{$fnret->value->{'stderr'} || []}) {
         $hint = "Hint: did you remotely allow this bastion to access the SSH port?";
     }
-    elsif (grep { $_ =~ /Permission denied/i } @{$fnret->value->{'stderr'} || []}) {
+    elsif (grep { /Permission denied/i } @{$fnret->value->{'stderr'} || []}) {
         $hint = "Hint: did you add the proper public key to the remote's authorized_keys?";
     }
     my $msg = "Couldn't connect to $user\@$ip (ssh returned error " . $fnret->value->{'sysret'} . ")";

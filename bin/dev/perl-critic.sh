@@ -9,8 +9,9 @@ cd "$basedir" || exit 1
 
 action_doing "Checking perlcritic"
 # shellcheck disable=SC2086
-perlcritic --color -q -p "$(dirname "$0")"/perlcriticrc .; ret=$?
-if [ "$ret" = 0 ]; then
+perlcritic --color -q -p "$(dirname "$0")"/perlcriticrc .; ret1=$?
+perlcritic --color -q -p "$(dirname "$0")"/perlcriticrc lib/perl/OVH/Bastion/*.inc; ret2=$?
+if [ "$ret1" = 0 ] && [ "$ret2" = 0 ]; then
     # shellcheck disable=SC2119
     action_done
 else

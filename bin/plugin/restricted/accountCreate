@@ -104,7 +104,6 @@ if (!$pubKey && !$noKey) {
     }
     osh_info "\nIn any case, don't save it without a passphrase (your paste won't be echoed).";
     $pubKey = <STDIN>;
-    ## use critic
 }
 
 if (!$noKey) {

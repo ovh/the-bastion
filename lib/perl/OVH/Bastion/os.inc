@@ -45,7 +45,7 @@ sub _sys_autoretry {
     my %params = @_;
 
     my $fnret;
-    for (my $try = 1 ; $try < 10 ; $try++) {
+    foreach my $try (1 .. 10) {
         $fnret = OVH::Bastion::execute(%params);
         if (   ($fnret->value && $fnret->value->{'sysret'} == 10)
             || ($fnret->value && $fnret->value->{'stdout'} && grep { /retry|lock/i } @{$fnret->value->{'stdout'}})
@@ -309,7 +309,7 @@ sub sys_delmemberfromgroup {
         if (open(my $fh, '<', '/etc/group')) {
             while (<$fh>) {
                 if (/^\Q$group\E:/) {
-                    s/([:,])\Q$user\E(,|$)/$1/;
+                    s/([:,])\Q$user\E(?:,|$)/$1/;
                     s/,$//;
                 }
                 $contents .= $_;
@@ -391,7 +391,7 @@ sub sys_neutralizepassword {
     my $stdin_str;
 
     if (is_linux()) {
-        @cmd       = ('chpasswd', '-e');
+        @cmd       = qw{ chpasswd -e };
         $stdin_str = "$user:*";
     }
     elsif (is_freebsd()) {
@@ -461,8 +461,12 @@ sub sys_getpasswordinfo {
         $fnret = OVH::Bastion::execute(cmd => ['getent', 'shadow', $user]);
         $fnret or return $fnret;
         return R('KO_NOT_FOUND') if ($fnret->value->{'sysret'} != 0);
-        return R('ERR_CANNOT_PARSE_SHADOW') if ($fnret->value->{'stdout'}->[0] !~ m{^([^:]*):([^:]*):([^:]*):([^:]*):([^:]*):([^:]*):([^:]*):([^:]*):([^:]*)$});
-        %ret = (user => $1, password => $2, epoch_changed_days => $3, min_days => $4, max_days => $5, warn_days => $6, inactive_days => $7, epoch_disabled_days => $8);
+        if ($fnret->value->{'stdout'}->[0] =~ m{^([^:]*):([^:]*):([^:]*):([^:]*):([^:]*):([^:]*):([^:]*):([^:]*):([^:]*)$}) {
+            %ret = (user => $1, password => $2, epoch_changed_days => $3, min_days => $4, max_days => $5, warn_days => $6, inactive_days => $7, epoch_disabled_days => $8);
+        }
+        else {
+            return R('ERR_CANNOT_PARSE_SHADOW');
+        }
 
     }
     elsif (is_bsd()) {
@@ -473,8 +477,12 @@ sub sys_getpasswordinfo {
             close($masterfd);
             my @userlines = grep { /^\Q$user\E:/ } @lines;
             return R('KO_NOT_FOUND') if (@userlines != 1);
-            return R('ERR_CANNOT_PARSE_SHADOW') if ($userlines[0] !~ m{^([^:]*):([^:]*)});
-            %ret = (user => $1, password => $2);
+            if ($userlines[0] =~ m{^([^:]*):([^:]*)}) {
+                %ret = (user => $1, password => $2);
+            }
+            else {
+                return R('ERR_CANNOT_PARSE_SHADOW');
+            }
         }
         else {
             return R('ERR_CANNOT_READ_FILE', msg => "Couldn't open /etc/master.passwd: $!");
@@ -545,7 +553,7 @@ sub sys_setfacl {
             my @perms;
             foreach (@{$fnret->value->{'stdout'}}) {
                 chomp;
-                /^((user|group|other)::...)$/ or next;
+                /^((?:user|group|other)::...)$/ or next;
                 push @perms, $1;    # untaint
             }
             if (@perms != 3) {

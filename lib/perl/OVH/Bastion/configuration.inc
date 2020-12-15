@@ -113,17 +113,17 @@ sub load_configuration {
     $C->{'defaultLogin'} =~ s/[^a-zA-Z0-9_-]//g;
 
     $C->{'accountUidMin'} = 2000 if (not defined $C->{'accountUidMin'} or $C->{'accountUidMin'} !~ /^\d+$/);
-    $C->{'accountUidMin'} > 100       or $C->{'accountUidMin'} = 100;
-    $C->{'accountUidMin'} < 999999999 or $C->{'accountUidMin'} = 999999999;    # usually 2^31-2 but well...
+    $C->{'accountUidMin'} > 100         or $C->{'accountUidMin'} = 100;
+    $C->{'accountUidMin'} < 999_999_999 or $C->{'accountUidMin'} = 999_999_999;    # usually 2^31-2 but well...
 
     $C->{'accountUidMax'} = 99999 if (not defined $C->{'accountUidMax'} or $C->{'accountUidMax'} !~ /^\d+$/);
-    $C->{'accountUidMax'} > 100       or $C->{'accountUidMax'} = 100;
-    $C->{'accountUidMax'} < 999999999 or $C->{'accountUidMax'} = 999999999;    # usually 2^31-2 but well...
+    $C->{'accountUidMax'} > 100         or $C->{'accountUidMax'} = 100;
+    $C->{'accountUidMax'} < 999_999_999 or $C->{'accountUidMax'} = 999_999_999;    # usually 2^31-2 but well...
 
     $C->{'accountUidMax'} = $C->{'accountUidMin'} + 1000 if ($C->{'accountUidMin'} + 1000 > $C->{'accountUidMax'});
 
-    $C->{'ttyrecGroupIdOffset'} = 100000 if (not defined $C->{'ttyrecGroupIdOffset'} or $C->{'ttyrecGroupIdOffset'} !~ /^\d+$/);
-    $C->{'ttyrecGroupIdOffset'} < 999999999 or $C->{'ttyrecGroupIdOffset'} = 999999999;
+    $C->{'ttyrecGroupIdOffset'} = 100_000 if (not defined $C->{'ttyrecGroupIdOffset'} or $C->{'ttyrecGroupIdOffset'} !~ /^\d+$/);
+    $C->{'ttyrecGroupIdOffset'} < 999_999_999 or $C->{'ttyrecGroupIdOffset'} = 999_999_999;
     if ($C->{'ttyrecGroupIdOffset'} < $C->{'accountUidMax'} - $C->{'accountUidMin'}) {
 
         # avoid overlap
@@ -237,10 +237,7 @@ sub load_configuration {
     foreach my $key (qw{ ingressKeysFrom egressKeysFrom }) {
         s=[^0-9.:/]==g for @{$C->{$key}};
     }
-    $C->{'adminAccounts'} = [
-        grep { OVH::Bastion::is_bastion_account_valid_and_existing(account => $_) }
-        map  { s/[^a-zA-Z0-9_-]//g; $_ } @{$C->{'adminAccounts'}}
-    ];
+    $C->{'adminAccounts'} = [grep { OVH::Bastion::is_bastion_account_valid_and_existing(account => $_) } @{$C->{'adminAccounts'}}];
 
     $C->{'documentationURL'} ||= "https://ovh.github.io/the-bastion/";
 
@@ -335,9 +332,9 @@ sub account_config {
         if (!open($fh, '<', $filename)) {
             return R('ERR_CANNOT_OPEN_FILE', msg => "Error while trying to open file $filename for read ($!)");
         }
-        my $value = do { local $/; <$fh> };
+        my $getvalue = do { local $/ = undef; <$fh> };
         close($fh);
-        return R('OK', value => $value);
+        return R('OK', value => $getvalue);
     }
 
     return R('ERR_INTERNAL');    # we shouldn't be here
@@ -461,7 +458,12 @@ sub group_config {
         }
         print $fh $value;
         close($fh);
-        chmod($secret ? 0640 : 0644), $filename;
+        if ($secret) {
+            chmod 0640, $filename;
+        }
+        else {
+            chmod 0644, $filename;
+        }
 
         # need to chown to group:group
         my (undef, undef, $groupuid, $groupgid) = getpwnam($group);
@@ -499,7 +501,7 @@ sub json_load {
     # Load file content
     my $rawConf;
     if (open(my $fh, '<', $file)) {
-        foreach (<$fh>) {
+        while (<$fh>) {
             chomp;
             s/^((?:(?:[^"]*"){2}|[^"]*)*[^"]*)\/\/.*$/$1/;    # Remove comment that start with //
             /^\s*#/ and next;                                 # Comment start with ^#

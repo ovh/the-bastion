@@ -19,6 +19,9 @@ terminal_funcs = HEXIT osh_exit osh_ok
 [ControlStructures::ProhibitDeepNests]
 max_nests = 6
 
+[Variables::ProhibitPackageVars]
+packages = Data::Dumper File::Find FindBin Log::Log4perl DBI
+
 [-BuiltinFunctions::ProhibitBooleanGrep]
 [-ControlStructures::ProhibitCascadingIfElse]
 [-ControlStructures::ProhibitPostfixControls]

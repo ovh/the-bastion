@@ -9,6 +9,7 @@ my $_mock_data;
 
 sub enable_mocking {
     $_mocking_enabled = 1;
+    return;
 }
 
 sub is_mocking {
@@ -18,6 +19,7 @@ sub is_mocking {
 sub set_mock_data {
     die "tried to set_mock_data without enabling mocking first" unless is_mocking();
     $_mock_data = shift;
+    return;
 }
 
 sub mock_get_account_entry {
