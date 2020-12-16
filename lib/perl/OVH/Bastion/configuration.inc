@@ -250,7 +250,7 @@ sub load_configuration {
             }
 
             # if set to "no", "false" or "disabled", be nice and cast to false (because a string is true, otherwise)
-            elsif (grep { lc($C->{$o}) eq lc($_) } qw{ no false disabled }) {
+            elsif (grep { lc($C->{$o}) eq lc } qw{ no false disabled }) {
                 push @errors, "Configuration error: found value '" . $C->{$o} . "' for option '$o', but it's supposed to be a boolean, assuming false";
                 $C->{$o} = 0;
             }
@@ -294,7 +294,9 @@ sub load_configuration {
 
     # 5/6) Arrays whose values should match a specific regex.
     foreach my $o (
-        {name => 'allowedIngressSshAlgorithms',          default => [qw{ rsa ecdsa ed25519 }], validre => qr/^(rsa|ecdsa|ed25519)$/},
+        ## no critic(RegularExpressions::ProhibitFixedStringMatches)
+        {name => 'allowedIngressSshAlgorithms', default => [qw{ rsa ecdsa ed25519 }], validre => qr/^(rsa|ecdsa|ed25519)$/},
+        ## no critic(RegularExpressions::ProhibitFixedStringMatches)
         {name => 'allowedEgressSshAlgorithms',           default => [qw{ rsa ecdsa ed25519 }], validre => qr/^(rsa|ecdsa|ed25519)$/},
         {name => 'accountCreateSupplementaryGroups',     default => [],                        validre => qr/^(.*)$/},
         {name => 'accountCreateDefaultPersonalAccesses', default => [],                        validre => qr/^(.*)$/},

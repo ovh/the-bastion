@@ -12,25 +12,26 @@ my @orderedsections;
 
 sub dumpdoc {
     if (!%h) {
-        ; # nothing to do
+        ;    # nothing to do
     }
     elsif (defined $h{param} && defined $h{default} && defined $h{desc} && defined $h{type}) {
         die "attempting to dump data but section=$section" if !$section;
-        push @{ $sections{$section} }, $h{param};
+        push @{$sections{$section}}, $h{param};
         push @out, ".. _bastion_conf_$h{param}:\n";
         push @out, "\n";
         push @out, "$h{param}\n";
         my $len = length($h{param});
-        push @out, "*"x$len."\n\n";
+        push @out, "*" x $len . "\n\n";
         push @out, ":Type: ``$h{type}``\n\n";
         push @out, ":Default: ``$h{default}``\n\n";
         push @out, ":Example: ``$h{example}``\n\n" if $h{example};
         push @out, "$h{desc}\n\n";
     }
     else {
-        die "something is missing: ".($h{param}?"":"param ").($h{default}?"":"default ").($h{desc}?"":"desc ").($h{type}?"":"type")."\n";
+        die "something is missing: " . ($h{param} ? "" : "param ") . ($h{default} ? "" : "default ") . ($h{desc} ? "" : "desc ") . ($h{type} ? "" : "type") . "\n";
     }
     %h = ();
+    return;
 }
 
 my $state = '';
@@ -39,8 +40,8 @@ while (<>) {
     next if /^\s*$/;
     if (m{^# ([a-zA-Z0-9_]+) \((.+)\)}) {
         $h{param} = $1;
-        $h{type} = $2;
-        $state = 'name';
+        $h{type}  = $2;
+        $state    = 'name';
     }
     elsif (m{^#\s+DESC:\s+(.+)$}) {
         $h{desc} = $1;
@@ -64,10 +65,10 @@ while (<>) {
     elsif (m{^# > (.+)$}) {
         if (%h or $state) { die "new section '$1' but we have pending data"; }
         $section = $1;
-        $state = 'section';
+        $state   = 'section';
         push @orderedsections, $section;
-        push @out, "$1\n";
-        push @out, "-"x(length($1))."\n\n";
+        push @out,             "$1\n";
+        push @out,             "-" x (length($1)) . "\n\n";
     }
     elsif (m{^# >> (.+)$} and $state eq 'section' and $section) {
         $sectiondesc{$section} = $1;
@@ -78,7 +79,7 @@ while (<>) {
 }
 dumpdoc();
 
-print <<EOF
+print <<'EOF'
 ======================
 bastion.conf reference
 ======================
@@ -94,24 +95,23 @@ Option List
 ===========
 
 EOF
-;
+  ;
 
 foreach my $section (@orderedsections) {
     die "no description for section $section" if !$sectiondesc{$section};
     print "\n$section\n";
-    print "-"x(length($section))."\n\n";
-    print $sectiondesc{$section}."\n\n";
-    foreach (@{ $sections{$section} }) {
+    print "-" x (length($section)) . "\n\n";
+    print $sectiondesc{$section} . "\n\n";
+    foreach (@{$sections{$section}}) {
         print "- :ref:`bastion_conf_$_`\n";
     }
 }
-print <<EOF
+print <<'EOF'
 
 Option Reference
 ================
 
 EOF
-;
-
+  ;
 
 print join("", @out);
