@@ -56,22 +56,22 @@
 #  DEFAULT: [ "rsa", "ecdsa", "ed25519" ]
 "allowedEgressSshAlgorithms": [ "rsa", "ecdsa", "ed25519" ],
 #
-# minimumIngressRsaKeySize (int)
+# minimumIngressRsaKeySize (int > 0)
 #     DESC: The minimum allowed size for ingress RSA keys (user->bastion). Sane values range from 2048 to 4096.
 #  DEFAULT: 2048
 "minimumIngressRsaKeySize": 2048,
 #
-# maximumIngressRsaKeySize (int)
+# maximumIngressRsaKeySize (int > 0)
 #     DESC: The maximum allowed size for ingress RSA keys (user->bastion). Too big values (>8192) are extremely CPU intensive and don't really add that much security.
 #  DEFAULT: 8192
 "maximumIngressRsaKeySize": 8192,
 #
-# minimumEgressRsaKeySize (int)
+# minimumEgressRsaKeySize (int > 0)
 #     DESC: The minimum allowed size for egress RSA keys (bastion->server). Sane values range from 2048 to 4096.
 #  DEFAULT: 2048
 "minimumEgressRsaKeySize": 2048,
 #
-# maximumEgressRsaKeySize (int)
+# maximumEgressRsaKeySize (int > 0)
 #     DESC: The maximum allowed size for ingress RSA keys (bastion->server). Too big values (>8192) are extremely CPU intensive and don't really add that much security.
 #  DEFAULT: 8192
 "maximumEgressRsaKeySize": 8192,
@@ -81,7 +81,7 @@
 # DEFAULT: "rsa"
 "defaultAccountEgressKeyAlgorithm": "rsa",
 #
-# defaultAccountEgressKeySize (int)
+# defaultAccountEgressKeySize (int > 0)
 #    DESC: The default size to use to create the egress key of a newly created account (also see ``defaultAccountEgressKeyAlgorithm``)
 # DEFAULT: 4096
 "defaultAccountEgressKeySize": 4096,
@@ -267,7 +267,7 @@
 #  DEFAULT: true
 "interactiveModeAllowed": true,
 #
-# interactiveModeTimeout (int (seconds))
+# interactiveModeTimeout (int >= 0 (seconds))
 #     DESC: The number of idle seconds after which the user is disconnected from the bastion when in interactive mode. A value of 0 will disable this feature (user will never be disconnected for idle timeout).
 #  DEFAULT: 60
 "interactiveModeTimeout": 60,
@@ -277,22 +277,22 @@
 #  DEFAULT: true
 "interactiveModeByDefault": true,
 #
-# idleLockTimeout (int >= 0)
+# idleLockTimeout (int >= 0 (seconds))
 #     DESC: If set to a positive value >0, the number of seconds of input idle time after which the session is locked. If ``false``, disabled.
 #  DEFAULT: 0
 "idleLockTimeout": 0,
 #
-# idleKillTimeout (int >= 0)
+# idleKillTimeout (int >= 0 (seconds))
 #     DESC: If set to a positive value >0, the number of seconds of input idle time after which the session is killed. If ``false``, disabled. If ``idleLockTimeout`` is set, this value must be higher (obviously).
 #  DEFAULT: 0
 "idleKillTimeout": 0,
 #
-# warnBeforeLockSeconds (int >= 0)
+# warnBeforeLockSeconds (int >= 0 (seconds))
 #     DESC: If set to a positive value >0, the number of seconds before ``idleLockTimeout`` where the user will receive a warning message telling him about the upcoming lock of his session.
 #  DEFAULT: 0
 "warnBeforeLockSeconds": 0,
 #
-# warnBeforeKillSeconds (int >= 0)
+# warnBeforeKillSeconds (int >= 0 (seconds))
 #     DESC: If set to a positive value >0, the number of seconds before ``idleKillTimeout`` where the user will receive a warning message telling him about the upcoming kill of his session.
 #  DEFAULT: 0
 "warnBeforeKillSeconds": 0,
@@ -325,7 +325,7 @@
 # > Account policies
 # >> Policies applying to the bastion accounts themselves
 #
-# accountMaxInactiveDays (int)
+# accountMaxInactiveDays (int >= 0 (days))
 #     DESC: If > 0, deny access to accounts that didn't log in since at least that many days. A value of 0 means that this functionality is disabled (we will never deny access for inactivity reasons).
 #  DEFAULT: 0
 "accountMaxInactiveDays": 0,
@@ -357,23 +357,23 @@
 #  DEFAULT: "enabled"
 "accountMFAPolicy": "enabled",
 #
-# MFAPasswordMinDays (int >= 0)
+# MFAPasswordMinDays (int >= 0 (days))
 #    DESC: For the PAM UNIX password MFA, sets the min amount of days between two password changes (see ``chage -m``)
 # DEFAULT: 0
 "MFAPasswordMinDays": 0,
 #
-# MFAPasswordMaxDays (int >= 0)
+# MFAPasswordMaxDays (int >= 0 (days))
 #    DESC: For the PAM UNIX password MFA, sets the max amount of days after which the password must be changed (see ``chage -M``)
 # DEFAULT: 90
 "MFAPasswordMaxDays": 90,
 #
-# MFAPasswordWarnDays (int >= 0)
+# MFAPasswordWarnDays (int >= 0 (days))
 #    DESC: For the PAM UNIX password MFA, sets the number of days before expiration on which the user will be warned to change his password (see ``chage -W``)
 # DEFAULT: 15
 "MFAPasswordWarnDays": 15,
 #
-# MFAPasswordInactiveDays (int >= -1)
-#    DESC: For the PAM UNIX password MFA, the account will be blocked after the password is expired (and not renewed) for this amount of days (see ``chage -E``). -1 disables this feature. Note that this is different from the accountMaxInactiveDays option above, that is handled by the bastion software itself instead of PAM
+# MFAPasswordInactiveDays (int >= -1 (days))
+#    DESC: For the PAM UNIX password MFA, the account will be blocked after the password is expired (and not renewed) for this amount of days (see ``chage -E``). -1 disables this feature. Note that this is different from the ``accountMaxInactiveDays`` option above, that is handled by the bastion software itself instead of PAM
 # DEFAULT: -1
 "MFAPasswordInactiveDays": -1,
 #
@@ -389,17 +389,17 @@
 # > Other options
 # >> These options are either discouraged (in which case this is explained in the description) or rarely need to be modified.
 #
-# accountUidMin (int)
+# accountUidMin (int >= 100)
 #     DESC: Minimum allowed UID for accounts on this bastion. Hardcoded > 100 even if configured for less.
 #  DEFAULT: 2000
 "accountUidMin": 2000,
 #
-# accountUidMax (int)
+# accountUidMax (int > 0)
 #     DESC: Maximum allowed UID for accounts on this bastion.
 #  DEFAULT: 99999
 "accountUidMax": 99999,
 #
-# ttyrecGroupIdOffset (int)
+# ttyrecGroupIdOffset (int > 0)
 #     DESC: Offset to apply on user group uid to create its ``-tty`` group, should be > ``accountUidMax - accountUidMin`` to ensure there is no overlap.
 #  DEFAULT: 100000
 "ttyrecGroupIdOffset": 100000,

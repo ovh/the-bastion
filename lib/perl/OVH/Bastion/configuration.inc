@@ -124,16 +124,16 @@ sub load_configuration {
 
     # 1/6) Options that are strings, and must match given regex. Always include capturing parens in regex for untainting.
     foreach my $o (
-        {name => 'bastionName',                      default => 'fix-my-config-please-missing-bastion-name', validre => qr/^([a-zA-Z0-9_.-]+)$/},
-        {name => 'bastionCommand',                   default => "ssh ACCOUNT\@HOSTNAME -t -- ",              validre => qr/^(.+)$/},
-        {name => 'defaultLogin',                     default => "",                                          validre => qr/^([a-zA-Z0-9_.-]*)$/, emptyok => 1},
-        {name => 'moshCommandLine',                  default => "",                                          validre => qr/^(.*)$/, emptyok => 1},
-        {name => 'documentationURL',                 default => "https://ovh.github.io/the-bastion/",        validre => qr'^([a-zA-Z0-9:/@&=",;_.-]+)$'},
-        {name => 'syslogFacility',                   default => 'local7',                                    validre => qr/^([a-zA-Z0-9_]+)$/},
-        {name => 'syslogDescription',                default => 'bastion',                                   validre => qr/^([a-zA-Z0-9_.-]+)$/},
-        {name => 'ttyrecFilenameFormat',             default => '%Y-%m-%d.%H-%M-%S.#usec#.&uniqid.&account.&user.&ip.&port.ttyrec',   validre => qr/^([a-zA-Z0-9%&#_.-]+)$/},
-        {name => 'accountExpiredMessage',            default => '',                                          validre => qr/^(.*)$/, emptyok => 1},
-        {name => 'accountExternalValidationProgram', default => '',                                          validre => qr'^([a-zA-Z0-9/$_.-]*)$', emptyok => 1},
+        {name => 'bastionName',           default => 'fix-my-config-please-missing-bastion-name',                        validre => qr/^([a-zA-Z0-9_.-]+)$/},
+        {name => 'bastionCommand',        default => "ssh ACCOUNT\@HOSTNAME -t -- ",                                     validre => qr/^(.+)$/},
+        {name => 'defaultLogin',          default => "",                                                                 validre => qr/^([a-zA-Z0-9_.-]*)$/, emptyok => 1},
+        {name => 'moshCommandLine',       default => "",                                                                 validre => qr/^(.*)$/, emptyok => 1},
+        {name => 'documentationURL',      default => "https://ovh.github.io/the-bastion/",                               validre => qr'^([a-zA-Z0-9:/@&=",;_.-]+)$'},
+        {name => 'syslogFacility',        default => 'local7',                                                           validre => qr/^([a-zA-Z0-9_]+)$/},
+        {name => 'syslogDescription',     default => 'bastion',                                                          validre => qr/^([a-zA-Z0-9_.-]+)$/},
+        {name => 'ttyrecFilenameFormat',  default => '%Y-%m-%d.%H-%M-%S.#usec#.&uniqid.&account.&user.&ip.&port.ttyrec', validre => qr/^([a-zA-Z0-9%&#_.-]+)$/},
+        {name => 'accountExpiredMessage', default => '',                                                                 validre => qr/^(.*)$/, emptyok => 1},
+        {name => 'accountExternalValidationProgram', default => '', validre => qr'^([a-zA-Z0-9/$_.-]*)$', emptyok => 1},
       )
     {
         if (!$C->{$o->{'name'}} && !$o->{'emptyok'}) {
@@ -216,7 +216,8 @@ sub load_configuration {
     }
 
     # 3/6) Booleans. Standard true/false values should be used in the JSON config file, but we normalize non-bool values here.
-    # We cast the strings "no", "false", "disabled" to false. The JSON null value is also false.
+    # We cast the strings "no", "false", "disabled" to false. The JSON null value is the same as omitting the option entirely,
+    # hence forcing the bastion to use the default value for this option.
     # For all other values, standard Perl applies: 0, "0", "" are false, everything else is true.
     # We warn where we have to cast, except for 0/1/"0"/"1" for backwards compatibility.
     foreach my $tuple (
@@ -243,7 +244,7 @@ sub load_configuration {
     {
         foreach my $o (@{$tuple->{'options'}}) {
 
-            # if not defined, set to default value
+            # if not defined (option missing or set to null), set to default value
             if (not defined $C->{$o}) {
                 $C->{$o} = $tuple->{'default'};
                 push @errors, "Configuration error: missing option '$o', defaulting to " . ($tuple->{'default'} ? 'true' : 'false') if $test;

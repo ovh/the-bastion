@@ -229,7 +229,7 @@ The algorithms authorized for egress ssh public keys generated on this bastion. 
 minimumIngressRsaKeySize
 ************************
 
-:Type: ``int``
+:Type: ``int > 0``
 
 :Default: ``2048``
 
@@ -240,7 +240,7 @@ The minimum allowed size for ingress RSA keys (user->bastion). Sane values range
 maximumIngressRsaKeySize
 ************************
 
-:Type: ``int``
+:Type: ``int > 0``
 
 :Default: ``8192``
 
@@ -251,7 +251,7 @@ The maximum allowed size for ingress RSA keys (user->bastion). Too big values (>
 minimumEgressRsaKeySize
 ***********************
 
-:Type: ``int``
+:Type: ``int > 0``
 
 :Default: ``2048``
 
@@ -262,7 +262,7 @@ The minimum allowed size for egress RSA keys (bastion->server). Sane values rang
 maximumEgressRsaKeySize
 ***********************
 
-:Type: ``int``
+:Type: ``int > 0``
 
 :Default: ``8192``
 
@@ -284,7 +284,7 @@ The default algorithm to use to create the egress key of a newly created account
 defaultAccountEgressKeySize
 ***************************
 
-:Type: ``int``
+:Type: ``int > 0``
 
 :Default: ``4096``
 
@@ -493,7 +493,7 @@ ttyrecFilenameFormat
 
 :Type: ``string``
 
-:Default: ``"%Y-%m-%d.%H-%M-%S.#usec#.&uniqid.ttyrec"``
+:Default: ``"%Y-%m-%d.%H-%M-%S.#usec#.&uniqid.&account.&user.&ip.&port.ttyrec"``
 
 Sets the filename format of the output files of ttyrec for a given session. Magic tokens are: ``&bastionname``, ``&uniqid``, ``&account``, ``&ip``, ``&port``, ``&user`` (they'll be replaced by the corresponding values of the current session). Then, this string (automatically prepended with the correct folder) will be passed to ttyrec's ``-F`` parameter, which uses ``strftime()`` to expand it, so the usual character conversions will be done (``%Y`` for the year, ``%H`` for the hour, etc., see ``man strftime``). Note that in a addition to the usual ``strftime()`` conversion specifications, ttyrec also supports ``#usec#``, to be replaced by the current microsecond value of the time.
 
@@ -531,7 +531,7 @@ ingressKeysFromAllowOverride
 
 :Type: ``boolean``
 
-:Default: ``true``
+:Default: ``false``
 
 If set to ``false``, any user-specified ``from="..."`` prefix on keys in commands such as ``selfAddIngressKey`` or ``accountCreate`` are silently ignored and replaced by the IPs in the ``ingressKeysFrom`` configuration option (if any).
 If set to ``true``, any user-specified ``from="..."`` will override the value set in ``ingressKeysFrom`` (if any).
@@ -625,7 +625,7 @@ If set to ``true``, ``--interactive`` mode is allowed. Otherwise, this feature i
 interactiveModeTimeout
 **********************
 
-:Type: ``int (seconds)``
+:Type: ``int >= 0 (seconds)``
 
 :Default: ``60``
 
@@ -647,7 +647,7 @@ If ``true``, drops the user to interactive mode if nothing is specified on the c
 idleLockTimeout
 ***************
 
-:Type: ``int >= 0``
+:Type: ``int >= 0 (seconds)``
 
 :Default: ``0``
 
@@ -658,7 +658,7 @@ If set to a positive value >0, the number of seconds of input idle time after wh
 idleKillTimeout
 ***************
 
-:Type: ``int >= 0``
+:Type: ``int >= 0 (seconds)``
 
 :Default: ``0``
 
@@ -669,7 +669,7 @@ If set to a positive value >0, the number of seconds of input idle time after wh
 warnBeforeLockSeconds
 *********************
 
-:Type: ``int >= 0``
+:Type: ``int >= 0 (seconds)``
 
 :Default: ``0``
 
@@ -680,7 +680,7 @@ If set to a positive value >0, the number of seconds before ``idleLockTimeout`` 
 warnBeforeKillSeconds
 *********************
 
-:Type: ``int >= 0``
+:Type: ``int >= 0 (seconds)``
 
 :Default: ``0``
 
@@ -737,7 +737,7 @@ Account policies
 accountMaxInactiveDays
 **********************
 
-:Type: ``int``
+:Type: ``int >= 0 (days)``
 
 :Default: ``0``
 
@@ -799,7 +799,7 @@ Set a MFA policy for the bastion accounts, the supported values are:
 MFAPasswordMinDays
 ******************
 
-:Type: ``int >= 0``
+:Type: ``int >= 0 (days)``
 
 :Default: ``0``
 
@@ -810,7 +810,7 @@ For the PAM UNIX password MFA, sets the min amount of days between two password 
 MFAPasswordMaxDays
 ******************
 
-:Type: ``int >= 0``
+:Type: ``int >= 0 (days)``
 
 :Default: ``90``
 
@@ -821,7 +821,7 @@ For the PAM UNIX password MFA, sets the max amount of days after which the passw
 MFAPasswordWarnDays
 *******************
 
-:Type: ``int >= 0``
+:Type: ``int >= 0 (days)``
 
 :Default: ``15``
 
@@ -832,11 +832,11 @@ For the PAM UNIX password MFA, sets the number of days before expiration on whic
 MFAPasswordInactiveDays
 ***********************
 
-:Type: ``int >= -1``
+:Type: ``int >= -1 (days)``
 
 :Default: ``-1``
 
-For the PAM UNIX password MFA, the account will be blocked after the password is expired (and not renewed) for this amount of days (see ``chage -E``). -1 disables this feature. Note that this is different from the accountMaxInactiveDays option above, that is handled by the bastion software itself instead of PAM
+For the PAM UNIX password MFA, the account will be blocked after the password is expired (and not renewed) for this amount of days (see ``chage -E``). -1 disables this feature. Note that this is different from the ``accountMaxInactiveDays`` option above, that is handled by the bastion software itself instead of PAM
 
 .. _bastion_conf_MFAPostCommand:
 
@@ -861,7 +861,7 @@ Other options
 accountUidMin
 *************
 
-:Type: ``int``
+:Type: ``int >= 100``
 
 :Default: ``2000``
 
@@ -872,7 +872,7 @@ Minimum allowed UID for accounts on this bastion. Hardcoded > 100 even if config
 accountUidMax
 *************
 
-:Type: ``int``
+:Type: ``int > 0``
 
 :Default: ``99999``
 
@@ -883,7 +883,7 @@ Maximum allowed UID for accounts on this bastion.
 ttyrecGroupIdOffset
 *******************
 
-:Type: ``int``
+:Type: ``int > 0``
 
 :Default: ``100000``
 
