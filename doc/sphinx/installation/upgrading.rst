@@ -19,7 +19,7 @@ General upgrade instructions
 
     /opt/bastion/bin/admin/install --upgrade
 
-Note that if you're using an infrastructure automation tool such as Puppet, Ansible, Chef, and don't want the update script to touch some files that you manage yourself, you can use ``--upgrade-managed`` instead of ``--upgrade``. See the ``--help`` for a more fine-grained upgrade path if needed.
+Note that if you're using an infrastructure automation tool such as Puppet, Ansible, Chef, and don't want the update script to touch some files that you manage yourself, you can use ``--managed-upgrade`` instead of ``--upgrade``. See the ``--help`` for a more fine-grained upgrade path if needed.
 
 Version-specific upgrade instructions
 =====================================
