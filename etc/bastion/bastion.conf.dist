@@ -59,7 +59,7 @@
 # minimumIngressRsaKeySize (int)
 #     DESC: The minimum allowed size for ingress RSA keys (user->bastion). Sane values range from 2048 to 4096.
 #  DEFAULT: 2048
-"minimumIngressRsaKeySize": 4096,
+"minimumIngressRsaKeySize": 2048,
 #
 # maximumIngressRsaKeySize (int)
 #     DESC: The maximum allowed size for ingress RSA keys (user->bastion). Too big values (>8192) are extremely CPU intensive and don't really add that much security.
@@ -69,7 +69,7 @@
 # minimumEgressRsaKeySize (int)
 #     DESC: The minimum allowed size for egress RSA keys (bastion->server). Sane values range from 2048 to 4096.
 #  DEFAULT: 2048
-"minimumEgressRsaKeySize": 4096,
+"minimumEgressRsaKeySize": 2048,
 #
 # maximumEgressRsaKeySize (int)
 #     DESC: The maximum allowed size for ingress RSA keys (bastion->server). Too big values (>8192) are extremely CPU intensive and don't really add that much security.
@@ -199,7 +199,7 @@
 #
 # ttyrecFilenameFormat (string)
 #    DESC: Sets the filename format of the output files of ttyrec for a given session. Magic tokens are: ``&bastionname``, ``&uniqid``, ``&account``, ``&ip``, ``&port``, ``&user`` (they'll be replaced by the corresponding values of the current session). Then, this string (automatically prepended with the correct folder) will be passed to ttyrec's ``-F`` parameter, which uses ``strftime()`` to expand it, so the usual character conversions will be done (``%Y`` for the year, ``%H`` for the hour, etc., see ``man strftime``). Note that in a addition to the usual ``strftime()`` conversion specifications, ttyrec also supports ``#usec#``, to be replaced by the current microsecond value of the time.
-# DEFAULT: "%Y-%m-%d.%H-%M-%S.#usec#.&uniqid.ttyrec"
+# DEFAULT: "%Y-%m-%d.%H-%M-%S.#usec#.&uniqid.&account.&user.&ip.&port.ttyrec"
 "ttyrecFilenameFormat": "%Y-%m-%d.%H-%M-%S.#usec#.&uniqid.&account.&user.&ip.&port.ttyrec",
 #
 # ttyrecAdditionalParameters (array of strings)
@@ -221,8 +221,8 @@
 #    DESC: If set to ``false``, any user-specified ``from="..."`` prefix on keys in commands such as ``selfAddIngressKey`` or ``accountCreate`` are silently ignored and replaced by the IPs in the ``ingressKeysFrom`` configuration option (if any).
 #          If set to ``true``, any user-specified ``from="..."`` will override the value set in ``ingressKeysFrom`` (if any).
 #          Note that when no user-specified ``from="..."`` appears, the value of ``ingressKeysFrom`` is still used, regardless of this option.
-# DEFAULT: true
-"ingressKeysFromAllowOverride": true,
+# DEFAULT: false
+"ingressKeysFromAllowOverride": false,
 
 #########################
 # > Other egress policies

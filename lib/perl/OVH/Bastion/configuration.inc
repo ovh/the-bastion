@@ -131,7 +131,7 @@ sub load_configuration {
         {name => 'documentationURL',                 default => "https://ovh.github.io/the-bastion/",        validre => qr'^([a-zA-Z0-9:/@&=",;_.-]+)$'},
         {name => 'syslogFacility',                   default => 'local7',                                    validre => qr/^([a-zA-Z0-9_]+)$/},
         {name => 'syslogDescription',                default => 'bastion',                                   validre => qr/^([a-zA-Z0-9_.-]+)$/},
-        {name => 'ttyrecFilenameFormat',             default => '%Y-%m-%d.%H-%M-%S.#usec#.&uniqid.ttyrec',   validre => qr/^([a-zA-Z0-9%&#_.-]+)$/},
+        {name => 'ttyrecFilenameFormat',             default => '%Y-%m-%d.%H-%M-%S.#usec#.&uniqid.&account.&user.&ip.&port.ttyrec',   validre => qr/^([a-zA-Z0-9%&#_.-]+)$/},
         {name => 'accountExpiredMessage',            default => '',                                          validre => qr/^(.*)$/, emptyok => 1},
         {name => 'accountExternalValidationProgram', default => '',                                          validre => qr'^([a-zA-Z0-9/$_.-]*)$', emptyok => 1},
       )
