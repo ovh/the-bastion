@@ -66,7 +66,7 @@ You can either use ``git clone`` directly, or get the tarball of the latest rele
 
 - Using the tarball:
 
-Get the tarball of the latest release, which can be found `here <https://github.com/ovh/the-bastion/releases/latest>`_, then untar it:
+Get the tarball of the latest release, which can be found `there <https://github.com/ovh/the-bastion/releases/latest>`_, then untar it:
 
 .. code-block:: shell
 

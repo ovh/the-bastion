@@ -7,6 +7,7 @@ use File::Basename;
 use lib dirname(__FILE__) . '/../../lib/perl';
 use OVH::Bastion;
 use OVH::Result;
+use JSON;
 
 OVH::Bastion::enable_mocking();
 OVH::Bastion::set_mock_data(
@@ -44,6 +45,17 @@ OVH::Bastion::load_configuration(
             [["192.168.0.0/16"],  ["192.168.0.0/16"],  "DENY"]
         ],
         bastionName => "mock",
+
+        # all options below are bool, we'll test for their normalization
+        enableSyslog           => 1,
+        enableGlobalAccessLog  => JSON::true,
+        enableAccountAccessLog => "yes",
+        enableGlobalSqlLog     => 0,
+        enableAccountSqlLog    => JSON::false,
+        displayLastLogin       => "",
+        debug                  => JSON::null,
+        passwordAllowed        => "no",
+        telnetAllowed          => "false",
     }
 );
 
@@ -87,5 +99,136 @@ is(OVH::Bastion::is_access_granted(account => "wildcard", user => "root", ipfrom
 
 ok(OVH::Bastion::is_access_granted(account => "wildcard", user => "root", ipfrom => "192.168.43.1", ip => "5.6.7.8", port => "9876")->is_ok,
     "is_access_granted(wildcard) on allowed machine due to ingressToEgressRules catch-all");
+
+# check that "bool" type options are correctly normalized
+is(OVH::Bastion::config("enableSyslog")->value,             1, "config bool(1)");
+is(OVH::Bastion::config("enableGlobalAccessLog")->value,    1, "config bool(true)");
+is(OVH::Bastion::config("enableAccountAccessLog")->value,   1, "config bool(\"yes\")");
+is(OVH::Bastion::config("enableGlobalSqlLog")->value,       0, "config bool(0)");
+is(OVH::Bastion::config("enableAccountSqlLog")->value,      0, "config bool(false)");
+is(OVH::Bastion::config("displayLastLogin")->value,         0, "config bool(\"\")");
+is(OVH::Bastion::config("interactiveModeByDefault")->value, 1, "config bool(missing, default true)");
+is(OVH::Bastion::config("interactiveModeAllowed")->value,   0, "config bool(missing, default false)");
+is(OVH::Bastion::config("debug")->value,                    0, "config bool(null)");
+is(OVH::Bastion::config("passwordAllowed")->value,          0, "config bool(\"no\")");
+is(OVH::Bastion::config("telnetAllowed")->value,            0, "config bool(\"false\")");
+
+is(
+    OVH::Bastion::plugin_config(
+        plugin    => "help",
+        key       => "disabled",
+        mock_data => {disabled => JSON::true}
+    )->value ? 1 : 0,
+    1,
+    "is_plugin_disabled(disabled=true)"
+);
+is(
+    OVH::Bastion::plugin_config(
+        plugin    => "help",
+        key       => "disabled",
+        mock_data => {disabled => JSON::false}
+    )->value ? 1 : 0,
+    0,
+    "is_plugin_disabled(disabled=false)"
+);
+is(
+    OVH::Bastion::plugin_config(
+        plugin    => "help",
+        key       => "disabled",
+        mock_data => {disabled => JSON::null}
+    )->value ? 1 : 0,
+    0,
+    "is_plugin_disabled(disabled=null)"
+);
+is(
+    OVH::Bastion::plugin_config(
+        plugin    => "help",
+        key       => "disabled",
+        mock_data => {disabled => "yes"}
+    )->value ? 1 : 0,
+    1,
+    "is_plugin_disabled(disabled=\"yes\")"
+);
+is(
+    OVH::Bastion::plugin_config(
+        plugin    => "help",
+        key       => "disabled",
+        mock_data => {disabled => "no"}
+    )->value ? 1 : 0,
+    0,
+    "is_plugin_disabled(disabled=\"no\")"
+);
+is(
+    OVH::Bastion::plugin_config(
+        plugin    => "help",
+        key       => "disabled",
+        mock_data => {disabled => "true"}
+    )->value ? 1 : 0,
+    1,
+    "is_plugin_disabled(disabled=\"true\")"
+);
+is(
+    OVH::Bastion::plugin_config(
+        plugin    => "help",
+        key       => "disabled",
+        mock_data => {disabled => "false"}
+    )->value ? 1 : 0,
+    0,
+    "is_plugin_disabled(disabled=\"false\")"
+);
+is(
+    OVH::Bastion::plugin_config(
+        plugin    => "help",
+        key       => "disabled",
+        mock_data => {disabled => ""}
+    )->value ? 1 : 0,
+    0,
+    "is_plugin_disabled(disabled=\"\")"
+);
+is(
+    OVH::Bastion::plugin_config(
+        plugin    => "help",
+        key       => "disabled",
+        mock_data => {disabled => "0"}
+    )->value ? 1 : 0,
+    0,
+    "is_plugin_disabled(disabled=\"0\")"
+);
+is(
+    OVH::Bastion::plugin_config(
+        plugin    => "help",
+        key       => "disabled",
+        mock_data => {disabled => "1"}
+    )->value ? 1 : 0,
+    1,
+    "is_plugin_disabled(disabled=\"1\")"
+);
+is(
+    OVH::Bastion::plugin_config(
+        plugin    => "help",
+        key       => "disabled",
+        mock_data => {disabled => 0}
+    )->value ? 1 : 0,
+    0,
+    "is_plugin_disabled(disabled=0)"
+);
+is(
+    OVH::Bastion::plugin_config(
+        plugin    => "help",
+        key       => "disabled",
+        mock_data => {disabled => 1}
+    )->value ? 1 : 0,
+    1,
+    "is_plugin_disabled(disabled=1)"
+);
+is(
+    OVH::Bastion::plugin_config(
+        plugin    => "help",
+        key       => "disabled",
+        mock_data => {}
+    )->value ? 1 : 0,
+    0,
+    "is_plugin_disabled()"
+);
 
 done_testing();

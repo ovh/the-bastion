@@ -40,6 +40,7 @@ The third section focuses on :doc:`how to use<using/index>` the bastion, from th
    presentation/index
    installation/index
    using/index
+   administration/index
    plugins/index
    faq
 

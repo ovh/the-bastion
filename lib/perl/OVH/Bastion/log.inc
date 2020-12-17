@@ -100,7 +100,9 @@ sub syslogFormatted {
 }
 
 sub warn_syslog {
-    my $msg = shift;
+    my $msg   = shift;
+    my $noisy = shift;
+    osh_warn("WARN: " . $msg) if $noisy;
     return syslogFormatted(
         type   => 'code-warning',
         fields => [['msg' => $msg]]

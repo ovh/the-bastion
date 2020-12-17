@@ -55,11 +55,24 @@ my $_cache_config = undef;
 sub load_configuration {
     my %params    = @_;
     my $mock_data = $params{'mock_data'};
+    my $noisy     = $params{'noisy'};       # print warnings/errors on stdout in addition to syslog
+    my $test      = $params{'test'};        # noisy + also print missing configuration options
 
-    if (defined $mock_data && !OVH::Bastion::is_mocking()) {
+    # do NOT use warn_syslog in this func, or any other function that needs to read configuration,
+    # or we might end up in an infinite loop: store errors we wanna log at the end
+    my @errors;
 
-        # if we're overriding configuration with mock_data without being in mocking mode, we have a problem
-        die("Attempted to load_configuration() with mock_data without being in mocking mode");
+    $noisy = 1 if $test;
+
+    if (defined $mock_data) {
+        if (!OVH::Bastion::is_mocking()) {
+
+            # if we're overriding configuration with mock_data without being in mocking mode, we have a problem
+            die("Attempted to load_configuration() with mock_data without being in mocking mode");
+        }
+
+        # mock data always overrides cache
+        undef $_cache_config;
     }
 
     if (ref $_cache_config eq 'HASH') {
@@ -83,7 +96,8 @@ sub load_configuration {
         $C = $mock_data;
     }
 
-    # define deprecated <=> new key names association
+    # define deprecated vs new key names association
+    # new old
     my %new2old = qw(
       accountCreateDefaultPersonalAccesses accountCreateDefaultPrivateAccesses
       adminAccounts adminLogins
@@ -103,152 +117,394 @@ sub load_configuration {
         $C->{$new} //= $C->{$old};
     }
 
-    # now validate, lint and normalize the conf
+    ####################################################
+    # now validate, lint, normalize and untaint the conf
 
-    $C->{'bastionName'} ||= 'fix-my-config-please-missing-bastion-name';
+    my %unknownkeys = map { $_ => 1 } keys %$C;
 
-    $C->{'bastionCommand'} ||= "ssh ACCOUNT\@HOSTNAME -t -- ";
+    # 1/6) Options that are strings, and must match given regex. Always include capturing parens in regex for untainting.
+    foreach my $o (
+        {name => 'bastionName',           default => 'fix-my-config-please-missing-bastion-name',                        validre => qr/^([a-zA-Z0-9_.-]+)$/},
+        {name => 'bastionCommand',        default => "ssh ACCOUNT\@HOSTNAME -t -- ",                                     validre => qr/^(.+)$/},
+        {name => 'defaultLogin',          default => "",                                                                 validre => qr/^([a-zA-Z0-9_.-]*)$/, emptyok => 1},
+        {name => 'moshCommandLine',       default => "",                                                                 validre => qr/^(.*)$/, emptyok => 1},
+        {name => 'documentationURL',      default => "https://ovh.github.io/the-bastion/",                               validre => qr'^([a-zA-Z0-9:/@&=",;_.-]+)$'},
+        {name => 'syslogFacility',        default => 'local7',                                                           validre => qr/^([a-zA-Z0-9_]+)$/},
+        {name => 'syslogDescription',     default => 'bastion',                                                          validre => qr/^([a-zA-Z0-9_.-]+)$/},
+        {name => 'ttyrecFilenameFormat',  default => '%Y-%m-%d.%H-%M-%S.#usec#.&uniqid.&account.&user.&ip.&port.ttyrec', validre => qr/^([a-zA-Z0-9%&#_.-]+)$/},
+        {name => 'accountExpiredMessage', default => '',                                                                 validre => qr/^(.*)$/, emptyok => 1},
+        {name => 'accountExternalValidationProgram', default => '', validre => qr'^([a-zA-Z0-9/$_.-]*)$', emptyok => 1},
+      )
+    {
+        if (!$C->{$o->{'name'}} && !$o->{'emptyok'}) {
+            $C->{$o->{'name'}} = $o->{'default'};
+            push @errors, "Configuration error: missing option '" . $o->{'name'} . "', defaulting to '" . $o->{'default'} . "'" if $test;
+        }
+        if ($C->{$o->{'name'}} =~ $o->{'validre'}) {
 
-    $C->{'defaultLogin'} = "" if (not defined $C->{'defaultLogin'});
-    $C->{'defaultLogin'} =~ s/[^a-zA-Z0-9_-]//g;
+            # untaint
+            $C->{$o->{'name'}} = $1;
+        }
+        else {
+            push @errors,
+              "Configuration error: value of option '" . $o->{'name'} . "' ('" . $C->{$o->{'name'}} . "') didn't match allowed regex, defaulting to '" . $o->{'default'} . "'";
+            $C->{$o->{'name'}} = $o->{'default'};
+        }
+        delete $unknownkeys{$o->{'name'}};
+    }
 
-    $C->{'accountUidMin'} = 2000 if (not defined $C->{'accountUidMin'} or $C->{'accountUidMin'} !~ /^\d+$/);
-    $C->{'accountUidMin'} > 100         or $C->{'accountUidMin'} = 100;
-    $C->{'accountUidMin'} < 999_999_999 or $C->{'accountUidMin'} = 999_999_999;    # usually 2^31-2 but well...
+    # 2/6) Options that must be numbers, between min and max.
+    foreach my $o (
+        {name => 'accountUidMin',            min => 100,  max => 999_999_999, default => 2000},
+        {name => 'accountUidMax',            min => 100,  max => 999_999_999, default => 99999},
+        {name => 'ttyrecGroupIdOffset',      min => 1,    max => 999_999_999, default => 100_000},
+        {name => 'minimumIngressRsaKeySize', min => 1024, max => 16384,       default => 2048},
+        {name => 'minimumEgressRsaKeySize',  min => 1024, max => 16384,       default => 2048},
+        {name => 'maximumIngressRsaKeySize', min => 1024, max => 32768,       default => 8192},
+        {name => 'maximumEgressRsaKeySize',  min => 1024, max => 32768,       default => 8192},
+        {name => 'moshTimeoutNetwork',       min => 0,    max => 86400 * 365, default => 86400},
+        {name => 'moshTimeoutSignal',        min => 0,    max => 86400 * 365, default => 30},
+        {name => 'idleLockTimeout',          min => 0,    max => 86400 * 365, default => 0},
+        {name => 'idleKillTimeout',          min => 0,    max => 86400 * 365, default => 0},
+        {name => 'warnBeforeLockSeconds',    min => 0,    max => 86400 * 365, default => 0},
+        {name => 'warnBeforeKillSeconds',    min => 0,    max => 86400 * 365, default => 0},
+        {name => 'MFAPasswordInactiveDays',  min => -1,   max => 365 * 5,     default => -1},
+        {name => 'MFAPasswordMinDays',       min => 0,    max => 365 * 5,     default => 0},
+        {name => 'MFAPasswordMaxDays',       min => 0,    max => 365 * 5,     default => 90},
+        {name => 'MFAPasswordWarnDays',      min => 0,    max => 365 * 5,     default => 15},
+        {name => 'sshClientDebugLevel',      min => 0,    max => 3,           default => 0},
+        {name => 'accountMaxInactiveDays',   min => 0,    max => 365 * 5,     default => 0},
+        {name => 'interactiveModeTimeout',   min => 0,    max => 86400 * 365, default => 15},
+      )
+    {
+        if (not defined $C->{$o->{'name'}}) {
+            $C->{$o->{'name'}} = $o->{'default'};
+            push @errors, "Configuration error: missing option '" . $o->{'name'} . "', defaulting to " . $o->{'default'} if $test;
+        }
+        if ($C->{$o->{'name'}} =~ /^(-?\d+)$/) {
 
-    $C->{'accountUidMax'} = 99999 if (not defined $C->{'accountUidMax'} or $C->{'accountUidMax'} !~ /^\d+$/);
-    $C->{'accountUidMax'} > 100         or $C->{'accountUidMax'} = 100;
-    $C->{'accountUidMax'} < 999_999_999 or $C->{'accountUidMax'} = 999_999_999;    # usually 2^31-2 but well...
+            # untaint
+            $C->{$o->{'name'}} = $1;
+        }
+        else {
+            push @errors, "Configuration error: value of option '" . $o->{'name'} . "' ('" . $C->{$o->{'name'}} . "') is not a number, defaulting to " . $o->{'default'};
+            $C->{$o->{'name'}} = $o->{'default'};
+        }
+        if ($C->{$o->{'name'}} > $o->{'max'}) {
+            push @errors,
+                "Configuration error: value of option '"
+              . $o->{'name'} . "' ("
+              . $C->{$o->{'name'}}
+              . ") is higher than allowed value ("
+              . $o->{'max'}
+              . "), defaulting to "
+              . $o->{'default'};
+            $C->{$o->{'name'}} = $o->{'default'};
+        }
+        elsif ($C->{$o->{'name'}} < $o->{'min'}) {
+            push @errors,
+                "Configuration error: value of option '"
+              . $o->{'name'} . "' ("
+              . $C->{$o->{'name'}}
+              . ") is lower than allowed value ("
+              . $o->{'min'}
+              . "), defaulting to "
+              . $o->{'default'};
+            $C->{$o->{'name'}} = $o->{'default'};
+        }
+        delete $unknownkeys{$o->{'name'}};
+    }
 
-    $C->{'accountUidMax'} = $C->{'accountUidMin'} + 1000 if ($C->{'accountUidMin'} + 1000 > $C->{'accountUidMax'});
+    # 3/6) Booleans. Standard true/false values should be used in the JSON config file, but we normalize non-bool values here.
+    # We cast the strings "no", "false", "disabled" to false. The JSON null value is the same as omitting the option entirely,
+    # hence forcing the bastion to use the default value for this option.
+    # For all other values, standard Perl applies: 0, "0", "" are false, everything else is true.
+    # We warn where we have to cast, except for 0/1/"0"/"1" for backwards compatibility.
+    foreach my $tuple (
+        {
+            default => 1,
+            options => [
+                qw{
+                  enableSyslog enableGlobalAccessLog enableAccountAccessLog enableGlobalSqlLog enableAccountSqlLog displayLastLogin
+                  interactiveModeByDefault
+                  }
+            ],
+        },
+        {
+            default => 0,
+            options => [
+                qw{
+                  interactiveModeAllowed readOnlySlaveMode sshClientHasOptionE ingressKeysFromAllowOverride
+                  moshAllowed debug keyboardInteractiveAllowed passwordAllowed telnetAllowed remoteCommandEscapeByDefault
+                  accountExternalValidationDenyOnFailure
+                  }
+            ],
+        }
+      )
+    {
+        foreach my $o (@{$tuple->{'options'}}) {
 
-    $C->{'ttyrecGroupIdOffset'} = 100_000 if (not defined $C->{'ttyrecGroupIdOffset'} or $C->{'ttyrecGroupIdOffset'} !~ /^\d+$/);
-    $C->{'ttyrecGroupIdOffset'} < 999_999_999 or $C->{'ttyrecGroupIdOffset'} = 999_999_999;
+            # if not defined (option missing or set to null), set to default value
+            if (not defined $C->{$o}) {
+                $C->{$o} = $tuple->{'default'};
+                push @errors, "Configuration error: missing option '$o', defaulting to " . ($tuple->{'default'} ? 'true' : 'false') if $test;
+            }
+
+            # if set to "no", "false" or "disabled", be nice and cast to false (because a string is true, otherwise)
+            elsif (grep { lc($C->{$o}) eq lc } qw{ no false disabled }) {
+                push @errors, "Configuration error: found value '" . $C->{$o} . "' for option '$o', but it's supposed to be a boolean, assuming false";
+                $C->{$o} = 0;
+            }
+
+            # if 0 or 1, normalize silently (backwards compatible)
+            elsif ($C->{$o} == 0 || $C->{$o} == 1) {
+                $C->{$o} = $C->{$o} ? 1 : 0;
+            }
+
+            # otherwise, normalize any true/false value to 1/0, and log a warning
+            else {
+                push @errors, "Configuration error: found value '" . $C->{$o} . "' for option '$o', but it's supposed to be a boolean, assuming " . ($C->{$o} ? 'true' : 'false');
+                $C->{$o} = $C->{$o} ? 1 : 0;
+            }
+            delete $unknownkeys{$o};
+        }
+    }
+
+    # 4/6) Strings that must be one item of a specific enum.
+    foreach my $o (
+        {name => 'defaultAccountEgressKeyAlgorithm', default => 'rsa',     valid => [qw{ rsa ecdsa ed25519 }]},
+        {name => 'accountMFAPolicy',                 default => 'enabled', valid => [qw{ disabled enabled password-required totp-required any-required }]},
+      )
+    {
+        # if not defined, set to default value
+        if (not defined $C->{$o->{'name'}}) {
+            $C->{$o->{'name'}} = $o->{'default'};
+            push @errors, "Configuration error: missing option '" . $o->{'name'} . "', defaulting to '" . (join(" ", @{$o->{'default'}})) . "'" if $test;
+        }
+
+        # must be one of the allowed values
+        elsif (my @untainted = grep { $C->{$o->{'name'}} eq $_ } @{$o->{'valid'}}) {
+            $C->{$o->{'name'}} = $untainted[0];
+        }
+        else {
+            push @errors, "Configuration error: option '" . $o->{'name'} . "' should be one of [" . (join(",", @{$o->{'valid'}})) . "] instead of '" . $C->{$o->{'name'}} . "'";
+            $C->{$o->{'name'}} = $o->{'default'};
+        }
+        delete $unknownkeys{$o->{'name'}};
+    }
+
+    # 5/6) Arrays whose values should match a specific regex.
+    foreach my $o (
+        ## no critic(RegularExpressions::ProhibitFixedStringMatches)
+        {name => 'allowedIngressSshAlgorithms', default => [qw{ rsa ecdsa ed25519 }], validre => qr/^(rsa|ecdsa|ed25519)$/},
+        ## no critic(RegularExpressions::ProhibitFixedStringMatches)
+        {name => 'allowedEgressSshAlgorithms',           default => [qw{ rsa ecdsa ed25519 }], validre => qr/^(rsa|ecdsa|ed25519)$/},
+        {name => 'accountCreateSupplementaryGroups',     default => [],                        validre => qr/^(.*)$/},
+        {name => 'accountCreateDefaultPersonalAccesses', default => [],                        validre => qr/^(.*)$/},
+        {name => 'alwaysActiveAccounts',                 default => [],                        validre => qr/^(.*)$/},
+        {name => 'superOwnerAccounts',                   default => [],                        validre => qr/^(.*)$/},
+        {name => 'ingressKeysFrom',                      default => [],                        validre => qr'^([0-9.:%/]+)$'},
+        {name => 'egressKeysFrom',                       default => [],                        validre => qr'^([0-9.:%/]+)$'},
+        {name => 'adminAccounts',                        default => [],                        validre => qr/^(.*)$/},
+        {name => 'allowedNetworks',                      default => [],                        validre => qr'^([0-9.:%/]+)$'},
+        {name => 'forbiddenNetworks',                    default => [],                        validre => qr'^([0-9.:%/]+)$'},
+        {name => 'ttyrecAdditionalParameters',           default => [],                        validre => qr/^(.*)$/},
+        {name => 'MFAPostCommand',                       default => [],                        validre => qr/^(.*)$/},
+      )
+    {
+        # if not defined, set to default value
+        if (not defined $C->{$o->{'name'}}) {
+            $C->{$o->{'name'}} = $o->{'default'};
+            push @errors, "Configuration error: missing option '" . $o->{'name'} . "', defaulting to [" . (join(",", @{$o->{'default'}})) . "]" if $test;
+        }
+
+        # must be an array
+        elsif (ref $C->{$o->{'name'}} ne 'ARRAY') {
+            $C->{$o->{'name'}} = $o->{'default'};
+            push @errors, "Configuration error: options option '" . $o->{'name'} . "' should be an array, defaulting to [" . (join(" ", @{$o->{'default'}})) . "]";
+        }
+
+        # whose values validate the regex
+        else {
+            my @untainted;
+            foreach my $v (@{$C->{$o->{'name'}}}) {
+                if ($v =~ $o->{'validre'}) {
+                    push @untainted, $1;
+                }
+                else {
+                    push @errors,
+                        "Configuration error: at least one of the values of the array defined by option '"
+                      . $o->{'name'}
+                      . "' is invalid, defaulting to ["
+                      . (join(" ", @{$o->{'default'}})) . "]";
+                    $C->{$o->{'name'}} = $o->{'default'};
+                    last;
+                }
+            }
+            $C->{$o->{'name'}} = \@untainted;
+        }
+        delete $unknownkeys{$o->{'name'}};
+    }
+
+    # 6/6) Special cases and/or additional checks for already vetted options
+
+    # ... we must have enough room between min and max
+    if ($C->{'accountUidMin'} + 1000 > $C->{'accountUidMax'}) {
+        push @errors,
+            "Configuration error: 'accountUidMax' ("
+          . $C->{'accountUidMax'}
+          . ") is too close from 'accountUidMin' ("
+          . $C->{'accountUidMin'}
+          . "), setting accountUidMax="
+          . ($C->{'accountUidMin'} + 1000);
+        $C->{'accountUidMax'} = $C->{'accountUidMin'} + 1000;
+    }
+
+    # ... ttyrec group offset must be high enough to avoid overlap with the accounts uids
     if ($C->{'ttyrecGroupIdOffset'} < $C->{'accountUidMax'} - $C->{'accountUidMin'}) {
-
-        # avoid overlap
-        $C->{'ttyrecGroupIdOffset'} = ($C->{'accountUidMax'} - $C->{'accountUidMin'}) + 1;
+        my $fixed = ($C->{'accountUidMax'} - $C->{'accountUidMin'}) + 1;
+        push @errors, "Configuration error: the configured 'ttyrecGroupIdOffset' (" . $C->{'ttyrecGroupIdOffset'} . ") would overlap with account UIDs, setting it to $fixed";
+        $C->{'ttyrecGroupIdOffset'} = $fixed;
     }
 
-    foreach my $key (qw{ allowedIngressSshAlgorithms allowedIngressSshAlgorithms }) {
-        $C->{$key} = ['rsa', 'ecdsa', 'ed25519'] if (not defined $C->{$key} or ref $C->{$key} ne 'ARRAY');
-    }
-
+    # ... ensure min <= max
     foreach my $key (qw{ Ingress Egress }) {
         my $minkey = "minimum${key}RsaKeySize";
         my $maxkey = "maximum${key}RsaKeySize";
-        $C->{$minkey} = 2048 if (not defined $C->{$minkey} or $C->{$minkey} !~ /^\d+$/);
-        $C->{$minkey} >= 1024  or $C->{$minkey} = 1024;
-        $C->{$minkey} <= 16384 or $C->{$minkey} = 16384;
-        $C->{$maxkey} = 8192 if (not defined $C->{$maxkey} or $C->{$maxkey} !~ /^\d+$/);
-        $C->{$maxkey} >= 1024  or $C->{$maxkey} = 1024;
-        $C->{$maxkey} <= 32768 or $C->{$maxkey} = 32768;
-        $C->{$minkey} = $C->{$maxkey} if ($C->{$minkey} > $C->{$maxkey});    # ensure min <= max
-    }
-
-    $C->{'defaultAccountEgressKeyAlgorithm'} ||= 'rsa';
-    if (!grep { $C->{'defaultAccountEgressKeyAlgorithm'} eq $_ } qw{ rsa ecdsa ed25519 }) {
-        $C->{'defaultAccountEgressKeyAlgorithm'} = 'rsa';
-    }
-
-    $C->{'defaultAccountEgressKeySize'} = 0 if $C->{'defaultAccountEgressKeySize'} !~ /^\d+$/;
-    if ($C->{'defaultAccountEgressKeyAlgorithm'} eq 'rsa') {
-        $C->{'defaultAccountEgressKeySize'} ||= 4096;
-        $C->{'defaultAccountEgressKeySize'} = 1024  if $C->{'defaultAccountEgressKeySize'} < 1024;
-        $C->{'defaultAccountEgressKeySize'} = 32768 if $C->{'defaultAccountEgressKeySize'} > 32768;
-    }
-    elsif ($C->{'defaultAccountEgressKeyAlgorithm'} eq 'ecdsa') {
-        $C->{'defaultAccountEgressKeySize'} ||= 521;
-        if (!grep { $C->{'defaultAccountEgressKeySize'} eq $_ } qw{ 256 384 521 }) {
-            $C->{'defaultAccountEgressKeySize'} = 521;
+        if ($C->{$minkey} > $C->{$maxkey}) {
+            push @errors, "Configuration error: '$minkey' (" . $C->{$minkey} . ") must be <= '$maxkey' (" . $C->{$maxkey} . "), setting $minkey=" . $C->{$maxkey};
+            $C->{$minkey} = $C->{$maxkey};
         }
     }
-    elsif ($C->{'defaultAccountEgressKeyAlgorithm'} eq 'ed25519') {
-        $C->{'defaultAccountEgressKeySize'} = 256;
-    }
 
-    $C->{'sshClientDebugLevel'} = 0 if (not defined $C->{'sshClientDebugLevel'} or $C->{'sshClientDebugLevel'} !~ /^\d+$/);
-    $C->{'sshClientDebugLevel'} > 3 and $C->{'sshClientDebugLevel'} = 3;
-
-    $C->{'accountMaxInactiveDays'} = 0
-      if (not defined $C->{'accountMaxInactiveDays'} or $C->{'accountMaxInactiveDays'} !~ /^\d+$/);
-
-    $C->{'interactiveModeTimeout'} = 15
-      if (not defined $C->{'interactiveModeTimeout'} or $C->{'interactiveModeTimeout'} !~ /^\d+$/);
-    $C->{'syslogFacility'}    = 'local7'  if (not defined $C->{'syslogFacility'}    or $C->{'syslogFacility'}    !~ /^\S+$/);
-    $C->{'syslogDescription'} = 'bastion' if (not defined $C->{'syslogDescription'} or $C->{'syslogDescription'} !~ /^\S+$/);
-
-    $C->{'moshTimeoutNetwork'} = 86400 if (not defined $C->{'moshTimeoutNetwork'} or $C->{'moshTimeoutNetwork'} !~ /^\d+$/);
-    $C->{'moshTimeoutSignal'}  = 30    if (not defined $C->{'moshTimeoutSignal'}  or $C->{'moshTimeoutSignal'}  !~ /^\d+$/);
-    $C->{'moshCommandLine'}    = ""    if (not defined $C->{'moshCommandLine'});
-
-    $C->{'ttyrecFilenameFormat'} = '%Y-%m-%d.%H-%M-%S.#usec#.&uniqid.&account.&user.&ip.&port.ttyrec' if (not $C->{'ttyrecFilenameFormat'});
-
-    $C->{'idleLockTimeout'}       = 0 if (not defined $C->{'idleLockTimeout'}       or $C->{'idleLockTimeout'}       !~ /^\d+$/);
-    $C->{'idleKillTimeout'}       = 0 if (not defined $C->{'idleKillTimeout'}       or $C->{'idleKillTimeout'}       !~ /^\d+$/);
-    $C->{'warnBeforeLockSeconds'} = 0 if (not defined $C->{'warnBeforeLockSeconds'} or $C->{'warnBeforeLockSeconds'} !~ /^\d+$/);
-    $C->{'warnBeforeKillSeconds'} = 0 if (not defined $C->{'warnBeforeKillSeconds'} or $C->{'warnBeforeKillSeconds'} !~ /^\d+$/);
-
-    if (!grep { $C->{'accountMFAPolicy'} eq $_ } qw{ disabled enabled password-required totp-required any-required }) {
-        $C->{'accountMFAPolicy'} = 'enabled';
-    }
-    $C->{'MFAPasswordInactiveDays'} = -1 if (!defined $C->{'MFAPasswordInactiveDays'} || $C->{'MFAPasswordInactiveDays'} !~ /^-\d+$/);
-    $C->{'MFAPasswordMinDays'}      = 0  if (!defined $C->{'MFAPasswordMinDays'}      || $C->{'MFAPasswordMinDays'}      !~ /^-?\d+$/);
-    $C->{'MFAPasswordMaxDays'}      = 90 if (!defined $C->{'MFAPasswordMaxDays'}      || $C->{'MFAPasswordMaxDays'}      !~ /^-?\d+$/);
-    $C->{'MFAPasswordWarnDays'}     = 15 if (!defined $C->{'MFAPasswordWarnDays'}     || $C->{'MFAPasswordWarnDays'}     !~ /^-?\d+$/);
-
-    # if kill timeout is lower than lock timeout, just unset lock timeout
-    $C->{'idleLockTimeout'} = 0 if ($C->{'idleKillTimeout'} <= $C->{'idleLockTimeout'});
-
-    # booleans that can only be 0 or 1 and default to 1
-    foreach my $key (
-        qw{
-        enableSyslog enableGlobalAccessLog enableAccountAccessLog enableGlobalSqlLog enableAccountSqlLog displayLastLogin
-        interactiveModeByDefault
+    # ... defaultAccountEgressKeySize can only be checked after defaultAccountEgressKeyAlgorithm has been handled
+    {
+        if (not defined $C->{'defaultAccountEgressKeySize'}) {
+            $C->{'defaultAccountEgressKeySize'} = 0;
         }
-      )
+        if ($C->{'defaultAccountEgressKeySize'} =~ /^(\d+)$/) {
+            $C->{'defaultAccountEgressKeySize'} = $1;
+        }
+        else {
+            push @errors, "Configuration error: value of option 'defaultAccountEgressKeySize' ('" . $C->{'defaultAccountEgressKeySize'} . "') is not a number, defaulting to 0";
+            $C->{'defaultAccountEgressKeySize'} = 0;
+        }
+        if ($C->{'defaultAccountEgressKeyAlgorithm'} eq 'rsa') {
+            $C->{'defaultAccountEgressKeySize'} ||= 4096;
+            if ($C->{'defaultAccountEgressKeySize'} < 1024) {
+                push @errors,
+                  "Configuration error: value of option 'defaultAccountEgressKeySize' ('" . $C->{'defaultAccountEgressKeySize'} . "') should be >= 1024, defaulting to 1024";
+                $C->{'defaultAccountEgressKeySize'} = 1024;
+            }
+            elsif ($C->{'defaultAccountEgressKeySize'} > 32768) {
+                push @errors,
+                  "Configuration error: value of option 'defaultAccountEgressKeySize' ('" . $C->{'defaultAccountEgressKeySize'} . "') should be >= 1024, defaulting to 1024";
+                $C->{'defaultAccountEgressKeySize'} = 32768;
+            }
+        }
+        elsif ($C->{'defaultAccountEgressKeyAlgorithm'} eq 'ecdsa') {
+            $C->{'defaultAccountEgressKeySize'} ||= 521;
+            if (!grep { $C->{'defaultAccountEgressKeySize'} eq $_ } qw{ 256 384 521 }) {
+                push @errors,
+                    "Configuration error: value of option 'defaultAccountEgressKeySize' ('"
+                  . $C->{'defaultAccountEgressKeySize'}
+                  . "') should be one of [256,384,521], defaulting to 521";
+                $C->{'defaultAccountEgressKeySize'} = 521;
+            }
+        }
+        elsif ($C->{'defaultAccountEgressKeyAlgorithm'} eq 'ed25519') {
+
+            # for ed25519, it's always 256 anyway
+            if ($C->{'defaultAccountEgressKeySize'} != 256) {
+                push @errors, "Configuration error: option 'defaultAccountEgressKeySize' has to be 256 when 'defaultAccountEgressKeyAlgorithm' is set to 'ed25519', forcing 256";
+                $C->{'defaultAccountEgressKeySize'} = 256;
+            }
+        }
+        delete $unknownkeys{'defaultAccountEgressKeySize'};
+    }
+
+    # ... if kill timeout is lower than lock timeout, just unset lock timeout
+    if ($C->{'idleKillTimeout'} <= $C->{'idleLockTimeout'} && $C->{'idleLockTimeout'} != 0) {
+        push @errors,
+            "Configuration error: option 'idleKillTimeout' ("
+          . $C->{'idleKillTimeout'}
+          . ") is <= 'idleLockTimeout' ("
+          . $C->{'idleLockTimeout'}
+          . "), setting 'idleKillTimeout' to 0";
+        $C->{'idleLockTimeout'} = 0;
+    }
+
+    # ... check that adminAccounts are actually valid accounts
     {
-        $C->{$key} = 1 if (not defined $C->{$key} or $C->{$key} !~ /^\d+$/);
-        $C->{$key} > 1 and $C->{$key} = 1;
+        my @validAccounts;
+        foreach my $conf (qw{ adminAccounts superOwnerAccounts }) {
+            foreach my $account (@{$C->{$conf}}) {
+                my $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
+                if (!$fnret) {
+                    push @errors, "Configuration error: specified $conf '$account' is not a valid account, ignoring";
+                }
+                else {
+                    push @validAccounts, $fnret->value->{'account'};
+                }
+            }
+            $C->{$conf} = \@validAccounts;
+        }
     }
 
-    # booleans that can only be 0 or 1 and default to 0
-    foreach my $key (
-        qw{ interactiveModeAllowed readOnlySlaveMode sshClientHasOptionE ingressKeysFromAllowOverride
-        moshAllowed debug keyboardInteractiveAllowed passwordAllowed telnetAllowed remoteCommandEscapeByDefault
-        accountExternalValidationDenyOnFailure }
-      )
-    {
-        $C->{$key} = 0 if (not defined $C->{$key} or $C->{$key} !~ /^\d+$/);
-        $C->{$key} > 1 and $C->{$key} = 1;
+    # ... this one is complicated; it's an array of (arrays of 3 items: (two arrays and a string))
+    if (not defined $C->{'ingressToEgressRules'}) {
+        $C->{'ingressToEgressRules'} = [];
+        push @errors, "Configuration error: missing option 'ingressToEgressRules', defaulting to []" if $test;
     }
-
-    # arrays that default to empty
-    foreach my $key (
-        qw{ accountCreateSupplementaryGroups accountCreateDefaultPrivateAccesses alwaysActiveAccounts
-        superOwnerAccounts ingressKeysFrom egressKeysFrom adminAccounts allowedNetworks forbiddenNetworks
-        ttyrecAdditionalParameters MFAPostCommand }
-      )
-    {
-        $C->{$key} = [] if ref $C->{$key} ne 'ARRAY';
+    elsif (ref $C->{'ingressToEgressRules'} ne 'ARRAY') {
+        $C->{'ingressToEgressRules'} = [];
+        push @errors, "Configuration error: option 'ingressToEgressRules' is invalid, expected an array, defaulting to []";
     }
-
-    # lint the contents of some arrays
-    foreach my $key (qw{ ingressKeysFrom egressKeysFrom }) {
-        s=[^0-9.:/]==g for @{$C->{$key}};
+    else {
+      SKIP: foreach my $rule (@{$C->{'ingressToEgressRules'}}) {
+            if (ref $rule ne 'ARRAY') {
+                $C->{'ingressToEgressRules'} = [];
+                push @errors, "Configuration error: option 'ingressToEgressRules' has an invalid format (rules should be arrays), defaulting to []";
+                last;
+            }
+            elsif (@$rule != 3 || ref $rule->[0] ne 'ARRAY' || ref $rule->[1] ne 'ARRAY' || ref $rule->[2]) {
+                $C->{'ingressToEgressRules'} = [];
+                push @errors, "Configuration error: option 'ingressToEgressRules' has an invalid format (rules should have 3 items: array, array, scalar), defaulting to []";
+                last;
+            }
+            else {
+                foreach my $i (0 .. 1) {
+                    foreach my $j (0 .. $#{$rule->[$i]}) {
+                        if ($rule->[$i][$j] =~ m{^([0-9.:%/]+)$}) {
+                            $rule->[$i][$j] = $1;
+                        }
+                        else {
+                            $C->{'ingressToEgressRules'} = [];
+                            push @errors,
+                              "Configuration error: option 'ingressToEgressRules' has an invalid format ('" . $rule->[$i][$j] . "' doesn't look like an IP), defaulting to []";
+                            last SKIP;
+                        }
+                    }
+                }
+                if (!grep { $rule->[2] eq $_ } qw{ ALLOW-EXCLUSIVE ALLOW DENY }) {
+                    $C->{'ingressToEgressRules'} = [];
+                    push @errors,
+                      "Configuration error: option 'ingressToEgressRules' has an invalid format ('" . $rule->[2] . "' should be ALLOW, DENY or ALLOW-EXCLUSIVE), defaulting to []";
+                }
+            }
+        }
     }
-    $C->{'adminAccounts'} = [grep { OVH::Bastion::is_bastion_account_valid_and_existing(account => $_) } @{$C->{'adminAccounts'}}];
+    delete $unknownkeys{'ingressToEgressRules'};
 
-    $C->{'documentationURL'} ||= "https://ovh.github.io/the-bastion/";
-
-    # we've checked everything. now forcibly untaint all of it.
-    foreach my $key (keys %$C) {
-        ref $C->{$key} eq '' or next;
-        ($C->{$key}) = $C->{$key} =~ m{(.+)};
-        $C->{$key} += 0 if $C->{$key} =~ /^\d+$/;
-    }
-
+    # OK we're done
     $_cache_config = $C;
+
+    # now that we cached our result, we can call warn_syslog() without risking an infinite loop
+    warn_syslog($_,                                                                          $noisy) for @errors;
+    warn_syslog("Configuration error: got an unknown option '$_' in configuration, ignored", $noisy) for sort keys %unknownkeys;
+
+    osh_info("Configuration loaded with " . scalar(@errors) . " warnings.") if $test;
+
     return R('OK', value => $C);
 }
 
@@ -343,14 +599,27 @@ sub account_config {
 my %_plugin_config_cache;
 
 sub plugin_config {
-    my %params = @_;
-    my $plugin = $params{'plugin'};
-    my $key    = $params{'key'};
+    my %params    = @_;
+    my $plugin    = $params{'plugin'};
+    my $key       = $params{'key'};
+    my $mock_data = $params{'mock_data'};
     my $fnret;
 
     if (my @missingParameters = grep { not defined $params{$_} } qw{ plugin }) {
         local $" = ', ';
         return R('ERR_MISSING_PARAMETER', msg => "Missing @missingParameters on plugin_config() call");
+    }
+
+    if (defined $mock_data) {
+
+        if (!OVH::Bastion::is_mocking()) {
+
+            # if we're overriding configuration with mock_data without being in mocking mode, we have a problem
+            die("Attempted to load_configuration() with mock_data without being in mocking mode");
+        }
+
+        # mock data always overrides our cache
+        delete $_plugin_config_cache{$plugin};
     }
 
     if (not exists $_plugin_config_cache{$plugin}) {
@@ -363,39 +632,45 @@ sub plugin_config {
         # if not in cache, load it
         my %config;
 
-        # 1of2) load from builtin config (plugin.json)
-        my $pluginPath = $OVH::Bastion::BASEPATH . '/bin/plugin';
-        undef $fnret;
-        foreach my $pluginDir (qw{ open restricted group-gatekeeper group-aclkeeper group-owner admin }) {
-            if (-e "$pluginPath/$pluginDir/$plugin") {
-                $fnret = OVH::Bastion::load_configuration_file(file => "$pluginPath/$pluginDir/$plugin.json");
-                if ($fnret->err eq 'KO_CANNOT_OPEN_FILE') {
+        if (!defined $mock_data) {
 
-                    # chmod error, don't fail silently
-                    warn_syslog("Can't read configuration file '$pluginPath/$pluginDir/$plugin.json'");
-                    return R('ERR_CONFIGURATION_ERROR', msg => "Configuration file has improper rights, ask your sysadmin!");
+            # 1of2) load from builtin config (plugin.json)
+            my $pluginPath = $OVH::Bastion::BASEPATH . '/bin/plugin';
+            undef $fnret;
+            foreach my $pluginDir (qw{ open restricted group-gatekeeper group-aclkeeper group-owner admin }) {
+                if (-e "$pluginPath/$pluginDir/$plugin") {
+                    $fnret = OVH::Bastion::load_configuration_file(file => "$pluginPath/$pluginDir/$plugin.json");
+                    if ($fnret->err eq 'KO_CANNOT_OPEN_FILE') {
+
+                        # chmod error, don't fail silently
+                        warn_syslog("Can't read configuration file '$pluginPath/$pluginDir/$plugin.json'");
+                        return R('ERR_CONFIGURATION_ERROR', msg => "Configuration file has improper rights, ask your sysadmin!");
+                    }
+                    last;
                 }
-                last;
+            }
+            if ($fnret && ref $fnret->value eq 'HASH') {
+                %config = %{$fnret->value};
+            }
+
+            # 2of2) load from /etc config (will NOT override plugin.json keys)
+            $fnret = OVH::Bastion::load_configuration_file(file => "/etc/bastion/plugin.$plugin.conf", secure => 1);
+            if ($fnret->err eq 'KO_CANNOT_OPEN_FILE') {
+
+                # chmod error, don't fail silently
+                warn_syslog("Can't read configuration file '/etc/bastion/plugin.$plugin.conf'");
+                return R('ERR_CONFIGURATION_ERROR', msg => "Configuration file has improper rights, ask your sysadmin!");
+            }
+            if ($fnret && ref $fnret->value eq 'HASH') {
+
+                # avoid overriding keys
+                foreach my $key (keys %{$fnret->value}) {
+                    $config{$key} = $fnret->value->{$key} if not exists $config{$key};
+                }
             }
         }
-        if ($fnret && ref $fnret->value eq 'HASH') {
-            %config = %{$fnret->value};
-        }
-
-        # 2of2) load from /etc config (will NOT override plugin.json keys)
-        $fnret = OVH::Bastion::load_configuration_file(file => "/etc/bastion/plugin.$plugin.conf", secure => 1);
-        if ($fnret->err eq 'KO_CANNOT_OPEN_FILE') {
-
-            # chmod error, don't fail silently
-            warn_syslog("Can't read configuration file '/etc/bastion/plugin.$plugin.conf'");
-            return R('ERR_CONFIGURATION_ERROR', msg => "Configuration file has improper rights, ask your sysadmin!");
-        }
-        if ($fnret && ref $fnret->value eq 'HASH') {
-
-            # avoid overriding keys
-            foreach my $key (keys %{$fnret->value}) {
-                $config{$key} = $fnret->value->{$key} if not exists $config{$key};
-            }
+        else {
+            %config = %$mock_data;
         }
 
         # compat: we previously expected "yes" as a value for the 'disabled' option, instead of a boolean.
