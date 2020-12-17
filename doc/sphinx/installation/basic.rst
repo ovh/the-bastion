@@ -29,16 +29,18 @@ The following Linux distros are tested with each release, but as this is a secur
 - Debian 10 (Buster), 9 (Stretch), 8 (Jessie)
 - RHEL/CentOS 8.x (8.3.2011, 8.2.2004, 8.1.1911), 7.x (7.9.2009, 7.8.2003, 7.7.1908)
 - Ubuntu LTS 20.04, 18.04, 16.04, 14.04\*
-- OpenSUSE Leap 15.2\*, 15.1\*, 15.0\*
+- OpenSUSE Leap 15.2\*, 15.1\*, 15.0\*\*
 
 \*: Note that these versions have no out-of-the-box MFA support, as they lack packaged versions of ``pamtester``, ``pam-google-authenticator``, or both. Of course, you may compile those yourself.
 Any other so-called `modern` Linux version are not tested with each release, but should work with no or minor adjustments.
 
+\*\*: OpenSUSE Leap 15.0 randomly hits a segfault when `updating system packages <https://bugzilla.opensuse.org/show_bug.cgi?id=1146027>`_, we had to remove it from our automated tests workflow.
+
 The following OS are also tested with each release:
 
-- FreeBSD/HardenedBSD 12.1\*\*
+- FreeBSD/HardenedBSD 12.1\*\*\*
 
-\*\*: Note that these have partial MFA support, due to their reduced set of available ``pam`` plugins. Support for either an additional password or TOTP factor can be configured, but not both at the same time. The code is actually known to work on FreeBSD/HardenedBSD 10+, but it's only regularly tested under 12.1.
+\*\*\*: Note that these have partial MFA support, due to their reduced set of available ``pam`` plugins. Support for either an additional password or TOTP factor can be configured, but not both at the same time. The code is actually known to work on FreeBSD/HardenedBSD 10+, but it's only regularly tested under 12.1.
 
 Other BSD variants partially work but are unsupported and discouraged as they have a severe limitation over the maximum number of supplementary groups (causing problems for group membership and restricted commands checks), no filesystem-level ACL support and missing MFA:
 

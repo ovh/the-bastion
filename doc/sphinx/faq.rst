@@ -41,6 +41,8 @@ They're actually quite low. Down to its basics, the bastion is merely a fancy wr
 
 Now to give you some data points, we've observed that 250 concurrent users take up 2.5 Gb of RAM (including the operating system's own footprint, and the usual daemons such as auditd, syslog, etc.). So a rule of thumb would be 1 Gb per 100 simultaneous sessions. If you expect to get a lot of new connections per minute (not necessarily long-lived), it's advised to use SSD drives however, as the bastion workload pattern for disk I/O is a lot of random seeks to write logs and ttyrecs. Mechanical hard drives are very bad at this.
 
+.. _faq_docker:
+
 Can I run it under Docker in production?
 ========================================
 

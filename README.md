@@ -125,7 +125,7 @@ Even with the most conservative, precautionous and paranoid coding process, code
 - The bastion main script is declared as the bastion user's system shell:
     - No user has real (`bash`-like) shell access on the system
     - All code is ran under the unprivileged user's system account rights
-    - Even if a user could escape to a real shell, he wouldn't be able to connect to machines he doesn't have access to, because he doesn't have filesystem-level read access to the SSH keys
+    - Even if a user could escape to a real shell, they wouldn't be able to connect to machines they don't have access to, because they don't have filesystem-level read access to the SSH keys
 
 - The code is modular
     - The main code mainly checks rights, logs actions, and enable `ssh` access to other machines
