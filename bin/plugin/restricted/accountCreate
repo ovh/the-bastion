@@ -34,7 +34,7 @@ Usage: --osh SCRIPT_NAME --account ACCOUNT [OPTIONS]
   --uid-auto              Auto-select an UID from the allowed range (the upper available one will be used)
   --always-active         This account's activation won't be challenged on connection, even if the bastion is globally
                             configured to check for account activation
-  --osh-only              This account will only be able to use OSH commands, and not connecting to machines (ssh or telnet)
+  --osh-only              This account will only be able to use ``--osh`` commands, and can't connect anywhere through the bastion
   --immutable-key         Deny any subsequent modification of the account key (selfAddKey and selfDelKey are denied)
   --comment '"STRING"'    An optional comment when creating the account. Quote it twice as shown if you're under a shell.
   --public-key '"KEY"'    Account public SSH key to deposit on the bastion, if not present,

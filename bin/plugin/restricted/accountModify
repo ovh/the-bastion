@@ -21,6 +21,7 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
         "egress-strict-host-key-checking=s" => \$modify{'egress-strict-host-key-checking'},
         "personal-egress-mfa-required=s"    => \$modify{'personal-egress-mfa-required'},
         "idle-ignore=s"                     => \$modify{'idle-ignore'},
+        "osh-only=s"                        => \$modify{'osh-only'},
     },
     helptext => <<'EOF',
 Modify an account configuration
@@ -43,6 +44,7 @@ Usage: --osh SCRIPT_NAME --account ACCOUNT [--option value [--option value [...]
                                                using the personal keys of the account, POLICY can be 'password', 'totp', 'any' or 'none'
   --always-active yes|no                     Set or unset the account as always active (i.e. disable the check of the 'active' status on this account)
   --idle-ignore yes|no                       If enabled, this account is immune to the idleLockTimeout and idleKillTimeout bastion-wide policy
+  --osh-only yes|no                          If enabled, this account can only use ``--osh`` commands, and can't connect anywhere through the bastion
 EOF
 );
 
@@ -69,7 +71,7 @@ foreach my $key (qw{ mfa-password-required mfa-totp-required }) {
         osh_exit 'ERR_INVALID_PARAMETER', "Expected '--$key yes' or '--$key no' or '--$key bypass' instead of '--$key $modify{$key}'";
     }
 }
-foreach my $key (qw{ always-active pam-auth-bypass idle-ignore }) {
+foreach my $key (qw{ always-active pam-auth-bypass idle-ignore osh-only }) {
     next unless $modify{$key};
     if (not grep { $modify{$key} eq $_ } qw{ yes no }) {
         help();

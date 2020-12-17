@@ -970,7 +970,7 @@ if (!$quiet) {
 }
 
 # before doing stuff, check if we have the right to connect somewhere (some users are locked only to osh commands)
-$fnret = OVH::Bastion::account_config(account => $self, key => "osh_only");
+$fnret = OVH::Bastion::account_config(account => $self, key => OVH::Bastion::OPT_ACCOUNT_OSH_ONLY);
 if ($fnret and $fnret->value() =~ /yes/) {
     $fnret = R('KO_ACCESS_DENIED', msg => "You don't have the right to connect anywhere");
 }

@@ -40,6 +40,25 @@ testsuite_selfaccesses()
     success realm modify_account1 $a0 --osh accountModify --pam-auth-bypass yes --account $account1
     json .error_code OK .command accountModify
 
+    # test osh-only
+    success accountModify enable_osh_only $a0 --osh accountModify --osh-only yes --account $account1
+    json .error_code OK .command accountModify
+
+    # account1 can not connect to anything
+    run accountModify no_ssh_after_osh_only $a1 anybody@127.0.0.1
+    retvalshouldbe 107
+    json .error_code KO_ACCESS_DENIED .error_message "You don't have the right to connect anywhere"
+
+    success accountModify disable_osh_only $a0 --osh accountModify --osh-only no --account $account1
+    json .error_code OK .command accountModify
+
+    # account1 can connect now (or could if they were granted)
+    run accountModify can_ssh_after_osh_only_disable $a1 anybody@127.0.0.1
+    retvalshouldbe 107
+    json .error_code KO_ACCESS_DENIED
+    contain "Access denied"
+    nocontain "anywhere"
+
     revoke accountModify
 
     success selfListEgressKeys beforeadd $a1 -osh selfListEgressKeys

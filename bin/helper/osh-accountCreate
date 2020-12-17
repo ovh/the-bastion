@@ -363,7 +363,7 @@ else {
 
 # push this flag to prevent ssh/telnet usage
 if ($oshOnly) {
-    $fnret = OVH::Bastion::account_config(account => $account, key => "osh_only", value => "yes");
+    $fnret = OVH::Bastion::account_config(account => $account, key => OVH::Bastion::OPT_ACCOUNT_OSH_ONLY, value => "yes");
     $fnret or HEXIT($fnret);
 }
 
