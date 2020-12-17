@@ -48,12 +48,12 @@ OVH::Bastion::load_configuration(
 
         # all options below are bool, we'll test for their normalization
         enableSyslog           => 1,
-        enableGlobalAccessLog  => JSON->new->allow_nonref->decode("true"),
+        enableGlobalAccessLog  => JSON::true,
         enableAccountAccessLog => "yes",
         enableGlobalSqlLog     => 0,
-        enableAccountSqlLog    => JSON->new->allow_nonref->decode("false"),
+        enableAccountSqlLog    => JSON::false,
         displayLastLogin       => "",
-        debug                  => JSON->new->allow_nonref->decode("null"),
+        debug                  => JSON::null,
         passwordAllowed        => "no",
         telnetAllowed          => "false",
     }
@@ -117,7 +117,7 @@ is(
     OVH::Bastion::plugin_config(
         plugin    => "help",
         key       => "disabled",
-        mock_data => {disabled => JSON->new->allow_nonref->decode("true")}
+        mock_data => {disabled => JSON::true}
     )->value ? 1 : 0,
     1,
     "is_plugin_disabled(disabled=true)"
@@ -126,7 +126,7 @@ is(
     OVH::Bastion::plugin_config(
         plugin    => "help",
         key       => "disabled",
-        mock_data => {disabled => JSON->new->allow_nonref->decode("false")}
+        mock_data => {disabled => JSON::false}
     )->value ? 1 : 0,
     0,
     "is_plugin_disabled(disabled=false)"
@@ -135,7 +135,7 @@ is(
     OVH::Bastion::plugin_config(
         plugin    => "help",
         key       => "disabled",
-        mock_data => {disabled => JSON->new->allow_nonref->decode("null")}
+        mock_data => {disabled => JSON::null}
     )->value ? 1 : 0,
     0,
     "is_plugin_disabled(disabled=null)"

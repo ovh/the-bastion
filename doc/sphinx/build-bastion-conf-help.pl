@@ -17,13 +17,7 @@ sub dumpdoc {
     elsif (defined $h{param} && defined $h{default} && defined $h{desc} && defined $h{type}) {
         die "attempting to dump data but section=$section" if !$section;
         push @{$sections{$section}}, $h{param};
-        push @out, ".. _bastion_conf_$h{param}:\n";
-        push @out, "\n";
-        push @out, "$h{param}\n";
-        my $len = length($h{param});
-        push @out, "*" x $len . "\n\n";
-        push @out, ":Type: ``$h{type}``\n\n";
-        push @out, ":Default: ``$h{default}``\n\n";
+        push @out, ".. _bastion_conf_$h{param}:\n\n", "$h{param}\n", "*" x length($h{param}), "\n\n", ":Type: ``$h{type}``\n\n", ":Default: ``$h{default}``\n\n";
         push @out, ":Example: ``$h{example}``\n\n" if $h{example};
         push @out, "$h{desc}\n\n";
     }
@@ -35,7 +29,7 @@ sub dumpdoc {
 }
 
 my $state = '';
-while (<>) {
+while (<STDIN>) {
     print STDERR $_;
     next if /^\s*$/;
     if (m{^# ([a-zA-Z0-9_]+) \((.+)\)}) {
@@ -67,8 +61,7 @@ while (<>) {
         $section = $1;
         $state   = 'section';
         push @orderedsections, $section;
-        push @out,             "$1\n";
-        push @out,             "-" x (length($1)) . "\n\n";
+        push @out, $section, "\n", "-" x (length($section)), "\n\n";
     }
     elsif (m{^# >> (.+)$} and $state eq 'section' and $section) {
         $sectiondesc{$section} = $1;
@@ -79,7 +72,7 @@ while (<>) {
 }
 dumpdoc();
 
-print <<'EOF'
+print <<'EOF';
 ======================
 bastion.conf reference
 ======================
@@ -95,23 +88,15 @@ Option List
 ===========
 
 EOF
-  ;
 
 foreach my $section (@orderedsections) {
     die "no description for section $section" if !$sectiondesc{$section};
-    print "\n$section\n";
-    print "-" x (length($section)) . "\n\n";
-    print $sectiondesc{$section} . "\n\n";
-    foreach (@{$sections{$section}}) {
-        print "- :ref:`bastion_conf_$_`\n";
-    }
+    print "\n", $section, "\n", "-" x length($section), "\n\n", $sectiondesc{$section}, "\n\n";
+    print "- :ref:`bastion_conf_$_`\n" for @{$sections{$section}};
 }
-print <<'EOF'
+print <<'EOF', join('', @out);
 
 Option Reference
 ================
 
 EOF
-  ;
-
-print join("", @out);
