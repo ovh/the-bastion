@@ -88,7 +88,7 @@ testsuite_groups()
     contain "you to be specifically granted"
     json .command   null .value      null .error_code KO_RESTRICTED_COMMAND
 
-    plgfail groupCreate a0_fail_to_create_g1_with_a1_as_owner_because_bad_key_size $a0 --osh groupCreate --group $group1 --algo rsa --size 2048 --owner $account1
+    plgfail groupCreate a0_fail_to_create_g1_with_a1_as_owner_because_bad_key_size $a0 --osh groupCreate --group $group1 --algo rsa --size 1024 --owner $account1
     contain "minimum configured key size"
     json .command groupCreate .error_code KO_KEY_SIZE_TOO_SMALL .value      null
 

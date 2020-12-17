@@ -407,7 +407,7 @@
 # documentationURL (string)
 #     DESC: The URL of the documentation where users will be pointed to, for example when displaying help. If you have some internal documentation about the bastion, you might want to advertise it here.
 #  DEFAULT: "https://ovh.github.io/the-bastion/"
-"documentationURL": "https://ovh.github.io/the-bastion/"
+"documentationURL": "https://ovh.github.io/the-bastion/",
 #
 # debug (boolean)
 #     DESC: Enables or disables debug *GLOBALLY*, printing a lot of information to anyone using the bastion. Don't enable this unless you're chasing a bug in the code and are familiar with it.
@@ -427,5 +427,5 @@
 # sshClientHasOptionE (boolean)
 #     DESC: Set to ``true`` if your ssh client supports the ``-E`` option and you want to use it to log debug info on opened sessions. **Discouraged** because it has some annoying side effects (some ssh errors then go silent from the user perspective).
 #  DEFAULT: false
-"sshClientHasOptionE": false,
+"sshClientHasOptionE": false
 }

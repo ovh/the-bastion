@@ -80,6 +80,8 @@ testsuite_selfkeys()
     grant accountInfo
     grant auditor
 
+    configchg 's=^\\\\x22minimumIngressRsaKeySize\\\\x22.+=\\\\x22minimumIngressRsaKeySize\\\\x22:4096,='
+
     success accountssh info0 $a0 --osh accountInfo --account $account1
     json .error_code OK .command accountInfo
     json .value.account_egress_ssh_config.type default
