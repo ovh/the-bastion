@@ -250,6 +250,11 @@ sub load_configuration {
                 push @errors, "Configuration error: missing option '$o', defaulting to " . ($tuple->{'default'} ? 'true' : 'false') if $test;
             }
 
+            # if a bool, it's ok, normalize to 0/1
+            elsif (JSON::is_bool($C->{$o})) {
+                $C->{$o} = $C->{$o} ? 1 : 0;
+            }
+
             # if set to "no", "false" or "disabled", be nice and cast to false (because a string is true, otherwise)
             elsif (grep { lc($C->{$o}) eq lc } qw{ no false disabled }) {
                 push @errors, "Configuration error: found value '" . $C->{$o} . "' for option '$o', but it's supposed to be a boolean, assuming false";
