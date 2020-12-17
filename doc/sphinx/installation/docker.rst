@@ -2,7 +2,17 @@
 Sandbox using Docker
 ====================
 
-- Let's build the docker image and run it
+This is a good way to test The Bastion within seconds, but :ref:`read the FAQ <faq_docker>` if you're serious about using containerization in production.
+
+The sandbox image is available for the following architectures: ``linux/386``, ``linux/amd64``, ``linux/arm/v6``, ``linux/arm/v7``, ``linux/arm64``, ``linux/ppc64le``, ``linux/s390x``.
+
+- Let's run the docker image:
+
+.. code-block:: shell
+
+    docker run -d -p 22 --name bastiontest ovhcom/the-bastion:sandbox
+
+- Or, if you prefer building the docker image yourself, you can: use the two commands below. Of course, if you already typed the ``docker run`` command above, you can skip the following commands:
 
 .. code-block:: shell
 
@@ -15,7 +25,7 @@ Sandbox using Docker
 
     docker exec -it bastiontest /opt/bastion/bin/admin/setup-first-admin-account.sh poweruser auto
 
-- We're now up and running with the default configuration! Let's setup a handy bastion alias, and test the `info` command:
+- We're now up and running with the default configuration! Let's setup a handy bastion alias, and test the ``info`` command:
 
 .. code-block:: shell
 
@@ -29,7 +39,7 @@ Sandbox using Docker
 
     bastion -i
 
-- This is useful to call several `--osh` plugins in a row. Now we can ask for help to see all plugins:
+- This is useful to call several ``--osh`` plugins in a row. Now we can ask for help to see all plugins:
 
 .. code-block:: shell
 
@@ -41,7 +51,7 @@ Sandbox using Docker
 
     $> selfListEgressKeys
 
-- Copy this public key to the remote machine's `authorized_keys` under the `.ssh/` folder of the account you want to connect to, then:
+- Copy this public key to the remote machine's ``authorized_keys`` under the ``.ssh/`` folder of the account you want to connect to, then:
 
 .. code-block:: shell
 
