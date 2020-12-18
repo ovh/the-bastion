@@ -114,6 +114,7 @@ use constant {
     OPT_ACCOUNT_INGRESS_PIV_GRACE  => 'ingress_piv_grace',
     OPT_ACCOUNT_ALWAYS_ACTIVE      => 'always_active',
     OPT_ACCOUNT_IDLE_IGNORE        => 'idle_ignore',
+    OPT_ACCOUNT_OSH_ONLY           => 'osh_only',
 };
 
 ###########

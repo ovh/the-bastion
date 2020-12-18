@@ -178,8 +178,12 @@ sub _toggle_yes_no {
     my $keyname = $params{'keyname'};
     my $keyfile = $params{'keyfile'};
     my $value   = $params{'value'};
+    my $public  = $params{'public'};
 
-    $fnret = OVH::Bastion::account_config(account => $account, public => 1, key => $keyfile);
+    # by default, if public is not specified, it's 1
+    $public = 1 if !exists $params{'public'};
+
+    $fnret = OVH::Bastion::account_config(account => $account, public => $public, key => $keyfile);
     if ($value eq 'yes') {
         osh_info "Setting this account as $keyname...";
         if ($fnret) {
@@ -187,7 +191,7 @@ sub _toggle_yes_no {
             return R('OK_NO_CHANGE');
         }
 
-        $fnret = OVH::Bastion::account_config(account => $account, public => 1, key => $keyfile, value => 'yes');
+        $fnret = OVH::Bastion::account_config(account => $account, public => $public, key => $keyfile, value => 'yes');
         if (!$fnret) {
             osh_warn "... error while setting the option";
             return R('ERR_OPTION_CHANGE_FAILED');
@@ -203,7 +207,7 @@ sub _toggle_yes_no {
             return R('OK_NO_CHANGE');
         }
 
-        $fnret = OVH::Bastion::account_config(account => $account, public => 1, key => $keyfile, delete => 1);
+        $fnret = OVH::Bastion::account_config(account => $account, public => $public, key => $keyfile, delete => 1);
         if (!$fnret) {
             osh_warn "... error while removing the option";
             return R('ERR_OPTION_CHANGE_FAILED');
@@ -229,6 +233,9 @@ foreach my $tuple (@modify) {
     }
     elsif ($key eq 'idle-ignore') {
         $result{$jsonkey} = _toggle_yes_no(value => $value, keyfile => OVH::Bastion::OPT_ACCOUNT_IDLE_IGNORE, keyname => 'idle-ignore');
+    }
+    elsif ($key eq 'osh-only') {
+        $result{$jsonkey} = _toggle_yes_no(value => $value, public => 0, keyfile => OVH::Bastion::OPT_ACCOUNT_OSH_ONLY, keyname => 'osh-only');
     }
     elsif ($key eq 'pam-auth-bypass') {
         $fnret = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::PAM_AUTH_BYPASS_GROUP);

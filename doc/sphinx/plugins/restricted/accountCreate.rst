@@ -33,7 +33,7 @@ Create a new bastion account
                             configured to check for account activation
 .. option:: --osh-only            
 
-   This account will only be able to use OSH commands, and not connecting to machines (ssh or telnet)
+   This account will only be able to use ``--osh`` commands, and can't connect anywhere through the bastion
 
 .. option:: --immutable-key       
 

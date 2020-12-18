@@ -54,5 +54,9 @@ Modify an account configuration
 
    If enabled, this account is immune to the idleLockTimeout and idleKillTimeout bastion-wide policy
 
+.. option:: --osh-only yes|no                        
+
+   If enabled, this account can only use ``--osh`` commands, and can't connect anywhere through the bastion
+
 
 
