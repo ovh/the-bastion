@@ -672,17 +672,17 @@ if ($mfaPolicy ne 'disabled' && !grep { $osh_command eq $_ } qw{ selfMFASetupPas
         main_exit(OVH::Bastion::EXIT_MFA_PASSWORD_SETUP_REQUIRED,
             'mfa_password_setup_required',
             "Sorry, but you need to setup the Multi-Factor Authentication before using this bastion, please use the `--osh selfMFASetupPassword' option to do so")
-          if !$isMfaPasswordConfigured;
+          if (!$isMfaPasswordConfigured && !$remoteMfaPassword);
     }
 
     if (($mfaPolicy eq 'totp-required' && !$hasMfaTOTPBypass) || $isMfaTOTPRequired) {
         main_exit(OVH::Bastion::EXIT_MFA_TOTP_SETUP_REQUIRED,
             'mfa_totp_setup_required',
             "Sorry, but you need to setup the Multi-Factor Authentication before using this bastion, please use the `--osh selfMFASetupTOTP' option to do so")
-          if !$isMfaTOTPConfigured;
+          if !($isMfaTOTPConfigured && !$remoteMfaTOTP);
     }
 
-    if ($mfaPolicy eq 'any-required' && (!$isMfaPasswordConfigured && !$hasMfaPasswordBypass) && (!$isMfaTOTPConfigured && !$hasMfaTOTPBypass)) {
+    if ($mfaPolicy eq 'any-required' && (!$isMfaPasswordConfigured && !$hasMfaPasswordBypass) && (!$isMfaTOTPConfigured && !$hasMfaTOTPBypass) && !$remoteMfaValidated) {
         main_exit(OVH::Bastion::EXIT_MFA_ANY_SETUP_REQUIRED, 'mfa_any_setup_required',
 "Sorry, but you need to setup the Multi-Factor Authentication before using this bastion, please use either the `--osh selfMFASetupPassword' or the `--osh selfMFASetupTOTP' option, at your discretion, to do so"
         );
@@ -1306,11 +1306,15 @@ if (!$logret) {
 
 # if we have JIT MFA, do it now
 if ($JITMFARequired) {
-    my $skipMFA = 0;
+    my $skipMFA  = 0;
+    my $realmMFA = 0;
     print "As this is required for this host, entering MFA phase.\n";
     if ($JITMFARequired eq 'totp' && !$isMfaTOTPConfigured) {
         if ($hasMfaTOTPBypass) {
             $skipMFA = 1;
+        }
+        elsif ($remoteMfaTOTP && $remoteMfaValidated) {
+            $realmMFA = 1;
         }
         else {
             main_exit(OVH::Bastion::EXIT_MFA_TOTP_SETUP_REQUIRED,
@@ -1321,6 +1325,9 @@ if ($JITMFARequired) {
     elsif ($JITMFARequired eq 'password' && !$isMfaPasswordConfigured) {
         if ($hasMfaPasswordBypass) {
             $skipMFA = 1;
+        }
+        elsif ($remoteMfaPassword && $remoteMfaValidated) {
+            $realmMFA = 1;
         }
         else {
             main_exit(OVH::Bastion::EXIT_MFA_PASSWORD_SETUP_REQUIRED,
@@ -1334,6 +1341,9 @@ if ($JITMFARequired) {
             # FIXME: should actually be $hasMFABypassAll (not yet implemented)
             $skipMFA = 1;
         }
+        elsif ($remoteMfaValidated) {
+            $realmMFA = 1;
+        }
         else {
             main_exit(OVH::Bastion::EXIT_MFA_ANY_SETUP_REQUIRED, 'mfa_any_setup_required',
 "Sorry, but you need to setup the Multi-Factor Authentication before connecting to this host,\nplease use either the `--osh selfMFASetupPassword' or the `--osh selfMFASetupTOTP' option, at your discretion, to do so"
@@ -1342,7 +1352,10 @@ if ($JITMFARequired) {
     }
 
     if ($skipMFA) {
-        print "... skipping as your account is exempt from MFA\n";
+        print "... skipping as your account is exempt from MFA.\n";
+    }
+    elsif ($realmMFA) {
+        print "... you already validated MFA on the bastion you're coming from.\n";
     }
     else {
         $fnret = OVH::Bastion::do_pamtester(self => $self, sysself => $sysself);
