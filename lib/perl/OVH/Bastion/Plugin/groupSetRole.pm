@@ -167,7 +167,7 @@ sub act {
 
             # if the user is a guest, must remove all his guest accesses first
             $fnret = OVH::Bastion::get_acl_way(way => 'groupguest', group => $shortGroup, account => $account);
-            if ($fnret && $fnret->value) {
+            if ($fnret && $fnret->value && @{$fnret->value}) {
                 osh_warn("This account was previously a guest of this group, with the following accesses:");
                 my @acl = @{$fnret->value};
                 OVH::Bastion::print_acls(acls => [{type => 'group-guest', group => $shortGroup, acl => \@acl}]);
