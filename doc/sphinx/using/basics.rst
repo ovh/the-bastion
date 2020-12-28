@@ -212,7 +212,7 @@ When we've done with server42, let's see if everything was correctly recorded:
    :emphasize-lines: 1
 
    bssh(master)> selfListSessions --type ssh --detailed
-   ---bst-dev-a.bastions.ovh.net------------------the-bastion-2.99.99-rc9.2-ovh1---
+   ---the-bastion.example.org---------------------the-bastion-2.99.99-rc9.2-ovh1---
    => your past sessions list
    --------------------------------------------------------------------------------
    ~ The list of your 100 past sessions follows:
@@ -228,7 +228,7 @@ Let's see what we did exactly during this session:
    :emphasize-lines: 1
 
    bssh(master)> selfPlaySession --id f4cca44a848e
-   ---bst-dev-a.bastions.ovh.net------------------the-bastion-2.99.99-rc9.2-ovh1---
+   ---the-bastion.example.org---------------------the-bastion-2.99.99-rc9.2-ovh1---
    => replay a past session
    --------------------------------------------------------------------------------
    ~       ID: f4cca44a848e
