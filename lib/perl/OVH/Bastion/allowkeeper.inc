@@ -655,11 +655,9 @@ sub get_group_list {
         return $_cache_get_group_list{$groupType};
     }
 
-    my $antiloop = 9000;
     my %groups;
     setgrent();
     while (my @nextgroup = getgrent()) {
-        $antiloop-- < 0 and last;
         my ($name, $passwd, $gid, $members) = @nextgroup;
         if (    $groupType eq 'key'
             and $name =~ /^key/
