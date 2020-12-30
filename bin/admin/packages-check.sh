@@ -70,12 +70,13 @@ if echo "$DISTRO_LIKE" | grep -q -w debian; then
 elif echo "$DISTRO_LIKE" | grep -q -w rhel; then
     wanted_list="perl-JSON perl-Net-Netmask perl-Net-IP \
             perl-Net-DNS perl-DBD-SQLite perl-TermReadKey \
-            sudo fping xz sqlite binutils acl gnupg rsync \
+            sudo fping xz sqlite binutils acl gnupg rsync perl-DateTime \
             perl-JSON-XS inotify-tools lsof curl perl-Term-ReadLine-Gnu \
             perl-libwww-perl perl-Digest perl-Net-Server cryptsetup mosh \
             expect openssh-server nc bash perl-CGI perl(Test::More) passwd \
             cracklib-dicts perl-Time-Piece perl-Time-HiRes diffutils \
-            perl-Sys-Syslog pamtester google-authenticator qrencode-libs"
+            perl-Sys-Syslog pamtester google-authenticator qrencode-libs \
+            util-linux-user"
     if [ "$DISTRO_VERSION_MAJOR" = 7 ]; then
         wanted_list="$wanted_list fortune-mod coreutils"
     fi
@@ -102,7 +103,7 @@ elif echo "$DISTRO_LIKE" | grep -q -w rhel; then
     install_cmd="yum install"
 elif echo "$DISTRO_LIKE" | grep -q -w suse; then
     wanted_list="perl-common-sense perl-JSON perl-Net-Netmask perl-Net-IP \
-            perl-Net-DNS perl-DBD-SQLite perl-TermReadKey \
+            perl-Net-DNS perl-DBD-SQLite perl-TermReadKey perl-DateTime \
             fortune sudo fping \
             xz sqlite binutils acl gnupg rsync \
             perl-JSON-XS inotify-tools lsof curl perl-TermReadLine-Gnu \
@@ -129,7 +130,9 @@ elif echo "$DISTRO_LIKE" | grep -q -w suse; then
     installed="FIXME"
     install_cmd="zypper install"
 elif [ "$OS_FAMILY" = FreeBSD ]; then
-    wanted_list="base64 coreutils rsync bash sudo pamtester p5-JSON p5-JSON-XS p5-common-sense p5-Net-IP p5-GnuPG p5-DBD-SQLite p5-Net-Netmask p5-Term-ReadKey expect fping p5-Net-Server p5-CGI p5-LWP-Protocol-https"
+    wanted_list="base64 coreutils rsync bash sudo pamtester p5-JSON p5-JSON-XS \
+            p5-common-sense p5-DateTime p5-Net-IP p5-GnuPG p5-DBD-SQLite p5-Net-Netmask \
+            p5-Term-ReadKey expect fping p5-Net-Server p5-CGI p5-LWP-Protocol-https"
     install_cmd="pkg add"
     installed=""
     for i in $wanted_list

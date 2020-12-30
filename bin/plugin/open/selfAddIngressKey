@@ -1,6 +1,7 @@
 #! /usr/bin/env perl
 # vim: set filetype=perl ts=4 sw=4 sts=4 et:
 use common::sense;
+use DateTime;
 
 use File::Basename;
 use lib dirname(__FILE__) . '/../../../lib/perl';
@@ -8,22 +9,26 @@ use OVH::Result;
 use OVH::Bastion;
 use OVH::Bastion::Plugin qw( :DEFAULT help );
 
-my ($pubKey);
 my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,
     header  => "add a new public key to your account",
     options => {
-        "pubKey=s",     \$pubKey,    # deprecated name, keep it to not break scripts or people
-        "public-key=s", \$pubKey,
+        "pubKey|public-key=s" => \my $pubKey,        # 'pubKey' is a deprecated name, keep it to not break scripts or people
+        "piv"                 => \my $pivExplicit,
     },
     helptext => <<'EOF',
 Add a new ingress public key to your account
 
-Usage: --osh SCRIPT_NAME [--public-key '"ssh key text"']
+Usage: --osh SCRIPT_NAME [--public-key '"ssh key text"'] [--piv]
 
   --public-key KEY  Your new ingress public SSH key to deposit on the bastion, use double-quoting if your're under a shell.
-
-If no option is specified, you'll be prompted interactively.
+                      If this option is not specified, you'll be prompted interactively for your public SSH key. Note that you
+                      can also pass it through STDIN directly. If the policy of this bastion allows it, you may prefix the key
+                      with a 'from="IP1,IP2,..."' snippet, a la authorized_keys. However the policy might force a configured
+                      'from' prefix that will override yours, or be used if you don't specify it yourself.
+  --piv             Add a public SSH key from a PIV-compatible hardware token, along with its attestation certificate and key
+                      certificate, both in PEM format. If you specified --public-key, then the attestation and key certificate are
+                      expected on STDIN only, otherwise the public SSH key, the attestation and key certificate are expected on STDIN.
 EOF
 );
 
@@ -37,12 +42,20 @@ if (ref $remainingOptions eq 'ARRAY' and @$remainingOptions) {
 #
 my $fnret;
 
-$fnret = OVH::Bastion::account_config(account => $self, public => 1, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_POLICY);
-if ($fnret && $fnret->value eq 'yes') {
-    osh_exit R('ERR_ACCESS_DENIED', msg => "PIV-only policy is enabled for your account, you can't add new keys this way");
-}
+my $pivEffectivePolicyEnabled = OVH::Bastion::is_effective_piv_account_policy_enabled(account => $self);
 
-my $allowedKeyFile = $HOME . '/' . OVH::Bastion::AK_FILE;
+# before requesting the ssh pubkey, if we have to do PIV, check we have the piv helper
+if (!OVH::Bastion::has_piv_helper()) {
+    if ($pivExplicit) {
+        osh_exit R('KO_PIV_NOT_AVAILABLE', msg => "This bastion doesn't have PIV capabilities due to missing prerequisites. Please retry without --piv.");
+    }
+    elsif ($pivEffectivePolicyEnabled) {
+        warn_syslog("selfAddIngressKey: $self is required to use PIV keys but we're missing the PIV helper");
+        osh_exit R('KO_PIV_NOT_AVAILABLE',
+            msg => "You are required per the bastion policy to only use PIV keys but we're missing some prerequisites to validate PIV keys. "
+              . "This is a configuration error, please contact your nearest sysadmin.");
+    }
+}
 
 if (not defined $pubKey) {
     $fnret = OVH::Bastion::get_supported_ssh_algorithms_list(way => 'ingress');
@@ -50,6 +63,7 @@ if (not defined $pubKey) {
     my @algoList = @{$fnret->value};
     my $algos    = join(' ', @algoList);
     osh_info "Please paste the SSH key you want to add. This bastion supports the following algorithms:\n";
+
     if (grep { 'ed25519' eq $_ } @algoList) {
         osh_info "ED25519: strongness[#####] speed[#####], use `ssh-keygen -t ed25519' to generate one";
     }
@@ -60,13 +74,18 @@ if (not defined $pubKey) {
         osh_info "RSA    : strongness[###..] speed[#....], use `ssh-keygen -t rsa -b 4096' to generate one";
     }
     osh_info "\nIn any case, don't save it without a passphrase.";
+
     if (OVH::Bastion::config('ingressKeysFromAllowOverride')->value) {
         osh_info 'You can prepend your key with a from="IP1,IP2,..." as this bastion policy allows ingress keys "from" override by users';
     }
     else {
         osh_info 'Any from="IP1,IP2,..." you include will be ignored, as this bastion policy refuses ingress keys "from" override by users';
     }
+
     $pubKey = <STDIN>;
+
+    # trim spaces
+    $pubKey =~ s{^\s+|\s+$}{}g;
 }
 
 $fnret = OVH::Bastion::is_valid_public_key(pubKey => $pubKey, way => 'ingress');
@@ -80,21 +99,60 @@ if (!$fnret) {
 }
 my $key = $fnret->value;
 
+my $allowedKeyFile = $HOME . '/' . OVH::Bastion::AK_FILE;
 if (checkExistKey($key->{'base64'})) {
     osh_exit R('KO_DUPLICATE_KEY', msg => "This public key already exists on your account!", value => {key => $key});
 }
 
+# we have a valid key, now handle PIV if needed
+
+if ($pivEffectivePolicyEnabled) {
+    osh_info "Your are required to add only SSH keys from PIV-compatible hardware tokens, by policy.";
+}
+elsif ($pivExplicit) {
+    osh_info "You have requested to add a PIV-enabled SSH key.";
+}
+
+if ($pivExplicit || $pivEffectivePolicyEnabled) {
+    osh_info "Please paste the PIV attestation certificate of your hardware key in PEM format.";
+    osh_info "This snippet should start with '-----BEGIN CERTIFICATE-----' and end with '-----END CERTIFICATE-----':";
+    osh_info " ";
+    $fnret = readPEMFromSTDIN();
+    $fnret or osh_exit $fnret;
+    $key->{'pivAttestationCertificate'} = $fnret->value;
+
+    osh_info " ";
+    osh_info "Thanks, now please paste the PIV key certificate of your generated key in PEM format.";
+    osh_info "This snippet should also start with '-----BEGIN CERTIFICATE-----' and end with '-----END CERTIFICATE-----':";
+    osh_info " ";
+    $fnret = readPEMFromSTDIN();
+    $fnret or osh_exit $fnret;
+    $key->{'pivKeyCertificate'} = $fnret->value;
+    osh_info " ";
+
+    $fnret = OVH::Bastion::verify_piv(key => $key->{'line'}, attestationCertificate => $key->{'pivAttestationCertificate'}, keyCertificate => $key->{'pivKeyCertificate'});
+    $key->{'isPiv'}   = ($fnret ? 1 : 0);
+    $key->{'pivInfo'} = $fnret->value if $fnret;
+
+    if (!$key->{'isPiv'}) {
+        osh_exit R('ERR_PIV_VALIDATION_FAILED', msg => "Those certificates didn't successfully validate the provided PIV key, aborting!");
+    }
+}
+
+# end of PIV handling
+
 $fnret = OVH::Bastion::get_from_for_user_key(userProvidedIpList => $key->{'fromList'}, key => $key);
 $fnret or osh_exit $fnret;
 
-if (open(my $fh_keyfile, '>>', $allowedKeyFile)) {
-    print $fh_keyfile $key->{'line'} . "\n";
-    close($fh_keyfile);
-}
-else {
-    osh_exit 'ERR_CANNOT_OPEN_FILE', "Error while trying to open file $allowedKeyFile for write ($!)";
-}
-osh_info "Public key successfully added";
+$key->{'info'} = sprintf("ADDED_BY=%s USING=%s UNIQID=%s TIMESTAMP=%s DATETIME=%s VERSION=%s", $self, $scriptName, $ENV{'UNIQID'}, time(), DateTime->now(), $OVH::Bastion::VERSION);
+
+$fnret = OVH::Bastion::add_key_to_authorized_keys_file(file => $allowedKeyFile, key => $key);
+$fnret or osh_exit $fnret;
+
+osh_info " ";
+osh_info "Public key successfully added:";
+OVH::Bastion::print_public_key(key => $key, nokeyline => 1);
+
 if (ref $key->{'fromList'} eq 'ARRAY' && @{$key->{'fromList'}}) {
     osh_info "You will only be able to connect from: " . join(', ', @{$key->{'fromList'}});
 }
@@ -116,6 +174,50 @@ sub checkExistKey {
     }
     close($fh_keys);
     return 0;
+}
+
+sub readPEMFromSTDIN {
+    my @pem;
+    my $readingState = 0;
+    while (my $line = <STDIN>) {
+        chomp $line;
+
+        # ignore empty lines, or lines with only space-like chars
+        next if $line =~ m{^\s*$};
+
+        # trim every space-like char before and after the line
+        $line =~ s{^\s+|\s+$}{}g;
+        if ($readingState == 0) {
+
+            # we're waiting for the BEGIN line, ignore everything till we get there
+            next if ($line ne '-----BEGIN CERTIFICATE-----');
+            push @pem, $line;
+            $readingState = 1;
+        }
+        elsif ($readingState == 1) {
+
+            # we're after BEGIN and before END, read the PEM cert
+            push @pem, $line;
+
+            # if we're at the end, bail out and be happy
+            if ($line eq '-----END CERTIFICATE-----') {
+                $readingState = 2;
+                last;
+            }
+        }
+    }
+
+    # here, if readingState != 2, then we don't have a complete PEM cert
+    if ($readingState == 0) {
+        return R('ERR_NO_PEM_START_MARKER', msg => "Couldn't find a valid '-----BEGIN CERTIFICATE-----' marker");
+    }
+    elsif ($readingState == 1) {
+        return R('ER_NO_PEM_END_MARKER', msg => "Couldn't find a valid '-----END CERTIFICATE-----' marker");
+    }
+    elsif ($readingState == 2) {
+        return R('OK', value => join("\n", @pem));
+    }
+    return R('ERR_INTERNAL');    # unreachable
 }
 
 $key->{'from_list'} = delete $key->{'fromList'};    # for json display

@@ -9,14 +9,14 @@ Remove an ingress public key from your account
 .. admonition:: usage
    :class: cmdusage
 
-   --osh selfDelIngressKey [--line-number-to-delete|-l NB] [--fingerprint-to-delete|-f FP]
+   --osh selfDelIngressKey [--id-to-delete|-l ID] [--fingerprint-to-delete|-f FP]
 
 .. program:: selfDelIngressKey
 
 
-.. option:: -l, --line-number-to-delete NB
+.. option:: -l, --id-to-delete ID         
 
-   Directly specify the line number to delete (CAUTION!), you can get the line numbers with selfListIngressKeys
+   Directly specify key id to delete (CAUTION!), you can get id with selfListIngressKeys
 
 .. option:: -f, --fingerprint-to-delete FP
 

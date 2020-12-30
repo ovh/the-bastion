@@ -46,7 +46,7 @@ $ENV{'UNIQID'} = OVH::Bastion::generate_uniq_id()->value;
 
 foreach my $account (%{$fnret->value}) {
 
-    # if account doesn't have PIV grace, don't bother
+    # if account doesn't have PIV grace, we have nothing to do
     $fnret = OVH::Bastion::account_config(account => $account, public => 1, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_GRACE);
     next if !$fnret;
 
@@ -56,49 +56,60 @@ foreach my $account (%{$fnret->value}) {
     _log "Account $account has PIV grace expiry set to $expiry (" . $human->{'human'} . ")";
 
     # is PIV grace TTL expired?
-    if (time() > $expiry) {
+    if (time() < $expiry) {
+        _log "... grace for $account is not expired yet, skipping...";
+        next;
+    }
 
-        # it is, but if current policy is not set to enforce, it's useless
-        _log "... grace for $account is expired, is current policy set to enforced?";
-        $fnret = OVH::Bastion::account_config(account => $account, public => 1, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_POLICY);
-        if (!$fnret || $fnret->value ne 'yes') {
+    # it is: remove it
+    _log "... grace for $account is expired, removing it";
+    $fnret = OVH::Bastion::account_config(account => $account, public => 1, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_GRACE, delete => 1);
+    if (!$fnret) {
+        warn_syslog("Couldn't remove grace flag for $account: " . $fnret->msg);
+        _err "... couldn't remove grace flag for $account";
+        next;
+    }
 
-            # PIV grace expired but current policy is already relaxed, so just remove the grace flag
-            _log "... grace for $account is expired, but current policy is not set to enforced, removing grace...";
-            $fnret = OVH::Bastion::account_config(account => $account, public => 1, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_GRACE, delete => 1);
-            if (!$fnret) {
-                _err "... couldn't remove grace flag for $account";
-                next;
-            }
+    $fnret = OVH::Bastion::syslogFormatted(
+        severity => 'info',
+        type     => 'account',
+        fields   => [
+            [action  => 'modify'],
+            [account => $account],
+            [item    => 'piv_grace'],
+            [old     => 'true'],
+            [new     => 'false'],
+            [comment => "PIV grace up to " . $human->{'human'} . " has been removed"]
+        ]
+    );
 
-            # grace removed for this account, no change needed on keys because it wasn't set to enforced
-            next;
-        }
+    # PIV grace expired, if the effective piv policy for this account is enabled (depending on global and account specific policy),
+    # we need to remove the non-PIV keys from the account's authorized_keys2 file, as we're now out from grace
+    $fnret = OVH::Bastion::is_effective_piv_account_policy_enabled(account => $account);
+    if ($fnret->is_err) {
+        my $msg = "Couldn't get the effective PIV account policy of $account (" . $fnret->msg . ")";
+        warn_syslog($msg);
+        _err("... $msg");
+    }
+    elsif ($fnret->is_ok) {
 
-        # PIV grace expired, we need to remove the non-PIV keys from the account's authorized_keys2 file
-        _log "... grace for $account is expired, enforcing PIV-keys only...";
+        # effective policy is enabled, remove non-piv keys
         OVH::SimpleLog::closeSyslog();
         $fnret = OVH::Bastion::ssh_ingress_keys_piv_apply(action => "enable", account => $account);
-        if (!$fnret) {
-            _err "... failed to re-enforce PIV policy for $account ($fnret->msg)";
-            next;
-        }
         if ($config && $config->{'SyslogFacility'}) {
             OVH::SimpleLog::setSyslog($config->{'SyslogFacility'});
         }
-        _log "... re-enforced PIV policy for $account";
-
-        # ok, now remove grace flag
-        $fnret = OVH::Bastion::account_config(account => $account, public => 1, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_GRACE, delete => 1);
         if (!$fnret) {
-            _err "... couldn't remove grace flag for $account";
+            my $msg = "failed to re-enforce PIV policy for $account (" . $fnret->msg . ")";
+            warn_syslog($msg);
+            _err("... $msg");
         }
         else {
-            _log "... grace flag removed for $account";
+            _log "... re-enforced PIV policy for $account";
         }
     }
     else {
-        _log "... grace for $account is not expired yet, skipping...";
+        _log "... effective policy is disabled for this $account, not disabling non-PIV keys";
     }
 }
 

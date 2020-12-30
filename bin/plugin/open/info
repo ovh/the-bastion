@@ -219,6 +219,8 @@ foreach my $way (qw{ ingress egress }) {
 }
 osh_info "- The Multi-Factor Authentication (MFA) policy is " . colored(uc($config->{'accountMFAPolicy'}), $config->{'accountMFAPolicy'} eq 'disabled' ? 'red' : 'green');
 
+osh_info "- The PIV-enforced ingress keys policy is " . colored($config->{'ingressRequirePIV'} ? 'ENABLED' : 'DISABLED', $config->{'ingressRequirePIV'} ? 'red' : 'green');
+
 if (OVH::Bastion::is_admin(account => $self)) {
     osh_info "\nAs you are a bastion admin, more information follows:";
     $fnret = OVH::Bastion::sysinfo();

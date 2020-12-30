@@ -142,7 +142,7 @@ while (my $file = readdir($dh)) {
     next unless -d "/home/$file";
     next if $file eq '.';
     next if $file eq '..';
-    if ($file !~ /[a-zA-Z0-9_-]+$/) {
+    if ($file !~ /[a-zA-Z0-9_.-]+$/) {
         _err "bad chars in /home/$file";
         next;
     }
