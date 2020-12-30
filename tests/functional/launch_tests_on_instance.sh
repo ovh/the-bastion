@@ -24,6 +24,7 @@ remote_basedir="$7"
 [ -z "$HAS_MFA"          ] && HAS_MFA=1
 [ -z "$HAS_MFA_PASSWORD" ] && HAS_MFA_PASSWORD=0
 [ -z "$HAS_PAMTESTER"    ] && HAS_PAMTESTER=1
+[ -z "$HAS_PIV"          ] && HAS_PIV=1
 [ -z "$nocc"             ] && nocc=0
 [ -z "$nowait"           ] && nowait=0
 [ -z "$TARGET"           ] && TARGET=''
@@ -51,15 +52,15 @@ fi
 {
     account1="testu_Ser.1-"
     account2="tesT-user2_"
-    account3=teStuser3
-    account4=TeStUsEr4
+    account3="teSt-user3."
+    account4="TeStUsEr4"
     uid1=9001
     uid2=9002
     uid3=9003
     uid4=9004
-    group1="test_Group1-"
-    group2="tEst-group2_"
-    group3=testgrOup3
+    group1="te.st_Group1-"
+    group2="tEst-gr.oup2_"
+    group3="testgrOup3"
     shellaccount="test-shell_"
     randomstr=randomstr_pUuGXu3tfhi5WII4_randomstr
 

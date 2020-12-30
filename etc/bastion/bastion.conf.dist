@@ -345,6 +345,11 @@
 #  DEFAULT: []
 "accountCreateDefaultPersonalAccesses": [],
 #
+# ingressRequirePIV (boolean), since: v3.01.99-rc1
+#     DESC: When set to true, only PIV-enabled SSH keys will be able to be added with selfAddIngressKey, hence ensuring that an SSH key generated on a computer, and not within a PIV-compatible hardware token, can't be used to access The Bastion. If you only want to enable this on a per-account basis, leave this to false and set the flag on said accounts using accountPIV instead. When set to false, will not require PIV-enabled SSH keys to be added by selfAddIngressKey. If you have no idea what PIV keys are, leave this to false, this is what you want.
+#  DEFAULT: false
+"ingressRequirePIV": false,
+#
 # accountMFAPolicy (string)
 #     DESC: Set a MFA policy for the bastion accounts, the supported values are:
 #

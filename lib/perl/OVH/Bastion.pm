@@ -136,7 +136,7 @@ my %_autoload_files = (
         qw{ sysinfo is_linux is_debian is_redhat is_bsd is_freebsd is_openbsd is_netbsd sys_useradd sys_groupadd sys_userdel sys_groupdel sys_addmembertogroup sys_delmemberfromgroup sys_changepassword sys_neutralizepassword sys_setpasswordpolicy sys_getsudoersfolder sys_getpasswordinfo sys_setfacl has_acls }
     ],
     ssh => [
-        qw{ get_ssh_pub_key_info is_valid_public_key get_from_for_user_key generate_ssh_key get_bastion_ips get_supported_ssh_algorithms_list is_allowed_algo_and_size is_valid_fingerprint print_public_key get_authorized_keys_from_file account_ssh_config_get account_ssh_config_set verify_piv put_authorized_keys_to_file ssh_ingress_keys_piv_apply }
+        qw{ get_ssh_pub_key_info is_valid_public_key get_from_for_user_key generate_ssh_key get_bastion_ips get_supported_ssh_algorithms_list is_allowed_algo_and_size is_valid_fingerprint print_public_key get_authorized_keys_from_file account_ssh_config_get account_ssh_config_set verify_piv put_authorized_keys_to_file ssh_ingress_keys_piv_apply has_piv_helper }
     ],
     password => [qw{ get_hashes_from_password get_hashes_list }],
     jail     => [qw{ jailify }],

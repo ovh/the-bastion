@@ -6,6 +6,21 @@ use common::sense;
 use File::Temp;
 use Fcntl qw{ :mode :DEFAULT };
 
+sub has_piv_helper {
+    my $fnret;
+    $fnret = OVH::Bastion::execute(must_succeed => 1, cmd => ['yubico-piv-checker', '--version']);
+    if (!$fnret) {
+        return R('KO_HELPER_MISSING');
+    }
+    my $version;
+    if ($fnret->value && $fnret->value->{'stdout'} && $fnret->value->{'stdout'}[0]) {
+
+        # Version "0.9.9" (cb010890db0a7888b0f405008cb2dbbff0dbfc46-go1.15.3) build at 2020-11-06T13:42:13Z
+        ($version) = $fnret->value->{'stdout'}[0] =~ m{Version "([^"]+)};
+    }
+    return R('OK', value => {version => $version});
+}
+
 sub verify_piv {
     my %params                 = @_;
     my $key                    = $params{'key'};
@@ -13,7 +28,7 @@ sub verify_piv {
     my $attestationCertificate = $params{'attestationCertificate'};
 
     my $fnret;
-    $fnret = OVH::Bastion::execute(must_succeed => 1, cmd => ['ovh-yubico-piv-checker', $key, $attestationCertificate, $keyCertificate]);
+    $fnret = OVH::Bastion::execute(must_succeed => 1, cmd => ['yubico-piv-checker', $key, $attestationCertificate, $keyCertificate]);
     if (!$fnret || $fnret->value->{'sysret'} != 0) {
         return R('KO_INVALID_PIV', "This SSH key failed PIV verification");
     }
@@ -47,14 +62,17 @@ sub get_authorized_keys_from_file {
             next if $line =~ /^\s*$/;    # ignore empty lines
             if ($line =~ /^# INFO: (.+)/) {
                 $info = $1;
+                osh_debug("[$i] got key info: $info");
                 next;
             }
             elsif ($line eq '# PIV ATTESTATION CERTIFICATE:') {
                 $state = 1;
+                osh_debug("[$i] got a piv attestation certificate");
                 next;
             }
             elsif ($line eq '# PIV KEY CERTIFICATE:') {
                 $state = 2;
+                osh_debug("[$i] got a piv key certificate");
                 next;
             }
             elsif ($line =~ /^# (.+)/ && $state == 1) {
@@ -72,12 +90,14 @@ sub get_authorized_keys_from_file {
             $state = 0;
             my $pivDisabled = 0;
             if ($includePivDisabled && $line =~ /^# NOTPIV (.+)/) {
+                osh_debug("[$i] got a notpiv disabled key");
                 $line        = $1;
                 $pivDisabled = 1;
             }
             next if $line =~ /^\s*#/;    # ignore comments
             $fnret = OVH::Bastion::get_ssh_pub_key_info(pubKey => $line, way => 'ingress');
             if (grep { $fnret->err eq $_ } qw{ KO_NOT_A_KEY KO_PRIVATE_KEY ERR_INTERNAL }) {
+                osh_debug("[$i] get_ssh_pub_key_info says: $fnret->err");
                 next unless $includeInvalid;
                 $fnret->{'value'} = {} if not ref $fnret->{'value'} eq 'HASH';
             }
@@ -93,6 +113,7 @@ sub get_authorized_keys_from_file {
                 $fnret = OVH::Bastion::verify_piv(key => $key->{'line'}, attestationCertificate => $pivAttestationCertificate, keyCertificate => $pivKeyCertificate);
                 $key->{'isPiv'}   = ($fnret ? 1 : 0);
                 $key->{'pivInfo'} = $fnret->value if $fnret;
+                osh_debug("[$i] verify_piv says: " . $key->{'isPiv'});
             }
             if ($includePivDisabled && $pivDisabled) {
                 $key->{'pivDisabled'} = 1;
@@ -110,6 +131,77 @@ sub get_authorized_keys_from_file {
     return R('OK', value => \@result);
 }
 
+sub add_key_to_authorized_keys_file {
+    my %params = @_;
+    my $file   = $params{'file'};
+    my $key    = $params{'key'};
+    my $fnret;
+
+    return R('ERR_MISSING_PARAMETER', msg => "Missing argument 'file'") if not $file;
+    return R('KO_NO_SUCH_FILE', msg => "Specified file ($file) doesn't exist") if not -f $file;
+    if (!$key) {
+        return R('ERR_MISSING_PARAMETER', msg => "Missing key param");
+    }
+    if (!$key->{'line'}) {
+        return R('ERR_MISSING_PARAMETER', msg => "Missing 'line' key");
+    }
+    $fnret = _format_key_data_to_text(key => $key);
+    if ($fnret) {
+        my $fh;
+        if (!open($fh, '>>', $file)) {
+            warn_syslog("Error while trying to open file $file for write ($!)");
+            return R('ERR_CANNOT_OPEN_FILE', msg => "Couldn't open authorized_keys to append key");
+        }
+        else {
+            print $fh $fnret->value;
+            close($fh);
+        }
+    }
+    else {
+        warn_syslog("Failed to format key for authorized_keys write to '$file', aborting (" . $fnret->msg . ")");
+        return R('ERR_INVALID_PARAMETER', msg => "Specified 'key' is not valid");
+    }
+    return R('OK');
+}
+
+sub _format_key_data_to_text {
+    my %params = @_;
+    my $key    = $params{'key'};
+
+    # we're only called by other subs in this file, but let's do a quick
+    # param check nevertheless
+    if (!$key) {
+        return R('ERR_MISSING_PARAMETER', msg => "Missing key param");
+    }
+    if (!$key->{'line'}) {
+        return R('ERR_MISSING_PARAMETER', msg => "Missing 'line' key");
+    }
+
+    my $plaintext;
+    if ($key->{'info'}) {
+        $plaintext .= "# INFO: " . $key->{'info'} . "\n";
+    }
+    if ($key->{'pivAttestationCertificate'}) {
+        my $toWrite = "PIV ATTESTATION CERTIFICATE:\n";
+        $toWrite .= $key->{'pivAttestationCertificate'};
+        $toWrite =~ s/^/# /mg;
+        chomp $toWrite;
+        $plaintext .= $toWrite . "\n";
+    }
+    if ($key->{'pivKeyCertificate'}) {
+        my $toWrite = "PIV KEY CERTIFICATE:\n";
+        $toWrite .= $key->{'pivKeyCertificate'};
+        $toWrite =~ s/^/# /mg;
+        chomp $toWrite;
+        $plaintext .= $toWrite . "\n";
+    }
+    if ($key->{'pivDisabled'}) {
+        $plaintext .= "# NOTPIV ";
+    }
+    $plaintext .= $key->{'line'} . "\n\n";
+    return R('OK', value => $plaintext);
+}
+
 sub put_authorized_keys_to_file {
     my %params  = @_;
     my $file    = $params{'file'};
@@ -124,31 +216,22 @@ sub put_authorized_keys_to_file {
     }
 
     my $newFile = $file . ".new";
-    if (open(my $fh, '>', $newFile)) {
-        foreach my $key (@$data) {
-            if ($key->{'info'}) {
-                print $fh "# INFO: " . $key->{'info'} . "\n";
-            }
-            if ($key->{'pivAttestationCertificate'}) {
-                my $toWrite = "PIV ATTESTATION CERTIFICATE:\n";
-                $toWrite .= $key->{'pivAttestationCertificate'};
-                $toWrite =~ s/^/# /mg;
-                chomp $toWrite;
-                print $fh $toWrite . "\n";
-            }
-            if ($key->{'pivKeyCertificate'}) {
-                my $toWrite = "PIV KEY CERTIFICATE:\n";
-                $toWrite .= $key->{'pivKeyCertificate'};
-                $toWrite =~ s/^/# /mg;
-                chomp $toWrite;
-                print $fh $toWrite . "\n";
-            }
-            print $fh $key->{'line'} . "\n\n";
-        }
-        close($fh);
+    my $fh;
+    if (!sysopen($fh, $newFile, O_RDWR | O_CREAT | O_EXCL)) {    # sysopen: avoid symlink attacks
+        warn_syslog("Error while trying to open file $newFile for write ($!)");
+        return R('ERR_CANNOT_OPEN_FILE', msg => "Couldn't open authorized_keys to append key");
     }
     else {
-        return R('ERR_CANNOT_OPEN_FILE', msg => "Couldn't open $file ($!)");
+        foreach my $key (@$data) {
+            $fnret = _format_key_data_to_text(key => $key);
+            if ($fnret) {
+                print $fh $fnret->value;
+            }
+            else {
+                warn_syslog("Failed to format key for authorized_keys write to '$file' for '$account', ignoring this one (" . $fnret->msg . ")");
+            }
+        }
+        close($fh);
     }
 
     if ($account) {
@@ -157,10 +240,13 @@ sub put_authorized_keys_to_file {
     }
     chmod 0644, $newFile;
 
-    if (!rename $file, $file . '.backup-' . time() . '-' . $$) {
+    my $backupName = $file . '.backup-' . time() . '-' . $$;
+    if (!rename $file, $backupName) {
+        warn_syslog("Couldn't rename old authorized keys file '$file' to '$backupName' ($!)");
         return R('ERR_RENAME_FAILED', msg => "Couldn't rename old authorized keys file, aborting");
     }
     if (!rename $newFile, $file) {
+        warn_syslog("Couldn't replace authorized keys file '$file' with new version '$newFile' ($!)");
         return R('ERR_RENAME_FAILED', msg => "Couldn't replace authorized keys file, account left in a locked-out state!");
     }
     return R('OK');
@@ -605,10 +691,11 @@ sub is_valid_fingerprint {
 }
 
 sub print_public_key {
-    my %params = @_;
-    my $key    = $params{'key'};
-    my $id     = $params{'id'};
-    my $err    = $params{'err'} || 'OK';
+    my %params    = @_;
+    my $key       = $params{'key'};
+    my $id        = $params{'id'};
+    my $err       = $params{'err'} || 'OK';
+    my $nokeyline = $params{'nokeyline'};
 
     require Term::ANSIColor;
 
@@ -647,8 +734,11 @@ sub print_public_key {
             $err eq 'OK' ? '' : ' ***<<' . $err . '>>***',
         )
     );
-    osh_info(Term::ANSIColor::colored('keyline', 'red') . ' follows, please copy the *whole* line:');
-    print($line. "\n");
+
+    if (!$nokeyline) {
+        osh_info(Term::ANSIColor::colored('keyline', 'red') . ' follows, please copy the *whole* line:');
+        print($line. "\n");
+    }
     osh_info(' ');
     return;
 }
@@ -772,45 +862,40 @@ sub ssh_ingress_keys_piv_apply {
 
     my $keys = $fnret->value();
 
-    my @keysToWrite;
     if ($action eq 'disable') {
 
-        # uncomment all commented PIV keys
-        foreach my $key (@$keys) {
-            if ($key->{'line'} =~ /^# NOTPIV (.+)/) {
-                $key->{'line'} = $1;
-            }
-            push @keysToWrite, $key;
-        }
+        # re-enable any non-PIV key
+        $_->{'pivDisabled'} = 0 for @$keys;
     }
     elsif ($action eq 'enable') {
 
-        # comment all non-PIV and non-verified PIV keys
+        # disable all non-PIV and non-verified PIV keys
         foreach my $key (@$keys) {
-            my $line = $key->{'line'};
 
-            # remove any commented PIV marker for the verify_piv()
-            $line =~ s/^# NOTPIV //;
+            $key->{'pivDisabled'} = 0;
             if ($key->{'pivAttestationCertificate'} && $key->{'pivKeyCertificate'}) {
-                $fnret = OVH::Bastion::verify_piv(key => $line, attestationCertificate => $key->{'pivAttestationCertificate'}, keyCertificate => $key->{'pivKeyCertificate'});
+
+                # remove any commented PIV marker for the verify_piv()
+                my $keyline = $key->{'line'};
+                $keyline =~ s/^# NOTPIV //;
+                $fnret = OVH::Bastion::verify_piv(key => $keyline, attestationCertificate => $key->{'pivAttestationCertificate'}, keyCertificate => $key->{'pivKeyCertificate'});
                 if (!$fnret) {
 
-                    # PIV verify failed prepend with # NOTPIV
-                    $key->{'line'} = "# NOTPIV " . $line;
+                    # PIV verify failed, disable this keey
+                    $key->{'pivDisabled'} = 1;
                 }
             }
             else {
-                # no certificates => not PIV, prepend with # NOTPIV
-                $key->{'line'} = "# NOTPIV " . $line;
+                # no certificates => not PIV, disable this key
+                $key->{'pivDisabled'} = 1;
             }
-            push @keysToWrite, $key;
         }
     }
     else {
         return R('ERR_INVALID_PARAMETER', msg => "Argument 'action' must be either 'enable' or 'disable'");
     }
 
-    $fnret = OVH::Bastion::put_authorized_keys_to_file(account => $account, file => $dir . '/' . OVH::Bastion::AK_FILE(), data => \@keysToWrite);
+    $fnret = OVH::Bastion::put_authorized_keys_to_file(account => $account, file => $dir . '/' . OVH::Bastion::AK_FILE(), data => $keys);
     $fnret or return $fnret;
 
     OVH::Bastion::syslogFormatted(

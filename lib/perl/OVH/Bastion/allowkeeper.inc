@@ -138,6 +138,9 @@ sub is_account_valid {
     elsif ($realmOnly && $account !~ m{/}) {
         return R('KO_LOCAL_FORBIDDEN', msg => "$whatis name must contain a '/'");
     }
+    elsif ($account =~ m/^[-.]/) {
+        return R('KO_FORBIDDEN_PREFIX', msg => "$whatis name must not start with a '-' nor a '.'");
+    }
     elsif ($account =~ m/-tty$/i) {
         return R('KO_FORBIDDEN_SUFFIX', msg => "$whatis name contains an unauthorized suffix");
     }
@@ -566,6 +569,9 @@ sub is_valid_group {
     }
     elsif ($group =~ m/^key/i and not grep { $groupType eq $_ } qw{ key gatekeeper owner }) {
         return R('KO_FORBIDDEN_PREFIX', msg => 'Forbidden prefix in group name');
+    }
+    elsif ($group =~ m/^[-.]/) {
+        return R('KO_FORBIDDEN_PREFIX', msg => "Group name can't start with a '-' nor a '.'");
     }
     elsif ($group =~ /^(key)?(private|root|user|self|legacy|osh)(-(gatekeeper|aclkeeper|owner))?$/) {
         return R('KO_FORBIDDEN_NAME', msg => 'Forbidden group name');
