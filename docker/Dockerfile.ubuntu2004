@@ -2,10 +2,11 @@ FROM ubuntu:20.04
 LABEL maintainer="stephane.lesimple+bastion@ovhcloud.com"
 
 # cache builds efficiently: just copy the scripts to install packages first
-COPY bin/admin/install-ttyrec.sh bin/admin/packages-check.sh /opt/bastion/bin/admin/
-COPY lib/shell                                               /opt/bastion/lib/shell/
+COPY bin/admin/install-ttyrec.sh bin/admin/install-yubico-piv-checker.sh bin/admin/packages-check.sh /opt/bastion/bin/admin/
+COPY lib/shell                                                                                       /opt/bastion/lib/shell/
 RUN ["/opt/bastion/bin/admin/packages-check.sh","-i","-d","-s"]
 RUN ["/opt/bastion/bin/admin/install-ttyrec.sh","-d"]
+RUN ["/opt/bastion/bin/admin/install-yubico-piv-checker.sh","-d"]
 
 # handle locales
 RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen && locale-gen
@@ -26,4 +27,4 @@ RUN ["/opt/bastion/bin/admin/install","--new-install","--no-wait"]
 # start at entrypoint
 ENTRYPOINT /opt/bastion/docker/entrypoint.sh
 
-# TESTENV HAS_ED25519=1 HAS_BLACKLIST=0 HAS_MFA=1 HAS_PAMTESTER=1
+# TESTENV HAS_ED25519=1 HAS_BLACKLIST=0 HAS_MFA=1 HAS_PAMTESTER=1 HAS_PIV=1

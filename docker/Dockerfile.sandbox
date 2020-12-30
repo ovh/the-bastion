@@ -13,6 +13,8 @@ RUN \
     /opt/bastion/bin/admin/packages-check.sh -i -d -s && \
     # download and install the ttyrec deb package (-d) \
     /opt/bastion/bin/admin/install-ttyrec.sh -d && \
+    # download and install the yubico-piv-checker deb package (-d) \
+    /opt/bastion/bin/admin/install-yubico-piv-checker.sh -d && \
     # cleanup packages cache to save space \
     rm -rf /var/cache/apt && \
     # handle locales \
