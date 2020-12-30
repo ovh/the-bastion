@@ -5,9 +5,7 @@ The basics
 We make the assumption here that you already have a bastion account:
 
 - either you're one of the admins who just :doc:`installed<../installation/basic>` it, or
-- one of the admins created an account for you
-
-If you are an admin and want to create accounts for your users, this is explained :doc:`here<accounts>`.
+- one of the admins created an account for you, using :doc:`/plugins/restricted/accountCreate`
 
 First steps
 ===========
@@ -28,7 +26,7 @@ For the remaining of this documentation, we'll assume your bastion alias is `bss
 You can do to categories of things on the bastion:
 
 - Connect to infrastructures through it
-- Interact with the bastion itself, for example to manage your account, and/or groups, through so-called *plugins*, also named *osh commands*
+- Interact with the bastion itself, for example to manage your account, and/or groups, through so-called :doc:`/plugins/index` aka *osh commands*
 
 Plugins
 *******
@@ -79,7 +77,7 @@ The list will depend on your access level on the bastion, as some commands are r
 
    $ bssh --osh selfAddIngressKey --help
 
-See :doc:`here <plugins>` for more information about the plugins.
+See :doc:`/plugins/index` for more information about the plugins.
 
 Instead of using ``--osh`` to call plugins, you can enter the special *interactive mode*, by saying:
 
@@ -248,4 +246,4 @@ Let's see what we did exactly during this session:
    ~ When you're ready to replay session 9f352fd4b85c, press ENTER.
    ~ Starting from the next line, the Total Recall begins. Press CTRL+C to jolt awake.
 
-Now that you've connected to your first server, using a personal access, you may want to check out the groups access management, or directly dive into the Bastion plugins.
+Now that you've connected to your first server, using a personal access, you may want to check out the groups access management, or directly dive into the :doc:`/plugins/index`.

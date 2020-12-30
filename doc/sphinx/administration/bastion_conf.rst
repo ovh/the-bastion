@@ -18,119 +18,120 @@ Main Options
 
 Those are the options you should customize when first setting up a bastion. All the other options have sane defaults and can be customized later if needed.
 
-- :ref:`bastion_conf_bastionName`
-- :ref:`bastion_conf_bastionCommand`
-- :ref:`bastion_conf_readOnlySlaveMode`
-- :ref:`bastion_conf_adminAccounts`
-- :ref:`bastion_conf_superOwnerAccounts`
+- :ref:`bastionName`
+- :ref:`bastionCommand`
+- :ref:`readOnlySlaveMode`
+- :ref:`adminAccounts`
+- :ref:`superOwnerAccounts`
 
 SSH Policies
 ------------
 
 All the options related to the SSH configuration and policies, both for ingress and egress connections.
 
-- :ref:`bastion_conf_allowedIngressSshAlgorithms`
-- :ref:`bastion_conf_allowedEgressSshAlgorithms`
-- :ref:`bastion_conf_minimumIngressRsaKeySize`
-- :ref:`bastion_conf_maximumIngressRsaKeySize`
-- :ref:`bastion_conf_minimumEgressRsaKeySize`
-- :ref:`bastion_conf_maximumEgressRsaKeySize`
-- :ref:`bastion_conf_defaultAccountEgressKeyAlgorithm`
-- :ref:`bastion_conf_defaultAccountEgressKeySize`
-- :ref:`bastion_conf_moshAllowed`
-- :ref:`bastion_conf_moshTimeoutNetwork`
-- :ref:`bastion_conf_moshTimeoutSignal`
-- :ref:`bastion_conf_moshCommandLine`
+- :ref:`allowedIngressSshAlgorithms`
+- :ref:`allowedEgressSshAlgorithms`
+- :ref:`minimumIngressRsaKeySize`
+- :ref:`maximumIngressRsaKeySize`
+- :ref:`minimumEgressRsaKeySize`
+- :ref:`maximumEgressRsaKeySize`
+- :ref:`defaultAccountEgressKeyAlgorithm`
+- :ref:`defaultAccountEgressKeySize`
+- :ref:`moshAllowed`
+- :ref:`moshTimeoutNetwork`
+- :ref:`moshTimeoutSignal`
+- :ref:`moshCommandLine`
 
 Global network policies
 -----------------------
 
 Those options can set a few global network policies to be applied bastion-wide.
 
-- :ref:`bastion_conf_allowedNetworks`
-- :ref:`bastion_conf_forbiddenNetworks`
-- :ref:`bastion_conf_ingressToEgressRules`
+- :ref:`allowedNetworks`
+- :ref:`forbiddenNetworks`
+- :ref:`ingressToEgressRules`
 
 Logging
 -------
 
 Options to customize how logs should be produced.
 
-- :ref:`bastion_conf_enableSyslog`
-- :ref:`bastion_conf_syslogFacility`
-- :ref:`bastion_conf_syslogDescription`
-- :ref:`bastion_conf_enableGlobalAccessLog`
-- :ref:`bastion_conf_enableAccountAccessLog`
-- :ref:`bastion_conf_enableGlobalSqlLog`
-- :ref:`bastion_conf_enableAccountSqlLog`
-- :ref:`bastion_conf_ttyrecFilenameFormat`
-- :ref:`bastion_conf_ttyrecAdditionalParameters`
+- :ref:`enableSyslog`
+- :ref:`syslogFacility`
+- :ref:`syslogDescription`
+- :ref:`enableGlobalAccessLog`
+- :ref:`enableAccountAccessLog`
+- :ref:`enableGlobalSqlLog`
+- :ref:`enableAccountSqlLog`
+- :ref:`ttyrecFilenameFormat`
+- :ref:`ttyrecAdditionalParameters`
 
 Other ingress policies
 ----------------------
 
 Policies applying to the ingress connections
 
-- :ref:`bastion_conf_ingressKeysFrom`
-- :ref:`bastion_conf_ingressKeysFromAllowOverride`
+- :ref:`ingressKeysFrom`
+- :ref:`ingressKeysFromAllowOverride`
 
 Other egress policies
 ---------------------
 
 Policies applying to the egress connections
 
-- :ref:`bastion_conf_defaultLogin`
-- :ref:`bastion_conf_egressKeysFrom`
-- :ref:`bastion_conf_keyboardInteractiveAllowed`
-- :ref:`bastion_conf_passwordAllowed`
-- :ref:`bastion_conf_telnetAllowed`
+- :ref:`defaultLogin`
+- :ref:`egressKeysFrom`
+- :ref:`keyboardInteractiveAllowed`
+- :ref:`passwordAllowed`
+- :ref:`telnetAllowed`
 
 Session policies
 ----------------
 
 Options to customize the established sessions behaviour
 
-- :ref:`bastion_conf_displayLastLogin`
-- :ref:`bastion_conf_interactiveModeAllowed`
-- :ref:`bastion_conf_interactiveModeTimeout`
-- :ref:`bastion_conf_interactiveModeByDefault`
-- :ref:`bastion_conf_idleLockTimeout`
-- :ref:`bastion_conf_idleKillTimeout`
-- :ref:`bastion_conf_warnBeforeLockSeconds`
-- :ref:`bastion_conf_warnBeforeKillSeconds`
-- :ref:`bastion_conf_accountExternalValidationProgram`
-- :ref:`bastion_conf_accountExternalValidationDenyOnFailure`
-- :ref:`bastion_conf_alwaysActiveAccounts`
+- :ref:`displayLastLogin`
+- :ref:`interactiveModeAllowed`
+- :ref:`interactiveModeTimeout`
+- :ref:`interactiveModeByDefault`
+- :ref:`idleLockTimeout`
+- :ref:`idleKillTimeout`
+- :ref:`warnBeforeLockSeconds`
+- :ref:`warnBeforeKillSeconds`
+- :ref:`accountExternalValidationProgram`
+- :ref:`accountExternalValidationDenyOnFailure`
+- :ref:`alwaysActiveAccounts`
 
 Account policies
 ----------------
 
 Policies applying to the bastion accounts themselves
 
-- :ref:`bastion_conf_accountMaxInactiveDays`
-- :ref:`bastion_conf_accountExpiredMessage`
-- :ref:`bastion_conf_accountCreateSupplementaryGroups`
-- :ref:`bastion_conf_accountCreateDefaultPersonalAccesses`
-- :ref:`bastion_conf_accountMFAPolicy`
-- :ref:`bastion_conf_MFAPasswordMinDays`
-- :ref:`bastion_conf_MFAPasswordMaxDays`
-- :ref:`bastion_conf_MFAPasswordWarnDays`
-- :ref:`bastion_conf_MFAPasswordInactiveDays`
-- :ref:`bastion_conf_MFAPostCommand`
+- :ref:`accountMaxInactiveDays`
+- :ref:`accountExpiredMessage`
+- :ref:`accountCreateSupplementaryGroups`
+- :ref:`accountCreateDefaultPersonalAccesses`
+- :ref:`ingressRequirePIV`
+- :ref:`accountMFAPolicy`
+- :ref:`MFAPasswordMinDays`
+- :ref:`MFAPasswordMaxDays`
+- :ref:`MFAPasswordWarnDays`
+- :ref:`MFAPasswordInactiveDays`
+- :ref:`MFAPostCommand`
 
 Other options
 -------------
 
 These options are either discouraged (in which case this is explained in the description) or rarely need to be modified.
 
-- :ref:`bastion_conf_accountUidMin`
-- :ref:`bastion_conf_accountUidMax`
-- :ref:`bastion_conf_ttyrecGroupIdOffset`
-- :ref:`bastion_conf_documentationURL`
-- :ref:`bastion_conf_debug`
-- :ref:`bastion_conf_remoteCommandEscapeByDefault`
-- :ref:`bastion_conf_sshClientDebugLevel`
-- :ref:`bastion_conf_sshClientHasOptionE`
+- :ref:`accountUidMin`
+- :ref:`accountUidMax`
+- :ref:`ttyrecGroupIdOffset`
+- :ref:`documentationURL`
+- :ref:`debug`
+- :ref:`remoteCommandEscapeByDefault`
+- :ref:`sshClientDebugLevel`
+- :ref:`sshClientHasOptionE`
 
 Option Reference
 ================
@@ -138,7 +139,7 @@ Option Reference
 Main Options
 ------------
 
-.. _bastion_conf_bastionName:
+.. _bastionName:
 
 bastionName
 ***********
@@ -149,7 +150,7 @@ bastionName
 
 This will be the name advertised in the aliases admins will give to bastion users, and also in the banner of the plugins output. You can see it as a friendly name everybody will use to refer to this machine: something more friendly than just its full hostname.
 
-.. _bastion_conf_bastionCommand:
+.. _bastionCommand:
 
 bastionCommand
 **************
@@ -166,7 +167,7 @@ The ``ssh`` command to launch to connect to this bastion as a user. This will be
 
 So, for example if your specify ``ssh USER@HOSTNAME -t --``, it'll give ``johndoe@bastion1.example.org -t --`` as a bastion alias to *johndoe*
 
-.. _bastion_conf_readOnlySlaveMode:
+.. _readOnlySlaveMode:
 
 readOnlySlaveMode
 *****************
@@ -177,7 +178,7 @@ readOnlySlaveMode
 
 If set to ``false``, this bastion will work in standalone mode, or will be the master in a master/slave mode. If set to ``true``, this'll be the slave which means all plugins that modify groups, accounts, or access rights will be disabled, and the master bastion will push its modifications using inotify/rsync, please refer do the documentation to set this up.
 
-.. _bastion_conf_adminAccounts:
+.. _adminAccounts:
 
 adminAccounts
 *************
@@ -188,7 +189,7 @@ adminAccounts
 
 The list of accounts that are Admins of the bastion. Admins can't be deleted or otherwise modified by non-admins. They also gain access to special dangerous/sensitive ``--osh`` commands, such as being able to impersonate anybody else. Note that an Admin is also always considered as a Super Owner, which means they also override all checks of group administrative commands. Don't forget to add them to the ``osh-admin`` group too (system-wise), or they won't really be considered as Admins: this is an additional security measure against privilege escalation. Rule of thumb: it's probably a good idea to only add here people that have ``root`` access to the bastion machine itself.
 
-.. _bastion_conf_superOwnerAccounts:
+.. _superOwnerAccounts:
 
 superOwnerAccounts
 ******************
@@ -202,7 +203,7 @@ The list of accounts that are "Super Owners". They can run all group administrat
 SSH Policies
 ------------
 
-.. _bastion_conf_allowedIngressSshAlgorithms:
+.. _allowedIngressSshAlgorithms:
 
 allowedIngressSshAlgorithms
 ***************************
@@ -213,7 +214,7 @@ allowedIngressSshAlgorithms
 
 The algorithms authorized for ingress ssh public keys added to this bastion. Possible values: ``dsa``, ``rsa``, ``ecdsa``, ``ed25519``, note that some of those might not be supported by your current version of ``OpenSSH``: unsupported algorithms are automatically omitted at runtime.
 
-.. _bastion_conf_allowedEgressSshAlgorithms:
+.. _allowedEgressSshAlgorithms:
 
 allowedEgressSshAlgorithms
 **************************
@@ -224,7 +225,7 @@ allowedEgressSshAlgorithms
 
 The algorithms authorized for egress ssh public keys generated on this bastion. Possible values: ``dsa``, ``rsa``, ``ecdsa``, ``ed25519``, note that some of those might not be supported by your current version of ``OpenSSH``, unsupported algorithms are automatically omitted at runtime.
 
-.. _bastion_conf_minimumIngressRsaKeySize:
+.. _minimumIngressRsaKeySize:
 
 minimumIngressRsaKeySize
 ************************
@@ -235,7 +236,7 @@ minimumIngressRsaKeySize
 
 The minimum allowed size for ingress RSA keys (user->bastion). Sane values range from 2048 to 4096.
 
-.. _bastion_conf_maximumIngressRsaKeySize:
+.. _maximumIngressRsaKeySize:
 
 maximumIngressRsaKeySize
 ************************
@@ -246,7 +247,7 @@ maximumIngressRsaKeySize
 
 The maximum allowed size for ingress RSA keys (user->bastion). Too big values (>8192) are extremely CPU intensive and don't really add that much security.
 
-.. _bastion_conf_minimumEgressRsaKeySize:
+.. _minimumEgressRsaKeySize:
 
 minimumEgressRsaKeySize
 ***********************
@@ -257,7 +258,7 @@ minimumEgressRsaKeySize
 
 The minimum allowed size for egress RSA keys (bastion->server). Sane values range from 2048 to 4096.
 
-.. _bastion_conf_maximumEgressRsaKeySize:
+.. _maximumEgressRsaKeySize:
 
 maximumEgressRsaKeySize
 ***********************
@@ -268,7 +269,7 @@ maximumEgressRsaKeySize
 
 The maximum allowed size for ingress RSA keys (bastion->server). Too big values (>8192) are extremely CPU intensive and don't really add that much security.
 
-.. _bastion_conf_defaultAccountEgressKeyAlgorithm:
+.. _defaultAccountEgressKeyAlgorithm:
 
 defaultAccountEgressKeyAlgorithm
 ********************************
@@ -279,7 +280,7 @@ defaultAccountEgressKeyAlgorithm
 
 The default algorithm to use to create the egress key of a newly created account
 
-.. _bastion_conf_defaultAccountEgressKeySize:
+.. _defaultAccountEgressKeySize:
 
 defaultAccountEgressKeySize
 ***************************
@@ -290,7 +291,7 @@ defaultAccountEgressKeySize
 
 The default size to use to create the egress key of a newly created account (also see ``defaultAccountEgressKeyAlgorithm``)
 
-.. _bastion_conf_moshAllowed:
+.. _moshAllowed:
 
 moshAllowed
 ***********
@@ -301,7 +302,7 @@ moshAllowed
 
 If set to ``true``, mosh usage is allowed (mosh needs to be installed on serverside, obviously). Otherwise, this feature is disabled.
 
-.. _bastion_conf_moshTimeoutNetwork:
+.. _moshTimeoutNetwork:
 
 moshTimeoutNetwork
 ******************
@@ -312,7 +313,7 @@ moshTimeoutNetwork
 
 Number of seconds of inactivity (network-wise) after a mosh-server will exit. By design even if the client is disconnected "for good", mosh-server would wait forever. If mosh is meant to handle shaky connections but not mobility, you can set this to a low value. It sets the ``MOSH_SERVER_NETWORK_TMOUT`` envvar for mosh, see ``man mosh-server`` for more information (mosh 1.2.6+).
 
-.. _bastion_conf_moshTimeoutSignal:
+.. _moshTimeoutSignal:
 
 moshTimeoutSignal
 *****************
@@ -323,7 +324,7 @@ moshTimeoutSignal
 
 Number of seconds of inactivity (network-wise) a mosh-server will wait after receiving a ``SIGUSR1`` before exiting. It sets the ``MOSH_SERVER_SIGNAL_TMOUT`` envvar for mosh, see ``man mosh-server`` for more information (mosh 1.2.6+).
 
-.. _bastion_conf_moshCommandLine:
+.. _moshCommandLine:
 
 moshCommandLine
 ***************
@@ -339,7 +340,7 @@ Additional parameters that will be passed as-is to mosh-server. See ``man mosh-s
 Global network policies
 -----------------------
 
-.. _bastion_conf_allowedNetworks:
+.. _allowedNetworks:
 
 allowedNetworks
 ***************
@@ -352,7 +353,7 @@ allowedNetworks
 
 Restricts egress connection attempts to those listed networks only. This is enforced at all times and can NOT be overridden by users. If you are lucky enough to have you own IP blocks, it's probably a good idea to list them here. An empty array means no restriction is applied.
 
-.. _bastion_conf_forbiddenNetworks:
+.. _forbiddenNetworks:
 
 forbiddenNetworks
 *****************
@@ -365,7 +366,7 @@ forbiddenNetworks
 
 Prevents egress connection to the listed networks, this takes precedence over ``allowedNetworks``. This can be used to prevent connection to some hosts or subnets in a broadly allowed prefix. This is enforced at all times and can NOT be overridden by users.
 
-.. _bastion_conf_ingressToEgressRules:
+.. _ingressToEgressRules:
 
 ingressToEgressRules
 ********************
@@ -409,7 +410,7 @@ In any case, all the personal and group accesses still apply in addition to thes
 Logging
 -------
 
-.. _bastion_conf_enableSyslog:
+.. _enableSyslog:
 
 enableSyslog
 ************
@@ -420,7 +421,7 @@ enableSyslog
 
 If set to ``false``, syslog will be disabled. If set to ``true``, we'll send logs through syslog (don't forget to setup your syslog daemon!).
 
-.. _bastion_conf_syslogFacility:
+.. _syslogFacility:
 
 syslogFacility
 **************
@@ -431,7 +432,7 @@ syslogFacility
 
 Sets the facility that will be used for syslog.
 
-.. _bastion_conf_syslogDescription:
+.. _syslogDescription:
 
 syslogDescription
 *****************
@@ -442,7 +443,7 @@ syslogDescription
 
 Sets the description that will be used for syslog.
 
-.. _bastion_conf_enableGlobalAccessLog:
+.. _enableGlobalAccessLog:
 
 enableGlobalAccessLog
 *********************
@@ -453,7 +454,7 @@ enableGlobalAccessLog
 
 If set to ``true``, all accesses will still be logged in ``/home/osh.log``. This file is never rotated and is world writable, this is discouraged: please use syslog insteead.
 
-.. _bastion_conf_enableAccountAccessLog:
+.. _enableAccountAccessLog:
 
 enableAccountAccessLog
 **********************
@@ -464,7 +465,7 @@ enableAccountAccessLog
 
 If set to ``true``, all accesses will still be logged in the user's home ``/home/USER/USER-log-YYYYMM.log``. If set to ``false``, we won't log there.
 
-.. _bastion_conf_enableGlobalSqlLog:
+.. _enableGlobalSqlLog:
 
 enableGlobalSqlLog
 ******************
@@ -475,7 +476,7 @@ enableGlobalSqlLog
 
 If set to ``true``, all accesses will be logged (in a short SQL format) in ``/home/logkeeper/*.sqlite``. If set to ``false``, we won't log there.
 
-.. _bastion_conf_enableAccountSqlLog:
+.. _enableAccountSqlLog:
 
 enableAccountSqlLog
 *******************
@@ -486,7 +487,7 @@ enableAccountSqlLog
 
 If set to ``true``, all accesses will be logged (in a detailed SQL format) in the user's home ``/home/USER/USER-log-YYYYMM.sqlite``. Otherwise, we won't log there.
 
-.. _bastion_conf_ttyrecFilenameFormat:
+.. _ttyrecFilenameFormat:
 
 ttyrecFilenameFormat
 ********************
@@ -497,7 +498,7 @@ ttyrecFilenameFormat
 
 Sets the filename format of the output files of ttyrec for a given session. Magic tokens are: ``&bastionname``, ``&uniqid``, ``&account``, ``&ip``, ``&port``, ``&user`` (they'll be replaced by the corresponding values of the current session). Then, this string (automatically prepended with the correct folder) will be passed to ttyrec's ``-F`` parameter, which uses ``strftime()`` to expand it, so the usual character conversions will be done (``%Y`` for the year, ``%H`` for the hour, etc., see ``man strftime``). Note that in a addition to the usual ``strftime()`` conversion specifications, ttyrec also supports ``#usec#``, to be replaced by the current microsecond value of the time.
 
-.. _bastion_conf_ttyrecAdditionalParameters:
+.. _ttyrecAdditionalParameters:
 
 ttyrecAdditionalParameters
 **************************
@@ -513,7 +514,7 @@ Additional parameters you want to pass to ``ttyrec`` invocation. Useful, for exa
 Other ingress policies
 ----------------------
 
-.. _bastion_conf_ingressKeysFrom:
+.. _ingressKeysFrom:
 
 ingressKeysFrom
 ***************
@@ -524,7 +525,7 @@ ingressKeysFrom
 
 This array of IPs (or prefixes, such as ``10.20.30.0/24``) will be used to build the ``from="..."`` in front of the ingress account public keys used to connect to the bastion (in ``accountCreate`` or ``selfAddIngressKey``). If the array is empty, then **NO** ``from="..."`` is added (this lowers the security).
 
-.. _bastion_conf_ingressKeysFromAllowOverride:
+.. _ingressKeysFromAllowOverride:
 
 ingressKeysFromAllowOverride
 ****************************
@@ -540,7 +541,7 @@ Note that when no user-specified ``from="..."`` appears, the value of ``ingressK
 Other egress policies
 ---------------------
 
-.. _bastion_conf_defaultLogin:
+.. _defaultLogin:
 
 defaultLogin
 ************
@@ -551,7 +552,7 @@ defaultLogin
 
 The default remote user to use for egress ssh connections where no user has been specified by our caller. If set to the empty string (``""``), will default to the account name of the caller. If your bastion is mainly used to connect as ``root`` on remote systems, you might want to set this to ``root`` for example, to spare a few keystrokes to your users. This is only used when no user is specified on the connection line. For example if your bastion alias is ``bssh``, and you say ``bssh srv1.example.net``, the value of the ``defaultLogin`` value will be used as the user to login as remotely.
 
-.. _bastion_conf_egressKeysFrom:
+.. _egressKeysFrom:
 
 egressKeysFrom
 **************
@@ -562,7 +563,7 @@ egressKeysFrom
 
 These IPs will be added to the ``from="..."`` of the personal account keys and the group keys. Typically you want to specify only the bastions IP here (including all the slaves). Note that if this option is NOT set at all or set to the empty array, it will default to autodetection at runtime (using ``hostname --all-ip-addresses`` under the hood). This is dependent from your system configuration and is therefore discouraged.
 
-.. _bastion_conf_keyboardInteractiveAllowed:
+.. _keyboardInteractiveAllowed:
 
 keyboardInteractiveAllowed
 **************************
@@ -573,7 +574,7 @@ keyboardInteractiveAllowed
 
 If set to ``true``, will allow keyboard-interactive authentication when publickey auth is requested for egress connections, this is needed e.g. for 2FA.
 
-.. _bastion_conf_passwordAllowed:
+.. _passwordAllowed:
 
 passwordAllowed
 ***************
@@ -584,7 +585,7 @@ passwordAllowed
 
 If set to ``true``, will allow password authentication for egress ssh, so that user can type his remote password interactively.
 
-.. _bastion_conf_telnetAllowed:
+.. _telnetAllowed:
 
 telnetAllowed
 *************
@@ -598,7 +599,7 @@ If set to ``true``, will allow telnet egress connections (``-e`` / ``--telnet``)
 Session policies
 ----------------
 
-.. _bastion_conf_displayLastLogin:
+.. _displayLastLogin:
 
 displayLastLogin
 ****************
@@ -609,7 +610,7 @@ displayLastLogin
 
 If ``true``, display their last login information on connection to your users.
 
-.. _bastion_conf_interactiveModeAllowed:
+.. _interactiveModeAllowed:
 
 interactiveModeAllowed
 **********************
@@ -620,7 +621,7 @@ interactiveModeAllowed
 
 If set to ``true``, ``--interactive`` mode is allowed. Otherwise, this feature is disabled.
 
-.. _bastion_conf_interactiveModeTimeout:
+.. _interactiveModeTimeout:
 
 interactiveModeTimeout
 **********************
@@ -631,7 +632,7 @@ interactiveModeTimeout
 
 The number of idle seconds after which the user is disconnected from the bastion when in interactive mode. A value of 0 will disable this feature (user will never be disconnected for idle timeout).
 
-.. _bastion_conf_interactiveModeByDefault:
+.. _interactiveModeByDefault:
 
 interactiveModeByDefault
 ************************
@@ -642,7 +643,7 @@ interactiveModeByDefault
 
 If ``true``, drops the user to interactive mode if nothing is specified on the command line. If ``false``, displays the help and exits with an error. Note that for ``true`` to have the expected effect, interactive mode must be enabled (see the ``interactiveModeAllowed`` option above).
 
-.. _bastion_conf_idleLockTimeout:
+.. _idleLockTimeout:
 
 idleLockTimeout
 ***************
@@ -653,7 +654,7 @@ idleLockTimeout
 
 If set to a positive value >0, the number of seconds of input idle time after which the session is locked. If ``false``, disabled.
 
-.. _bastion_conf_idleKillTimeout:
+.. _idleKillTimeout:
 
 idleKillTimeout
 ***************
@@ -664,7 +665,7 @@ idleKillTimeout
 
 If set to a positive value >0, the number of seconds of input idle time after which the session is killed. If ``false``, disabled. If ``idleLockTimeout`` is set, this value must be higher (obviously).
 
-.. _bastion_conf_warnBeforeLockSeconds:
+.. _warnBeforeLockSeconds:
 
 warnBeforeLockSeconds
 *********************
@@ -675,7 +676,7 @@ warnBeforeLockSeconds
 
 If set to a positive value >0, the number of seconds before ``idleLockTimeout`` where the user will receive a warning message telling him about the upcoming lock of his session.
 
-.. _bastion_conf_warnBeforeKillSeconds:
+.. _warnBeforeKillSeconds:
 
 warnBeforeKillSeconds
 *********************
@@ -686,7 +687,7 @@ warnBeforeKillSeconds
 
 If set to a positive value >0, the number of seconds before ``idleKillTimeout`` where the user will receive a warning message telling him about the upcoming kill of his session.
 
-.. _bastion_conf_accountExternalValidationProgram:
+.. _accountExternalValidationProgram:
 
 accountExternalValidationProgram
 ********************************
@@ -705,7 +706,7 @@ An account present in this list is called an *active account*, in the bastion's 
 
 The result is interpreted from the program's exit code. If the program return 0, the account is deemed active. If the program returns 1, the account is deemed inactive. A return code of 2, 3 or 4 indicates a failure of the program in determining the activeness of the account. In this case, the decision to allow or deny the access is determined by the ``accountExternalValidationDenyOnFailure`` option below. Status code 3 additionally logs the ``stderr`` of the program *silently* to the syslog: this can be used to warn admins of a problem without leaking information to the user. Status code 4 does the same, but the ``stderr`` is also shown directly to the user. Any other return code deems the account inactive (same behavior that return code 1).
 
-.. _bastion_conf_accountExternalValidationDenyOnFailure:
+.. _accountExternalValidationDenyOnFailure:
 
 accountExternalValidationDenyOnFailure
 **************************************
@@ -718,7 +719,7 @@ If we can't validate an account using the program configured in ``accountExterna
 
 Note that the bastion admins will always be allowed if the ``accountExternalValidationProgram`` doesn't work correctly, because they're expected to be able to fix it. They would be denied, as any other account, if ``accountExternalValidationProgram`` works correctly and denies them access, however. If you're still testing your account validation procedure, and don't want to break your users workflow while you're not 100% sure it works correctly, you can say ``false`` here, and return 4 instead of 1 in your ``accountExternalValidationProgram`` when you would want to deny access.
 
-.. _bastion_conf_alwaysActiveAccounts:
+.. _alwaysActiveAccounts:
 
 alwaysActiveAccounts
 ********************
@@ -732,7 +733,7 @@ List of accounts which should NOT be checked against the ``accountExternalValida
 Account policies
 ----------------
 
-.. _bastion_conf_accountMaxInactiveDays:
+.. _accountMaxInactiveDays:
 
 accountMaxInactiveDays
 **********************
@@ -743,7 +744,7 @@ accountMaxInactiveDays
 
 If > 0, deny access to accounts that didn't log in since at least that many days. A value of 0 means that this functionality is disabled (we will never deny access for inactivity reasons).
 
-.. _bastion_conf_accountExpiredMessage:
+.. _accountExpiredMessage:
 
 accountExpiredMessage
 *********************
@@ -754,7 +755,7 @@ accountExpiredMessage
 
 If non-empty, customizes the message that will be printed to a user attempting to connect with an expired account (see ``accountMaxInactiveDays`` above). When empty, defaults to the standard message "Sorry, but your account has expired (#DAYS# days), access denied by policy.". The special token ``#DAYS#`` is replaced by the number of days since we've last seen this user.
 
-.. _bastion_conf_accountCreateSupplementaryGroups:
+.. _accountCreateSupplementaryGroups:
 
 accountCreateSupplementaryGroups
 ********************************
@@ -765,7 +766,7 @@ accountCreateSupplementaryGroups
 
 List of system groups to add a new account to when its created (see ``accountCreate``). Can be useful to grant some restricted commands by default to new accounts. For example ``osh-selfAddPersonalAccess``, ``osh-selfDelPersonalAccess``, etc. Note that the group here are **NOT** *bastion groups*, but system groups.
 
-.. _bastion_conf_accountCreateDefaultPersonalAccesses:
+.. _accountCreateDefaultPersonalAccesses:
 
 accountCreateDefaultPersonalAccesses
 ************************************
@@ -776,7 +777,18 @@ accountCreateDefaultPersonalAccesses
 
 List of strings of the form USER@IP or USER@IP:PORT or IP or IP:PORT, with IP being IP or prefix (such as 1.2.3.0/24). This is the list of accesses to add to the personal access list of newly created accounts. The special value ACCOUNT is replaced by the name of the account being created. This can be useful to grant some accesses by default to new accounts (for example ACCOUNT@0.0.0.0/0)
 
-.. _bastion_conf_accountMFAPolicy:
+.. _ingressRequirePIV:
+
+ingressRequirePIV
+*****************
+
+:Type: ``boolean``
+
+:Default: ``false``
+
+When set to true, only PIV-enabled SSH keys will be able to be added with selfAddIngressKey, hence ensuring that an SSH key generated on a computer, and not within a PIV-compatible hardware token, can't be used to access The Bastion. If you only want to enable this on a per-account basis, leave this to false and set the flag on said accounts using accountPIV instead. When set to false, will not require PIV-enabled SSH keys to be added by selfAddIngressKey. If you have no idea what PIV keys are, leave this to false, this is what you want.
+
+.. _accountMFAPolicy:
 
 accountMFAPolicy
 ****************
@@ -794,7 +806,7 @@ Set a MFA policy for the bastion accounts, the supported values are:
 - ``enabled``: for all accounts, TOTP and UNIX account password are available as opt-in features as the users see fit. Some accounts can be forced to setup either TOTP or password-based MFA if they're flagged accordingly (with the accountModify command)
 
 
-.. _bastion_conf_MFAPasswordMinDays:
+.. _MFAPasswordMinDays:
 
 MFAPasswordMinDays
 ******************
@@ -805,7 +817,7 @@ MFAPasswordMinDays
 
 For the PAM UNIX password MFA, sets the min amount of days between two password changes (see ``chage -m``)
 
-.. _bastion_conf_MFAPasswordMaxDays:
+.. _MFAPasswordMaxDays:
 
 MFAPasswordMaxDays
 ******************
@@ -816,7 +828,7 @@ MFAPasswordMaxDays
 
 For the PAM UNIX password MFA, sets the max amount of days after which the password must be changed (see ``chage -M``)
 
-.. _bastion_conf_MFAPasswordWarnDays:
+.. _MFAPasswordWarnDays:
 
 MFAPasswordWarnDays
 *******************
@@ -827,7 +839,7 @@ MFAPasswordWarnDays
 
 For the PAM UNIX password MFA, sets the number of days before expiration on which the user will be warned to change his password (see ``chage -W``)
 
-.. _bastion_conf_MFAPasswordInactiveDays:
+.. _MFAPasswordInactiveDays:
 
 MFAPasswordInactiveDays
 ***********************
@@ -838,7 +850,7 @@ MFAPasswordInactiveDays
 
 For the PAM UNIX password MFA, the account will be blocked after the password is expired (and not renewed) for this amount of days (see ``chage -E``). -1 disables this feature. Note that this is different from the ``accountMaxInactiveDays`` option above, that is handled by the bastion software itself instead of PAM
 
-.. _bastion_conf_MFAPostCommand:
+.. _MFAPostCommand:
 
 MFAPostCommand
 **************
@@ -856,7 +868,7 @@ The magic token ``%ACCOUNT%`` will be replaced by the account name.
 Other options
 -------------
 
-.. _bastion_conf_accountUidMin:
+.. _accountUidMin:
 
 accountUidMin
 *************
@@ -867,7 +879,7 @@ accountUidMin
 
 Minimum allowed UID for accounts on this bastion. Hardcoded > 100 even if configured for less.
 
-.. _bastion_conf_accountUidMax:
+.. _accountUidMax:
 
 accountUidMax
 *************
@@ -878,7 +890,7 @@ accountUidMax
 
 Maximum allowed UID for accounts on this bastion.
 
-.. _bastion_conf_ttyrecGroupIdOffset:
+.. _ttyrecGroupIdOffset:
 
 ttyrecGroupIdOffset
 *******************
@@ -889,7 +901,7 @@ ttyrecGroupIdOffset
 
 Offset to apply on user group uid to create its ``-tty`` group, should be > ``accountUidMax - accountUidMin`` to ensure there is no overlap.
 
-.. _bastion_conf_documentationURL:
+.. _documentationURL:
 
 documentationURL
 ****************
@@ -900,7 +912,7 @@ documentationURL
 
 The URL of the documentation where users will be pointed to, for example when displaying help. If you have some internal documentation about the bastion, you might want to advertise it here.
 
-.. _bastion_conf_debug:
+.. _debug:
 
 debug
 *****
@@ -911,7 +923,7 @@ debug
 
 Enables or disables debug *GLOBALLY*, printing a lot of information to anyone using the bastion. Don't enable this unless you're chasing a bug in the code and are familiar with it.
 
-.. _bastion_conf_remoteCommandEscapeByDefault:
+.. _remoteCommandEscapeByDefault:
 
 remoteCommandEscapeByDefault
 ****************************
@@ -922,7 +934,7 @@ remoteCommandEscapeByDefault
 
 If set to ``false``, will not escape simple quotes in remote commands by default. Don't enable this, this is to keep compatibility with an ancient broken behavior. Will be removed in the future. Can be overridden at runtime with ``--never-escape`` and ``--always-escape``.
 
-.. _bastion_conf_sshClientDebugLevel:
+.. _sshClientDebugLevel:
 
 sshClientDebugLevel
 *******************
@@ -933,7 +945,7 @@ sshClientDebugLevel
 
 Indicates the number of ``-v``'s that will be added to the ssh client command line when starting a session. Probably a bad idea unless you want to annoy your users.
 
-.. _bastion_conf_sshClientHasOptionE:
+.. _sshClientHasOptionE:
 
 sshClientHasOptionE
 *******************
