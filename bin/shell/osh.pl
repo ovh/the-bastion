@@ -1349,7 +1349,7 @@ sub exit_sig {
 sub help {
 
 =cut just to debug memory fingerprint
-    use Devel::Size qw[total_size];
+    use Devel::Size qw[total_size]; # pragma optional module
     my %siz;
     foreach (keys %::main::main::)
     {

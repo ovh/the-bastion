@@ -44,7 +44,7 @@ local $0 = '' . __FILE__ . ' ' . join(' ', @command);
 
 # set signal for when my parent dies (Linux only)
 eval {
-    require Linux::Prctl;
+    require Linux::Prctl;    # pragma optional module
 
     # 1 is SIGHUP
     Linux::Prctl::set_pdeathsig(1);
