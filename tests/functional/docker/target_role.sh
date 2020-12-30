@@ -44,6 +44,12 @@ if [ "$OS_FAMILY" = Linux ]; then
     usermod -U "$UID0"
 fi
 
+# ensure root user has bash as a shell
+bashlocation=$(command -v bash)
+if [ -x "$bashlocation" ]; then
+    chsh -s "$bashlocation" "$UID0"
+fi
+
 HOME="$UID0HOME" USER="$UID0" "$basedir"/bin/plugin/restricted/accountCreate       '' '' '' '' --uid 5000 --account "$TARGET_USER" --public-key "$user_pubkey FOR_TESTS_ONLY"
 HOME="$UID0HOME" USER="$UID0" "$basedir"/bin/plugin/restricted/accountGrantCommand '' '' '' '' --account "$TARGET_USER" --command accountGrantCommand
 

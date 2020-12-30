@@ -229,7 +229,7 @@ if (defined $ttygroup) {
 OVH::Bastion::syslogFormatted(
     severity => 'info',
     type     => 'account',
-    fields   => [['action', 'delete'], ['account', $account], ['tty_group', $ttygroup],]
+    fields   => [['action', 'delete'], ['account', $account]]
 );
 
 HEXIT('OK', value => {account => $account, ttygroup => $ttygroup, operation => 'deleted'});

@@ -45,7 +45,7 @@ if (OVH::Bastion::is_auditor(account => $account)) {
     $ret{'is_auditor'} = 1;
 }
 
-osh_info "$account has access to the following restricted commands:";
+osh_info "This account has access to the following restricted commands:";
 my @granted;
 foreach my $plugin (sort keys %{$fnret->value}) {
     $fnret = OVH::Bastion::is_user_in_group(user => $account, group => "osh-$plugin");
@@ -86,6 +86,7 @@ foreach my $name (sort keys %{$fnret->value}) {
 if (not keys %$result_hash) {
     osh_info "(none)";
 }
+osh_info "\n";
 
 $ret{'groups'} = $result_hash;
 
@@ -170,26 +171,37 @@ if (OVH::Bastion::is_auditor(account => $self)) {
         osh_info "- (unknown: " . $fnret . ")";
     }
 
+    osh_info "\nAccount PIV-only policy status:";
     $fnret = OVH::Bastion::account_config(account => $account, public => 1, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_POLICY);
-    $ret{'ingress_piv_enforced'} = ($fnret && $fnret->value eq 'yes') ? 1 : 0;
-    osh_info "\nPIV-enforced policy for ingress keys on this account is " . ($ret{'ingress_piv_enforced'} ? colored('enabled', 'green') : colored('disabled', 'blue'));
-    if ($ret{'ingress_piv_enforced'}) {
+    $ret{'ingress_piv_enforced'} = ($fnret && $fnret->value eq 'yes') ? 1 : 0;    # keep for backwards compat
+    $ret{'ingress_piv_policy'}   = $fnret->value || undef;
+    osh_info "- PIV policy for ingress keys on this account is set to " . colored($ret{'ingress_piv_policy'}, $ret{'ingress_piv_policy'} eq 'default' ? 'blue' : 'green');
 
-        # if it's enabled, we might have a grace period for this account
-        $fnret = OVH::Bastion::account_config(account => $account, public => 1, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_GRACE);
-        if ($fnret && $fnret->value > time()) {
-            my $expiry = $fnret->value - time();
-            my $human  = OVH::Bastion::duration2human(seconds => $expiry)->value;
-            osh_info "PIV grace period for this account is " . colored('set', 'green') . " and expires in " . $human->{'human'};
-            $ret{'ingress_piv_grace'} = {
-                enabled              => 1,
-                expiration_timestamp => $fnret->value,
-                seconds_remaining    => $expiry,
-                expiration_date      => $human->{'date'},
-                time_remaining       => $human->{'duration'},
-            };
-        }
+    $fnret = OVH::Bastion::account_config(account => $account, public => 1, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_GRACE);
+    if ($fnret && $fnret->value > time()) {
+        my $expiry = $fnret->value - time();
+        my $human  = OVH::Bastion::duration2human(seconds => $expiry)->value;
+        osh_info "- PIV grace period for this account is " . colored('set', 'green') . " and expires in " . $human->{'human'};
+        $ret{'ingress_piv_grace'} = {
+            enabled              => 1,
+            expiration_timestamp => $fnret->value,
+            seconds_remaining    => $expiry,
+            expiration_date      => $human->{'date'},
+            time_remaining       => $human->{'duration'},
+        };
     }
+    else {
+        osh_info "- PIV grace period for this account is " . colored('inactive', 'blue');
+        $ret{'ingress_piv_grace'} = {enabled => 0};
+    }
+
+    $fnret = OVH::Bastion::config('ingressRequirePIV')->value;
+    $ret{'global_ingress_policy'} = $fnret = OVH::Bastion::config('ingressRequirePIV')->value ? 1 : 0;
+    osh_info "- Global PIV policy status is " . ($ret{'global_ingress_policy'} ? colored('enabled', 'red') : colored('disabled', 'blue'));
+
+    $fnret = OVH::Bastion::is_effective_piv_account_policy_enabled(account => $account);
+    $ret{'effective_ingress_piv_policy'} = $fnret->is_ok ? 1 : 0;
+    osh_info "- As a consequence, PIV policy is " . ($ret{'effective_ingress_piv_policy'} ? colored('enforced', 'red') : colored('inactive', 'blue')) . " for this account";
 
     osh_info "\nAccount Multi-Factor Authentication status:";
     $ret{'mfa_password_required'}   = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_PASSWORD_REQUIRED_GROUP)   ? 1 : 0;

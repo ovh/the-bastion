@@ -68,8 +68,8 @@ $account = $fnret->value->{'account'};
 #<PARAMS:ACCOUNT
 
 #>PARAMS:POLICY
-if (not grep { $policy eq $_ } qw{ none enforce grace }) {
-    HEXIT('ERR_INVALID_PARAMETER', "Expected either 'none,' enforce' of 'grace' as a parameter to --policy");
+if (not grep { $policy eq $_ } qw{ default enforce grace never }) {
+    HEXIT('ERR_INVALID_PARAMETER', "Expected either 'default,' enforce', 'grace' or 'never' as a parameter to --policy");
 }
 
 #<PARAMS:POLICY
@@ -104,77 +104,98 @@ if (OVH::Bastion::is_admin(account => $account, sudo => 1) && !OVH::Bastion::is_
 #<RIGHTSCHECK
 
 #>CODE
-my $currentPolicy = OVH::Bastion::account_config(account => $account, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_POLICY, public => 1);
+$fnret = OVH::Bastion::account_config(account => $account, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_POLICY, public => 1);
+
+# no file means the policy is 'default' (we can also have a file with a written policy of 'default', it's the same)
+my $currentPolicy = $fnret ? $fnret->value : 'default';
+
+# 'yes' is an old synonym of 'enforce'
+$currentPolicy = 'enforce' if $currentPolicy eq 'yes';
+
+$fnret = OVH::Bastion::account_config(account => $account, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_GRACE, public => 1);
+my $currentGrace = $fnret ? $fnret->value : 0;
+
 if ($step == 1) {
 
-    # we're run under allowkeeper user, set config params where applicable
-    if ($policy eq 'enforce') {
-        if ($currentPolicy && $currentPolicy->value eq 'yes') {
-            HEXIT('OK_NO_CHANGE', msg => "PIV policy was already set to 'enforce' for this account, no change needed");
-        }
-        $fnret = OVH::Bastion::account_config(account => $account, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_POLICY, public => 1, value => 'yes');
-        $fnret or HEXIT($fnret);
-        $fnret = OVH::Bastion::account_config(account => $account, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_GRACE, public => 1, delete => 1);
+    # step1: we're run under allowkeeper user, set the account config
 
-        # ignore error because maybe grace wasn't set
-        OVH::Bastion::syslogFormatted(
-            severity => 'info',
-            type     => 'account',
-            fields   => [['action', 'ingress-piv-policy'], ['account', $account], ['policy', 'enforce'],]
-        );
-        HEXIT('OK', msg => "PIV policy set to 'enforce' for this account");
-    }
-    elsif ($policy eq 'none') {
-        if (!$currentPolicy || $currentPolicy->value ne 'yes') {
-            HEXIT('OK_NO_CHANGE', msg => "PIV policy was already set to 'none' for this account, no change needed");
-        }
-        $fnret = OVH::Bastion::account_config(account => $account, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_POLICY, public => 1, delete => 1);
-        $fnret or HEXIT($fnret);
-        $fnret = OVH::Bastion::account_config(account => $account, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_GRACE, public => 1, delete => 1);
+    if ($policy ne 'grace') {
 
-        # ignore error because maybe grace wasn't set
-        OVH::Bastion::syslogFormatted(
-            severity => 'info',
-            type     => 'account',
-            fields   => [['action', 'ingress-piv-policy'], ['account', $account], ['policy', 'none'],]
-        );
-        HEXIT('OK', msg => "PIV policy set to 'none' for this account");
-    }
-    elsif ($policy eq 'grace') {
-        if (!$currentPolicy || $currentPolicy->value ne 'yes') {
-            HEXIT('OK_NO_CHANGE', msg => "PIV policy is not set to 'enforce' for this account, so no need for a grace period");
+        # is the policy we're asked to apply already the current one?
+        if ($currentPolicy eq $policy) {
+            HEXIT('OK_NO_CHANGE', msg => "PIV policy was already set to '$policy' for this account, no change needed");
         }
+
+        # no, ok: apply the requested policy
+        $fnret = OVH::Bastion::account_config(account => $account, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_POLICY, public => 1, value => $policy);
+        if (!$fnret) {
+            warn_syslog("Couldn't apply the requested PIV policy '$policy' (current is '$currentPolicy'): " . $fnret->msg);
+            HEXIT($fnret);
+        }
+        else {
+            $fnret = OVH::Bastion::syslogFormatted(
+                severity => 'info',
+                type     => 'account',
+                fields   => [[action => 'modify'], [account => $account], [item => 'piv_policy'], [old => $currentPolicy], [new => $policy]]
+            );
+        }
+
+        # and delete any existing grace
+        if ($currentGrace) {
+            $fnret = OVH::Bastion::account_config(account => $account, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_GRACE, public => 1, delete => 1);
+            if (!$fnret) {
+                warn_syslog("Couldn't remove the grace TTL PIV policy: " . $fnret->msg);
+
+                # attempt to continue nevertheless...
+            }
+            else {
+                my $human = OVH::Bastion::duration2human(seconds => ($currentGrace - time()))->value;
+                $fnret = OVH::Bastion::syslogFormatted(
+                    severity => 'info',
+                    type     => 'account',
+                    fields   => [
+                        [action  => 'modify'],
+                        [account => $account],
+                        [item    => 'piv_grace'],
+                        [old     => 'true'],
+                        [new     => 'false'],
+                        [comment => "PIV grace up to " . $human->{'human'} . " has been removed"]
+                    ]
+                );
+            }
+        }
+        HEXIT('OK', msg => "PIV policy set to '$policy' for this account");
+    }
+    else {
+        # grace is not really a policy per se, it just sets a grace period for which the account will behave as it had the "never" policy set
         $fnret = OVH::Bastion::account_config(account => $account, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_GRACE, public => 1, value => (time() + $ttl));
-        $fnret or HEXIT($fnret);
+        if (!$fnret) {
+            warn_syslog("Couldn't apply the requested grace ttl PIV policy: " . $fnret->msg);
+            HEXIT($fnret);
+        }
         my $human = OVH::Bastion::duration2human(seconds => $ttl)->value;
-        OVH::Bastion::syslogFormatted(
+        $fnret = OVH::Bastion::syslogFormatted(
             severity => 'info',
             type     => 'account',
-            fields   => [['action', 'ingress-piv-policy'], ['account', $account], ['policy', 'grace'], ['duration', $human->{'duration'}],]
+            fields   => [
+                [action  => 'modify'],
+                [account => $account],
+                [item    => 'piv_grace'],
+                [old     => 'false'],
+                [new     => 'true'],
+                [comment => "PIV grace up to " . $human->{'human'} . " has been set"]
+            ]
         );
-        HEXIT('OK', msg => "PIV policy is now in grace mode for " . $human->{'duration'} . " (until " . $human->{'date'} . ")");
+        HEXIT('OK', msg => "PIV grace up to " . $human->{'human'} . " has been set for this account");
     }
-
-    # unreachable
-    HEXIT('ERR_INTERNAL', msg => "Unknown policy specified (step 1)");
 }
 elsif ($step == 2) {
 
-    # now we're running under the own account's user, modify the authkeys file accordingly
-    my $pivAction;
-    if ($policy eq 'enforce') {
-        $pivAction = 'enable';
-    }
-    elsif ($policy eq 'none' || $policy eq 'grace') {
-        $pivAction = 'disable';
-    }
-    else {
-        # unreachable
-        HEXIT('ERR_INTERNAL', msg => "Unknown policy specified (step 2)");
-    }
-
+    # step2: now we're running under the own account's user, modify the authkeys file accordingly
+    my $pivAction = (OVH::Bastion::is_effective_piv_account_policy_enabled(account => $account)->is_ok) ? 'enable' : 'disable';
     $fnret = OVH::Bastion::ssh_ingress_keys_piv_apply(action => $pivAction, account => $account);
     $fnret or HEXIT($fnret);
+
     if ($pivAction eq 'enable') {
         HEXIT('OK', msg => "All non-PIV account's ingress keys have been disabled");
     }

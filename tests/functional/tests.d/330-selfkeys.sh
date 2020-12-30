@@ -140,6 +140,7 @@ testsuite_selfkeys()
     contain "keyline"
     json .error_code OK .command accountListEgressKeys
     set +e
+    local tmpfp
     tmpfp=$(get_json | $jq '.value|keys[0]')
     set -e
     json $(cat <<EOS
@@ -561,7 +562,7 @@ EOS
     json .command info .error_code OK .value.account $account1
 
     success selfDelIngressKey key2 $a1k2 -osh selfDelIngressKey -f "$account1key2fp"
-    json .command selfDelIngressKey .error_code OK .value null
+    json .command selfDelIngressKey .error_code OK .value.deleted_key.err OK
 
     plgfail selfDelIngressKey a1k1mustfail $a1 -osh selfDelIngressKey -f "$account1key1fp"
     json .command selfDelIngressKey .error_code ERR_ONLY_ONE_KEY .value null
