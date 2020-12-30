@@ -300,6 +300,19 @@ add_user_to_group_compat()
     fi
 }
 
+del_user_from_group_compat()
+{
+    local _user="$1" _group="$2"
+    if command -v gpasswd >/dev/null ; then
+        gpasswd -d "$_user" "$_group"
+    elif command -v pw >/dev/null ; then
+        pw groupmod -n "$_group" -d "$_user"
+    else
+        echo "del_user_from_group_compat: don't know how to del $_user from $_group!" >&2
+        return 1
+    fi
+}
+
 _logtag="$(basename "$0")[$$]"
 __log()
 {
