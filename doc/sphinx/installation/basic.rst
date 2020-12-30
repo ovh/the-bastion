@@ -103,6 +103,12 @@ Note that ``-t`` makes the assumption that you have compiled and made available 
 
 This will detect your distro, then download and either install the ``.deb`` or ``.rpm`` package for `ovh-ttyrec <https://github.com/ovh/ovh-ttyrec>`_. If your distro doesn't handle those package types, it'll fallback to installing precompiled static binaries. Of course you can package it yourself and make it available to your own internal repositories instead of installing it this way.
 
+If you plan to use the PIV functionalities of The Bastion, you'll also need to install the ``yubico-piv-checker`` `helper tool <https://github.com/ovh/yubico-piv-checker>`_:
+
+.. code-block:: shell
+
+   /opt/bastion/bin/admin/install-yubico-piv-checker.sh -a
+
 .. _install-basic_encrypt-home:
 
 4. Encrypt /home
