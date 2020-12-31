@@ -8,6 +8,8 @@ basedir=$(readlink -f "$(dirname "$0")"/../..)
 
 LOG_FACILITY=local6
 
+trap "_err 'Unexpected termination!'" EXIT
+
 if [ "$1" = "--big-only" ]; then
     _log "Rotating big ttyrec files..."
     tokill=''
@@ -34,3 +36,4 @@ else
     fi
 fi
 _log "Done"
+trap - EXIT

@@ -8,6 +8,8 @@ basedir=$(readlink -f "$(dirname "$0")"/../..)
 
 LOG_FACILITY=local6
 
+trap "_err 'Unexpected termination!'" EXIT
+
 _log "Terminating lingering sessions..."
 
 tokill=''
@@ -45,3 +47,4 @@ if [ -n "$tokill" ]; then
 fi
 
 _log "Done"
+trap - EXIT

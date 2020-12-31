@@ -9,6 +9,8 @@ basedir=$(readlink -f "$(dirname "$0")"/../..)
 
 LOG_FACILITY=local6
 
+trap "_err 'Unexpected termination!'" EXIT
+
 _log "Checking orphaned home directories..."
 
 while IFS= read -r -d '' dir
@@ -49,4 +51,4 @@ do
 done < <(find /home/ -mindepth 1 -maxdepth 1 -type d -nouser -nogroup -mmin +3 -print0)
 
 _log "Done"
-exit 0
+trap - EXIT
