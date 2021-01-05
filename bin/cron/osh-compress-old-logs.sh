@@ -7,6 +7,8 @@ basedir=$(readlink -f "$(dirname "$0")"/../..)
 
 LOG_FACILITY=local6
 
+trap "_err 'Unexpected termination!'" EXIT
+
 _log "Compressing old sqlite databases..."
 
 while IFS= read -r -d '' sqlite
@@ -34,3 +36,4 @@ if command -v chattr >/dev/null; then
 fi
 
 _log "Done"
+trap - EXIT
