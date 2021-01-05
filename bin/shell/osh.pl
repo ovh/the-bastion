@@ -489,6 +489,7 @@ if ($interactive and not $ENV{'OSH_NO_INTERACTIVE'}) {
 
     if (defined $log_insert_id and defined $log_db_name) {
         $logret = OVH::Bastion::log_access_update(
+            account       => $self,
             insert_id     => $log_insert_id,
             db_name       => $log_db_name,
             uniq_id       => $log_uniq_id,
@@ -957,10 +958,11 @@ if ($osh_command) {
 
         if (defined $log_insert_id and defined $log_db_name) {
             $logret = OVH::Bastion::log_access_update(
+                account       => $self,
                 insert_id     => $log_insert_id,
                 db_name       => $log_db_name,
                 uniq_id       => $log_uniq_id,
-                returnvalue   => $fnret->value ? $fnret->value->{'sysret'} : undef,
+                returnvalue   => $fnret->value ? $fnret->value->{'sysret_raw'} : undef,
                 plugin_stdout => $fnret->value ? $fnret->value->{'stdout'} : undef,
                 plugin_stderr => $fnret->value ? $fnret->value->{'stderr'} : undef
             );
@@ -1392,8 +1394,12 @@ if (!$quiet) {
 
 push @toExecute, $OVH::Bastion::BASEPATH . '/bin/shell/connect.pl';
 exec(
-    @toExecute,                    $ip,                         $config->{'sshClientHasOptionE'}, $userPasswordClue, $saveFile,
-    $logret->value->{'insert_id'}, $logret->value->{'db_name'}, $logret->value->{'uniq_id'},      @ttyrec
+    @toExecute, $ip, $config->{'sshClientHasOptionE'},
+    $userPasswordClue, $saveFile,
+    $logret->value->{'insert_id'},
+    $logret->value->{'db_name'},
+    $logret->value->{'uniq_id'},
+    $self, @ttyrec
 ) or exit(OVH::Bastion::EXIT_EXEC_FAILED);
 
 exit OVH::Bastion::EXIT_OK;
@@ -1409,11 +1415,11 @@ sub exit_sig {
     my ($sig) = @_;
     if (defined $log_insert_id and defined $log_db_name) {
         OVH::Bastion::log_access_update(
-            insert_id   => $log_insert_id,
-            db_name     => $log_db_name,
-            uniq_id     => $log_uniq_id,
-            returnvalue => -9999,
-            comment     => 'signal_' . $sig
+            account   => $self,
+            insert_id => $log_insert_id,
+            db_name   => $log_db_name,
+            uniq_id   => $log_uniq_id,
+            signal    => $sig,
         );
     }
     exit OVH::Bastion::EXIT_OK;

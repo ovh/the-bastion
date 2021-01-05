@@ -6,6 +6,7 @@ use common::sense;
 use DBD::SQLite;
 use Time::HiRes;
 use Sys::Syslog qw();
+use JSON;
 
 my $_syslog_inited = 0;    # lazy init
 
@@ -46,25 +47,29 @@ END {
 }
 
 sub syslogFormatted {
+
+    # do NOT use warn_syslog in this func, or we would loop. warn() is fine.
     my %params    = @_;
     my $criticity = $params{'criticity'} || 'info';
     my $type      = $params{'type'} || 'unknown';
-    my $fields    = $params{'fields'};
+    my $fieldsref = $params{'fields'};
 
-    if (ref $fields ne 'ARRAY') {
+    if (ref $fieldsref ne 'ARRAY') {
         my $error = "bad call to syslogFormatted, invalid fields parameter";
         warn($error);    # this will in turn log into syslog with the trace() thanks to the SIG{'WARN'} handler
         return R('INTERNAL_ERROR', msg => $error);
     }
 
-    unshift @$fields, ['gid', ((split(/ /, $)))[0])];
-    unshift @$fields, ['uid',       $>];
-    unshift @$fields, ['sudo_user', $ENV{'SUDO_USER'}];
-    unshift @$fields, ['sysuser',   OVH::Bastion::get_user_from_env()->value];
-    unshift @$fields, ['ppid',      getppid()];
-    unshift @$fields, ['pid',       $$];
-    unshift @$fields, ['version',   $OVH::Bastion::VERSION];
-    unshift @$fields, ['uniqid', ($ENV{'UNIQID'} || '-')];
+    my @fields = @$fieldsref;
+
+    unshift @fields, ['gid', ((split(/ /, $)))[0])];
+    unshift @fields, ['uid',       $>];
+    unshift @fields, ['sudo_user', $ENV{'SUDO_USER'}];
+    unshift @fields, ['sysuser',   OVH::Bastion::get_user_from_env()->value];
+    unshift @fields, ['ppid',      getppid()];
+    unshift @fields, ['pid',       $$];
+    unshift @fields, ['version',   $OVH::Bastion::VERSION];
+    unshift @fields, ['uniqid', ($ENV{'UNIQID'} || '-')];
 
     my @msg = ($type);
     if (($type eq 'die' || $type eq 'warn') && $criticity eq 'info') {
@@ -73,15 +78,22 @@ sub syslogFormatted {
         @msg = ("$type-$criticity");
     }
 
-    foreach my $item (@$fields) {
+    my %dedupe;
+    foreach my $item (@fields) {
 
-        # each @$fields item is a 2-dimensional array for key => value
+        # each $item item is a 2-dimensional array for key => value
         if (ref $item ne 'ARRAY') {
             my $error = "bad call to syslogFormatted, invalid item in fields (ref " . (ref $item) . ")";
             warn($error);
             return R('INTERNAL_ERROR', msg => $error);
         }
         my ($key, $value) = @$item;
+
+        # warn if we have the same key more than once
+        if (exists $dedupe{$key}) {
+            warn("syslogFormatted(): got multiple '$key' keys");
+        }
+        $dedupe{$key} = $value;
 
         # remove any \n in the value
         $value =~ s/\n/ /g;
@@ -228,7 +240,6 @@ sub _sql_log_insert_file {
     my $plugin        = $params{'plugin'};
     my $params        = $params{'params'};
     my $comment       = $params{'comment'};
-    my $ttyrecfile    = $params{'ttyrecfile'};
     my $timestamp     = $params{'timestamp'};
     my $timestampusec = $params{'timestampusec'};
     my $uniqid        = $params{'uniqid'};
@@ -283,11 +294,11 @@ sub _sql_log_insert_file {
         if ($sqltype eq 'local') {
             $prepare =
                 "INSERT INTO connections"
-              . "(uniqid,timestamp,timestampusec,account,cmdtype,allowed,hostfrom,ipfrom,portfrom,bastionip,bastionport,hostto,ipto,portto,user,plugin,params,comment,ttyrecfile)"
-              . "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+              . "(uniqid,timestamp,timestampusec,account,cmdtype,allowed,hostfrom,ipfrom,portfrom,bastionip,bastionport,hostto,ipto,portto,user,plugin,params,comment)"
+              . "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
             @execute = (
-                $uniqid,      $timestamp, $timestampusec, $account, $cmdtype, $allowed, $hostfrom, $ipfrom,  $portfrom, $bastionip,
-                $bastionport, $hostto,    $ipto,          $portto,  $user,    $plugin,  $params,   $comment, $ttyrecfile
+                $uniqid,    $timestamp,   $timestampusec, $account, $cmdtype, $allowed, $hostfrom, $ipfrom, $portfrom,
+                $bastionip, $bastionport, $hostto,        $ipto,    $portto,  $user,    $plugin,   $params, $comment
             );
         }
         elsif ($sqltype eq 'global') {
@@ -331,16 +342,19 @@ sub log_access_insert {
     my $custom  = $params{'custom'};                     # only used for proxyhttp, not pushed to sql
     my $fnret;
 
-    if (not defined $account) {
-        return R('ERR_MISSING_PARAMETER', msg => "Missing parameter 'account'");
+    # if we get a valid account, we'll try to log to its files, if enabled.
+    # if not, or if its invalid, still try to log what we can (hence don't return here)
+    my ($remoteaccount, $sysaccount);
+    if (defined $account) {
+        if ($fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account)) {
+            $account       = $fnret->value->{'account'};
+            $sysaccount    = $fnret->value->{'sysaccount'};
+            $remoteaccount = $fnret->value->{'remoteaccount'};
+        }
+        else {
+            undef $account;
+        }
     }
-
-    $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
-    $fnret or return $fnret;
-
-    $account = $fnret->value->{'account'};
-    my $sysaccount    = $fnret->value->{'sysaccount'};
-    my $remoteaccount = $fnret->value->{'remoteaccount'};
 
     $loghome ||= $sysaccount;
 
@@ -365,23 +379,36 @@ sub log_access_insert {
     $params{'timestamp'}     = $timestamp;
     $params{'timestampusec'} = $timestampusec;
 
-    my @localtime      = localtime(time());
-    my $sqlfile_global = sprintf("/home/logkeeper/global-log-%04d.sqlite", $localtime[5] + 1900);
-    my $sqlfile_account =
-      sprintf("/home/%s/%s-log-%04d%02d.sqlite", $params{'loghome'}, $remoteaccount || $loghome, $localtime[5] + 1900, $localtime[4] + 1);
-
-    # first, log in account sql file
+    # 1/3) log into sql databases if enabled
+    my @localtime = localtime(time());
     my ($insert_id, $db_name);
+
+    # first, log in account db
+    my $accountsql = 'no';
     if (OVH::Bastion::config('enableAccountSqlLog')->value()) {
-        $params{'file'}    = $sqlfile_account;
-        $params{'sqltype'} = 'local';
-        $fnret             = _sql_log_insert_file(%params);
+        $fnret = _sql_log_insert_file(
+            %params,
+            sqltype => "local",
+            file    => sprintf("/home/%s/%s-log-%04d%02d.sqlite", $loghome, $remoteaccount || $loghome, $localtime[5] + 1900, $localtime[4] + 1)
+        );
         if ($fnret) {
             ($insert_id, $db_name) = ($fnret->value->{'id'}, $params{'file'});
+            $accountsql = 'ok';
+        }
+        else {
+            $accountsql = 'error ' . $fnret->msg;
         }
     }
 
-    # then, syslog, we'll also say if the sqlinsert failed
+    # then global db
+    my $globalsql = 'no';
+    if (OVH::Bastion::config('enableGlobalSqlLog')->value()) {
+        $fnret     = _sql_log_insert_file(%params, sqltype => "global", file => sprintf("/home/logkeeper/global-log-%04d%02d.sqlite", $localtime[5] + 1900, $localtime[4] + 1));
+        $globalsql = $fnret ? 'ok' : 'error ' . $fnret->msg;
+    }
+
+    # 2/3) push to syslog, we'll also say if any sqlinsert failed through globalsql/accountsql
+    # even if syslog is disabled, syslogFormatted() will return a oneline $msg that we'll use afterwards
     my @fields = (
         ['account', $account],
         ['cmdtype', $params{'cmdtype'}],
@@ -397,43 +424,36 @@ sub log_access_insert {
         ['port_to',      $params{'portto'}],
         ['host_to',      $params{'hostto'}],
         ['plugin',       $params{'plugin'}],
+        ['globalsql',    $globalsql],
+        ['accountsql',   $accountsql],
         ['comment',      $params{'comment'}],
-        ['sqlfile', ($fnret ? '' : 'ERR:') . $params{'file'}],
-        ['params', $params{'params'}],
+        ['params',       $params{'params'}],
     );
     if (ref $custom eq 'ARRAY') {
         foreach my $item (@$custom) {
             push @fields, $item if (ref $item eq 'ARRAY' && @$item == 2);
         }
     }
-    $fnret = OVH::Bastion::syslogFormatted(
+
+    $fnret = syslogFormatted(
         criticity => 'info',
         type      => 'open',
         fields    => \@fields,
     );
-    my $msg = '(empty)';
-    $msg = $fnret->value if $fnret;
 
-    # then, log in oldschool files
-    if (OVH::Bastion::config('enableAccountAccessLog')->value()) {
-        if (open(my $log_acc, ">>", sprintf("/home/%s/%s-log-%04d%02d.log", $params{'loghome'}, $remoteaccount || $loghome, $localtime[5] + 1900, $localtime[4] + 1))) {
-            print $log_acc localtime() . " $msg\n";
-            close($log_acc);
-        }
-    }
-    if (OVH::Bastion::config('enableGlobalAccessLog')->value()) {
-        if (open(my $log_gen, ">>", "/home/osh.log")) {
-            print $log_gen localtime() . " $msg\n";
-            close($log_gen);
-        }
-    }
+    # if syslogFormatted failed, we'll log its error message (->msg) instead of the message it couldn't assemble (->value)
+    my $msg = $fnret ? $fnret->value : $fnret->msg;
 
-    # then global sql
-    if (OVH::Bastion::config('enableGlobalSqlLog')->value()) {
-        $params{'file'}    = $sqlfile_global;
-        $params{'sqltype'} = 'global';
-        $fnret             = _sql_log_insert_file(%params);
-    }
+    # 3/3) push to our own local / global text logs, if enabled, using the $msg returned by syslogFormatted
+    _write_log(account => $account, sysaccount => $loghome, remoteaccount => $remoteaccount, msg => $msg);
+
+    # save this for log_access_update()
+    my $cache = {
+        fields        => \@fields,
+        timestamp     => $params{'timestamp'},
+        timestampusec => $params{'timestampusec'},
+    };
+    $ENV{'LOG_CACHE_' . $params{'uniqid'}} = encode_json($cache);
 
     return R('OK', value => {insert_id => $insert_id, db_name => $db_name, uniq_id => $params{'uniqid'}});
 }
@@ -446,7 +466,6 @@ sub _sql_log_update_file {
     my $comment          = $params{'comment'};
     my $timestampend     = $params{'timestampend'};
     my $timestampendusec = $params{'timestampendusec'};
-    my $ttyrecsize       = $params{'ttyrecsize'};
 
     my $plugin_stdout = $params{'plugin_stdout'};
     my $plugin_stderr = $params{'plugin_stderr'};
@@ -485,10 +504,6 @@ sub _sql_log_update_file {
         if (defined $comment) {
             $prepare .= ", comment=?";
             push @execute, $comment;
-        }
-        if (defined $ttyrecsize) {
-            $prepare .= ", ttyrecsize=?";
-            push @execute, $ttyrecsize;
         }
         $prepare .= " WHERE id=? AND timestampend IS NULL";
         push @execute, $id;
@@ -584,40 +599,120 @@ EOS
     return R('OK');
 }
 
+# called by log_access_insert and log_access_update
+# don't re-check the validity of our params, this has been done by our callers
+sub _write_log {
+    my %params    = @_;
+    my @localtime = localtime(time());
+    my @date      = ($localtime[5] + 1900, $localtime[4] + 1);
+
+    if (OVH::Bastion::config('enableAccountAccessLog')->value() && $params{'sysaccount'}) {
+        if (open(my $log_acc, ">>", sprintf("/home/%s/%s-log-%04d%02d.log", $params{'sysaccount'}, $params{'remoteaccount'} || $params{'sysaccount'}, @date))) {
+            print $log_acc localtime() . " " . $params{'msg'} . "\n";
+            close($log_acc);
+        }
+    }
+    if (OVH::Bastion::config('enableGlobalAccessLog')->value()) {
+        if (open(my $log_gen, ">>", sprintf("/home/logkeeper/global-log-%04d%02d.log", @date))) {
+            print $log_gen localtime() . " " . $params{'msg'} . "\n";
+            close($log_gen);
+        }
+    }
+    return;
+}
+
 sub log_access_update {
     my %params    = @_;
+    my $account   = $params{'account'};
     my $insert_id = $params{'insert_id'};
     my $db_name   = $params{'db_name'};
     my $uniq_id   = $params{'uniq_id'};
+    my $fnret;
+
+    # if we get a valid account, we'll try to log to its files, if enabled.
+    # if not, or if its invalid, still try to log what we can (hence don't return here)
+    my ($remoteaccount, $sysaccount);
+    if (defined $account) {
+        if ($fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account)) {
+            $account       = $fnret->value->{'account'};
+            $sysaccount    = $fnret->value->{'sysaccount'};
+            $remoteaccount = $fnret->value->{'remoteaccount'};
+        }
+        else {
+            undef $account;
+        }
+    }
 
     if (not defined $params{'timestampend'} or not defined $params{'timestampendusec'}) {
         ($params{'timestampend'}, $params{'timestampendusec'}) = Time::HiRes::gettimeofday();
     }
 
-    # in any case, send a syslog even if we miss insert_id or db_name
-    OVH::Bastion::syslogFormatted(
+    # retrieve info from the corresponding "open" log so that we can include it to our log
+    my @comments = $params{'comment'} ? split(" ", $params{'comment'}) : ();
+    my @fields;
+    my $duration = -1;
+    if (exists $ENV{'LOG_CACHE_' . $params{'uniq_id'}}) {
+        my $cache;
+        eval { $cache = decode_json(delete $ENV{'LOG_CACHE_' . $params{'uniq_id'}}); };
+        if ($cache) {
+            @fields   = @{$cache->{'fields'}};
+            $duration = ($params{'timestampend'} + $params{'timestampendusec'} / 1_000_000) - ($cache->{'timestamp'} + $cache->{'timestampusec'} / 1_000_000);
+        }
+    }
+    if (!@fields) {
+        push @comments, "missing_open_log_info";
+    }
+
+    my $signal = '';
+    my $status = '';
+    if (defined $params{'returnvalue'}) {
+        $fnret = OVH::Bastion::sysret2human($params{'returnvalue'});
+        if ($fnret && $fnret->value) {
+            $signal = $fnret->value->{'signal'};
+            $status = $fnret->value->{'status'};
+        }
+    }
+    else {
+        # sql logs expect a returnvalue, so set one if we don't have any
+        $params{'returnvalue'} = -1;
+    }
+
+    # if an explicit signal value has been passed, use it
+    if ($params{'signal'}) {
+        $signal = delete $params{'signal'};
+    }
+
+    push @fields, ['sysret', $status], ['signal', $signal], ['comment_close', join(" ", @comments)], ['duration', sprintf("%.3f", $duration)];
+
+    # 1/3) update the account sql db if enabled. note that the global sql db is NOT updated, as
+    # it contains less details that the account databases and doesn't have any field that requires
+    # to wait the end of a connection to be filled.
+    my $accountsql = 'missing';
+    if ($insert_id && $db_name) {
+        if (OVH::Bastion::config('enableAccountSqlLog')->value()) {
+            $fnret      = _sql_log_update_file(%params, file => $db_name, id => $insert_id);
+            $accountsql = $fnret ? 'ok' : 'error ' . $fnret->msg;
+        }
+        else {
+            $accountsql = 'no';
+        }
+    }
+
+    # 2/3) push to syslog, we'll also say if the sql update failed through accountsql
+    # even if syslog is disabled, syslogFormatted() will return a oneline $msg that we'll use afterwards
+    push @fields, [accountsql_close => $accountsql];
+    $fnret = syslogFormatted(
         criticity => 'info',
         type      => 'close',
-        fields    => [
-
-            # TODO: in addition to the specific "on-close" fields, we should re-log here everything
-            # that was logged in the log_access_insert call for easier SIEM analytics
-            ['sysret',        $params{'returnvalue'}],
-            ['ttyrec_size',   $params{'ttyrecsize'}],
-            ['comment_close', $params{'comment'}],
-        ]
+        fields    => \@fields,
     );
 
-    if (not defined $insert_id or not defined $db_name) {
-        return R('ERR_MISSING_PARAMETER', msg => "Missing required 'insert_id' or 'db_name'");
-    }
+    # if syslogFormatted failed, we'll log its error message (->msg) instead of the message it couldn't assemble (->value)
+    my $msg = $fnret ? $fnret->value : $fnret->msg;
 
-    $params{'file'} = $db_name;
-    $params{'id'}   = $insert_id;
+    # 3/3) push to our own local / global text logs, if enabled, using the $msg returned by syslogFormatted
+    _write_log(account => $account, sysaccount => $sysaccount, remoteaccount => $remoteaccount, msg => $msg);
 
-    if (OVH::Bastion::config('enableAccountSqlLog')->value()) {
-        return _sql_log_update_file(%params);
-    }
     return R('OK');
 }
 
@@ -641,24 +736,13 @@ sub log_access_get {
 
     my @localtime = localtime(time());
 
-    # first, check in account sql file
+    # check in account sql file
     if (OVH::Bastion::config('enableAccountSqlLog')->value()) {
         $params{'file'}    = sprintf("/home/%s/%s-log-%04d%02d.sqlite", $params{'account'}, $params{'account'}, $localtime[5] + 1900, $localtime[4] + 1);
         $params{'sqltype'} = 'local';
         $fnret             = _sql_log_fetch_from_file(%params);
         return $fnret;
     }
-
-    # second, check in global sql file
-
-=cut not now, too slow and table columns differ
-    if (OVH::Bastion::config('enableGlobalSqlLog')->value()) {
-        $params{'file'}    = sprintf("/home/logkeeper/global-log-%04d.sqlite", $localtime[5] + 1900);
-        $params{'sqltype'} = 'global';
-        $fnret             = _sql_log_fetch_from_file(%params);
-        return $fnret;
-    }
-=cut
 
     return R('ERR_DISABLED', msg => "This feature is not available");
 }

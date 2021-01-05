@@ -33,7 +33,7 @@ BEGIN {
         OVH::Bastion::syslogFormatted(
             criticity => $criticity,
             type      => $type,
-            fields => [['sudouser', $ENV{'SUDO_USER'}], ['version', $OVH::Bastion::VERSION], ['msg', $msg], ['program', $0], ['cmdline', $_SAVED_ARGV], ['trace', Carp::longmess()]]
+            fields    => [['msg', $msg], ['program', $0], ['cmdline', $_SAVED_ARGV], ['trace', Carp::longmess()]]
         );
         return 1;
     }
@@ -129,7 +129,7 @@ my %_autoload_files = (
         qw{ is_user_in_group is_group_existing get_acl_from_file get_account_acl is_valid_uid get_next_available_uid is_bastion_account_valid_and_existing is_account_valid is_account_existing access_modify is_valid_group is_valid_group_and_existing add_user_to_group get_group_servers_list get_group_list get_account_list is_admin is_super_owner is_group_aclkeeper is_group_gatekeeper is_group_owner is_group_guest is_group_member is_auditor get_remote_accounts_from_realm is_valid_ttl get_realm_list }
     ],
     configuration => [qw{ load_configuration_file main_configuration_directory load_configuration config account_config plugin_config group_config json_load }],
-    execute       => [qw{ execute result_from_helper helper_decapsulate helper }],
+    execute       => [qw{ sysret2human execute result_from_helper helper_decapsulate helper }],
     interactive   => [qw{ interactive }],
     log           => [qw{ syslog syslog_close syslogFormatted warn_syslog log_access_insert log_access_update log_access_get }],
     os            => [

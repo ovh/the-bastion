@@ -418,7 +418,7 @@ enableSyslog
 
 :Default: ``true``
 
-If set to ``false``, syslog will be disabled. If set to ``true``, we'll send logs through syslog (don't forget to setup your syslog daemon!).
+If enabled, we'll send logs through syslog, don't forget to setup your syslog daemon!. You can also adjust ``syslogFacility`` and ``syslogDescription`` below, to match your syslog configuration. Note that the provided ``syslog-ng`` templates work with the default values left as-is.
 
 .. _bastion_conf_syslogFacility:
 
@@ -451,7 +451,7 @@ enableGlobalAccessLog
 
 :Default: ``true``
 
-If set to ``true``, all accesses will still be logged in ``/home/osh.log``. This file is never rotated and is world writable, this is discouraged: please use syslog insteead.
+If enabled, all *open* and *close* logs will be written to ``/home/logkeeper/global-log-YYYYMM.log``. Those are also logged through syslog if *enableSyslog* is set.
 
 .. _bastion_conf_enableAccountAccessLog:
 
@@ -462,7 +462,7 @@ enableAccountAccessLog
 
 :Default: ``true``
 
-If set to ``true``, all accesses will still be logged in the user's home ``/home/USER/USER-log-YYYYMM.log``. If set to ``false``, we won't log there.
+If enabled, all *open* and *close* logs will be written to the corresponding user's home in ``/home/USER/USER-log-YYYYMM.log``. Those are also logged through syslog if *enableSyslog* is set.
 
 .. _bastion_conf_enableGlobalSqlLog:
 
@@ -473,7 +473,7 @@ enableGlobalSqlLog
 
 :Default: ``true``
 
-If set to ``true``, all accesses will be logged (in a short SQL format) in ``/home/logkeeper/*.sqlite``. If set to ``false``, we won't log there.
+If enabled, all access logs (corresponding to the *open* and *close* events) will be written in a short SQL format, as one row per access, to ``/home/logkeeper/global-log-YYYYMM.sqlite``.
 
 .. _bastion_conf_enableAccountSqlLog:
 
@@ -484,7 +484,7 @@ enableAccountSqlLog
 
 :Default: ``true``
 
-If set to ``true``, all accesses will be logged (in a detailed SQL format) in the user's home ``/home/USER/USER-log-YYYYMM.sqlite``. Otherwise, we won't log there.
+If enabled, all access logs (corresponding to the *open* and *close* events) will be written in a detailed SQL format, as one row per access, in the corresponding user's home to ``/home/USER/USER-log-YYYYMM.sqlite``. If you want to use ``selfListSessions`` and/or ``selfPlaySession``, this is required.
 
 .. _bastion_conf_ttyrecFilenameFormat:
 
