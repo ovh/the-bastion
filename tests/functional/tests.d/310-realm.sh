@@ -277,3 +277,4 @@ testsuite_realm()
 }
 
 testsuite_realm
+unset -f testsuite_realm

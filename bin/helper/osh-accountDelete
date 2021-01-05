@@ -1,7 +1,9 @@
 #! /usr/bin/perl -T
 # vim: set filetype=perl ts=4 sw=4 sts=4 et:
 # NEEDGROUP osh-accountDelete
-# SUDOERS %osh-accountDelete ALL=(root)  NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountDelete *
+# SUDOERS %osh-accountDelete ALL=(root)  NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountDelete --type normal *
+# NEEDGROUP osh-realmDelete
+# SUDOERS %osh-realmDelete ALL=(root)  NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountDelete --type realm *
 # FILEMODE 0700
 # FILEOWN 0 0
 
@@ -55,20 +57,6 @@ if (!$account || !$type) {
 
 #<HEADER
 
-#>RIGHTSCHECK
-if ($self eq 'root') {
-    osh_debug "Real root, skipping checks of permissions";
-}
-else {
-    # need to perform another security check
-    $fnret = OVH::Bastion::is_user_in_group(user => $self, group => "osh-accountDelete");
-    if (!$fnret) {
-        HEXIT('ERR_SECURITY_VIOLATION', msg => "You're not allowed to run this, dear $self");
-    }
-}
-
-#<RIGHTSCHECK
-
 #>PARAMS:TYPE
 osh_debug("Checking type");
 if (not grep { $type eq $_ } qw{ normal realm }) {
@@ -76,6 +64,31 @@ if (not grep { $type eq $_ } qw{ normal realm }) {
 }
 
 #<PARAMS:TYPE
+
+#>RIGHTSCHECK
+if ($self eq 'root') {
+    osh_debug "Real root, skipping checks of permissions";
+}
+else {
+    # need to perform another security check
+    if ($type eq 'normal') {
+        $fnret = OVH::Bastion::is_user_in_group(user => $self, group => "osh-accountDelete");
+        if (!$fnret) {
+            HEXIT('ERR_SECURITY_VIOLATION', msg => "You're not allowed to run this, dear $self");
+        }
+    }
+    elsif ($type eq 'realm') {
+        $fnret = OVH::Bastion::is_user_in_group(user => $self, group => "osh-realmDelete");
+        if (!$fnret) {
+            HEXIT('ERR_SECURITY_VIOLATION', msg => "You're not allowed to run this, dear $self");
+        }
+    }
+    else {
+        HEXIT('ERR_INTERNAL');
+    }
+}
+
+#<RIGHTSCHECK
 
 #>PARAMS:ACCOUNT
 osh_debug("Checking account");

@@ -16,12 +16,15 @@ echo "Targets: $targets"
 
 sleep 5
 
+tempdir=$(mktemp -d)
+trap 'test -d $tempdir && rm -rf $tempdir' EXIT
+
 for t in $targets
 do
+    [ "$t" = "-" ] && continue
     (
-        rm -f "/tmp/.$t"
         DOCKER_TTY=false ./docker_build_and_run_tests.sh "$t"
-        echo $? > "/tmp/.$t"
+        echo $? > "$tempdir/$t"
     ) &
 done
 wait
@@ -32,21 +35,22 @@ nberrors=0
 
 for t in $targets
 do
-    err=$(cat "/tmp/.$t" 2>/dev/null)
-    rm -f "/tmp/.$t"
+    [ "$t" = "-" ] && continue
+    err=$(cat "$tempdir/$t" 2>/dev/null)
+    rm -f "$tempdir/$t"
     if [ -z "$err" ]; then
-        printf "%b%15s: tests couldn't run properly%b\\n" "$BLACK_ON_RED" "$t" "$NOC"
+        printf "%b%23s: tests couldn't run properly%b\\n" "$BLACK_ON_RED" "$t" "$NOC"
         nberrors=$(( nberrors + 1 ))
     elif [ "$err" = 0 ]; then
-        printf "%b%15s: no errors :)%b\\n" "$BLACK_ON_GREEN" "$t" "$NOC"
+        printf "%b%23s: no errors :)%b\\n" "$BLACK_ON_GREEN" "$t" "$NOC"
     elif [ "$err" = 143 ]; then
-        printf "%b%15s: tests interrupted%b\\n" "$BLACK_ON_RED" "$t" "$NOC"
+        printf "%b%23s: tests interrupted%b\\n" "$BLACK_ON_RED" "$t" "$NOC"
         nberrors=$(( nberrors + 1 ))
     elif [ "$err" -lt 254 ]; then
-        printf "%b%15s: $err tests failed%b\\n" "$BLACK_ON_RED" "$t" "$NOC"
+        printf "%b%23s: $err tests failed%b\\n" "$BLACK_ON_RED" "$t" "$NOC"
         nberrors=$(( nberrors + 1 ))
     else
-        printf "%b%15s: $err errors%b\\n" "$BLACK_ON_RED" "$t" "$NOC"
+        printf "%b%23s: $err errors%b\\n" "$BLACK_ON_RED" "$t" "$NOC"
         nberrors=$(( nberrors + 1 ))
     fi
 done
