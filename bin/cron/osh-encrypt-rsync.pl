@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use GnuPG;
+use GnuPG;    # pragma optional module
 use File::Temp;
 use File::Basename;
 use File::Find;

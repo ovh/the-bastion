@@ -35,9 +35,8 @@ do
         grep -q '^use common::sense;' "$i" || echo "(missing common::sense in $i)"
     fi
 done
-if [ -x "$basedir/bin/dev/perl-use-all.pl" ] ; then
-    action_detail "Trying to \`use' all required perl modules"
-    "$basedir/bin/dev/perl-use-all.pl" || (( fails++ ))
+if [ -x "$basedir/bin/dev/perl-use-all.sh" ] ; then
+    "$basedir/bin/dev/perl-use-all.sh" || (( fails++ ))
 fi
 
 if [ "$fails" -ne 0 ] ; then
