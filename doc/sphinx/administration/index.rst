@@ -12,3 +12,4 @@ Here we make the assumption that you've already installed The Bastion, and would
    :maxdepth: 3
 
    bastion_conf
+   logs
