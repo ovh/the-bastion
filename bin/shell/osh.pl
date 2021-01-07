@@ -112,9 +112,20 @@ my $osh_debug   = $config->{'debug'};
 # and the real remote account name (which doesn't have an account here because it's from another realm)
 # is passed through LC_BASTION
 if ($self =~ /^realm_([a-zA-Z0-9_.-]+)/) {
-    $self  = sprintf("%s/%s", $1, $ENV{'LC_BASTION'});
-    $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $self, realmOnly => 1);
-    $fnret or main_exit(OVH::Bastion::EXIT_ACCOUNT_INVALID, "account_invalid", "The realm-scoped account '$self' is invalid (" . $fnret->msg . ")");
+    if ($ENV{'LC_BASTION'}) {
+
+        # don't overwrite $self just yet because it might end up being invalid, and when we'll call main_exit 2 lines down,
+        # we won't log to the proper place if sql logs or access logs are enabled per account.
+        my $potentialSelf = sprintf("%s/%s", $1, $ENV{'LC_BASTION'});
+        $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $potentialSelf, realmOnly => 1);
+        $fnret or main_exit(OVH::Bastion::EXIT_ACCOUNT_INVALID, "account_invalid", "The realm-scoped account '$self' is invalid (" . $fnret->msg . ")");
+
+        # $potentialSelf is valid, we can use it
+        $self = $potentialSelf;
+    }
+    else {
+        main_exit(OVH::Bastion::EXIT_ACCOUNT_INVALID, "account_invalid", "Attempted to use a realm account but not from another bastion");
+    }
 }
 else {
     # non-realm case
