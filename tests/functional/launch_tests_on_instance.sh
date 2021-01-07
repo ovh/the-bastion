@@ -462,7 +462,7 @@ echo
 
 set +e
 set +u
-(( totalerrors = nbfailedret + nbfailedgrep + nbfailedcon + nbfailedgeneric ))
+(( totalerrors = nbfailedret + nbfailedgrep + nbfailedcon + nbfailedlog + nbfailedgeneric ))
 [ $totalerrors -ge 255 ] && totalerrors=254
 
 rm -rf "$mytmpdir"
