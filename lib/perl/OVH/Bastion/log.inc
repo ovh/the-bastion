@@ -327,7 +327,7 @@ sub _sql_log_insert_file {
     # if this is set, we probably reached max retry in previous loop without succeeding
     if ($DBI::err) {
 
-        warn_syslog("Failed after multiple retries [$sqltype] err $DBI::err while doing [$doing]: $DBI::errstr");
+        warn_syslog("Failed after multiple retries [$sqltype] err $DBI::err while doing [$doing]: $DBI::errstr ($file)");
         return R('ERR_SQL_EXECUTE', msg => "SQL error [$sqltype] err $DBI::err while doing [$doing]: $DBI::errstr");
     }
 
@@ -346,13 +346,24 @@ sub log_access_insert {
     # if not, or if its invalid, still try to log what we can (hence don't return here)
     my ($remoteaccount, $sysaccount);
     if (defined $account) {
-        if ($fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account)) {
-            $account       = $fnret->value->{'account'};
-            $sysaccount    = $fnret->value->{'sysaccount'};
-            $remoteaccount = $fnret->value->{'remoteaccount'};
+        if ($fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account, accountType => "normal")) {
+
+            # normal accounts
+            ;
+        }
+        elsif ($fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account, accountType => "realm")) {
+
+            # $account can also be a realm_xyz account, in case osh.pl is erroring early and couldn't resolve the
+            # proper realm-qualified account name (realm/user)
+            ;
         }
         else {
             undef $account;
+        }
+        if ($fnret) {
+            $account       = $fnret->value->{'account'};
+            $sysaccount    = $fnret->value->{'sysaccount'};
+            $remoteaccount = $fnret->value->{'remoteaccount'};
         }
     }
 
@@ -386,17 +397,22 @@ sub log_access_insert {
     # first, log in account db
     my $accountsql = 'no';
     if (OVH::Bastion::config('enableAccountSqlLog')->value()) {
-        $fnret = _sql_log_insert_file(
-            %params,
-            sqltype => "local",
-            file    => sprintf("/home/%s/%s-log-%04d%02d.sqlite", $loghome, $remoteaccount || $loghome, $localtime[5] + 1900, $localtime[4] + 1)
-        );
-        if ($fnret) {
-            ($insert_id, $db_name) = ($fnret->value->{'id'}, $params{'file'});
-            $accountsql = 'ok';
+        if ($loghome && -d "/home/$loghome") {
+            $fnret = _sql_log_insert_file(
+                %params,
+                sqltype => "local",
+                file    => sprintf("/home/%s/%s-log-%04d%02d.sqlite", $loghome, $remoteaccount || $loghome, $localtime[5] + 1900, $localtime[4] + 1)
+            );
+            if ($fnret) {
+                ($insert_id, $db_name) = ($fnret->value->{'id'}, $params{'file'});
+                $accountsql = 'ok';
+            }
+            else {
+                $accountsql = 'error ' . $fnret->msg;
+            }
         }
         else {
-            $accountsql = 'error ' . $fnret->msg;
+            warn_syslog("Attempted to log to account $account sqlite database without a valid loghome ($loghome)");
         }
     }
 
@@ -528,7 +544,7 @@ sub _sql_log_update_file {
 
     # if this is set, we probably reached max retry in previous loop without succeeding
     if ($DBI::err) {
-        warn("Failed after multiple retries [updating] err $DBI::err while doing [$doing]: $DBI::errstr");
+        warn_syslog("Failed after multiple retries [updating] err $DBI::err while doing [$doing]: $DBI::errstr ($file)");
         return R('ERR_SQL_EXECUTE', msg => "SQL error [updating] err $DBI::err while doing [$doing]: $DBI::errstr");
     }
 
@@ -591,7 +607,7 @@ EOS
         # if this is set, we probably reached max retry in previous loop without succeeding
         if ($DBI::err) {
 
-            warn("Failed after multiple retries [plugins] err $DBI::err while doing [$doing]: $DBI::errstr");
+            warn_syslog("Failed after multiple retries [plugins] err $DBI::err while doing [$doing]: $DBI::errstr ($file)");
             return R('ERR_SQL_EXECUTE', msg => "SQL error [plugins] err $DBI::err while doing [$doing]: $DBI::errstr");
         }
     }
@@ -885,7 +901,7 @@ sub _sql_log_fetch_from_file {
     # if this is set, we probably reached max retry in previous loop without succeeding
     if ($DBI::err) {
 
-        warn("Failed after multiple retries [$sqltype] err $DBI::err while doing [$doing]: $DBI::errstr");
+        warn_syslog("Failed after multiple retries [$sqltype] err $DBI::err while doing [$doing]: $DBI::errstr ($file)");
         return R('ERR_SQL_EXECUTE', msg => "SQL error [$sqltype] err $DBI::err while doing [$doing]: $DBI::errstr");
     }
 
