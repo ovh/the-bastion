@@ -16,7 +16,7 @@ jobs:
         name: Install sphinx and prerequisites
         run: |
           sudo apt update
-          sudo apt install -y python3-sphinx-rtd-theme python3-sphinx make libcommon-sense-perl libjson-perl
+          sudo apt install -y python3-sphinx-rtd-theme python3-sphinx make libcommon-sense-perl libjson-perl libdatetime-perl
       -
         name: Build documentation
         run: cd doc/sphinx/ && make all
