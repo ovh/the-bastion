@@ -527,6 +527,23 @@ EOS
     contain "allowed ... log on"
     contain 'Permission denied (publickey'
 
+    # ttyrec: take the opportunity to test selfListSessions/selfPlaySession as we just recorded a ttyrec
+    success ssh a3_selfListSessions $a3 --osh selfListSessions --host 127.0.0.2 --user g2 --type ssh
+    json .command selfListSessions .error_code OK .value[0].allowed 1
+    local sessionid
+    sessionid=$(get_json | $jq '.value[0].id')
+
+    plgfail ssh a3_selfPlaySession_nonexisting $a3 --osh selfPlaySession --id 123456
+    json .command selfPlaySession .error_code ERR_NOT_FOUND
+
+    script ssh a3_selfPlaySession_existing $a3 --osh selfPlaySession --id $sessionid '< /dev/null'
+    retvalshouldbe 0
+    json .command selfPlaySession .error_code OK
+    contain 'Total Recall'
+    contain 'Permission denied (publickey'
+    nocontain 'n/a'
+    # /ttyrec
+
     run ssh a3_access_g1_as_member_but_ip_not_in_group $a3 g1@127.0.0.3
     retvalshouldbe 107
     json .error_code KO_ACCESS_DENIED
