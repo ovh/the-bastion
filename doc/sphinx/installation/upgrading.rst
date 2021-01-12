@@ -24,6 +24,26 @@ Note that if you're using an infrastructure automation tool such as Puppet, Ansi
 Version-specific upgrade instructions
 =====================================
 
+v3.02.00 - not yet released
+***************************
+
+The upgrade path from the preceding version is straightforward, however there are a few changes around logging that you might want to know before hitting the upgrade button:
+
+All connections and plugin executions emit two logs, an *open* and a *close* log. We now add all the details of the connection to the *close* logs, those that were previously only available in the corresponding *open* log. This way, it is no longer required to correlate both logs with their uniqid to have all the data: the *close* log should suffice. The *open* log is still there if for some reason the *close* log can't be emitted (kill -9, system crash, etc.), or if the *open* and the *close* log are several hours, days or months appart.
+
+An additional field **duration** has been added to the *close* logs, this represents the number of seconds (with millisecond precision) the connection lasted.
+
+Two new fields **globalsql** and **accountsql** have been added to the *open*-type logs. These will contain either `ok` if we successfully logged to the corresponding log database, `no` if it is disabled, or `error $aDetailedMessage` if we got an error trying to insert the row. The *close*-type log also has the new **accountsql_close** field, but misses the **globalsql_close** field as we never update the global database on this event. On the *close* log, we can also have the value **missing**, indicating that we couldn't update the access log row in the database, as the corresponding *open* log couldn't insert it.
+
+The **ttyrecsize** log field for the *close*-type logs has been removed, as it was never completely implemented, and contains bogus data if ttyrec log rotation occurs. It has also been removed from the sqlite log databases.
+
+The *open* and *close* events are now pushed to our own log files, in addition to syslog, if logging to those files is enabled (see :ref:`enableGlobalAccesssLog` and :ref:`enableAccountAccessLog`), previously the *close* events were only pushed to syslog.
+
+The :file:`/home/osh.log` file is no longer used for :ref:`enableGlobalAccessLog`, the global log is instead written to :file:`/home/logkeeper/global-log-YYYYMM.log`.
+
+The global sql file, enabled with :ref:`enableGlobalSqlLog`, is now split by year-month instead of by year, to :file:`/home/logkeeper/global-log-YYYYMM.sqlite`.
+
+
 v3.01.03 - 2020/12/15
 *********************
 
