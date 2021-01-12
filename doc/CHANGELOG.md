@@ -1,3 +1,20 @@
+## v3.01.99-rc1 - 2021/01/12
+- feat: add support for a PIV-enforced policy (see https://ovh.github.io/the-bastion/using/piv)
+- feat: revamp logs (see the UPGRADING section of the documentation)
+- feat: realms: use remote bastion MFA validation information for local policy enforcement
+- feat: add `LC_BASTION_DETAILS` envvar so that remote hosts can gather more information about the connection
+- feat: `accountModify`: add --osh-only policy (closes #97)
+- enh: satellite scripts: better error handling
+- enh: config: better parsing and normalization
+- fix: groupList: remove 9K group limit
+- fix: realmDelete: bad sudoers configuration
+- fix: global-log: directly set proper perms on file creation
+- fix: remove useless warning when there is no guest access
+- fix: proper sqlite log location for invalid realm accounts
+- fix: tests: syslog-logged errors were not counted towards the total
+- chore: tests: remove OpenSUSE Leap 15.0 (due to https://bugzilla.opensuse.org/show_bug.cgi?id=1146027)
+- chore: a few other fixes & enhancements around tests, documentation, perlcritic et al.
+
 ## v3.01.03 - 2020/12/15
 - fix: sudogen: don't check for account/groups validity too much when deleting them (fixes #86)
 - fix: guests: get rid of ghost guest accesses in corner cases (fixes internal ticket)
