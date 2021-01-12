@@ -400,13 +400,14 @@ sub log_access_insert {
     my $accountsql = 'no';
     if (OVH::Bastion::config('enableAccountSqlLog')->value()) {
         if ($loghome && -d "/home/$loghome") {
+            my $sqlfile = sprintf("/home/%s/%s-log-%04d%02d.sqlite", $loghome, $remoteaccount || $loghome, $localtime[5] + 1900, $localtime[4] + 1);
             $fnret = _sql_log_insert_file(
                 %params,
                 sqltype => "local",
-                file    => sprintf("/home/%s/%s-log-%04d%02d.sqlite", $loghome, $remoteaccount || $loghome, $localtime[5] + 1900, $localtime[4] + 1)
+                file    => $sqlfile
             );
             if ($fnret) {
-                ($insert_id, $db_name) = ($fnret->value->{'id'}, $params{'file'});
+                ($insert_id, $db_name) = ($fnret->value->{'id'}, $sqlfile);
                 $accountsql = 'ok';
             }
             else {
@@ -710,14 +711,14 @@ sub log_access_update {
     # 1/3) update the account sql db if enabled. note that the global sql db is NOT updated, as
     # it contains less details that the account databases and doesn't have any field that requires
     # to wait the end of a connection to be filled.
-    my $accountsql = 'missing';
-    if ($insert_id && $db_name) {
-        if (OVH::Bastion::config('enableAccountSqlLog')->value()) {
+    my $accountsql = 'no';
+    if (OVH::Bastion::config('enableAccountSqlLog')->value()) {
+        if ($insert_id && $db_name) {
             $fnret      = _sql_log_update_file(%params, file => $db_name, id => $insert_id);
             $accountsql = $fnret ? 'ok' : 'error ' . $fnret->msg;
         }
         else {
-            $accountsql = 'no';
+            $accountsql = 'missing';
         }
     }
 
