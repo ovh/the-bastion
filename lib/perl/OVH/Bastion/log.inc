@@ -240,6 +240,7 @@ sub _sql_log_insert_file {
     my $plugin        = $params{'plugin'};
     my $params        = $params{'params'};
     my $comment       = $params{'comment'};
+    my $ttyrecfile    = $params{'ttyrecfile'};
     my $timestamp     = $params{'timestamp'};
     my $timestampusec = $params{'timestampusec'};
     my $uniqid        = $params{'uniqid'};
@@ -295,11 +296,11 @@ sub _sql_log_insert_file {
         if ($sqltype eq 'local') {
             $prepare =
                 "INSERT INTO connections"
-              . "(uniqid,timestamp,timestampusec,account,cmdtype,allowed,hostfrom,ipfrom,portfrom,bastionip,bastionport,hostto,ipto,portto,user,plugin,params,comment)"
-              . "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+              . "(uniqid,timestamp,timestampusec,account,cmdtype,allowed,hostfrom,ipfrom,portfrom,bastionip,bastionport,hostto,ipto,portto,user,plugin,params,comment,ttyrecfile)"
+              . "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
             @execute = (
-                $uniqid,    $timestamp,   $timestampusec, $account, $cmdtype, $allowed, $hostfrom, $ipfrom, $portfrom,
-                $bastionip, $bastionport, $hostto,        $ipto,    $portto,  $user,    $plugin,   $params, $comment
+                $uniqid,      $timestamp, $timestampusec, $account, $cmdtype, $allowed, $hostfrom, $ipfrom,  $portfrom, $bastionip,
+                $bastionport, $hostto,    $ipto,          $portto,  $user,    $plugin,  $params,   $comment, $ttyrecfile
             );
         }
         elsif ($sqltype eq 'global') {
