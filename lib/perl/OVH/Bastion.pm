@@ -600,6 +600,40 @@ sub touch_file {
     return R('KO', msg => "Couldn't create file $file: $!");
 }
 
+sub create_file_if_not_exists {
+    my %params = @_;
+    my $file   = $params{'file'};
+    my $perms  = $params{'perms'};     # must be an octal value (not a string)
+    my $group  = $params{'group'};
+
+    my $fh;
+
+    # this call will fail if the file already exists
+    my $ret = sysopen($fh, $file, O_RDWR | O_CREAT | O_EXCL);
+
+    if ($ret) {
+
+        # only if we did create the file:
+        # - set the proper perms on it, if specified
+        chmod($perms, $fh) if $perms;
+
+        # - set the proper group, if specified
+        if ($group) {
+            my $gid = getgrnam($group);
+            if (defined $gid) {
+                chown -1, $gid, $fh;
+            }
+        }
+
+        # done
+        close($fh);
+        return R('OK');
+    }
+
+    # else
+    return R('KO', msg => "Couldn't create file $file: $!");
+}
+
 sub get_plugin_list {
     my %params         = @_;
     my $restrictedOnly = $params{'restrictedOnly'};

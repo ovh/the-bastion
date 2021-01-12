@@ -251,9 +251,10 @@ sub _sql_log_insert_file {
 
     if ($sqltype eq 'global') {
 
-        # create the file ourselves, and set it rw rw rw (for global log)
+        # if it doesn't exist yet, create the file ourselves, chgrp it to bastion-users and set the
+        # proper rights (0660). if the file already exists, we won't do anything.
         # -journal -shm and -wal files are created with same perms by sqlite
-        OVH::Bastion::touch_file($file, oct(666));
+        OVH::Bastion::create_file_if_not_exists(file => $file, perms => oct(660), group => "bastion-users");
     }
 
     # big db-related retry block:
@@ -629,7 +630,12 @@ sub _write_log {
         }
     }
     if (OVH::Bastion::config('enableGlobalAccessLog')->value()) {
-        if (open(my $log_gen, ">>", sprintf("/home/logkeeper/global-log-%04d%02d.log", @date))) {
+        my $file = sprintf("/home/logkeeper/global-log-%04d%02d.log", @date);
+
+        # if it doesn't exist yet, create the file ourselves, chgrp it to bastion-users and set the
+        # proper rights (0660). if the file already exists, we won't do anything.
+        OVH::Bastion::create_file_if_not_exists(file => $file, perms => oct(660), group => "bastion-users");
+        if (open(my $log_gen, ">>", $file)) {
             print $log_gen localtime() . " " . $params{'msg'} . "\n";
             close($log_gen);
         }

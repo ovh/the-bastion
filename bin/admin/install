@@ -1043,7 +1043,9 @@ if [ "$nothing" = 0 ]; then
 
     action_doing "Replacing legacy o+w by bastion-users/g+w"
     at_least_one_changed=0
-    for file in $(test -f /home/osh.log && find /home/osh.log -perm -o+w) $(find /home/logkeeper/ -mindepth 1 -maxdepth 1 -type f -name "global-log-*" -perm -o+w)
+    for file in \
+        $(test -f /home/osh.log && find /home/osh.log \( -perm -o+w -o ! -user root \) ) \
+        $(find /home/logkeeper/ -mindepth 1 -maxdepth 1 -type f -name "global-log-*" \( -perm -o+w -o ! -user root \) )
     do
         if echo "$file" | grep -Eq '\.log$' && command -v chattr &>/dev/null; then
             chattr -a "$file" 2>/dev/null || true
