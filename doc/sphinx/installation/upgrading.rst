@@ -27,7 +27,15 @@ Version-specific upgrade instructions
 v3.02.00 - not yet released
 ***************************
 
-The upgrade path from the preceding version is straightforward, however there are a few changes around logging that you might want to know before hitting the upgrade button:
+The upgrade path from the preceding version is straightforward, however there are a few changes that you might want to be aware of before hitting the upgrade button:
+
+The main configuration file now supports proper booleans
+--------------------------------------------------------
+
+For a lot of configuration options, previously you would specify "1" to enable a feature, and "0" to disable it. This has been changed to use proper *true* and *false* json values in :file:`/etc/bastion/bastion.conf`. Of course, backward compatibility with "0" and "1" will always be kept, so no breakage is to be expected for this version or future ones even if you keep your configuration untouched.
+
+Logs have been enhanced
+-----------------------
 
 All connections and plugin executions emit two logs, an *open* and a *close* log. We now add all the details of the connection to the *close* logs, those that were previously only available in the corresponding *open* log. This way, it is no longer required to correlate both logs with their uniqid to have all the data: the *close* log should suffice. The *open* log is still there if for some reason the *close* log can't be emitted (kill -9, system crash, etc.), or if the *open* and the *close* log are several hours, days or months appart.
 
@@ -42,7 +50,6 @@ The *open* and *close* events are now pushed to our own log files, in addition t
 The :file:`/home/osh.log` file is no longer used for :ref:`enableGlobalAccessLog`, the global log is instead written to :file:`/home/logkeeper/global-log-YYYYMM.log`.
 
 The global sql file, enabled with :ref:`enableGlobalSqlLog`, is now split by year-month instead of by year, to :file:`/home/logkeeper/global-log-YYYYMM.sqlite`.
-
 
 v3.01.03 - 2020/12/15
 *********************
