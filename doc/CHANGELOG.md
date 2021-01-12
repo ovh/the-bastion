@@ -1,3 +1,9 @@
+## v3.01.99-rc2 - 2021/01/12
+- fix: re-introduce the ttyrecfile field (fixes #114)
+- fix: logs: sql dbname was not properly passed through the update logs func (fixes #114)
+- doc: upgrade: add a note about config normalization
+- chore: fix: documentation build was missing a prereq
+
 ## v3.01.99-rc1 - 2021/01/12
 - feat: add support for a PIV-enforced policy (see https://ovh.github.io/the-bastion/using/piv)
 - feat: revamp logs (see the UPGRADING section of the documentation)
