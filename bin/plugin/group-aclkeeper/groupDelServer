@@ -62,7 +62,7 @@ $user = '!scpdownload' if $scpDown;
 
 if (not $user and not $userAny) {
     help();
-    osh_exit 'ERR_MISSING_PARAMETER', "No user specified, if you want to add this server with any user, add --user-any";
+    osh_exit 'ERR_MISSING_PARAMETER', "No user specified, if any remote login was allowed, add --user-any";
 }
 
 if ($portAny and $port) {
@@ -72,7 +72,7 @@ if ($portAny and $port) {
 
 if (not $port and not $portAny) {
     help();
-    osh_exit 'ERR_MISSING_PARAMETER', "No port specified, if you want to add this server with any port, add --port-any";
+    osh_exit 'ERR_MISSING_PARAMETER', "No port specified, if any remote port was allowed, add --port-any";
 }
 
 $fnret = OVH::Bastion::is_valid_group_and_existing(group => $group, groupType => "key");
