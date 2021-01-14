@@ -24,8 +24,9 @@ if [ "$1" = "--big-only" ]; then
     done < <(lsof -a -n -c ttyrec 2>/dev/null -- /home/ 2>/dev/null)
     if [ -n "$tokill" ]; then
         _log "Rotating $nb big ttyrec files..."
+        # add || true to avoid script termination due to TOCTTOU and set -e
         # shellcheck disable=SC2086
-        kill -USR1 $tokill
+        kill -USR1 $tokill || true
     fi
 else
     _log "Rotating all ttyrec files..."
