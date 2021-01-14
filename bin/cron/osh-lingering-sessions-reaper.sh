@@ -23,8 +23,9 @@ do
     fi
 done < <(ps -C ttyrec -o etimes,pid,tty --no-header)
 if [ -n "$tokill" ]; then
+    # add || true to avoid script termination due to TOCTTOU and set -e
     # shellcheck disable=SC2086
-    kill $tokill
+    kill $tokill || true
     _log "Terminated $nb orphan ttyrec sessions (pids$tokill)"
 fi
 
@@ -41,8 +42,9 @@ do
     fi
 done < <(ps -C sshd --no-header -o etimes,pid,tty,user)
 if [ -n "$tokill" ]; then
+    # add || true to avoid script termination due to TOCTTOU and set -e
     # shellcheck disable=SC2086
-    kill $tokill
+    kill $tokill || true
     _log "Terminated $nb orphan sshd sessions (pids$tokill)"
 fi
 
