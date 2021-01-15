@@ -128,7 +128,7 @@ sub load_configuration {
         {name => 'bastionCommand',        default => "ssh ACCOUNT\@HOSTNAME -t -- ",                                     validre => qr/^(.+)$/},
         {name => 'defaultLogin',          default => "",                                                                 validre => qr/^([a-zA-Z0-9_.-]*)$/, emptyok => 1},
         {name => 'moshCommandLine',       default => "",                                                                 validre => qr/^(.*)$/, emptyok => 1},
-        {name => 'documentationURL',      default => "https://ovh.github.io/the-bastion/",                               validre => qr'^([a-zA-Z0-9:/@&=",;_.-]+)$'},
+        {name => 'documentationURL',      default => "https://ovh.github.io/the-bastion/",                               validre => qr'^([a-zA-Z0-9:/@&=",;_.# -]+)$'},
         {name => 'syslogFacility',        default => 'local7',                                                           validre => qr/^([a-zA-Z0-9_]+)$/},
         {name => 'syslogDescription',     default => 'bastion',                                                          validre => qr/^([a-zA-Z0-9_.-]+)$/},
         {name => 'ttyrecFilenameFormat',  default => '%Y-%m-%d.%H-%M-%S.#usec#.&uniqid.&account.&user.&ip.&port.ttyrec', validre => qr/^([a-zA-Z0-9%&#_.-]+)$/},
