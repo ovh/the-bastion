@@ -19,7 +19,7 @@ while read etimes pid tty
 do
     if [ "$tty" = "?" ] && [ "$etimes" -gt 86400 ]; then
         tokill="$tokill $pid"
-        (( nb++ ))
+        (( ++nb ))
     fi
 done < <(ps -C ttyrec -o etimes,pid,tty --no-header)
 if [ -n "$tokill" ]; then
@@ -37,7 +37,7 @@ do
     if [ "$tty" = "?" ] && [ "$user" != "root" ] && [ "$etimes" -gt 86400 ]; then
         if [ "$(ps --no-header --ppid "$pid" | wc -l)" = 0 ]; then
             tokill="$tokill $pid"
-            (( nb++ ))
+            (( ++nb ))
         fi
     fi
 done < <(ps -C sshd --no-header -o etimes,pid,tty,user)
