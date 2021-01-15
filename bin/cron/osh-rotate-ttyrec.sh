@@ -19,7 +19,7 @@ if [ "$1" = "--big-only" ]; then
     do
         if echo "$size" | grep -qE '^[0-9]+$' && [ "$size" -gt 100000000 ]; then
             tokill="$tokill $pid"
-            (( nb++ ))
+            (( ++nb ))
         fi
     done < <(lsof -a -n -c ttyrec 2>/dev/null -- /home/ 2>/dev/null)
     if [ -n "$tokill" ]; then
