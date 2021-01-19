@@ -288,12 +288,12 @@
 "idleKillTimeout": 0,
 #
 # warnBeforeLockSeconds (int >= 0 (seconds))
-#     DESC: If set to a positive value >0, the number of seconds before ``idleLockTimeout`` where the user will receive a warning message telling him about the upcoming lock of his session.
+#     DESC: If set to a positive value >0, the number of seconds before ``idleLockTimeout`` where the user will receive a warning message telling them about the upcoming lock of his session. Don't enable this (by setting a non-zero value) if `idleLockTimeout` is disabled (set to zero).
 #  DEFAULT: 0
 "warnBeforeLockSeconds": 0,
 #
 # warnBeforeKillSeconds (int >= 0 (seconds))
-#     DESC: If set to a positive value >0, the number of seconds before ``idleKillTimeout`` where the user will receive a warning message telling him about the upcoming kill of his session.
+#     DESC: If set to a positive value >0, the number of seconds before ``idleKillTimeout`` where the user will receive a warning message telling them about the upcoming kill of his session. Don't enable this (by setting a non-zero value) if `idleKillTimeout` is disabled (set to zero).
 #  DEFAULT: 0
 "warnBeforeKillSeconds": 0,
 #
@@ -353,7 +353,7 @@
 # accountMFAPolicy (string)
 #     DESC: Set a MFA policy for the bastion accounts, the supported values are:
 #
-#     - ``disabled``: the commands to setup TOTP and UNIX account password are disabled, nobody can setup MFA for himself or others. Already configured MFA still applies, unless the sshd configuration is modified to no longer call PAM on the authentication phase
+#     - ``disabled``: the commands to setup TOTP and UNIX account password are disabled, nobody can setup MFA for themselves or others. Already configured MFA still applies, unless the sshd configuration is modified to no longer call PAM on the authentication phase
 #     - ``password-required``: for all accounts, a UNIX account password is required in addition to the ingress SSH public key. On first connection with his SSH key, the user is forced to setup a password for his account, and can't disable it afterwards
 #     - ``totp-required``: for all accounts, a TOTP is required in addition to the ingress SSH public key. On first connection with his SSH key, the user is forced to setup a TOTP for his account, and can't disable it afterwards
 #     - ``any-required``: for all accounts, either a TOTP or an UNIX account password is required in addition to the ingress SSH public key. On first connection with his SSH key, the user is forced to setup either of those, as he sees fit, and can't disable it afterwards
