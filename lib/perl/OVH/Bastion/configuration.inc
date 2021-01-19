@@ -439,6 +439,17 @@ sub load_configuration {
         $C->{'idleLockTimeout'} = 0;
     }
 
+    # ... if warnBefore*Seconds are set whereas idle*Timeout are not, unset the warnBefore*Seconds params and log the misconfiguration
+    foreach my $what (qw{ Kill Lock }) {
+        if ($C->{"warnBefore${what}Seconds"} && !$C->{"idle${what}Timeout"}) {
+            push @errors,
+                "Configuration error: option 'warnBefore${what}Seconds' ("
+              . $C->{"warnBefore${what}Seconds"}
+              . ") is set whereas the corresponding 'idle${what}Timeout' option is not, setting 'warnBefore${what}Seconds' to 0";
+            $C->{"warnBefore${what}Seconds"} = 0;
+        }
+    }
+
     # ... check that adminAccounts are actually valid accounts
     {
         my @validAccounts;
