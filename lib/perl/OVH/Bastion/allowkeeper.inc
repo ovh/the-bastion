@@ -6,19 +6,28 @@ use common::sense;
 
 use Time::Piece;    # $t->strftime
 
+# used to speedup extensive calls to is_user_in_group() and is_group_existing(),
+# if our caller allows us:
+my %_cache_getgrnam;
+
 # Check if user belongs to a specific group
 sub is_user_in_group {
     my %params = @_;
     my $group  = $params{'group'};
     my $user   = $params{'user'} || OVH::Bastion::get_user_from_env()->value;
+    my $cache  = $params{'cache'};                                              # if true, allow cache use from potential previous calls
 
     # mandatory keys
     if (!$user || !$group) {
         return R('ERR_MISSING_PARAMETER', msg => "Missing parameter 'user' or 'group'");
     }
 
-    # get group info
-    my ($groupname, $passwd, $gid, $members) = getgrnam($group);
+    # if we're not allowed to use cache, call getgrnam() in all cases.
+    # if we're allowed to use it; only call getgrnam() if we have no cache for this group
+    if (!$cache || (!$_cache_getgrnam{$group} || ref $_cache_getgrnam{$group} ne 'ARRAY')) {
+        $_cache_getgrnam{$group} = [(getgrnam($group))];
+    }
+    my ($groupname, $passwd, $gid, $members) = @{$_cache_getgrnam{$group}};
     my @membersList = split / /, $members;
 
     if (grep { $user eq $_ } @membersList) {
@@ -28,15 +37,22 @@ sub is_user_in_group {
 }
 
 # does this group exist ?
+# uses %_cache_getgrnam defined above
 sub is_group_existing {
     my %params = @_;
     my $group  = $params{'group'};
+    my $cache  = $params{'cache'};    # if true, allow cache use from potential previous calls
 
     if (!$group) {
         return R('ERR_MISSING_PARAMETER', msg => "Missing parameter 'group'");
     }
 
-    my ($groupname, $password, $gid, $members) = getgrnam($group);
+    # if we're not allowed to use cache, call getgrnam() in all cases.
+    # if we're allowed to use it; only call getgrnam() if we have no cache for this group
+    if (!$cache || (!$_cache_getgrnam{$group} || ref $_cache_getgrnam{$group} ne 'ARRAY')) {
+        $_cache_getgrnam{$group} = [(getgrnam($group))];
+    }
+    my ($groupname, $passwd, $gid, $members) = @{$_cache_getgrnam{$group}};
     if ($groupname) {
         my (undef, $shortGroup) = $group =~ m{^(key)?(.+)};
         return R('OK', value => {group => $group, shortGroup => $shortGroup, gid => $gid, members => [split(/ /, $members)]});
@@ -108,7 +124,7 @@ sub is_bastion_account_valid_and_existing {
     $fnret or return $fnret;
     my %values = %{$fnret->value()};
     my ($account, $realm, $sysaccount, $remoteaccount) = @values{qw{ account realm sysaccount remoteaccount}};
-    $fnret = OVH::Bastion::is_account_existing(account => $sysaccount, checkBastionShell => 1);
+    $fnret = OVH::Bastion::is_account_existing(account => $sysaccount, checkBastionShell => 1, cache => $params{'cache'});
     $fnret or return $fnret;
     $fnret->value->{'account'}       = $account;
     $fnret->value->{'sysaccount'}    = $sysaccount;
@@ -191,16 +207,24 @@ sub is_account_valid {
 
 # check that this account is present on the bastion
 # it also returns untainted data, including splitting by realm where applicable
+my %_cache_getpwnam;
+
 sub is_account_existing {
     my %params            = @_;
     my $account           = $params{'account'};
     my $checkBastionShell = $params{'checkBastionShell'};    # check if this account is a bastion user
+    my $cache             = $params{'cache'};                # allow cache use to speedup commands that don't modify accounts but may call us extensively, i.e. groupList
 
     if (!$account) {
         return R('ERR_MISSING_PARAMETER', msg => "Missing parameter 'account'");
     }
 
-    my ($name, $passwd, $uid, $gid, $quota, $comment, $gcos, $dir, $shell, $expire) = getpwnam($account);
+    # if we're not allowed to use cache, call getpwnam() in all cases.
+    # if we're allowed to use it; only call getpwnam() if we have no cache for this account
+    if (!$cache || (!$_cache_getpwnam{$account} || ref $_cache_getpwnam{$account} ne 'ARRAY')) {
+        $_cache_getpwnam{$account} = [(getpwnam($account))];
+    }
+    my ($name, $passwd, $uid, $gid, $quota, $comment, $gcos, $dir, $shell, $expire) = @{$_cache_getpwnam{$account}};
     if (OVH::Bastion::is_mocking()) {
         ($name, $passwd, $uid, $gid, $gcos, $dir, $shell) = OVH::Bastion::mock_get_account_entry(account => $account);
     }
@@ -665,6 +689,9 @@ sub get_group_list {
     setgrent();
     while (my @nextgroup = getgrent()) {
         my ($name, $passwd, $gid, $members) = @nextgroup;
+
+        # also be nice and fill this cache for our sibling funcs
+        $_cache_getgrnam{$name} = \@nextgroup;
         if (    $groupType eq 'key'
             and $name =~ /^key/
             and $name !~ /-(?:owner|gatekeeper|aclkeeper)$/
@@ -701,7 +728,11 @@ sub get_account_list {
     }
     else {
         setpwent();
-        while (my ($name, $passwd, $uid, $gid, $quota, $comment, $gcos, $dir, $shell, $expire) = getpwent()) {
+        while (my @nextaccount = getpwent()) {
+            my ($name, $passwd, $uid, $gid, $quota, $comment, $gcos, $dir, $shell, $expire) = @nextaccount;
+
+            # also be nice and fill this cache for our sibling funcs
+            $_cache_getpwnam{$name} = \@nextaccount;
             next unless OVH::Bastion::is_bastion_account_valid_and_existing(account => $name);
             $users{$name} = {name => $name, uid => $uid, gid => $gid, home => $dir, shell => $shell};
         }
@@ -845,6 +876,7 @@ sub _has_group_role {    ## no critic(Subroutines::RequireArgUnpacking)
     my $role       = $params{'role'};          # regular or gatekeeper or owner
     my $superowner = $params{'superowner'};    # allow superowner (will always return yes if so)
     my $sudo       = $params{'sudo'};          # are we run under sudo ?
+    my $cache      = $params{'cache'};         # allow cache use (for commands that don't modify accounts or groups, such as groupList)
     my $fnret;
 
     if (not $account) {
@@ -874,12 +906,12 @@ sub _has_group_role {    ## no critic(Subroutines::RequireArgUnpacking)
     }
 
     # for the realm case, we need to test sysaccount and not just account
-    $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
+    $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account, cache => $cache);
     $fnret or return $fnret;
 
     my $sysaccount = $fnret->value->{'sysaccount'};
 
-    $fnret = OVH::Bastion::is_user_in_group(user => $sysaccount, group => $group);
+    $fnret = OVH::Bastion::is_user_in_group(user => $sysaccount, group => $group, cache => $cache);
     osh_debug("is <$sysaccount> in <$group> ? => " . ($fnret ? 'yes' : 'no'));
     if ($fnret) {
         $fnret->{'value'} = {account => $account, sysaccount => $sysaccount};
@@ -926,7 +958,7 @@ sub _is_group_member_or_guest {
     $fnret or return $fnret;
 
     my $account = $fnret->value()->{'account'};
-    $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
+    $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account, cache => $params{'cache'});
     $fnret or return $fnret;
 
     $account = $fnret->value->{'account'};
@@ -934,7 +966,7 @@ sub _is_group_member_or_guest {
     my $sysaccount    = $fnret->value->{'sysaccount'};
 
     my $group = "key$shortGroup";
-    $fnret = OVH::Bastion::is_valid_group_and_existing(group => $group, groupType => "key");
+    $fnret = OVH::Bastion::is_valid_group_and_existing(group => $group, groupType => "key", cache => $params{'cache'});
     $fnret or return $fnret;
     $group      = $fnret->value()->{'group'};
     $shortGroup = $fnret->value()->{'shortGroup'};    # untainted

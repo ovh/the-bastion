@@ -31,11 +31,11 @@ $fnret or osh_exit $fnret;
 my $result_hash = {};
 foreach my $name (sort keys %{$fnret->value}) {
     my @flags;
-    push @flags, 'owner'      if OVH::Bastion::is_group_owner(group => $name);
-    push @flags, 'gatekeeper' if OVH::Bastion::is_group_gatekeeper(group => $name);
-    push @flags, 'aclkeeper'  if OVH::Bastion::is_group_aclkeeper(group => $name);
-    push @flags, 'member'     if OVH::Bastion::is_group_member(group => $name);
-    push @flags, 'guest'      if OVH::Bastion::is_group_guest(group => $name);
+    push @flags, 'owner' if OVH::Bastion::is_group_owner(group => $name, cache => 1);
+    push @flags, 'gatekeeper' if OVH::Bastion::is_group_gatekeeper(group => $name, cache => 1);
+    push @flags, 'aclkeeper' if OVH::Bastion::is_group_aclkeeper(group => $name, cache => 1);
+    push @flags, 'member' if OVH::Bastion::is_group_member(group => $name, cache => 1);
+    push @flags, 'guest' if OVH::Bastion::is_group_guest(group => $name, cache => 1);
     if (@flags or $all) {
         push @flags, 'no-access' if not @flags;
         my $line = sprintf "%18s", $name;
