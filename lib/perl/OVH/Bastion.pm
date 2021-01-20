@@ -123,24 +123,26 @@ use constant {
 # for i in *.inc ; do bz=$(basename $i .inc) ; echo "$bz => "'[qw{ '$(grep ^sub $i | grep -v 'sub _' | awk '{print $2}' | tr "\n" " ")'}],' ; done
 my %_autoload_files = (
     allowdeny => [
-        qw{ get_personal_account_keys get_group_keys is_access_way_granted get_ip ip2host get_user_groups print_acls is_access_granted ssh_test_access_way get_acl_way get_acls duration2human }
+        qw{ get_personal_account_keys get_group_keys is_access_way_granted get_ip ip2host get_user_groups duration2human print_acls is_access_granted ssh_test_access_way get_acls get_acl_way }
     ],
     allowkeeper => [
-        qw{ is_user_in_group is_group_existing get_acl_from_file get_account_acl is_valid_uid get_next_available_uid is_bastion_account_valid_and_existing is_account_valid is_account_existing access_modify is_valid_group is_valid_group_and_existing add_user_to_group get_group_servers_list get_group_list get_account_list is_admin is_super_owner is_group_aclkeeper is_group_gatekeeper is_group_owner is_group_guest is_group_member is_auditor get_remote_accounts_from_realm is_valid_ttl get_realm_list }
+        qw{ is_user_in_group is_group_existing is_valid_uid get_next_available_uid is_bastion_account_valid_and_existing is_account_valid is_account_existing access_modify is_valid_group is_valid_group_and_existing add_user_to_group get_group_list get_account_list get_realm_list is_admin is_super_owner is_auditor is_group_aclkeeper is_group_gatekeeper is_group_owner is_group_guest is_group_member get_remote_accounts_from_realm is_valid_ttl build_re_from_wildcards }
     ],
     configuration => [qw{ load_configuration_file main_configuration_directory load_configuration config account_config plugin_config group_config json_load }],
     execute       => [qw{ sysret2human execute result_from_helper helper_decapsulate helper }],
     interactive   => [qw{ interactive }],
+    jail          => [qw{ jailify }],
     log           => [qw{ syslog syslog_close syslogFormatted warn_syslog log_access_insert log_access_update log_access_get }],
-    os            => [
-        qw{ sysinfo is_linux is_debian is_redhat is_bsd is_freebsd is_openbsd is_netbsd sys_useradd sys_groupadd sys_userdel sys_groupdel sys_addmembertogroup sys_delmemberfromgroup sys_changepassword sys_neutralizepassword sys_setpasswordpolicy sys_getsudoersfolder sys_getpasswordinfo sys_setfacl has_acls }
+    mock          => [
+        qw{ enable_mocking is_mocking set_mock_data mock_get_account_entry mock_get_account_accesses mock_get_account_personal_accesses mock_get_account_legacy_accesses mock_get_group_accesses mock_get_account_guest_accesses }
     ],
-    ssh => [
-        qw{ get_ssh_pub_key_info is_valid_public_key get_from_for_user_key generate_ssh_key get_bastion_ips get_supported_ssh_algorithms_list is_allowed_algo_and_size is_valid_fingerprint print_public_key get_authorized_keys_from_file account_ssh_config_get account_ssh_config_set verify_piv put_authorized_keys_to_file ssh_ingress_keys_piv_apply has_piv_helper is_effective_piv_account_policy_enabled }
+    os => [
+        qw{ sysinfo is_linux is_debian is_redhat is_bsd is_freebsd is_openbsd is_netbsd has_acls sys_useradd sys_groupadd sys_userdel sys_groupdel sys_addmembertogroup sys_delmemberfromgroup sys_changepassword sys_neutralizepassword sys_setpasswordpolicy sys_getpasswordinfo sys_getsudoersfolder sys_setfacl }
     ],
     password => [qw{ get_hashes_from_password get_hashes_list }],
-    jail     => [qw{ jailify }],
-    mock     => [qw{ enable_mocking is_mocking set_mock_data mock_get_account_entry mock_get_account_access_way }],
+    ssh      => [
+        qw{ has_piv_helper verify_piv get_authorized_keys_from_file add_key_to_authorized_keys_file put_authorized_keys_to_file get_ssh_pub_key_info is_valid_public_key get_from_for_user_key generate_ssh_key get_bastion_ips get_supported_ssh_algorithms_list is_allowed_algo_and_size is_valid_fingerprint print_public_key account_ssh_config_get account_ssh_config_set ssh_ingress_keys_piv_apply is_effective_piv_account_policy_enabled }
+    ],
 );
 
 sub AUTOLOAD {    ## no critic (AutoLoading)
