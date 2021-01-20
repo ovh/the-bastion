@@ -612,21 +612,30 @@ sub create_file_if_not_exists {
     my $ret = sysopen($fh, $file, O_RDWR | O_CREAT | O_EXCL);
 
     if ($ret) {
-
-        # only if we did create the file:
-        # - set the proper perms on it, if specified
-        chmod($perms, $fh) if $perms;
+        close($fh);
 
         # - set the proper group, if specified
         if ($group) {
             my $gid = getgrnam($group);
             if (defined $gid) {
-                chown -1, $gid, $fh;
+                if (!chown -1, $gid, $file) {
+                    warn_syslog("Couldn't chgrp $file to group $group (GID $gid): $!");
+                }
+            }
+            else {
+                warn_syslog("Couldn't chgrp $file to group $group (no GID found)");
+            }
+        }
+
+        # only if we did create the file:
+        # - set the proper perms on it, if specified
+        if ($perms) {
+            if (!chmod($perms, $file)) {
+                warn_syslog("Couldn't chmod $file to perms $perms ($!)");
             }
         }
 
         # done
-        close($fh);
         return R('OK');
     }
 
