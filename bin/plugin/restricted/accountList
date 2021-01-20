@@ -17,6 +17,8 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
         "realm-only"    => \my $realmOnly,
         "account=s"     => \my $account,
         "audit"         => \my $audit,
+        'exclude=s'     => \my @excludes,
+        'include=s'     => \my @includes,
     },
     helptext => <<'EOF',
 List the bastion accounts
@@ -26,6 +28,10 @@ Usage: --osh SCRIPT_NAME [--account ACCOUNT] [--inactive-only] [--audit]
   --account ACCOUNT  Only list the specified account. This is an easy way to check whether the account exists
   --inactive-only    Only list inactive accounts
   --audit            Show more verbose information (SLOW!), you need to be a bastion auditor
+  --include WILDCARD  Only list accounts that match the given WILDCARD string, '*' and '?' are recognized,
+                        this option can be used multiple times to refine results.
+  --exclude WILDCARD  Omit accounts that match the given WILDCARD string, '*' and '?' are recognized,
+                        can be used multiple times. Note that --exclude takes precedence over --include
 EOF
 );
 
@@ -63,10 +69,20 @@ if ($audit) {
     $fnretPassword = OVH::Bastion::helper(cmd => \@command);
 }
 
+# if we have excludes and/or includes, transform those into regexes
+my $includere = OVH::Bastion::build_re_from_wildcards(wildcards => \@includes)->value;
+my $excludere = OVH::Bastion::build_re_from_wildcards(wildcards => \@excludes)->value;
+
 my $result_hash = {};
 foreach my $account (sort keys %$accounts) {
-    my %states;
 
+    # if we have excludes, match name against the built regex
+    next if ($excludere && $account =~ $excludere);
+
+    # same for includes
+    next if ($includere && $account !~ $includere);
+
+    my %states;
     $states{'is_active'} = undef;
     $fnret = OVH::Bastion::is_account_active(account => $account);
     if ($fnret->is_ok) {

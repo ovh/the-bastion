@@ -9,17 +9,24 @@ use OVH::Result;
 use OVH::Bastion;
 use OVH::Bastion::Plugin qw( :DEFAULT help );
 
-my ($all);
 my $remainingOptions = OVH::Bastion::Plugin::begin(
-    argv     => \@ARGV,
-    header   => "group list",
-    options  => {'all' => \$all},
+    argv    => \@ARGV,
+    header  => "group list",
+    options => {
+        'all'       => \my $all,
+        'exclude=s' => \my @excludes,
+        'include=s' => \my @includes,
+    },
     helptext => <<'EOF',
 List the groups available on this bastion
 
-Usage: --osh SCRIPT_NAME [--all]
+Usage: --osh SCRIPT_NAME [--all] [--exclude|--include WILDCARD [--exclude|--include WILDCARD ..]]
 
-  --all  List all groups, even those to which you don't have access
+  --all               List all groups, even those to which you don't have access
+  --include WILDCARD  Only list groups that match the given WILDCARD string, '*' and '?' are recognized,
+                        this option can be used multiple times to refine results.
+  --exclude WILDCARD  Omit groups that match the given WILDCARD string, '*' and '?' are recognized,
+                        can be used multiple times. Note that --exclude takes precedence over --include
 EOF
 );
 
@@ -28,8 +35,18 @@ my $fnret;
 $fnret = OVH::Bastion::get_group_list(groupType => "key");
 $fnret or osh_exit $fnret;
 
+my $includere = OVH::Bastion::build_re_from_wildcards(wildcards => \@includes)->value;
+my $excludere = OVH::Bastion::build_re_from_wildcards(wildcards => \@excludes)->value;
+
 my $result_hash = {};
 foreach my $name (sort keys %{$fnret->value}) {
+
+    # if we have excludes, match name against the built regex
+    next if ($excludere && $name =~ $excludere);
+
+    # same for includes
+    next if ($includere && $name !~ $includere);
+
     my @flags;
     push @flags, 'owner'      if OVH::Bastion::is_group_owner(group => $name);
     push @flags, 'gatekeeper' if OVH::Bastion::is_group_gatekeeper(group => $name);

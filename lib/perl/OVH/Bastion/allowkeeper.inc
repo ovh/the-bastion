@@ -1014,4 +1014,25 @@ sub is_valid_ttl {
     return R('KO_INVALID_PARAMETER', msg => "Invalid TTL ($ttl), expected an amount of seconds, or a duration string such as '2d8h15m'");
 }
 
+# used by groupList and accountList
+sub build_re_from_wildcards {
+    my %params    = @_;
+    my $wildcards = $params{'wildcards'};
+
+    # to avoid modifying the caller's array
+    my @relist = @$wildcards;
+
+    # qr// is true, so return undef if there's nothing to build
+    return R('OK', value => undef) if !@relist;
+
+    for (@relist) {
+        $_ = quotemeta;
+        s/\\\*/.*/g;
+        s/\\\?/./g;
+        $_ = '^' . $_ . '$';
+    }
+    my $stringified = join("|", @relist);
+    return R('OK', value => qr/$stringified/);
+}
+
 1;
