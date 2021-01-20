@@ -140,15 +140,22 @@ nbfailedgrep=0
 nbfailedcon=0
 nbfailedlog=0
 nbfailedgeneric=0
+totalerrors=0
 isbad=0
 
 start_time=$(date +%s)
+
+update_totalerrors()
+{
+    (( totalerrors = nbfailedret + nbfailedgrep + nbfailedcon + nbfailedlog + nbfailedgeneric ))
+}
+
 prefix()
 {
     local elapsed=$(( $(date +%s) - start_time))
     local min=$(( elapsed / 60 ))
     local sec=$(( elapsed - min * 60 ))
-    local totalerrors=$(( nbfailedret + nbfailedgrep + nbfailedcon + nbfailedgeneric ))
+    update_totalerrors
     if [ "$totalerrors" = 0 ]; then
         printf "%b%02dm%02d [noerror]" "$TARGET" "$min" "$sec"
     else
@@ -463,7 +470,7 @@ echo
 
 set +e
 set +u
-(( totalerrors = nbfailedret + nbfailedgrep + nbfailedcon + nbfailedlog + nbfailedgeneric ))
+update_totalerrors
 [ $totalerrors -ge 255 ] && totalerrors=254
 
 rm -rf "$mytmpdir"
