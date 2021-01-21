@@ -29,7 +29,7 @@ my $fnret;
 
 my @command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
 push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountListIngressKeys';
-push @command, '--account', 'root';
+push @command, '--account', 'root', '--all-files';
 
 $fnret = OVH::Bastion::helper(cmd => \@command);
 $fnret or osh_exit $fnret;
