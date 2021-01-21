@@ -1,3 +1,14 @@
+## v3.01.99-rc3 - 2021/01/21
+- feat: `rootListIngressKeys`: look for all well-known authkeys files
+- feat: add `--(in|ex)clude` filters to `groupList` and `accountList`
+- enh: groupList: use cache to speedup calls
+- enh: config: detect `warnBefore`/`idleTimeout` misconfiguration (#125)
+- fix: scripts: `(( ))` returns 1 if evaluated to zero, hence failing under `set -e`
+- fix: config: be more permissive for `documentationURL` regex
+- fix: TOCTTOU fixes in ttyrec rotation script and lingering sessions reaper
+- fix: confusing error messages in `groupDelServer`
+- chore: tests: also update totalerrors while tests are running
+
 ## v3.01.99-rc2 - 2021/01/12
 - fix: re-introduce the ttyrecfile field (fixes #114)
 - fix: logs: sql dbname was not properly passed through the update logs func (fixes #114)
