@@ -30,11 +30,14 @@ if (not defined $self) {
 
 # Fetch command options
 my $fnret;
-my ($result, @optwarns);
-my ($account);
+my ($result,  @optwarns);
+my ($account, $allfiles);
 eval {
     local $SIG{__WARN__} = sub { push @optwarns, shift };
-    $result = GetOptions("account=s" => sub { $account //= $_[1] });
+    $result = GetOptions(
+        "account=s" => sub { $account  //= $_[1] },
+        "all-files" => sub { $allfiles //= $_[1] },
+    );
 };
 if ($@) { die $@ }
 
@@ -80,7 +83,18 @@ else {
 #<PARAMS:ACCOUNT
 
 my @keys;
-foreach my $file ($accounthome . '/' . OVH::Bastion::AK_FILE) {
+
+# by default, we only look in the authorized_keys file used by the bastion
+my %files = ($accounthome . '/' . OVH::Bastion::AK_FILE => 1);
+
+if ($allfiles) {
+
+    # if allfiles is requested, add all well-known potentially existing authorized_keys used by sshd
+    $files{"$accounthome/.ssh/authorized_keys"}  = 1;
+    $files{"$accounthome/.ssh/authorized_keys2"} = 1;
+}
+
+foreach my $file (keys %files) {
     $fnret = OVH::Bastion::get_authorized_keys_from_file(file => $file);
     push @keys, @{$fnret->value} if ($fnret && $fnret->value);
 }

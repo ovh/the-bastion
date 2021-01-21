@@ -1,1 +1,1 @@
-%osh-rootListIngressKeys ALL=(root) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountListIngressKeys --account root
+%osh-rootListIngressKeys ALL=(root) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountListIngressKeys --account root --all-files
