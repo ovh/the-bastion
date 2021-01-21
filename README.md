@@ -162,8 +162,10 @@ Even with the most conservative, precautionous and paranoid coding process, code
 
 ### Optional tools
 
-- [yubico-piv-checker](https://github.com/ovh/yubico-piv-checker) - a self-contained go binary to check the validity of PIV keys and certificates. Optional, to enable The Bastion PIV-aware functionalities.
+- [yubico-piv-checker](https://github.com/ovh/yubico-piv-checker) - a self-contained go binary to check the validity of PIV keys and certificates. Optional, to enable The Bastion PIV-aware functionalities
 - [puppet-thebastion](https://forge.puppet.com/modules/goldenkiwi/thebastion) ([GitHub](https://github.com/ovh/puppet-thebastion)) - a Puppet module to automate and maintain the configuration of The Bastion machines
+- [the-bastion-ansible-wrapper](https://github.com/ovh/the-bastion-ansible-wrapper) - a wrapper to make it possible to run Ansible playbooks through The Bastion
+- [debian-cis](https://github.com/ovh/debian-cis) - a script to apply and monitor the hardening of Debian hosts as per the [CIS](https://www.cisecurity.org/benchmark/debian_linux/) recommendations
 
 ## License
 
