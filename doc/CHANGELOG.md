@@ -1,3 +1,6 @@
+## v3.01.99-rc4 - 2021/01/25
+- fix: admins no longer inherited superowner powers (since rc1)
+
 ## v3.01.99-rc3 - 2021/01/21
 - feat: `rootListIngressKeys`: look for all well-known authkeys files
 - feat: add `--(in|ex)clude` filters to `groupList` and `accountList`
