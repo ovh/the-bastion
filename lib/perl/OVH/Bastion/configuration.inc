@@ -452,8 +452,8 @@ sub load_configuration {
 
     # ... check that adminAccounts are actually valid accounts
     {
-        my @validAccounts;
         foreach my $conf (qw{ adminAccounts superOwnerAccounts }) {
+            my @validAccounts;
             foreach my $account (@{$C->{$conf}}) {
                 my $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
                 if (!$fnret) {
