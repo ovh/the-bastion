@@ -294,18 +294,19 @@ sub _sql_log_insert_file {
         my $prepare;
         my @execute;
         if ($sqltype eq 'local') {
-            $prepare =
-                "INSERT INTO connections"
-              . "(uniqid,timestamp,timestampusec,account,cmdtype,allowed,hostfrom,ipfrom,portfrom,bastionip,bastionport,hostto,ipto,portto,user,plugin,params,comment,ttyrecfile)"
-              . "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
             @execute = (
                 $uniqid,      $timestamp, $timestampusec, $account, $cmdtype, $allowed, $hostfrom, $ipfrom,  $portfrom, $bastionip,
                 $bastionport, $hostto,    $ipto,          $portto,  $user,    $plugin,  $params,   $comment, $ttyrecfile
             );
+            $prepare =
+                "INSERT INTO connections"
+              . "(uniqid,timestamp,timestampusec,account,cmdtype,allowed,hostfrom,ipfrom,portfrom,bastionip,bastionport,hostto,ipto,portto,user,plugin,params,comment,ttyrecfile)"
+              . 'VALUES ('
+              . ('?,' x (@execute - 1)) . '?)';
         }
         elsif ($sqltype eq 'global') {
-            $prepare = "INSERT INTO connections_summary (uniqid,timestamp,account,cmdtype,allowed,ipfrom,ipto,portto,user,plugin)" . "VALUES (?,?,?,?,?,?,?,?,?,?)";
             @execute = ($uniqid, $timestamp, $account, $cmdtype, $allowed, $ipfrom, $ipto, $portto, $user, $plugin);
+            $prepare = "INSERT INTO connections_summary (uniqid,timestamp,account,cmdtype,allowed,ipfrom,ipto,portto,user,plugin)" . 'VALUES (' . ('?,' x (@execute - 1)) . '?)';
         }
 
         # prepare insertion on db
