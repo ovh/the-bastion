@@ -50,7 +50,6 @@ set_default_options()
     opt[syslog-ng]=1
     opt[overwrite-syslog-ng]=1
     opt[migration-grant-aclkeeper-to-gatekeepers]=0
-    opt[wait]=1
     opt[check-ttyrec]=1
     opt[install-fake-ttyrec]=0
 }
@@ -98,6 +97,7 @@ while [ -n "$1" ]; do
     elif [ "$1" = "--upgrade" ]; then
         set_default_options
     else
+        # "--[no]-wait" is no longer used, but to keep compatibility, we keep it here (ignored)
         foundoption=0
         for allowedopt in modify-banner modify-sshd-config modify-ssh-config modify-motd modify-umask \
             modify-pam-lastlog remove-weak-moduli regen-hostkeys overwrite-logrotate overwrite-cron \
@@ -193,7 +193,6 @@ Usage:
     --[no-]syslog-ng             put our syslog-ng config files in syslog-ng.d/ [N, U]
     --[no-]overwrite-syslog-ng   overwrite possibly existing files in system syslog-ng.d/ with our templates [N, U]
 
-    --[no-]wait                  wait for 3 seconds to avoid race with master/slave sync daemon [N, U, M]
     --[no-]check-ttyrec          verify that the ttyrec installed version is compatible with our code [N, U, M]
     --[no-]install-fake-ttyrec   install a fake ttyrec binary if ttyrec is not present; useful mainly for tests,
                                  or if you *really* don't want to use the real ttyrec
@@ -225,15 +224,6 @@ if [ "$OS_FAMILY" = FreeBSD ]; then
     else
         action_done
     fi
-fi
-
-if [ "${opt[wait]}" = 1 ]; then
-    action_doing "Touching lockfile to suspend sync, and waiting 3 seconds to ensure it has been picked up..."
-    # shellcheck disable=SC2064
-    trap "rm -f $LOCKFILE" EXIT HUP INT
-    touch "$LOCKFILE"
-    sleep 3
-    action_done
 fi
 
 if [ "${opt[install-fake-ttyrec]}" = 1 ]; then
@@ -522,24 +512,66 @@ if [ "$nothing" = 0 ]; then
         action_na
     fi
 
-    # delete all bastion sudoers file (pattern osh-*)
-    action_doing "Remove obsolete sudoers files"
-    find "$SUDOERS_DIR/" -name "osh-*" -type f -delete
-    action_done
+    # List all sudoers.d files matching osh-*. Then, each time we regenerate one below,
+    # we'll delete it from the list. This way, when we're done, and if any file name remains,
+    # it means we should delete it because it's obsolete. This way of upgrading in place
+    # tries to avoid a race condition in sudo where it stat()s all the sudoers.d files, then
+    # opens them one by one, if some files have disappeared in the meantime,
+    # it'll log an error to syslog.
+    action_doing "Listing pre-existing sudoers.d files before in-place regeneration"
+    oldsudoers=$(mktemp)
+    find "$SUDOERS_DIR/" -name "osh-*" -type f > "$oldsudoers"
+    nbfiles=$(wc -l < "$oldsudoers")
+    action_done "Found $nbfiles sudoers.d files"
 
     # copy new sudoers files
     action_doing "Copy sudoers files to $SUDOERS_DIR"
     for file in "$basedir/etc/sudoers.d"/osh-*; do
-        action_detail "$file"
-        install -o "$UID0" -g "$GID0" -m 0440 "$file" "$SUDOERS_DIR/"
+        filename=$(basename "$file")
+        sed_compat "/\/$filename$/d" "$oldsudoers"
+        action_detail "... copying $filename"
+        # don't use install(1) because it doesn't overwrite in place (it unlinks then copies data)
+        # this can lead to a race condition if somebody uses sudo exactly at this moment, where it'll
+        # log a bunch of errors because files it has listed from sudoers.d have disappeared
+        # use a .tmp file while we're setting the proper perms, files containing '.' are ignored by sudo
+        if ! cp "$file" "$SUDOERS_DIR/$filename.tmp"; then
+            action_error "Failed copying $file to $SUDOERS_DIR/$filename.tmp"
+            continue
+        fi
+        if ! chown "$UID0":"$GID0" "$SUDOERS_DIR/$filename.tmp"; then
+            action_error "Failed chowing $SUDOERS_DIR/$filename.tmp to $UID0:$GID0"
+            # attempt to continue
+        fi
+        if ! chmod 0440 "$SUDOERS_DIR/$filename.tmp"; then
+            action_error "Failed chmoding $SUDOERS_DIR/$filename.tmp to 0440"
+            # attempt to continue
+        fi
+        # then overwrite in place
+        if ! mv -f "$SUDOERS_DIR/$filename.tmp" "$SUDOERS_DIR/$filename"; then
+            action_error "Failed to move $SUDOERS_DIR/$filename.tmp to $SUDOERS_DIR/$filename"
+        fi
     done
     action_done
 
     # regenerate all group sudoers files
-    "$basedir/bin/sudogen/generate-sudoers.sh" create group
+    OLD_SUDOERS="$oldsudoers" "$basedir/bin/sudogen/generate-sudoers.sh" create group
 
     # regenerate all accounts sudoers files
-    "$basedir/bin/sudogen/generate-sudoers.sh" create account
+    OLD_SUDOERS="$oldsudoers" "$basedir/bin/sudogen/generate-sudoers.sh" create account
+
+    action_doing "Removing obsolete sudoers.d files if any..."
+    nbtoremove=$(wc -l < "$oldsudoers")
+    if [ "$nbtoremove" = 0 ]; then
+        action_na
+    else
+        for toremove in $(< "$oldsudoers")
+        do
+            action_detail "removing $toremove"
+            rm -f "$toremove"
+        done
+        action_done "removed $nbtoremove obsolete files"
+    fi
+    rm -f "$oldsudoers"
 
     # create the bastionsync account (needed for master/slave)
     action_doing "Creating the bastionsync account"
@@ -1334,11 +1366,11 @@ fi
 if [ "${opt[check-ttyrec]}" = 1 ] ; then
     action_doing "Checking ttyrec version"
     if ! command -v ttyrec >/dev/null 2>&1; then
-        action_error "ttyrec is not installed, the bastion will not work! Please either install ovh-ttyrec (/opt/bastion/bin/admin/install-ttyrec.sh) or run this script a second time with \`$0 --nothing --no-wait --install-fake-ttyrec'"
+        action_error "ttyrec is not installed, the bastion will not work! Please either install ovh-ttyrec (/opt/bastion/bin/admin/install-ttyrec.sh) or run this script a second time with \`$0 --nothing --install-fake-ttyrec'"
     else
         ttyrec_version=$(ttyrec -V 2>/dev/null | grep -Eo 'ttyrec v[0-9.]+' | cut -c9-)
         if [ -z "$ttyrec_version" ]; then
-            action_error "Incompatible ttyrec version installed, the bastion will not work! Please either install ovh-ttyrec (/opt/bastion/bin/admin/install-ttyrec.sh) or run this script again with \`$0 --nothing --no-wait --install-fake-ttyrec'"
+            action_error "Incompatible ttyrec version installed, the bastion will not work! Please either install ovh-ttyrec (/opt/bastion/bin/admin/install-ttyrec.sh) or run this script again with \`$0 --nothing --install-fake-ttyrec'"
         else
             action_detail "found v$ttyrec_version"
             action_detail "expected v$TTYREC_VERSION_NEEDED"
