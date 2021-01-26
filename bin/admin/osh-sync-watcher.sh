@@ -120,13 +120,10 @@ do
             else
                 remoteport=22
             fi
-            if [ -e "$LOCKFILE" ] && [ $(( $(date +%s) - $(stat -c %Y "$LOCKFILE") )) -le 300 ]; then
-                _log "$remote: [Server $(($+1))/$remotehostslen - Step 1/3] syncing needed data postponed for next run (upgrade lockfile present)"
-            else
-                _log "$remote: [Server $((i+1))/$remotehostslen - Step 1/3] syncing needed data..."
-                rsync -vaA --numeric-ids --delete --filter "merge $rsyncfilterfile" --rsh "$rshcmd -p $remoteport" / "$remoteuser@$remote:/"
-                _log "$remote: [Server $((i+1))/$remotehostslen - Step 1/3] sync ended with return value $?"
-            fi
+
+            _log "$remote: [Server $((i+1))/$remotehostslen - Step 1/3] syncing needed data..."
+            rsync -vaA --numeric-ids --delete --filter "merge $rsyncfilterfile" --rsh "$rshcmd -p $remoteport" / "$remoteuser@$remote:/"
+            _log "$remote: [Server $((i+1))/$remotehostslen - Step 1/3] sync ended with return value $?"
 
             _log "$remote: [Server $((i+1))/$remotehostslen - Step 2/3] syncing lastlog files from master to slave, only if master version is newer..."
             rsync -vaA --numeric-ids --update --include '/' --include '/home/' --include '/home/*/' --include '/home/*/lastlog' --exclude='*' --rsh "$rshcmd -p $remoteport" / "$remoteuser@$remote:/"

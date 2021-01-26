@@ -37,6 +37,7 @@ LINUX_DISTRO=$(echo "$LINUX_DISTRO" | tr '[:upper:]' '[:lower:]' | tr -d ' ')
 DISTRO_VERSION_MAJOR=$(echo "$DISTRO_VERSION" | grep -Eo '^[0-9]+' || true)
 [ -z "$DISTRO_LIKE" ] && DISTRO_LIKE="$LINUX_DISTRO"
 
+# no longer needed, but keep if for a few versions so that non-restarted daemons are still happy
 # shellcheck disable=SC2034
 LOCKFILE=/var/run/bastion-upgrade.lock
 

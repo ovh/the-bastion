@@ -77,6 +77,10 @@ manage_account_sudoers()
     } > "${dst}.tmp"
     # then move the file to its final name (potentially overwriting a previous file of the same name)
     mv -f "${dst}.tmp" "$dst"
+    # if we have a OLD_SUDOERS file defined, remove the filename from it
+    if [ -n "$OLD_SUDOERS" ]; then
+        sed_compat "/$(basename "$dst")$/d" "$OLD_SUDOERS"
+    fi
     return 0
 }
 
@@ -133,6 +137,10 @@ manage_group_sudoers()
     } > "${dst}.tmp"
     # then move the file to its final name (potentially overwriting a previous file of the same name)
     mv -f "${dst}.tmp" "$dst"
+    # if we have a OLD_SUDOERS file defined, remove the filename from it
+    if [ -n "$OLD_SUDOERS" ]; then
+        sed_compat "/$(basename "$dst")$/d" "$OLD_SUDOERS"
+    fi
     return 0
 }
 
