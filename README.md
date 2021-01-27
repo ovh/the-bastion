@@ -1,7 +1,7 @@
 ![The Bastion Logo](https://user-images.githubusercontent.com/218502/96882661-d3b21e80-147f-11eb-8d89-a69e37a5870b.png)
 
-The Bastion
-===========
+:lock: The Bastion
+==================
 
 Bastions are a cluster of machines used as the unique entry point by operational teams (such as sysadmins, developers, database admins, ...) to securely connect to devices (servers, virtual machines, cloud instances, network equipment, ...), usually using `ssh`.
 
@@ -13,15 +13,15 @@ Learn more by reading the blog post series that announced the release:
 - [Part 3 - Security at the Core](https://www.ovh.com/blog/the-bastion-part-3-security-at-the-core/)
 - [Part 4 - A new era](https://www.ovh.com/blog/the-bastion-part-4-a-new-era/)
 
-## Quick connection and replay example
+## :movie_camera: Quick connection and replay example
 
 [![asciicast](https://asciinema.org/a/369555.png)](https://asciinema.org/a/369555?autoplay=1)
 
-## Installing, upgrading, using The Bastion
+## :wrench: Installing, upgrading, using The Bastion
 
 Please see the [online documentation](https://ovh.github.io/the-bastion/), or the corresponding text-based version found in the `doc/` folder.
 
-## TL;DR: disposable sandbox using Docker
+## :zap: TL;DR: disposable sandbox using Docker
 
 This is a good way to test The Bastion within seconds, but [read the FAQ](https://ovh.github.io/the-bastion/faq.html#can-i-run-it-under-docker-in-production) if you're serious about using containerization in production.
 
@@ -66,7 +66,7 @@ That's it! Of course, there is a lot more to it, documentation is available unde
 Be sure to check the help of the bastion (`bastion --help`) and the help of each osh plugin (`bastion --osh command --help`).
 Also don't forget to customize your `bastion.conf` file, which can be found in `/etc/bastion/bastion.conf` (for Linux).
 
-## Compatibility
+## :twisted_rightwards_arrows: Compatibility
 
 ### Supported OS for installation
 
@@ -99,20 +99,20 @@ Nothing fancy is needed either on the ingress or the egress side of The Bastion 
 
 In other words, only your good old `ssh` client is needed to connect through it, and on the other side, any standard `sshd` server will do the trick. This includes, for example, network devices on which you may not have the possibility to install any custom software.
 
-## Reliability
+## :curly_loop: Reliability
 
 * The KISS principle is used where possible for design and code: less complicated code means more auditability and less bugs
 * Only a few well-known libraries are used, less third party code means a tinier attack surface
 * The bastion is engineered to be self-sufficient: no dependencies such as databases, other daemons, other machines, or third-party cloud services, statistically means less downtime
 * High availability can be setup so that multiple bastion instances form a cluster of several instances, with any instance usable at all times (active/active scheme)
 
-## Code quality
+## :ok: Code quality
 
 * The code is ran under `perltidy`
 * The code is also ran under `perlcritic`
 * Functional tests are used before every release
 
-## Security at the core
+## :passport_control: Security at the core
 
 Even with the most conservative, precautionous and paranoid coding process, code has bugs, so it shouldn't be trusted blindly. Hence the bastion doesn't trust its own code. It leverages the operating system security primitives to get additional security, as seen below.
 
@@ -145,7 +145,7 @@ Even with the most conservative, precautionous and paranoid coding process, code
 
 - A protocol break is operated between the ingress and the egress side, rendering most protocol-based vulnerabilities ineffective
 
-## Auditability
+## :mag: Auditability
 
 - Bastion administrators must use the bastion's logic to connect to itself to administer it (or better, use another bastion to do so), this ensures auditability in all cases
 * Every access and action (whether allowed or denied) is logged with:
@@ -154,7 +154,7 @@ Even with the most conservative, precautionous and paranoid coding process, code
 * Every session is recorded with `ttyrec`, helper scripts are provided to encrypt and push these records on a remote escrow filer
 * This code is used in production in several PCI-DSS, ISO 27001, SOC1 and SOC2 certified environments
 
-## Related
+## :link: Related
 
 ### Dependencies
 
@@ -167,7 +167,7 @@ Even with the most conservative, precautionous and paranoid coding process, code
 - [the-bastion-ansible-wrapper](https://github.com/ovh/the-bastion-ansible-wrapper) - a wrapper to make it possible to run Ansible playbooks through The Bastion
 - [debian-cis](https://github.com/ovh/debian-cis) - a script to apply and monitor the hardening of Debian hosts as per the [CIS](https://www.cisecurity.org/benchmark/debian_linux/) recommendations
 
-## License
+## :memo: License
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
