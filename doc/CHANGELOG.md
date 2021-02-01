@@ -1,3 +1,6 @@
+## v3.02.00 - 2021/02/01
+- no functional change since rc4, this version ends the rc cycle and is considered stable
+
 ## v3.01.99-rc4 - 2021/01/25
 - fix: admins no longer inherited superowner powers (since rc1)
 
