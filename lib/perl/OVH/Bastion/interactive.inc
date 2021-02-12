@@ -42,8 +42,8 @@ sub interactive {
 
 Welcome to $bastionName interactive mode, type `help' for available commands.
 You can use <tab> and <tab><tab> for autocompletion.
-You'll be disconnected after $interactiveModeTimeout seconds of inactivity.
 EOM
+    print "You'll be disconnected after $interactiveModeTimeout seconds of inactivity.\n" if $interactiveModeTimeout;
 
     # dynamically get the list of plugins we can use
 
