@@ -161,7 +161,7 @@ testsuite_selfaccesses()
     set -e
 
     success ssh shellaccountatlo2_mustwork   $a0 $shellaccount@127.0.0.2 --kbd-interactive -- echo $randomstr
-    contain REGEX "$shellaccount@($targethostname|127.0.0.2):22"
+    contain REGEX "$shellaccount@($targethostname|127.0.0.2|fv-[a-z0-9-]+):22"
     contain "allowed ... log on"
     nocontain "Permission denied"
     contain "$randomstr"
@@ -385,7 +385,7 @@ testsuite_selfaccesses()
     # should
 
     success ssh shellaccountatlo2_mustwork226   $a0 $shellaccount@127.0.0.2 -p 226 -- echo $randomstr
-    contain REGEX "$shellaccount@(127.0.0.2|$targethostname):226"
+    contain REGEX "$shellaccount@(127.0.0.2|$targethostname|fv-[a-z0-9-]+):226"
     contain "allowed ... log on"
     nocontain "Permission denied"
     contain "$randomstr"
