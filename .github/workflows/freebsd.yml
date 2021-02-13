@@ -12,9 +12,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Functional tests under FreeBSD
-      uses: vmactions/freebsd-vm@v0.0.8
+      uses: vmactions/freebsd-vm@v0.1.2
       with:
         usesh: true
+        sync: sshfs
         run: |
           set -ex
           freebsd-version
