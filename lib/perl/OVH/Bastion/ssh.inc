@@ -270,6 +270,7 @@ sub get_ssh_pub_key_info {
 
     $pubKey =~ s/[\r\n]//g;
 
+    my $mtime;
     if ($file) {
         if (open(my $fh, '<', $file)) {
             $pubKey = <$fh>;
@@ -278,6 +279,7 @@ sub get_ssh_pub_key_info {
         else {
             return R('ERR_CANNOT_OPEN_FILE', msg => "Couldn't open specified file ($!)");
         }
+        $mtime = (stat($file))[9];
     }
 
     # some little sanity check
@@ -302,12 +304,19 @@ sub get_ssh_pub_key_info {
     if ($prefix =~ /^from=["']([^ "']+)/) {
         @fromList = split /,/, $1;
     }
+
+    # generate a uniq id f($line)
+    require Digest::MD5;
+    my $id = 'id' . substr(Digest::MD5::md5_hex($line), 0, 8);
+
     my %return = (
         prefix   => $prefix,
         typecode => $typecode,
         base64   => $base64,
         comment  => $comment,
         line     => $line,
+        id       => $id,
+        mtime    => $mtime,
         fromList => \@fromList,
     );
 
@@ -698,6 +707,12 @@ sub print_public_key {
     my $nokeyline = $params{'nokeyline'};
 
     require Term::ANSIColor;
+
+    # if id is passed directly, this is a key from an authkeys file, the id is the line number
+    # otherwise, we should have an id within the key, it depends on $key->line, usually this is a key from a .pub file (no line number)
+    if (!$id && $key->{'id'}) {
+        $id = $key->{'id'};
+    }
 
     my $line = $key->{'line'};
     if ($key->{'base64'}) {
