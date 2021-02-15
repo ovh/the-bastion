@@ -787,11 +787,7 @@ sub is_admin {    ## no critic(Subroutines::RequireArgUnpacking)
 
         # only legit case is if we have osh.pl under sudo because of an admin (adminSudo / ssh-as), check this
         if (not OVH::Bastion::is_admin(account => $ENV{'SUDO_USER'}, sudo => 1)) {
-            OVH::Bastion::syslogFormatted(
-                criticity => 'info',
-                type      => 'security',
-                fields    => [['type', 'unexpected-sudo'], ['account', $params{'account'}], ['plugin', 'is_admin'], ['params', join(" ", @_)],]
-            );
+            warn_syslog("is_admin(): wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'} . " from account ".$params{'account'});
             return R('ERR_SECURITY_VIOLATION', msg => "Wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'});
         }
     }
@@ -821,11 +817,7 @@ sub is_super_owner {    ## no critic(Subroutines::RequireArgUnpacking)
 
         # only legit case is if we have osh.pl under sudo because of an admin (adminSudo / ssh-as), check this
         if (not OVH::Bastion::is_admin(account => $ENV{'SUDO_USER'}, sudo => 1)) {
-            OVH::Bastion::syslogFormatted(
-                criticity => 'info',
-                type      => 'security',
-                fields    => [['type', 'unexpected-sudo'], ['account', $params{'account'}], ['plugin', 'is_super_owner'], ['params', join(" ", @_)],]
-            );
+            warn_syslog("is_super_owner(): wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'} . " from account ".$params{'account'});
             return R('ERR_SECURITY_VIOLATION', msg => "Wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'});
         }
     }
@@ -856,11 +848,7 @@ sub is_auditor {    ## no critic(Subroutines::RequireArgUnpacking)
 
         # only legit case is if we have osh.pl under sudo because of an admin (adminSudo / ssh-as), check this
         if (not OVH::Bastion::is_admin(account => $ENV{'SUDO_USER'}, sudo => 1)) {
-            OVH::Bastion::syslogFormatted(
-                criticity => 'info',
-                type      => 'security',
-                fields    => [['type', 'unexpected-sudo'], ['account', $params{'account'}], ['plugin', 'is_auditor'], ['params', join(" ", @_)],]
-            );
+            warn_syslog("is_auditor(): wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'} . " from account ".$params{'account'});
             return R('ERR_SECURITY_VIOLATION', msg => "Wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'});
         }
     }
@@ -889,11 +877,7 @@ sub _has_group_role {    ## no critic(Subroutines::RequireArgUnpacking)
 
         # only legit case is if we have osh.pl under sudo because of an admin (adminSudo / ssh-as), check this
         if (not OVH::Bastion::is_admin(account => $ENV{'SUDO_USER'}, sudo => 1)) {
-            OVH::Bastion::syslogFormatted(
-                criticity => 'info',
-                type      => 'security',
-                fields    => [['type', 'unexpected-sudo'], ['account', $params{'account'}], ['plugin', '_has_group_role'], ['params', join(" ", @_)],]
-            );
+            warn_syslog("_has_group_role(): wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'} . " from account ".$params{'account'});
             return R('ERR_SECURITY_VIOLATION', msg => "Wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'});
         }
     }
