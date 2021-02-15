@@ -771,7 +771,7 @@ sub get_realm_list {
 
 # check if account is a bastion admin (gives access to adminXyz commands)
 # hint: an admin is also always a superowner
-sub is_admin {    ## no critic(Subroutines::RequireArgUnpacking)
+sub is_admin {
     my %params  = @_;
     my $sudo    = $params{'sudo'};      # we're run under sudo
     my $account = $params{'account'};
@@ -787,7 +787,7 @@ sub is_admin {    ## no critic(Subroutines::RequireArgUnpacking)
 
         # only legit case is if we have osh.pl under sudo because of an admin (adminSudo / ssh-as), check this
         if (not OVH::Bastion::is_admin(account => $ENV{'SUDO_USER'}, sudo => 1)) {
-            warn_syslog("is_admin(): wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'} . " from account ".$params{'account'});
+            warn_syslog("is_admin(): wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'} . " from account " . $params{'account'});
             return R('ERR_SECURITY_VIOLATION', msg => "Wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'});
         }
     }
@@ -801,7 +801,7 @@ sub is_admin {    ## no critic(Subroutines::RequireArgUnpacking)
 
 # check if account is a superowner
 # hint: an admin is also always a superowner
-sub is_super_owner {    ## no critic(Subroutines::RequireArgUnpacking)
+sub is_super_owner {
     my %params  = @_;
     my $sudo    = $params{'sudo'};      # we're run under sudo
     my $account = $params{'account'};
@@ -817,7 +817,7 @@ sub is_super_owner {    ## no critic(Subroutines::RequireArgUnpacking)
 
         # only legit case is if we have osh.pl under sudo because of an admin (adminSudo / ssh-as), check this
         if (not OVH::Bastion::is_admin(account => $ENV{'SUDO_USER'}, sudo => 1)) {
-            warn_syslog("is_super_owner(): wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'} . " from account ".$params{'account'});
+            warn_syslog("is_super_owner(): wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'} . " from account " . $params{'account'});
             return R('ERR_SECURITY_VIOLATION', msg => "Wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'});
         }
     }
@@ -832,7 +832,7 @@ sub is_super_owner {    ## no critic(Subroutines::RequireArgUnpacking)
 }
 
 # check if account is an auditor
-sub is_auditor {    ## no critic(Subroutines::RequireArgUnpacking)
+sub is_auditor {
     my %params  = @_;
     my $sudo    = $params{'sudo'};      # we're run under sudo
     my $account = $params{'account'};
@@ -848,7 +848,7 @@ sub is_auditor {    ## no critic(Subroutines::RequireArgUnpacking)
 
         # only legit case is if we have osh.pl under sudo because of an admin (adminSudo / ssh-as), check this
         if (not OVH::Bastion::is_admin(account => $ENV{'SUDO_USER'}, sudo => 1)) {
-            warn_syslog("is_auditor(): wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'} . " from account ".$params{'account'});
+            warn_syslog("is_auditor(): wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'} . " from account " . $params{'account'});
             return R('ERR_SECURITY_VIOLATION', msg => "Wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'});
         }
     }
@@ -857,7 +857,7 @@ sub is_auditor {    ## no critic(Subroutines::RequireArgUnpacking)
 }
 
 # used by funcs below
-sub _has_group_role {    ## no critic(Subroutines::RequireArgUnpacking)
+sub _has_group_role {
     my %params     = @_;
     my $account    = $params{'account'};
     my $shortGroup = $params{'group'};
@@ -877,7 +877,7 @@ sub _has_group_role {    ## no critic(Subroutines::RequireArgUnpacking)
 
         # only legit case is if we have osh.pl under sudo because of an admin (adminSudo / ssh-as), check this
         if (not OVH::Bastion::is_admin(account => $ENV{'SUDO_USER'}, sudo => 1)) {
-            warn_syslog("_has_group_role(): wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'} . " from account ".$params{'account'});
+            warn_syslog("_has_group_role(): wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'} . " from account " . $params{'account'});
             return R('ERR_SECURITY_VIOLATION', msg => "Wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'});
         }
     }

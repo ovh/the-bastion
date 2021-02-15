@@ -11,9 +11,9 @@ use OVH::Bastion::Plugin qw{ :DEFAULT };
 
 sub help_algos {
     require Term::ANSIColor;
-    my $fnret        = OVH::Bastion::get_supported_ssh_algorithms_list(way => 'egress');
-    my @algoList     = @{$fnret->value};
-    my $algos        = Term::ANSIColor::colored(uc join(' ', @algoList), 'green');
+    my $fnret    = OVH::Bastion::get_supported_ssh_algorithms_list(way => 'egress');
+    my @algoList = @{$fnret->value};
+    my $algos    = Term::ANSIColor::colored(uc join(' ', @algoList), 'green');
 
     # when generating documentation, don't talk about "this" bastion, be generic
     if ($ENV{'PLUGIN_DOCGEN'}) {
@@ -31,7 +31,7 @@ the following algorithms are supported: $algos.
 A quick overview of the different algorithms:
 EOF
     }
-        osh_info <<"EOF";
+    osh_info <<"EOF";
 
   +---------+------+----------+-------+-----------------------------------------+
   | algo    | size | strength | speed | compatibility                           |
