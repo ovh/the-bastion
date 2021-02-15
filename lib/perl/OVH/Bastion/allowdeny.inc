@@ -46,9 +46,10 @@ sub get_group_keys {
     $fnret or return $fnret;
     $group = $fnret->value->{'group'};    # untainted version
     my $shortGroup = $fnret->value->{'shortGroup'};
+    my $keyhome    = $fnret->value->{'keyhome'};
 
     $fnret = _get_pub_keys_from_directory(
-        dir         => '/home/keykeeper/' . $group,
+        dir         => $keyhome,
         pattern     => qr/^id_([a-z0-9]+)_\Q$shortGroup\E/,
         listOnly    => $listOnly,
         forceKey    => $forceKey,
