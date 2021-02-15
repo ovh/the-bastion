@@ -185,7 +185,10 @@ if ($fnret) {
 $fnret = OVH::Bastion::get_group_keys(group => $group);
 if ($fnret and $from) {
     osh_info ' ';
-    if (@{$fnret->value->{'sortedKeys'}} == 1) {
+    if ($fnret->value && !@{$fnret->value->{'sortedKeys'}}) {
+        osh_info "This group has no SSH egress key, the owner may use groupGenerateEgressKey to generate one.";
+    }
+    elsif (@{$fnret->value->{'sortedKeys'}} == 1) {
         osh_info "The public key of this group is:";
     }
     else {

@@ -59,7 +59,7 @@ if (!$mfaRequired && !defined $ttl) {
 
 #<HEADER
 
-#>PARAMS:ACCOUNT
+#>PARAMS:GROUP
 $fnret = OVH::Bastion::is_valid_group_and_existing(group => $group, groupType => "key");
 $fnret or HEXIT($fnret);
 
@@ -67,7 +67,7 @@ $fnret or HEXIT($fnret);
 $group = $fnret->value->{'group'};
 my $shortGroup = $fnret->value->{'shortGroup'};
 
-#<PARAMS:ACCOUNT
+#<PARAMS:GROUP
 
 #>RIGHTSCHECK
 if ($self eq 'root') {
