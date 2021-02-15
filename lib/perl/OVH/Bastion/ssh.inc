@@ -664,6 +664,7 @@ sub is_allowed_algo_and_size {
     }
 
     if ($algo eq 'rsa') {
+        $algo  = 'rsa';                                             # untaint
         $way   = ucfirst($way);
         $fnret = OVH::Bastion::config("minimum${way}RsaKeySize");
         $fnret or return $fnret;
@@ -672,14 +673,20 @@ sub is_allowed_algo_and_size {
         }
     }
     elsif ($algo eq 'ecdsa') {
+        $algo = 'ecdsa';                                            # untaint
         if (not grep { $size eq $_ } qw{ 256 384 521 }) {
             return R('KO_KEY_SIZE_INVALID', msg => "For the selected algorithm, valid key sizes are 256, 384, 521");
         }
     }
-    elsif ($algo eq 'ed25519' && $size && $size ne '256') {
-        return R('KO_KEY_SIZE_INVALID', msg => "For the selected algorithm, key size must be 256");
+    elsif ($algo eq 'ed25519') {
+        $algo = 'ed25519';                                          # untaint
+        if ($size && $size ne '256') {
+            return R('KO_KEY_SIZE_INVALID', msg => "For the selected algorithm, key size must be 256");
+        }
+        $size = 256;
     }
-    return R('OK');
+    ($size) = $size =~ /^(\d+)$/;                                   # untaint
+    return R('OK', value => {algo => $algo, size => $size});
 }
 
 sub is_valid_fingerprint {

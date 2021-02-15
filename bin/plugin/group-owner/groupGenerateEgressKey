@@ -12,8 +12,9 @@ use OVH::Bastion::Plugin::generateEgressKey;
 
 my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,
-    header  => "generating a new key pair for your account",
+    header  => "generating a new key pair for a group",
     options => {
+        "group=s"   => \my $group,
         "algo=s"    => \my $algo,
         "size=i"    => \my $size,
         "encrypted" => \my $encrypted,
@@ -27,18 +28,20 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
 my $fnret;
 
 $fnret = OVH::Bastion::Plugin::generateEgressKey::preconditions(
-    context => 'account',
-    account => $self,
+    context => 'group',
+    self    => $self,
+    group   => $group,
     algo    => $algo,
     size    => $size
 );
 if ($fnret->err eq 'ERR_MISSING_PARAMETER') {
     OVH::Bastion::Plugin::generateEgressKey::help();
-    osh_exit(R('ERR_MISSING_PARAMETER', msg => "Missing the 'algo' or 'size' parameter'"));
+    osh_exit(R('ERR_MISSING_PARAMETER', msg => "Missing the 'algo', 'size' or 'group' parameter'"));
 }
 $fnret or osh_exit $fnret;
 
-($algo, $size) = @{$fnret->value}{qw{ algo size }};
+my ($shortGroup, $keyhome);
+($group, $algo, $size, $shortGroup, $keyhome) = @{$fnret->value}{qw{ group algo size shortGroup keyhome }};
 
 my $passphrase = '';    # empty by default
 if ($encrypted) {
@@ -47,19 +50,14 @@ if ($encrypted) {
     $passphrase = $fnret->value;
 }
 
-osh_info "Generating your key, this might take a while...";
-$fnret = OVH::Bastion::generate_ssh_key(
-    folder     => OVH::Bastion::get_home_from_env()->value . '/.ssh',
-    prefix     => 'private',
-    name       => $self,
-    algo       => $algo,
-    size       => $size,
-    passphrase => $passphrase,
-);
-$fnret or osh_exit $fnret;
+my @command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
+push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-groupGenerateEgressKey';
+push @command, '--group', $group;
+push @command, '--algo', $algo;
+push @command, '--size', $size;
+push @command, '--encrypted' if $encrypted;
 
-osh_info "You new key pair has been generated:\n";
-$fnret = OVH::Bastion::get_ssh_pub_key_info(file => $fnret->value->{'file'} . ".pub", way => "egress");
+$fnret = OVH::Bastion::helper(cmd => \@command, stdin_str => $passphrase);
 $fnret or osh_exit $fnret;
 
 my $key = $fnret->value;

@@ -51,7 +51,7 @@ my $shortGroup = $fnret->value->{'shortGroup'};
 
 $fnret = OVH::Bastion::is_group_owner(account => $self, group => $shortGroup, superowner => 1);
 if (!$fnret) {
-    osh_exit 'ERR_NOT_GROUP_OWNER', "You must be an owner to delete an egress group key";
+    osh_exit 'ERR_NOT_GROUP_OWNER', "You must be an owner to modify this group";
 }
 
 if (defined $mfaRequired && !grep { $mfaRequired eq $_ } qw{ password totp any none }) {

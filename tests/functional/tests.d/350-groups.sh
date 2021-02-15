@@ -104,6 +104,45 @@ EOS
     )
     # new state: g1[a1(ow,gk,acl,member)]
 
+    # create g3 with a3 as owner to test key generation of a group a3 is not an owner of, without getting the early no-owner deny
+    success 350-groups a0_create_g3_with_a3_as_owner $a0 --osh groupCreate --group $group3 --algo ed25519 --owner $account3
+
+    # test egress key generation as an owner
+    run 350-groups a0_generate_key_g1_fail $a0 --osh groupGenerateEgressKey --group $group1 --algo ed25519
+    retvalshouldbe 106
+    json .command null .error_code KO_RESTRICTED_COMMAND .value null
+
+    plgfail 350-groups a3_generate_key_g1_fail $a3 --osh groupGenerateEgressKey --group $group1 --algo ed25519
+    json .command groupGenerateEgressKey .error_code ERR_NOT_GROUP_OWNER
+
+    success 350-groups a1_generate_key_g1 $a1 --osh groupGenerateEgressKey --group $group1 --algo ed25519
+    json .command groupGenerateEgressKey .error_code OK .value.typecode ssh-ed25519
+    local key1id
+    local key1fp
+    key1id=$(get_json | $jq .value.id)
+    key1fp=$(get_json | $jq .value.fingerprint)
+
+    success 350-groups a0_list_group_keys_g1 $a0 --osh groupInfo --group $group1
+    json .command groupInfo .error_code OK ".value.keys.\"$key1fp\".typecode" ssh-ed25519
+
+    run 350-groups a0_del_key_g1 $a0 --osh groupDelEgressKey --group $group1 --id $key1id
+    retvalshouldbe 106
+    json .command null .error_code KO_RESTRICTED_COMMAND .value null
+
+    plgfail 350-groups a3_del_key_g1 $a3 --osh groupDelEgressKey --group $group1 --id $key1id
+    json .command groupDelEgressKey .error_code ERR_NOT_GROUP_OWNER
+
+    success 350-groups a1_del_key_g1 $a1 --osh groupDelEgressKey --group $group1 --id $key1id
+    json .command groupDelEgressKey .error_code OK .value.id "$key1id" .value.fingerprint "$key1fp"
+    unset key1id
+    unset key1fp
+
+    grant groupDelete
+    script 350-groups a0_delete_g3 $a0 --osh groupDelete --group $group3 '<<<' "$group3"
+    retvalshouldbe 0
+    revoke groupDelete
+    # /egress key generation
+
     # now test all group-* commands from a2 to grant a3 on g1 => should get an early deny
 
     run groupAddOwner a2_fail_to_addowner_a3_on_g1_early_deny_owner_cmd $a2 --osh groupAddOwner --group $group1 --account $account3

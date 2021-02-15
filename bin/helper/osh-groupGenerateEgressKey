@@ -1,0 +1,138 @@
+#! /usr/bin/perl -T
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+# KEYSUDOERS # as an owner, we can generate an egress key for the group
+# KEYSUDOERS SUPEROWNERS, %%GROUP%-owner      ALL=(root)        NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupGenerateEgressKey --group %GROUP% *
+# FILEMODE 0755
+# FILEOWN 0 0
+
+#>HEADER
+use common::sense;
+use Getopt::Long;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin::generateEgressKey;
+local $| = 1;
+
+#
+# Globals
+#
+$ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/pkg/bin';
+my ($self) = $ENV{'SUDO_USER'} =~ m{^([a-zA-Z0-9._-]+)$};
+if (not defined $self) {
+    if ($< == 0) {
+        $self = 'root';
+    }
+    else {
+        HEXIT('ERR_SUDO_NEEDED', msg => 'This command must be run under sudo');
+    }
+}
+
+# Fetch command options
+my ($result, @optwarns);
+my ($group, $algo, $size, $encrypted);
+eval {
+    local $SIG{__WARN__} = sub { push @optwarns, shift };
+    $result = GetOptions(
+        "group=s"   => sub { $group     //= $_[1] },    # ignore subsequent --group on cmdline (anti-sudoers-override)
+        "algo=s"    => sub { $algo      //= $_[1] },
+        "size=i"    => sub { $size      //= $_[1] },
+        "encrypted" => sub { $encrypted //= $_[1] },
+    );
+};
+if ($@) { die $@ }
+
+if (!$result) {
+    local $" = ", ";
+    HEXIT('ERR_BAD_OPTIONS', msg => "Error parsing options: @optwarns");
+}
+
+if (!$size || !$algo || !$group) {
+    HEXIT('ERR_MISSING_PARAMETER', msg => "Missing argument 'size', 'algo' or 'group'");
+}
+
+#<HEADER
+
+my $fnret;
+
+$fnret = OVH::Bastion::is_valid_group_and_existing(group => $group, groupType => "key");
+$fnret or HEXIT($fnret);
+
+$fnret = OVH::Bastion::Plugin::generateEgressKey::preconditions(
+    context => 'group',
+    self    => $self,
+    group   => $group,
+    algo    => $algo,
+    size    => $size,
+    sudo    => 1,
+);
+$fnret or HEXIT($fnret);
+
+# get returned untainted values
+my ($shortGroup, $keyhome);
+($group, $algo, $size, $shortGroup, $keyhome) = @{$fnret->value}{qw{ group algo size shortGroup keyhome}};
+
+my $passphrase = '';
+if ($encrypted) {
+
+    # read the passphrase from stdin
+    $passphrase = <STDIN>;
+
+    # we need to untaint it, as it's going to be passed as an arg to the array version of system(),
+    # it can contain anything, really, there is no shell escape possible (see generate_ssh_key in ssh.inc)
+    ($passphrase) = $passphrase =~ /^(.+)$/;
+}
+
+my $keykeeper_uid = (getpwnam('keykeeper'))[2];
+my $group_gid     = (getgrnam($group))[2];
+
+if (!$keykeeper_uid || !$group_gid) {
+    warn_syslog("Couldn't get the uid of keykeeper ($keykeeper_uid) or gid of $group ($group_gid) while $self is attempting to generate a new key with algo $algo and size $size");
+    HEXIT('ERR_INTERNAL', msg => "Couldn't fetch the required account or group IDs");
+}
+
+osh_info "Generating a new key pair, this might take a while...";
+$fnret = OVH::Bastion::generate_ssh_key(
+    folder         => $keyhome,
+    prefix         => $shortGroup,
+    algo           => $algo,
+    size           => $size,
+    passphrase     => $passphrase,
+    uid            => $keykeeper_uid,
+    gid            => $group_gid,
+    group_readable => 1,
+);
+$fnret or HEXIT($fnret);
+
+my $filepath = $fnret->value->{'file'};
+my $mtime    = (stat($filepath))[9];
+
+osh_info "The new key pair has been generated:\n";
+$fnret = OVH::Bastion::get_ssh_pub_key_info(file => $filepath . ".pub", way => "egress");
+$fnret or HEXIT($fnret);
+
+my $key = $fnret->value;
+
+OVH::Bastion::syslogFormatted(
+    severity => 'info',
+    type     => 'group',
+    fields   => [
+        [action          => 'generate_egress_key'],
+        [group           => $shortGroup],
+        [self            => $self],
+        [key_id          => $key->{'id'}],
+        [key_algo        => $key->{'typecode'}],
+        [key_algo_family => $key->{'family'}],
+        [key_size        => $key->{'size'}],
+        [key_fingerprint => $key->{'fingerprint'}],
+        [key_comment     => $key->{'comment'}],
+        [key_mtime       => $mtime],
+        [key_path        => $filepath],
+        [key_base64      => $key->{'base64'}],
+        [key_encrypted   => $encrypted ? "yes" : "no"],
+    ]
+);
+
+HEXIT('OK', value => $key);
