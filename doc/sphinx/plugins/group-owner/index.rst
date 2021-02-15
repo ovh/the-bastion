@@ -8,8 +8,10 @@ group-owner plugins
    groupAddGatekeeper
    groupAddOwner
    groupDelAclkeeper
+   groupDelEgressKey
    groupDelGatekeeper
    groupDelOwner
+   groupGenerateEgressKey
    groupGeneratePassword
    groupModify
    groupTransmitOwnership

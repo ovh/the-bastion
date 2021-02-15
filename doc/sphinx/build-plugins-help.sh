@@ -26,6 +26,8 @@ mkdir doc/sphinx/plugins
 
 export PLUGIN_QUIET=1
 export PLUGIN_HELP=1
+export PLUGIN_DOCGEN=1
+export ANSI_COLORS_DISABLED=1
 
 for pluginfile in $(find bin/plugin -executable -type f -print)
 do

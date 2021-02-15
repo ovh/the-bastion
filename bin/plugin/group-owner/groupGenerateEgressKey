@@ -19,8 +19,30 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
         "size=i"    => \my $size,
         "encrypted" => \my $encrypted,
     },
-    help => \&OVH::Bastion::Plugin::generateEgressKey::help,
+    help => \&help,
 );
+
+sub help {
+    print <<"EOF";
+Create a new public + private key pair for a group
+
+Usage: --osh $scriptName --group GROUP --algo ALGO --size SIZE [--encrypted]
+
+  --group GROUP  Group name to generate a new egress key for.
+
+  --algo ALGO    Specifies the algo of the key, either rsa, ecdsa or ed25519.
+
+  --size SIZE    Specifies the size of the key to be generated.
+                   For RSA, choose between 2048 and 8192 (4096 is good).
+                   For ECDSA, choose either 256, 384 or 521.
+                   For ED25519, size is always 256.
+
+  --encrypted    If specified, a passphrase will be prompted for the new key
+
+EOF
+    OVH::Bastion::Plugin::generateEgressKey::help_algos();
+    return 0;
+}
 
 #
 # code
