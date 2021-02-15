@@ -67,7 +67,6 @@ sub execute {
     }
 =cut
 
-    #=cut only to debug tainted stuff
     require Scalar::Util;
     foreach (@$cmd) {
         if (Scalar::Util::tainted($_) && /(.+)/) {
@@ -75,11 +74,8 @@ sub execute {
             # to be able to warn under -T; untaint it. we're going to crash right after anyway.
             require Carp;
             warn(Carp::longmess("would exec <" . join('^', @$cmd) . "> but param '$1' is tainted!"));
-            osh_warn("about to execute a cmd but param '$1' is tainted, I'm gonna crash!");
         }
     }
-
-    #=cut
 
     if ($system) {
         my $child_exit_status = system(@$cmd);
