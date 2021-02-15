@@ -55,7 +55,7 @@ sub is_group_existing {
     my ($groupname, $passwd, $gid, $members) = @{$_cache_getgrnam{$group}};
     if ($groupname) {
         my (undef, $shortGroup) = $group =~ m{^(key)?(.+)};
-        return R('OK', value => {group => $group, shortGroup => $shortGroup, gid => $gid, members => [split(/ /, $members)]});
+        return R('OK', value => {group => $group, shortGroup => $shortGroup, gid => $gid, keyhome => "/home/keykeeper/$group", members => [split(/ /, $members)]});
     }
     return R('KO_GROUP_NOT_FOUND', msg => "Group '$group' doesn't exist");
 }
