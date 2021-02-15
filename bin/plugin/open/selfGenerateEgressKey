@@ -18,8 +18,28 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
         "size=i"    => \my $size,
         "encrypted" => \my $encrypted,
     },
-    help => \&OVH::Bastion::Plugin::generateEgressKey::help,
+    help => \&help,
 );
+
+sub help {
+    print <<"EOF";
+Create a new public + private key pair on your bastion account
+
+Usage: --osh $scriptName --algo ALGO --size SIZE [--encrypted]
+
+  --algo ALGO  Specifies the algo of the key, either rsa, ecdsa or ed25519.
+
+  --size SIZE  Specifies the size of the key to be generated.
+               For RSA, choose between 2048 and 8192 (4096 is good).
+               For ECDSA, choose either 256, 384 or 521.
+               For ED25519, size is always 256.
+
+  --encrypted  if specified, a passphrase will be prompted for the new key
+
+EOF
+    OVH::Bastion::Plugin::generateEgressKey::help_algos();
+    return 1;
+}
 
 #
 # code
@@ -33,7 +53,7 @@ $fnret = OVH::Bastion::Plugin::generateEgressKey::preconditions(
     size    => $size
 );
 if ($fnret->err eq 'ERR_MISSING_PARAMETER') {
-    OVH::Bastion::Plugin::generateEgressKey::help();
+    help();
     osh_exit(R('ERR_MISSING_PARAMETER', msg => "Missing the 'algo' or 'size' parameter'"));
 }
 $fnret or osh_exit $fnret;

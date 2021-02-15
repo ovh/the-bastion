@@ -93,8 +93,8 @@ plugin
 accountsql
    This field will contain either:
 
-   - ok: when :ref:`bastion_conf_enableAccountSqlLog` is enabled, and we successfully inserted a new row for the log
-   - no: when :ref:`bastion_conf_enableAccountSqlLog` is disabled
+   - ok: when :ref:`enableAccountSqlLog` is enabled, and we successfully inserted a new row for the log
+   - no: when :ref:`enableAccountSqlLog` is disabled
    - error: when we couldn't insert a new row, **error** followed by a detailed error message, for example "error SQL error [global] err 8 while doing [inserting data (execute)]: attempt to write a readonly database".
 
 globalsql
@@ -364,7 +364,7 @@ Syslog
 ======
 
 Files location
---------------
+**************
 
 If you use ``syslog-ng`` and installed the provided templates (which is the default if you used the ``--new-install`` option to the install script), you'll have 4 files in your system log directory:
 
@@ -381,7 +381,7 @@ If you use ``syslog-ng`` and installed the provided templates (which is the defa
    This is where all the satellite scripts (mostly found in the ``bin/cron/`` directory) will log their output.
 
 Log format
-----------
+**********
 
 A syslog message will always match the following generic format::
 
@@ -406,7 +406,7 @@ If you don't or can't use :ref:`syslog`, the bastion can create and use access l
 
 These access logs will only contain :ref:`log_open` and :ref:`log_close` log types, which can be seen as "access logs". All the other log types, such as :ref:`log_warn`, :ref:`log_membership`, etc. are only logged through syslog.
 
-These logs are enabled through the :ref:`bastion_conf_enableGlobalAccessLog` and :ref:`bastion_conf_enableAccountAccessLog` options.
+These logs are enabled through the :ref:`enableGlobalAccessLog` and :ref:`enableAccountAccessLog` options.
 
 enableGlobalAccessLog
    When enabled, a single log file will be used, located in :file:`/home/logkeeper/global-log-YYYYMM.log`. There will be one file per month. Note that it can grow quite large if you have a busy bastion.
@@ -419,19 +419,19 @@ If both options are enabled, it means that every access log will be logged twice
 SQLite logs
 ===========
 
-If you want to store access logs into local sqlite databases, you can enable either :ref:`bastion_conf_enableGlobalSqlLog`, :ref:`bastion_conf_enableAccountSqlLog`, or both.
+If you want to store access logs into local sqlite databases, you can enable either :ref:`enableGlobalSqlLog`, :ref:`enableAccountSqlLog`, or both.
 
 enableGlobalSqlLog
    When enabled, a global sqlite database will be created in :file:`/home/logkeeper/global-log-YYYYMM.sqlite`. It'll contain one row per access (created at the same time the :ref:`log_open` log is emitted). The following columns exist: id, timestamp, account, cmdtype, allowed, ipfrom, ipto, portto, user, plugin, uniqid. Refer to the :ref:`log_open` log description to get the meaning of each column.
 
 enableAccountSqlLog
-   When enabled, an sqlite database per account will be created in :file:`/home/USER/USER-log-YYYYMM.sqlite`. It'll contain one row per access (created at the same time the :ref:`log_open` log is emitted), and the same row will be updated by the :ref:`log_close` event when it is emitted. The following columns exist: id, timestamp, timestampusec, account, cmdtype, allowed, hostfrom, ipfrom, bastionip, bastionport, hostto, ipto, portto, user, plugin, ttyrecfilee, params, timestampend, timestampendusec, returnvalue, comment, uniqid. Refer to the :ref:`log_open` log and :ref:`log_close` log descriptions to get the meaning of each column. Note that the :ref:`bastion_conf_enableAccountSqlLog` option is required if you want the :doc:`/plugins/open/selfListSessions` and :doc:`/plugins/open/selfPlaySession` plugins to work, as they use this database.
+   When enabled, an sqlite database per account will be created in :file:`/home/USER/USER-log-YYYYMM.sqlite`. It'll contain one row per access (created at the same time the :ref:`log_open` log is emitted), and the same row will be updated by the :ref:`log_close` event when it is emitted. The following columns exist: id, timestamp, timestampusec, account, cmdtype, allowed, hostfrom, ipfrom, bastionip, bastionport, hostto, ipto, portto, user, plugin, ttyrecfilee, params, timestampend, timestampendusec, returnvalue, comment, uniqid. Refer to the :ref:`log_open` log and :ref:`log_close` log descriptions to get the meaning of each column. Note that the :ref:`enableAccountSqlLog` option is required if you want the :doc:`/plugins/open/selfListSessions` and :doc:`/plugins/open/selfPlaySession` plugins to work, as they use this database.
 
 Note that enabling these on a very busy bastion (several new connections per second) can create lock contention, especially on the global log: ensure you have a fast storage. In any case, if a connection can't get the lock after a few seconds, it'll proceed anyway, and skip writing the sql log. In that case, if you enabled syslog or local access logs, the **globalsql** and/or the **accountsql** field will contain the error detail.
 
 Terminal recordings (*ttyrec*)
 ==============================
 
-Every egress connection is started under ``ttyrec``, which means that everything appearing on the console is recorded. If a password is asked by some program, for example, and typing the password prints '*' or doesn't print anything at all, this won't be recorded. This is by design. In other words, the keystrokes are not recorded, except if they produce something on the screen. The ttyrec files location is always :file:`/home/USER/ttyrec/REMOTEIP/file.ttyrec`, where the actual `file.ttyrec` name can be configured by the :ref:`bastion_conf_ttyrecFilenameFormat` option. By default, it'll contain the date, time, account, remote ip, port and user used to start the egress connection, as well as the uniqid, for easier correlation between all the logs produced by the same connection. Note that for long connections, or connections producing a lot of output, ttyrec files will be transparently rotated, without interrupting the connection. This is to avoid ending up with ttyrec files of several gigabytes that would still be opened, written to, hence impossible to compress, encrypt, and push to an escrow filer. The uniqid will be the same for all the ttyrec files corresponding to the same connection.
+Every egress connection is started under ``ttyrec``, which means that everything appearing on the console is recorded. If a password is asked by some program, for example, and typing the password prints '*' or doesn't print anything at all, this won't be recorded. This is by design. In other words, the keystrokes are not recorded, except if they produce something on the screen. The ttyrec files location is always :file:`/home/USER/ttyrec/REMOTEIP/file.ttyrec`, where the actual `file.ttyrec` name can be configured by the :ref:`ttyrecFilenameFormat` option. By default, it'll contain the date, time, account, remote ip, port and user used to start the egress connection, as well as the uniqid, for easier correlation between all the logs produced by the same connection. Note that for long connections, or connections producing a lot of output, ttyrec files will be transparently rotated, without interrupting the connection. This is to avoid ending up with ttyrec files of several gigabytes that would still be opened, written to, hence impossible to compress, encrypt, and push to an escrow filer. The uniqid will be the same for all the ttyrec files corresponding to the same connection.
 
 To play ttyrec files, you can either use :doc:`/plugins/open/selfPlaySession` for yourself, or, for admins having local access to the bastion machine, the ``ttyplay`` program can be used. Another software, perhaps more powerful than ttyplay, can also be used: `IPBT <https://www.chiark.greenend.org.uk/~sgtatham/ipbt/>`_ (`wiki <https://nethackwiki.com/wiki/IPBT>`_), aka "It's PlayBack Time", by the PuTTY author. It can do more advanced things such as look for words appearing on any frame recorded in the ttyrec file, play files using a logarithmic speed, or display an OSD with the exact time output you're seeing has appeared. As ttyrec is a well-known format that has been around for a while, there are a bunch of other programs you can use to read or convert these files.

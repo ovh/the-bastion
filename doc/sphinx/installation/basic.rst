@@ -47,7 +47,7 @@ Other BSD variants partially work but are unsupported and discouraged as they ha
 - OpenBSD 5.4+
 - NetBSD 7+
 
-In any case, you are expected to install this on a properly secured machine (including, but not limited to: ``iptables``/``pf``, reduced-set of installed software and daemons, general system hardening, etc.). If you use Debian, following the `CIS Hardening guidelines <https://www.cisecurity.org/benchmark/debian_linux/>`_ is a good start. We have a `tool <https://github.com/ovh/debian-cis`_ to check for compliance against these guidelines. If you use Debian and don't yet have your own hardened template, this script should help you getting up to speed, and ensuring your hardened host stays hardened over time, through a daily audit you might want to setup through cron.
+In any case, you are expected to install this on a properly secured machine (including, but not limited to: ``iptables``/``pf``, reduced-set of installed software and daemons, general system hardening, etc.). If you use Debian, following the `CIS Hardening guidelines <https://www.cisecurity.org/benchmark/debian_linux/>`_ is a good start. We have `a tool <https://github.com/ovh/debian-cis>`_ to check for compliance against these guidelines. If you use Debian and don't yet have your own hardened template, this script should help you getting up to speed, and ensuring your hardened host stays hardened over time, through a daily audit you might want to setup through cron.
 
 Great care has been taken to write secure, tested code, but of course this is worthless if your machine is a hacker highway. Ensuring that all the layers below the bastion code (the operating system and the hardware it's running on) is your job.
 
