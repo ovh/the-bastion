@@ -49,6 +49,11 @@ $fnret or osh_exit $fnret;
 $group = $fnret->value->{'group'};
 my $shortGroup = $fnret->value->{'shortGroup'};
 
+$fnret = OVH::Bastion::is_group_owner(account => $self, group => $shortGroup, superowner => 1);
+if (!$fnret) {
+    osh_exit 'ERR_NOT_GROUP_OWNER', "You must be an owner to delete an egress group key";
+}
+
 if (defined $mfaRequired && !grep { $mfaRequired eq $_ } qw{ password totp any none }) {
     help();
     osh_exit 'ERR_INVALID_PARAMETER', "Expected 'password', 'totp', 'any' or 'none' as parameter to --mfa-required";
