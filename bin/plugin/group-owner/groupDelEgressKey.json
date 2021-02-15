@@ -1,0 +1,10 @@
+{
+    "interactive": [
+        "groupDelEgressKey"                       , {"ac" : ["--group"]},
+        "groupDelEgressKey --group"               , {"ac" : ["<GROUP>"]},
+        "groupDelEgressKey --group \\S+"          , {"ac" : ["--id"]},
+        "groupDelEgressKey --group \\S+ --id"     , {"pr" : ["<KEYID>"]},
+        "groupDelEgressKey --group \\S+ --id \\d+", {"pr" : ["<enter>"]}
+    ],
+    "master_only": true
+}

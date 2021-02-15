@@ -1,0 +1,14 @@
+{
+    "interactive": [
+        "groupGenerateEgressKey"                                                 , {"ac" : ["--group"]},
+        "groupGenerateEgressKey --group"                                         , {"ac" : ["<GROUP>"]},
+        "groupGenerateEgressKey --group \\S+"                                    , {"ac" : ["--algo"]},
+        "groupGenerateEgressKey --group \\S+ --algo"                             , {"ac" : ["rsa", "ecdsa", "ed25519"]},
+        "groupGenerateEgressKey --group \\S+ --algo \\S+"                        , {"ac" : ["--size"]},
+        "groupGenerateEgressKey --group \\S+ --algo \\S+ --size"                 , {"pr" : ["<SIZE>"]},
+        "groupGenerateEgressKey --group \\S+ --algo \\S+ --size \\d+"            , {"ac" : ["<enter>", "--encrypted"]},
+        "groupGenerateEgressKey --group \\S+ --algo \\S+ --size \\d+ --encrypted", {"pr" : ["<enter>"]}
+    ],
+    "master_only": true,
+    "terminal_mode" : "raw"
+}

@@ -1,0 +1,61 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "Remove a bastion group egress key",
+    options => {
+        "group=s" => \my $group,
+        "id=s"    => \my $id,
+    },
+    helptext => <<"EOF",
+Remove a bastion group egress key
+
+Usage: --osh SCRIPT_NAME <--group GROUP> <--id ID>
+
+  --group GROUP  Name of the group to delete the egress key from
+  --id ID        Specify the key ID to delete, you can get it with groupInfo
+EOF
+);
+
+#
+# code
+#
+my $fnret;
+
+if (!$id || !$group) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing the --group or --id parameter";
+}
+
+$fnret = OVH::Bastion::is_valid_group_and_existing(group => $group, groupType => "key");
+$fnret or osh_exit($fnret);
+
+# get returned untainted value
+$group = $fnret->value->{'group'};
+my $shortGroup = $fnret->value->{'shortGroup'};
+
+if (!OVH::Bastion::is_group_owner(account => $self, group => $shortGroup, superowner => 1)) {
+    osh_exit 'ERR_NOT_GROUP_OWNER', "You must be an owner to delete an egress group key";
+}
+
+$fnret = OVH::Bastion::get_group_keys(group => $group);
+
+my @matchingKeys = grep { $fnret->value->{'keys'}{$_}{'id'} eq $id } @{$fnret->value->{'sortedKeys'} || []};
+
+if (!@matchingKeys) {
+    osh_exit 'ERR_INVALID_PARAMETER', "Couldn't find any key with the ID you specified ($id) in group $shortGroup";
+}
+
+my @command = qw{ sudo -n -u keykeeper -- /usr/bin/env perl -T };
+push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-groupDelEgressKey';
+push @command, "--group", $group, "--id", $id;
+
+osh_exit(OVH::Bastion::helper(cmd => \@command));

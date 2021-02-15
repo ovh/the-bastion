@@ -13,6 +13,12 @@ SUPEROWNERS, %%GROUP%-owner      ALL=(root)        NOPASSWD: /usr/bin/env perl -
 # as an owner, we can generate an egress password for the group
 SUPEROWNERS, %%GROUP%-owner      ALL=(%GROUP%)     NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupGeneratePassword --group %GROUP% *
 
+# as an owner, we can generate an egress key for the group
+SUPEROWNERS, %%GROUP%-owner      ALL=(root)        NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupGenerateEgressKey --group %GROUP% *
+
+# as an owner, we can delete an egress key of the group
+SUPEROWNERS, %%GROUP%-owner      ALL=(keykeeper)   NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupDelEgressKey --group %GROUP% *
+
 # as a gatekeeper, we can grant/revoke membership
 SUPEROWNERS, %%GROUP%-gatekeeper ALL=(root)        NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupSetRole --type member --group %GROUP% *
 # as a gatekeeper, to be able to symlink in /home/allowkeeper/ACCOUNT the /home/%GROUP%/allowed.ip file

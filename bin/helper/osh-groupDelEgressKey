@@ -1,0 +1,133 @@
+#! /usr/bin/perl -T
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+# KEYSUDOERS # as an owner, we can delete an egress key of the group
+# KEYSUDOERS SUPEROWNERS, %%GROUP%-owner      ALL=(keykeeper)   NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupDelEgressKey --group %GROUP% *
+# FILEMODE 0750
+# FILEOWN 0 keykeeper
+
+#>HEADER
+use common::sense;
+use Getopt::Long;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../lib/perl';
+use OVH::Bastion;
+use OVH::Result;
+local $| = 1;
+
+#
+# Globals
+#
+$ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/pkg/bin';
+my ($self) = $ENV{'SUDO_USER'} =~ m{^([a-zA-Z0-9._-]+)$};
+if (not defined $self) {
+    if ($< == 0) {
+        $self = 'root';
+    }
+    else {
+        HEXIT('ERR_SUDO_NEEDED', msg => 'This command must be run under sudo');
+    }
+}
+
+# Fetch command options
+Getopt::Long::Configure("no_auto_abbrev");
+my $fnret;
+my ($result, @optwarns);
+my ($group,  $id);
+eval {
+    local $SIG{__WARN__} = sub { push @optwarns, shift };
+    $result = GetOptions(
+        "group=s" => sub { $group //= $_[1] },    # ignore subsequent --group on cmdline (anti-sudoers-override)
+        "id=s"    => sub { $id    //= $_[1] },
+    );
+};
+if ($@) { die $@ }
+
+if (!$result) {
+    local $" = ", ";
+    HEXIT('ERR_BAD_OPTIONS', msg => "Error parsing options: @optwarns");
+}
+
+if (!$group || !$id) {
+    HEXIT('ERR_MISSING_PARAMETER', msg => "Missing argument 'group' or 'id'");
+}
+
+#<HEADER
+
+#>PARAMS:GROUP
+$fnret = OVH::Bastion::is_valid_group_and_existing(group => $group, groupType => "key");
+$fnret or HEXIT($fnret);
+
+# get returned untainted value
+$group = $fnret->value->{'group'};
+my $shortGroup = $fnret->value->{'shortGroup'};
+
+#<PARAMS:GROUP
+
+#>RIGHTSCHECK
+if ($self eq 'root') {
+    osh_debug "Real root, skipping checks of permissions";
+}
+$fnret = OVH::Bastion::is_group_owner(account => $self, group => $shortGroup, superowner => 1, sudo => 1);
+if (!$fnret) {
+    HEXIT('ERR_SECURITY_VIOLATION', msg => "You're not allowed to run this, dear $self");
+}
+
+#<RIGHTSCHECK
+
+#>CODE
+$fnret = OVH::Bastion::get_group_keys(group => $group);
+$fnret or HEXIT($fnret);
+
+my @matchingKeys = grep { $fnret->value->{'keys'}{$_}{'id'} eq $id } @{$fnret->value->{'sortedKeys'} || []};
+
+if (!@matchingKeys) {
+    HEXIT('ERR_INVALID_PARAMETER', msg => "Couldn't find any key with the ID you specified ($id) in group $shortGroup");
+}
+
+my $keyToDelete = $matchingKeys[0];
+my $key         = $fnret->value->{'keys'}{$keyToDelete};
+
+osh_info("We're about to delete the following key:\n");
+OVH::Bastion::print_public_key(key => $key);
+
+# get the path to the privkey
+my $fileToDelete = $fnret->value->{'keys'}{$keyToDelete}{'fullpath'};
+if (!-f $fileToDelete) {
+    warn_syslog("The file '$fileToDelete' doesn't exist while trying to delete this egress key from group $shortGroup");
+    HEXIT('ERR_INVALID_PARAMETER', msg => "Couldn't find the key file");
+}
+
+my @errors;
+foreach my $file ($fileToDelete, "$fileToDelete.pub") {
+    push @errors, "Couldn't delete '$file' in groupDelEgressKey by $self ($!)" if !unlink($file);
+}
+
+if (@errors) {
+    warn_syslog($_) for @errors;
+    if (@errors == 2) {
+        HEXIT('ERR_INTERNAL', msg => "Couldn't delete the requested key, more information available in the system log");
+    }
+    HEXIT('ERR_INTERNAL', msg => "Couldn't delete one of the files constituting the key, more information available in the system log");
+}
+
+OVH::Bastion::syslogFormatted(
+    severity => 'info',
+    type     => 'group',
+    fields   => [
+        [action          => 'delete_egress_key'],
+        [group           => $shortGroup],
+        [self            => $self],
+        [key_id          => $key->{'id'}],
+        [key_algo        => $key->{'typecode'}],
+        [key_algo_family => $key->{'family'}],
+        [key_size        => $key->{'size'}],
+        [key_fingerprint => $key->{'fingerprint'}],
+        [key_comment     => $key->{'comment'}],
+        [key_mtime       => $key->{'mtime'}],
+        [key_path        => $key->{'fullpath'}],
+        [key_base64      => $key->{'base64'}],
+    ]
+);
+
+HEXIT('OK', value => $key, msg => "Key $id has successfully been deleted from the $shortGroup group");
