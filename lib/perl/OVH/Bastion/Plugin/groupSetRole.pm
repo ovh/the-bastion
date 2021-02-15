@@ -163,7 +163,7 @@ sub act {
 
     if ($type eq 'member') {
 
-        if ($action eq 'add' && OVH::Bastion::is_group_guest(group => $shortGroup, account => $account)) {
+        if ($action eq 'add' && OVH::Bastion::is_group_guest(group => $shortGroup, account => $account, sudo => $params{'sudo'})) {
 
             # if the user is a guest, must remove all his guest accesses first
             $fnret = OVH::Bastion::get_acl_way(way => 'groupguest', group => $shortGroup, account => $account);
@@ -242,7 +242,7 @@ sub act {
         }
 
         # If the account is already a member, can't add/del them as guest
-        if (OVH::Bastion::is_group_member(group => $shortGroup, account => $account)) {
+        if (OVH::Bastion::is_group_member(group => $shortGroup, account => $account, sudo => $params{'sudo'})) {
             return R('ERR_MEMBER_CANNOT_BE_GUEST', msg => "Can't $action $account as a guest of group $shortGroup, they're already a member!");
         }
 
@@ -303,7 +303,7 @@ sub act {
                 }
             }
 
-            if ($accessesFound == 0 && !OVH::Bastion::is_group_member(group => $shortGroup, account => $account)) {
+            if ($accessesFound == 0 && !OVH::Bastion::is_group_member(group => $shortGroup, account => $account, sudo => $params{'sudo'})) {
                 osh_debug "No guest access remains to group $shortGroup for account $account, removing group key access";
                 #
                 # remove account from group
