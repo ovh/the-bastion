@@ -45,7 +45,7 @@ Two new fields **globalsql** and **accountsql** have been added to the *open*-ty
 
 The **ttyrecsize** log field for the *close*-type logs has been removed, as it was never completely implemented, and contains bogus data if ttyrec log rotation occurs. It has also been removed from the sqlite log databases.
 
-The *open* and *close* events are now pushed to our own log files, in addition to syslog, if logging to those files is enabled (see :ref:`enableGlobalAccesssLog` and :ref:`enableAccountAccessLog`), previously the *close* events were only pushed to syslog.
+The *open* and *close* events are now pushed to our own log files, in addition to syslog, if logging to those files is enabled (see :ref:`enableGlobalAccessLog` and :ref:`enableAccountAccessLog`), previously the *close* events were only pushed to syslog.
 
 The :file:`/home/osh.log` file is no longer used for :ref:`enableGlobalAccessLog`, the global log is instead written to :file:`/home/logkeeper/global-log-YYYYMM.log`.
 
