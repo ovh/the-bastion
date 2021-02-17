@@ -51,23 +51,26 @@ sub preconditions {
             return R('ERR_INVALID_PARAMETER', msg => "Invalid remote user ($user) specified");
         }
 
-        # policy check for guest accesses: if group forces ttl, the account creation must comply
-        $fnret = OVH::Bastion::group_config(group => $group, key => "guest_ttl_limit");
+        if ($action eq 'add') {
 
-        # if this config key is not set, no policy enforce has been requested, otherwise, check it:
-        if ($fnret) {
-            my $max = $fnret->value();
-            if (!$ttl) {
-                return R('ERR_INVALID_PARAMETER',
-                        msg => "This group requires guest accesses to have a TTL set, to a duration of "
-                      . OVH::Bastion::duration2human(seconds => $max)->value->{'duration'}
-                      . " or less");
-            }
-            if ($ttl > $max) {
-                return R('ERR_INVALID_PARAMETER',
-                        msg => "The TTL you specified is invalid, this group requires guest accesses to have a TTL of "
-                      . OVH::Bastion::duration2human(seconds => $max)->value->{'duration'}
-                      . " maximum");
+            # policy check for guest accesses: if group forces ttl, the account creation must comply
+            $fnret = OVH::Bastion::group_config(group => $group, key => "guest_ttl_limit");
+
+            # if this config key is not set, no policy enforce has been requested, otherwise, check it:
+            if ($fnret) {
+                my $max = $fnret->value();
+                if (!$ttl) {
+                    return R('ERR_INVALID_PARAMETER',
+                            msg => "This group requires guest accesses to have a TTL set, to a duration of "
+                          . OVH::Bastion::duration2human(seconds => $max)->value->{'duration'}
+                          . " or less");
+                }
+                if ($ttl > $max) {
+                    return R('ERR_INVALID_PARAMETER',
+                            msg => "The TTL you specified is invalid, this group requires guest accesses to have a TTL of "
+                          . OVH::Bastion::duration2human(seconds => $max)->value->{'duration'}
+                          . " maximum");
+                }
             }
         }
     }

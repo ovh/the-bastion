@@ -600,13 +600,14 @@ sub touch_file {
     }
 
     # else
+    warn_syslog(sprintf("Couldn't touch file '%s' with perms %o: %s", $file, $perms, $!));
     return R('KO', msg => "Couldn't create file $file: $!");
 }
 
 sub create_file_if_not_exists {
     my %params = @_;
     my $file   = $params{'file'};
-    my $perms  = $params{'perms'};     # must be an octal value (not a string)
+    my $perms  = $params{'perms'};    # must be an octal value (not a string)
     my $group  = $params{'group'};
 
     my $fh;
