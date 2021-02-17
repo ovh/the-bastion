@@ -92,6 +92,7 @@ use constant {
     EXIT_TTYREC_CMDLINE_FAILED       => 126,
     EXIT_INVALID_REMOTE_USER         => 127,
     EXIT_INVALID_REMOTE_HOST         => 128,
+    EXIT_PIV_REQUIRED                => 129,
 };
 
 use constant {
