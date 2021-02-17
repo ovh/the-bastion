@@ -509,14 +509,14 @@ EOS
     # TODO test elsewhere the syntax/good functioning of those commands with all combinations of parameters allowed. here we test the RIGHTS.
 
     success groupAddServer a2_add_server_to_g1_works $a2 --osh groupAddServer --group $group1 --host 127.0.0.1 --port 22 --user g1
-    json .command groupAddServer .error_code OK .value null
+    json .command groupAddServer .error_code OK .value.ip 127.0.0.1 .value.group $group1 .value.port 22 .value.user g1
     contain "have access to yourself"
 
     success groupAddServer a2_add_server_to_g1_force_but_dup               $a2 --osh groupAddServer --group $group1 --host 127.0.0.1 --port 22 --user g1 --force
     json .command groupAddServer .error_code OK_NO_CHANGE .value null
 
-    success groupAddServer a2_add_server_to_g1               $a2 --osh groupAddServer --group $group1 --host 127.0.0.2 --port 22 --user g2 --force
-    json .command groupAddServer .error_code OK .value null
+    success groupAddServer a2_add_server_to_g1               $a2 --osh groupAddServer --group $group1 --host 127.0.0.2 --port 22 --user g2 --force --comment '"\"this is a comment\""'
+    json .command groupAddServer .error_code OK .value.ip 127.0.0.2 .value.group $group1 .value.user g2 .value.comment "this is a comment"
 
     # new state: g1[a1(ow,gk,acl,member) a2(acl) acl(g1@127.0.0.1:22,g2@127.0.0.2:22)] g3[a0,a2,a3(ow,gk,acl,member)]
 
@@ -889,7 +889,7 @@ EOS
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2() servers()
     success groupAddServer firstadd_ok $a1 --osh groupAddServer --group $group1 --host 127.0.0.10 --port-any --user-any --force
     contain "was added to group"
-    json .command groupAddServer .error_code OK .value      null
+    json .command groupAddServer .error_code OK .value.group $group1 .value.host 127.0.0.10 .value.port null .value.user null
 
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2() servers(127.0.0.10)
     success groupAddServer firstadd_dup $a1 --osh groupAddServer --group $group1 --host 127.0.0.10 --port-any --user-any --force
@@ -898,13 +898,13 @@ EOS
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2() servers(127.0.0.10)
     success groupAddServer secondadd $a1 --osh groupAddServer --group $group1 --host 127.0.0.11 --port-any --user-any --force
     contain "was added to group"
-    json .command groupAddServer .error_code OK .value      null
+    json .command groupAddServer .error_code OK .value.group $group1 .value.host 127.0.0.11 .value.port null .value.user null
 
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2() servers(127.0.0.10,127.0.0.11)
     success groupAddServer thirdaddttl $a1 --osh groupAddServer --group $group1 --host 127.0.0.12 --port-any --user-any --force --ttl 0w19s0d
     contain "was added to group"
     contain "expires in 00:00:"
-    json .command groupAddServer .error_code OK .value      null
+    json .command groupAddServer .error_code OK .value.group $group1 .value.host 127.0.0.12 .value.port null .value.user null .value.ttl 19
 
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2() servers(127.0.0.10,127.0.0.11,127.0.0.12-TTL)
     success groupListServers list   $a1 --osh groupListServers --group $group1
