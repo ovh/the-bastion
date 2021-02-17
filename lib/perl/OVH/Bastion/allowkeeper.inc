@@ -255,14 +255,14 @@ sub access_modify {
     my $ip   = $params{'ip'};                                                       # can be a single ip or prefix
     my $port = $params{'port'};                                                     # if undef, means a port-wildcard access
 
-    my $ttl = $params{'ttl'};
+    my $ttl     = $params{'ttl'};
+    my $comment = $params{'comment'};
 
     my $way     = $params{'way'};                                                   # group, groupguest, personal
     my $group   = $params{'group'};                                                 # only for way=group or way=groupguest
     my $account = $params{'account'};                                               # only for way=personal
 
     my $forceKey = $params{'forceKey'};
-    my $comment  = $params{'comment'};
 
     my $fnret;
 
@@ -354,7 +354,7 @@ sub access_modify {
         }
     }
 
-    # check if the caller has the right to make the change he's asking
+    # check if the caller has the right to make the change they're asking
     # ... 1. either $> is allowkeeper and $ENV{'SUDO_USER'} is the requesting account
     # ... 2. or $> is $grouptomodify  and $ENV{'SUDO_USER'} is the requesting account
 
@@ -406,16 +406,12 @@ sub access_modify {
     );
     osh_debug("... result is $fnret");
 
-    #return $fnret if $fnret->is_err;
-
     if ($action eq 'add' and $fnret) {
         return R('OK_NO_CHANGE', msg => "The requested access to add was already granted");
     }
     elsif ($action eq 'del' and not $fnret) {
         return R('OK_NO_CHANGE', msg => "The requested access to delete was not found, no change made");
     }
-
-    # TODO for groupguest case, also check that the group has the right
 
     # ok, now do the change, first define this sub
 

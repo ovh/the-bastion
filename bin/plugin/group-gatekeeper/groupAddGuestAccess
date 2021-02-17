@@ -20,6 +20,7 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
         "scpup"     => \my $scpUp,
         "scpdown"   => \my $scpDown,
         "ttl=s"     => \my $ttl,
+        "comment=s" => \my $comment,
     },
     helptext => <<'EOF',
 Add a specific group server access to an account
@@ -27,7 +28,7 @@ Add a specific group server access to an account
 Usage: --osh SCRIPT_NAME --group GROUP --account ACCOUNT [OPTIONS]
 
   --group GROUP           group to add guest access to
-  --account ACCOUNT       name of the other bastion account to add access to, he'll be given access to the GROUP key
+  --account ACCOUNT       name of the other bastion account to add access to, they'll be given access to the GROUP key
   --host HOST|IP          add access to this HOST (which must belong to the GROUP)
   --user USER             allow connecting to HOST only with remote login USER
   --user-any              allow connecting to HOST with any remote login
@@ -35,7 +36,9 @@ Usage: --osh SCRIPT_NAME --group GROUP --account ACCOUNT [OPTIONS]
   --port-any              allow connecting to HOST with any remote port
   --scpup                 allow SCP upload, you--bastion-->server (omit --user in this case)
   --scpdown               allow SCP download, you<--bastion--server (omit --user in this case)
-  --ttl SECONDS|DURATION  Specify a number of seconds after which the access will automatically expire
+  --ttl SECONDS|DURATION  specify a number of seconds after which the access will automatically expire
+  --comment '"ANY TEXT'"  add a comment alongside this access.
+                            If omitted, we'll use the closest preexisting group access' comment as seen in groupListServers
 
 This command adds, to an existing bastion account, access to the egress keys of a group,
 but only to accessing one or several given servers, instead of all the servers of this group.
@@ -83,6 +86,7 @@ my $fnret = OVH::Bastion::Plugin::groupSetRole::act(
     portAny        => $portAny,
     host           => ($ip || $host),
     ttl            => $ttl,
+    comment        => $comment,
     sudo           => 0,
     silentoverride => 0,
     self           => $self,
