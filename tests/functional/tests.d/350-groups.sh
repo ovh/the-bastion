@@ -663,14 +663,14 @@ EOS
 
     grant accountAddPersonalAccess
 
-    run accountAddPersonalAccess a0_add_personal_access_to_a3_works_slash $a0 --osh accountAddPersonalAccess --account $account3 --host 77.66.55.0/24
-    json .command accountAddPersonalAccess .error_code OK .value null
+    run accountAddPersonalAccess a0_add_personal_access_to_a3_works_slash_1 $a0 --osh accountAddPersonalAccess --account $account3 --host 77.66.55.0/24
+    json .command accountAddPersonalAccess .error_code OK .value.ip 77.66.55.0/24 .value.port null .value.user null
 
     run accountAddPersonalAccess a0_add_personal_access_to_a3_fail_badslash $a0 --osh accountAddPersonalAccess --account $account3 --host 77.66.55.0/23
     json .command null .error_code KO_INVALID_IP .value null
 
-    run accountAddPersonalAccess a0_add_personal_access_to_a3_works_slash $a0 --osh accountAddPersonalAccess --account $account3 --host 1.2.3.4/32
-    json .command accountAddPersonalAccess .error_code OK .value null
+    run accountAddPersonalAccess a0_add_personal_access_to_a3_works_slash_2 $a0 --osh accountAddPersonalAccess --account $account3 --host 1.2.3.4/32
+    json .command accountAddPersonalAccess .error_code OK .value.ip 1.2.3.4 .value.port null .value.user null
 
     success accountAddPersonalAccess a0_add_personal_access_to_a3_works $a0 --osh accountAddPersonalAccess --account $account3 --host 77.66.55.4
 
@@ -889,7 +889,7 @@ EOS
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2() servers()
     success groupAddServer firstadd_ok $a1 --osh groupAddServer --group $group1 --host 127.0.0.10 --port-any --user-any --force
     contain "was added to group"
-    json .command groupAddServer .error_code OK .value.group $group1 .value.host 127.0.0.10 .value.port null .value.user null
+    json .command groupAddServer .error_code OK .value.group $group1 .value.ip 127.0.0.10 .value.port null .value.user null
 
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2() servers(127.0.0.10)
     success groupAddServer firstadd_dup $a1 --osh groupAddServer --group $group1 --host 127.0.0.10 --port-any --user-any --force
@@ -898,13 +898,13 @@ EOS
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2() servers(127.0.0.10)
     success groupAddServer secondadd $a1 --osh groupAddServer --group $group1 --host 127.0.0.11 --port-any --user-any --force
     contain "was added to group"
-    json .command groupAddServer .error_code OK .value.group $group1 .value.host 127.0.0.11 .value.port null .value.user null
+    json .command groupAddServer .error_code OK .value.group $group1 .value.ip 127.0.0.11 .value.port null .value.user null
 
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2() servers(127.0.0.10,127.0.0.11)
     success groupAddServer thirdaddttl $a1 --osh groupAddServer --group $group1 --host 127.0.0.12 --port-any --user-any --force --ttl 0w19s0d
     contain "was added to group"
     contain "expires in 00:00:"
-    json .command groupAddServer .error_code OK .value.group $group1 .value.host 127.0.0.12 .value.port null .value.user null .value.ttl 19
+    json .command groupAddServer .error_code OK .value.group $group1 .value.ip 127.0.0.12 .value.port null .value.user null .value.ttl 19
 
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2() servers(127.0.0.10,127.0.0.11,127.0.0.12-TTL)
     success groupListServers list   $a1 --osh groupListServers --group $group1
@@ -1011,13 +1011,13 @@ EOS
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2(guest(127.0.0.10)) servers(127.0.0.10,127.0.0.11)
     success accountAddPersonalAccess own11 $a0 --osh accountAddPersonalAccess --account $account2 --host 127.0.0.11 --user $account2 --port 22
     contain "adding the access blindly"
-    json .command accountAddPersonalAccess .error_code OK .value      null
+    json .command accountAddPersonalAccess .error_code OK .value.account $account2 .value.ip 127.0.0.11 .value.user $account2 .value.port 22
 
     # just try the ttl param
-    success accountAddPersonalAccess own11 $a0 --osh accountAddPersonalAccess --account $account2 --host 127.7.0.11 --user $account2 --port 22 --ttl 3
+    success accountAddPersonalAccess own11_ttl $a0 --osh accountAddPersonalAccess --account $account2 --host 127.7.0.11 --user $account2 --port 22 --ttl 3
     contain "adding the access blindly"
     contain "expires in 00:00:0"
-    json .command accountAddPersonalAccess .error_code OK .value      null
+    json .command accountAddPersonalAccess .error_code OK .value.account $account2 .value.ip 127.7.0.11 .value.user $account2 .value.port 22 .value.ttl 3
 
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2(guest(127.0.0.10)) servers(127.0.0.10,127.0.0.11)
     # account1: perso(account1@127.0.0.11:22)

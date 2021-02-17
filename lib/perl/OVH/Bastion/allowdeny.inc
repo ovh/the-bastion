@@ -98,7 +98,7 @@ sub is_access_way_granted {
 "checking way $way/$account/$group with ignorePort=$ignorePort ignoreUser=$ignoreUser exactIpMatch=$exactIpMatch exactPortMatch=$exactPortMatch exactUserMatch=$exactUserMatch"
     );
 
-    my ($bestMatch, $bestMatchSize, $forceKey);
+    my ($bestMatch, $bestMatchSize, $bestMatchComment, $forceKey);
     foreach my $entry (@acl) {
         my $allowedIp     = $entry->{'ip'};         # can be a prefix
         my $allowedUser   = $entry->{'user'};       # can be undef (if any-user)
@@ -200,10 +200,11 @@ sub is_access_way_granted {
             next if ($allowedIp ne $wantedIp);
 
             # here, we got a perfect match
-            $forceKey      = $localForceKey;
-            $bestMatch     = $allowedIp;
-            $bestMatchSize = undef;            # not needed
-            last;                              # perfect match, don't search further
+            $forceKey         = $localForceKey;
+            $bestMatch        = $allowedIp;
+            $bestMatchComment = $entry->{'userComment'};
+            $bestMatchSize    = undef;                     # not needed
+            last;                                          # perfect match, don't search further
         }
 
         # check IP in not-exactIpMatch case. if it contains / then it's a prefix
@@ -215,9 +216,10 @@ sub is_access_way_granted {
             if ($ipCheck && $ipCheck->match($wantedIp)) {
                 osh_debug("... we got a slash match !");
                 if (not defined $bestMatchSize or $ipCheck->size() < $bestMatchSize) {
-                    $forceKey      = $localForceKey;
-                    $bestMatch     = $allowedIp;
-                    $bestMatchSize = $ipCheck->size();
+                    $forceKey         = $localForceKey;
+                    $bestMatch        = $allowedIp;
+                    $bestMatchComment = $entry->{'userComment'};
+                    $bestMatchSize    = $ipCheck->size();
                     $bestMatchSize == 1 and last;    # we won't get better than this
                 }
             }
@@ -226,16 +228,17 @@ sub is_access_way_granted {
             # it's a single ip, so a stupid strcmp() does the trick
             if ($allowedIp eq $wantedIp) {
                 osh_debug("... we got a singleip match !");
-                $forceKey      = $localForceKey;
-                $bestMatch     = $allowedIp;
-                $bestMatchSize = 1;
+                $forceKey         = $localForceKey;
+                $bestMatch        = $allowedIp;
+                $bestMatchComment = $entry->{'userComment'};
+                $bestMatchSize    = 1;
                 last;
             }
         }
     }
 
     if (defined $bestMatch) {
-        return R('OK', value => {match => $bestMatch, size => $bestMatchSize, forceKey => $forceKey});
+        return R('OK', value => {match => $bestMatch, size => $bestMatchSize, forceKey => $forceKey, comment => $bestMatchComment});
     }
     return R('KO_ACCESS_DENIED');
 }

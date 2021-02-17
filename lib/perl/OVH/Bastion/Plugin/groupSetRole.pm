@@ -33,7 +33,7 @@ sub preconditions {
     if ($type eq 'guest' && !$sudo) {
 
         # guest access need (user||user-any), host and (port||port-any)
-        # in sudo mode, these are not used, because the helper doesn't handle the guest access add by itself, the do() func of this package does
+        # in sudo mode, these are not used, because the helper doesn't handle the guest access add by itself, the act() func of this package does
         if (!($user xor $userAny)) {
             return R('ERR_MISSING_PARAMETER', msg => "Require exactly one argument of user or user-any");
         }
@@ -144,8 +144,8 @@ sub act {
 
     # get returned untainted value
     my %values = %{$fnret->value()};
-    my ($group, $shortGroup, $account, $type, $realm, $remoteaccount, $sysaccount) = @values{qw{ group shortGroup account type realm remoteaccount sysaccount }};
-    my ($action, $self, $user, $host, $port, $ttl) = @params{qw{ action self user host port ttl }};
+    my ($group,  $shortGroup, $account, $type, $realm, $remoteaccount, $sysaccount) = @values{qw{ group shortGroup account type realm remoteaccount sysaccount }};
+    my ($action, $self,       $user,    $host, $port,  $ttl,           $comment)    = @params{qw{ action self user host port ttl comment }};
 
     undef $user if $params{'userAny'};
     undef $port if $params{'portAny'};
@@ -168,7 +168,7 @@ sub act {
 
         if ($action eq 'add' && OVH::Bastion::is_group_guest(group => $shortGroup, account => $account, sudo => $params{'sudo'})) {
 
-            # if the user is a guest, must remove all his guest accesses first
+            # if the user is a guest, must remove all their guest accesses first
             $fnret = OVH::Bastion::get_acl_way(way => 'groupguest', group => $shortGroup, account => $account);
             if ($fnret && $fnret->value && @{$fnret->value}) {
                 osh_warn("This account was previously a guest of this group, with the following accesses:");
@@ -242,6 +242,9 @@ sub act {
                     msg => "The group $shortGroup doesn't have access to $machine, so you can't add a guest group access "
                       . "to it (first add it to the group if applicable, with groupAddServer)");
             }
+
+            # if no comment was specified for this guest access, reuse the one from the matching group ACL entry
+            $comment ||= $fnret->value->{'comment'};
         }
 
         # If the account is already a member, can't add/del them as guest
@@ -259,6 +262,7 @@ sub act {
         push @command, '--user', $user if $user;
         push @command, '--port', $port if $port;
         push @command, '--ttl', $ttl if $ttl;
+        push @command, '--comment', $comment if $comment;
 
         $fnret = OVH::Bastion::helper(cmd => \@command);
         $fnret or return $fnret;
@@ -350,6 +354,7 @@ sub act {
                 ['host',    $host],
                 ['port',    $port],
                 ['ttl',     $ttl],
+                ['comment', $comment || ''],
             ]
         );
     }

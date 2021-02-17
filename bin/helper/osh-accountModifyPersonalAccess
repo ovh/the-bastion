@@ -91,6 +91,10 @@ if (not grep { $action eq $_ } qw{ add del }) {
 #<PARAMS:ACTION
 
 #>CODE
+my $machine = $ip;
+$port and $machine .= ":$port";
+$user and $machine = $user . '@' . $machine;
+
 # access_modify validates all its parameters, don't do it ourselves here for clarity
 $fnret = OVH::Bastion::access_modify(
     way      => 'personal',
@@ -103,4 +107,18 @@ $fnret = OVH::Bastion::access_modify(
     forceKey => $forceKey,
     comment  => $comment,
 );
+if ($fnret->err eq 'OK') {
+    my $ttlmsg = $ttl ? ' (expires in ' . OVH::Bastion::duration2human(seconds => $ttl)->value->{'human'} . ')' : '';
+    HEXIT(
+        'OK',
+        value => {action => $action, account => $account, ip => $ip, user => $user, port => $port, ttl => $ttl, comment => $comment},
+        msg   => $action eq 'add' ? "Access to $machine was added to account $account$ttlmsg" : "Access to $machine was removed from account $account$ttlmsg"
+    );
+}
+elsif ($fnret->err eq 'OK_NO_CHANGE') {
+    HEXIT('OK_NO_CHANGE',
+        msg => $action eq 'add'
+        ? "Access to $machine was already granted to account $account, nothing done"
+        : "Access to $machine was not granted to account $account, nothing done");
+}
 HEXIT($fnret);

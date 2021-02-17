@@ -115,16 +115,14 @@ testsuite_selfaccesses()
 
     success selfAddPersonalAccess mustwork $a0 -osh selfAddPersonalAccess -h 127.0.0.2 -u $shellaccount -p 22 --kbd-interactive
     nocontain "already"
-    contain "Access to $shellaccount@127.0.0.2:22 successfully added"
-    json .command   selfAddPersonalAccess .error_code   OK .value null
+    json .command   selfAddPersonalAccess .error_code   OK .value.ip 127.0.0.2 .value.user $shellaccount .value.port 22
 
     success selfAddPersonalAccess dupe $a0 -osh selfAddPersonalAccess -h 127.0.0.2 -u $shellaccount -p 22 --kbd-interactive
     contain "already"
     json .command   selfAddPersonalAccess .error_code   OK_NO_CHANGE .value null
 
     success selfAddPersonalAccess withttl $a0 -osh selfAddPersonalAccess -h 127.0.0.4 -u $shellaccount -p 22 --force --ttl 0d0h0m3s
-    contain "Access to $shellaccount@127.0.0.4:22 successfully added (expires in 00:00:0"
-    json .command   selfAddPersonalAccess .error_code   OK .value  null
+    json .command   selfAddPersonalAccess .error_code   OK .value.ip 127.0.0.4 .value.user $shellaccount .value.port 22 .value.ttl 3
 
     run ssh a1atlo2_login8     $a0           127.0.0.2 -- id
     retvalshouldbe 107
@@ -360,8 +358,8 @@ testsuite_selfaccesses()
 
     #sudo usermod -a -G osh-selfDelPersonalAccess $account1
     success selfDelPersonalAccess mustwork $a0 -osh selfDelPersonalAccess -h 127.0.0.2 -u $shellaccount -p 22
-    contain "Access to $shellaccount@127.0.0.2:22 successfully removed"
-    json  .command selfDelPersonalAccess .error_code OK .value null
+    contain "Access to $shellaccount@127.0.0.2:22"
+    json  .command selfDelPersonalAccess .error_code OK .value.ip 127.0.0.2 .value.user $shellaccount .value.port 22
 
     run ssh shellaccountatlo2_mustfail   $a1 $shellaccount@127.0.0.2 -- echo $randomstr
     retvalshouldbe 107
@@ -371,8 +369,7 @@ testsuite_selfaccesses()
 
     success selfAddPersonalAccess mustwork $a0 -osh selfAddPersonalAccess -h 127.0.0.2 -u $shellaccount -p 226
     nocontain "already"
-    contain "Access to $shellaccount@127.0.0.2:226 successfully added"
-    json .command selfAddPersonalAccess .error_code OK .value null
+    json .command selfAddPersonalAccess .error_code OK .value.ip 127.0.0.2 .value.user $shellaccount .value.port 226
 
     # shouldn't work
 
@@ -391,8 +388,8 @@ testsuite_selfaccesses()
     contain "$randomstr"
 
     success selfDelPersonalAccess mustwork $a0 -osh selfDelPersonalAccess -h 127.0.0.2 -u $shellaccount -p 226
-    contain "Access to $shellaccount@127.0.0.2:226 successfully removed"
-    json .command selfDelPersonalAccess .error_code OK .value      null
+    contain "Access to $shellaccount@127.0.0.2:226"
+    json .command selfDelPersonalAccess .error_code OK .value.ip 127.0.0.2 .value.user $shellaccount .value.port 226
 
     run ssh shellaccountatlo2_mustfailnow   $a0 $shellaccount@127.0.0.2 -p 226 -- echo $randomstr
     retvalshouldbe 107
@@ -408,8 +405,7 @@ testsuite_selfaccesses()
     success selfAddPersonalAccess nousernoport $a0 -osh selfAddPersonalAccess -h 127.0.0.4 --force
     nocontain "already"
     contain "Forcing add as asked"
-    contain "Access to 127.0.0.4 successfully added"
-    json .command selfAddPersonalAccess .error_code OK .value      null
+    json .command selfAddPersonalAccess .error_code OK .value.ip 127.0.0.4 .value.port null .value.user null
 
     run ssh rootport22 $a0 root@127.0.0.4 -- echo $randomstr
     retvalshouldbe 255
@@ -441,8 +437,8 @@ testsuite_selfaccesses()
     nocontain "$randomstr"
 
     success selfDelPersonalAccess nousernoport $a0 -osh selfDelPersonalAccess -h 127.0.0.4
-    contain "Access to 127.0.0.4 successfully removed"
-    json .command selfDelPersonalAccess .error_code OK .value      null
+    contain "Access to 127.0.0.4 "
+    json .command selfDelPersonalAccess .error_code OK .value.ip 127.0.0.4 .value.port null .value.user null
 
     success selfDelPersonalAccess nousernoport_dupe $a0 -osh selfDelPersonalAccess -h 127.0.0.4
     nocontain "no longer has a personal access"
