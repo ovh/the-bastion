@@ -105,7 +105,11 @@ $fnret = OVH::Bastion::access_modify(
 );
 if ($fnret->err eq 'OK') {
     my $ttlmsg = $ttl ? ' (expires in ' . OVH::Bastion::duration2human(seconds => $ttl)->value->{'human'} . ')' : '';
-    HEXIT('OK', msg => $action eq 'add' ? "Entry $machine was added to group $shortGroup$ttlmsg" : "Entry $machine was removed from group $shortGroup$ttlmsg");
+    HEXIT(
+        'OK',
+        value => {action => $action, group => $shortGroup, ip => $ip, user => $user, port => $port, ttl => $ttl, comment => $comment},
+        msg   => $action eq 'add' ? "Entry $machine was added to group $shortGroup$ttlmsg" : "Entry $machine was removed from group $shortGroup$ttlmsg"
+    );
 }
 elsif ($fnret->err eq 'OK_NO_CHANGE') {
     HEXIT('OK_NO_CHANGE',
