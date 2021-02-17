@@ -662,6 +662,9 @@ my $hasMfaTOTPBypass        = OVH::Bastion::is_user_in_group(account => $sysself
 my $remoteMfaValidated = 0;
 my $remoteMfaPassword  = 0;
 my $remoteMfaTOTP      = 0;
+my $remoteHasPIV       = 0;
+
+my $pivEffectivePolicyEnabled = OVH::Bastion::is_effective_piv_account_policy_enabled(account => $self);
 
 # if we're coming from a realm, we're receiving a connection from another bastion, keep all the traces:
 my @previous_bastion_details;
@@ -675,6 +678,19 @@ if ($realm && $ENV{'LC_BASTION_DETAILS'}) {
         $remoteMfaValidated = $decoded_details->[0]{'mfa'}{'validated'}        ? 1 : 0;
         $remoteMfaPassword  = $decoded_details->[0]{'mfa'}{'type'}{'password'} ? 1 : 0;
         $remoteMfaTOTP      = $decoded_details->[0]{'mfa'}{'type'}{'totp'}     ? 1 : 0;
+
+        # also get the PIV status
+        if (ref $decoded_details->[0]{'piv'} eq 'HASH') {
+            $remoteHasPIV = $decoded_details->[0]{'piv'}{'enforced'} ? 1 : 0;
+
+            # if remote PIV is not enforced AND we enforce PIV locally (either by global policy or account-scoped policy),
+            # we must refuse the connection.
+            if ($pivEffectivePolicyEnabled && !$remoteHasPIV) {
+                my $otherSideName = $decoded_details->[0]{'via'}{'name'} || $decoded_details->[0]{'via'}{'host'};
+                main_exit(OVH::Bastion::EXIT_PIV_REQUIRED, 'piv_required',
+                    "Sorry $self, but the $bastionName bastion policy requires that you use a PIV key to connect, please set a PIV key up on your local bastion ($otherSideName).");
+            }
+        }
     }
 }
 
@@ -785,7 +801,12 @@ if ($sshAs) {
 }
 
 # This will be filled with details we might want to pass on to the remote machine as a json-encoded envvar
-my %bastion_details;
+my %bastion_details = (
+    piv => {
+        enforced => $pivEffectivePolicyEnabled ? \1 : \0,
+        reason   => $pivEffectivePolicyEnabled->msg,
+    },
+);
 
 #
 #   First case. We have an OSH command
@@ -1245,8 +1266,9 @@ $ENV{'LC_BASTION'} = $self;
 $bastion_details{'mfa'}{'validated'}        //= \0;
 $bastion_details{'mfa'}{'type'}{'password'} //= \0;
 $bastion_details{'mfa'}{'type'}{'totp'}     //= \0;
+$bastion_details{'piv'}{'enforced'}         //= \0;
 $bastion_details{'from'} = {addr => $ipfrom,    host => $hostfrom,    port => $portfrom + 0};
-$bastion_details{'via'}  = {addr => $bastionip, host => $bastionhost, port => $bastionport + 0};
+$bastion_details{'via'}  = {addr => $bastionip, host => $bastionhost, port => $bastionport + 0, name => $bastionName};
 $bastion_details{'to'}   = {addr => $ip,        host => $hostto,      port => $port + 0, user => $user};
 $bastion_details{'account'} = $self;
 $bastion_details{'uniqid'}  = $log_uniq_id;
