@@ -20,7 +20,7 @@ Add a specific group server access to an account
 
 .. option:: --account ACCOUNT     
 
-   name of the other bastion account to add access to, he'll be given access to the GROUP key
+   name of the other bastion account to add access to, they'll be given access to the GROUP key
 
 .. option:: --host HOST|IP        
 
@@ -52,8 +52,13 @@ Add a specific group server access to an account
 
 .. option:: --ttl SECONDS|DURATION
 
-   Specify a number of seconds after which the access will automatically expire
+   specify a number of seconds after which the access will automatically expire
 
+.. option:: --comment '"ANY TEXT'"
+
+   add a comment alongside this access.
+
+                            If omitted, we'll use the closest preexisting group access' comment as seen in groupListServers
 
 This command adds, to an existing bastion account, access to the egress keys of a group,
 but only to accessing one or several given servers, instead of all the servers of this group.
