@@ -129,6 +129,11 @@ testsuite_selfaccesses()
     contain "Access denied for"
     json .command null .value null .error_code KO_ACCESS_DENIED
 
+    # auto hostname=$host comment
+
+    success selfAddPersonalAccess self_add_personal_access_auto_comment $a0 --osh selfAddPersonalAccess --host localhost -u autocomment -p 1234 --force --ttl 1
+    json .command selfAddPersonalAccess .error_code OK .value.comment "hostname=localhost" .value.user autocomment .value.port 1234 .value.ttl 1
+
     # forcekey
 
     success selfListIngressKeys for_force_key $a0 --osh selfListEgressKeys

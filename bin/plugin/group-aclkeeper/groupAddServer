@@ -130,6 +130,12 @@ else {
     osh_info "Forcing add as asked, we didn't test the SSH connection, maybe it won't work!";
 }
 
+# if no comment is specified, but we're adding the server by hostname,
+# use it to craft a comment
+if (!$comment && $host ne $ip) {
+    $comment = "hostname=$host";
+}
+
 my @command = qw{ sudo -n -u };
 push @command, ($group, '--', '/usr/bin/env', 'perl', '-T', $OVH::Bastion::BASEPATH . '/bin/helper/osh-groupAddServer');
 push @command, '--group',     $group;
