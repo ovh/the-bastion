@@ -175,7 +175,8 @@ if (OVH::Bastion::is_auditor(account => $self)) {
     $fnret = OVH::Bastion::account_config(account => $account, public => 1, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_POLICY);
     $ret{'ingress_piv_enforced'} = ($fnret && $fnret->value eq 'yes') ? 1 : 0;    # keep for backwards compat
     $ret{'ingress_piv_policy'}   = $fnret->value || undef;
-    osh_info "- PIV policy for ingress keys on this account is set to " . colored($ret{'ingress_piv_policy'}, $ret{'ingress_piv_policy'} eq 'default' ? 'blue' : 'green');
+    my $ingress_piv_policy_print = $ret{'ingress_piv_policy'} ? $ret{'ingress_piv_policy'} : 'default';
+    osh_info "- PIV policy for ingress keys on this account is set to " . colored($ingress_piv_policy_print, $ingress_piv_policy_print eq 'default' ? 'blue' : 'green');
 
     $fnret = OVH::Bastion::account_config(account => $account, public => 1, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_GRACE);
     if ($fnret && $fnret->value > time()) {
