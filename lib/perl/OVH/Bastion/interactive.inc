@@ -75,7 +75,14 @@ EOM
 
     # setup readline
 
-    $term->ornaments(1);
+    if (!$ENV{'TERM'}) {
+
+        # if TERM is undef, don't call $term->ornaments(1) or we'll generate a warn
+        print "Your TERM envvar is not defined, some things might not work correctly!\n\n";
+    }
+    else {
+        $term->ornaments(1);
+    }
     my $attribs = $term->Attribs;
 
     $attribs->{'completion_function'} = sub {
