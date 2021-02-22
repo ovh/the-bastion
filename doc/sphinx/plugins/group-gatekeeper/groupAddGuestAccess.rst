@@ -54,7 +54,7 @@ Add a specific group server access to an account
 
    specify a number of seconds after which the access will automatically expire
 
-.. option:: --comment '"ANY TEXT'"
+.. option:: --comment '"ANY TEXT"'
 
    add a comment alongside this access.
 
