@@ -24,6 +24,11 @@ Note that if you're using an infrastructure automation tool such as Puppet, Ansi
 Version-specific upgrade instructions
 =====================================
 
+v3.03.00 - 2021/02/22
+*********************
+
+No specific upgrade instructions.
+
 v3.02.00 - 2021/02/01
 *********************
 
