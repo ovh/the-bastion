@@ -1,3 +1,20 @@
+## v3.03.00 - 2021/02/22
+- feat: transmit PIV enforcement status to remote realms, so that the remote policy can be enforced (#33)
+- feat: add `groupGenerateEgressKey` and `groupDelEgressKey` (#135)
+- feat: auto-add hostname as comment in `groupAddServer` and `selfAddPersonalAccesss` (side-note in #60)
+- enh: `groupAddGuestAccess` now supports setting a comment (#17, #18)
+- enh: `groupAddServer`: augment the returned JSON with the added server details
+- enh: move unexpected-sudo messages from `security` to `code-warning` type
+- enh: egress ssh key: compute an ID so that keys can be pointed to and deleted
+- fix: `groupDelGuestAccess`: deleting a guest access returned an error on TTL-forced groups
+- fix: groupSetRole(): pass sudo param to subfuncs to avoid a security warning
+- fix: execute(): remove osh_warn on tainted params to avoid exposing arguments on coding error
+- fix: `groupModify`: deny early if user is not an owner of the group
+- enh: `groupInfo`: nicer message when no egress key exists
+- enh: `install`: use in-place overwrite for sudoers files, the 3-seconds wait by default has been removed (and the `--no-wait` parameter now does nothing)
+- fix: `interactive`: omit inactivity message warning when set to 0 seconds
+- a few other internal fixes here and there
+
 ## v3.02.00 - 2021/02/01
 - no functional change since rc4, this version ends the rc cycle and is considered stable
 
