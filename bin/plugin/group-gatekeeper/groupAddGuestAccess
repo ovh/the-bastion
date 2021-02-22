@@ -37,7 +37,7 @@ Usage: --osh SCRIPT_NAME --group GROUP --account ACCOUNT [OPTIONS]
   --scpup                 allow SCP upload, you--bastion-->server (omit --user in this case)
   --scpdown               allow SCP download, you<--bastion--server (omit --user in this case)
   --ttl SECONDS|DURATION  specify a number of seconds after which the access will automatically expire
-  --comment '"ANY TEXT'"  add a comment alongside this access.
+  --comment '"ANY TEXT"'  add a comment alongside this access.
                             If omitted, we'll use the closest preexisting group access' comment as seen in groupListServers
 
 This command adds, to an existing bastion account, access to the egress keys of a group,
