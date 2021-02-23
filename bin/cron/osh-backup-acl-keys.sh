@@ -96,8 +96,8 @@ do
         rm -f "$tarstderr"
         break
     else
-        # special case: if a file changed while we were reading it, tar fails, in that case: retry
-        if [ $ret -eq 1 ] && grep -q 'file changed as we read it' "$tarstderr"; then
+        # special case: if a file changed/removed while we were reading it, tar fails, in that case: retry
+        if [ $ret -eq 1 ] && grep -q -e 'changed as we read it' -e 'removed before we read it' "$tarstderr"; then
             _log "Transient tar failure (try $try):"
             while read -r line; do
                 _log "tar: $line"
