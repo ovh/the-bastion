@@ -29,6 +29,8 @@ chmod 0644 "$basedir"/bin/dev/perlcriticrc
 chmod 0700 "$basedir"/bin/admin/install
 chmod 0700 "$basedir"/contrib
 chmod 0700 "$basedir"/bin/sudogen
+chmod 0700 "$basedir"/tests
+test -d "$basedir"/install && chmod 0700 "$basedir"/install
 
 while IFS= read -r -d '' file
 do
@@ -49,8 +51,9 @@ chmod 0755 "$basedir"/docker/entrypoint.sh \
     "$basedir"/tests/functional/launch_tests_on_instance.sh \
     "$basedir"/tests/functional/docker/target_role.sh \
     "$basedir"/tests/functional/docker/tester_role.sh \
-    "$basedir"/tests/functional/fake_ttyrec.sh \
-    "$basedir"/tests/unit/run.pl
+    "$basedir"/tests/functional/fake_ttyrec.sh
+
+find "$basedir"/tests/unit -type f -name "*.pl" -print0 | xargs -r0 chmod 0755 --
 
 while IFS= read -r -d '' plugin
 do
