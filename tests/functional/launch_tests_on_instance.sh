@@ -418,10 +418,10 @@ runtests()
     for module in "$(dirname $0)"/tests.d/???-*.sh
     do
         if [ -n "$TEST_SCRIPT" ] && [ "$TEST_SCRIPT" != "$(basename "$module")" ]; then
-            echo "### SKIPPING MODULE $module"
+            echo "### SKIPPING MODULE $(basename $module)"
             continue
         fi
-        echo "### RUNNING MODULE $module"
+        echo "### RUNNING MODULE $(basename $module)"
 
         # as this is a loop, we do the check in a reversed way, see any included module for more info:
         # shellcheck disable=SC1090
@@ -434,10 +434,17 @@ runtests()
 
 COUNTONLY=0
 echo === running unit tests ===
-if ! $r0 perl "$remote_basedir/tests/unit/run.pl"; then
-    printf "%b%b%b\\n" "$WHITE_ON_RED" "Unit tests failed :(" "$NOC"
-    exit 1
-fi
+# a while read loop doesn't work well here:
+# shellcheck disable=SC2044
+for f in $(find "$basedir/tests/unit/" -mindepth 1 -maxdepth 1 -type f -name "*.pl" -print)
+do
+    fbasename=$(basename "$f")
+    echo "-> $fbasename"
+    if ! $r0 perl "$remote_basedir/tests/unit/$fbasename"; then
+        printf "%b%b%b\\n" "$WHITE_ON_RED" "Unit tests failed :(" "$NOC"
+        exit 1
+    fi
+done
 
 COUNTONLY=1
 testno=0
