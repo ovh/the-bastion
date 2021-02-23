@@ -195,6 +195,10 @@ testsuite_selfaccesses()
     contain "No such file or directory"
     nocontain "Permission denied"
 
+    run scp invalidhostname scp -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file $shellaccount@_invalid._invalid:uptest /tmp/downloaded
+    retvalshouldbe 1
+    contain "Sorry, couldn't resolve the host you specified"
+
     success scp upload scp -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file /etc/passwd $shellaccount@127.0.0.2:uptest
     contain "through the bastion to"
     contain "Done,"

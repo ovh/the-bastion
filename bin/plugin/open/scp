@@ -96,6 +96,15 @@ if (not $host) {
     osh_exit;
 }
 
+if (not $ip) {
+
+    # use STDERR because stdout is eaten by scp itself
+    print STDERR "\nscp: Sorry, couldn't resolve the host you specified ('$host'), aborting.\n";
+
+    # note that the calling-side scp will not passthrough this exit code, but most probably "1" instead.
+    exit(OVH::Bastion::EXIT_HOST_NOT_FOUND);
+}
+
 my $machine = $ip;
 $machine = "$user\@$ip" if $user;
 $port ||= 22;       # scp uses 22 if not specified, so we need to test access to that port and not any port (aka undef)
