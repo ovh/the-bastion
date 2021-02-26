@@ -18,7 +18,7 @@ BEGIN {
         return 1 if (!defined $^S || $^S);
 
         # ignore this unimportant error (perl race condition?)
-        return 1 if (defined $msg and $msg =~ m{^panic: fold_constants JMPENV_PUSH returned 2});
+        return 1 if (defined $msg and $msg =~ m{^panic: (gen_constant_list|fold_constants) JMPENV_PUSH returned 2});
 
         # eval{} in a BEGIN{} in Net::DNS, ignore it
         return 1 if (defined $msg and $msg =~ m{^Can't locate Net/});
