@@ -1,0 +1,494 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Advanced Installation &mdash; The Bastion 3.03.00 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/thebastion.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Upgrading" href="upgrading.html" />
+    <link rel="prev" title="Basic Installation" href="basic.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> The Bastion
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                3.03.00
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../presentation/index.html">Presentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Installation &amp; Setup</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="basic.html">Basic Installation</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Advanced Installation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#encryption-signature-gpg-keys">Encryption &amp; signature GPG keys</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#generating-the-bastion-gpg-key">Generating the bastion GPG key</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#generating-and-importing-the-admins-gpg-key">Generating and importing the admins GPG key</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#rotation-encryption-backup-of-ttyrec-files">Rotation, encryption &amp; backup of ttyrec files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#configuring-keys-accounts-groups-remote-backup">Configuring keys, accounts &amp; groups remote backup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#logs-syslog">Logs/Syslog</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#clustering-high-availability">Clustering (High Availability)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#setting-up-a-slave-bastion">Setting up a slave bastion</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#misc">Misc</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#fix-buggy-readline-under-debian-jessie">Fix buggy ReadLine under Debian Jessie</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#create-sshfp-records">Create SSHFP records</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#harden-the-ssh-configuration">Harden the SSH configuration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fa-root-authentication">2FA root authentication</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="upgrading.html">Upgrading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tests.html">Running Tests</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../using/index.html">Using the bastion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/index.html">Administration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/index.html">Bastion plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">The Bastion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Installation &amp; Setup</a> &raquo;</li>
+        
+      <li>Advanced Installation</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/installation/advanced.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="advanced-installation">
+<h1>Advanced Installation<a class="headerlink" href="#advanced-installation" title="Permalink to this headline">¶</a></h1>
+<p>This section goes further in explaining how to setup your bastion. You should have completed the <a class="reference internal" href="basic.html"><span class="doc">basic installation</span></a> first.</p>
+<div class="section" id="encryption-signature-gpg-keys">
+<h2>Encryption &amp; signature GPG keys<a class="headerlink" href="#encryption-signature-gpg-keys" title="Permalink to this headline">¶</a></h2>
+<p>There are 2 pairs of GPG keys being used by the bastion:</p>
+<ul class="simple">
+<li>The <em>bastion GPG key</em><ul>
+<li>The <strong>private</strong> key is used by the <strong>bastion</strong> to <strong>sign</strong> the ttyrec files</li>
+<li>The <strong>public</strong> key is used by the <strong>admins</strong> to <strong>verify</strong> the signature and prove non-repudiation and non-tampering of the ttyrec files</li>
+</ul>
+</li>
+<li>The <em>admins GPG key</em><ul>
+<li>The <strong>public</strong> key is used by the <strong>bastion</strong> to <strong>encrypt</strong> the backups and the ttyrec files</li>
+<li>The <strong>private</strong> key is used by the <strong>admins</strong> to <strong>decrypt</strong> the backups when a restore operation is needed, and the ttyrec files</li>
+</ul>
+</li>
+</ul>
+<div class="section" id="generating-the-bastion-gpg-key">
+<h3>Generating the bastion GPG key<a class="headerlink" href="#generating-the-bastion-gpg-key" title="Permalink to this headline">¶</a></h3>
+<p>Generate a GPG key that will be used by the bastion to sign files, this might take a while especially if the server is idle:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll"> /opt/bastion/bin/admin/setup-gpg.sh --generate
+</span>
+ gpg: directory <span class="sb">`</span>/root/.gnupg<span class="s1">&#39; created</span>
+<span class="s1"> gpg: Generating GPG key, it&#39;</span>ll take some time.
+
+ Not enough random bytes available.  Please <span class="k">do</span> some other work to give
+ the OS a chance to collect more entropy! <span class="o">(</span>Need <span class="m">39</span> more bytes<span class="o">)</span>
+ ..........+++++
+ gpg: /root/.gnupg/trustdb.gpg: trustdb created
+ gpg: key A4480F26 marked as ultimately trusted
+ gpg: <span class="k">done</span>
+ gpg: checking the trustdb
+ gpg: <span class="m">3</span> marginal<span class="o">(</span>s<span class="o">)</span> needed, <span class="m">1</span> complete<span class="o">(</span>s<span class="o">)</span> needed, PGP trust model
+ gpg: depth: <span class="m">0</span>  valid:   <span class="m">1</span>  signed:   <span class="m">0</span>  trust: <span class="m">0</span>-, 0q, 0n, 0m, 0f, 1u
+
+ Configuration file /etc/bastion/osh-encrypt-rsync.conf.d/50-gpg-bastion-key.conf updated:
+ <span class="m">8</span>&lt;---8&lt;---8&lt;---8&lt;---8&lt;---8&lt;--
+ <span class="c1"># autogenerated with /opt/bastion/bin/admin/setup-gpg.sh at Wed Mar 21 10:03:08 CET 2018</span>
+ <span class="o">{</span>
+     <span class="s2">&quot;signing_key_passphrase&quot;</span>: <span class="s2">&quot;************&quot;</span>,
+     <span class="s2">&quot;signing_key&quot;</span>: <span class="s2">&quot;5D3CFDFFA4480F26&quot;</span>
+ <span class="o">}</span>
+ ---&gt;8---&gt;8---&gt;8---&gt;8---&gt;8---&gt;8
+
+ Done.
+</pre></div>
+</div>
+<p>While it's working, you can proceed to the section below.</p>
+</div>
+<div class="section" id="generating-and-importing-the-admins-gpg-key">
+<h3>Generating and importing the admins GPG key<a class="headerlink" href="#generating-and-importing-the-admins-gpg-key" title="Permalink to this headline">¶</a></h3>
+<p>You should import on the bastion one or more <strong>public</strong> GPG keys that'll be used for encryption. If you don't already have a GPG key for this, you can generate one. As this is the admin GPG key, don't generate it on the bastion itself. On the desk of the administrator (you?), you can run for example:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll"> <span class="nv">myname</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span>
+</span><span class="hll"> <span class="nv">email</span><span class="o">=</span><span class="s1">&#39;jd@example.org&#39;</span>
+</span><span class="hll"> <span class="nv">bastion</span><span class="o">=</span><span class="s1">&#39;mybastion4.example.org&#39;</span>
+</span><span class="hll"> <span class="nv">pass</span><span class="o">=</span><span class="sb">`</span>pwgen -sy <span class="m">12</span> <span class="m">1</span><span class="sb">`</span>
+</span><span class="hll"> <span class="nb">echo</span> <span class="s2">&quot;The passphrase for the key will be: </span><span class="nv">$pass</span><span class="s2">&quot;</span>
+</span><span class="hll"> <span class="nb">printf</span> <span class="s2">&quot;Key-Type: RSA\nKey-Length: 4096\nSubkey-Type: RSA\nSubkey-Length: 4096\n&quot;</span> <span class="se">\</span>
+</span><span class="hll">   <span class="s2">&quot;Name-Real: %s\nName-Comment: %s\nName-Email: %s\nExpire-Date: 0\n&quot;</span> <span class="se">\</span>
+</span><span class="hll">   <span class="s2">&quot;Passphrase: %s\n%%echo Generating GPG key\n%%commit\n%%echo done\n&quot;</span> <span class="se">\</span>
+</span><span class="hll">   <span class="s2">&quot;</span><span class="nv">$myname</span><span class="s2"> (</span><span class="nv">$bastion</span><span class="s2">)&quot;</span> <span class="k">$(</span>date +%Y<span class="k">)</span> <span class="s2">&quot;</span><span class="nv">$email</span><span class="s2">&quot;</span> <span class="s2">&quot;</span><span class="nv">$pass</span><span class="s2">&quot;</span> <span class="p">|</span> gpg --gen-key --batch
+</span>
+ The passphrase <span class="k">for</span> the key will be: ************
+ gpg: Generating GPG key
+
+ Not enough random bytes available.  Please <span class="k">do</span> some other work to give
+ the OS a chance to collect more entropy! <span class="o">(</span>Need <span class="m">119</span> more bytes<span class="o">)</span>
+ .....+++++
+
+ gpg: key D2BDF9B5 marked as ultimately trusted
+ gpg: <span class="k">done</span>
+</pre></div>
+</div>
+<p>Of course, adjust the <code class="docutils literal notranslate"><span class="pre">myname</span></code>, <code class="docutils literal notranslate"><span class="pre">email</span></code> and <code class="docutils literal notranslate"><span class="pre">bastion</span></code> variables accordingly. Write down the passphrase in a secure vault. All bastions admins will need it if they are to decrypt ttyrec files later for inspection, and also decrypt the backup should a restore be needed. When the key is done being generated, get the public key with <code class="docutils literal notranslate"><span class="pre">gpg</span> <span class="pre">-a</span> <span class="pre">--export</span> <span class="pre">D2BDF9B5</span></code>, using the proper key ID that you just generated. Copy it to your clipboard, then back to the bastion, paste it at the following prompt:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>/opt/bastion/bin/admin/setup-gpg.sh --import
+</pre></div>
+</div>
+<p>Also export the private admins GPG key to a secure vault (if you want the same key to be shared by the admins):</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>gpg --export-secret-keys --armor D2BDF9B5
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="rotation-encryption-backup-of-ttyrec-files">
+<h2>Rotation, encryption &amp; backup of ttyrec files<a class="headerlink" href="#rotation-encryption-backup-of-ttyrec-files" title="Permalink to this headline">¶</a></h2>
+<p>You should already have all the needed GPG keys at the proper places, by following &quot;Setup the encryption &amp; signature GPG keys&quot; section above.</p>
+<p>The configuration file is located in <code class="docutils literal notranslate"><span class="pre">/etc/bastion/osh-encrypt-rsync.conf</span></code>.
+You can ignore the <code class="docutils literal notranslate"><span class="pre">signing_key</span></code>, <code class="docutils literal notranslate"><span class="pre">signing_key_passphrase</span></code> and <code class="docutils literal notranslate"><span class="pre">recipients</span></code> options, as these have been auto-filled when you generated the GPG keys, by dropping configuration files in the <code class="docutils literal notranslate"><span class="pre">/etc/bastion/osh-encrypt-rsync.conf.d</span></code> directory. Any file there takes precedence over the global configuration file.</p>
+<p>Once you are done with you configuration, you might want to test it by running:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>/opt/bastion/bin/admin/osh-encrypt-rsync.pl --config-test
+</pre></div>
+</div>
+<p>Or even go further by starting the script in dry-run mode:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>/opt/bastion/bin/admin/osh-encrypt-rsync.pl --dry-run
+</pre></div>
+</div>
+</div>
+<div class="section" id="configuring-keys-accounts-groups-remote-backup">
+<h2>Configuring keys, accounts &amp; groups remote backup<a class="headerlink" href="#configuring-keys-accounts-groups-remote-backup" title="Permalink to this headline">¶</a></h2>
+<p>Everything that is needed to restore a bastion from backup (keys, accounts, groups, etc.) is backed up daily in <code class="docutils literal notranslate"><span class="pre">/root/backups</span></code> by default. If you followed the &quot;Setup the encryption &amp; signature GPG keys&quot; section above, these backups will be encrypted automatically.</p>
+<p>If you want to push these backups to a remote location, which is warmly advised, you have to specify the remote location to <code class="docutils literal notranslate"><span class="pre">scp</span></code> the backup archives to. The configuration file is <code class="docutils literal notranslate"><span class="pre">/etc/bastion/osh-backup-acl-keys.conf</span></code>, and you should specify the <code class="docutils literal notranslate"><span class="pre">PUSH_REMOTE</span></code> and <code class="docutils literal notranslate"><span class="pre">PUSH_OPTIONS</span></code>.</p>
+<p>To verify that the script is correctly able to connect remotely (and also validate the remote hostkey), start the script manually:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll"> /opt/bastion/bin/admin/osh-backup-acl-keys.sh
+</span>
+ Pushing backup file <span class="o">(</span>/root/backups/backup-2020-05-25.tar.gz.gpg<span class="o">)</span> remotely...
+ backup-2020-05-25.tar.gz.gpg
+ <span class="m">100</span>%   21MB  <span class="m">20</span>.8MB/s   <span class="m">00</span>:00
+</pre></div>
+</div>
+<p>Also verify that the extension is <code class="docutils literal notranslate"><span class="pre">.gpg</span></code>, as seen above, which indicates that the script successfully encrypted the backup.</p>
+</div>
+<div class="section" id="logs-syslog">
+<h2>Logs/Syslog<a class="headerlink" href="#logs-syslog" title="Permalink to this headline">¶</a></h2>
+<p>It is advised to use syslog for The Bastion application logs. This can be configured in <code class="docutils literal notranslate"><span class="pre">/etc/bastion/bastion.conf</span></code> with the parameter <code class="docutils literal notranslate"><span class="pre">enableSyslog</span></code>.</p>
+<p>There is a default <code class="docutils literal notranslate"><span class="pre">syslog-ng</span></code> configuration provided, if you happen to use it. The file can be found as <code class="docutils literal notranslate"><span class="pre">etc/syslog-ng/conf.d/20-bastion.conf.dist</span></code> in the repository. Please read the comments in the file to know how to integrate it properly in your system.</p>
+</div>
+<div class="section" id="clustering-high-availability">
+<h2>Clustering (High Availability)<a class="headerlink" href="#clustering-high-availability" title="Permalink to this headline">¶</a></h2>
+<p>The bastions can work in a cluster, with N instances. In that case, there is one <em>master</em> instance, where any modification command can be used (creating accounts, deleting groups, granting accesses), and N-1 <em>slave</em> instances, where only <em>readonly</em> actions are permitted. Note that any instance can be used to connect to infrastructures, so in effect all instances can always be used at the same time. You may set up a DNS round-robin hostname, with all the instances IPs declared, so that clients automatically choose a random instance, without having to rely on another external component such as a load-balancer. Note that if you do this, you'll need all the instances to share the same SSH host keys.</p>
+<div class="section" id="setting-up-a-slave-bastion">
+<h3>Setting up a slave bastion<a class="headerlink" href="#setting-up-a-slave-bastion" title="Permalink to this headline">¶</a></h3>
+<p>Before, setting up the slave bastion, you should have the two bastions up and running (follow the normal installation documentation).</p>
+<div class="section" id="on-the-slave">
+<h4>On the slave<a class="headerlink" href="#on-the-slave" title="Permalink to this headline">¶</a></h4>
+<p>The sync of the  <code class="docutils literal notranslate"><span class="pre">passwd</span></code> and <code class="docutils literal notranslate"><span class="pre">group</span></code> files can have adverse effects on a newly installed machine where the packages where not installed in the same order than on the master, hence having different UIDs for the same users. The following commands are known to fix all the problems that could arise in that case, on an classic Debian machine, that has <code class="docutils literal notranslate"><span class="pre">puppet</span></code>, <code class="docutils literal notranslate"><span class="pre">postfix</span></code>, <code class="docutils literal notranslate"><span class="pre">ossec</span></code> and <code class="docutils literal notranslate"><span class="pre">bind</span></code> installed (disregard any <em>file or directory not found</em> message):</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>chown -R puppet:puppet /var/lib/puppet /var/log/puppet /run/puppet
+chgrp puppet /etc/puppet
+chown -R postfix /var/spool/postfix /var/lib/postfix
+chown root:root /var/spool/postfix
+chown -R root:root /var/spool/postfix/<span class="o">{</span>pid,etc,lib,dev,usr<span class="o">}</span>
+chgrp -R postdrop /var/spool/postfix/<span class="o">{</span>public,maildrop<span class="o">}</span>
+chown root:postdrop /usr/sbin/postdrop /usr/sbin/postqueue
+chmod g+s /usr/sbin/postdrop /usr/sbin/postqueue
+chown -R ossec /var/ossec/logs /var/ossec/queue /var/ossec/stats /var/ossec/var
+chgrp -R ossec /var/ossec
+chown ossecr /var/ossec/queue/agent-info /var/ossec/queue/rids
+chown root /var/ossec/queue/ /var/ossec/queue/alerts/execq /var/ossec/var /var/ossec/var/run
+chgrp <span class="nb">bind</span> /var/cache/bind /var/lib/bind /etc/bind /etc/bind/named.conf.default-zones /run/named
+chown -R bind:bind /etc/bind/rndc.key /run/named
+chgrp allowkeeper /var/log/bastion
+</pre></div>
+</div>
+<p>Then, on the slave, set the <code class="docutils literal notranslate"><span class="pre">readOnlySlaveMode</span></code> option in the <code class="docutils literal notranslate"><span class="pre">/etc/bastion/bastion.conf</span></code> file to <code class="docutils literal notranslate"><span class="pre">1</span></code>:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>vim /etc/bastion/bastion.conf
+</pre></div>
+</div>
+<p>This will instruct the bastion to deny any modification plugin, so that changes can only be done through the master instance.</p>
+<p>Then, append the master bastion synchronization public SSH keyfile, found in <code class="docutils literal notranslate"><span class="pre">~root/.ssh/id_master2slave.pub</span></code> on the master instance, to <code class="docutils literal notranslate"><span class="pre">~bastionsync/.ssh/authorized_keys</span></code> on the slave, with the following prefix: <code class="docutils literal notranslate"><span class="pre">from=&quot;IP.OF.THE.MASTER&quot;,restrict</span></code></p>
+<p>Hence the file should look like this:</p>
+<blockquote>
+<div><code class="docutils literal notranslate"><span class="pre">from=&quot;198.51.100.42&quot;,restrict</span> <span class="pre">ssh-ed25519</span> <span class="pre">AAA[...]</span></code></div></blockquote>
+<p>Note that if you're using an old OpenSSH before version 7.2, the prefix should be instead: <code class="docutils literal notranslate"><span class="pre">from=&quot;IP.OF.THE.MASTER&quot;,no-port-forwarding,no-agent-forwarding,no-X11-forwarding,no-pty,no-user-rc</span></code>.</p>
+</div>
+<div class="section" id="on-the-master">
+<h4>On the master<a class="headerlink" href="#on-the-master" title="Permalink to this headline">¶</a></h4>
+<ul class="simple">
+<li>Check that the key setup works correctly by launching the following command under the <code class="docutils literal notranslate"><span class="pre">root</span></code> account:</li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>rsync -vaA --numeric-ids --dry-run --delete --filter <span class="s2">&quot;merge /etc/bastion/osh-sync-watcher.rsyncfilter&quot;</span> --rsh <span class="s2">&quot;ssh -i /root/.ssh/id_master2slave&quot;</span> / bastionsync@IP.OF.THE.SLAVE:/
+</pre></div>
+</div>
+<ul class="simple">
+<li>Check that it's not trying to rsync too much stuff (if you have weird things in your <code class="docutils literal notranslate"><span class="pre">/home</span></code>, you might want to edit <code class="docutils literal notranslate"><span class="pre">/etc/bastion/osh-sync-watcher.rsyncfilter</span></code> to exclude that stuff)</li>
+<li>Once you're happy with the output, retry without the <code class="docutils literal notranslate"><span class="pre">--dry-run</span></code></li>
+<li>When it's done, run it immediately again to ensure it still work, because <code class="docutils literal notranslate"><span class="pre">/etc/passwd</span></code> and <code class="docutils literal notranslate"><span class="pre">/etc/group</span></code> will have been overwritten on the slave</li>
+<li>Then, edit the configuration on the master:</li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>vim /etc/bastion/osh-sync-watcher.sh
+</pre></div>
+</div>
+<ul class="simple">
+<li>Then, configure the script to start on boot and start it manually:</li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>systemctl <span class="nb">enable</span> osh-sync-watcher
+systemctl start osh-sync-watcher
+</pre></div>
+</div>
+<ul class="simple">
+<li>You can check the logs (if you configured <code class="docutils literal notranslate"><span class="pre">syslog</span></code> instead, which is encouraged, then the logfile depends on your syslog daemon configuration)</li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tail -F /var/log/bastion/osh-sync-watcher.log
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="misc">
+<h2>Misc<a class="headerlink" href="#misc" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="fix-buggy-readline-under-debian-jessie">
+<h3>Fix buggy ReadLine under Debian Jessie<a class="headerlink" href="#fix-buggy-readline-under-debian-jessie" title="Permalink to this headline">¶</a></h3>
+<p>Unfortunately, the version of <cite>libterm-readline-gnu-perl</cite> of Debian Jessie is bugged.
+The version of Wheezy (7) and Stretch (9) are correct, only Jessie (8) is affected.
+This impacts the <code class="docutils literal notranslate"><span class="pre">interactive</span></code> mode of the bastion, namely the autocomplete feature, if you want to apply a quickfix on your system, you can use this:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>patch -p0 -d / -r - &lt; /opt/bastion/contrib/libterm-readline-gnu-perl-jessiefix.patch
+</pre></div>
+</div>
+<p>Now, as Debian Jessie is quite old, the proper solution is probably not to use it!</p>
+</div>
+<div class="section" id="create-sshfp-records">
+<h3>Create SSHFP records<a class="headerlink" href="#create-sshfp-records" title="Permalink to this headline">¶</a></h3>
+<p>If you want to use <code class="docutils literal notranslate"><span class="pre">SSHFP</span></code> (for a bastion, you should), generate the records and publish them in the DNS:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>awk <span class="s1">&#39;tolower($1)~/^hostkey$/ {system(&quot;ssh-keygen -r bastion.name -f &quot;$2)}&#39;</span> /etc/ssh/sshd_config
+</pre></div>
+</div>
+</div>
+<div class="section" id="harden-the-ssh-configuration">
+<h3>Harden the SSH configuration<a class="headerlink" href="#harden-the-ssh-configuration" title="Permalink to this headline">¶</a></h3>
+<p>You can use this script:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>/opt/bastion/bin/admin/check-ssh-hardening.pl
+</pre></div>
+</div>
+<p>Note that this script doesn't check everything, just a few items. If you want a complete audit of your SSH configuration, there are other tools available. Using our SSH templates is also a good start.</p>
+<p>The script also supports generating custom moduli for your installation. The following command will generate moduli of 8192 bits size. Note that it'll take several hours:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>/opt/bastion/bin/admin/check-ssh-hardening.pl --generate-moduli <span class="m">8192</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="fa-root-authentication">
+<h3>2FA root authentication<a class="headerlink" href="#fa-root-authentication" title="Permalink to this headline">¶</a></h3>
+<p>The bastion supports TOTP (Time-based One Time Password), to further secure high profile accesses. This section covers the configuration of 2FA root authentication on the bastion itself. TOTP can also be enabled for regular bastion users, but this is covered in another section. To enable 2FA root authentication, run on the bastion:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>script -c <span class="s2">&quot;google-authenticator -t -Q UTF8 -r 3 -R 15 -s /var/otp/root -w 2 -e 4 -D&quot;</span> /root/qrcode
+</pre></div>
+</div>
+<p>Of course, you can check the <code class="docutils literal notranslate"><span class="pre">--help</span></code> and adjust the options accordingly. The example given above has sane defaults, but you might want to adjust if needed.
+Now, flash this QR code with your phone, using a TOTP application. You might want to copy the QR code somewhere safe in case you need to flash it on some other phone, by exporting the <code class="docutils literal notranslate"><span class="pre">base64</span></code> version of it:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>gzip -c /root/qrcode <span class="p">|</span> base64 -w150
+</pre></div>
+</div>
+<p>Copy this in your password manager (for example). You can then delete the <code class="docutils literal notranslate"><span class="pre">/root/qrcode</span></code> file.</p>
+<p>You have then two configuration adjustments to do.</p>
+<ul class="simple">
+<li>First, ensure you have installed the provided <code class="docutils literal notranslate"><span class="pre">/etc/pam.d/sshd</span></code> file, or at least the corresponding line to enable the TOTP pam plugin in your configuration.</li>
+<li>Second, ensure that your <code class="docutils literal notranslate"><span class="pre">/etc/ssh/sshd_config</span></code> file calls PAM for root authentication. In the provided templates, there is a commented snippet to do it. The uncommented snippet looks like this:</li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># 2FA has been configured for root, so we force pubkey+PAM for it</span>
+Match User root
+    AuthenticationMethods publickey,keyboard-interactive:pam
+</pre></div>
+</div>
+<p>Note that first, the usual publickey method will be used, then control will be passed to PAM. This is where the <code class="docutils literal notranslate"><span class="pre">/etc/pam.d/sshd</span></code> configuration will apply.</p>
+<p>Now, you should be asked for the TOTP the next time you try to login through ssh as root.
+In case something goes wrong with the new configuration, be sure to keep your already opened existing connection to be able to fix the problem without falling back to console access.</p>
+<p>Once this has been tested, you can (and probably should) also protect the direct root console access to your machine with TOTP, including a snippet similar to this one:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># TOTP config</span>
+auth    <span class="o">[</span><span class="nv">success</span><span class="o">=</span><span class="m">1</span> <span class="nv">default</span><span class="o">=</span>ignore<span class="o">]</span>  pam_google_authenticator.so <span class="nv">secret</span><span class="o">=</span>/var/otp/<span class="si">${</span><span class="nv">USER</span><span class="si">}</span>
+auth    requisite                   pam_deny.so
+<span class="c1"># End of TOTP Config</span>
+</pre></div>
+</div>
+<p>inside your <code class="docutils literal notranslate"><span class="pre">/etc/pam.d/login</span></code> file.</p>
+<p>Of course, when using TOTP, this is paramount to ensure your server is properly synchronized through NTP.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="upgrading.html" class="btn btn-neutral float-right" title="Upgrading" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="basic.html" class="btn btn-neutral float-left" title="Basic Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, OVHcloud
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

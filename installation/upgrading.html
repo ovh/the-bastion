@@ -1,0 +1,309 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Upgrading &mdash; The Bastion 3.03.00 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/thebastion.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Sandbox using Docker" href="docker.html" />
+    <link rel="prev" title="Advanced Installation" href="advanced.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> The Bastion
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                3.03.00
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../presentation/index.html">Presentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Installation &amp; Setup</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="basic.html">Basic Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="advanced.html">Advanced Installation</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Upgrading</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#general-upgrade-instructions">General upgrade instructions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#version-specific-upgrade-instructions">Version-specific upgrade instructions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#v3-03-00-2021-02-22">v3.03.00 - 2021/02/22</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#v3-02-00-2021-02-01">v3.02.00 - 2021/02/01</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#v3-01-03-2020-12-15">v3.01.03 - 2020/12/15</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#v3-01-02-2020-12-08">v3.01.02 - 2020/12/08</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#v3-01-01-2020-12-04">v3.01.01 - 2020/12/04</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#v3-01-00-2020-11-20">v3.01.00 - 2020/11/20</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#v3-00-02-2020-11-16">v3.00.02 - 2020/11/16</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#v3-00-01-2020-11-06">v3.00.01 - 2020/11/06</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#v3-00-00-2020-10-30">v3.00.00 - 2020/10/30</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tests.html">Running Tests</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../using/index.html">Using the bastion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/index.html">Administration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/index.html">Bastion plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">The Bastion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Installation &amp; Setup</a> &raquo;</li>
+        
+      <li>Upgrading</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/installation/upgrading.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="upgrading">
+<h1>Upgrading<a class="headerlink" href="#upgrading" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="general-upgrade-instructions">
+<h2>General upgrade instructions<a class="headerlink" href="#general-upgrade-instructions" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>First, check below if there are specific upgrade instructions for your version.</li>
+<li>When you're ready, update the code, if you're using <code class="docutils literal notranslate"><span class="pre">git</span></code>, you can checkout the latest tag:</li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="o">(</span> <span class="nb">umask</span> <span class="m">0022</span> <span class="o">&amp;&amp;</span> <span class="nb">cd</span> /opt/bastion <span class="o">&amp;&amp;</span> git fetch <span class="o">&amp;&amp;</span> git checkout <span class="k">$(</span>git tag <span class="p">|</span> tail -1<span class="k">)</span> <span class="o">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>Run the install script in upgrade mode, so it can make adjustments to the system needed for the new version:</li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>/opt/bastion/bin/admin/install --upgrade
+</pre></div>
+</div>
+<p>Note that if you're using an infrastructure automation tool such as Puppet, Ansible, Chef, and don't want the update script to touch some files that you manage yourself, you can use <code class="docutils literal notranslate"><span class="pre">--managed-upgrade</span></code> instead of <code class="docutils literal notranslate"><span class="pre">--upgrade</span></code>. See the <code class="docutils literal notranslate"><span class="pre">--help</span></code> for a more fine-grained upgrade path if needed.</p>
+</div>
+<div class="section" id="version-specific-upgrade-instructions">
+<h2>Version-specific upgrade instructions<a class="headerlink" href="#version-specific-upgrade-instructions" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="v3-03-00-2021-02-22">
+<h3>v3.03.00 - 2021/02/22<a class="headerlink" href="#v3-03-00-2021-02-22" title="Permalink to this headline">¶</a></h3>
+<p>No specific upgrade instructions.</p>
+</div>
+<div class="section" id="v3-02-00-2021-02-01">
+<h3>v3.02.00 - 2021/02/01<a class="headerlink" href="#v3-02-00-2021-02-01" title="Permalink to this headline">¶</a></h3>
+<p>The upgrade path from the preceding version is straightforward, however there are a few changes that you might want to be aware of before hitting the upgrade button:</p>
+<div class="section" id="the-main-configuration-file-now-supports-proper-booleans">
+<h4>The main configuration file now supports proper booleans<a class="headerlink" href="#the-main-configuration-file-now-supports-proper-booleans" title="Permalink to this headline">¶</a></h4>
+<p>For a lot of configuration options, previously you would specify &quot;1&quot; to enable a feature, and &quot;0&quot; to disable it. This has been changed to use proper <em>true</em> and <em>false</em> json values in <code class="file docutils literal notranslate"><span class="pre">/etc/bastion/bastion.conf</span></code>. Of course, backward compatibility with &quot;0&quot; and &quot;1&quot; will always be kept, so no breakage is to be expected for this version or future ones even if you keep your configuration untouched.</p>
+</div>
+<div class="section" id="logs-have-been-enhanced">
+<h4>Logs have been enhanced<a class="headerlink" href="#logs-have-been-enhanced" title="Permalink to this headline">¶</a></h4>
+<p>All connections and plugin executions emit two logs, an <em>open</em> and a <em>close</em> log. We now add all the details of the connection to the <em>close</em> logs, those that were previously only available in the corresponding <em>open</em> log. This way, it is no longer required to correlate both logs with their uniqid to have all the data: the <em>close</em> log should suffice. The <em>open</em> log is still there if for some reason the <em>close</em> log can't be emitted (kill -9, system crash, etc.), or if the <em>open</em> and the <em>close</em> log are several hours, days or months appart.</p>
+<p>An additional field <strong>duration</strong> has been added to the <em>close</em> logs, this represents the number of seconds (with millisecond precision) the connection lasted.</p>
+<p>Two new fields <strong>globalsql</strong> and <strong>accountsql</strong> have been added to the <em>open</em>-type logs. These will contain either <cite>ok</cite> if we successfully logged to the corresponding log database, <cite>no</cite> if it is disabled, or <cite>error $aDetailedMessage</cite> if we got an error trying to insert the row. The <em>close</em>-type log also has the new <strong>accountsql_close</strong> field, but misses the <strong>globalsql_close</strong> field as we never update the global database on this event. On the <em>close</em> log, we can also have the value <strong>missing</strong>, indicating that we couldn't update the access log row in the database, as the corresponding <em>open</em> log couldn't insert it.</p>
+<p>The <strong>ttyrecsize</strong> log field for the <em>close</em>-type logs has been removed, as it was never completely implemented, and contains bogus data if ttyrec log rotation occurs. It has also been removed from the sqlite log databases.</p>
+<p>The <em>open</em> and <em>close</em> events are now pushed to our own log files, in addition to syslog, if logging to those files is enabled (see <a class="reference internal" href="../administration/bastion_conf.html#enableglobalaccesslog"><span class="std std-ref">enableGlobalAccessLog</span></a> and <a class="reference internal" href="../administration/bastion_conf.html#enableaccountaccesslog"><span class="std std-ref">enableAccountAccessLog</span></a>), previously the <em>close</em> events were only pushed to syslog.</p>
+<p>The <code class="file docutils literal notranslate"><span class="pre">/home/osh.log</span></code> file is no longer used for <a class="reference internal" href="../administration/bastion_conf.html#enableglobalaccesslog"><span class="std std-ref">enableGlobalAccessLog</span></a>, the global log is instead written to <code class="file docutils literal notranslate"><span class="pre">/home/logkeeper/global-log-YYYYMM.log</span></code>.</p>
+<p>The global sql file, enabled with <a class="reference internal" href="../administration/bastion_conf.html#enableglobalsqllog"><span class="std std-ref">enableGlobalSqlLog</span></a>, is now split by year-month instead of by year, to <code class="file docutils literal notranslate"><span class="pre">/home/logkeeper/global-log-YYYYMM.sqlite</span></code>.</p>
+</div>
+</div>
+<div class="section" id="v3-01-03-2020-12-15">
+<h3>v3.01.03 - 2020/12/15<a class="headerlink" href="#v3-01-03-2020-12-15" title="Permalink to this headline">¶</a></h3>
+<p>No specific upgrade instructions.</p>
+</div>
+<div class="section" id="v3-01-02-2020-12-08">
+<h3>v3.01.02 - 2020/12/08<a class="headerlink" href="#v3-01-02-2020-12-08" title="Permalink to this headline">¶</a></h3>
+<p>No specific upgrade instructions.</p>
+</div>
+<div class="section" id="v3-01-01-2020-12-04">
+<h3>v3.01.01 - 2020/12/04<a class="headerlink" href="#v3-01-01-2020-12-04" title="Permalink to this headline">¶</a></h3>
+<p>No specific upgrade instructions.</p>
+</div>
+<div class="section" id="v3-01-00-2020-11-20">
+<h3>v3.01.00 - 2020/11/20<a class="headerlink" href="#v3-01-00-2020-11-20" title="Permalink to this headline">¶</a></h3>
+<p>A new bastion.conf option was introduced: <em>interactiveModeByDefault</em>. If not present in your config file, its value defaults to 1 (true), which changes the behavior of The Bastion when a user connects without specifying any command. When this happens, it'll now display the help then drop the user into interactive mode (if this mode is enabled), instead of displaying the help and aborting with an error message. Set it to 0 (false) if you want to keep the previous behavior.</p>
+<p>An SELinux module has been added in this version, to ensure TOTP MFA works correctly under systems where SELinux is on enforcing mode. This module will be installed automatically whenever SELinux is detected on the system. If you don't want to use this module, specify <cite>--no-install-selinux-module</cite> on your <cite>/opt/bastion/bin/admin/install</cite> upgrade call (please refer to the generic upgrade instructions for more details).</p>
+</div>
+<div class="section" id="v3-00-02-2020-11-16">
+<h3>v3.00.02 - 2020/11/16<a class="headerlink" href="#v3-00-02-2020-11-16" title="Permalink to this headline">¶</a></h3>
+<p>No specific upgrade instructions.</p>
+</div>
+<div class="section" id="v3-00-01-2020-11-06">
+<h3>v3.00.01 - 2020/11/06<a class="headerlink" href="#v3-00-01-2020-11-06" title="Permalink to this headline">¶</a></h3>
+<p>If you previously installed <code class="docutils literal notranslate"><span class="pre">ttyrec</span></code> using the now deprecated <code class="docutils literal notranslate"><span class="pre">build-and-install-ttyrec.sh</span></code> script, you might want to know that since this version, the script has been replaced by <code class="docutils literal notranslate"><span class="pre">install-ttyrec.sh</span></code>, which no longer builds in-place, but prefers downloading and installing prebuild <code class="docutils literal notranslate"><span class="pre">rpm</span></code> or <code class="docutils literal notranslate"><span class="pre">deb</span></code> packages.</p>
+<p>If you previously built and installed <code class="docutils literal notranslate"><span class="pre">ttyrec</span></code> manually, and want to use the new packages instead, you might want to manually uninstall your previously built ttyrec program (remove the binaries that were installed in <code class="docutils literal notranslate"><span class="pre">/usr/local/bin</span></code>), and call <code class="docutils literal notranslate"><span class="pre">install-ttyrec.sh</span> <span class="pre">-a</span></code> to download and install the proper package instead.</p>
+<p>This is not mandatory and doesn't change anything from the software point of view.</p>
+</div>
+<div class="section" id="v3-00-00-2020-10-30">
+<h3>v3.00.00 - 2020/10/30<a class="headerlink" href="#v3-00-00-2020-10-30" title="Permalink to this headline">¶</a></h3>
+<p>Initial public version, no specific upgrade instructions.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="docker.html" class="btn btn-neutral float-right" title="Sandbox using Docker" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="advanced.html" class="btn btn-neutral float-left" title="Advanced Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, OVHcloud
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

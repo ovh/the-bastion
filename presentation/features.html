@@ -1,0 +1,243 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Features &mdash; The Bastion 3.03.00 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/thebastion.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Security" href="security.html" />
+    <link rel="prev" title="Principles" href="principles.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> The Bastion
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                3.03.00
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of contents</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Presentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="principles.html">Principles</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="security.html">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/index.html">Installation &amp; Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/index.html">Using the bastion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/index.html">Administration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/index.html">Bastion plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">The Bastion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Presentation</a> &raquo;</li>
+        
+      <li>Features</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/presentation/features.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="features">
+<h1>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h1>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This aims to be a quick overview of the main supported features of The Bastion, focusing on use cases. For a better introduction about the basic features, please refer to the front page of the documentation.</p>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Documentation might not be present yet for all the features below.</p>
+</div>
+<ul class="simple">
+<li>Personal and group access schemes with group roles delegation to ensure teams autonomy without security trade-offs</li>
+<li>SSH protocol break between the ingress and egress connections (see other <a class="reference internal" href="security.html"><span class="doc">security measures</span></a>)</li>
+<li>Self-reliance achieved through virtually no external dependencies (see other <a class="reference internal" href="security.html"><span class="doc">security measures</span></a>)</li>
+<li>Interactive session recording (in standard <code class="docutils literal notranslate"><span class="pre">ttyrec</span></code> files)</li>
+<li>Non-interactive session recording (<cite>stdout</cite> and <cite>stderr</cite> through <code class="docutils literal notranslate"><span class="pre">ttyrec</span></code>)</li>
+<li>Extensive logging support through <cite>syslog</cite> for easy SIEM consumption</li>
+<li>Supports <a class="reference external" href="https://github.com/mobile-shell/mosh">MOSH</a> on the ingress connection side</li>
+<li>Supports <code class="docutils literal notranslate"><span class="pre">scp</span></code> passthrough, to upload and/or download files from/to remote servers</li>
+<li>Supports <code class="docutils literal notranslate"><span class="pre">netconf</span></code> SSH subsystem passthrough</li>
+<li>Supports Yubico PIV keys <a class="reference external" href="https://developers.yubico.com/PIV/Introduction/Yubico_extensions.html">attestation checking</a> and enforcement on the ingress connection side</li>
+<li>Supports realms, to create a trust between two bastions of possibly two different companies, splitting the authentication and authorization phases while still enforcing local policies</li>
+<li>Supports SSH password autologin on the egress side for legacy devices not supporting pubkey authentication, while still forcing proper pubkey authentication on the ingress side</li>
+<li>Supports telnet password autologin on the egress side for ancient devices not supporting SSH, while still forcing proper SSH pubkey authentication on the ingress side</li>
+<li>Supports HTTPS proxying with man-in-the-middle authentication and authorization handling, for ingress and egress password decoupling (mainly useful for network device APIs)</li>
+</ul>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="security.html" class="btn btn-neutral float-right" title="Security" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="principles.html" class="btn btn-neutral float-left" title="Principles" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, OVHcloud
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

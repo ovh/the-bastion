@@ -1,0 +1,277 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Administration &mdash; The Bastion 3.03.00 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/thebastion.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="bastion.conf reference" href="bastion_conf.html" />
+    <link rel="prev" title="PIV keys" href="../using/piv.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> The Bastion
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                3.03.00
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../presentation/index.html">Presentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/index.html">Installation &amp; Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/index.html">Using the bastion</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Administration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="bastion_conf.html">bastion.conf reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logs.html">Logs</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/index.html">Bastion plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">The Bastion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>Administration</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/administration/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="administration">
+<h1>Administration<a class="headerlink" href="#administration" title="Permalink to this headline">¶</a></h1>
+<p>Here we make the assumption that you've already installed The Bastion, and would like to know more about administration topics.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The options reference of the satellite configuration files (other than bastion.conf)
+are not yet documented here, but directly in the configuration files themselves.</p>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="bastion_conf.html">bastion.conf reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="bastion_conf.html#option-list">Option List</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bastion_conf.html#main-options">Main Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bastion_conf.html#ssh-policies">SSH Policies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bastion_conf.html#global-network-policies">Global network policies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bastion_conf.html#logging">Logging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bastion_conf.html#other-ingress-policies">Other ingress policies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bastion_conf.html#other-egress-policies">Other egress policies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bastion_conf.html#session-policies">Session policies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bastion_conf.html#account-policies">Account policies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bastion_conf.html#other-options">Other options</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bastion_conf.html#option-reference">Option Reference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bastion_conf.html#id1">Main Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bastion_conf.html#id7">SSH Policies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bastion_conf.html#id20">Global network policies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bastion_conf.html#id24">Logging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bastion_conf.html#id34">Other ingress policies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bastion_conf.html#id37">Other egress policies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bastion_conf.html#id43">Session policies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bastion_conf.html#id55">Account policies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bastion_conf.html#id67">Other options</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="logs.html">Logs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="logs.html#message-types">Message types</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="logs.html#open">open</a></li>
+<li class="toctree-l3"><a class="reference internal" href="logs.html#close">close</a></li>
+<li class="toctree-l3"><a class="reference internal" href="logs.html#warn-die">warn, die</a></li>
+<li class="toctree-l3"><a class="reference internal" href="logs.html#warn-info-die-info">warn-info, die-info</a></li>
+<li class="toctree-l3"><a class="reference internal" href="logs.html#code-warning">code-warning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="logs.html#acl">acl</a></li>
+<li class="toctree-l3"><a class="reference internal" href="logs.html#membership">membership</a></li>
+<li class="toctree-l3"><a class="reference internal" href="logs.html#security">security</a></li>
+<li class="toctree-l3"><a class="reference internal" href="logs.html#group">group</a></li>
+<li class="toctree-l3"><a class="reference internal" href="logs.html#account">account</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="logs.html#syslog">Syslog</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="logs.html#files-location">Files location</a></li>
+<li class="toctree-l3"><a class="reference internal" href="logs.html#log-format">Log format</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="logs.html#access-logs">Access logs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logs.html#sqlite-logs">SQLite logs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logs.html#terminal-recordings-ttyrec">Terminal recordings (<em>ttyrec</em>)</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="bastion_conf.html" class="btn btn-neutral float-right" title="bastion.conf reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../using/piv.html" class="btn btn-neutral float-left" title="PIV keys" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, OVHcloud
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

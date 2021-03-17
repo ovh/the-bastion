@@ -1,0 +1,387 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Basic Installation &mdash; The Bastion 3.03.00 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/thebastion.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Advanced Installation" href="advanced.html" />
+    <link rel="prev" title="Installation &amp; Setup" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> The Bastion
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                3.03.00
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../presentation/index.html">Presentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Installation &amp; Setup</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Basic Installation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#got-puppet">0. Got Puppet?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#operating-system">1. Operating system</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#get-the-code">2. Get the code</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#install-the-needed-packages">3. Install the needed packages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#encrypt-home">4. Encrypt /home</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#setup-bastion-and-system-configuration">5. Setup bastion and system configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#review-the-configuration">6. Review the configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#check-that-the-code-works-on-your-machine">7. Check that the code works on your machine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#manually-create-our-first-bastion-account">8. Manually create our first bastion account</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="advanced.html">Advanced Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="upgrading.html">Upgrading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tests.html">Running Tests</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../using/index.html">Using the bastion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/index.html">Administration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/index.html">Bastion plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">The Bastion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Installation &amp; Setup</a> &raquo;</li>
+        
+      <li>Basic Installation</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/installation/basic.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="basic-installation">
+<h1>Basic Installation<a class="headerlink" href="#basic-installation" title="Permalink to this headline">¶</a></h1>
+<p>If you are just upgrading from a previous version, please read <a class="reference internal" href="upgrading.html"><span class="doc">upgrading</span></a> instead.</p>
+<div class="section" id="got-puppet">
+<h2>0. Got Puppet?<a class="headerlink" href="#got-puppet" title="Permalink to this headline">¶</a></h2>
+<p>We published a Puppet module to handle The Bastion configuration and prerequisites. The GitHub repo is <a class="reference external" href="https://github.com/ovh/puppet-thebastion">here</a> and our module has been published to <a class="reference external" href="https://forge.puppet.com/modules/goldenkiwi/thebastion">the Puppet forge</a>. Of course, its usage is completely optional, but if you choose to use it, some of the below steps will be done by Puppet. Hence, you might want to only consider the following steps:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#install-basic-operating-system"><span class="std std-ref">1. Operating system</span></a></li>
+<li><a class="reference internal" href="#install-basic-get-the-code"><span class="std std-ref">2. Get the code</span></a></li>
+<li><a class="reference internal" href="#install-basic-encrypt-home"><span class="std std-ref">4. Encrypt /home</span></a></li>
+<li>(Run Puppet)</li>
+<li><a class="reference internal" href="#install-basic-first-account"><span class="std std-ref">8. Manually create our first bastion account</span></a></li>
+</ul>
+</div>
+<div class="section" id="operating-system">
+<span id="install-basic-operating-system"></span><h2>1. Operating system<a class="headerlink" href="#operating-system" title="Permalink to this headline">¶</a></h2>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The Bastion expects to be the only main service running on the server, please see <a class="reference internal" href="../faq.html#faq-existing-server"><span class="std std-ref">this FAQ entry</span></a> for more information.</p>
+</div>
+<p>The following Linux distros are tested with each release, but as this is a security product, you are <em>warmly</em> advised to run it on the latest up-to-date stable version of your favorite OS:</p>
+<ul class="simple">
+<li>Debian 10 (Buster), 9 (Stretch), 8 (Jessie)</li>
+<li>RHEL/CentOS 8.x (8.3.2011, 8.2.2004, 8.1.1911), 7.x (7.9.2009, 7.8.2003, 7.7.1908)</li>
+<li>Ubuntu LTS 20.04, 18.04, 16.04, 14.04*</li>
+<li>OpenSUSE Leap 15.2*, 15.1*, 15.0**</li>
+</ul>
+<p>*: Note that these versions have no out-of-the-box MFA support, as they lack packaged versions of <code class="docutils literal notranslate"><span class="pre">pamtester</span></code>, <code class="docutils literal notranslate"><span class="pre">pam-google-authenticator</span></code>, or both. Of course, you may compile those yourself.
+Any other so-called <cite>modern</cite> Linux version are not tested with each release, but should work with no or minor adjustments.</p>
+<p>**: OpenSUSE Leap 15.0 randomly hits a segfault when <a class="reference external" href="https://bugzilla.opensuse.org/show_bug.cgi?id=1146027">updating system packages</a>, we had to remove it from our automated tests workflow.</p>
+<p>The following OS are also tested with each release:</p>
+<ul class="simple">
+<li>FreeBSD/HardenedBSD 12.1***</li>
+</ul>
+<p>***: Note that these have partial MFA support, due to their reduced set of available <code class="docutils literal notranslate"><span class="pre">pam</span></code> plugins. Support for either an additional password or TOTP factor can be configured, but not both at the same time. The code is actually known to work on FreeBSD/HardenedBSD 10+, but it's only regularly tested under 12.1.</p>
+<p>Other BSD variants partially work but are unsupported and discouraged as they have a severe limitation over the maximum number of supplementary groups (causing problems for group membership and restricted commands checks), no filesystem-level ACL support and missing MFA:</p>
+<ul class="simple">
+<li>OpenBSD 5.4+</li>
+<li>NetBSD 7+</li>
+</ul>
+<p>In any case, you are expected to install this on a properly secured machine (including, but not limited to: <code class="docutils literal notranslate"><span class="pre">iptables</span></code>/<code class="docutils literal notranslate"><span class="pre">pf</span></code>, reduced-set of installed software and daemons, general system hardening, etc.). If you use Debian, following the <a class="reference external" href="https://www.cisecurity.org/benchmark/debian_linux/">CIS Hardening guidelines</a> is a good start. We have <a class="reference external" href="https://github.com/ovh/debian-cis">a tool</a> to check for compliance against these guidelines. If you use Debian and don't yet have your own hardened template, this script should help you getting up to speed, and ensuring your hardened host stays hardened over time, through a daily audit you might want to setup through cron.</p>
+<p>Great care has been taken to write secure, tested code, but of course this is worthless if your machine is a hacker highway. Ensuring that all the layers below the bastion code (the operating system and the hardware it's running on) is your job.</p>
+</div>
+<div class="section" id="get-the-code">
+<span id="install-basic-get-the-code"></span><h2>2. Get the code<a class="headerlink" href="#get-the-code" title="Permalink to this headline">¶</a></h2>
+<p>The bastion code usually lives under <code class="docutils literal notranslate"><span class="pre">/opt/bastion</span></code>.
+You can either use <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">clone</span></code> directly, or get the tarball of the latest release.</p>
+<ul class="simple">
+<li>Using <strong class="command">git</strong>:</li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/ovh/the-bastion /opt/bastion
+git -C /opt/bastion checkout <span class="k">$(</span>git -C /opt/bastion tag <span class="p">|</span> tail -1<span class="k">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>Using the tarball:</li>
+</ul>
+<p>Get the tarball of the latest release, which can be found <a class="reference external" href="https://github.com/ovh/the-bastion/releases/latest">there</a>, then untar it:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">test</span> -d /opt/bastion <span class="o">||</span> mkdir -p /opt/bastion
+tar -C /opt/bastion v3.03.00.tar.gz
+</pre></div>
+</div>
+<p>The code supports being hosted somewhere else on the filesystem hierarchy, but this is discouraged as you might need to adjust a lot of configuration files (notably sudoers.d, cron.d, init.d) that needs an absolute path.
+You should end up with directories such as <code class="docutils literal notranslate"><span class="pre">bin</span></code>, <code class="docutils literal notranslate"><span class="pre">lib</span></code>, etc. directly under <code class="docutils literal notranslate"><span class="pre">/opt/bastion</span></code>.</p>
+</div>
+<div class="section" id="install-the-needed-packages">
+<span id="install-basic-install-packages"></span><h2>3. Install the needed packages<a class="headerlink" href="#install-the-needed-packages" title="Permalink to this headline">¶</a></h2>
+<p>For the supported Linux distros (see above), you can simply run:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>/opt/bastion/bin/admin/packages-check.sh -i
+</pre></div>
+</div>
+<p>You can add other parameters to install optional packages, depending on your environment:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">-s</span></code> to install <code class="docutils literal notranslate"><span class="pre">syslog-ng</span></code> (advised, we have templates files for it)</li>
+<li><code class="docutils literal notranslate"><span class="pre">-d</span></code> to install packages needed for developing the software (useless in production)</li>
+<li><code class="docutils literal notranslate"><span class="pre">-t</span></code> to install <code class="docutils literal notranslate"><span class="pre">ovh-ttyrec</span></code></li>
+</ul>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">-t</span></code> makes the assumption that you have compiled and made available <code class="docutils literal notranslate"><span class="pre">ovh-ttyrec</span></code> to your distro repositories. If you haven't, you can use the following helper:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>/opt/bastion/bin/admin/install-ttyrec.sh -a
+</pre></div>
+</div>
+<p>This will detect your distro, then download and either install the <code class="docutils literal notranslate"><span class="pre">.deb</span></code> or <code class="docutils literal notranslate"><span class="pre">.rpm</span></code> package for <a class="reference external" href="https://github.com/ovh/ovh-ttyrec">ovh-ttyrec</a>. If your distro doesn't handle those package types, it'll fallback to installing precompiled static binaries. Of course you can package it yourself and make it available to your own internal repositories instead of installing it this way.</p>
+<p>If you plan to use the PIV functionalities of The Bastion, you'll also need to install the <code class="docutils literal notranslate"><span class="pre">yubico-piv-checker</span></code> <a class="reference external" href="https://github.com/ovh/yubico-piv-checker">helper tool</a>:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>/opt/bastion/bin/admin/install-yubico-piv-checker.sh -a
+</pre></div>
+</div>
+</div>
+<div class="section" id="encrypt-home">
+<span id="install-basic-encrypt-home"></span><h2>4. Encrypt /home<a class="headerlink" href="#encrypt-home" title="Permalink to this headline">¶</a></h2>
+<p>Strictly speaking, this step is optional, but if you skip it, know that all the SSH private keys and session recordings will be stored unencrypted on the <code class="docutils literal notranslate"><span class="pre">/home</span></code> partition. Of course, if partition encryption is already handled by the OS template you use, or if the storage layer of your OS is encrypted by some other mean, you may skip this section.</p>
+<p>First, generate a secure password on your desk (but not too complicated so it can be typed on a console over your hypervisor over a VDI over VPN over 4G in the dark at 3am on a Sunday) and save it to a secure location: <code class="docutils literal notranslate"><span class="pre">pwgen</span> <span class="pre">-s</span> <span class="pre">10</span></code>.</p>
+<p>Then you can use the helper script to do this, it'll guide you through the process: When prompted for a passphrase, enter the one chosen just before.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>/opt/bastion/bin/admin/setup-encryption.sh
+</pre></div>
+</div>
+<p>If you get a cryptsetup error, you might need to add <code class="docutils literal notranslate"><span class="pre">--type</span> <span class="pre">luks1</span></code> to the <code class="docutils literal notranslate"><span class="pre">cryptsetup</span> <span class="pre">luksFormat</span></code> command in the script. It can happen if your kernel doesn't have the necessary features enabled for LUKS2.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Once you have setup encryption, <strong>do not forget</strong> to ensure that the keys backup script has encryption enabled, otherwise the backups will be stored unencrypted in <code class="docutils literal notranslate"><span class="pre">/root/backups</span></code>, which would make your <code class="docutils literal notranslate"><span class="pre">/home</span></code> encryption moot. This is not covered here because you can do it later, just don't forget it: it's in the <a class="reference internal" href="advanced.html"><span class="doc">advanced installation</span></a> section.</p>
+</div>
+</div>
+<div class="section" id="setup-bastion-and-system-configuration">
+<span id="install-basic-setup"></span><h2>5. Setup bastion and system configuration<a class="headerlink" href="#setup-bastion-and-system-configuration" title="Permalink to this headline">¶</a></h2>
+<p>The following script will do that for you. There are several possibilities here.</p>
+<ul class="simple">
+<li>If you're installing a new machine (nobody is using it as a bastion yet), then you can regenerate brand new host keys and directly harden the ssh configuration without any side effect:</li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>/opt/bastion/bin/admin/install --new-install
+</pre></div>
+</div>
+<ul class="simple">
+<li>If you're upgrading an existing machine (from a previous version of this software), and there are already some people using it as a bastion, then if you change the host keys, they'll have to acknowledge the change when connecting, i.e. this is not transparent at all. To avoid doing that and not touching either the ssh config or the host keys, use this:</li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>/opt/bastion/bin/admin/install --upgrade
+</pre></div>
+</div>
+<p>If you used <code class="docutils literal notranslate"><span class="pre">--upgrade</span></code>, then you are <strong>warmly</strong> advised to harden the configuration yourself, using our templates as a basis. For example, if you're under Debian 10:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>vimdiff /opt/bastion/etc/ssh/ssh_config.debian10 /etc/ssh/ssh_config
+vimdiff /opt/bastion/etc/ssh/sshd_config.debian10 /etc/ssh/sshd_config
+</pre></div>
+</div>
+<p>There are other templates available in the same directory, for the other supported distros.</p>
+<ul class="simple">
+<li>If you want to have a fine-grained control of what is managed by the installation script, and what is managed by yourself (or any configuration automation system you may have), you can review all the fine-grained options:</li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>/opt/bastion/bin/admin/install --help
+</pre></div>
+</div>
+</div>
+<div class="section" id="review-the-configuration">
+<span id="install-basic-review-config"></span><h2>6. Review the configuration<a class="headerlink" href="#review-the-configuration" title="Permalink to this headline">¶</a></h2>
+<p>Base configuration files have been copied, you should review the main configuration and modify it to your needs:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>vim /etc/bastion/bastion.conf
+</pre></div>
+</div>
+</div>
+<div class="section" id="check-that-the-code-works-on-your-machine">
+<span id="install-basic-perl-check"></span><h2>7. Check that the code works on your machine<a class="headerlink" href="#check-that-the-code-works-on-your-machine" title="Permalink to this headline">¶</a></h2>
+<p>This script will verify that all required modules are installed:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>/opt/bastion/bin/dev/perl-check.sh
+</pre></div>
+</div>
+</div>
+<div class="section" id="manually-create-our-first-bastion-account">
+<span id="install-basic-first-account"></span><h2>8. Manually create our first bastion account<a class="headerlink" href="#manually-create-our-first-bastion-account" title="Permalink to this headline">¶</a></h2>
+<p>Just launch this script, replacing <em>USERNAME</em> by the username you want to use:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>/opt/bastion/bin/admin/setup-first-admin-account.sh USERNAME auto
+</pre></div>
+</div>
+<p>You'll just need to specify the public SSH key to add to this new account. It'll be created as a bastion admin, and all the restricted commands will be granted.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This command will also give you a so-called <em>bastion alias</em>, this is the command you'll routinely use to connect to the bastion, and to your infrastructures through it, replacing in effect your previous usage of the <cite>ssh</cite> command. The alias name advertised on account creation is configurable in <code class="docutils literal notranslate"><span class="pre">bastion.conf</span></code>, and of course the users can rename it as they see fit, but it's advised to keep this command short, as people will use it a lot.</p>
+</div>
+<p>If you want to create other admin accounts, you can repeat the operation. All the other accounts should be created by a bastion admin (or more precisely, by somebody granted to the <em>accountCreate</em> command), using the bastion own commands. But more about this in the section <em>Using the bastion</em>.</p>
+<p>Now that your bastion is installed, you can either check the <a class="reference internal" href="advanced.html"><span class="doc">advanced installation</span></a> documentation, or head over to the <a class="reference internal" href="../using/index.html"><span class="doc">using the bastion</span></a> section.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="advanced.html" class="btn btn-neutral float-right" title="Advanced Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral float-left" title="Installation &amp; Setup" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, OVHcloud
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

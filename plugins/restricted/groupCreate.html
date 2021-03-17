@@ -1,0 +1,320 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>groupCreate &mdash; The Bastion 3.03.00 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/thebastion.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="groupDelete" href="groupDelete.html" />
+    <link rel="prev" title="accountUnexpire" href="accountUnexpire.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> The Bastion
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                3.03.00
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/index.html">Presentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/index.html">Installation &amp; Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/index.html">Using the bastion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/index.html">Administration</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Bastion plugins</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../admin/index.html">admin plugins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../open/index.html">open plugins</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">restricted plugins</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="accountAddPersonalAccess.html">accountAddPersonalAccess</a></li>
+<li class="toctree-l3"><a class="reference internal" href="accountCreate.html">accountCreate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="accountDelPersonalAccess.html">accountDelPersonalAccess</a></li>
+<li class="toctree-l3"><a class="reference internal" href="accountDelete.html">accountDelete</a></li>
+<li class="toctree-l3"><a class="reference internal" href="accountGeneratePassword.html">accountGeneratePassword</a></li>
+<li class="toctree-l3"><a class="reference internal" href="accountGrantCommand.html">accountGrantCommand</a></li>
+<li class="toctree-l3"><a class="reference internal" href="accountInfo.html">accountInfo</a></li>
+<li class="toctree-l3"><a class="reference internal" href="accountList.html">accountList</a></li>
+<li class="toctree-l3"><a class="reference internal" href="accountListAccesses.html">accountListAccesses</a></li>
+<li class="toctree-l3"><a class="reference internal" href="accountListEgressKeys.html">accountListEgressKeys</a></li>
+<li class="toctree-l3"><a class="reference internal" href="accountListIngressKeys.html">accountListIngressKeys</a></li>
+<li class="toctree-l3"><a class="reference internal" href="accountListPasswords.html">accountListPasswords</a></li>
+<li class="toctree-l3"><a class="reference internal" href="accountMFAResetPassword.html">accountMFAResetPassword</a></li>
+<li class="toctree-l3"><a class="reference internal" href="accountMFAResetTOTP.html">accountMFAResetTOTP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="accountModify.html">accountModify</a></li>
+<li class="toctree-l3"><a class="reference internal" href="accountPIV.html">accountPIV</a></li>
+<li class="toctree-l3"><a class="reference internal" href="accountRevokeCommand.html">accountRevokeCommand</a></li>
+<li class="toctree-l3"><a class="reference internal" href="accountUnexpire.html">accountUnexpire</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">groupCreate</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#create-a-new-bastion-group">Create a new bastion group</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#algorithms-guideline">Algorithms guideline</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="groupDelete.html">groupDelete</a></li>
+<li class="toctree-l3"><a class="reference internal" href="realmCreate.html">realmCreate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="realmDelete.html">realmDelete</a></li>
+<li class="toctree-l3"><a class="reference internal" href="realmInfo.html">realmInfo</a></li>
+<li class="toctree-l3"><a class="reference internal" href="realmList.html">realmList</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rootListIngressKeys.html">rootListIngressKeys</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selfAddPersonalAccess.html">selfAddPersonalAccess</a></li>
+<li class="toctree-l3"><a class="reference internal" href="selfDelPersonalAccess.html">selfDelPersonalAccess</a></li>
+<li class="toctree-l3"><a class="reference internal" href="whoHasAccessTo.html">whoHasAccessTo</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Bastion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Bastion plugins</a> &raquo;</li>
+        
+          <li><a href="index.html">restricted plugins</a> &raquo;</li>
+        
+      <li>groupCreate</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/plugins/restricted/groupCreate.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="groupcreate">
+<h1>groupCreate<a class="headerlink" href="#groupcreate" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="create-a-new-bastion-group">
+<h2>Create a new bastion group<a class="headerlink" href="#create-a-new-bastion-group" title="Permalink to this headline">¶</a></h2>
+<div class="cmdusage admonition">
+<p class="first admonition-title">usage</p>
+<p class="last">--osh groupCreate --group NAME --owner ACCOUNT --algo ALGO --size SIZE [OPTIONS]</p>
+</div>
+<dl class="option">
+<dt id="cmdoption-groupcreate-group">
+<code class="descname">--group</code><code class="descclassname"> NAME</code><a class="headerlink" href="#cmdoption-groupcreate-group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Group name to create, NAME must contain only valid UNIX group name characters</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-groupcreate-owner">
+<code class="descname">--owner</code><code class="descclassname"> ACCOUNT</code><a class="headerlink" href="#cmdoption-groupcreate-owner" title="Permalink to this definition">¶</a></dt>
+<dd><p>Account to set as the group owner, this account will have complete rights to manage the group</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-groupcreate-algo">
+<code class="descname">--algo</code><code class="descclassname"> ALGO</code><a class="headerlink" href="#cmdoption-groupcreate-algo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specifies the algo of the key, usually either rsa, ecdsa or ed25519. Note that the available algorithms depend on the OS the bastion is running on, along with its configuration policies</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-groupcreate-size">
+<code class="descname">--size</code><code class="descclassname"> SIZE</code><a class="headerlink" href="#cmdoption-groupcreate-size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specifies the size of the key to be generated.
+For RSA, choose between 2048 and 8192 (any value above 4096 is probably not very useful).
+For ECDSA, choose either 256, 384 or 521.
+For ED25519, size is always 256.</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-groupcreate-encrypted">
+<code class="descname">--encrypted</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-groupcreate-encrypted" title="Permalink to this definition">¶</a></dt>
+<dd><p>When specified, a passphrase will be prompted for the new key, and the private key will be stored encrypted on the bastion. Note that the passphrase will be required each time you want to use the key.</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-groupcreate-no-key">
+<code class="descname">--no-key</code><code class="descclassname"></code><a class="headerlink" href="#cmdoption-groupcreate-no-key" title="Permalink to this definition">¶</a></dt>
+<dd><p>No egress key pair will be generated. In that case, omit <code class="docutils literal notranslate"><span class="pre">--algo</span></code> and <code class="docutils literal notranslate"><span class="pre">--size</span></code>.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="algorithms-guideline">
+<h2>Algorithms guideline<a class="headerlink" href="#algorithms-guideline" title="Permalink to this headline">¶</a></h2>
+<p>A quick overview of the different algorithms:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">+---------+------+-----------+---------+-----------------------------------------+</span>
+<span class="o">|</span> <span class="n">algo</span>    <span class="o">|</span> <span class="n">size</span> <span class="o">|</span> <span class="n">strength</span>  <span class="o">|</span> <span class="n">speed</span>   <span class="o">|</span> <span class="n">compatibility</span>                           <span class="o">|</span>
+<span class="o">+=========+======+===========+=========+=========================================+</span>
+<span class="o">|</span> <span class="n">DSA</span>     <span class="o">|</span>  <span class="nb">any</span> <span class="o">|</span> <span class="mi">0</span>         <span class="o">|</span> <span class="n">n</span><span class="o">/</span><span class="n">a</span>     <span class="o">|</span> <span class="n">obsolete</span><span class="p">,</span> <span class="n">do</span> <span class="ow">not</span> <span class="n">use</span>                    <span class="o">|</span>
+<span class="o">|</span> <span class="n">RSA</span>     <span class="o">|</span> <span class="mi">2048</span> <span class="o">|</span> <span class="o">**</span>        <span class="o">|</span> <span class="o">**</span>      <span class="o">|</span> <span class="n">works</span> <span class="n">everywhere</span>                        <span class="o">|</span>
+<span class="o">|</span> <span class="n">RSA</span>     <span class="o">|</span> <span class="mi">4096</span> <span class="o">|</span> <span class="o">***</span>       <span class="o">|</span> <span class="o">*</span>       <span class="o">|</span> <span class="n">works</span> <span class="n">almost</span> <span class="n">everywhere</span>                 <span class="o">|</span>
+<span class="o">|</span> <span class="n">ECDSA</span>   <span class="o">|</span>  <span class="mi">521</span> <span class="o">|</span> <span class="o">****</span>      <span class="o">|</span> <span class="o">*****</span>   <span class="o">|</span> <span class="n">OpenSSH</span> <span class="mf">5.7</span><span class="o">+</span> <span class="p">(</span><span class="n">debian</span> <span class="mi">7</span><span class="o">+</span><span class="p">,</span> <span class="n">ubuntu</span> <span class="mf">12.04</span><span class="o">+</span><span class="p">)</span> <span class="o">|</span>
+<span class="o">|</span> <span class="n">ED25519</span> <span class="o">|</span>  <span class="mi">256</span> <span class="o">|</span> <span class="o">*****</span>     <span class="o">|</span> <span class="o">*****</span>   <span class="o">|</span> <span class="n">OpenSSH</span> <span class="mf">6.5</span><span class="o">+</span> <span class="p">(</span><span class="n">debian</span> <span class="mi">8</span><span class="o">+</span><span class="p">,</span> <span class="n">ubuntu</span> <span class="mf">14.04</span><span class="o">+</span><span class="p">)</span> <span class="o">|</span>
+<span class="o">+---------+------+-----------+---------+-----------------------------------------+</span>
+</pre></div>
+</div>
+<p>This table is meant as a quick cheat-sheet, you're warmly advised to do your own research, as other constraints may apply to your environment.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="groupDelete.html" class="btn btn-neutral float-right" title="groupDelete" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="accountUnexpire.html" class="btn btn-neutral float-left" title="accountUnexpire" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, OVHcloud
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,283 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>group-owner plugins &mdash; The Bastion 3.03.00 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/thebastion.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="groupAddAclkeeper" href="groupAddAclkeeper.html" />
+    <link rel="prev" title="groupListGuestAccesses" href="../group-gatekeeper/groupListGuestAccesses.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> The Bastion
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                3.03.00
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/index.html">Presentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/index.html">Installation &amp; Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/index.html">Using the bastion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/index.html">Administration</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Bastion plugins</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../admin/index.html">admin plugins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">group-owner plugins</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="groupAddAclkeeper.html">groupAddAclkeeper</a></li>
+<li class="toctree-l3"><a class="reference internal" href="groupAddGatekeeper.html">groupAddGatekeeper</a></li>
+<li class="toctree-l3"><a class="reference internal" href="groupAddOwner.html">groupAddOwner</a></li>
+<li class="toctree-l3"><a class="reference internal" href="groupDelAclkeeper.html">groupDelAclkeeper</a></li>
+<li class="toctree-l3"><a class="reference internal" href="groupDelEgressKey.html">groupDelEgressKey</a></li>
+<li class="toctree-l3"><a class="reference internal" href="groupDelGatekeeper.html">groupDelGatekeeper</a></li>
+<li class="toctree-l3"><a class="reference internal" href="groupDelOwner.html">groupDelOwner</a></li>
+<li class="toctree-l3"><a class="reference internal" href="groupGenerateEgressKey.html">groupGenerateEgressKey</a></li>
+<li class="toctree-l3"><a class="reference internal" href="groupGeneratePassword.html">groupGeneratePassword</a></li>
+<li class="toctree-l3"><a class="reference internal" href="groupModify.html">groupModify</a></li>
+<li class="toctree-l3"><a class="reference internal" href="groupTransmitOwnership.html">groupTransmitOwnership</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../open/index.html">open plugins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../restricted/index.html">restricted plugins</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Bastion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Bastion plugins</a> &raquo;</li>
+        
+      <li>group-owner plugins</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/plugins/group-owner/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="group-owner-plugins">
+<h1>group-owner plugins<a class="headerlink" href="#group-owner-plugins" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="groupAddAclkeeper.html">groupAddAclkeeper</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="groupAddAclkeeper.html#add-the-group-aclkeeper-role-to-an-account">Add the group aclkeeper role to an account</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="groupAddGatekeeper.html">groupAddGatekeeper</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="groupAddGatekeeper.html#add-the-group-gatekeeper-role-to-an-account">Add the group gatekeeper role to an account</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="groupAddOwner.html">groupAddOwner</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="groupAddOwner.html#add-the-group-owner-role-to-an-account">Add the group owner role to an account</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="groupDelAclkeeper.html">groupDelAclkeeper</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="groupDelAclkeeper.html#remove-the-group-aclkeeper-role-from-an-account">Remove the group aclkeeper role from an account</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="groupDelEgressKey.html">groupDelEgressKey</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="groupDelEgressKey.html#remove-a-bastion-group-egress-key">Remove a bastion group egress key</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="groupDelGatekeeper.html">groupDelGatekeeper</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="groupDelGatekeeper.html#remove-the-group-gatekeeper-role-from-an-account">Remove the group gatekeeper role from an account</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="groupDelOwner.html">groupDelOwner</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="groupDelOwner.html#remove-the-group-owner-role-from-an-account">Remove the group owner role from an account</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="groupGenerateEgressKey.html">groupGenerateEgressKey</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="groupGenerateEgressKey.html#create-a-new-public-private-key-pair-for-a-group">Create a new public + private key pair for a group</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="groupGeneratePassword.html">groupGeneratePassword</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="groupGeneratePassword.html#generate-a-new-egress-password-for-the-group">Generate a new egress password for the group</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="groupModify.html">groupModify</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="groupModify.html#modify-the-configuration-of-a-group">Modify the configuration of a group</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="groupTransmitOwnership.html">groupTransmitOwnership</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="groupTransmitOwnership.html#transmit-your-group-ownership-to-somebody-else">Transmit your group ownership to somebody else</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="groupAddAclkeeper.html" class="btn btn-neutral float-right" title="groupAddAclkeeper" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../group-gatekeeper/groupListGuestAccesses.html" class="btn btn-neutral float-left" title="groupListGuestAccesses" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, OVHcloud
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,287 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Installation &amp; Setup &mdash; The Bastion 3.03.00 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/thebastion.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Basic Installation" href="basic.html" />
+    <link rel="prev" title="Security" href="../presentation/security.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> The Bastion
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                3.03.00
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../presentation/index.html">Presentation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation &amp; Setup</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="basic.html">Basic Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="advanced.html">Advanced Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="upgrading.html">Upgrading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tests.html">Running Tests</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../using/index.html">Using the bastion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/index.html">Administration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/index.html">Bastion plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">The Bastion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>Installation &amp; Setup</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/installation/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="installation-setup">
+<h1>Installation &amp; Setup<a class="headerlink" href="#installation-setup" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="basic.html">Basic Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="basic.html#got-puppet">0. Got Puppet?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="basic.html#operating-system">1. Operating system</a></li>
+<li class="toctree-l2"><a class="reference internal" href="basic.html#get-the-code">2. Get the code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="basic.html#install-the-needed-packages">3. Install the needed packages</a></li>
+<li class="toctree-l2"><a class="reference internal" href="basic.html#encrypt-home">4. Encrypt /home</a></li>
+<li class="toctree-l2"><a class="reference internal" href="basic.html#setup-bastion-and-system-configuration">5. Setup bastion and system configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="basic.html#review-the-configuration">6. Review the configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="basic.html#check-that-the-code-works-on-your-machine">7. Check that the code works on your machine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="basic.html#manually-create-our-first-bastion-account">8. Manually create our first bastion account</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="advanced.html#encryption-signature-gpg-keys">Encryption &amp; signature GPG keys</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="advanced.html#generating-the-bastion-gpg-key">Generating the bastion GPG key</a></li>
+<li class="toctree-l3"><a class="reference internal" href="advanced.html#generating-and-importing-the-admins-gpg-key">Generating and importing the admins GPG key</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="advanced.html#rotation-encryption-backup-of-ttyrec-files">Rotation, encryption &amp; backup of ttyrec files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="advanced.html#configuring-keys-accounts-groups-remote-backup">Configuring keys, accounts &amp; groups remote backup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="advanced.html#logs-syslog">Logs/Syslog</a></li>
+<li class="toctree-l2"><a class="reference internal" href="advanced.html#clustering-high-availability">Clustering (High Availability)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="advanced.html#setting-up-a-slave-bastion">Setting up a slave bastion</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="advanced.html#on-the-slave">On the slave</a></li>
+<li class="toctree-l4"><a class="reference internal" href="advanced.html#on-the-master">On the master</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="advanced.html#misc">Misc</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="advanced.html#fix-buggy-readline-under-debian-jessie">Fix buggy ReadLine under Debian Jessie</a></li>
+<li class="toctree-l3"><a class="reference internal" href="advanced.html#create-sshfp-records">Create SSHFP records</a></li>
+<li class="toctree-l3"><a class="reference internal" href="advanced.html#harden-the-ssh-configuration">Harden the SSH configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="advanced.html#fa-root-authentication">2FA root authentication</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="upgrading.html">Upgrading</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="upgrading.html#general-upgrade-instructions">General upgrade instructions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="upgrading.html#version-specific-upgrade-instructions">Version-specific upgrade instructions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="upgrading.html#v3-03-00-2021-02-22">v3.03.00 - 2021/02/22</a></li>
+<li class="toctree-l3"><a class="reference internal" href="upgrading.html#v3-02-00-2021-02-01">v3.02.00 - 2021/02/01</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="upgrading.html#the-main-configuration-file-now-supports-proper-booleans">The main configuration file now supports proper booleans</a></li>
+<li class="toctree-l4"><a class="reference internal" href="upgrading.html#logs-have-been-enhanced">Logs have been enhanced</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="upgrading.html#v3-01-03-2020-12-15">v3.01.03 - 2020/12/15</a></li>
+<li class="toctree-l3"><a class="reference internal" href="upgrading.html#v3-01-02-2020-12-08">v3.01.02 - 2020/12/08</a></li>
+<li class="toctree-l3"><a class="reference internal" href="upgrading.html#v3-01-01-2020-12-04">v3.01.01 - 2020/12/04</a></li>
+<li class="toctree-l3"><a class="reference internal" href="upgrading.html#v3-01-00-2020-11-20">v3.01.00 - 2020/11/20</a></li>
+<li class="toctree-l3"><a class="reference internal" href="upgrading.html#v3-00-02-2020-11-16">v3.00.02 - 2020/11/16</a></li>
+<li class="toctree-l3"><a class="reference internal" href="upgrading.html#v3-00-01-2020-11-06">v3.00.01 - 2020/11/06</a></li>
+<li class="toctree-l3"><a class="reference internal" href="upgrading.html#v3-00-00-2020-10-30">v3.00.00 - 2020/10/30</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests.html">Running Tests</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tests.html#using-docker">Using Docker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tests.html#without-docker">Without Docker</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="basic.html" class="btn btn-neutral float-right" title="Basic Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../presentation/security.html" class="btn btn-neutral float-left" title="Security" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, OVHcloud
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,246 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Running Tests &mdash; The Bastion 3.03.00 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/thebastion.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Using the bastion" href="../using/index.html" />
+    <link rel="prev" title="Sandbox using Docker" href="docker.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> The Bastion
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                3.03.00
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../presentation/index.html">Presentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Installation &amp; Setup</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="basic.html">Basic Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="advanced.html">Advanced Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="upgrading.html">Upgrading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Running Tests</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#using-docker">Using Docker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#without-docker">Without Docker</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../using/index.html">Using the bastion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/index.html">Administration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/index.html">Bastion plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">The Bastion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Installation &amp; Setup</a> &raquo;</li>
+        
+      <li>Running Tests</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/installation/tests.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="running-tests">
+<h1>Running Tests<a class="headerlink" href="#running-tests" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="using-docker">
+<h2>Using Docker<a class="headerlink" href="#using-docker" title="Permalink to this headline">¶</a></h2>
+<p>Functional tests use <code class="docutils literal notranslate"><span class="pre">Docker</span></code> to spawn an environment matching a bastion install.</p>
+<p>One of the docker instances will be used as client, which will connect to the other instance which is used as the bastion server.</p>
+<p>The client instance sends commands to the server instance and tests the return values against expected output.</p>
+<p>To test the current code, put it on a machine with docker installed, and use the following script, which will run docker build and launch the tests:</p>
+<blockquote>
+<div><code class="docutils literal notranslate"><span class="pre">tests/functional/docker/docker_build_and_run_tests.sh</span> <span class="pre">&lt;TARGET&gt;</span></code></div></blockquote>
+<p>Where target is one of the supported OSes. Currently only Linux targets are supported.
+You'll get a list of the supported targets by calling the command without argument.</p>
+</div>
+<div class="section" id="without-docker">
+<h2>Without Docker<a class="headerlink" href="#without-docker" title="Permalink to this headline">¶</a></h2>
+<p>You can however still test the code against a BSD (or any other OS) without using Docker, by spawning a server under the target OS, and installing the bastion on it.</p>
+<p>Then, from another machine, run:</p>
+<blockquote>
+<div><code class="docutils literal notranslate"><span class="pre">test/functional/launch_tests_on_instance.sh</span> <span class="pre">&lt;IP&gt;</span> <span class="pre">&lt;port&gt;</span> <span class="pre">&lt;remote_user_name&gt;</span> <span class="pre">&lt;ssh_key_path&gt;</span> <span class="pre">[outdir]</span></code></div></blockquote>
+<p>Where <code class="docutils literal notranslate"><span class="pre">IP</span></code> and <code class="docutils literal notranslate"><span class="pre">port</span></code> are the information needed to connect to the remote server to test, <code class="docutils literal notranslate"><span class="pre">remote_user_name</span></code> is the name of the account created on the remote bastion to use for the tests, and <code class="docutils literal notranslate"><span class="pre">ssh_key_path</span></code> is the private SSH key path used to connect to the account. The <code class="docutils literal notranslate"><span class="pre">outdir</span></code> parameter is optional, if you want to keep the raw output of each test.</p>
+<p>This script is also the script used by the Docker client instance, so you're sure to get the proper results even without using Docker.</p>
+<p>Please do <strong>NOT</strong> run any of those tests on a production bastion!</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../using/index.html" class="btn btn-neutral float-right" title="Using the bastion" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="docker.html" class="btn btn-neutral float-left" title="Sandbox using Docker" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, OVHcloud
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

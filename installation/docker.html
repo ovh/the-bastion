@@ -1,0 +1,284 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Sandbox using Docker &mdash; The Bastion 3.03.00 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/thebastion.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Running Tests" href="tests.html" />
+    <link rel="prev" title="Upgrading" href="upgrading.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> The Bastion
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                3.03.00
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../presentation/index.html">Presentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Installation &amp; Setup</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="basic.html">Basic Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="advanced.html">Advanced Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="upgrading.html">Upgrading</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Sandbox using Docker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tests.html">Running Tests</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../using/index.html">Using the bastion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/index.html">Administration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/index.html">Bastion plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">The Bastion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Installation &amp; Setup</a> &raquo;</li>
+        
+      <li>Sandbox using Docker</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/installation/docker.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="sandbox-using-docker">
+<h1>Sandbox using Docker<a class="headerlink" href="#sandbox-using-docker" title="Permalink to this headline">¶</a></h1>
+<p>This is a good way to test The Bastion within seconds, but <a class="reference internal" href="../faq.html#faq-docker"><span class="std std-ref">read the FAQ</span></a> if you're serious about using containerization in production.</p>
+<p>The sandbox image is available for the following architectures: <code class="docutils literal notranslate"><span class="pre">linux/386</span></code>, <code class="docutils literal notranslate"><span class="pre">linux/amd64</span></code>, <code class="docutils literal notranslate"><span class="pre">linux/arm/v6</span></code>, <code class="docutils literal notranslate"><span class="pre">linux/arm/v7</span></code>, <code class="docutils literal notranslate"><span class="pre">linux/arm64</span></code>, <code class="docutils literal notranslate"><span class="pre">linux/ppc64le</span></code>, <code class="docutils literal notranslate"><span class="pre">linux/s390x</span></code>.</p>
+<ul class="simple">
+<li>Let's run the docker image:</li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>docker run -d -p <span class="m">22</span> --name bastiontest ovhcom/the-bastion:sandbox
+</pre></div>
+</div>
+<ul class="simple">
+<li>Or, if you prefer building the docker image yourself, you can: use the two commands below. Of course, if you already typed the <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">run</span></code> command above, you can skip the following commands:</li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>docker build -f docker/Dockerfile.debian10 -t bastion:debian10 .
+docker run -d -p <span class="m">22</span> --name bastiontest bastion:debian10
+</pre></div>
+</div>
+<ul class="simple">
+<li>Configure the first administrator account (get your public SSH key ready)</li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>docker <span class="nb">exec</span> -it bastiontest /opt/bastion/bin/admin/setup-first-admin-account.sh poweruser auto
+</pre></div>
+</div>
+<ul class="simple">
+<li>We're now up and running with the default configuration! Let's setup a handy bastion alias, and test the <code class="docutils literal notranslate"><span class="pre">info</span></code> command:</li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nv">PORT</span><span class="o">=</span><span class="k">$(</span>docker port bastiontest <span class="p">|</span> cut -d: -f2<span class="k">)</span>
+<span class="nb">alias</span> <span class="nv">bastion</span><span class="o">=</span><span class="s2">&quot;ssh poweruser@127.0.0.1 -tp </span><span class="nv">$PORT</span><span class="s2"> -- &quot;</span>
+bastion --osh info
+</pre></div>
+</div>
+<ul class="simple">
+<li>It should greet you as being a bastion admin, which means you have access to all commands. Let's enter interactive mode:</li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>bastion -i
+</pre></div>
+</div>
+<ul class="simple">
+<li>This is useful to call several <code class="docutils literal notranslate"><span class="pre">--osh</span></code> plugins in a row. Now we can ask for help to see all plugins:</li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$&gt; <span class="nb">help</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>If you have a remote machine you want to try to connect to through the bastion, fetch your egress key:</li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$&gt; selfListEgressKeys
+</pre></div>
+</div>
+<ul class="simple">
+<li>Copy this public key to the remote machine's <code class="docutils literal notranslate"><span class="pre">authorized_keys</span></code> under the <code class="docutils literal notranslate"><span class="pre">.ssh/</span></code> folder of the account you want to connect to, then:</li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$&gt; selfAddPersonalAccess --host &lt;remote_host&gt; --user &lt;remote_account_name&gt; --port-any
+$&gt; ssh &lt;remote_account_name&gt;@&lt;remote_host&gt;
+</pre></div>
+</div>
+<ul class="simple">
+<li>Note that you can connect directly without using interactive mode, with:</li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>bastion &lt;remote_account_name&gt;@&lt;remote_machine_host_or_ip&gt;
+</pre></div>
+</div>
+<p>That's it! You can head over to the <a class="reference internal" href="../using/index.html"><span class="doc">using the bastion</span></a> section for more information.
+Be sure to check the help of the bastion with <code class="docutils literal notranslate"><span class="pre">bastion</span> <span class="pre">--help</span></code>, along with the help of each osh plugin with <code class="docutils literal notranslate"><span class="pre">bastion</span> <span class="pre">--osh</span> <span class="pre">command</span> <span class="pre">--help</span></code>.</p>
+<p>Also don't forget to customize your <code class="docutils literal notranslate"><span class="pre">bastion.conf</span></code> file, which can be found in <code class="docutils literal notranslate"><span class="pre">/etc/bastion/bastion.conf</span></code> (for Linux).</p>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="tests.html" class="btn btn-neutral float-right" title="Running Tests" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="upgrading.html" class="btn btn-neutral float-left" title="Upgrading" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, OVHcloud
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
