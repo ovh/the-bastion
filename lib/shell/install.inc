@@ -112,6 +112,8 @@ set_archre() {
 
     if [ "$arch" = "x86_64" ] || [ "$arch" = "amd64" ]; then
         archre="(x86_|amd)64"
+    elif [ "$arch" = "ppc64el" ]; then
+        archre="ppc64(le|el)"
     else
         archre="$arch"
     fi
