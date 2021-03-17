@@ -22,11 +22,7 @@ action_static() {
     set_archre
     os=$(uname -s | tr '[:upper:]' '[:lower:]')
 
-    if [ "$arch" = "x86_64" ] || [ "$arch" = "amd64" ]; then
-        set_download_url "/${PROGRAM_NAME}.*_${os}_(x86_|amd)64\\.tar\\.gz$"
-    else
-        set_download_url "/${PROGRAM_NAME}.*_${os}_$arch\\.tar\\.gz$"
-    fi
+    set_download_url "/${PROGRAM_NAME}.*_${os}_${archre}\\.tar\\.gz$"
     prepare_temp_folder
 
     _download "$url"
