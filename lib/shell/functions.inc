@@ -314,6 +314,16 @@ del_user_from_group_compat()
     fi
 }
 
+get_file_uid_compat()
+{
+    stat -c "%u" "$1"
+}
+
+get_file_gid_compat()
+{
+    stat -c "%g" "$1"
+}
+
 _logtag="$(basename "$0")[$$]"
 __log()
 {
