@@ -53,7 +53,7 @@ chmod 0755 "$basedir"/docker/entrypoint.sh \
     "$basedir"/tests/functional/docker/tester_role.sh \
     "$basedir"/tests/functional/fake_ttyrec.sh
 
-find "$basedir"/tests/unit -type f -name "*.pl" -print0 | xargs -r0 chmod 0755 --
+find "$basedir"/tests/unit -type f -name "*.pl" -print0 | xargs -r0 chmod 0755
 
 while IFS= read -r -d '' plugin
 do
