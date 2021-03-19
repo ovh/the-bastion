@@ -37,7 +37,7 @@ echo "Port 22"                  >> /etc/ssh/sshd_config
 echo "Port 226"                 >> /etc/ssh/sshd_config
 
 # put the root pubkey on the root account
-[ -d "$UID0HOME/.ssh" ] || mkdir "$UID0HOME/.ssh"
+mkdir -p "$UID0HOME/.ssh"
 echo "$root_pubkey" >> "$UID0HOME/.ssh/authorized_keys"
 # also unlock the root account, which can sometimes prevent us connecting through SSH (CentOS 8)
 if [ "$OS_FAMILY" = Linux ]; then
@@ -55,7 +55,7 @@ HOME="$UID0HOME" USER="$UID0" "$basedir"/bin/plugin/restricted/accountGrantComma
 
 # add an account with local shell access (to mimic a remote server)
 useradd_compat test-shell_ "" "" /bin/sh
-test -d ~test-shell_/.ssh || mkdir ~test-shell_/.ssh
+mkdir -p ~test-shell_/.ssh
 # and copy the bastion pubkey of the bastion account we created
 cat /home/"$TARGET_USER"/.ssh/id_*.pub > ~test-shell_/.ssh/authorized_keys
 # add it to the bastion-nopam group

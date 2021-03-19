@@ -21,7 +21,7 @@ do_generate()
         echo "$rsync_conf already exists, aborting!" >&2
         exit 1
     fi
-    test -d "$BASTION_ETC_DIR/osh-encrypt-rsync.conf.d" || mkdir "$BASTION_ETC_DIR/osh-encrypt-rsync.conf.d"
+    mkdir -p "$BASTION_ETC_DIR/osh-encrypt-rsync.conf.d"
 
     sign_key_pass=$(perl -e '$p .= chr(int(rand(93))+33) for (1..16); $p =~ s{["\\]}{~}g; print "$p"')
     printf "Key-Type: RSA\\nKey-Length: $key_size\\nSubkey-Type: RSA\\nSubkey-Length: $key_size\\nName-Real: %s\\nName-Comment: Bastion signing key\\nName-Email: %s\\nExpire-Date: 0\\nPassphrase: %s\\n%%echo Generating GPG key, it'll take some time.\\n%%commit\\n%%echo done\\n" "$(hostname)" "root@$(hostname)" "$sign_key_pass" | $gpgcmd --gen-key --batch
@@ -61,13 +61,13 @@ do_import()
         echo "$rsync_conf already exists, aborting!" >&2
         exit 1
     fi
-    test -d "$BASTION_ETC_DIR/osh-encrypt-rsync.conf.d" || mkdir "$BASTION_ETC_DIR/osh-encrypt-rsync.conf.d"
+    mkdir -p "$BASTION_ETC_DIR/osh-encrypt-rsync.conf.d"
     backup_conf="$BASTION_ETC_DIR/osh-backup-acl-keys.conf.d/50-gpg.conf"
     if [ -e "$backup_conf" ]; then
         echo "$backup_conf already exists, aborting!" >&2
         exit 1
     fi
-    test -d "$BASTION_ETC_DIR/osh-backup-acl-keys.conf.d" || mkdir "$BASTION_ETC_DIR/osh-backup-acl-keys.conf.d"
+    mkdir -p "$BASTION_ETC_DIR/osh-backup-acl-keys.conf.d"
 
     keys_before=$(mktemp)
     # shellcheck disable=SC2064

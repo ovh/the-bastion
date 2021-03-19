@@ -22,7 +22,7 @@ print_title() {
 }
 
 rm -rf doc/sphinx/plugins
-mkdir doc/sphinx/plugins
+mkdir -p doc/sphinx/plugins
 
 export PLUGIN_QUIET=1
 export PLUGIN_HELP=1
@@ -35,7 +35,7 @@ do
     docfile="doc/sphinx/plugins/$pluginname.rst"
     docdir=$(dirname "$docfile")
     name=$(basename "$pluginname")
-    [ -d "$docdir" ] || mkdir -p "$docdir"
+    mkdir -p "$docdir"
     echo "$docfile..."
     {
         print_title "$name"
