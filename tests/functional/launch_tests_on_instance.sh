@@ -403,6 +403,11 @@ configchg()
     success bastion configchange $r0 perl -pe "$*" -i $osh_etc/bastion.conf
 }
 
+sshclientconfigchg()
+{
+    success bastion sshclientconfigchange $r0 perl -pe "$*" -i /etc/ssh/ssh_config
+}
+
 runtests()
 {
     # ensure syslog is clean

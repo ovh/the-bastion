@@ -6,7 +6,7 @@ use common::sense;
 # that is launching us. we don't use GetOpts or such, as this is not
 # user-modifiable anyway. We're mainly passing parameters we will need
 # in this short script. some of them can sometimes be undef. this is normal.
-my ($ip, $sshClientHasOptionE, $userPasswordClue, $saveFile, $insert_id, $db_name, $uniq_id, $self, @command) = @ARGV;
+my ($ip, $port, $sshClientHasOptionE, $userPasswordClue, $saveFile, $insert_id, $db_name, $uniq_id, $self, @command) = @ARGV;
 
 # on signal (HUP happens a lot), still try to log in db
 sub exit_sig {
@@ -187,16 +187,17 @@ if ($header) {
 
         # be nice and explain to the user cf ticket BASTION-10
         if ($userPasswordClue) {
-            OVH::Bastion::osh_crit("BASTION SAYS: Password auth is blocked because of the hostkey mismatch on $ip.");
-            OVH::Bastion::osh_crit("If you are aware of this change, remove the hostkey cache with --osh selfForgetHostKey --host $ip --port PORT");
+            my $bastionName = OVH::Bastion::config('bastionName')->value;
+            OVH::Bastion::osh_crit("BASTION SAYS: Password authentication is blocked because of the hostkey mismatch on $ip.");
+            OVH::Bastion::osh_crit("If you are aware of this change, remove the hostkey cache with `$bastionName --osh selfForgetHostKey --host $ip --port $port'");
         }
     }
-    if ($header =~ /remove with: ssh-keygen -f "\S+" -R (\S+)/) {
 
-        # be nice and explain how to remove this warning
-        OVH::Bastion::osh_crit("BASTION SAYS: If you know why the hostkey changed and you know this is normal, you can remove this warning by using the following command:");
+    # if strict host key checking is enabled, be nice and explain how to remove this error
+    if ($header =~ /strict checking/) {
         my $bastionName = OVH::Bastion::config('bastionName')->value;
-        OVH::Bastion::osh_crit("$bastionName --osh selfForgetHostKey --host $1");
+        OVH::Bastion::osh_crit("BASTION SAYS: Connection has been blocked because of the hostkey mismatch on $ip.");
+        OVH::Bastion::osh_crit("If you are aware of this change, remove the hostkey cache with `$bastionName --osh selfForgetHostKey --host $ip --port $port'");
     }
 }
 else {
