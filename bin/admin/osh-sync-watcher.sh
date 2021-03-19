@@ -34,7 +34,7 @@ fi
 # if a logdir is defined, tail to the log
 # shellcheck disable=SC2154
 if [ -n "$logdir" ]; then
-    [ ! -d "$logdir" ] && mkdir -p "$logdir"
+    mkdir -p "$logdir"
     exec &>> >(tee -a "$logdir/osh-sync-watcher.log")
 fi
 

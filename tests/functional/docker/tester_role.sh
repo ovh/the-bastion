@@ -16,7 +16,7 @@ chmod 400 /root/root.privkey
 printf '%b>>> %b <<<%b\n' "$BOLD_CYAN" "STARTING TESTS" "$NOC"
 
 chmod 755 "$(dirname "$0")/../launch_tests_on_instance.sh"
-[ ! -d "/root/.ssh" ] && mkdir /root/.ssh
+mkdir -p /root/.ssh
 
 delay=10
 for i in $(seq 1 $delay); do

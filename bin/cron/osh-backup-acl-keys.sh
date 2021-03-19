@@ -61,7 +61,7 @@ fi
 
 _log "Starting backup..."
 
-[ -d "$DESTDIR" ] || mkdir -p "$DESTDIR"
+mkdir -p "$DESTDIR"
 
 tarfile="$DESTDIR/backup-$(date +'%Y-%m-%d').tar.gz"
 _log "Creating $tarfile..."
