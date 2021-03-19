@@ -1427,7 +1427,7 @@ if (!$quiet) {
 
 push @toExecute, $OVH::Bastion::BASEPATH . '/bin/shell/connect.pl';
 exec(
-    @toExecute, $ip, $config->{'sshClientHasOptionE'},
+    @toExecute, $ip, $port, $config->{'sshClientHasOptionE'},
     $userPasswordClue, $saveFile,
     $logret->value->{'insert_id'},
     $logret->value->{'db_name'},
