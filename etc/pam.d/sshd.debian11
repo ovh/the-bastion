@@ -1,0 +1,81 @@
+# PAM configuration for the Secure Shell service
+
+auth       requisite                                pam_nologin.so
+
+# --- PASSWORD CHECK SECTION
+# proceed in this section ONLY if the user is in group mfa-password-configd, skip it entirely otherwise
+auth       [success=ignore ignore=ignore default=4] pam_succeed_if.so quiet user ingroup mfa-password-configd
+auth       optional                                 pam_echo.so       Your account has Multi-Factor Authentication enabled, an additional authentication factor is required (password).
+auth       optional                                 pam_exec.so       quiet debug stdout /opt/bastion/bin/shell/pam_exec_pwd_info.sh
+# lock account after 6 failures, for 5 minutes
+#FIXME auth       required                                 pam_tally2.so     onerr=fail deny=6 unlock_time=300
+# then check password
+auth       required                                 pam_unix.so
+
+# --- TOTP CHECK SECTION
+# if root, enable TOTP check
+auth   [success=ignore ignore=ignore default=1]                                          pam_succeed_if.so             quiet uid eq 0
+# [success=ok new_authtok_reqd=ok ignore=ignore default=bad module_unknown=ignore] == required + module_unknown:ignore
+# if you have a recent enough libpam-google-authenticator, you can customize the prompt with the following option: [authtok_prompt=Verification Code (OTP): ]
+# you can also add "debug" for more verbose logs (requires a not too old version of the pam module)
+# note the nullok parameter, instructing that if TOTP is not configured for root, it shouldn't be asked
+# if you know you've configured TOTP for root and prefer blocking access if there is a problem with the secret file, remove `nullok'
+auth   [success=ok new_authtok_reqd=ok ignore=ignore default=bad module_unknown=ignore]  pam_google_authenticator.so   nullok secret=/var/otp/root
+# if root, TOTP check has already been done just above, so skip this subsection
+auth   [success=3 ignore=ignore default=ignore]                                          pam_succeed_if.so             quiet uid eq 0
+# else (if not root), proceed in this section ONLY if the user is in group mfa-totp-configd, skip it entirely otherwise
+auth   [success=ignore ignore=ignore default=2]                                          pam_succeed_if.so             quiet user ingroup mfa-totp-configd
+auth   optional                                                                          pam_echo.so                   Multi-Factor Authentication enabled, an additional authentication factor is required (OTP).
+auth   [success=ok new_authtok_reqd=ok ignore=ignore default=bad module_unknown=ignore]  pam_google_authenticator.so   secret=~/.otp
+
+# Read environment variables from /etc/environment and
+# /etc/security/pam_env.conf.
+session    required     pam_env.so # [1]
+# In Debian 4.0 (etch), locale-related environment variables were moved to
+# /etc/default/locale, so read that as well.
+session    required     pam_env.so user_readenv=1 envfile=/etc/default/locale
+
+# Disallow non-root logins when /etc/nologin exists.
+account    required     pam_nologin.so
+
+# Reset counter if auth succeeded
+#FIXME account    required     pam_tally2.so
+
+# Uncomment and edit /etc/security/access.conf if you need to set complex
+# access limits that are hard to express in sshd_config.
+# account  required     pam_access.so
+
+# Standard Un*x authorization.
+@include common-account
+
+# Standard Un*x session setup and teardown.
+@include common-session
+
+
+# Print the message of the day upon successful login.
+session    optional     pam_motd.so noupdate
+
+# Print the status of the user's mailbox upon successful login.
+#session    optional     pam_mail.so standard noenv # [1]
+
+# Set up user limits from /etc/security/limits.conf.
+session    required     pam_limits.so
+
+# Set the loginuid process attribute.
+session    required     pam_loginuid.so
+
+# Create a new session keyring.
+session    optional     pam_keyinit.so force revoke
+
+# SELinux needs to be the first session rule.  This ensures that any
+# lingering context has been cleared.  Without this it is possible that a
+# module could execute code in the wrong domain.
+session [success=ok ignore=ignore module_unknown=ignore default=bad]        pam_selinux.so close
+
+# SELinux needs to intervene at login time to ensure that the process starts
+# in the proper default security context.  Only sessions which are intended
+# to run in the user's context should be run after this.
+session [success=ok ignore=ignore module_unknown=ignore default=bad]        pam_selinux.so open
+
+# Standard Un*x password updating.
+@include common-password

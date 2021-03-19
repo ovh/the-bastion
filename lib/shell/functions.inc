@@ -25,6 +25,10 @@ if [ -z "$LINUX_DISTRO" ] || [ -z "$DISTRO_VERSION" ]; then
     elif [ -e /etc/debian_version ]; then
         LINUX_DISTRO=debian
         DISTRO_VERSION=$(cat /etc/debian_version)
+        # special case while bullseye is not yet released
+        if [ "$DISTRO_VERSION" = "bullseye/sid" ]; then
+            DISTRO_VERSION=11
+        fi
     elif [ -e /etc/redhat-release ]; then
         LINUX_DISTRO=redhat
     fi

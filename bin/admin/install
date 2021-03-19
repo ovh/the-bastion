@@ -1300,10 +1300,13 @@ if [ "${opt[modify-pam-sshd]}" = 1 ]; then
         echo "$DISTRO_LIKE" | grep -q -w debian  && pamsuffix=debian
         echo "$DISTRO_LIKE" | grep -q -w rhel    && pamsuffix=rhel
         [ "$OS_FAMILY" = FreeBSD ] && pamsuffix=freebsd
-        if [ -n "$pamsuffix" ] && [ -e $PAM_SSHD ] && [ -e "$basedir/etc/pam.d/sshd.$pamsuffix" ]; then
+        if [ -n "$pamsuffix" ] && [ -e "$basedir/etc/pam.d/sshd.$pamsuffix$DISTRO_VERSION" ]; then
+            pamsuffix="$pamsuffix$DISTRO_VERSION"
+        fi
+        if [ -n "$pamsuffix" ] && [ -e "$PAM_SSHD" ] && [ -e "$basedir/etc/pam.d/sshd.$pamsuffix" ]; then
             cp -a "$PAM_SSHD" "$PAM_SSHD.backup_$(date +%s)"
-            cat "$basedir/etc/pam.d/sshd.$pamsuffix" > $PAM_SSHD
-            action_done
+            cat "$basedir/etc/pam.d/sshd.$pamsuffix" > "$PAM_SSHD"
+            action_done "sshd.$pamsuffix"
         else
             action_error "couldn't use our pam.d/sshd template (no template for $OS_FAMILY/$DISTRO_LIKE)"
         fi
