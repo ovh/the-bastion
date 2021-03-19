@@ -93,9 +93,15 @@ elif echo "$DISTRO_LIKE" | grep -q -w rhel; then
                     sed -i -e 's/enabled=.*/enabled=1/g' /etc/yum.repos.d/$repo.repo
                 done
             fi
-            yum install -y epel-release
+            if command -v dnf >/dev/null; then
+                dnf_or_yum=dnf
+            else
+                dnf_or_yum=yum
+            fi
+            $dnf_or_yum makecache
+            $dnf_or_yum install -y epel-release
             # shellcheck disable=SC2086
-            yum install -y $wanted_list
+            $dnf_or_yum install -y $wanted_list
             exit 0
     fi
 
