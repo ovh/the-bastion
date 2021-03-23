@@ -1,14 +1,14 @@
 {
     "interactive": [
-        "groupAddServer"                    , {"ac" : ["--group"]},
-        "groupAddServer --group"            , {"ac" : ["<GROUP>"]},
-        "groupAddServer --group \\S+"        , {"ac" : ["--host"]},
-        "groupAddServer --group \\S+ --host" , {"pr" : ["<HOST>", "<IP>", "<IP/MASK>"]},
-        "groupAddServer --group \\S+ --host \\S+"                                     , {"ac" : ["--port",  "--port-any"]},
-        "groupAddServer --group \\S+ --host \\S+ --port"                              , {"pr" : ["<PORT>"]},
-        "groupAddServer --group \\S+ --host \\S+ --port(-any| \\d+)"                   , {"ac" : ["--user",  "--user-any"]},
-        "groupAddServer --group \\S+ --host \\S+ --port(-any| \\d+) --user"            , {"pr" : ["<USER>"]},
-        "groupAddServer --group \\S+ --host \\S+ --port(-any| \\d+) --user(-any| \\S+)" , {"pr" : ["<enter>", "--force"]}
+        "groupDelServer"                    , {"ac" : ["--group"]},
+        "groupDelServer --group"            , {"ac" : ["<GROUP>"]},
+        "groupDelServer --group \\S+"        , {"ac" : ["--host"]},
+        "groupDelServer --group \\S+ --host" , {"pr" : ["<HOST>", "<IP>", "<IP/MASK>"]},
+        "groupDelServer --group \\S+ --host \\S+"                                     , {"ac" : ["--port",  "--port-any"]},
+        "groupDelServer --group \\S+ --host \\S+ --port"                              , {"pr" : ["<PORT>"]},
+        "groupDelServer --group \\S+ --host \\S+ --port(-any| \\d+)"                   , {"ac" : ["--user",  "--user-any"]},
+        "groupDelServer --group \\S+ --host \\S+ --port(-any| \\d+) --user"            , {"pr" : ["<USER>"]},
+        "groupDelServer --group \\S+ --host \\S+ --port(-any| \\d+) --user(-any| \\S+)" , {"pr" : ["<enter>", "--force"]}
     ],
     "master_only": true
 }
