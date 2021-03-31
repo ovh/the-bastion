@@ -9,7 +9,7 @@ Create a new bastion account
 .. admonition:: usage
    :class: cmdusage
 
-   --osh accountCreate --account ACCOUNT [OPTIONS]
+   --osh accountCreate --account ACCOUNT <--uid UID|--uid-auto> [OPTIONS]
 
 .. program:: accountCreate
 
