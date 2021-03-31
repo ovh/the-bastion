@@ -9,7 +9,7 @@ List the bastion accounts
 .. admonition:: usage
    :class: cmdusage
 
-   --osh accountList [--account ACCOUNT] [--inactive-only] [--audit]
+   --osh accountList [OPTIONS]
 
 .. program:: accountList
 
@@ -26,15 +26,19 @@ List the bastion accounts
 
    Show more verbose information (SLOW!), you need to be a bastion auditor
 
-.. option:: --include WILDCARD
+.. option:: --include PATTERN
 
-   Only list accounts that match the given WILDCARD string, '*' and '?' are recognized,
+   Only show accounts whose name match the given PATTERN (see below)
 
-                        this option can be used multiple times to refine results.
-.. option:: --exclude WILDCARD
+                        This option can be used multiple times to refine results
+.. option:: --exclude PATTERN
 
-   Omit accounts that match the given WILDCARD string, '*' and '?' are recognized,
+   Omit accounts whose name match the given PATTERN (see below)
 
-                        can be used multiple times. Note that --exclude takes precedence over --include
+                        This option can be used multiple times.
+                        Note that --exclude takes precedence over --include
+
+**Note:** PATTERN supports the ``*`` and ``?`` wildcards.
+If PATTERN is a simple string without wildcards, then names containing this string will be considered.
 
 

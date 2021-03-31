@@ -20,13 +20,17 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
     helptext => <<'EOF',
 List the groups available on this bastion
 
-Usage: --osh SCRIPT_NAME [--all] [--exclude|--include WILDCARD [--exclude|--include WILDCARD ..]]
+Usage: --osh SCRIPT_NAME [--all] [--exclude|--include PATTERN [--exclude|--include PATTERN ..]]
 
   --all               List all groups, even those to which you don't have access
-  --include WILDCARD  Only list groups that match the given WILDCARD string, '*' and '?' are recognized,
-                        this option can be used multiple times to refine results.
-  --exclude WILDCARD  Omit groups that match the given WILDCARD string, '*' and '?' are recognized,
-                        can be used multiple times. Note that --exclude takes precedence over --include
+  --include PATTERN  Only list groups that match the given PATTERN (see below)
+                        This option can be used multiple times to refine results
+  --exclude PATTERN  Omit groups that match the given PATTERN string (see below)
+                        This option can be used multiple times.
+                        Note that --exclude takes precedence over --include
+
+**Note:** PATTERN supports the ``*`` and ``?`` wildcards.
+If PATTERN is a simple string without wildcards, then names containing this string will be considered.
 EOF
 );
 
@@ -35,8 +39,8 @@ my $fnret;
 $fnret = OVH::Bastion::get_group_list(groupType => "key");
 $fnret or osh_exit $fnret;
 
-my $includere = OVH::Bastion::build_re_from_wildcards(wildcards => \@includes)->value;
-my $excludere = OVH::Bastion::build_re_from_wildcards(wildcards => \@excludes)->value;
+my $includere = OVH::Bastion::build_re_from_wildcards(wildcards => \@includes, implicit_contains => 1)->value;
+my $excludere = OVH::Bastion::build_re_from_wildcards(wildcards => \@excludes, implicit_contains => 1)->value;
 
 my $result_hash = {};
 foreach my $name (sort keys %{$fnret->value}) {

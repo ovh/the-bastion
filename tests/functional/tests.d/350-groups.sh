@@ -932,6 +932,18 @@ EOS
     nocontain REGEX '127\.0\.0\.12[[:space:]]+\(any\)[[:space:]]+\(any\)[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
     contain '4 accesses listed'
 
+    success groupListServers include $a1 --osh groupListServers --group $group1 --include 127.0.0.1
+    json .command groupListServers .error_code OK
+    contain REGEX '127\.0\.0\.1[[:space:]]+22[[:space:]]+g1[[:space:]]+'$group1'\(group\)[[:space:]]+'$account2'[[:space:]]'
+    contain REGEX '127\.0\.0\.10[[:space:]]+\(any\)[[:space:]]+\(any\)[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
+    contain REGEX '127\.0\.0\.11[[:space:]]+\(any\)[[:space:]]+\(any\)[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
+    contain '3 accesses listed'
+
+    success groupListServers include_exclude $a1 --osh groupListServers --group $group1 --include 127.0.0.1 --exclude 127.0.0.10 --exclude 127.?.0.11
+    json .command groupListServers .error_code OK
+    contain REGEX '127\.0\.0\.1[[:space:]]+22[[:space:]]+g1[[:space:]]+'$group1'\(group\)[[:space:]]+'$account2'[[:space:]]'
+    contain '1 accesses listed'
+
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2() servers(127.0.0.10,127.0.0.11)
     plgfail groupListServers list   $a2 --osh groupListServers --group $group1
     json .command groupListServers .error_code KO_ACCESS_DENIED .value      null

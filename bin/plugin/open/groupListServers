@@ -8,21 +8,31 @@ use OVH::Result;
 use OVH::Bastion;
 use OVH::Bastion::Plugin qw( :DEFAULT help );
 
-my ($group, $reverse);
 my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,
     header  => "list of servers pertaining to the group",
     options => {
-        "group=s"     => \$group,
-        "reverse-dns" => \$reverse,
+        "group=s"     => \my $group,
+        "reverse-dns" => \my $reverse,
+        "include=s"   => \my @includes,
+        "exclude=s"   => \my @excludes,
     },
     helptext => <<'EOF',
 List the servers (IPs and IP blocks) pertaining to a group
 
 Usage: --osh SCRIPT_NAME --group GROUP [--reverse-dns]
 
-  --group GROUP   List the servers of this group
-  --reverse-dns   Resolve and display the reverse DNS of each IP (SLOW!)
+  --group GROUP      List the servers of this group
+  --reverse-dns      Attempt to resolve the reverse hostnames (SLOW!)
+  --include PATTERN  Only include servers matching the given PATTERN (see below)
+                        This option can be used multiple times to refine results
+  --exclude PATTERN  Omit servers matching the given PATTERN (see below)
+                        This option can be used multiple times.
+                        Note that --exclude takes precedence over --include
+
+**Note:** PATTERN supports the ``*`` and ``?`` wildcards.
+If PATTERN is a simple string without wildcards, then names containing this string will be considered.
+The matching is done on the text output of the command.
 EOF
 );
 
@@ -51,8 +61,8 @@ if (
     osh_exit(
         R(
             'KO_ACCESS_DENIED',
-            msg =>
-"Sorry, you're neither a member or aclkeeper of group $shortGroup, you can't list the servers of this group.\nIf you think you should be able to, use groupInfo to get contact info."
+            msg => "Sorry, you're neither a member or aclkeeper of group $shortGroup, you can't list the servers of this group.\n"
+              . "If you think you should be able to, use groupInfo to get contact info."
         )
     );
 }
@@ -64,5 +74,5 @@ if (not @{$fnret->value}) {
     osh_ok R('OK_EMPTY', msg => "This group is empty, if you are an aclkeeper of this group, you might want to add servers to it with groupAddServer");
 }
 
-OVH::Bastion::print_acls(acls => [{type => 'group', group => $shortGroup, acl => $fnret->value}], reverse => $reverse);
+OVH::Bastion::print_acls(acls => [{type => 'group', group => $shortGroup, acl => $fnret->value}], reverse => $reverse, includes => \@includes, excludes => \@excludes);
 osh_ok($fnret->value);

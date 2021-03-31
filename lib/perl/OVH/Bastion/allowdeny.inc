@@ -490,12 +490,20 @@ sub print_acls {
     my $acls       = $params{'acls'} || [];
     my $reverse    = $params{'reverse'};
     my $hideGroups = $params{'hideGroups'};
+    my $includes   = $params{'includes'} || [];
+    my $excludes   = $params{'excludes'} || [];
 
-    my $printIpLen = $reverse ? 30 : 15;
-    osh_info(
-        sprintf("%-" . $printIpLen . "s %5s %20s %30s %10s %13s %45s %40s %s", "IP", "PORT", "USER", "ACCESS-BY", "ADDED-BY", "ADDED-AT", "EXPIRY?", "COMMENT", "FORCED-KEY?"));
+    my $includere = OVH::Bastion::build_re_from_wildcards(wildcards => $includes, implicit_contains => 1)->value;
+    my $excludere = OVH::Bastion::build_re_from_wildcards(wildcards => $excludes, implicit_contains => 1)->value;
 
-    my @flatArray;
+    # first, get all the rows we'll print, and fill both the array that will be printed (printRows),
+    # and the one that will be returned as JSON (jsonRows). We also apply the filters here to include/exclude
+    # the requested patterns, if any
+    # also take this opportunity to remember the longest field for each column
+    my @printRows;
+    my @jsonRows;
+    my @columnNames       = qw( IP PORT USER ACCESS-BY ADDED-BY ADDED-AT EXPIRY? COMMENT FORCED-KEY );
+    my @printColumnLength = map { length } @columnNames;
     foreach my $contextAcl (@$acls) {
         my $type  = $contextAcl->{'type'};
         my $group = $contextAcl->{'group'};
@@ -504,32 +512,93 @@ sub print_acls {
         next if ($hideGroups and $type =~ /^group/);
         my $accessType = ($group ? "$group($type)" : $type);
 
-        foreach my $entry (@$acl) {
-            my $addedBy   = $entry->{'addedBy'}   || '(unknown)';
-            my $addedDate = $entry->{'addedDate'} || '(unknown)';
+      ENTRY: foreach my $entry (@$acl) {
+            my $addedBy   = $entry->{'addedBy'}   || '-';
+            my $addedDate = $entry->{'addedDate'} || '-';
             $addedDate = substr($addedDate, 0, 10);
             my $forceKey = $entry->{'forceKey'} || '-';
             my $expiry   = $entry->{'expiry'} ? (duration2human(seconds => ($entry->{'expiry'} - time()))->value->{'human'}) : '-';
 
-            # type => member ('full'), guest ('partial'), personal or legacy
+            # resolve reverse if asked for it
             my $ipReverse;
             $ipReverse = OVH::Bastion::ip2host($entry->{'ip'})->value if $reverse;
             $entry->{'reverseDns'} = $ipReverse;
 
-            push @flatArray, $entry;
-            osh_info(
-                sprintf(
-                    "%-" . $printIpLen . "s %5s %20s %30s %10s %13s %45s %40s %s",
-                    $ipReverse       ? $ipReverse       : $entry->{'ip'},
-                    $entry->{'port'} ? $entry->{'port'} : '(any)',
-                    $entry->{'user'} ? $entry->{'user'} : '(any)',
-                    $accessType, $addedBy, $addedDate, $expiry, $entry->{'userComment'} || '-', $forceKey
-                )
+            my @row = (
+                $ipReverse       ? $ipReverse       : $entry->{'ip'},
+                $entry->{'port'} ? $entry->{'port'} : '(any)',
+                $entry->{'user'} ? $entry->{'user'} : '(any)',
+                $accessType, $addedBy, $addedDate, $expiry, $entry->{'userComment'} || '-', $forceKey
             );
+
+            # if we have includes or excludes, match fields against the built regex
+            # for excludes, any field matching is enough to exclude the row
+            if ($excludere) {
+                foreach (@row) {
+                    next ENTRY if ($_ =~ $excludere);
+                }
+            }
+
+            # for includes, at least one field must match or we exclude the row
+            if ($includere) {
+                my $matched = 0;
+                foreach (@row) {
+                    $matched++ if ($_ =~ $includere);
+                    last if $matched;
+                }
+                next ENTRY if !$matched;
+            }
+
+            # if we're here, row must be included
+            push @printRows, \@row;
+            push @jsonRows,  $entry;
+
+            # for each cell of this row, remember its len if its longer than any previously seen cell in the same column
+            for (0 .. @row) {
+                my $cellLen = length($row[$_]);
+                $printColumnLength[$_] = $cellLen if $printColumnLength[$_] < $cellLen;
+            }
         }
     }
-    osh_info(scalar(@flatArray) . " accesses listed");
-    return R('OK', value => \@flatArray);
+
+    # then, check if we have at least one non-empty row for each column,
+    # so that we can omit the empty columns on print (empty cells are '-')
+    my %atLeastOne;
+    foreach my $row (@printRows) {
+        my $i = 0;
+        foreach my $cell (@$row) {
+            $atLeastOne{$i}++ if $cell ne '-';
+            $i++;
+        }
+    }
+
+    # now build the header
+    my (@header, @format, @underline);
+    my $i = 0;
+    foreach (@columnNames) {
+        if ($atLeastOne{$i}) {
+            push @header,    $_;
+            push @format,    "%" . ($printColumnLength[$i] + 0) . "s";
+            push @underline, "-" x ($printColumnLength[$i] + 0);
+        }
+        $i++;
+    }
+    my $formatstr = join(" ", @format);
+    osh_info(sprintf($formatstr, @header));
+    osh_info(sprintf($formatstr, @underline));
+
+    # and print each row, potentially omitting empty columns (%atLeastOne)
+    foreach my $row (@printRows) {
+        my @fields;
+        $i = 0;
+        foreach my $cell (@$row) {
+            push @fields, $cell if ($atLeastOne{$i});
+            $i++;
+        }
+        osh_info(sprintf($formatstr, @fields));
+    }
+    osh_info("\n" . scalar(@printRows) . " accesses listed");
+    return R('OK', value => \@jsonRows);
 }
 
 # checks if ip matches any given array of prefixes/networks

@@ -1035,8 +1035,9 @@ sub is_valid_ttl {
 
 # used by groupList and accountList
 sub build_re_from_wildcards {
-    my %params    = @_;
-    my $wildcards = $params{'wildcards'};
+    my %params            = @_;
+    my $wildcards         = $params{'wildcards'};
+    my $implicit_contains = $params{'implicit_contains'};
 
     # to avoid modifying the caller's array
     my @relist = @$wildcards;
@@ -1045,6 +1046,11 @@ sub build_re_from_wildcards {
     return R('OK', value => undef) if !@relist;
 
     for (@relist) {
+        if ($implicit_contains) {
+
+            # if we have a word without any ? or *, guess that the user expects a "contains" behavior, i.e. *item*
+            $_ = '*' . $_ . '*' if not /[\*\?]/;
+        }
         $_ = quotemeta;
         s/\\\*/.*/g;
         s/\\\?/./g;

@@ -8,14 +8,15 @@ use OVH::Result;
 use OVH::Bastion;
 use OVH::Bastion::Plugin qw( :DEFAULT help );
 
-my ($hideGroups, $reverse, $account);
 my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,
     header  => "access list of a bastion account",
     options => {
-        "hide-groups" => \$hideGroups,
-        "reverse-dns" => \$reverse,
-        "account=s"   => \$account,
+        "account=s"   => \my $account,
+        "hide-groups" => \my $hideGroups,
+        "reverse-dns" => \my $reverse,
+        "include=s"   => \my @includes,
+        "exclude=s"   => \my @excludes,
     },
     helptext => <<'EOF',
 View the expanded access list of a given bastion account
@@ -23,11 +24,18 @@ View the expanded access list of a given bastion account
 Usage: --osh SCRIPT_NAME --account ACCOUNT [--hide-groups] [--reverse-dns]
 
   --account ACCOUNT  The account to work on
-
   --hide-groups      Don't show the machines the accouns has access to through group rights.
-                       In other words, list only the account's private accesses.
-
+                       In other words, list only the account's personal accesses.
   --reverse-dns      Attempt to resolve the reverse hostnames (SLOW!)
+  --include PATTERN  Only include accesses matching the given PATTERN (see below)
+                        This option can be used multiple times to refine results
+  --exclude PATTERN  Omit accesses matching the given PATTERN (see below)
+                        This option can be used multiple times.
+                        Note that --exclude takes precedence over --include
+
+**Note:** PATTERN supports the ``*`` and ``?`` wildcards.
+If PATTERN is a simple string without wildcards, then names containing this string will be considered.
+The matching is done on the text output of the command.
 EOF
 );
 
@@ -42,23 +50,21 @@ $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account
 $fnret or osh_exit $fnret;
 $account = $fnret->value->{'account'};
 
-# FIXME won't be able to see group accesses caller is not a member of
-my $accessListResult = OVH::Bastion::get_acls(account => $account);
-$accessListResult or osh_exit $accessListResult;
+$fnret = OVH::Bastion::get_acls(account => $account);
+$fnret or osh_exit $fnret;
 
-if (not @{$accessListResult->value}) {
+if (!OVH::Bastion::is_auditor(account => $self)) {
+    osh_info "NOTE: you're not a bastion auditor, hence you won't be able to";
+    osh_info "see access lists of groups you're not yourself a member of.";
+    osh_info ' ';
+}
+
+if (not @{$fnret->value}) {
     osh_ok R('OK_EMPTY', msg => "This account has no registered accesses to machines through this bastion yet");
 }
-else {
-    osh_info "NOTE: KNOWN LIMITATION in this version: you won't be able to";
-    osh_info "see access lists of group you're not yourself a member of.";
-    osh_info "For such cases, an error 'unable to access' will be printed.";
-    osh_info ' ';
-    osh_info "This account has access to the following servers:";
-    osh_info ' ';
 
-    OVH::Bastion::print_acls(acls => $accessListResult->value, reverse => $reverse, hideGroups => $hideGroups);
-    osh_ok($accessListResult);
-}
+osh_info "This account has access to the following servers:";
+osh_info ' ';
 
-osh_exit 'ERR_INTERNAL';
+OVH::Bastion::print_acls(acls => $fnret->value, reverse => $reverse, hideGroups => $hideGroups, includes => \@includes, excludes => \@excludes);
+osh_ok($fnret);
