@@ -12,22 +12,21 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,
     header  => "create a new bastion account",
     options => {
-        'uid=i'         => \my $uid,
-        'account=s'     => \my $account,
-        'always-active' => \my $alwaysActive,
-        'pubKey=s'      => \my $pubKey,         # deprecated, keep it not to break scripts or people
-        'public-key=s'  => \my $pubKey,
-        'comment=s'     => \my $comment,
-        'uid-auto'      => \my $uidAuto,
-        'osh-only'      => \my $oshOnly,
-        'immutable-key' => \my $immutableKey,
-        'no-key'        => \my $noKey,
-        'ttl=s'         => \my $ttl,
+        'uid=i'               => \my $uid,
+        'account=s'           => \my $account,
+        'always-active'       => \my $alwaysActive,
+        'pubKey|public-key=s' => \my $pubKey,
+        'comment=s'           => \my $comment,
+        'uid-auto'            => \my $uidAuto,
+        'osh-only'            => \my $oshOnly,
+        'immutable-key'       => \my $immutableKey,
+        'no-key'              => \my $noKey,
+        'ttl=s'               => \my $ttl,
     },
     helptext => <<'EOF',
 Create a new bastion account
 
-Usage: --osh SCRIPT_NAME --account ACCOUNT [OPTIONS]
+Usage: --osh SCRIPT_NAME --account ACCOUNT <--uid UID|--uid-auto> [OPTIONS]
 
   --account NAME          Account name to create, NAME must contain only valid UNIX account name characters
   --uid UID               Account system UID, also see --uid-auto
@@ -59,9 +58,14 @@ my $fnret;
 # params check
 #
 
-if ((not $account) or (not defined $uid and not $uidAuto)) {
+if (!$account) {
     help();
-    osh_exit 'ERR_MISSING_PARAMETER', "Missing mandatory parameter 'account' or ('uid' or 'uid-auto')";
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing mandatory parameter 'account'";
+}
+
+if (!defined $uid && !$uidAuto) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing mandatory parameter --uid or --uid-auto";
 }
 
 # quicky ensure these params are not pure bullshit (real check is done by helper script)
@@ -80,11 +84,13 @@ if (defined $uid && $uid == 0) {
 }
 
 if (defined $uid && $uidAuto) {
-    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "Can't specify UID and ask auto UID assignment at the same time";
+    help();
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "Can't use --uid and --uid-auto at the same time";
 }
 
 if (defined $pubKey && $noKey) {
-    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "Can't use pubKey as you also specified noKey";
+    help();
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "Can't use --public-key and --no-key at the same time";
 }
 
 if (!$pubKey && !$noKey) {
