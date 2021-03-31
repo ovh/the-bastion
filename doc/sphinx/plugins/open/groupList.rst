@@ -9,7 +9,7 @@ List the groups available on this bastion
 .. admonition:: usage
    :class: cmdusage
 
-   --osh groupList [--all] [--exclude|--include WILDCARD [--exclude|--include WILDCARD ..]]
+   --osh groupList [--all] [--exclude|--include PATTERN [--exclude|--include PATTERN ..]]
 
 .. program:: groupList
 
@@ -18,16 +18,20 @@ List the groups available on this bastion
 
    List all groups, even those to which you don't have access
 
-.. option:: --include WILDCARD
+.. option:: --include PATTERN
 
-   Only list groups that match the given WILDCARD string, '*' and '?' are recognized,
+   Only list groups that match the given PATTERN (see below)
 
-                        this option can be used multiple times to refine results.
-.. option:: --exclude WILDCARD
+                        This option can be used multiple times to refine results
+.. option:: --exclude PATTERN
 
-   Omit groups that match the given WILDCARD string, '*' and '?' are recognized,
+   Omit groups that match the given PATTERN string (see below)
 
-                        can be used multiple times. Note that --exclude takes precedence over --include
+                        This option can be used multiple times.
+                        Note that --exclude takes precedence over --include
+
+**Note:** PATTERN supports the ``*`` and ``?`` wildcards.
+If PATTERN is a simple string without wildcards, then names containing this string will be considered.
 
 
 

@@ -23,15 +23,19 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
     helptext => <<'EOF',
 List the bastion accounts
 
-Usage: --osh SCRIPT_NAME [--account ACCOUNT] [--inactive-only] [--audit]
+Usage: --osh SCRIPT_NAME [OPTIONS]
 
   --account ACCOUNT  Only list the specified account. This is an easy way to check whether the account exists
   --inactive-only    Only list inactive accounts
   --audit            Show more verbose information (SLOW!), you need to be a bastion auditor
-  --include WILDCARD  Only list accounts that match the given WILDCARD string, '*' and '?' are recognized,
-                        this option can be used multiple times to refine results.
-  --exclude WILDCARD  Omit accounts that match the given WILDCARD string, '*' and '?' are recognized,
-                        can be used multiple times. Note that --exclude takes precedence over --include
+  --include PATTERN  Only show accounts whose name match the given PATTERN (see below)
+                        This option can be used multiple times to refine results
+  --exclude PATTERN  Omit accounts whose name match the given PATTERN (see below)
+                        This option can be used multiple times.
+                        Note that --exclude takes precedence over --include
+
+**Note:** PATTERN supports the ``*`` and ``?`` wildcards.
+If PATTERN is a simple string without wildcards, then names containing this string will be considered.
 EOF
 );
 
@@ -70,8 +74,8 @@ if ($audit) {
 }
 
 # if we have excludes and/or includes, transform those into regexes
-my $includere = OVH::Bastion::build_re_from_wildcards(wildcards => \@includes)->value;
-my $excludere = OVH::Bastion::build_re_from_wildcards(wildcards => \@excludes)->value;
+my $includere = OVH::Bastion::build_re_from_wildcards(wildcards => \@includes, implicit_contains => 1)->value;
+my $excludere = OVH::Bastion::build_re_from_wildcards(wildcards => \@excludes, implicit_contains => 1)->value;
 
 my $result_hash = {};
 foreach my $account (sort keys %$accounts) {

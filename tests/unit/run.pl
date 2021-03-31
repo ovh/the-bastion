@@ -231,4 +231,16 @@ is(
     "is_plugin_disabled()"
 );
 
+is(
+    OVH::Bastion::build_re_from_wildcards(wildcards => ["azerty", "st*ar", "que?stion", "c*ompl?i*cated*"])->value,
+    qr/^azerty$|^st.*ar$|^que.stion$|^c.*ompl.i.*cated.*$/,
+    "build_re_from_wildcards() 1"
+);
+
+is(
+    OVH::Bastion::build_re_from_wildcards(wildcards => ["azerty", "st*ar", "que?stion", "c*ompl?i*cated*"], implicit_contains => 1)->value,
+    qr/^.*azerty.*$|^st.*ar$|^que.stion$|^c.*ompl.i.*cated.*$/,
+    "build_re_from_wildcards() 2"
+);
+
 done_testing();

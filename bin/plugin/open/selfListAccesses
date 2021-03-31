@@ -8,23 +8,32 @@ use OVH::Result;
 use OVH::Bastion;
 use OVH::Bastion::Plugin qw( :DEFAULT help );
 
-my ($hideGroups, $reverse);
 my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,
     header  => "your access list",
     options => {
-        "hide-groups" => \$hideGroups,
-        "reverse-dns" => \$reverse,
+        "hide-groups" => \my $hideGroups,
+        "reverse-dns" => \my $reverse,
+        "include=s"   => \my @includes,
+        "exclude=s"   => \my @excludes,
     },
     helptext => <<'EOF',
 Show the list of servers you have access to
 
 Usage: --osh SCRIPT_NAME [--hide-groups] [--reverse-dns]
 
-  --hide-groups  Don't show the machines you have access to through group rights. In other words,
-                   list only your private accesses.
+  --hide-groups      Don't show the machines you have access to through group rights.
+                       In other words, list only your personal accesses.
+  --reverse-dns      Attempt to resolve the reverse hostnames (SLOW!)
+  --include PATTERN  Only include accesses matching the given PATTERN (see below)
+                        This option can be used multiple times to refine results
+  --exclude PATTERN  Omit accesses matching the given PATTERN (see below)
+                        This option can be used multiple times.
+                        Note that --exclude takes precedence over --include
 
-  --reverse-dns  Attempt to resolve the reverse hostnames (SLOW!)
+**Note:** PATTERN supports the ``*`` and ``?`` wildcards.
+If PATTERN is a simple string without wildcards, then names containing this string will be considered.
+The matching is done on the text output of the command.
 EOF
 );
 
@@ -39,5 +48,5 @@ if (not @{$fnret->value}) {
 
 osh_info "Dear $self, you have access to the following servers:\n";
 
-OVH::Bastion::print_acls(acls => $fnret->value, reverse => $reverse, hideGroups => $hideGroups);
+OVH::Bastion::print_acls(acls => $fnret->value, reverse => $reverse, hideGroups => $hideGroups, includes => \@includes, excludes => \@excludes);
 osh_ok($fnret);

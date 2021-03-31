@@ -8,14 +8,15 @@ use OVH::Result;
 use OVH::Bastion;
 use OVH::Bastion::Plugin qw( :DEFAULT help );
 
-my ($group, $account, $reverse);
 my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,
-    header  => "lists partial access to group servers of a bastion account",
+    header  => "lists guest accesses to group servers of a bastion account",
     options => {
-        "group=s"     => \$group,
-        "account=s"   => \$account,
-        "reverse-dns" => \$reverse,
+        "group=s"     => \my $group,
+        "account=s"   => \my $account,
+        "reverse-dns" => \my $reverse,
+        "include=s"   => \my @includes,
+        "exclude=s"   => \my @excludes,
     },
     helptext => <<'EOF',
 List the guest accesses to servers of a group specifically granted to an account
@@ -24,6 +25,16 @@ Usage: --osh SCRIPT_NAME --group GROUP --account ACCOUNT
 
   --group GROUP      Look for accesses to servers of this GROUP
   --account ACCOUNT  Which account to check
+  --reverse-dns      Attempt to resolve the reverse hostnames (SLOW!)
+  --include PATTERN  Only include servers matching the given PATTERN (see below)
+                        This option can be used multiple times to refine results
+  --exclude PATTERN  Omit servers matching the given PATTERN (see below)
+                        This option can be used multiple times.
+                        Note that --exclude takes precedence over --include
+
+**Note:** PATTERN supports the ``*`` and ``?`` wildcards.
+If PATTERN is a simple string without wildcards, then names containing this string will be considered.
+The matching is done on the text output of the command.
 EOF
 );
 
@@ -48,5 +59,5 @@ if (not @{$fnret->value}) {
     osh_ok R('OK_EMPTY', msg => "This account doesn't seem to have any guest access to this group");
 }
 
-OVH::Bastion::print_acls(acls => [{type => 'group-guest', group => $shortGroup, acl => $fnret->value}], reverse => $reverse);
+OVH::Bastion::print_acls(acls => [{type => 'group-guest', group => $shortGroup, acl => $fnret->value}], reverse => $reverse, includes => \@includes, excludes => \@excludes);
 osh_ok($fnret->value);
