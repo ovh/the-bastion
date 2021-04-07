@@ -112,6 +112,9 @@ EOS
     retvalshouldbe 106
     json .command null .error_code KO_RESTRICTED_COMMAND .value null
 
+    plgfail 350-groups a3_generate_key_help $a3 --osh groupGenerateEgressKey
+    json .command groupGenerateEgressKey .error_code ERR_MISSING_PARAMETER
+
     plgfail 350-groups a3_generate_key_g1_fail $a3 --osh groupGenerateEgressKey --group $group1 --algo ed25519
     json .command groupGenerateEgressKey .error_code ERR_NOT_GROUP_OWNER
 

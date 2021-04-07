@@ -57,7 +57,7 @@ $fnret = OVH::Bastion::Plugin::generateEgressKey::preconditions(
     size    => $size
 );
 if ($fnret->err eq 'ERR_MISSING_PARAMETER') {
-    OVH::Bastion::Plugin::generateEgressKey::help();
+    help();
     osh_exit(R('ERR_MISSING_PARAMETER', msg => "Missing the 'algo', 'size' or 'group' parameter'"));
 }
 $fnret or osh_exit $fnret;
