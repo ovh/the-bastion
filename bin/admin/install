@@ -843,6 +843,7 @@ if [ "$nothing" = 0 ]; then
         if [ "$OS_FAMILY" = "Linux" ] || [ "$OS_FAMILY" = "FreeBSD" ]; then
             setfacl -m "group:osh-whoHasAccessTo:--x" "/home/$grp"
             setfacl -m "group:osh-auditor:--x" "/home/$grp"
+            setfacl -m "group:osh-superowner:--x" "/home/$grp"
             setfacl -m "group:$grp-gatekeeper:--x" "/home/$grp"
             setfacl -m "group:$grp-aclkeeper:--x" "/home/$grp"
             setfacl -m "group:$grp-owner:--x" "/home/$grp"

@@ -298,9 +298,10 @@ foreach my $file (@keyhomesfound) {
             check_file_rights(
                 "/home/$file",
                 [
-                    "# file: /home/$file",        "# owner: $file",               "# group: $file",        "user::rwx",
-                    "group::r-x",                 "group:osh-whoHasAccessTo:--x", "group:osh-auditor:--x", "group:$file-aclkeeper:--x",
-                    "group:$file-gatekeeper:--x", "group:$file-owner:--x",        "mask::r-x",             "other::---",
+                    "# file: /home/$file",       "# owner: $file",               "# group: $file",        "user::rwx",
+                    "group::r-x",                "group:osh-whoHasAccessTo:--x", "group:osh-auditor:--x", "group:osh-superowner:--x",
+                    "group:$file-aclkeeper:--x", "group:$file-gatekeeper:--x",   "group:$file-owner:--x", "mask::r-x",
+                    "other::---",
                 ],
                 "drwxr-x--x",
                 $file, $file
