@@ -57,6 +57,13 @@ sub is_group_existing {
         my (undef, $shortGroup) = $group =~ m{^(key)?(.+)};
         return R('OK', value => {group => $group, shortGroup => $shortGroup, gid => $gid, keyhome => "/home/keykeeper/$group", members => [split(/ /, $members)]});
     }
+
+    if ($params{'user_friendly_error'}) {
+
+        # build a user-compatible error message, as it can make its way through osh_exit()
+        $group =~ s/^key//;
+        return R('KO_GROUP_NOT_FOUND', msg => "The bastion group '$group' doesn't exist.\nYou may use groupList --all to see all existing groups.");
+    }
     return R('KO_GROUP_NOT_FOUND', msg => "Group '$group' doesn't exist");
 }
 
@@ -636,7 +643,7 @@ sub is_valid_group_and_existing {
     my $fnret = OVH::Bastion::is_valid_group(%params);
     $fnret or return $fnret;
     $params{'group'} = $fnret->value->{'group'};
-    return OVH::Bastion::is_group_existing(%params);
+    return OVH::Bastion::is_group_existing(%params, user_friendly_error => 1);
 }
 
 # Add a user to a group
