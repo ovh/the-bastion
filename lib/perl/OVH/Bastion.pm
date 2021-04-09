@@ -1006,6 +1006,14 @@ sub do_pamtester {
         return R('ERR_MISSING_PARAMETER', msg => "Missing mandatory arguments 'sysself' or 'self'");
     }
 
+    # if we're being called as part of the batch plugin, OSH_BATCH will be set and it means
+    # we can't grab the term, so pam can't set raw mode to avoid local echo, and it could end
+    # up having passwords typed by the user displayed on screen. In that case, refuse to do it,
+    # and return an error to our caller.
+    if ($ENV{'OSH_BATCH'}) {
+        return R('KO_MFA_TERM_NOT_RAW', msg => "MFA is required for this action, but we're running under batch mode, please use --proactive-mfa");
+    }
+
     # use system() instead of OVH::Bastion::execute() because we need it to grab the term
     my $pamtries = 3;
     while (1) {
@@ -1017,11 +1025,11 @@ sub do_pamtester {
             $pamsysret = system('pamtester', 'sshd', $sysself, 'authenticate');
         }
         if ($pamsysret < 0) {
-            return R('KO_MFA_FAILED', msg => "MFA is required for this host, but this bastion is missing the `pamtester' tool, aborting");
+            return R('KO_MFA_FAILED', msg => "MFA is required for this action, but this bastion is missing the `pamtester' tool, aborting");
         }
         elsif ($pamsysret != 0) {
             if (--$pamtries <= 0) {
-                return R('KO_MFA_FAILED', msg => "Sorry, but Multi-Factor Authentication failed, I can't connect you to this host");
+                return R('KO_MFA_FAILED', msg => "Sorry, but Multi-Factor Authentication failed, couldn't complete the requested action");
             }
             next;
         }
