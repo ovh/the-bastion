@@ -66,6 +66,48 @@ testsuite_mfa()
         json .command groupList .error_code OK_EMPTY
     fi
 
+    # batch trying to start a plugin that requires mfa => should get an error
+
+    if [ "${capabilities[pamtester]}" = 1 ]; then
+
+        success batch_set_mfa $r0 "echo '{\\\"mfa_required\\\":\\\"any\\\"}' \> $opt_remote_etc_bastion/plugin.info.conf \; chmod o+r $opt_remote_etc_bastion/plugin.info.conf"
+
+        if [ "${capabilities[mfa]}" = 1 ] || [ "${capabilities[mfa-password]}" = 1 ]; then
+            script batch_try_mfa "echo 'set timeout 30; \
+                spawn $a4 --osh batch; \
+                expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
+                expect \"waiting for input\" { sleep 0.2; send \"info\\n\"; }; \
+                expect \"failed\" { sleep 0.2; send \"quit\\n\"; }; \
+                expect eof; \
+                lassign [wait] pid spawnid value value; \
+                exit \$value' | expect -f -"
+            retvalshouldbe 0
+            contain "launching command: info"
+            contain "entering MFA phase"
+            contain "please use --proactive-mfa"
+            nocontain "Your alias to connect"
+            json .command batch .error_code OK '.value[0].command' info '.value[0].result.error_code' KO_MFA_FAILED
+        else
+            script batch_try_mfa "echo 'set timeout 30; \
+                spawn $a4 --osh batch; \
+                expect \"waiting for input\" { sleep 0.2; send \"info\\n\"; }; \
+                expect \"failed\" { sleep 0.2; send \"quit\\n\"; }; \
+                expect eof; \
+                lassign [wait] pid spawnid value value; \
+                exit \$value' | expect -f -"
+            retvalshouldbe 0
+            contain "launching command: info"
+            contain "entering MFA phase"
+            contain "please use --proactive-mfa"
+            nocontain "Your alias to connect"
+            json .command batch .error_code OK '.value[0].command' info '.value[0].result.error_code' KO_MFA_FAILED
+        fi
+
+        success batch_unset_mfa $r0 "rm -f $opt_remote_etc_bastion/plugin.info.conf"
+    fi
+
+    # /batch
+
     if [ "${capabilities[pamtester]}" = 1 ]; then
         grant groupCreate
 

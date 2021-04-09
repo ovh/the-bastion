@@ -79,7 +79,7 @@ testsuite_selfaccesses()
 
     # batch plugin
 
-    script one "printf \"%b\\n\" \"info\\naccountInfo --account $account0\\nselfListEgressKeys\" | $a1 --osh batch"
+    script batch_one "printf \"%b\\n\" \"info\\naccountInfo --account $account0\\nselfListEgressKeys\" | $a1 --osh batch"
     retvalshouldbe 0
     json .command batch .error_code OK
     json '.value[0].result.error_code' OK '.value[0].command' info '.value[0].result.value.account' "$account1"

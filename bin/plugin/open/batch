@@ -57,7 +57,12 @@ while (my $line = <STDIN>) {
     $line =~ s/ --json[a-z-]*//g;
     my @cmd = ($ENV{'SHELL'}, '-c', "--osh $line --json");
     osh_info "--- launching command: $line";
-    $fnret = OVH::Bastion::helper(cmd => \@cmd);
+    do {
+        # notify that we're under batch mode, hence if plugin requires MFA,
+        # we'll require --proactive-mfa, see comment in lib/perl/OVH/Bastion.pm
+        local $ENV{'OSH_BATCH'} = 1;
+        $fnret = OVH::Bastion::helper(cmd => \@cmd);
+    };
     if (!$fnret) {
         osh_warn "--- command failed!";
     }
