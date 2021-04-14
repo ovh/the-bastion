@@ -226,7 +226,7 @@ sub load_configuration {
             options => [
                 qw{
                   enableSyslog enableGlobalAccessLog enableAccountAccessLog enableGlobalSqlLog enableAccountSqlLog displayLastLogin
-                  interactiveModeByDefault
+                  interactiveModeByDefault allowUTF8
                   }
             ],
         },

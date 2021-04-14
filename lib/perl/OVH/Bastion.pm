@@ -367,9 +367,18 @@ sub osh_header {
     my $hostname    = Sys::Hostname::hostname();
     my $versionline = 'the-bastion-' . $VERSION;
     my $output      = '';
-    $output .= colored('---' . $hostname . '-' x (80 - length($hostname) - length($versionline) - 6) . "$versionline---" . "\n", 'bold blue');
-    $output .= colored("=> $text\n",                                                                                             "blue");
-    $output .= colored('-' x 80 . "\n",                                                                                          'blue');
+    if (OVH::Bastion::can_use_utf8()) {
+        my $line = "\N{U+256D}\N{U+2500}\N{U+2500}" . $hostname . "\N{U+2500}" x (80 - length($hostname) - length($versionline) - 6) . $versionline . "\N{U+2500}" x 3 . "\n";
+        $output .= colored($line,                                   'bold blue');
+        $output .= colored("\N{U+2502} \N{U+25B6} $text\n",         'blue');
+        $output .= colored("\N{U+251C}" . "\N{U+2500}" x 79 . "\n", 'blue');
+    }
+    else {
+        my $line = '-' x 3 . $hostname . '-' x (80 - length($hostname) - length($versionline) - 6) . $versionline . '-' x 3 . "\n";
+        $output .= colored($line,           'bold blue');
+        $output .= colored("=> $text\n",    'blue');
+        $output .= colored('-' x 80 . "\n", 'blue');
+    }
 
     print $output unless ($ENV{'PLUGIN_QUIET'});
     return;
@@ -381,8 +390,13 @@ sub osh_footer {
         $text = $ENV{'PLUGIN_NAME'};
     }
 
-    my $output = '';
-    $output .= colored('-' x (80 - length($text) - 6) . "</$text>---" . "\n", 'bold blue');
+    my $output;
+    if (OVH::Bastion::can_use_utf8()) {
+        $output = colored("\N{U+2570}" . "\N{U+2500}" x (79 - length($text) - 6) . "</$text>" . "\N{U+2500}" x 3 . "\n", 'bold blue');
+    }
+    else {
+        $output = colored('-' x (80 - length($text) - 6) . "</$text>---" . "\n", 'bold blue');
+    }
 
     print $output unless ($ENV{'PLUGIN_QUIET'});
     return;
@@ -472,15 +486,16 @@ sub osh_debug {
 }
 
 sub osh_info {
-    return _osh_log(text => shift, color => 'blue', onlyPrefix => 1);
+    return _osh_log(text => shift, type => 'info');
 }
 
 sub osh_warn {
-    return _osh_log(text => shift, color => 'magenta');
+    return _osh_log(text => shift, type => 'warn');
 }
 
 sub osh_crit {
-    return _osh_log(text => shift, color => 'red bold');
+    my $text = shift;
+    return _osh_log(text => "\n$text", type => 'crit');
 }
 
 sub _osh_log {
@@ -491,14 +506,30 @@ sub _osh_log {
         print $output $params{'text'} . "\n";
     }
     else {
+        my $prefix           = OVH::Bastion::can_use_utf8() ? "\N{U+2502}" : '~';
+        my $prefixIfNotEmpty = '';
+        my $color;
+        if ($params{'type'} eq 'crit') {
+            $prefixIfNotEmpty = (OVH::Bastion::can_use_utf8() ? "\N{U+26D4}" : "[!]");
+            $color            = 'red bold';
+        }
+        elsif ($params{'type'} eq 'warn') {
+            $prefixIfNotEmpty = (OVH::Bastion::can_use_utf8() ? "\N{U+2757}" : "[#]");
+            $color            = 'yellow';
+        }
+        else {
+            $color = 'blue';
+        }
         foreach my $line (split /^/, $params{'text'}) {
             chomp $line;
+            my $realPrefix = $prefix;
+            $realPrefix .= ' ' . $prefixIfNotEmpty if (length($line) && $prefixIfNotEmpty);
 
-            if ($params{'onlyPrefix'}) {
-                print $output colored('~ ', $params{'color'}) . "$line\n";
+            if ($params{'type'} eq 'info') {
+                print $output colored("$realPrefix ", $color) . "$line\n";
             }
             else {
-                print $output colored("~ $line", $params{'color'}) . "\n";
+                print $output colored("$realPrefix $line", $color) . "\n";
             }
         }
     }
@@ -1017,6 +1048,12 @@ sub do_pamtester {
         last;
     }
     return R('OK_MFA_SUCCESS');
+}
+
+sub can_use_utf8 {
+
+    # only use UTF-8 if allowed in the config, if user LANG seems to support it, and if TERM is defined and not dumb
+    return (OVH::Bastion::config('allowUTF8')->value && $ENV{'LANG'} && ($ENV{'LANG'} =~ /utf-?8/i) && $ENV{'TERM'} && $ENV{'TERM'} !~ /dumb|unknown/i);
 }
 
 1;

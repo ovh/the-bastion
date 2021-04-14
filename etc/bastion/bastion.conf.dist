@@ -262,6 +262,11 @@
 #  DEFAULT: true
 "displayLastLogin": true,
 #
+# allowUTF8 (boolean)
+#     DESC: When ``true``, The Bastion will use some UTF-8 characters on the output, for a more pleasant experience (for warnings, critical messages, etc.). Note that if the terminal doesn't advertise UTF-8 support, UTF-8 will not be used, even when enabled here.
+#  DEFAULT: true
+"allowUTF8": true,
+#
 # interactiveModeAllowed (boolean)
 #     DESC: If set to ``true``, ``--interactive`` mode is allowed. Otherwise, this feature is disabled.
 #  DEFAULT: true
