@@ -20,6 +20,7 @@ Print some basic information about a group
 
 
 
+
 Output example
 ==============
 

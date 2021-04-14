@@ -37,3 +37,4 @@ Run a batch of osh commands fed through STDIN
   for i in user1 user2 user3; do echo "groupAddMember --account $i --group grp4"; done | bssh --osh batch
 
 
+
