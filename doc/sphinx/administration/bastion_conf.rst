@@ -91,6 +91,7 @@ Session policies
 Options to customize the established sessions behaviour
 
 - :ref:`displayLastLogin`
+- :ref:`allowUTF8`
 - :ref:`interactiveModeAllowed`
 - :ref:`interactiveModeTimeout`
 - :ref:`interactiveModeByDefault`
@@ -609,6 +610,17 @@ displayLastLogin
 :Default: ``true``
 
 If ``true``, display their last login information on connection to your users.
+
+.. _allowUTF8:
+
+allowUTF8
+*********
+
+:Type: ``boolean``
+
+:Default: ``true``
+
+When ``true``, The Bastion will use some UTF-8 characters on the output, for a more pleasant experience (for warnings, critical messages, etc.). Note that if the terminal doesn't advertise UTF-8 support, UTF-8 will not be used, even when enabled here.
 
 .. _interactiveModeAllowed:
 

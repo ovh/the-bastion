@@ -15,6 +15,7 @@ I'm So Meta, Even This Acronym
 
 
 
+
 Displays help about the available plugins callable with ``--osh``.
 
 If you need help on a specific plugin, you can use ``--osh PLUGIN --help``, replacing ``PLUGIN`` with the actual plugin name.

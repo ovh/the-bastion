@@ -47,3 +47,4 @@ This is only true if the remote server does have the group key installed, of cou
 can't tell without trying to connect "right now" (which it won't do).
 
 
+
