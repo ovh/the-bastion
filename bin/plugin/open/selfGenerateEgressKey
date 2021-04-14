@@ -22,7 +22,7 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
 );
 
 sub help {
-    print <<"EOF";
+    my $text = <<"EOF";
 Create a new public + private key pair on your bastion account
 
 Usage: --osh $scriptName --algo ALGO --size SIZE [--encrypted]
@@ -37,6 +37,7 @@ Usage: --osh $scriptName --algo ALGO --size SIZE [--encrypted]
   --encrypted  if specified, a passphrase will be prompted for the new key
 
 EOF
+    osh_info($text);
     OVH::Bastion::Plugin::generateEgressKey::help_algos();
     return 1;
 }

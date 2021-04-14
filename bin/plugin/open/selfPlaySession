@@ -89,11 +89,11 @@ if (!-r $ttyrecfile) {
     osh_exit R('ERR_NOT_FOUND', msg => "Recorded session for ID $id couldn't be found, it might have been archived");
 }
 
-osh_warn "Press '+' to play faster";
-osh_warn "Press '-' to play slower";
-osh_warn "Press '1' to restore normal playing speed";
-osh_warn "\nWhen you're ready to replay session $id, press ENTER.";
-osh_warn "Starting from the next line, the Total Recall begins. Press CTRL+C to jolt awake.";
+osh_info "Press '+' to play faster";
+osh_info "Press '-' to play slower";
+osh_info "Press '1' to restore normal playing speed";
+osh_info "\nWhen you're ready to replay session $id, press ENTER.";
+osh_info "Starting from the next line, the Total Recall begins. Press CTRL+C to jolt awake.";
 <STDIN>;
 my $sysret = system('ttyplay', $ttyrecfile);
 osh_ok {};

@@ -14,7 +14,6 @@ use POSIX qw(strftime);
 use Term::ANSIColor;
 use JSON;
 
-$ENV{'LANG'} = 'C';
 $| = 1;
 my $fnret;
 
