@@ -39,7 +39,7 @@ Usage: --osh SCRIPT_NAME --account ACCOUNT [--option value [--option value [...]
                                                 this overrides the global bastion configuration 'accountMFAPolicy'. If 'bypass' is specified,
                                                 no OTP will ever be asked, even for groups or plugins explicitly requiring it
   --egress-strict-host-key-checking POLICY   Modify the egress SSH behavior of this account regarding StrictHostKeyChecking (see man ssh_config),
-                                               POLICY can be 'yes', 'no', 'ask', 'default' or 'bypass'
+                                               POLICY can be 'yes', 'accept-new', 'no', 'ask', 'default' or 'bypass'
   --personal-egress-mfa-required POLICY      Enforce UNIX password requirement, or TOTP requirement, or any MFA requirement, when connecting to a server
                                                using the personal keys of the account, POLICY can be 'password', 'totp', 'any' or 'none'
   --always-active yes|no                     Set or unset the account as always active (i.e. disable the check of the 'active' status on this account)
@@ -78,9 +78,9 @@ foreach my $key (qw{ always-active pam-auth-bypass idle-ignore osh-only }) {
         osh_exit 'ERR_INVALID_PARAMETER', "Expected '--$key yes' or '--$key no' instead of '--$key $modify{$key}'";
     }
 }
-if ($modify{'egress-strict-host-key-checking'} && !grep { $modify{'egress-strict-host-key-checking'} eq $_ } qw{ yes no ask default bypass }) {
+if ($modify{'egress-strict-host-key-checking'} && !grep { $modify{'egress-strict-host-key-checking'} eq $_ } qw{ yes accept-new no ask default bypass }) {
     help();
-    osh_exit 'ERR_INVALID_PARAMETER', "Expected option 'yes', 'no', 'ask', 'default' or 'bypass' to --egress-strict-host-key-checking";
+    osh_exit 'ERR_INVALID_PARAMETER', "Expected option 'yes', 'accept-new', 'no', 'ask', 'default' or 'bypass' to --egress-strict-host-key-checking";
 }
 if ($modify{'personal-egress-mfa-required'} && !grep { $modify{'personal-egress-mfa-required'} eq $_ } qw{ password totp any none }) {
     help();

@@ -288,7 +288,7 @@ foreach my $tuple (@modify) {
     }
     elsif ($key eq 'egress-strict-host-key-checking') {
         osh_info "Changing the egress StrictHostKeyChecking option for this account...";
-        if (not grep { $value eq $_ } qw{ yes no ask default bypass }) {
+        if (not grep { $value eq $_ } qw{ yes accept-new no ask default bypass }) {
             osh_warn "Invalid parameter '$value', skipping";
             $result{$jsonkey} = R('ERR_INVALID_PARAMETER');
         }

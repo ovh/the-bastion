@@ -40,7 +40,7 @@ Modify an account configuration
 
    Modify the egress SSH behavior of this account regarding StrictHostKeyChecking (see man ssh_config),
 
-                                               POLICY can be 'yes', 'no', 'ask', 'default' or 'bypass'
+                                               POLICY can be 'yes', 'accept-new', 'no', 'ask', 'default' or 'bypass'
 .. option:: --personal-egress-mfa-required POLICY    
 
    Enforce UNIX password requirement, or TOTP requirement, or any MFA requirement, when connecting to a server
