@@ -94,6 +94,14 @@ testsuite_selfkeys()
     json .value.account_egress_ssh_config.type custom
     json .value.account_egress_ssh_config.items.stricthostkeychecking no
 
+    success accountssh modifyssh2 $a0 --osh accountModify --account $account1 --egress-strict-host-key-checking accept-new
+    json .error_code OK .command accountModify
+
+    success accountssh info2 $a0 --osh accountInfo --account $account1
+    json .error_code OK .command accountInfo
+    json .value.account_egress_ssh_config.type custom
+    json .value.account_egress_ssh_config.items.stricthostkeychecking accept-new
+
     success accountssh modifyssh2 $a0 --osh accountModify --account $account1 --egress-strict-host-key-checking yes
     json .error_code OK .command accountModify
 
