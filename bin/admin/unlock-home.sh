@@ -31,7 +31,7 @@ if [ -e "$DEV_UNLOCKED" ] ; then
     do_mount
 fi
 
-echo "Mouting $DEV_ENCRYPTED as $UNLOCKED_NAME"
+echo "Mounting $DEV_ENCRYPTED as $UNLOCKED_NAME"
 cryptsetup luksOpen "$DEV_ENCRYPTED" "$UNLOCKED_NAME"
 sleep 1
 if [ -e "$DEV_UNLOCKED" ] ; then
