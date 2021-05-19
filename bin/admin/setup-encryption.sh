@@ -15,6 +15,14 @@ else
     action_done
 fi
 
+action_doing "Checking whether the install script has run"
+if ! [ -f "/etc/bastion/luks-config.sh" ]; then
+    action_error "The '/etc/bastion/luks-config.sh' file doesn't exist, did you run the '$basedir/bin/admin/install' script before?"
+    exit 1
+else
+    action_done
+fi
+
 action_doing "Checking whether /home is a separate partition"
 home_block_device=$(awk '/ \/home / {print $1}' /proc/mounts)
 if [ -n "$home_block_device" ] && [ -e "$home_block_device" ]; then
