@@ -92,6 +92,12 @@ testsuite_groups()
     contain "minimum configured key size"
     json .command groupCreate .error_code KO_KEY_SIZE_TOO_SMALL .value      null
 
+    plgfail groupCreate a0_fail_create_group_reserved_1 $a0 --osh groupCreate --group key --no-key --owner $account1
+    json .command groupCreate .error_code ERR_INVALID_PARAMETER
+
+    plgfail groupCreate a0_fail_create_group_reserved_2 $a0 --osh groupCreate --group keytothegate --no-key --owner $account1
+    json .command groupCreate .error_code ERR_INVALID_PARAMETER
+
     success groupCreate a0_create_g1_with_a1_as_owner $a0 --osh groupCreate --group $group1 --algo rsa --size 4096 --owner $account1
     contain "The public key of this group is"
     json $(cat <<EOS

@@ -83,6 +83,14 @@ if (!$group || !$owner) {
     osh_exit 'ERR_MISSING_PARAMETER', "Group name or owner is missing";
 }
 
+# first, check that the name doesn't start with 'key' (see https://github.com/ovh/the-bastion/issues/178)
+# as the is_valid_group() internally automatically guesses whether the input is from a user (in that case
+# the $group is a bastion group name) or some other part of the code (in that case the $group might be
+# the name of the OS group mapped to the bastion group name, hence starting with 'key')
+if ($group =~ /^key/) {
+    osh_exit 'ERR_INVALID_PARAMETER', "The group name can't start with 'key' (reserved prefix)";
+}
+
 if ($algo && !$size && lc($algo) eq 'ed25519') {
     $size = 256;    # ed25519 size is always 256
 }
