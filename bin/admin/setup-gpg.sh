@@ -73,7 +73,7 @@ do_import()
     # shellcheck disable=SC2064
     trap "rm -f $keys_before" EXIT INT
     $gpgcmd --with-colons --list-keys | grep ^pub: | awk -F: '{print $5}' > "$keys_before"
-    echo "Paste the admins public GPG key:"
+    echo "Paste the admins public GPG key (use ^D, aka CTRL+D, when you're done):"
     $gpgcmd --import
     newkey=''
     for key in $($gpgcmd --with-colons --list-keys | grep ^pub: | awk -F: '{print $5}'); do
