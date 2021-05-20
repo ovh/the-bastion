@@ -84,9 +84,9 @@ Any other so-called "modern" Linux version are not tested with each release, but
 
 The following OS are also tested with each release:
 
-- FreeBSD/HardenedBSD 12.1\*\*\*
+- FreeBSD/HardenedBSD 13.0\*\*\*
 
-\*\*\*: Note that these have partial MFA support, due to their reduced set of available `pam` plugins. Support for either an additional password or TOTP factor can be configured, but not both at the same time. The code is actually known to work on FreeBSD/HardenedBSD 10+, but it's only regularly tested under 12.1.
+\*\*\*: Note that these have partial MFA support, due to their reduced set of available `pam` plugins. Support for either an additional password or TOTP factor can be configured, but not both at the same time. The code is actually known to work on FreeBSD/HardenedBSD 10+, but it's only regularly tested under 13.0.
 
 Other BSD variants partially work but are unsupported and discouraged as they have a severe limitation over the maximum number of supplementary groups (causing problems for group membership and restricted commands checks), no filesystem-level ACL support and missing MFA:
 
