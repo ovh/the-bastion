@@ -1323,8 +1323,9 @@ if [ "${opt[modify-pam-lastlog]}" = 1 ]; then
         if ! grep -Eq '^\s*session\s+optional\s+pam_lastlog.so' "$PAM_SSHD" ; then
             action_detail "missing lastlog config in file, adjusting"
             # shellcheck disable=SC1004
-            sed_compat '/^\s*@include\s+common-session/a\
-    # bastion config: lastlog needs to be updated on connection\nsession optional pam_lastlog.so silent' "$PAM_SSHD"
+            sed_compat '/^[[:space:]]*@include[[:space:]]+common-session/a\
+# bastion config: lastlog needs to be updated on connection\
+session optional pam_lastlog.so silent' "$PAM_SSHD"
             action_done
         else
             action_na "lastlog config was already ok"
