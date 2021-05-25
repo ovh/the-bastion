@@ -782,7 +782,7 @@ sub json_load {
     my %params = @_;
 
     # Check params
-    my $file     = $params{'file'};
+    my $file = $params{'file'};
 
     if (!$file) {
         return R('KO_MISSING_PARAMETER', msg => "Missing 'file' parameter");

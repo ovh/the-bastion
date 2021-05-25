@@ -3,7 +3,6 @@ package OVH::Bastion;
 
 use common::sense;
 use Term::ReadLine;
-use JSON;
 use POSIX ();
 
 # autocompletion rules
@@ -60,15 +59,15 @@ EOM
         push @cmdlist, $plugin;
 
         # also load autocompletion rules for this plugin
-        if (open(my $jsonFd, '<', $pluginList->{$plugin}->{'dir'} . '/' . $plugin . '.json')) {
-            local $/ = undef;
-            my $jsonPayload = <$jsonFd>;
-            close($jsonFd);
-            my $jsonData;
-            eval { $jsonData = decode_json($jsonPayload); };
+        $fnret = OVH::Bastion::load_configuration_file(secure => 1, file => $pluginList->{$plugin}->{'dir'} . '/' . $plugin . '.json');
+        if ($fnret) {
+            my $jsonData = $fnret->value;
             if (ref $jsonData eq 'HASH' && ref $jsonData->{'interactive'} eq 'ARRAY') {
                 push @rules, @{$jsonData->{'interactive'}};
             }
+        }
+        elsif ($fnret->err ne 'KO_NO_SUCH_FILE') {
+            warn_syslog("Interactive mode: error reading configuration for plugin '$plugin': " . $fnret->msg);
         }
     }
     print scalar(@cmdlist) . " commands and " . (@rules / 2) . " autocompletion rules loaded.\n\n";
