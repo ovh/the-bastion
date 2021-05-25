@@ -783,7 +783,6 @@ sub json_load {
 
     # Check params
     my $file     = $params{'file'};
-    my $keywords = $params{'keywords'} || [];
 
     if (!$file) {
         return R('KO_MISSING_PARAMETER', msg => "Missing 'file' parameter");
@@ -829,15 +828,6 @@ sub json_load {
         return R('KO_INVALID_JSON', msg => "Error while trying to decode JSON configuration from file: $@");
     }
 
-    # Check that each given keywords are defined
-    my @missing = map { defined($configuration->{$_}) ? () : $_ } keys %$configuration;
-    if (@missing) {
-        return R(
-            'KO_MISSING_CONFIGURATION',
-            value => $configuration,
-            msg   => "Configuration is lacking mandatory keywords: " . join(', ', @missing)
-        );
-    }
     return R('OK', value => $configuration);
 }
 
