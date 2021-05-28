@@ -1170,21 +1170,19 @@ EOS
     )
     unset tmpfp
 
-    grant groupDelete
+    plgfail  end   groupDestroy_fail   $a2 --osh groupDestroy --group $group3 --no-confirm
+    retvalshouldbe 100
+    json .command groupDestroy .error_code ERR_NOT_GROUP_OWNER
 
-    script   end   groupDelete   $a0 --osh groupDelete --group $group3 '<<<' "$group3"
-    retvalshouldbe 0
-    json .command groupDelete .error_code OK
+    success  end   groupDestroy   $a3 --osh groupDestroy --group $group3 --no-confirm
+    json .command groupDestroy .error_code OK
 
-    script   end   groupDelete   $a0 --osh groupDelete --group $group2 '<<<' "$group2"
-    retvalshouldbe 0
-    json .command groupDelete .error_code OK
+    success  end   groupDestroy   $a2 --osh groupDestroy --group $group2 --no-confirm
+    json .command groupDestroy .error_code OK
 
-    script   end   groupDelete   $a0 --osh groupDelete --group $group1 '<<<' "$group1"
-    retvalshouldbe 0
-    json .command groupDelete .error_code OK
+    success  end   groupDestroy   $a2 --osh groupDestroy --group $group1 --no-confirm
+    json .command groupDestroy .error_code OK
 
-    revoke groupDelete
     grant accountDelete
 
     script   end   accountDelete   $a0 --osh accountDelete --account $account3 "<<< \"Yes, do as I say and delete $account3, kthxbye\""
