@@ -2,6 +2,8 @@
 # vim: set filetype=perl ts=4 sw=4 sts=4 et:
 # NEEDGROUP osh-groupDelete
 # SUDOERS %osh-groupDelete ALL=(root) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-groupDelete *
+# KEYSUDOERS # as an owner, we can delete our own group
+# KEYSUDOERS SUPEROWNERS, %%GROUP%-owner      ALL=(root)        NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupDelete --group %GROUP%
 # FILEMODE 0700
 # FILEOWN 0 0
 
@@ -50,20 +52,6 @@ if (!$group) {
 
 #<HEADER
 
-#>RIGHTSCHECK
-if ($self eq 'root') {
-    osh_debug "Real root, skipping checks of permissions";
-}
-else {
-    # need to perform another security check
-    $fnret = OVH::Bastion::is_user_in_group(user => $self, group => "osh-groupDelete");
-    if (!$fnret) {
-        HEXIT('ERR_SECURITY_VIOLATION', msg => "You're not allowed to run this, dear $self");
-    }
-}
-
-#<RIGHTSCHECK
-
 #>PARAMS:GROUP
 # test if start by key, append if necessary
 osh_debug("Checking group");
@@ -75,6 +63,25 @@ $group = $fnret->value->{'group'};
 my $shortGroup = $fnret->value->{'shortGroup'};
 
 #<PARAMS:GROUP
+
+#>RIGHTSCHECK
+if ($self eq 'root') {
+    osh_debug "Real root, skipping checks of permissions";
+}
+else {
+    # either we can delete any group
+    $fnret = OVH::Bastion::is_user_in_group(user => $self, group => "osh-groupDelete");
+    if (!$fnret) {
+
+        # or we can delete our own group as the owner of said group
+        $fnret = OVH::Bastion::is_group_owner(account => $self, group => $shortGroup, sudo => 1, superowner => 1);
+        if (!$fnret) {
+            HEXIT('ERR_SECURITY_VIOLATION', msg => "You're not allowed to run this, dear $self");
+        }
+    }
+}
+
+#<RIGHTSCHECK
 
 #>CODE
 # last security check

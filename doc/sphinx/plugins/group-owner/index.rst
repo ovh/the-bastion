@@ -11,6 +11,7 @@ group-owner plugins
    groupDelEgressKey
    groupDelGatekeeper
    groupDelOwner
+   groupDestroy
    groupGenerateEgressKey
    groupGeneratePassword
    groupModify

@@ -1,6 +1,5 @@
 #! /usr/bin/env perl
 # vim: set filetype=perl ts=4 sw=4 sts=4 et:
-# TODO move this from restricted/ to group-owner/
 
 use common::sense;
 
@@ -25,8 +24,8 @@ Usage: --osh SCRIPT_NAME --group GROUP
   --group GROUP  Group name to delete
   --no-confirm   Skip group name confirmation, but blame yourself if you deleted the wrong group!
 
-This restricted command is able to delete any group. Group owners can however delete
-their own groups using the sibling `groupDestroy` command.
+This command is able to delete any group you're an owner of.
+Granted users to the sibling restricted command `groupDelete` can delete any group.
 EOF
 );
 
@@ -50,6 +49,11 @@ $fnret or osh_exit($fnret);
 # get returned untainted value
 $group = $fnret->value->{'group'};
 my $shortGroup = $fnret->value->{'shortGroup'};
+
+$fnret = OVH::Bastion::is_group_owner(group => $shortGroup, account => $self, superowner => 1);
+if (!$fnret) {
+    osh_exit 'ERR_NOT_GROUP_OWNER', "Sorry, you're not an owner of group $shortGroup, which is needed to being able to delete it";
+}
 
 if (!$noConfirm) {
     osh_info <<'EOS';

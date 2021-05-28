@@ -1,0 +1,9 @@
+{
+    "interactive": [
+        "groupDestroy"              ,  {"ac" : ["--group"]},
+        "groupDestroy --group"      ,  {"ac" : ["<GROUP>"]},
+        "groupDestroy --group \\S+" ,  {"pr" : "<enter>"}
+    ],
+    "master_only": true,
+    "terminal_mode": "raw"
+}
