@@ -29,14 +29,6 @@ set_download_url() {
         _download() {
             wget -q "$1"
         }
-    elif command -v curl >/dev/null; then
-        action_done curl
-        _apicall() {
-            curl -sL -H 'Accept: application/vnd.github.v3+json' "$1" || true
-        }
-        _download() {
-            curl -sL -O "$1"
-        }
     elif command -v fetch >/dev/null; then
         action_done fetch
         _apicall() {
@@ -44,6 +36,14 @@ set_download_url() {
         }
         _download() {
             fetch "$1"
+        }
+    elif command -v curl >/dev/null; then
+        action_done curl
+        _apicall() {
+            curl -sL -H 'Accept: application/vnd.github.v3+json' "$1" || true
+        }
+        _download() {
+            curl -sL -O "$1"
         }
     else
         action_error "Couldn't find wget, curl nor fetch"
