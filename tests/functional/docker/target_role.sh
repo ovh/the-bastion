@@ -125,7 +125,34 @@ if [ -n "$NO_SLEEP" ]; then
     exit 0
 fi
 
-echo "Now sleeping forever (docker mode)"
-while : ; do
-    sleep 3600
-done
+if [ "$WANT_HTTP_PROXY" = 1 ]; then
+
+    # build a self-signed certificate for the http proxy and adjust the config
+    openssl req -x509 -nodes -days 7 -newkey rsa:2048 -keyout /tmp/selfsigned.key -out /tmp/selfsigned.crt -subj "/CN=testcert"
+    chgrp proxyhttp /tmp/selfsigned.key
+    chmod g+r /tmp/selfsigned.key
+    sed -i -re 's="ssl_certificate":.*="ssl_certificate": "/tmp/selfsigned.crt",=' /etc/bastion/osh-http-proxy.conf
+    sed -i -re 's="ssl_key":.*="ssl_key": "/tmp/selfsigned.key",=' /etc/bastion/osh-http-proxy.conf
+    sed -i -re 's="enabled":.+="enabled":true,=' /etc/bastion/osh-http-proxy.conf
+    sed -i -re 's="insecure":.+="insecure":true,=' /etc/bastion/osh-http-proxy.conf
+
+    # ensure the remote daemon is executable
+    chmod 0755 "$basedir"/tests/functional/proxy/remote-daemon
+
+    while : ; do
+        echo "Starting HTTP Proxy and fake remote server"
+        if [ -x /etc/init.d/osh-http-proxy ]; then
+            /etc/init.d/osh-http-proxy start
+        else
+            sudo -n -u proxyhttp -- /opt/bastion/bin/proxy/osh-http-proxy-daemon &
+            disown
+        fi
+        "$basedir"/tests/functional/proxy/remote-daemon
+        sleep 1
+    done
+else
+    echo "Now sleeping forever (docker mode)"
+    while : ; do
+        sleep 3600
+    done
+fi
