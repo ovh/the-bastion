@@ -436,8 +436,11 @@ sub process_http_request {
     push @cmd, "--allow-downgrade" if $allow_downgrade;
     push @cmd, "--insecure"        if ($self->{'proxy_config'}{'insecure'} && !$enforce_secure);
 
-    foreach my $key (qw{ accept content-type connection }) {
-        push @cmd, "--header", $key . ':' . $req_headers->{$key} if (defined $req_headers->{$key});
+    # X-Test-* is only used for functional tests, and has to be passed to the remote
+    foreach my $key (keys %$req_headers) {
+        if ($key =~ /^x-test-/i || grep { lc($key) eq $_ } qw{ accept content-type connection }) {
+            push @cmd, "--header", $key . ':' . $req_headers->{$key};
+        }
     }
 
     # we don't want the CGI module to parse/modify/interpret the content, so we

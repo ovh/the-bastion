@@ -132,6 +132,7 @@ docker run $privileged \
     -e ROOT_PUBKEY_B64="$ROOT_PUBKEY_B64" \
     -e TARGET_USER="user.5000" \
     -e TEST_QUICK="${TEST_QUICK:-0}" \
+    -e WANT_HTTP_PROXY=1 \
     $namespace:"$target"
 docker logs -f "bastion_${target}_target" | sed -u -e 's/^/target: /;s/$/\r/' &
 
@@ -177,6 +178,7 @@ docker run \
     --tty=$DOCKER_TTY \
     -e TARGET_IP="bastion_${target}_target" \
     -e TARGET_PORT=22 \
+    -e TARGET_PROXY_PORT=8443 \
     -e TARGET_USER="user.5000" \
     -e USER_PRIVKEY_B64="$USER_PRIVKEY_B64" \
     -e ROOT_PRIVKEY_B64="$ROOT_PRIVKEY_B64" \

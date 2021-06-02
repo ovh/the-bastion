@@ -11,11 +11,14 @@ basedir=$(readlink -f "$(dirname "$0")"/../..)
 
 remote_ip="$1"
 remote_port="$2"
-account0="$3"
-user_ssh_key_path="$4"
-root_ssh_key_path="$5"
-osh_etc="$6"
-remote_basedir="$7"
+# the var below is used in sourced test files
+# shellcheck disable=SC2034
+remote_proxy_port="$3"
+account0="$4"
+user_ssh_key_path="$5"
+root_ssh_key_path="$6"
+osh_etc="$7"
+remote_basedir="$8"
 [ -n "$osh_etc" ] || osh_etc=/etc/bastion
 [ -n "$remote_basedir" ] || remote_basedir="$basedir"
 
@@ -34,7 +37,7 @@ remote_basedir="$7"
 set -u
 
 if [ -z "$root_ssh_key_path" ] ; then
-    echo "Usage: $0 <IP> <Port> <remote_user_name> <user_ssh_key_path> <root_ssh_key_path>"
+    echo "Usage: $0 <IP> <Port> <HTTP_Proxy_Port_or_zero> <remote_user_name> <user_ssh_key_path> <root_ssh_key_path> [osh_etc] [remote_basedir]"
     exit 1
 fi
 

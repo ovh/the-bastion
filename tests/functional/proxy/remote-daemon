@@ -1,0 +1,59 @@
+#! /usr/bin/perl
+use strict;
+use warnings;
+use base qw{Net::Server::HTTP};
+use CGI;
+use Data::Dumper;
+
+__PACKAGE__->run(
+    port => ["9080", "9443/ssl"],
+    ipv => 4,
+    SSL_key_file => "/tmp/selfsigned.key",
+    SSL_cert_file => "/tmp/selfsigned.crt",
+    max_requests      => 1,
+);
+
+sub process_http_request {
+    my $self = shift;
+
+    my $hasContentType;
+    my $wantedResponseSize = 64;
+
+    my $real_content_type = $ENV{'CONTENT_TYPE'};
+    $ENV{'CONTENT_TYPE'} = 'application/xml';
+    my $content = CGI->new->param('XForms:Model');
+    $ENV{'CONTENT_TYPE'} = $real_content_type;
+
+    foreach my $headerTuple (@{ $self->{'request_info'}{'request_headers'} }) {
+        if ($headerTuple->[0] =~ /^x-test-add-response-header-(.+)/i) {
+            print "$1: ".$headerTuple->[1]."\n";
+            $hasContentType = 1 if lc($1) eq 'content-type';
+        }
+        elsif (lc $headerTuple->[0] eq 'x-test-wanted-response-size') {
+            $wantedResponseSize = $headerTuple->[1];
+        }
+    }
+    print "Content-type: text/plain\n" if !$hasContentType;
+
+    if ($content) {
+        print "Content-Length: ".length($content)."\n\n";
+        print $content;
+    }
+    else {
+        print "Content-Length: ".$wantedResponseSize."\n\n";
+        my @chars = ('0'..'9', 'a'..'z', 'A'..'Z', "\n");
+
+        my $buffer;
+        for (2..$wantedResponseSize) {
+            $buffer .= $chars[rand @chars];
+            if (length($buffer) > 16384) {
+                print $buffer;
+                $buffer = '';
+            }
+        }
+        print $buffer;
+        print "\n";
+    }
+    close(STDOUT);
+    return;
+}
