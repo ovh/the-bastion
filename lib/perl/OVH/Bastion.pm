@@ -130,7 +130,7 @@ my %_autoload_files = (
         qw{ is_user_in_group is_group_existing is_valid_uid get_next_available_uid is_bastion_account_valid_and_existing is_account_valid is_account_existing access_modify is_valid_group is_valid_group_and_existing add_user_to_group get_group_list get_account_list get_realm_list is_admin is_super_owner is_auditor is_group_aclkeeper is_group_gatekeeper is_group_owner is_group_guest is_group_member get_remote_accounts_from_realm is_valid_ttl build_re_from_wildcards }
     ],
     configuration => [qw{ load_configuration_file main_configuration_directory load_configuration config account_config plugin_config group_config json_load }],
-    execute       => [qw{ sysret2human execute result_from_helper helper_decapsulate helper }],
+    execute       => [qw{ sysret2human execute execute_simple result_from_helper helper_decapsulate helper }],
     interactive   => [qw{ interactive }],
     jail          => [qw{ jailify }],
     log           => [qw{ syslog syslog_close syslogFormatted warn_syslog log_access_insert log_access_update log_access_get }],
@@ -338,6 +338,7 @@ sub json_output {    ## no critic (ArgUnpacking)
     my $R             = shift;
     my %params        = @_;
     my $force_default = $params{'force_default'};
+    my $no_delimiters = $params{'no_delimiters'};
     my $command       = $params{'command'} || $ENV{'PLUGIN_NAME'};
 
     my $JsonObject = JSON->new->utf8;
@@ -350,7 +351,10 @@ sub json_output {    ## no critic (ArgUnpacking)
     # rename forbidden strings
     $encoded_json =~ s/JSON_(START|OUTPUT|END)/JSON__$1/g;
 
-    if ($ENV{'PLUGIN_JSON'} eq 'GREP' and not $force_default) {
+    if ($no_delimiters) {
+        print $encoded_json;
+    }
+    elsif ($ENV{'PLUGIN_JSON'} eq 'GREP' and not $force_default) {
         $encoded_json =~ tr/\r\n/ /;
         print "\nJSON_OUTPUT=$encoded_json\n";
     }

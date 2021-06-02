@@ -56,7 +56,8 @@ sub log_and_exit {
     OVH::Bastion::log_access_insert(%merged);
 
     push @headers, ["X-Bastion-Local-Status" => $code];
-    HEXIT('OK', value => {code => $code, msg => $msg, body => $body . "\n", headers => \@headers, allowed => $merged{'allowed'}});
+    OVH::Bastion::json_output(R('OK', value => {code => $code, msg => $msg, body => $body . "\n", headers => \@headers, allowed => $merged{'allowed'}}), no_delimiters => 1);
+    exit 0;
 }
 
 my $pass = delete $ENV{'PROXY_ACCOUNT_PASSWORD'};
@@ -93,7 +94,8 @@ push @headers, ["X-Bastion-Request-Length" => "" . length($content)];
 
 # if we're being called by the monitoring, just exit happily
 if ($monitoring) {
-    HEXIT('OK', value => {code => 200, msg => 'OK', body => $OVH::Bastion::VERSION, allowed => 1});
+    OVH::Bastion::json_output(R('OK', value => {code => 200, msg => 'OK', body => $OVH::Bastion::VERSION, allowed => 1}), no_delimiters => 1);
+    exit 0;
 }
 
 $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);    # time: 20ms
@@ -275,11 +277,15 @@ my $req = HTTP::Request->new($method => "https://" . $remotemachine . ':' . $rem
 $req->content($content);
 
 # passthru some tolerated headers from client->bastion to bastion->device req
-foreach my $key (qw{ accept content-type content-length content-encoding }) {
-    my @values = grep { /^\Q$key\E:/i } @client_headers;
-    next if not @values;
-    $values[0] =~ s/^\Q$key\E:\s*//i;
-    $req->header($key, $values[0]);
+my %passthrough_headers;
+foreach my $pattern (qw{ accept content-type content-length content-encoding x-test-[a-z-]+ }) {
+    foreach my $header (grep { /^$pattern:/i } @client_headers) {
+        my ($key, $value) = $header =~ /^([^:]+):\s*(.+)$/;
+        $passthrough_headers{lc $key} = $value;
+    }
+}
+foreach my $key (keys %passthrough_headers) {
+    $req->header($key, $passthrough_headers{$key});
 }
 $req->header('Accept-Encoding' => scalar HTTP::Message::decodable());
 
@@ -433,5 +439,19 @@ if ($res) {
 }
 OVH::Bastion::log_access_insert(%log_params);
 
-HEXIT('OK', value => {code => $res->code + 0, msg => $res->message, body => $res->decoded_content, headers => \@headers, allowed => 1}) if $res;
-HEXIT('OK', value => {code => 504, msg => "Device Timeout", body => "Device Timeout\n", headers => \@headers, allowed => 1});
+my %ret = (
+    headers => \@headers,
+    allowed => 1,
+);
+if ($res) {
+    $ret{'code'} = $res->code + 0;
+    $ret{'msg'}  = $res->message;
+    $ret{'body'} = $res->decoded_content;
+}
+else {
+    $ret{'code'} = 504;
+    $ret{'msg'}  = "Device Timeout";
+    $ret{'body'} = "Device Timeout\n";
+}
+OVH::Bastion::json_output(R('OK', value => \%ret), no_delimiters => 1);
+exit 0;

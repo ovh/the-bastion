@@ -9,6 +9,7 @@ use OVH::Result;
 use OVH::Bastion;
 
 use CGI;
+use JSON;
 use Fcntl qw(:flock);
 use Time::HiRes ();
 use MIME::Base64;
@@ -184,6 +185,50 @@ sub run {
     return $self->SUPER::run($self, %params);
 }
 
+# used twice in process_http_request(): get the worker cmd to execute, launch it
+# and decapsulate the result with the proper error checks
+## no critic (Subroutines::RequireArgUnpacking)
+sub _exec_worker_and_get_result {
+    my $self = shift;
+    my @cmd  = @_;
+    my $fnret;
+
+    $fnret = OVH::Bastion::execute_simple(cmd => \@cmd);
+    $fnret or return $self->log_and_exit(500, "Internal Error (couldn't exec worker)", "Couldn't exec worker (" . $fnret->msg . ")", {comment => "worker_exec_failed"});
+
+    if ($fnret->value->{'sysret'} != 0) {
+        return $self->log_and_exit(
+            500,
+            "Internal Error (worker returned a non-zero exit value)",
+            "Worker returned a non-zero exit value (" . $fnret->value->{'sysret'} . ")",
+            {comment => "worker_non_zero_exit"}
+        );
+    }
+
+    if (!$fnret->value->{'output'}) {
+        return $self->log_and_exit(500, "Internal Error (worker returned no data)", "Worker returned no data", {comment => "worker_no_data"});
+    }
+
+    my $json_decoded;
+    eval { $json_decoded = decode_json($fnret->value->{'output'}); };
+    if ($@) {
+        return $self->log_and_exit(
+            500,
+            "Internal Error (worker returned invalid JSON)",
+            "Worker returned "
+              . (length($fnret->value->{'output'}))
+              . " bytes of data but JSON decoding failed ($@). The first 500 bytes follow:\n"
+              . substr($fnret->value->{'output'}, 0, 500),
+            {comment => "worker_invalid_json"}
+        );
+    }
+
+    $fnret = OVH::Bastion::helper_decapsulate($json_decoded);
+    $fnret or return $self->log_and_exit(500, "Internal Error (worker returned an error)", "Worker returned an error (" . $fnret->msg . ")", {comment => "worker_error"});
+
+    return $fnret;
+}
+
 # overrides parent func
 sub process_http_request {
     my ($self, $client) = @_;
@@ -229,17 +274,7 @@ sub process_http_request {
         my @cmd = ("sudo", "-n", "-u", "proxyhttp", "--", "/usr/bin/env", "perl", "-T", "/opt/bastion/bin/proxy/osh-http-proxy-worker");
         push @cmd, "--monitoring", "--uniqid", $ENV{'UNIQID'};
 
-        $fnret = OVH::Bastion::execute(cmd => \@cmd, noisy_stdout => 0, noisy_stderr => 1, is_helper => 1);
-        $fnret
-          or return $self->log_and_exit(500, "Internal Error (couldn't call helper)", "Couldn't call helper (" . $fnret->msg . ")", {comment => "exec1_failed"});
-
-        $fnret = OVH::Bastion::result_from_helper($fnret->value->{'stdout'});
-        $fnret
-          or return $self->log_and_exit(500, "Internal Error (helper execution failed)", "Helper execution failed (" . $fnret->msg . ")", {comment => "exec2_failed"});
-
-        $fnret = OVH::Bastion::helper_decapsulate($fnret->value);
-        $fnret
-          or return $self->log_and_exit(500, "Internal Error (helper returned an error)", "Helper returned an error (" . $fnret->msg . ")", {comment => "exec3_failed"});
+        $fnret = $self->_exec_worker_and_get_result(@cmd);
 
         my $workerversion = $fnret->value->{'body'};
 
@@ -419,19 +454,11 @@ sub process_http_request {
     $ENV{'PROXY_ACCOUNT_PASSWORD'} = $pass;
     undef $pass;
     $self->{'_log'}{'request_body_length'} = length($content);
-    $fnret = OVH::Bastion::execute(cmd => \@cmd, noisy_stdout => 0, noisy_stderr => 1, is_helper => 1);
-    $fnret
-      or return $self->log_and_exit(500, "Internal Error (couldn't call helper)", "Couldn't call helper (" . $fnret->msg . ")", {comment => "exec1_failed"});
+
+    $fnret = $self->_exec_worker_and_get_result(@cmd);
+
     delete $ENV{'PROXY_ACCOUNT_PASSWORD'};
     delete $ENV{'PROXY_POST_DATA'};
-
-    $fnret = OVH::Bastion::result_from_helper($fnret->value->{'stdout'});
-    $fnret
-      or return $self->log_and_exit(500, "Internal Error (helper execution failed)", "Helper execution failed (" . $fnret->msg . ")", {comment => "exec2_failed"});
-
-    $fnret = OVH::Bastion::helper_decapsulate($fnret->value);
-    $fnret
-      or return $self->log_and_exit(500, "Internal Error (helper returned an error)", "Helper returned an error (" . $fnret->msg . ")", {comment => "exec3_failed"});
 
     if (ref $fnret->value->{'headers'} eq 'ARRAY') {
         push @{$self->{'_supplementary_headers'}}, @{$fnret->value->{'headers'}};

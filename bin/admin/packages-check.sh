@@ -76,7 +76,7 @@ elif echo "$DISTRO_LIKE" | grep -q -w rhel; then
             expect openssh-server nc bash perl-CGI perl(Test::More) passwd \
             cracklib-dicts perl-Time-Piece perl-Time-HiRes diffutils \
             perl-Sys-Syslog pamtester google-authenticator qrencode-libs \
-            util-linux-user"
+            util-linux-user perl-LWP-Protocol-https"
     if [ "$DISTRO_VERSION_MAJOR" = 7 ]; then
         wanted_list="$wanted_list fortune-mod coreutils"
     fi
@@ -116,7 +116,7 @@ elif echo "$DISTRO_LIKE" | grep -q -w suse; then
             perl-libwww-perl perl-Digest perl-IO-Socket-SSL \
             perl-Net-Server cryptsetup mosh expect openssh \
             coreutils netcat-openbsd bash perl-CGI iputils \
-            perl-Time-HiRes perl-Unix-Syslog hostname"
+            perl-Time-HiRes perl-Unix-Syslog hostname perl-LWP-Protocol-https"
         wanted_list="$wanted_list google-authenticator-libpam"
             # perl-GnuPG
     [ "$opt_syslogng" = 1 ] && wanted_list="$wanted_list syslog-ng"
