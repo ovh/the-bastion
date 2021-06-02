@@ -143,11 +143,11 @@ if ($sshClientHasOptionE) {
 my @comments;
 my $header;
 if (open(my $fh_ttyrec, '<', $saveFile)) {
-    read $fh_ttyrec, $header, 1000;    # 1K if there's the host key changed warning
+    read $fh_ttyrec, $header, 2000;    # 2K if there's the host key changed warning
     close($fh_ttyrec);
 }
 elsif (-r "$saveFile.zst") {
-    my $fnret = OVH::Bastion::execute(cmd => ['zstd', '-d', '-c', "$saveFile.zst"], max_stdout_bytes => 1000, must_succeed => 1);
+    my $fnret = OVH::Bastion::execute(cmd => ['zstd', '-d', '-c', "$saveFile.zst"], max_stdout_bytes => 2000, must_succeed => 1);
     $header = join("\n", @{$fnret->value->{'stdout'} || []}) if $fnret;
 }
 
