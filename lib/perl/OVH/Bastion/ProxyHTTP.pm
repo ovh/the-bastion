@@ -437,8 +437,8 @@ sub process_http_request {
     push @cmd, "--insecure"        if ($self->{'proxy_config'}{'insecure'} && !$enforce_secure);
 
     # X-Test-* is only used for functional tests, and has to be passed to the remote
-    foreach my $key (keys %$req_headers) {
-        if ($key =~ /^x-test-/i || grep { lc($key) eq $_ } qw{ accept content-type connection }) {
+    foreach my $pattern (qw{ accept content-type content-length content-encoding x-test-[a-z-]+ }) {
+        foreach my $key (grep { /^$pattern$/i } keys %$req_headers) {
             push @cmd, "--header", $key . ':' . $req_headers->{$key};
         }
     }

@@ -420,7 +420,9 @@ else {
     warn("Couldn't open $logfile for log write");
 }
 
-my @passthru_headers = qw{ content-type client-ssl-cert-subject client-ssl-cipher client-ssl-warning };
+# those are the headers we allow to come back from the remote server to the client
+# we don't passthrough content-encoding, as we've already decoded the content (for logging purposes)
+my @passthru_headers = qw{ content-type content-length client-ssl-cert-subject client-ssl-cipher client-ssl-warning };
 if ($res) {
     foreach my $key ($res->headers->header_field_names) {
         next unless (grep { lc($key) eq $_ } @passthru_headers);
