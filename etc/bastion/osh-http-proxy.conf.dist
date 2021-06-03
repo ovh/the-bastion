@@ -74,5 +74,17 @@
 #    VALUE: 1 to 3600
 #     DESC: timeout delay (in seconds) for the connection between the bastion and the devices
 #  DEFAULT: 120
-"timeout": 120
+"timeout": 120,
+#
+# log_request_response (bool)
+#    VALUE: true or false
+#     DESC: when enabled, the complete response of the device to the request we forwarded will be logged, otherwise we'll only log the response headers
+#  DEFAULT: true
+"log_request_response": true,
+#
+# log_request_response_max_size (int)
+#    VALUE: 0 to 2^30 (1 GiB)
+#     DESC: this option only applies when `log_request_response` is true (see above). When set to zero, the complete response will be logged in the account's home log directory, including the body, regardless of its size. If set to a positive integer, the query response will only be partially logged, with full status and headers but the body only up to the specified size. This is a way to avoid turning off request response logging completely on very busy bastions, by ensuring logs growth don't get out of hand, as some responses to queries can take megabytes, with possibly limited added value to traceability.
+#  DEFAULT: 65536
+"log_request_response_max_size": 65536
 }

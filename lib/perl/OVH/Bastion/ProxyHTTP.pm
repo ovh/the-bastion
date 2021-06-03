@@ -133,18 +133,20 @@ sub log_and_exit {
         push @request_lines, delete $self->{'_log'}{'post_content'};
     }
 
-    my $logfile = sprintf("%s/%s.txt", $finaldir, POSIX::strftime("%F", @t));
-    my $logline = sprintf(
-        "--- CLIENT_REQUEST UNIQID=%s TIMESTAMP=%d.%06d DATE=%s ---\n%s\n"
+    my $bastion_answer_log = "HTTP/1.0 $code $msg\n";
+    foreach my $row (@{$self->http_base_headers()}) {
+        $bastion_answer_log .= $row->[0] . ": " . $row->[1] . "\n";
+    }
+    $bastion_answer_log .= "\n(BODY OMITTED, " . length($body) . " bytes)\n";
+    my @headerlog = ($ENV{'UNIQID'}, $now[0], $now[1], POSIX::strftime("%Y/%m/%d.%H:%M:%S", @t));
+    my $logfile   = sprintf("%s/%s.txt", $finaldir, POSIX::strftime("%F", @t));
+    my $logline   = sprintf(
+        ""
+          . "--- CLIENT_REQUEST UNIQID=%s TIMESTAMP=%d.%06d DATE=%s ---\n%s\n"
           . "--- BASTION_ANSWER UNIQID=%s TIMESTAMP=%d.%06d DATE=%s ---\n%s\n"
           . "--- END UNIQID=%s TIMESTAMP=%d.%06d DATE=%s ---\n\n",
-        $ENV{'UNIQID'}, $now[0], $now[1],
-        POSIX::strftime("%Y/%m/%d.%H:%M:%S", @t),
-        join("\n", @request_lines),
-        $ENV{'UNIQID'}, $now[0], $now[1],
-        POSIX::strftime("%Y/%m/%d.%H:%M:%S", @t),
-        "HTTP/1.0 $code $msg\n\n$body",
-        $ENV{'UNIQID'}, $now[0], $now[1], POSIX::strftime("%Y/%m/%d.%H:%M:%S", @t),
+        @headerlog, join("\n", @request_lines),
+        @headerlog, $bastion_answer_log, @headerlog,
     );
     $logline =~ s/^(Authorization:).+/$1 (removed)/mgi;
 
@@ -163,7 +165,7 @@ sub log_and_exit {
         push @{$self->{'_supplementary_headers'}}, ['WWW-Authenticate', 'Basic realm="bastion"'];
     }
 
-    # and send status (will also fills access_log)
+    # and send status (will also fill access_log)
     return $self->send_status($code, $msg, $body . "\n");
 }
 
@@ -398,8 +400,10 @@ sub process_http_request {
     push @cmd, "--port", $remoteport;
     push @cmd, "--group",   $group   if $group;
     push @cmd, "--timeout", $timeout if $timeout;
-    push @cmd, "--allow-downgrade" if $allow_downgrade;
-    push @cmd, "--insecure"        if ($self->{'proxy_config'}{'insecure'} && !$enforce_secure);
+    push @cmd, "--allow-downgrade"      if $allow_downgrade;
+    push @cmd, "--insecure"             if ($self->{'proxy_config'}{'insecure'} && !$enforce_secure);
+    push @cmd, "--log-request-response" if ($self->{'proxy_config'}{'log_request_response'});
+    push @cmd, "--log-request-response-max-size", $self->{'proxy_config'}{'log_request_response_max_size'} if ($self->{'proxy_config'}{'log_request_response'});
 
     foreach my $key (qw{ accept content-type connection }) {
         push @cmd, "--header", $key . ':' . $req_headers->{$key} if (defined $req_headers->{$key});
@@ -469,7 +473,6 @@ sub http_base_headers {
         $keyname = 'X-Bastion-Remote-' . $keyname if ($keyname =~ /^(client-ssl-)/i);
         push @headers, [$keyname, $keyval->[1]];
     }
-    delete $self->{'_supplementary_headers'};
     return \@headers;
 }
 

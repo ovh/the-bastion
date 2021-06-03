@@ -63,21 +63,23 @@ my $pass = delete $ENV{'PROXY_ACCOUNT_PASSWORD'};
 my $content;
 
 GetOptions(
-    "account=s"       => \my $account,
-    "user=s"          => \my $user,
-    "group=s"         => \my $group,
-    "context=s"       => \my $context,
-    "host=s"          => \my $remotemachine,
-    "port=i"          => \my $remoteport,
-    "method=s"        => \my $method,
-    "path=s"          => \my $path,
-    "header=s"        => \my @client_headers,
-    "timeout=i"       => \my $timeout,
-    "insecure"        => \my $insecure,
-    "uniqid=s"        => \$uniqid,
-    "post-data-stdin" => \my $postDataStdin,
-    "allow-downgrade" => \my $allow_downgrade,
-    "monitoring"      => \my $monitoring,
+    "account=s"                       => \my $account,
+    "user=s"                          => \my $user,
+    "group=s"                         => \my $group,
+    "context=s"                       => \my $context,
+    "host=s"                          => \my $remotemachine,
+    "port=i"                          => \my $remoteport,
+    "method=s"                        => \my $method,
+    "path=s"                          => \my $path,
+    "header=s"                        => \my @client_headers,
+    "timeout=i"                       => \my $timeout,
+    "insecure"                        => \my $insecure,
+    "uniqid=s"                        => \$uniqid,
+    "post-data-stdin"                 => \my $postDataStdin,
+    "allow-downgrade"                 => \my $allow_downgrade,
+    "monitoring"                      => \my $monitoring,
+    "log-request-response"            => \my $log_request_response,
+    "log-request-response-max-size=i" => \my $log_request_response_max_size,
 );
 push @headers, ["X-Bastion-Remote-IP" => $remotemachine];
 
@@ -388,20 +390,31 @@ my $basedir = "/home/$account/ttyrec";
 my $finaldir = "$basedir/$remotemachine";
 -d $finaldir || mkdir $finaldir;
 
-my @now = Time::HiRes::gettimeofday();
-my @t   = localtime($now[0]);
+# depending on whether we must log the body or not, and whether there is a max size specified,
+# prepare the log line about the body
+my $body_to_log = "(BODY OMITTED)";
+if ($res && $log_request_response) {
+    $log_request_response_max_size //= 65536;
+    if ($log_request_response_max_size && length($res->decoded_content) > $log_request_response_max_size) {
+        $body_to_log = substr($res->decoded_content, 0, $log_request_response_max_size / 2) . '[...snip...]' . substr($res->decoded_content, -$log_request_response_max_size / 2);
+    }
+    else {
+        $body_to_log = $res->decoded_content;
+    }
+}
 
+my @now               = Time::HiRes::gettimeofday();
+my @t                 = localtime($now[0]);
+my @headerlog         = ($uniqid, $now[0], $now[1], POSIX::strftime("%Y/%m/%d.%H:%M:%S", @t));
 my $headers_as_string = $res ? join("", $res->{'_headers'}->as_string("\n")) : '';
 my $logfile           = sprintf("%s/%s.txt", $finaldir, POSIX::strftime("%F", @t));
-my $logline           = sprintf(
-    "--- BASTION_REQUEST UNIQID=%s TIMESTAMP=%d.%06d DATE=%s ---\n%s\n"
+my $logline =
+  sprintf(""
+      . "--- BASTION_REQUEST UNIQID=%s TIMESTAMP=%d.%06d DATE=%s ---\n%s\n"
       . "--- DEVICE_ANSWER UNIQID=%s TIMESTAMP=%d.%06d DATE=%s ---\n%s\n"
       . "--- END UNIQID=%s TIMESTAMP=%d.%06d DATE=%s ---\n\n",
-    $uniqid, $now[0], $now[1], POSIX::strftime("%Y/%m/%d.%H:%M:%S", @t), $req->as_string(),
-    $uniqid, $now[0], $now[1], POSIX::strftime("%Y/%m/%d.%H:%M:%S", @t),
-    ($res ? sprintf("%s %s\n%s\n%s", $res->protocol, $res->status_line, $headers_as_string, $res->decoded_content) : '(DEVICE TIMEOUT)'),
-    $uniqid, $now[0], $now[1], POSIX::strftime("%Y/%m/%d.%H:%M:%S", @t),
-);
+    @headerlog, $req->as_string(), @headerlog, $res ? sprintf("%s %s\n%s\n%s", $res->protocol, $res->status_line, $headers_as_string, $body_to_log) : '(DEVICE TIMEOUT)',
+    @headerlog,);
 $logline =~ s/^(Authorization:).+/$1 (removed)/mgi;
 
 if (open(my $log, '>>', $logfile)) {

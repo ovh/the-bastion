@@ -47,11 +47,12 @@ my $_normalize_config_integer = sub {
         $config->{$param} = $default;
     }
 };
-$_normalize_config_integer->('timeout',           1, 3600, 120);
-$_normalize_config_integer->('min_servers',       1, 512,  8);
-$_normalize_config_integer->('max_servers',       1, 512,  32);
-$_normalize_config_integer->('min_spare_servers', 1, 512,  8);
-$_normalize_config_integer->('max_spare_servers', 1, 512,  16);
+$_normalize_config_integer->('timeout',                       1, 3600,               120);
+$_normalize_config_integer->('min_servers',                   1, 512,                8);
+$_normalize_config_integer->('max_servers',                   1, 512,                32);
+$_normalize_config_integer->('min_spare_servers',             1, 512,                8);
+$_normalize_config_integer->('max_spare_servers',             1, 512,                16);
+$_normalize_config_integer->('log_request_response_max_size', 0, 1024 * 1024 * 1024, 65536);
 
 foreach my $file ($config->{'ssl_key'}, $config->{'ssl_certificate'}) {
     if (!(-r -f $file)) {
@@ -59,6 +60,9 @@ foreach my $file ($config->{'ssl_key'}, $config->{'ssl_certificate'}) {
         exit 1;
     }
 }
+
+# this option is enabled by default if omitted
+$config->{'log_request_response'} //= 1;
 
 OVH::Bastion::ProxyHTTP->new()->run(
     %options,
@@ -81,8 +85,10 @@ OVH::Bastion::ProxyHTTP->new()->run(
     # which is also the max allowed value of the 'timeout' config param (see above).
     timeout_idle => 3600,
     proxy_config => {
-        insecure => $config->{'insecure'} ? 1 : 0,
-        timeout  => $config->{'timeout'},            # our worker will wait for up to this amount of time for the egress connection to complete
+        insecure                      => $config->{'insecure'} ? 1 : 0,
+        timeout                       => $config->{'timeout'},                         # our worker will wait for up to this amount of time for the egress connection to complete
+        log_request_response          => $config->{'log_request_response'} ? 1 : 0,
+        log_request_response_max_size => $config->{'log_request_response_max_size'},
     },
 ) or die "Proxy launch failed!";
 
