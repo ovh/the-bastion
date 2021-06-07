@@ -1,4 +1,4 @@
-FROM opensuse/leap:15.2
+FROM opensuse/leap:15
 LABEL maintainer="stephane.lesimple+bastion@ovhcloud.com"
 
 # cache builds efficiently: just copy the scripts to install packages first
@@ -19,9 +19,10 @@ COPY . /opt/bastion
 RUN ["/opt/bastion/bin/dev/perl-check.sh"]
 
 # setup ssh/sshd config and setup bastion install
-RUN ["/opt/bastion/bin/admin/install","--new-install","--no-wait"]
+RUN ["/opt/bastion/bin/admin/install","--new-install"]
 
 # start at entrypoint
 ENTRYPOINT /opt/bastion/docker/entrypoint.sh
 
-# TESTENV HAS_ED25519=1 HAS_BLACKLIST=0 HAS_MFA=0 HAS_PAMTESTER=0 HAS_PIV=1
+# TESTOPT --has-mfa=0 --has-pamtester=0 --has-piv=0
+# TESTFROM opensuse/leap:15.2 opensuse/leap:15.3

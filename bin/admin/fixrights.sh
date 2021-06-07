@@ -27,7 +27,6 @@ find "$basedir" -name .git -prune -o -name contrib -prune -o -type f -print0 | x
 find "$basedir"/bin/ ! -name "*.json" -print0 | xargs -r0 chmod 0755
 chmod 0644 "$basedir"/bin/dev/perlcriticrc
 chmod 0700 "$basedir"/bin/admin/install
-chmod 0700 "$basedir"/contrib
 chmod 0700 "$basedir"/bin/sudogen
 chmod 0700 "$basedir"/tests
 test -d "$basedir"/install && chmod 0700 "$basedir"/install
