@@ -34,8 +34,9 @@ for i in $(seq 1 $delay); do
     sleep 1
     if echo test | nc -w 1 "$TARGET_IP" "$TARGET_PORT" | grep -q ^SSH-2 ; then
         echo "tester: it's alive, starting tests!"
-        [ "$TEST_QUICK" = 1 ] && export nocc=1
-        "$(dirname "$0")"/../launch_tests_on_instance.sh "$TARGET_IP" "$TARGET_PORT" "${TARGET_PROXY_PORT:-0}" "$TARGET_USER" /root/user.privkey /root/root.privkey; ret=$?
+        # we want EXTRA_OPTIONS to expand
+        # shellcheck disable=SC2086
+        "$(dirname "$0")"/../launch_tests_on_instance.sh ${EXTRA_OPTIONS:-} "$TARGET_IP" "$TARGET_PORT" "${TARGET_PROXY_PORT:-0}" "$TARGET_USER" /root/user.privkey /root/root.privkey; ret=$?
         [ "$ret" -gt 253 ] && ret=253
         exit "$ret"
     elif ! fping -r 1 "$TARGET_IP" >/dev/null 2>&1; then

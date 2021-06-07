@@ -113,7 +113,7 @@ EOF
     # for this trick, a0 needs to use adminSudo hence needs to be an admin
     configchg 's=^\\\\x22adminAccounts\\\\x22.+=\\\\x22adminAccounts\\\\x22:[\\\\x22'"$account0"'\\\\x22],='
 
-    success root set_a0_as_admin $r0 "\". $remote_basedir/lib/shell/functions.inc; add_user_to_group_compat $account0 osh-admin\""
+    success root set_a0_as_admin $r0 "\". $opt_remote_basedir/lib/shell/functions.inc; add_user_to_group_compat $account0 osh-admin\""
 
     script sudo-selfListIngressKeys a0_sudo_a1_selfaddnonpiv $a0 --osh adminSudo -- --sudo-as $account1 --sudo-cmd selfAddIngressKey -- $js "< $account2key1file.pub"
     retvalshouldbe 0
@@ -148,7 +148,7 @@ EOF
 
     # manually launch the grace reaper (normally done by cron)
     echo "manually launching piv grace reaper..."
-    success root grace_reaper $r0 $remote_basedir/bin/cron/osh-piv-grace-reaper.pl
+    success root grace_reaper $r0 $opt_remote_basedir/bin/cron/osh-piv-grace-reaper.pl
 
     # account1 should no longer be able to connect, as PIV grace expired
     run info a1_noconnect_grace_expired $a1 --osh info
@@ -168,7 +168,7 @@ EOF
     json .command selfDelIngressKey .error_code OK
 
     # remove a0 from admins
-    success root del_a0_as_admin $r0 "\". $remote_basedir/lib/shell/functions.inc; del_user_from_group_compat $account0 osh-admin\""
+    success root del_a0_as_admin $r0 "\". $opt_remote_basedir/lib/shell/functions.inc; del_user_from_group_compat $account0 osh-admin\""
 
     revoke accountListIngressKeys
     revoke accountPIV
@@ -182,9 +182,10 @@ EOF
     revoke accountDelete
 
     # restore default config
-    success bastion configrestore $r0 "dd if=$osh_etc/bastion.conf.bak.$now of=$osh_etc/bastion.conf"
+    success bastion configrestore $r0 "dd if=$opt_remote_etc_bastion/bastion.conf.bak.$now of=$opt_remote_etc_bastion/bastion.conf"
 }
 
-if [ "$HAS_PIV" = 1 ]; then
+if [ "${capabilities[piv]}" = 1 ]; then
     testsuite_piv
 fi
+unset -f testsuite_piv

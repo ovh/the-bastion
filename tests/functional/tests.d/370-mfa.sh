@@ -52,7 +52,7 @@ testsuite_mfa()
 
     # now try to connect after we have a pass
     run mfa a4_connect_after_pass $a4f --osh groupList
-    if [ "$HAS_MFA" = 1 ] || [ "$HAS_MFA_PASSWORD" = 1 ]; then
+    if [ "${capabilities[mfa]}" = 1 ] || [ "${capabilities[mfa-password]}" = 1 ]; then
         # now we need a password, we don't enter it so it'll timeout (124)
         retvalshouldbe 124
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
@@ -66,7 +66,7 @@ testsuite_mfa()
         json .command groupList .error_code OK_EMPTY
     fi
 
-    if [ "$HAS_PAMTESTER" = 1 ]; then
+    if [ "${capabilities[pamtester]}" = 1 ]; then
         grant groupCreate
 
         success mfa a0_create_g3 $a0 --osh groupCreate --group $group3 --algo rsa --size 4096 --owner $account4
@@ -192,7 +192,7 @@ testsuite_mfa()
 
     # change our password
     a4_password_new="rkw=*Ffyqs23"
-    if [ "$HAS_MFA" = 1 ] || [ "$HAS_MFA_PASSWORD" = 1 ]; then
+    if [ "${capabilities[mfa]}" = 1 ] || [ "${capabilities[mfa-password]}" = 1 ]; then
         script mfa a4_change_pass "echo 'set timeout 30; \
             spawn $a4 --osh selfMFASetupPassword --yes; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
@@ -224,7 +224,7 @@ testsuite_mfa()
     a4_password="$a4_password_new"
     unset a4_password_new
 
-    if [ "$HAS_MFA" = 1 ] || [ "$HAS_MFA_PASSWORD" = 1 ]; then
+    if [ "${capabilities[mfa]}" = 1 ] || [ "${capabilities[mfa-password]}" = 1 ]; then
         script mfa a4_connect_with_pass "echo 'set timeout 30; \
             spawn $a4 --osh groupList; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
@@ -246,7 +246,7 @@ testsuite_mfa()
     json .error_code OK .command accountModify .value.mfa_totp_required.error_code OK_NO_CHANGE
 
     # now try to connect with account4
-    if [ "$HAS_MFA" = 1 ] || [ "$HAS_MFA_PASSWORD" = 1 ]; then
+    if [ "${capabilities[mfa]}" = 1 ] || [ "${capabilities[mfa-password]}" = 1 ]; then
         script mfa a4_connect_with_totpreq "echo 'set timeout 30; \
             spawn $a4 --osh groupList; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
@@ -259,7 +259,7 @@ testsuite_mfa()
     retvalshouldbe 123
     json .error_code KO_MFA_TOTP_SETUP_REQUIRED
 
-    if [ "$HAS_MFA" = 1 ]; then
+    if [ "${capabilities[mfa]}" = 1 ]; then
         # setup totp
         script mfa a4_setup_totp "echo 'set timeout 30; \
             spawn $a4 --osh selfMFASetupTOTP --no-confirm; \

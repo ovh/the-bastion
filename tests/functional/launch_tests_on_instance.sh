@@ -3,11 +3,106 @@
 # shellcheck disable=SC2086
 # shellcheck disable=SC2016
 # shellcheck disable=SC2046
-set -e
+set -eu
 
 basedir=$(readlink -f "$(dirname "$0")"/../..)
 # shellcheck source=lib/shell/functions.inc
 . "$basedir"/lib/shell/functions.inc
+
+opt_remote_etc_bastion=/etc/bastion
+opt_remote_basedir=$basedir
+opt_skip_consistency_check=0
+opt_no_pause_on_fail=0
+opt_log_prefix=
+opt_module=
+declare -A capabilities=( [ed25519]=1 [blacklist]=0 [mfa]=1 [mfa-password]=0 [pamtester]=1 [piv]=1 )
+
+# set the helptext now to get the proper default values
+help_text=$(cat <<EOF
+
+Usage: $0 [OPTIONS] <IP> <SSH_Port> <HTTP_Proxy_Port_or_Zero> <Remote_Admin_User_Name> <Admin_User_SSH_Key_Path> <Root_SSH_Key_Path>
+
+Test Options:
+    --skip-consistency-check   Speed up tests by skipping the consistency check between every test
+    --no-pause-on-fail         Don't pause when a test fails
+    --log-prefix=X             Prefix all logs by this name
+    --module=X                 Only test this module (specify a filename found in \`functional/tests.d/\`)
+
+Remote OS directory locations:
+    --remote-etc-bastion=X     Override the default remote bastion configuration directory (default: $opt_remote_etc_bastion)
+    --remote-basedir=X         Override the default remote basedir location (default: $opt_remote_basedir)
+
+Specifying features support of the underlying OS of the tested bastion:
+    --has-ed25519=[0|1]        Ed25519 keys are supported (default: ${capabilities[ed25519]})
+    --has-blacklist=[0|1]      Detection of bad SSH keys generated during the Debian OpenSSL debacle of 2006 is supported (default: ${capabilities[blacklist]})
+    --has-mfa=[0|1]            PAM is usable to check passwords and TOTP (default: ${capabilities[mfa]})
+    --has-mfa-password=[0|1]   PAM is usable to check passwords (default: ${capabilities[mfa-password]})
+    --has-pamtester=[0|1]      The \`pamtester\` binary is available, and PAM is usable (default: ${capabilities[pamtester]})
+    --has-piv=[0|1]            The \`yubico-piv-tool\` binary is available (default: ${capabilities[piv]})
+
+EOF
+)
+
+
+usage() {
+    echo "$help_text"
+}
+
+while [ -n "${1:-}" ]
+do
+    optval="${1/*=/}"
+    case "$1" in
+        --remote-etc-bastion=*)
+            opt_remote_etc_bastion="$optval"
+            ;;
+        --remote-basedir=*)
+            opt_remote_basedir="$optval"
+            ;;
+        --skip-consistency-check)
+            opt_skip_consistency_check=1
+            ;;
+        --no-pause-on-fail)
+            opt_no_pause_on_fail=1
+            ;;
+        --log-prefix=*)
+            opt_log_prefix="$optval"
+            ;;
+        --module=*)
+            opt_module="$optval"
+            if [ ! -e "$basedir/tests/functional/tests.d/$optval" ]; then
+                echo "Unknown module specified '$opt_module', supported modules are:"
+                cd "$basedir/tests/functional/tests.d"
+                ls -- ???-*.sh
+                exit 1
+            fi
+            ;;
+        --has-*=*)
+            optname=${1/--has-/}
+            optname=${optname/=*/}
+            capabilities[$optname]=$optval
+            ;;
+        -*)
+            echo "Unknown option: $1"
+            usage
+            exit 1
+            ;;
+        *) break
+            ;;
+    esac
+    shift
+done
+
+if [ -n "${7:-}" ]; then
+    echo "Error: too many parameters"
+    usage
+    exit 1
+fi
+
+if [ -z "${6:-}" ]; then
+    echo "Error: missing parameters"
+    usage
+    exit 1
+fi
 
 remote_ip="$1"
 remote_port="$2"
@@ -17,29 +112,6 @@ remote_proxy_port="$3"
 account0="$4"
 user_ssh_key_path="$5"
 root_ssh_key_path="$6"
-osh_etc="$7"
-remote_basedir="$8"
-[ -n "$osh_etc" ] || osh_etc=/etc/bastion
-[ -n "$remote_basedir" ] || remote_basedir="$basedir"
-
-[ -z "$HAS_ED25519"      ] && HAS_ED25519=1
-[ -z "$HAS_BLACKLIST"    ] && HAS_BLACKLIST=0
-[ -z "$HAS_MFA"          ] && HAS_MFA=1
-[ -z "$HAS_MFA_PASSWORD" ] && HAS_MFA_PASSWORD=0
-[ -z "$HAS_PAMTESTER"    ] && HAS_PAMTESTER=1
-[ -z "$HAS_PIV"          ] && HAS_PIV=1
-[ -z "$nocc"             ] && nocc=0
-[ -z "$nowait"           ] && nowait=0
-[ -z "$TARGET"           ] && TARGET=''
-[ -z "$TEST_SCRIPT"      ] && TEST_SCRIPT=''
-
-# die if using an unset var
-set -u
-
-if [ -z "$root_ssh_key_path" ] ; then
-    echo "Usage: $0 <IP> <Port> <HTTP_Proxy_Port_or_zero> <remote_user_name> <user_ssh_key_path> <root_ssh_key_path> [osh_etc] [remote_basedir]"
-    exit 1
-fi
 
 # does ssh work there ?
 server_output=$(echo test | nc -w 1 $remote_ip $remote_port)
@@ -110,7 +182,7 @@ cat >"$mytmpdir/ssh_config" <<EOF
    PasswordAuthentication no
    RequestTTY yes
 EOF
-if [ "$HAS_MFA" = 1 ] || [ "$HAS_MFA_PASSWORD" = 1 ]; then
+if [ "${capabilities[mfa]}" = 1 ] || [ "${capabilities[mfa-password]}" = 1 ]; then
         cat >>"$mytmpdir/ssh_config" <<EOF
            ChallengeResponseAuthentication yes
            KbdInteractiveAuthentication yes
@@ -158,11 +230,14 @@ prefix()
     local elapsed=$(( $(date +%s) - start_time))
     local min=$(( elapsed / 60 ))
     local sec=$(( elapsed - min * 60 ))
+    local prefixfmt="%b"
     update_totalerrors
+
+    [ -n "$opt_log_prefix" ] && prefixfmt="%16b "
     if [ "$totalerrors" = 0 ]; then
-        printf "%b%02dm%02d [noerror]" "$TARGET" "$min" "$sec"
+        printf "${prefixfmt}%02dm%02d %b[--]%b" "$opt_log_prefix" "$min" "$sec" "$DARKGRAY" "$NOC"
     else
-        printf "%b%02dm%02d %b[%d err]%b" "$TARGET" "$min" "$sec" "$RED" "$totalerrors" "$NOC"
+        printf "${prefixfmt}%02dm%02d %b[%d err]%b" "$opt_log_prefix" "$min" "$sec" "$RED" "$totalerrors" "$NOC"
     fi
 }
 
@@ -180,11 +255,11 @@ run()
         cat "$outdir/$basename.log"
         printf "%b%b%b\\n" "$WHITE_ON_BLUE" "[INFO] returned json follows" "$NOC"
         grep "^JSON_OUTPUT=" -- $outdir/$basename.log | cut -d= -f2- | $jq .
-        if [ "$nocc" != 1 ]; then
+        if [ "$opt_skip_consistency_check" != 1 ]; then
             printf "%b%b%b\\n" "$WHITE_ON_BLUE" "[INFO] consistency check follows" "$NOC"
             cat "$outdir/$basename.cc"
         fi
-        if test -t 0 && [ "$nowait" != 1 ]; then
+        if test -t 0 && [ "$opt_no_pause_on_fail" != 1 ]; then
             printf "%b%b%b\\n" "$WHITE_ON_BLUE" "[INFO] press enter to continue" "$NOC"
             read -r _
         fi
@@ -205,7 +280,7 @@ run()
         cp "$1" "$outdir/$basename.script"
     fi
 
-    printf '%b %b*** [%03d/%03d] %b::%b %s(%b)\n' "$(prefix)" "$BOLD_CYAN" "$testno" "$testcount" "$name" "$case" "$NOC" "$*"
+    printf '%b %b*** [%03d/%03d] %b::%b %b(%b)%b\n' "$(prefix)" "$BOLD_CYAN" "$testno" "$testcount" "$name" "$case" "$NOC$DARKGRAY" "$*" "$NOC"
 
     # special case for scp: we need to wait a bit before terminating the test
     sleepafter=0
@@ -227,7 +302,7 @@ run()
     fi
 
     # now run consistency check on the target, unless configured otherwise
-    if [ "$nocc" != 1 ]; then
+    if [ "$opt_skip_consistency_check" != 1 ]; then
         flock "$outdir/$basename.retval" $screen "$outdir/$basename.cc" -D -m -fn -ln $r0 '
                 /opt/bastion/bin/admin/check-consistency.pl ; echo _RETVAL_CC=$?= ;
                 grep -Fw -e warn -e die -e code-warning /var/log/bastion/bastion.log | grep -Fv "'"${code_warn_exclude:-__none__}"'" | sed "s/^/_SYSLOG=/" ;
@@ -403,7 +478,7 @@ nocontain()
 
 configchg()
 {
-    success bastion configchange $r0 perl -pe "$*" -i $osh_etc/bastion.conf
+    success bastion configchange $r0 perl -pe "$*" -i $opt_remote_etc_bastion/bastion.conf
 }
 
 sshclientconfigchg()
@@ -419,13 +494,13 @@ runtests()
 
     # backup the original default configuration on target side
     now=$(date +%s)
-    success bastion backupconfig $r0 "dd if=$osh_etc/bastion.conf of=$osh_etc/bastion.conf.bak.$now"
+    success bastion backupconfig $r0 "dd if=$opt_remote_etc_bastion/bastion.conf of=$opt_remote_etc_bastion/bastion.conf.bak.$now"
 
     grant accountRevokeCommand
 
     for module in "$(dirname $0)"/tests.d/???-*.sh
     do
-        if [ -n "$TEST_SCRIPT" ] && [ "$TEST_SCRIPT" != "$(basename "$module")" ]; then
+        if [ -n "$opt_module" ] && [ "$opt_module" != "$(basename "$module")" ]; then
             echo "### SKIPPING MODULE $(basename $module)"
             continue
         fi
@@ -437,7 +512,7 @@ runtests()
     done
 
     # put the backed up configuration back
-    success bastion restoreconfig $r0 "dd if=$osh_etc/bastion.conf.bak.$now of=$osh_etc/bastion.conf"
+    success bastion restoreconfig $r0 "dd if=$opt_remote_etc_bastion/bastion.conf.bak.$now of=$opt_remote_etc_bastion/bastion.conf"
 }
 
 COUNTONLY=0
@@ -448,7 +523,7 @@ for f in $(find "$basedir/tests/unit/" -mindepth 1 -maxdepth 1 -type f -name "*.
 do
     fbasename=$(basename "$f")
     echo "-> $fbasename"
-    if ! $r0 perl "$remote_basedir/tests/unit/$fbasename"; then
+    if ! $r0 perl "$opt_remote_basedir/tests/unit/$fbasename"; then
         printf "%b%b%b\\n" "$WHITE_ON_RED" "Unit tests failed :(" "$NOC"
         exit 1
     fi

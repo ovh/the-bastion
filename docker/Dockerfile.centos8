@@ -19,10 +19,10 @@ COPY . /opt/bastion
 RUN ["/opt/bastion/bin/dev/perl-check.sh"]
 
 # setup ssh/sshd config and setup bastion install
-RUN ["/opt/bastion/bin/admin/install","--new-install","--no-wait"]
+RUN ["/opt/bastion/bin/admin/install","--new-install"]
 
 # start at entrypoint
 ENTRYPOINT /opt/bastion/docker/entrypoint.sh
 
-# TESTENV HAS_ED25519=1 HAS_BLACKLIST=0 HAS_MFA=1 HAS_PAMTESTER=1 HAS_PIV=1
+# TESTOPT --has-mfa=1 --has-pamtester=1 --has-piv=1
 # TESTFROM centos:8.3.2011 centos:8.2.2004 centos:8.1.1911

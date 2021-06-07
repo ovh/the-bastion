@@ -139,7 +139,7 @@ testsuite_mfa_realm()
     revoke groupDelete
 }
 
-if [ "$HAS_MFA" = 1 ] || [ "$HAS_MFA_PASSWORD" = 1 ]; then
+if [ "${capabilities[mfa]}" = 1 ] || [ "${capabilities[mfa-password]}" = 1 ]; then
     testsuite_mfa_realm
 fi
 unset -f testsuite_mfa_realm

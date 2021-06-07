@@ -9,12 +9,14 @@ basedir=$(readlink -f "$(dirname "$0")"/../../..)
 namespace=the-bastion-test
 
 target="$1"
-test_script="$2"
+shift
+
+# all remaining options will be passed as-is on the target docker, through target_role.sh to launch-tests-on-instance.sh
 
 get_supported_targets() {
     local target targets subtarget
     for dockerfile in "$(dirname "$0")"/../../../docker/Dockerfile.*; do
-        if grep -q '^# TESTENV ' "$dockerfile"; then
+        if grep -q '^# TESTOPT ' "$dockerfile"; then
             target=$(basename "$dockerfile")
             target=${target/Dockerfile./}
             # if the file has a TESTFROM entry, then it's actually multiple similar targets
@@ -24,8 +26,9 @@ get_supported_targets() {
                     subtarget="$target@$testfrom"
                     targets="$targets $subtarget"
                 done
+            else
+                targets="$targets $target"
             fi
-            targets="$targets $target"
         fi
     done
     # shellcheck disable=SC2086
@@ -76,23 +79,21 @@ docker build -f "$testenv_dockerfile" -t "$namespace:tester" "$(dirname "$0")"/.
 if [ -n "$subtarget" ]; then
     dockerfiletmp=$(mktemp)
     trap 'rm -f $dockerfiletmp' EXIT
-    sed -re "s/^FROM .+/FROM $subtarget/" "$target_dockerfile" > "$dockerfiletmp"
+    sed -re "s=^FROM .+=FROM $subtarget=" "$target_dockerfile" > "$dockerfiletmp"
     target_dockerfile="$dockerfiletmp"
 fi
 
 # build target
 echo "Building target environment"
 target=$(echo "$target" | sed -re 's/[^a-zA-Z0-9_-]/_/g')
-docker build -f "$target_dockerfile" -t "$namespace:$target" --build-arg "TEST_QUICK=$TEST_QUICK" "$(dirname "$0")"/../../..
+docker build -f "$target_dockerfile" -t "$namespace:$target" "$(dirname "$0")"/../../..
 
 # get the target environment we want from the dockerfile
-varstoadd=''
+testopts="$(grep '^# TESTOPT' "$target_dockerfile" | tail -n1 | cut -c10-)"
 privileged=''
-for var in $(grep '^# TESTENV' "$target_dockerfile" | tail -n1 | sed -re 's/^# TESTENV//')
-do
-    echo "$var" | grep -Eq '^[A-Z0-9_]+=[01]$' && varstoadd="$varstoadd -e $var "
-    [ "$var" = "PRIVILEGED=1" ] && privileged='--privileged'
-done
+if grep -q '^# PRIVILEGED' "$target_dockerfile"; then
+    privileged='--privileged'
+fi
 
 # cleanup the dockerfile temp if applicable
 if [ -n "$subtarget" ]; then
@@ -131,7 +132,6 @@ docker run $privileged \
     -e USER_PUBKEY_B64="$USER_PUBKEY_B64" \
     -e ROOT_PUBKEY_B64="$ROOT_PUBKEY_B64" \
     -e TARGET_USER="user.5000" \
-    -e TEST_QUICK="${TEST_QUICK:-0}" \
     -e WANT_HTTP_PROXY=1 \
     $namespace:"$target"
 docker logs -f "bastion_${target}_target" | sed -u -e 's/^/target: /;s/$/\r/' &
@@ -168,7 +168,7 @@ if [[ -t 1 ]] && [ -z "$DOCKER_TTY" ]; then
 else
     DOCKER_TTY="false"
 fi
-echo "Starting test instance and run tests with --tty=$DOCKER_TTY"
+echo "Starting test instance and run tests with --tty=$DOCKER_TTY (testopts: $testopts, extra params: $*)"
 set +e
 # shellcheck disable=SC2086
 docker run \
@@ -182,10 +182,8 @@ docker run \
     -e TARGET_USER="user.5000" \
     -e USER_PRIVKEY_B64="$USER_PRIVKEY_B64" \
     -e ROOT_PRIVKEY_B64="$ROOT_PRIVKEY_B64" \
-    -e TARGET="$target " \
-    -e TEST_SCRIPT="$test_script" \
-    -e TEST_QUICK="${TEST_QUICK:-0}" \
-    $varstoadd $namespace:tester
+    -e EXTRA_OPTIONS="$testopts $*" \
+    $namespace:tester
 ret=$?
 if [ $ret -ne 0 ]; then
     printf '%b%b%b\n' "$WHITE_ON_RED" "Test instance returned $ret" "$NOC"

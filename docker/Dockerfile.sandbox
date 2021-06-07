@@ -24,7 +24,7 @@ RUN \
     # accountUidMax & ttyrecGroupIdOffset change: fixes https://github.com/ovh/the-bastion/issues/24 \
     sed -i -re 's/^"accountUidMax":.+/"accountUidMax": 9999,/;s/^"ttyrecGroupIdOffset":.+/"ttyrecGroupIdOffset": 10000,/' /opt/bastion/etc/bastion/bastion.conf.dist && \
     # install the software \
-    /opt/bastion/bin/admin/install --new-install --no-wait
+    /opt/bastion/bin/admin/install --new-install
 
 # We'll expose our port 22
 EXPOSE 22/tcp

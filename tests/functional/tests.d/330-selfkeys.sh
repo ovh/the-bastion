@@ -471,7 +471,7 @@ EOS
     [ "$FP_TYPE" = md5 ] && fped="d7:92:5b:77:8b:69:03:cb:e7:5a:11:76:d1:a6:ea:e4"
     fplist="$fp4096 $fp8192 $fp16384 $fpe256 $fpe384 $fpe521"
     script selfAddIngressKey  ed25519   $a1 -osh selfAddIngressKey "<<< \"ssh-ed25519 $b64 test@ed25519\""
-    if [ "$HAS_ED25519" = "1" ] ; then
+    if [ "${capabilities[ed25519]}" = "1" ] ; then
         fplist="$fplist $fped"
         retvalshouldbe 0
         contain "key successfully added"
@@ -506,7 +506,7 @@ EOS
             .value.key.prefix ""
     fi
 
-    if [ "$HAS_BLACKLIST" = 1 ] ; then
+    if [ "${capabilities[blacklist]}" = 1 ] ; then
     script selfAddIngressKey  rsa1024fucked $a1 -osh selfAddIngressKey "<<< \"ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAIEA90Td1GTx+tYMbsti93lyiyKYelBgaXRrnweoYJXjUFNU93jZ+RmBR8yp5J6mx7jz9ECaMS7Dn49fNQi5uG75+m+DTUgq3bfNv8cygoVC4g3NhzA3e+uA22D+iI53j3Gm9YxaJVOypGXGkOoWnmXZy7FQ4aSBFvgqa81xfnoa+4M= compromised@rsa1024\""
     retvalshouldbe 100
     contain "IT IS VULNERABLE"
@@ -624,7 +624,7 @@ EOS
     revoke accountDelete
 
     # restore default config
-    success bastion configrestore $r0 "dd if=$osh_etc/bastion.conf.bak.$now of=$osh_etc/bastion.conf"
+    success bastion configrestore $r0 "dd if=$opt_remote_etc_bastion/bastion.conf.bak.$now of=$opt_remote_etc_bastion/bastion.conf"
 }
 
 testsuite_selfkeys
