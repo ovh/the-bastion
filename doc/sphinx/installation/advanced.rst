@@ -228,19 +228,6 @@ On the master
 Misc
 ====
 
-Fix buggy ReadLine under Debian Jessie
-**************************************
-
-Unfortunately, the version of `libterm-readline-gnu-perl` of Debian Jessie is bugged.
-The version of Wheezy (7) and Stretch (9) are correct, only Jessie (8) is affected.
-This impacts the ``interactive`` mode of the bastion, namely the autocomplete feature, if you want to apply a quickfix on your system, you can use this:
-
-.. code-block:: shell
-
-    patch -p0 -d / -r - < /opt/bastion/contrib/libterm-readline-gnu-perl-jessiefix.patch
-
-Now, as Debian Jessie is quite old, the proper solution is probably not to use it!
-
 Create SSHFP records
 ********************
 
