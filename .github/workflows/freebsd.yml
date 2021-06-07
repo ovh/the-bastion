@@ -8,7 +8,7 @@ jobs:
   freebsd:
     runs-on: macos-latest
     name: FreeBSD
-    if: contains(github.event.pull_request.labels.*.name, 'tests:full')
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'tests:full') || contains(github.event.pull_request.labels.*.name, 'tests:long') || contains(github.event.pull_request.labels.*.name, 'tests:freebsd') }}
     steps:
     - uses: actions/checkout@v2
     - name: Functional tests under FreeBSD
@@ -26,8 +26,8 @@ jobs:
           /opt/bastion/bin/admin/packages-check.sh -i
           /opt/bastion/bin/admin/install-ttyrec.sh -s
           /opt/bastion/bin/admin/install-yubico-piv-checker.sh -s
-          /opt/bastion/bin/admin/install --new-install --no-wait
+          /opt/bastion/bin/admin/install --new-install
           ssh-keygen -t ed25519 -f id_user
           ssh-keygen -t ed25519 -f id_root
-          NO_SLEEP=1 user_pubkey=$(cat id_user.pub) root_pubkey=$(cat id_root.pub) TARGET_USER=user5000 /opt/bastion/tests/functional/docker/target_role.sh
-          HAS_MFA=0 HAS_MFA_PASSWORD=1 HAS_PAMTESTER=1 nocc=1 /opt/bastion/tests/functional/launch_tests_on_instance.sh 127.0.0.1 22 0 user5000 id_user id_root /usr/local/etc/bastion
+          WANT_HTTP_PROXY=0 NO_SLEEP=1 user_pubkey=$(cat id_user.pub) root_pubkey=$(cat id_root.pub) TARGET_USER=user5000 /opt/bastion/tests/functional/docker/target_role.sh
+          /opt/bastion/tests/functional/launch_tests_on_instance.sh --module=500-http-proxy.sh --has-mfa=0 --has-mfa-password=1 --has-pamtester=1 --skip-consistency-check --remote-etc-bastion=/usr/local/etc/bastion 127.0.0.1 22 0 user5000 id_user id_root

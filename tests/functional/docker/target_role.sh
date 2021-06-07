@@ -63,7 +63,7 @@ add_user_to_group_compat test-shell_ bastion-nopam
 
 # install a fake ttyrec just so that our connection tests work
 if ! command -v ttyrec >/dev/null; then
-    "$basedir"/bin/admin/install --nothing --no-wait --install-fake-ttyrec
+    "$basedir"/bin/admin/install --nothing --install-fake-ttyrec
 fi
 
 # if we have other specific scripts to run, run them

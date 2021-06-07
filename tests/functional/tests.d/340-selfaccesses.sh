@@ -153,18 +153,8 @@ testsuite_selfaccesses()
 
     # /forcekey
 
-    # this should work...
-
-    set +e
-    if [ "$COUNTONLY" = 1 ]; then
-        targethostname=dummy
-    else
-        targethostname=$($r0 hostname | tail -n1 | grep -E -o '[a-z0-9._-]+')
-    fi
-    set -e
-
     success ssh shellaccountatlo2_mustwork   $a0 $shellaccount@127.0.0.2 --kbd-interactive -- echo $randomstr
-    contain REGEX "$shellaccount@($targethostname|127.0.0.2|fv-[a-z0-9-]+):22"
+    contain REGEX "$shellaccount@[a-zA-Z0-9._-]+:22"
     contain "allowed ... log on"
     nocontain "Permission denied"
     contain "$randomstr"
@@ -391,7 +381,7 @@ testsuite_selfaccesses()
     # should
 
     success ssh shellaccountatlo2_mustwork226   $a0 $shellaccount@127.0.0.2 -p 226 -- echo $randomstr
-    contain REGEX "$shellaccount@(127.0.0.2|$targethostname|fv-[a-z0-9-]+):226"
+    contain REGEX "$shellaccount@[a-zA-Z0-9._-]+:226"
     contain "allowed ... log on"
     nocontain "Permission denied"
     contain "$randomstr"

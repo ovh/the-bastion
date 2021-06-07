@@ -2,10 +2,14 @@
 # shellcheck shell=bash
 # shellcheck disable=SC2034
 
-RED=$(printf "%b" '\033[31m')
-GREEN=$(printf "%b" '\033[32m')
-YELLOW=$(printf "%b" '\033[33m')
-BLUE=$(printf "%b" '\033[34m')
+RED=$(printf       "%b" '\033[31m')
+GREEN=$(printf     "%b" '\033[32m')
+YELLOW=$(printf    "%b" '\033[33m')
+BLUE=$(printf      "%b" '\033[34m')
+MAGENTA=$(printf   "%b" '\033[35m')
+CYAN=$(printf      "%b" '\033[36m')
+LIGHTGRAY=$(printf "%b" '\033[37m')
+DARKGRAY=$(printf      "%b" '\033[90m')
 
 BOLD_CYAN=$(printf "%b" '\033[1;36m')
 

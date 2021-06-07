@@ -24,7 +24,7 @@ testsuite_admin_superowner()
     json .error_code KO_RESTRICTED_COMMAND .command null
 
     # now set account1 as superowner
-    success admin_superowner set_a1_as_superowner $r0 "\". $remote_basedir/lib/shell/functions.inc; add_user_to_group_compat $account1 osh-superowner\""
+    success admin_superowner set_a1_as_superowner $r0 "\". $opt_remote_basedir/lib/shell/functions.inc; add_user_to_group_compat $account1 osh-superowner\""
     configchg 's=^\\\\x22superOwnerAccounts\\\\x22.+=\\\\x22superOwnerAccounts\\\\x22:[\\\\x22'"$account1"'\\\\x22],='
 
     # account1 now can add/del members
@@ -37,7 +37,7 @@ testsuite_admin_superowner()
     contain OVERRIDE
 
     # now set account1 as admin
-    success admin_superowner set_a1_as_admin $r0 "\". $remote_basedir/lib/shell/functions.inc; add_user_to_group_compat $account1 osh-admin\""
+    success admin_superowner set_a1_as_admin $r0 "\". $opt_remote_basedir/lib/shell/functions.inc; add_user_to_group_compat $account1 osh-admin\""
     configchg 's=^\\\\x22adminAccounts\\\\x22.+=\\\\x22adminAccounts\\\\x22:[\\\\x22'"$account0"'\\\\x22,\\\\x22'"$account1"'\\\\x22],='
 
     # account1 now can add/del aclkeepers
@@ -50,7 +50,7 @@ testsuite_admin_superowner()
     contain OVERRIDE
 
     # now remove superowner grant from a1, the account is still admin so it should inherhit superowner powers
-    success admin_superowner del_a1_as_superowner $r0 "\". $remote_basedir/lib/shell/functions.inc; del_user_from_group_compat $account1 osh-superowner\""
+    success admin_superowner del_a1_as_superowner $r0 "\". $opt_remote_basedir/lib/shell/functions.inc; del_user_from_group_compat $account1 osh-superowner\""
     configchg 's=^\\\\x22superOwnerAccounts\\\\x22.+=\\\\x22superOwnerAccounts\\\\x22:[],='
 
     # account1 can add/del gatekeepers
@@ -63,7 +63,7 @@ testsuite_admin_superowner()
     contain OVERRIDE
 
     # and finally remove admin grant
-    success admin_superowner del_a1_as_admin $r0 "\". $remote_basedir/lib/shell/functions.inc; del_user_from_group_compat $account1 osh-admin\""
+    success admin_superowner del_a1_as_admin $r0 "\". $opt_remote_basedir/lib/shell/functions.inc; del_user_from_group_compat $account1 osh-admin\""
     configchg 's=^\\\\x22adminAccounts\\\\x22.+=\\\\x22adminAccounts\\\\x22:[\\\\x22'"$account0"'\\\\x22],='
 
     # account1 can no longer add members
