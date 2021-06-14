@@ -20,7 +20,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'The Bastion'
-copyright = '2020, OVHcloud'
+copyright = '__YEAR__, OVHcloud'
 author = 'The Bastion Authors'
 
 # The short X.Y version
