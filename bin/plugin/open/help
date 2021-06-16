@@ -52,7 +52,7 @@ my @knownPlugins = (
               groupAddOwner groupDelOwner groupTransmitOwnership groupGenerateEgressKey groupDelEgressKey groupModify }
         ],
         'egress passwords commands'                  => [qw{ groupListPasswords groupGeneratePassword groupDelPassword }],
-        'gatekeeper commands to manage members'      => [qw{ groupAddMember groupDelMember groupAddGuestAccess groupDelGuestAccess }],
+        'gatekeeper commands to manage members'      => [qw{ groupAddMember groupDelMember }],
         'gatekeeper commands to manage guests'       => [qw{ groupListGuestAccesses groupAddGuestAccess groupDelGuestAccess }],
         'aclkeeper commands to manage group servers' => [qw{ groupAddServer groupDelServer }],
     ],
