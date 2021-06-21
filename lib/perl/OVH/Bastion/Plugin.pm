@@ -97,6 +97,14 @@ sub begin {
     $ENV{'PATH'}        = '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/pkg/bin';
     $ENV{'PLUGIN_NAME'} = $scriptName;
 
+    $HOME = OVH::Bastion::get_home_from_env()->value;
+    $self = OVH::Bastion::get_user_from_env()->value;
+
+    # if we're generating documentation (PLUGIN_DOCGEN is set), leave the BASTION_ACCOUNT placeholder
+    if ($_helptext && !$ENV{'PLUGIN_DOCGEN'}) {
+        $_helptext =~ s/BASTION_ACCOUNT/$self/g;
+    }
+
     osh_header($header) if $header;
 
     if (!$result) {
@@ -109,9 +117,6 @@ sub begin {
         $helpfunc->();
         osh_exit;
     }
-
-    $self = OVH::Bastion::get_user_from_env()->value;
-    $HOME = OVH::Bastion::get_home_from_env()->value;
 
     $fnret = OVH::Result::R('OK', value => {sysaccount => $self, account => $self, realm => undef, remoteaccount => undef});
     if ($< == 0) {
