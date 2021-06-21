@@ -22,4 +22,16 @@ fi
 
 add_user_to_group_compat "$1" "osh-admin"
 
-sed_compat 's/^"adminAccounts": \[\]/"adminAccounts": ["'"$1"'"]/' "$BASTION_ETC_DIR/bastion.conf"
+configline=$(BASEDIR="$basedir" ACCOUNT="$1" perl -e '
+    use lib $ENV{BASEDIR}."/lib/perl";
+    use JSON;
+    use OVH::Bastion;
+    my $C = OVH::Bastion::load_configuration();
+    if (!$C->value || ref $C->value->{adminAccounts} ne "ARRAY") { die "Could not add $ENV{ACCOUNT} in \"adminAccounts\" of bastion.conf, please do it manually!"; }
+    push @{ $C->value->{adminAccounts} }, $ENV{ACCOUNT};
+    print encode_json($C->value->{adminAccounts});
+')
+
+if [ -n "$configline" ]; then
+    sed_compat 's/^"adminAccounts": .*/"adminAccounts": '"$configline"',/' "$BASTION_ETC_DIR/bastion.conf"
+fi
