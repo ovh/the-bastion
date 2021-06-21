@@ -16,7 +16,15 @@ Launch a remote command on several machines sequentially (clush-like)
 
 .. option:: --list HOSTLIST         
 
-   Comma-separated list of the hosts to run the command on
+   Comma-separated list of the hosts (hostname or IP) to run the command on
+
+.. option:: --user USER             
+
+   Specify which remote user should we use to connect (default: BASTION_ACCOUNT)
+
+.. option:: --port PORT             
+
+   Specify which port to connect to (default: 22)
 
 .. option:: --step-by-step          
 
