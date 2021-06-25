@@ -4,5 +4,7 @@ Using the bastion
 
 .. toctree::
 
-    basics
+    basics/index
     piv
+    scp
+    http_proxy
