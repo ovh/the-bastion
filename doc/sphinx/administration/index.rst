@@ -9,7 +9,7 @@ Here we make the assumption that you've already installed The Bastion, and would
    are not yet documented here, but directly in the configuration files themselves.
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
 
-   bastion_conf
+   configuration/index
    logs

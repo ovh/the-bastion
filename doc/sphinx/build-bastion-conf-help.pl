@@ -72,7 +72,8 @@ while (<STDIN>) {
 }
 dumpdoc();
 
-print <<'EOF';
+if ($ENV{BASTION_CONF}) {
+    print <<'EOF';
 ======================
 bastion.conf reference
 ======================
@@ -88,6 +89,23 @@ Option List
 ===========
 
 EOF
+}
+elsif ($ENV{OSH_HTTP_PROXY_CONF}) {
+    print <<'EOF';
+=============================
+osh-http-proxy.conf reference
+=============================
+
+.. note::
+
+   This module is optional, and disabled by default. To know more about the HTTP Proxy feature
+   of The Bastion, please check :doc:`/using/http_proxy`
+
+Option List
+===========
+
+EOF
+}
 
 foreach my $section (@orderedsections) {
     die "no description for section $section" if !$sectiondesc{$section};

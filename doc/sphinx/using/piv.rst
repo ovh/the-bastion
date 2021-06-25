@@ -1,6 +1,6 @@
-========
-PIV keys
-========
+================
+PIV keys support
+================
 
 .. contents::
 
@@ -18,12 +18,14 @@ If you want to support PIV keys without making those mandatory, you don't have a
 In that case, after having properly configured your hardware token with a key in slot 9a, you can just use :doc:`/plugins/open/selfAddIngressKey` to add the key to your bastion account, and call it a day. As a quick guidance, on a Yubikey you can usually generate a key in the proper slot this way, after you've setup a management key:
 
 .. code:: shell
+   :emphasize-lines: 1
 
    yubico-piv-tool --key=YOUR_MGMT_KEY --action generate --pin-policy always --touch-policy never --slot 9a -o -
 
 Now, if you want the bastion to be aware that this key is from a hardware token, you shall use the ``--piv`` option to :doc:`/plugins/open/selfAddIngressKey`. This won't do anything special per-se, except storing the certificates information, and showing the details of the PIV key in command outputs such as :doc:`/plugins/open/selfListIngressKeys`. Note however that if in the future you enable the PIV enforcing policy either on your account or globally, this key will be considered valid, contrary to all the keys added without the ``--piv`` option, even if these keys happen to be PIV ones. To add a key with the ``--piv`` option, you'll need the SSH public key as usual, but also the attestation certificate and the key certificate. Step by step details on how to get those are out of the scope of this document, but again as a quick guidance, on a Yubikey you can usually get those this way:
 
 .. code:: shell
+   :emphasize-lines: 1,2,3
 
    yubico-piv-tool --action=read-certificate --slot=9a --key-format=SSH
    yubico-piv-tool --action=attest --slot=9a
@@ -32,8 +34,9 @@ Now, if you want the bastion to be aware that this key is from a hardware token,
 When you'll have added your key, you'll see a few more details than usual:
 
 .. code:: shell
+   :emphasize-lines: 1
 
-   $ bssh --osh selfAddIngressKey --piv
+   bssh --osh selfAddIngressKey --piv
    Enter PIN for 'PIV Card Holder pin (PIV_II)':
    ---the-bastion.example.org--------------------------------the-bastion-3.01.03---
    => add a new public key to your account
@@ -120,8 +123,9 @@ Temporary grace period
 If you enable the PIV policy globally or on several accounts, you'll soon find out that sometimes people forget or lose their PIV-enabled hardware tokens, effectively locking them out of the bastion. There is a *temporary grace period* feature you can use to handle such cases nicely:
 
 .. code:: shell
+   :emphasize-lines: 1
 
-   $ bssh --osh accountPIV --account lechuck --policy grace --ttl 48h
+   bssh --osh accountPIV --account lechuck --policy grace --ttl 48h
    ---the-bastion.example.org--------------------------------the-bastion-3.01.03---
    => modify the PIV policy of an account
    --------------------------------------------------------------------------------

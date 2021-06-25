@@ -1,90 +1,79 @@
 ############################################################################################
-# Config for the HTTP Proxy of The Bastion.
-# This is a JSON file, its syntax must be valid at all times. To verify:
-# => grep -v ^# /etc/bastion/osh-http-proxy.conf|python -mjson.tool>/dev/null && echo OK
-#
-# If you're on a production bastion you can verify it can properly load its configuration:
-# => perl -I/opt/bastion/lib/perl -MOVH::Bastion -e 'die OVH::Bastion::load_configuration_file(file => "/etc/bastion/osh-http-proxy.conf")'
+## Config for the HTTP Proxy of The Bastion.
+## This is a JSON file, its syntax must be valid at all times. To verify:
+## => grep -v ^# /etc/bastion/osh-http-proxy.conf|python -mjson.tool>/dev/null && echo OK
+##
+## If you're on a production bastion you can verify it can properly load its configuration:
+## => perl -I/opt/bastion/lib/perl -MOVH::Bastion -e 'die OVH::Bastion::load_configuration_file(file => "/etc/bastion/osh-http-proxy.conf")'
 ############################################################################################
 {
+# > HTTP Proxy configuration
+# >> These options modify the behavior of the HTTP Proxy, an optional module of The Bastion
+#
 # enabled (bool)
-#    VALUE: true or false
-#     DESC: whether the http proxy daemon is enabled or not (if not, it'll exit when launched)
+#     DESC: Whether the HTTP proxy daemon daemon is enabled or not. If it's not enabled, it'll exit when started. Of course, if you want to enable this daemon, you should **also** configure your init system to start it for you. Both sysV-style scripts and systemd unit files are provided. For systemd, using `systemctl enable osh-http-proxy.service` should be enough. For sysV-style inits, it depends on the scripts provided for your distro, but usually `update-rc.d osh-http-proxy defaults` then `update-rc.d osh-http-proxy enable` should do the trick.
 #  DEFAULT: false
 "enabled": false,
 #
-# port (int)
-#    VALUE: 1 to 65535
-#     DESC: port to listen to. you can set < 1024, in which case privileges will be dropped after binding,
-#           but please ensure your systemd unit file starts the daemon as root in that case
+# port (int, 1 to 65535)
+#     DESC: The port to listen to. You can use ports < 1024, in which case privileges will be dropped after binding, but please ensure your systemd unit file starts the daemon as root in that case.
 #  DEFAULT: 8443
 "port": 8443,
 #
 # ssl_certificate (string)
-#    VALUE: a full path to a file
-#     DESC: file that contains the server SSL certificate in PEM format. For tests, install the ssl-cert package and point to snakeoil (which is the default).
-#  DEFAULT: /etc/ssl/private/ssl-cert-snakeoil.key
+#     DESC: The file that contains the server SSL certificate in PEM format. For tests, install the ``ssl-cert`` package and point this configuration item to the snakeoil certs (which is the default).
+#  DEFAULT: /etc/ssl/certs/ssl-cert-snakeoil.pem
 "ssl_certificate": "/etc/ssl/certs/ssl-cert-snakeoil.pem",
 #
 # ssl_key (string)
-#    VALUE: a full path to a file
-#     DESC: file that contains the server SSL key in PEM format. For tests, install the ssl-cert package and point to snakeoil (which is the default).
+#     DESC: The file that contains the server SSL key in PEM format. For tests, install the ``ssl-cert`` package and point this configuration item to the snakeoil certs (which is the default).
 #  DEFAULT: /etc/ssl/private/ssl-cert-snakeoil.key
 "ssl_key": "/etc/ssl/private/ssl-cert-snakeoil.key",
 #
 # ciphers (string)
-#    VALUE: openssl-compatible colon-separated (':') ciphersuites
-#     DESC: the ordered list the TLS server ciphers, in openssl classic format. Use `openssl ciphers' to see what your system supports,
+#     DESC: The ordered list the TLS server ciphers, in ``openssl`` classic format. Use ``openssl ciphers`' to see what your system supports,
 #           an empty list leaves the choice to your openssl libraries default values (system-dependent)
 #  EXAMPLE: "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256"
 #  DEFAULT: ""
 "ciphers": "",
 #
 # insecure (bool)
-#    VALUE: true or false
-#     DESC: whether to ignore SSL certificate verification for the connection between the bastion and the devices
+#     DESC: Whether to ignore SSL certificate verification for the connection between the bastion and the devices
 #  DEFAULT: false
 "insecure": false,
 #
-# min_servers (int)
-#    VALUE: 1 to 512
-#     DESC: number of child processes to start at launch
+# min_servers (int, 1 to 512)
+#     DESC: Number of child processes to start at launch
 #  DEFAULT: 8
 "min_servers": 8,
 #
-# max_servers (int)
-#    VALUE: 1 to 512
-#     DESC: hard maximum number of child processes that can be active at any given time no matter what
+# max_servers (int, 1 to 512)
+#     DESC: Hard maximum number of child processes that can be active at any given time no matter what
 #  DEFAULT: 32
 "max_servers": 32,
 #
-# min_spare_servers (int)
-#    VALUE: 1 to 512
-#     DESC: the daemon will ensure that there is at least this number of children idle & ready to accept new connections (as long as max_servers is not reached)
+# min_spare_servers (int, 1 to 512)
+#     DESC: The daemon will ensure that there is at least this number of children idle & ready to accept new connections (as long as max_servers is not reached)
 #  DEFAULT: 8
 "min_spare_servers": 8,
 #
-# max_spare_servers (int)
-#    VALUE: 1 to 512
-#     DESC: the daemon will kill *idle* children to keep their number below this maximum when traffic is low
+# max_spare_servers (int, 1 to 512)
+#     DESC: The daemon will kill *idle* children to keep their number below this maximum when traffic is low
 #  DEFAULT: 16
 "max_spare_servers": 16,
 #
-# timeout (int)
-#    VALUE: 1 to 3600
-#     DESC: timeout delay (in seconds) for the connection between the bastion and the devices
+# timeout (int, 1 to 3600)
+#     DESC: Timeout delay (in seconds) for the connection between the bastion and the devices
 #  DEFAULT: 120
 "timeout": 120,
 #
 # log_request_response (bool)
-#    VALUE: true or false
-#     DESC: when enabled, the complete response of the device to the request we forwarded will be logged, otherwise we'll only log the response headers
+#     DESC: When enabled, the complete response of the device to the request we forwarded will be logged, otherwise we'll only log the response headers
 #  DEFAULT: true
 "log_request_response": true,
 #
-# log_request_response_max_size (int)
-#    VALUE: 0 to 2^30 (1 GiB)
-#     DESC: this option only applies when `log_request_response` is true (see above). When set to zero, the complete response will be logged in the account's home log directory, including the body, regardless of its size. If set to a positive integer, the query response will only be partially logged, with full status and headers but the body only up to the specified size. This is a way to avoid turning off request response logging completely on very busy bastions, by ensuring logs growth don't get out of hand, as some responses to queries can take megabytes, with possibly limited added value to traceability.
+# log_request_response_max_size (int, 0 to 2^30 (1 GiB))
+#     DESC: This option only applies when `log_request_response` is true (see above). When set to zero, the complete response will be logged in the account's home log directory, including the body, regardless of its size. If set to a positive integer, the query response will only be partially logged, with full status and headers but the body only up to the specified size. This is a way to avoid turning off request response logging completely on very busy bastions, by ensuring logs growth don't get out of hand, as some responses to queries can take megabytes, with possibly limited added value to traceability.
 #  DEFAULT: 65536
 "log_request_response_max_size": 65536
 }

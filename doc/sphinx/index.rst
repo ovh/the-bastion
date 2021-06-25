@@ -33,6 +33,12 @@ The second section explains how to :doc:`get the bastion running<installation/in
 
 The third section focuses on :doc:`how to use<using/index>` the bastion, from the perspective of the different roles, such as bastion users, group owners, bastion admins, etc.
 
+The fourth section is about the proper :doc:`administration<administration/index>` of the bastion itself. If you're about to be the person in charge of managing the bastion for your company, you want to read that one carefully!
+
+The fifth section is the complete reference of all the :doc:`plugins<plugins/index>`, that are the commands used to interact with the bastion accounts, groups, accesses, credentials, and more.
+
+The last section is the unavoidable and iconic :doc:`Frequently Asked Questions<faq>`.
+
 .. toctree::
    :maxdepth: 2
    :caption: Table of contents
