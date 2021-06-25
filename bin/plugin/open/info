@@ -134,6 +134,16 @@ else {
 }
 $ret{'slave_mode'} = $config->{'readOnlySlaveMode'};
 
+if (OVH::Bastion::is_auditor(account => $self)) {
+    my @adminAccounts = @{$config->{'adminAccounts'}};
+    osh_info "My admins are: " . colored(@adminAccounts ? join(", ", @adminAccounts) : "-", "magenta");
+    $ret{'adminAccounts'} = \@adminAccounts;
+
+    my @superOwnerAccounts = @{$config->{'superOwnerAccounts'}};
+    osh_info "My super owners are: " . colored(@superOwnerAccounts ? join(", ", @superOwnerAccounts) : "-", "magenta");
+    $ret{'superOwnerAccounts'} = \@superOwnerAccounts;
+}
+
 my @allowedNets = @{$config->{'allowedNetworks'}};
 osh_info "The networks I'm able to connect you to on the egress side are: " . colored(@allowedNets ? join(", ", @allowedNets) : "all", "magenta");
 $ret{'allowed_networks_list'} = \@allowedNets;
