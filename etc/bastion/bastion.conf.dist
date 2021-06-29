@@ -262,10 +262,14 @@
 #  DEFAULT: true
 "displayLastLogin": true,
 #
-# allowUTF8 (boolean)
-#     DESC: When ``true``, The Bastion will use some UTF-8 characters on the output, for a more pleasant experience (for warnings, critical messages, etc.). Note that if the terminal doesn't advertise UTF-8 support, UTF-8 will not be used, even when enabled here.
-#  DEFAULT: true
-"allowUTF8": true,
+# fanciness (string)
+#     DESC: Customize to which extent the text output by the program will use decorations to enhance human-friendliness and highlight warnings or critical messages. Note that if a given session's terminal doesn't advertise UTF-8 support, UTF-8 will not be used, regardless of what is set here.
+#
+#           - "none": Text will only consist of us-ascii characters
+#           - "basic": UTF-8 characters will be used to draw tables, instead of ---'s, among other things
+#           - "full": Some emoticons may appear to highlight important messages
+#  DEFAULT: full
+"fanciness": "full",
 #
 # interactiveModeAllowed (boolean)
 #     DESC: If set to ``true``, ``--interactive`` mode is allowed. Otherwise, this feature is disabled.
