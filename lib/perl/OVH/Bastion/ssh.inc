@@ -361,6 +361,7 @@ sub get_ssh_pub_key_info {
                     $shortfp =~ s/^.{12}//;
 
                     #print "looking for shortfingerprint=$shortfp...\n";
+                    local $_ = undef;
                     while (<$fh_blacklist>) {
                         /^\Q$shortfp\E$/ or next;
                         close($fh_blacklist);

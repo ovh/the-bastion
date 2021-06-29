@@ -124,6 +124,7 @@ sub get_hashes_list {
 
             my %metadata;
             if (open(my $metadatafd, '<', "$currentname.metadata")) {
+                local $_ = undef;
                 while (<$metadatafd>) {
                     chomp;
                     m{^([A-Z0-9_-]+)=(.+)$} or next;
