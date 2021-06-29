@@ -307,6 +307,7 @@ sub sys_delmemberfromgroup {
         # manually patching /etc/group... eew :(
         my $contents;
         if (open(my $fh, '<', '/etc/group')) {
+            local $_ = undef;
             while (<$fh>) {
                 if (/^\Q$group\E:/) {
                     s/([:,])\Q$user\E(?:,|$)/$1/;
