@@ -133,7 +133,8 @@ sub load_configuration {
         {name => 'syslogDescription',     default => 'bastion',                                                          validre => qr/^([a-zA-Z0-9_.-]+)$/},
         {name => 'ttyrecFilenameFormat',  default => '%Y-%m-%d.%H-%M-%S.#usec#.&uniqid.&account.&user.&ip.&port.ttyrec', validre => qr/^([a-zA-Z0-9%&#_.-]+)$/},
         {name => 'accountExpiredMessage', default => '',                                                                 validre => qr/^(.*)$/, emptyok => 1},
-        {name => 'accountExternalValidationProgram', default => '', validre => qr'^([a-zA-Z0-9/$_.-]*)$', emptyok => 1},
+        {name => 'fanciness',                        default => 'full', validre => qr/^((none|boomer)|(basic|millenial)|(full|genz))$/},
+        {name => 'accountExternalValidationProgram', default => '',     validre => qr'^([a-zA-Z0-9/$_.-]*)$', emptyok => 1},
       )
     {
         if (!$C->{$o->{'name'}} && !$o->{'emptyok'}) {
@@ -226,7 +227,7 @@ sub load_configuration {
             options => [
                 qw{
                   enableSyslog enableGlobalAccessLog enableAccountAccessLog enableGlobalSqlLog enableAccountSqlLog displayLastLogin
-                  interactiveModeByDefault allowUTF8
+                  interactiveModeByDefault
                   }
             ],
         },
@@ -512,6 +513,11 @@ sub load_configuration {
     }
     delete $unknownkeys{'ingressToEgressRules'};
 
+    # ... normalize fanciness
+    $C->{'fanciness'} = 'none'  if $C->{'fanciness'} eq 'boomer';
+    $C->{'fanciness'} = 'basic' if $C->{'fanciness'} eq 'millenial';
+    $C->{'fanciness'} = 'full'  if $C->{'fanciness'} eq 'genz';
+
     # OK we're done
     $_cache_config = $C;
 
@@ -791,6 +797,7 @@ sub json_load {
     # Load file content
     my $rawConf;
     if (open(my $fh, '<', $file)) {
+        local $_ = undef;
         while (<$fh>) {
             chomp;
             s/^((?:(?:[^"]*"){2}|[^"]*)*[^"]*)\/\/.*$/$1/;    # Remove comment that start with //

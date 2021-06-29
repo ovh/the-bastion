@@ -371,7 +371,8 @@ sub osh_header {
     my $hostname    = Sys::Hostname::hostname();
     my $versionline = 'the-bastion-' . $VERSION;
     my $output      = '';
-    if (OVH::Bastion::can_use_utf8()) {
+    my $fanciness   = OVH::Bastion::config('fanciness')->value;
+    if (OVH::Bastion::can_use_utf8() && grep { $fanciness eq $_ } qw{ basic full }) {
         my $line = "\N{U+256D}\N{U+2500}\N{U+2500}" . $hostname . "\N{U+2500}" x (80 - length($hostname) - length($versionline) - 6) . $versionline . "\N{U+2500}" x 3 . "\n";
         $output .= colored($line,                                   'bold blue');
         $output .= colored("\N{U+2502} \N{U+25B6} $text\n",         'blue');
@@ -395,7 +396,8 @@ sub osh_footer {
     }
 
     my $output;
-    if (OVH::Bastion::can_use_utf8()) {
+    my $fanciness = OVH::Bastion::config('fanciness')->value;
+    if (OVH::Bastion::can_use_utf8() && grep { $fanciness eq $_ } qw{ basic full }) {
         $output = colored("\N{U+2570}" . "\N{U+2500}" x (79 - length($text) - 6) . "</$text>" . "\N{U+2500}" x 3 . "\n", 'bold blue');
     }
     else {
@@ -510,15 +512,15 @@ sub _osh_log {
         print $output $params{'text'} . "\n";
     }
     else {
-        my $prefix           = OVH::Bastion::can_use_utf8() ? "\N{U+2502}" : '~';
+        my $prefix           = OVH::Bastion::can_use_utf8() && OVH::Bastion::config('fanciness')->value eq 'full' ? "\N{U+2502}" : '~';
         my $prefixIfNotEmpty = '';
         my $color;
         if ($params{'type'} eq 'crit') {
-            $prefixIfNotEmpty = (OVH::Bastion::can_use_utf8() ? "\N{U+26D4}" : "[!]");
+            $prefixIfNotEmpty = (OVH::Bastion::can_use_utf8() && OVH::Bastion::config('fanciness')->value eq 'full' ? "\N{U+26D4}" : "[!]");
             $color            = 'red bold';
         }
         elsif ($params{'type'} eq 'warn') {
-            $prefixIfNotEmpty = (OVH::Bastion::can_use_utf8() ? "\N{U+2757}" : "[#]");
+            $prefixIfNotEmpty = (OVH::Bastion::can_use_utf8() && OVH::Bastion::config('fanciness')->value eq 'full' ? "\N{U+2757}" : "[#]");
             $color            = 'yellow';
         }
         else {
@@ -1056,8 +1058,8 @@ sub do_pamtester {
 
 sub can_use_utf8 {
 
-    # only use UTF-8 if allowed in the config, if user LANG seems to support it, and if TERM is defined and not dumb
-    return (OVH::Bastion::config('allowUTF8')->value && $ENV{'LANG'} && ($ENV{'LANG'} =~ /utf-?8/i) && $ENV{'TERM'} && $ENV{'TERM'} !~ /dumb|unknown/i);
+    # only use UTF-8 if user LANG seems to support it, and if TERM is defined and not dumb
+    return ($ENV{'LANG'} && ($ENV{'LANG'} =~ /utf-?8/i) && $ENV{'TERM'} && $ENV{'TERM'} !~ /dumb|unknown/i);
 }
 
 1;
