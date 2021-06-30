@@ -18,6 +18,3 @@ Runs the mtr tool to traceroute a host
 
    Don't run mtr interactively, output a text report once done
 
-
-
-

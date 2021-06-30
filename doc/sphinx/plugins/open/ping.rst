@@ -30,6 +30,3 @@ Ping a remote host from the bastion
 
    Exit unconditionally after this amount of seconds
 
-
-
-

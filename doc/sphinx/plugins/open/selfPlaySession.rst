@@ -18,6 +18,3 @@ Replay the ttyrec of a past session
 
    ID of the session to replay, use ``selfListSessions`` to find it.
 
-
-
-

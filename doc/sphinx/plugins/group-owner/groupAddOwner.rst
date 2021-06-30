@@ -27,6 +27,3 @@ The specified account will be able to manage the owner, gatekeeper
 and aclkeeper list of this group. In other words, this account will
 have all possible rights to manage the group and delegate some or all
 of the rights to other accounts
-
-
-

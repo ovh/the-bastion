@@ -18,6 +18,3 @@ List the bastions realms
 
    Only list the specified realm (mainly: check if it exists)
 
-
-
-

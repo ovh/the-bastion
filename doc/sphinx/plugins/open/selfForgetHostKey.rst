@@ -26,6 +26,3 @@ Forget a known host key from your bastion account
 This command is useful to remove the man-in-the-middle warning when a key has changed,
 however please verify that the host key change is legit before using this command.
 The warning SSH gives is there for a reason.
-
-
-

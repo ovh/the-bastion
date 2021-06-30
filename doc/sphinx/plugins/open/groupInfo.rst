@@ -18,9 +18,6 @@ Print some basic information about a group
 
    specify the group to display the infos of
 
-
-
-
 Output example
 ==============
 

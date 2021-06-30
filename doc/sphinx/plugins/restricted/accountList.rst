@@ -40,6 +40,3 @@ List the bastion accounts
 
 **Note:** PATTERN supports the ``*`` and ``?`` wildcards.
 If PATTERN is a simple string without wildcards, then names containing this string will be considered.
-
-
-

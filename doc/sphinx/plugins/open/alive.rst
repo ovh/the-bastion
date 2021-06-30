@@ -21,6 +21,3 @@ Note that if you want to ssh to it afterwards, you can simply use the ``--wait``
 
    hostname or IP to ping
 
-
-
-

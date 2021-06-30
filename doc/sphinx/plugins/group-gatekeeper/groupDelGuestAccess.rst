@@ -58,6 +58,3 @@ If you want to remove access from an account from a group server but using his p
 key instead of the group key, please use ``accountDelPersonalAccess`` instead.
 
 This command is the opposite of ``groupAddGuestAccess``.
-
-
-

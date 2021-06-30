@@ -25,6 +25,3 @@ Transmit your group ownership to somebody else
 
 Note that this command has the same net effect than using ``groupAddOwner``
 to add ACCOUNT as an owner, then removing yourself with ``groupDelOwner``
-
-
-

@@ -26,6 +26,3 @@ Manage the bastion maintenance mode
 
    Optionally set a maintenance reason, if you're in a shell, quote it twice.
 
-
-
-

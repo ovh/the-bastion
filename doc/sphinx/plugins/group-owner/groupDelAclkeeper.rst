@@ -24,6 +24,3 @@ Remove the group aclkeeper role from an account
 
 
 The specified account will no longer be able to manage the server list of this group
-
-
-

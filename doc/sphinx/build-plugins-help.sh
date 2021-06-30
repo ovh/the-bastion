@@ -42,7 +42,7 @@ do
         if [ -e "doc/sphinx-plugins-override/$name.override.rst" ]; then
             cat "doc/sphinx-plugins-override/$name.override.rst"
         else
-            perl "$pluginfile" '' '' '' '' | perl -ne '
+            perl "$pluginfile" '' '' '' '' | perl -e 'undef $/; $_=<>; s/\n+$/\n/; print $_' | perl -ne '
                 if (m{^Usage: (.+)}) { print ".. admonition:: usage\n   :class: cmdusage\n\n   $1\n\n.. program:: '"$name"'\n\n"; }
                 elsif (m{^  (-[- ,a-z|/A-Z"'"'"']+)  (.+)}) { print ".. option:: $1\n\n   $2\n\n"; }
                 elsif ($l++ == 0) { chomp; print "$_\n"."="x(length($_))."\n\n"; }

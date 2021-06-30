@@ -18,6 +18,3 @@ Display information about a bastion realm
 
    Name of the realm to show info about
 
-
-
-

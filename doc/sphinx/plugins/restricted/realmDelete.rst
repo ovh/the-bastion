@@ -18,6 +18,3 @@ Delete a bastion realm
 
    Name of the realm to delete
 
-
-
-

@@ -22,6 +22,3 @@ Remove a bastion group egress key
 
    Specify the key ID to delete, you can get it with groupInfo
 
-
-
-

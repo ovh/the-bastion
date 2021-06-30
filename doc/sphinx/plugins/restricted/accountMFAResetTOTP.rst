@@ -20,6 +20,3 @@ Remove the TOTP configuration of an account
 
 
 Note that if doesn't remove the TOTP requirement, if set (see ``accountModify`` for this).
-
-
-

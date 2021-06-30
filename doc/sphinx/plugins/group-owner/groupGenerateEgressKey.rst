@@ -54,6 +54,3 @@ A quick overview of the different algorithms::
 
 This table is meant as a quick cheat-sheet, you're warmly advised to do
 your own research, as other constraints may apply to your environment.
-
-
-
