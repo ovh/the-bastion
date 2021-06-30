@@ -63,6 +63,3 @@ Modify an account configuration
 
    If enabled, this account can only use ``--osh`` commands, and can't connect anywhere through the bastion
 
-
-
-

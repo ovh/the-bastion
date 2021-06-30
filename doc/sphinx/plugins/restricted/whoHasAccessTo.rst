@@ -45,6 +45,3 @@ Note: This list is what the bastion THINKS is true, which means that if some gro
 then it'll show all the members of that group as having access to the machine you're specifying, through this group key.
 This is only true if the remote server does have the group key installed, of course, which the bastion
 can't tell without trying to connect "right now" (which it won't do).
-
-
-

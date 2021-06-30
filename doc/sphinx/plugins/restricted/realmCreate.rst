@@ -32,6 +32,3 @@ Declare and create a new trusted realm
    Public SSH key to deposit on the bastion to access this realm. If not present,
 
                       you'll be prompted interactively for it. Use double-quoting if your're under a shell.
-
-
-

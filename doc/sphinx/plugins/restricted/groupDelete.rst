@@ -25,6 +25,3 @@ Delete a group
 
 This restricted command is able to delete any group. Group owners can however delete
 their own groups using the sibling `groupDestroy` command.
-
-
-

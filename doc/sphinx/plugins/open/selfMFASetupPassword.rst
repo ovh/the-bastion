@@ -18,6 +18,3 @@ Setup an additional credential (UNIX password) to access your account
 
    Don't ask for confirmation
 
-
-
-

@@ -56,6 +56,3 @@ Create a new bastion account
 
    Time after which the account will be deactivated (amount of seconds, or duration string such as "4d12h15m")
 
-
-
-

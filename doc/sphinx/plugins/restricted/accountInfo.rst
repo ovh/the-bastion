@@ -18,9 +18,6 @@ Display some information about an account
 
    The account name to work on
 
-
-
-
 Output example
 ==============
 

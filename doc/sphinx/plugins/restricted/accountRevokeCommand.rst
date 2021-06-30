@@ -22,6 +22,3 @@ Revoke access to a restricted command
 
    The name of the OSH plugin to revoke access to (omit to get the list)
 
-
-
-

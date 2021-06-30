@@ -42,6 +42,3 @@ View the expanded access list of a given bastion account
 **Note:** PATTERN supports the ``*`` and ``?`` wildcards.
 If PATTERN is a simple string without wildcards, then names containing this string will be considered.
 The matching is done on the text output of the command.
-
-
-

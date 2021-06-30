@@ -427,10 +427,10 @@ sub osh_exit {    ## no critic (ArgUnpacking)
         $R = R(@_);
     }
 
-    if (!$R) {
+    if (!$R && $R->msg) {
         OVH::Bastion::osh_crit($R->msg);
     }
-    elsif ($R->msg ne $R->err) {
+    elsif ($R->msg ne $R->err && $R->msg) {
         OVH::Bastion::osh_info($R->msg);
     }
 

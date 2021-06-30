@@ -13,9 +13,6 @@ Displays some information about this bastion instance
 
 .. program:: info
 
-
-
-
 Output example
 ==============
 

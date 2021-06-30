@@ -29,6 +29,3 @@ but then they'll be able to grant themselves or anybody else to this or any othe
 A specific command that can be granted is ``auditor``, it is not an osh plugin per-se, but activates
 more verbose output for several other commands, suitable to audit rights or grants without needing
 to be granted (e.g. to groups).
-
-
-

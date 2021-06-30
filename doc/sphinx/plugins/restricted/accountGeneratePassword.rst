@@ -38,6 +38,3 @@ egress password to use right away for the account, for any access that requires 
 A fallback mechanism exists that will auto-try the previous password if this one
 doesn't work, but please ensure that this new password is deployed on the remote
 devices as soon as possible.
-
-
-

@@ -27,6 +27,3 @@ Modify the configuration of a group
    This group will enforce TTL setting, on guest access creation, to be set, and not to a higher value than DURATION,
 
                                                 set to zero to allow guest accesses creation without any TTL set (default)
-
-
-

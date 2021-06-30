@@ -37,6 +37,3 @@ List the servers (IPs and IP blocks) pertaining to a group
 **Note:** PATTERN supports the ``*`` and ``?`` wildcards.
 If PATTERN is a simple string without wildcards, then names containing this string will be considered.
 The matching is done on the text output of the command.
-
-
-

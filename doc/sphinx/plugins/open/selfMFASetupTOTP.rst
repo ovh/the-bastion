@@ -18,6 +18,3 @@ Setup an additional credential (TOTP) to access your account
 
    Bypass the confirmation step for TOTP enrollment phase
 
-
-
-

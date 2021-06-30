@@ -28,6 +28,3 @@ Add a new ingress public key to your account
 
                       certificate, both in PEM format. If you specified --public-key, then the attestation and key certificate are
                       expected on STDIN only, otherwise the public SSH key, the attestation and key certificate are expected on STDIN.
-
-
-

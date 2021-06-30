@@ -25,6 +25,3 @@ Remove the group owner role from an account
 
 The specified account will no longer be able to manage the owner,
 gatekeeper and aclkeeper lists of this group
-
-
-

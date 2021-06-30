@@ -23,6 +23,3 @@ The keys listed are the public egress SSH keys tied to this account.
 They can be used to gain access to another machine from this bastion,
 by putting one of those keys in the remote machine's ``authorized_keys`` file,
 and adding this account access to this machine with ``accountAddPersonalAccess``.
-
-
-

@@ -22,6 +22,3 @@ Delete an account from the bastion
 
    Don't ask for confirmation, and blame yourself if you deleted the wrong account
 
-
-
-

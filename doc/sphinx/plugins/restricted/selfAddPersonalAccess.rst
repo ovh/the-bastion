@@ -58,6 +58,3 @@ Add a personal server access on your account
 
    Add a comment alongside this server. Quote it twice as shown if you're under a shell.
 
-
-
-

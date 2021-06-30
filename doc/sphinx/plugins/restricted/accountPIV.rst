@@ -49,6 +49,3 @@ grace
    for this account, or if the global :ref:`ingressRequirePIV` option is set to true. This policy requires the use of the ``--ttl`` option to
    specify how much time the policy will be relaxed for this account before going back to its previous policy automatically. This can be
    useful when people forget their PIV-enabled hardware token and you don't want to send them back home.
-
-
-

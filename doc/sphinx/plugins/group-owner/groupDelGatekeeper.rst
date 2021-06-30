@@ -25,6 +25,3 @@ Remove the group gatekeeper role from an account
 
 The specified account will no longer be able to manager the members nor
 the guest list of this group
-
-
-

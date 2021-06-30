@@ -71,6 +71,3 @@ key instead of the group key, please use ``accountAddPersonalAccess`` instead (h
 must be on the remote server).
 
 This command is the opposite of ``groupDelGuestAccess``.
-
-
-

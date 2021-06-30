@@ -21,6 +21,3 @@ Unexpire an inactivity-expired account
 
 When the bastion is configured to expire accounts that haven't been seen in a while,
 this command can be used to activate them back.
-
-
-

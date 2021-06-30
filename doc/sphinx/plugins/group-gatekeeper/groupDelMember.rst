@@ -27,6 +27,3 @@ The specified account will no longerr be able to access all present and future s
 pertaining to this group.
 Note that if this account also had specific guest accesses to this group, they may
 still apply, see ``groupListGuestAccesses``
-
-
-

@@ -42,6 +42,3 @@ Remove a personal server access from your account
 
    Remove SCP download right, you<--bastion--server (omit --user in this case)
 
-
-
-

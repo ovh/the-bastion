@@ -42,6 +42,3 @@ Launch a remote command on several machines sequentially (clush-like)
 
    Command to be run on the remote hosts. If you're in a shell, quote it twice as shown.
 
-
-
-

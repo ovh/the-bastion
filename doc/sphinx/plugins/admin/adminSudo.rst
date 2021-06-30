@@ -29,6 +29,3 @@ Example::
 
 Don't forget the double-double-dash as seen in the example above: one after the plugin name,
 and another one to separate adminSudo options from the options of the plugin to be called.
-
-
-

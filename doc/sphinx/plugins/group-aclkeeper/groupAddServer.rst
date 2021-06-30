@@ -68,6 +68,3 @@ Examples::
 
   --osh groupAddServer --group grp1 --host 203.0.113.0/24 --user-any --port-any --force --comment '"a whole network"'
   --osh groupAddServer --group grp2 --host srv1.example.org --user root --port 22
-
-
-

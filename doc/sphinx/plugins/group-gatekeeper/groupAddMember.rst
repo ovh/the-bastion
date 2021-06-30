@@ -27,6 +27,3 @@ The specified account will be able to access all present and future servers
 pertaining to this group.
 If you need to give a specific and/or temporary access instead,
 see ``groupAddGuestAccess``
-
-
-

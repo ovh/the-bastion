@@ -46,6 +46,3 @@ Remove an IP or IP block from a group's serrver list
 
    Remove SCP download right, you<--bastion--server (omit --user in this case)
 
-
-
-

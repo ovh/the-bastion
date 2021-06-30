@@ -71,6 +71,3 @@ List the few past sessions of your account
 
 Note that only the sessions that happened on this precise bastion instance will be shown,
 not the sessions from its possible cluster siblings.
-
-
-
