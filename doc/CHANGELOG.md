@@ -1,3 +1,14 @@
+## v3.03.99-rc2 - 2021/06/30
+- OS support: /!\ drop EOL OSes: Debian 8, Ubuntu 14.04, OpenSUSE 15.0/15.1, add OpenSUSE 15.3
+- feat: add admin and super owner accounts list in `info` plugin (#206)
+- enh: replace bool 'allowUTF8' (introduced in rc1) by 'fanciness' enum
+- enh: tests: refactor the framework for more maintainability
+- fix: `setup-first-admin-account.sh`: support to add several admins (#202)
+- fix: use local `$\_` before `while(<>)` loops
+- doc: added a lot of new content
+- doc: `clush`: document `--user` and `--port`
+- doc: several other fixes here and there
+
 ## v3.03.99-rc1 - 2021/06/03
 - enh: `osh-orphaned-homedir.sh`: add more security checks to ensure we don't archive still-used home dirs
 - enh: install.inc: try harder to hit GitHub API in CI
