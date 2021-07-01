@@ -1,32 +1,40 @@
 # PAM configuration for the Secure Shell service
 
-auth       requisite                                pam_nologin.so
+# instantly fail if /etc/nologin exists and user is not root:
+auth   requisite                                                pam_nologin.so
+
 
 # --- PASSWORD CHECK SECTION
-# proceed in this section ONLY if the user is in group mfa-password-configd, skip it entirely otherwise
-auth       [success=ignore ignore=ignore default=4] pam_succeed_if.so quiet user ingroup mfa-password-configd
-auth       optional                                 pam_echo.so       Your account has Multi-Factor Authentication enabled, an additional authentication factor is required (password).
-auth       optional                                 pam_exec.so       quiet debug stdout /opt/bastion/bin/shell/pam_exec_pwd_info.sh
+# proceed in this section ONLY if the user is in group mfa-password-configd, skip it entirely otherwise (4 lines -> next section)
+auth   [success=ignore ignore=ignore default=4] pam_succeed_if.so quiet user ingroup mfa-password-configd
+# just display a nice message to the user:
+auth   optional                                 pam_echo.so       Your account has Multi-Factor Authentication enabled, an additional authentication factor is required (password).
+# also display how many days remain before expiration of their password:
+auth   optional                                 pam_exec.so       quiet debug stdout /opt/bastion/bin/shell/pam_exec_pwd_info.sh
 # lock account after 6 failures, for 5 minutes
-auth       required                                 pam_tally2.so     onerr=fail deny=6 unlock_time=300
-# then check password
-auth       required                                 pam_unix.so
+auth   required                                 pam_tally2.so     onerr=fail deny=6 unlock_time=300
+# now actually ask for the password, and skip the next line if it's correct:
+auth   required                                 pam_unix.so
+
 
 # --- TOTP CHECK SECTION
-# if root, enable TOTP check
-auth   [success=ignore ignore=ignore default=1]                                          pam_succeed_if.so             quiet uid eq 0
+# if root is logging in, enable TOTP check in all cases (nullok is used below, so if TOTP is not configured for root, it'll pass through):
+auth   [success=ignore ignore=ignore default=1]                                           pam_succeed_if.so             quiet uid eq 0
 # [success=ok new_authtok_reqd=ok ignore=ignore default=bad module_unknown=ignore] == required + module_unknown:ignore
 # if you have a recent enough libpam-google-authenticator, you can customize the prompt with the following option: [authtok_prompt=Verification Code (OTP): ]
 # you can also add "debug" for more verbose logs (requires a not too old version of the pam module)
 # note the nullok parameter, instructing that if TOTP is not configured for root, it shouldn't be asked
 # if you know you've configured TOTP for root and prefer blocking access if there is a problem with the secret file, remove `nullok'
-auth   [success=ok new_authtok_reqd=ok ignore=ignore default=bad module_unknown=ignore]  pam_google_authenticator.so   nullok secret=/var/otp/root
-# if root, TOTP check has already been done just above, so skip this subsection
-auth   [success=3 ignore=ignore default=ignore]                                          pam_succeed_if.so             quiet uid eq 0
-# else (if not root), proceed in this section ONLY if the user is in group mfa-totp-configd, skip it entirely otherwise
-auth   [success=ignore ignore=ignore default=2]                                          pam_succeed_if.so             quiet user ingroup mfa-totp-configd
-auth   optional                                                                          pam_echo.so                   Multi-Factor Authentication enabled, an additional authentication factor is required (OTP).
-auth   [success=ok new_authtok_reqd=ok ignore=ignore default=bad module_unknown=ignore]  pam_google_authenticator.so   secret=~/.otp
+auth   [success=ok new_authtok_reqd=ok ignore=ignore default=bad module_unknown=ignore]   pam_google_authenticator.so   nullok secret=/var/otp/root
+# if root, TOTP check has already been done just above, so skip this subsection (3 lines -> next section):
+auth   [success=3 ignore=ignore default=ignore]                                           pam_succeed_if.so             quiet uid eq 0
+# else (if not root), proceed in this subsection ONLY if the user is in group mfa-totp-configd, skip it entirely otherwise (2 lines -> next section):
+auth   [success=ignore ignore=ignore default=2]                                           pam_succeed_if.so             quiet user ingroup mfa-totp-configd
+# just display a nice message to the user:
+auth   optional                                                                           pam_echo.so                   Multi-Factor Authentication enabled, an additional authentication factor is required (OTP).
+# now actually ask for the TOTP:
+auth   [success=ok new_authtok_reqd=ok ignore=ignore default=bad module_unknown=ignore]   pam_google_authenticator.so   secret=~/.otp
+
 
 # Read environment variables from /etc/environment and
 # /etc/security/pam_env.conf.
