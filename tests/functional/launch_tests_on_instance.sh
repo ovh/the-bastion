@@ -125,10 +125,10 @@ fi
 # those vars are also used in all our modules
 # shellcheck disable=SC2034
 {
-    account1="testu_Ser.1-"
-    account2="tesT-user2_"
-    account3="teSt-user3."
-    account4="TeStUsEr4"
+    account1="te3456789012345678stu_Ser.1-"
+    account2="te23456789012345678sT-user2_"
+    account3="te23456789012345678St-user3."
+    account4="Te0123456789012345678StUsEr4"
     uid1=9001
     uid2=9002
     uid3=9003

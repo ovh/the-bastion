@@ -343,7 +343,7 @@ if ($alwaysActive || $type eq 'realm') {
     }
 }
 
-$fnret = OVH::Bastion::add_user_to_group(user => "keyreader", group => $account, accountType => 'group');
+$fnret = OVH::Bastion::add_user_to_group(user => "keyreader", group => $account, accountType => 'group', groupType => 'regular');
 $fnret or HEXIT($fnret);
 osh_debug('user keyreader added to group');
 
