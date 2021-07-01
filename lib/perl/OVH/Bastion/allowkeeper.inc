@@ -183,14 +183,18 @@ sub is_account_valid {
         return R('KO_FORBIDDEN_NAME', msg => "$whatis name is reserved");
     }
     elsif ($account =~ m{^([a-zA-Z0-9-]+)/([a-zA-Z0-9._-]+)$} && $accountType eq 'normal') {
-        if (length("realm_$1") > 18) {
-            return R('KO_TOO_LONG', msg => "$whatis name is too long, length(realm_$1) > 18");
+
+        # 32 is the max Linux user length
+        if (length("realm_$1") > 32) {
+            return R('KO_TOO_LONG', msg => "$whatis name is too long, length(realm_$1) > 32");
         }
         elsif (length($1) < 2) {
             return R('KO_TOO_SMALL', msg => "$whatis name is too long, length($1) < 2");
         }
-        elsif (length($2) > 18) {
-            return R('KO_TOO_LONG', msg => "Remote account name is too long, length($2) > 18");
+
+        # 28 because all accounts have a corresponding "-tty" group, and 32 - length(-tty) == 28
+        elsif (length($2) > 28) {
+            return R('KO_TOO_LONG', msg => "Remote account name is too long, length($2) > 28");
         }
         elsif (length($2) < 2) {
             return R('KO_TOO_SMALL', msg => "Remote account name is too short, length($2) < 2");
@@ -201,8 +205,10 @@ sub is_account_valid {
         if (length($1) < 2) {
             return R('KO_TOO_SMALL', msg => "$whatis name is too small, length($1) < 2");
         }
-        elsif (length($1) > 18) {
-            return R('KO_TOO_LONG', msg => "$whatis name is too long, length($1) > 18");
+
+        # 28 because all accounts have a corresponding "-tty" group, and 32 - length(-tty) == 28
+        elsif (length($1) > 28) {
+            return R('KO_TOO_LONG', msg => "$whatis name is too long, length($1) > 28");
         }
         return R('OK', value => {sysaccount => $1, realm => undef, remoteaccount => undef, account => $1});           # untainted
     }
@@ -568,12 +574,14 @@ sub is_valid_group {
     my $group     = $params{'group'};
     my $groupType = $params{'groupType'};
 
-    # osh: osh-accountListBastionKeys
+    # possible groupTypes:
+    # osh: osh-accountList
     # tty: login8-tty
     # key: keymygroup
     # gatekeeper: keymygroup-gatekeeper
     # aclkeeper: keymygroup-aclkeeper
     # owner: keymygroup-owner
+    # regular: no check appart from the length and forbidden prefixes/suffixes
 
     if (!$group) {
         return R('ERR_MISSING_PARAMETER', msg => "Missing parameter 'group'");
@@ -626,10 +634,9 @@ sub is_valid_group {
             return R('KO_NAME_TOO_LONG', msg => 'Group name is too long (system limit)');
         }
 
-        if ($groupType ne 'osh' and length($shortGroup) > 18) {
-
-            # 18 max for the short group (except for osh groups)
-            return R('KO_NAME_TOO_LONG', msg => 'Group name is too long (code limit)');
+        # 18 max for the short group name, because 32 - length(key) - length(-gatekeeper) == 18
+        if ((grep { $groupType eq $_ } qw{ key gatekeeper aclkeeper owner }) && (length($shortGroup) > 18)) {
+            return R('KO_NAME_TOO_LONG', msg => "Group name is too long (limit is 18 chars)");
         }
 
         return R('OK', value => {group => $group, shortGroup => $shortGroup});
