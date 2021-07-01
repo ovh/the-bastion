@@ -875,11 +875,12 @@ MFAPostCommand
 
 :Default: ``[]``
 
-:Example: ``["sudo","-n","-u","root","--","/sbin/pam_tally2","-u","%ACCOUNT%","-r"],``
+:Example: ``["sudo","-n","-u","root","--","/sbin/pam_tally2","-u","%ACCOUNT%","-r"] or ["/usr/sbin/faillock","--reset"]``
 
 When using JIT MFA (i.e. not directly by calling PAM from SSHD's configuration, but using ``pamtester`` from within the code), execute this command on success.
-This can be used for example if you're using ``pam_tally2`` in your PAM MFA configuration, ``pamtester`` can't reset the counter to zero because this is usually done in the ``account_mgmt`` PAM phase. You can use a script to reset it here.
+This can be used for example if you're using ``pam_tally2`` or ``pam_faillock`` in your PAM MFA configuration, ``pamtester`` can't reset the counter to zero because this is usually done in the ``account_mgmt`` PAM phase. You can use a script to reset it here.
 The magic token ``%ACCOUNT%`` will be replaced by the account name.
+Note that usually, ``pam_tally2`` can only be used by root (hence might require the proper sudoers configuration), while ``faillock`` can directly be used by unprivileged users to reset their counter.
 
 Other options
 -------------
