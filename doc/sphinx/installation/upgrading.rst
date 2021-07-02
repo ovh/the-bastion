@@ -24,6 +24,16 @@ Note that if you're using an infrastructure automation tool such as Puppet, Ansi
 Version-specific upgrade instructions
 =====================================
 
+v3.04.00 - 2021/07/02
+*********************
+
+The upgrade path from the preceding version is straightforward, however there are a few changes that you might want to be aware of before hitting the upgrade button:
+
+- Some EOL OSes have been dropped: Debian 8, Ubuntu 14.04, OpenSUSE 15.0 and 15.1.
+  This means that while the software might still work, theses OSes are no longer part of the tests and might break in any future upgrade.
+
+- The default logging level of the :doc:`/using/http_proxy` has been decreased. If you want to keep full requests and responses logging, check the :doc:`log_request_response and log_request_response_max_size </administration/configuration/osh-http-proxy_conf>` configuration options.
+
 v3.03.01 - 2021/03/25
 *********************
 
