@@ -1,3 +1,6 @@
+## v3.04.00 - 2021/07/02
+No changes since rc2.
+
 ## v3.03.99-rc2 - 2021/06/30
 - OS support: /!\ drop EOL OSes: Debian 8, Ubuntu 14.04, OpenSUSE 15.0/15.1, add OpenSUSE 15.3
 - feat: add admin and super owner accounts list in `info` plugin (#206)
