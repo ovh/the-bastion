@@ -30,7 +30,6 @@ sub dumpdoc {
 
 my $state = '';
 while (<STDIN>) {
-    print STDERR $_;
     next if /^\s*$/;
     if (m{^# ([a-zA-Z0-9_]+) \((.+)\)}) {
         $h{param} = $1;
