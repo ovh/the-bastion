@@ -38,7 +38,7 @@ sub help {
         $helpAlgoSize = '--algo ed25519';
     }
     osh_info <<"EOF";
-Usage       : --osh SCRIPT_NAME --group GROUP --owner ACCOUNT $helpAlgoSize [--encrypted] [--no-key]
+Usage       : --osh $scriptName --group GROUP --owner ACCOUNT $helpAlgoSize [--encrypted] [--no-key]
 Description : creates group GROUP on the bastion with ACCOUNT as the owner
 Params      :
 
