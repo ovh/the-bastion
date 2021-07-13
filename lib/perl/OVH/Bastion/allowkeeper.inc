@@ -114,14 +114,40 @@ sub is_valid_uid {
 sub get_next_available_uid {
     my %params = @_;
 
+    # if true, also check for the availablility of the corresponding GID:
+    my $available_gid = $params{'available_gid'};
+
+    # if true, also check for the availability of the corresponding GID + the ttyrec offset:
+    my $available_gid_ttyrec = $params{'available_gid_ttyrec'};
+
     my $higher = OVH::Bastion::config('accountUidMax')->value();
     my $lower  = OVH::Bastion::config('accountUidMin')->value();
     my $next   = $higher;
-    while ($next >= $lower) {
-        last if not scalar(getpwuid($next));
+    my $found  = 0;
+    while (1) {
+
+        # find the first available UID, starting from the upper ID allowed and decrementing
+        while ($next >= $lower) {
+            last if not scalar(getpwuid($next));
+            $next--;
+        }
+
+        # did we get out of the loop because we found a candidate, or because we're out of bounds?
+        last if $next < $lower;
+
+        # if $available_gid, also check if the corresponding GID is available
+        # if $available_gid_ttyrec, also check if the corresponding GID + the ttyrec offset is available
+        if (   (!$available_gid || !scalar(getgrgid($next)))
+            && (!$available_gid_ttyrec || !scalar(getgrgid($next + OVH::Bastion::config('ttyrecGroupIdOffset')->value))))
+        {
+            $found = 1;
+            last;
+        }
+
+        # if we're here, at least one of the $available_gid* check failed, so continue looking
         $next--;
     }
-    return R('OK',                value => $next) if not scalar(getpwuid($next));
+    return R('OK',                value => $next) if $found;
     return R('ERR_UID_COLLISION', msg   => "No available UID in the allowed range");
 }
 
