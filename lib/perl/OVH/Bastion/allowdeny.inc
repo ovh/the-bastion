@@ -984,7 +984,7 @@ sub get_acls {
 
         # then check for group access
         my $grantedGroup = OVH::Bastion::get_acl_way(way => "group", group => $shortGroup);
-        osh_debug("get_acls: grantedGroup=" . Data::Dumper::Dumper($grantedGroup));
+        osh_debug("get_acls: grantedGroup($shortGroup)=" . Data::Dumper::Dumper($grantedGroup));
         next if not $grantedGroup;            # if group doesn't have access, don't even check legacy either
 
         # now we have to cases, if the group has access: either the account is member or guest
