@@ -120,7 +120,7 @@ if (defined $uid) {
     getgrgid($uid) and HEXIT('ERR_GID_COLLISION', msg => "This GID ($uid) is already taken");
 }
 elsif ($uidAuto) {
-    $fnret = OVH::Bastion::get_next_available_uid();
+    $fnret = OVH::Bastion::get_next_available_uid(available_gid => 1, available_gid_ttyrec => 1);
     $fnret or HEXIT($fnret);
     $uid = $fnret->value();
 }
