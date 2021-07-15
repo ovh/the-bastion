@@ -3,6 +3,8 @@
 use common::sense;
 use Sys::Hostname ();
 use Term::ANSIColor;
+use JSON;
+use POSIX ();
 
 use File::Basename;
 use lib dirname(__FILE__) . '/../../../lib/perl';
@@ -27,6 +29,9 @@ my $fnret;
 
 $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
 $fnret or osh_exit $fnret;
+$account = $fnret->value->{'account'};
+my $sysaccount    = $fnret->value->{'sysaccount'};
+my $remoteaccount = $fnret->value->{'remoteaccount'};
 
 $fnret = OVH::Bastion::get_plugin_list(restrictedOnly => 1);
 $fnret or osh_exit $fnret;
@@ -110,7 +115,8 @@ else {
 }
 
 if (OVH::Bastion::is_auditor(account => $self)) {
-    $fnret = OVH::Bastion::is_account_nonexpired(sysaccount => $account);
+
+    $fnret = OVH::Bastion::is_account_nonexpired(sysaccount => $sysaccount, remoteaccount => $remoteaccount);
     if ($fnret->is_ok) {
         osh_info "This account is " . colored('not expired', 'green');
         $ret{'is_expired'} = 0;
@@ -128,23 +134,58 @@ if (OVH::Bastion::is_auditor(account => $self)) {
         osh_info "As a consequence, this account " . ($canConnect ? colored("can", 'green') : colored("CANNOT", 'red')) . " connect to this bastion\n\n";
         $ret{'can_connect'} = $canConnect;
 
-        my $seenBefore = 1;
         if ($fnret->value->{'already_seen_before'}) {
-            osh_info "This account has already been used " . colored('at least once', 'green');
             $ret{'already_seen_before'} = 1;
+            if (defined $fnret->value->{'seconds'}) {
+                $fnret = OVH::Bastion::duration2human(seconds => $fnret->value->{'seconds'}, tense => "past");
+                if ($fnret) {
+                    my $seenBeforeStr = $fnret->value->{'datetime_utc'};
+                    if ($fnret->value->{'datetime_local'} && $fnret->value->{'datetime_utc'} ne $fnret->value->{'datetime_local'}) {
+                        $seenBeforeStr .= " / " . $fnret->value->{'datetime_local'};
+                    }
+                    $seenBeforeStr = sprintf("Last seen on %s (%s ago)", colored($seenBeforeStr, 'magenta'), $fnret->value->{'duration'},);
+                    osh_info $seenBeforeStr;
+                    $ret{'last_activity'}{$_}          = $fnret->value->{$_} for qw{ datetime_local datetime_utc };
+                    $ret{'last_activity'}{'ago'}       = $fnret->value->{'duration'};
+                    $ret{'last_activity'}{'timestamp'} = time() - $fnret->value->{'seconds'};
+                }
+            }
         }
         else {
             osh_info "This account has " . colored('NEVER', 'red') . " been used (yet)";
-            $seenBefore = 0;
             $ret{'already_seen_before'} = 0;
         }
+    }
 
-        if (defined $fnret->value->{'seconds'}) {
-            $fnret = OVH::Bastion::duration2human(seconds => $fnret->value->{'seconds'}, tense => "past");
-            if ($fnret) {
-                my $seenBeforeStr = sprintf("%s on %s (%s ago)", $seenBefore ? "Last seen" : "Created", colored($fnret->value->{'date'}, 'magenta'), $fnret->value->{'duration'});
-                osh_info $seenBeforeStr;
-                $ret{'last_activity_date'} = $seenBeforeStr;
+    $fnret = OVH::Bastion::account_config(account => $account, key => "creation_info");
+    if ($fnret) {
+        my $creation_info;
+        eval { $creation_info = decode_json($fnret->value); };
+        if ($@) {
+            osh_warn("While reading creation metadata information for account '$account', couldn't decode JSON: $@");
+        }
+        else {
+            $ret{'creation_information'} = $creation_info;
+            if ($creation_info->{'time_utc'}) {
+                my $createdOnStr = $creation_info->{'time_utc'};
+                if ($creation_info->{'time_local'} && $creation_info->{'time_utc'} ne $creation_info->{'time_local'}) {
+                    $createdOnStr .= " / " . $creation_info->{'time_local'};
+                }
+                $createdOnStr = sprintf(
+                    "Created on %s (%s ago)",
+                    colored($createdOnStr, 'magenta'),
+                    OVH::Bastion::duration2human(seconds => time() - $creation_info->{'timestamp'})->value->{'duration'}
+                );
+                osh_info $createdOnStr;
+            }
+            if ($creation_info->{'by'}) {
+                osh_info "Created by " . colored($creation_info->{'by'}, 'magenta');
+            }
+            if ($creation_info->{'bastion_version'}) {
+                osh_info "Created using The Bastion " . colored('v' . $creation_info->{'bastion_version'}, 'magenta');
+            }
+            if ($creation_info->{'comment'}) {
+                osh_info "Creation with the following comment: " . colored($creation_info->{'comment'}, 'magenta');
             }
         }
     }

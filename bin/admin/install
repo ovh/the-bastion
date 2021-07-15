@@ -1127,6 +1127,49 @@ if [ "$nothing" = 0 ]; then
         action_done
     fi
 
+    # The Bastion > v3.04.00
+    action_doing "Migrating account creation metadata to new format where applicable"
+    at_least_one_changed=0
+    at_least_one_error=0
+    for accounthome in $(getent passwd | grep ":$basedir/bin/shell/osh.pl$" | cut -d: -f6); do
+        # if the old AND the new files exists, don't do anything: we won't delete the old file
+        # because we want our users to be able to roll back to an old version, and as this file doesn't
+        # hurt anything (it'll just get ignored by new versions), no point in inserting an incompatible change here.
+        if [ -f "$accounthome/accountCreate.comment" ] && ! [ -f "$accounthome/config.creation_info" ]; then
+            at_least_one_changed=$((at_least_one_changed + 1))
+            # build a config.creation_info file from the data stored in the legacy accountCreate.comment
+            perl -Mstrict -MJSON -mPOSIX -e '
+                my %h;
+                open(my $oldfh, "<", $ARGV[0]) or die $!;
+                while (<$oldfh>) {
+                    chomp;
+                    my @f = split("=", $_, 2);
+                    $h{$f[0]}=$f[1] if @f == 2;
+                }
+                close($oldfh);
+                open(my $newfh, ">", $ARGV[1]) or die $!;
+                print $newfh encode_json({
+                    by => $h{CREATED_BY},
+                    bastion_version => $h{BASTION_VERSION},
+                    datetime_utc => POSIX::strftime("%a %Y-%m-%d %H:%M:%S UTC", gmtime($h{CREATION_TIMESTAMP})),
+                    datetime_local => POSIX::strftime("%a %Y-%m-%d %H:%M:%S %Z", localtime($h{CREATION_TIMESTAMP})),
+                    timestamp => $h{CREATION_TIMESTAMP}+0,
+                    comment => (($h{COMMENT} && $h{COMMENT} ne "(no_comment_provided)") ? $h{COMMENT} : undef),
+                });
+                close($newfh);
+            ' "$accounthome/accountCreate.comment" "$accounthome/config.creation_info"; ret=$?
+            [ -f "$accounthome/config.creation_info" ] && chmod 644 "$accounthome/config.creation_info"
+            [ "$ret" != 0 ] && at_least_one_error=1
+        fi
+    done
+    if [ "$at_least_one_error" != 0 ]; then
+        action_error
+    elif [ "$at_least_one_changed" = 0 ]; then
+        action_na
+    else
+        action_done "Migrated $at_least_one_changed files"
+    fi
+
     # checking whether we have things to install from the install.d directory
     # shellcheck disable=SC2034
     STARTED_BY_MAIN_INSTALL=1
