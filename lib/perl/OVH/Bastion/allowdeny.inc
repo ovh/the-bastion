@@ -472,7 +472,8 @@ sub duration2human {
     my $tense  = $params{'tense'};
 
     require POSIX;
-    my $date = POSIX::strftime("%a %Y-%m-%d %H:%M:%S %Z", localtime(time() + ($tense eq 'past' ? -$s : $s)));
+    my $date_local = POSIX::strftime("%a %Y-%m-%d %H:%M:%S %Z", localtime(time() + ($tense eq 'past' ? -$s : $s)));
+    my $date_utc = POSIX::strftime("%a %Y-%m-%d %H:%M:%S UTC", gmtime(time() + ($tense eq 'past' ? -$s : $s)));
 
     my $d = int($s / 86400);
     $s -= $d * 86400;
@@ -482,7 +483,9 @@ sub duration2human {
     $s -= $m * 60;
 
     my $duration = $d ? sprintf('%dd+%02d:%02d:%02d', $d, $h, $m, $s) : sprintf('%02d:%02d:%02d', $h, $m, $s);
-    return R('OK', value => {duration => $duration, date => $date, human => "$duration ($date)"});
+
+    # we keep the 'date' key for backwards compat, it's the same as 'datetime_local'
+    return R('OK', value => {duration => $duration, date => $date_local, datetime_local => $date_local, datetime_utc => $date_utc, human => "$duration ($date_local)"});
 }
 
 sub print_acls {
