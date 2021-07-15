@@ -254,7 +254,7 @@ run()
         printf "%b%b%b\\n" "$WHITE_ON_BLUE" "[INFO] output of the command follows" "$NOC"
         cat "$outdir/$basename.log"
         printf "%b%b%b\\n" "$WHITE_ON_BLUE" "[INFO] returned json follows" "$NOC"
-        grep "^JSON_OUTPUT=" -- $outdir/$basename.log | cut -d= -f2- | $jq .
+        grep "^JSON_OUTPUT=" -- $outdir/$basename.log | cut -d= -f2- | jq --sort-keys .
         if [ "$opt_skip_consistency_check" != 1 ]; then
             printf "%b%b%b\\n" "$WHITE_ON_BLUE" "[INFO] consistency check follows" "$NOC"
             cat "$outdir/$basename.cc"
@@ -433,6 +433,22 @@ json()
             fail "JSON VALUE" "(for key <$filter> wanted <$expected> but got <$got>, with optional params jq1='$jq1' jq2='$jq2' jq3='$jq3')"
         fi
     done
+}
+
+json_document()
+{
+    [ "$COUNTONLY" = 1 ] && return
+    local fulljson="$1"
+    local tmpdiff; tmpdiff=$(mktemp)
+    local diffret=0
+    diff -u0 <(echo "$fulljson" | jq -S .) <(get_json | jq -S .) > "$tmpdiff"; diffret=$?
+    if [ "$diffret" = 0 ]; then
+        ok "JSON DOCUMENT" "(fully matched)"
+    else
+        fail "JSON DOCUMENT" "($(awk '{if(NR>3){print}}' "$tmpdiff" | grep -c '^[-+]') lines differ)"
+        awk '{if(NR>3){print}}' "$tmpdiff"
+    fi
+    rm -f "$tmpdiff"
 }
 
 pattern()
