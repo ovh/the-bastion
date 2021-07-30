@@ -12,127 +12,126 @@ bastion.conf reference
 Option List
 ===========
 
-
-Main Options
-------------
+Main Options options
+--------------------
 
 Those are the options you should customize when first setting up a bastion. All the other options have sane defaults and can be customized later if needed.
 
-- :ref:`bastionName`
-- :ref:`bastionCommand`
-- :ref:`readOnlySlaveMode`
-- :ref:`adminAccounts`
-- :ref:`superOwnerAccounts`
+- `bastionName`_
+- `bastionCommand`_
+- `readOnlySlaveMode`_
+- `adminAccounts`_
+- `superOwnerAccounts`_
 
-SSH Policies
-------------
+SSH Policies options
+--------------------
 
 All the options related to the SSH configuration and policies, both for ingress and egress connections.
 
-- :ref:`allowedIngressSshAlgorithms`
-- :ref:`allowedEgressSshAlgorithms`
-- :ref:`minimumIngressRsaKeySize`
-- :ref:`maximumIngressRsaKeySize`
-- :ref:`minimumEgressRsaKeySize`
-- :ref:`maximumEgressRsaKeySize`
-- :ref:`defaultAccountEgressKeyAlgorithm`
-- :ref:`defaultAccountEgressKeySize`
-- :ref:`moshAllowed`
-- :ref:`moshTimeoutNetwork`
-- :ref:`moshTimeoutSignal`
-- :ref:`moshCommandLine`
+- `allowedIngressSshAlgorithms`_
+- `allowedEgressSshAlgorithms`_
+- `minimumIngressRsaKeySize`_
+- `maximumIngressRsaKeySize`_
+- `minimumEgressRsaKeySize`_
+- `maximumEgressRsaKeySize`_
+- `defaultAccountEgressKeyAlgorithm`_
+- `defaultAccountEgressKeySize`_
+- `moshAllowed`_
+- `moshTimeoutNetwork`_
+- `moshTimeoutSignal`_
+- `moshCommandLine`_
 
-Global network policies
------------------------
+Global network policies options
+-------------------------------
 
 Those options can set a few global network policies to be applied bastion-wide.
 
-- :ref:`allowedNetworks`
-- :ref:`forbiddenNetworks`
-- :ref:`ingressToEgressRules`
+- `allowedNetworks`_
+- `forbiddenNetworks`_
+- `ingressToEgressRules`_
 
-Logging
--------
+Logging options
+---------------
 
 Options to customize how logs should be produced.
 
-- :ref:`enableSyslog`
-- :ref:`syslogFacility`
-- :ref:`syslogDescription`
-- :ref:`enableGlobalAccessLog`
-- :ref:`enableAccountAccessLog`
-- :ref:`enableGlobalSqlLog`
-- :ref:`enableAccountSqlLog`
-- :ref:`ttyrecFilenameFormat`
-- :ref:`ttyrecAdditionalParameters`
+- `enableSyslog`_
+- `syslogFacility`_
+- `syslogDescription`_
+- `enableGlobalAccessLog`_
+- `enableAccountAccessLog`_
+- `enableGlobalSqlLog`_
+- `enableAccountSqlLog`_
+- `ttyrecFilenameFormat`_
+- `ttyrecAdditionalParameters`_
 
-Other ingress policies
-----------------------
+Other ingress policies options
+------------------------------
 
 Policies applying to the ingress connections
 
-- :ref:`ingressKeysFrom`
-- :ref:`ingressKeysFromAllowOverride`
+- `ingressKeysFrom`_
+- `ingressKeysFromAllowOverride`_
 
-Other egress policies
----------------------
+Other egress policies options
+-----------------------------
 
 Policies applying to the egress connections
 
-- :ref:`defaultLogin`
-- :ref:`egressKeysFrom`
-- :ref:`keyboardInteractiveAllowed`
-- :ref:`passwordAllowed`
-- :ref:`telnetAllowed`
+- `defaultLogin`_
+- `egressKeysFrom`_
+- `keyboardInteractiveAllowed`_
+- `passwordAllowed`_
+- `telnetAllowed`_
 
-Session policies
-----------------
+Session policies options
+------------------------
 
 Options to customize the established sessions behaviour
 
-- :ref:`displayLastLogin`
-- :ref:`fanciness`
-- :ref:`interactiveModeAllowed`
-- :ref:`interactiveModeTimeout`
-- :ref:`interactiveModeByDefault`
-- :ref:`idleLockTimeout`
-- :ref:`idleKillTimeout`
-- :ref:`warnBeforeLockSeconds`
-- :ref:`warnBeforeKillSeconds`
-- :ref:`accountExternalValidationProgram`
-- :ref:`accountExternalValidationDenyOnFailure`
-- :ref:`alwaysActiveAccounts`
+- `displayLastLogin`_
+- `fanciness`_
+- `interactiveModeAllowed`_
+- `interactiveModeTimeout`_
+- `interactiveModeByDefault`_
+- `idleLockTimeout`_
+- `idleKillTimeout`_
+- `warnBeforeLockSeconds`_
+- `warnBeforeKillSeconds`_
+- `accountExternalValidationProgram`_
+- `accountExternalValidationDenyOnFailure`_
+- `alwaysActiveAccounts`_
 
-Account policies
-----------------
+Account policies options
+------------------------
 
 Policies applying to the bastion accounts themselves
 
-- :ref:`accountMaxInactiveDays`
-- :ref:`accountExpiredMessage`
-- :ref:`accountCreateSupplementaryGroups`
-- :ref:`accountCreateDefaultPersonalAccesses`
-- :ref:`ingressRequirePIV`
-- :ref:`accountMFAPolicy`
-- :ref:`MFAPasswordMinDays`
-- :ref:`MFAPasswordMaxDays`
-- :ref:`MFAPasswordWarnDays`
-- :ref:`MFAPasswordInactiveDays`
-- :ref:`MFAPostCommand`
+- `accountMaxInactiveDays`_
+- `accountExpiredMessage`_
+- `accountCreateSupplementaryGroups`_
+- `accountCreateDefaultPersonalAccesses`_
+- `ingressRequirePIV`_
+- `accountMFAPolicy`_
+- `MFAPasswordMinDays`_
+- `MFAPasswordMaxDays`_
+- `MFAPasswordWarnDays`_
+- `MFAPasswordInactiveDays`_
+- `MFAPostCommand`_
 
-Other options
--------------
+Other options options
+---------------------
 
 These options are either discouraged (in which case this is explained in the description) or rarely need to be modified.
 
-- :ref:`accountUidMin`
-- :ref:`accountUidMax`
-- :ref:`ttyrecGroupIdOffset`
-- :ref:`documentationURL`
-- :ref:`debug`
-- :ref:`remoteCommandEscapeByDefault`
-- :ref:`sshClientDebugLevel`
-- :ref:`sshClientHasOptionE`
+- `accountUidMin`_
+- `accountUidMax`_
+- `ttyrecGroupIdOffset`_
+- `documentationURL`_
+- `debug`_
+- `remoteCommandEscapeByDefault`_
+- `sshClientDebugLevel`_
+- `sshClientHasOptionE`_
 
 Option Reference
 ================

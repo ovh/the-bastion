@@ -43,7 +43,12 @@ smartquotes = False
 # ones.
 extensions = [
     'sphinx.ext.githubpages',
+    # see https://docs.readthedocs.io/en/stable/guides/cross-referencing-with-sphinx.html#automatically-label-sections
+    'sphinx.ext.autosectionlabel',
 ]
+# Make sure the target is unique
+# Sphinx will create explicit targets for all your sections, the name of target has the form {path/to/page}:{title-of-section}
+autosectionlabel_prefix_document = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
