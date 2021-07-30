@@ -1,0 +1,17 @@
+================================
+osh-encrypt-rsync.conf reference
+================================
+
+.. note::
+
+   The osh-encrypt-rsync script is called by cron and is responsible for encrypting
+   and optionally pushing the recorded ``ttyrec`` files to a distant server.
+
+.. warning::
+
+   If left unconfigured, this script won't do anything, and recorded ``ttyrec`` files
+   won't be encrypted or moved out from the server. This might not be a problem for
+   low-traffic bastions or if you have plenty of storage available, though.
+
+Option List
+===========

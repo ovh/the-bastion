@@ -1,0 +1,12 @@
+=============================
+osh-sync-watcher.sh reference
+=============================
+
+.. note::
+
+   The osh-sync-watcher daemon is responsible for ensuring secondary bastions are synced
+   up to their primary. If you don't have such HA setup, you can ignore this config file.
+   For more information, see :ref:`installation/advanced:clustering (high availability)`.
+
+Option List
+===========
