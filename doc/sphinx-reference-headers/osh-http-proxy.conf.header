@@ -1,0 +1,11 @@
+=============================
+osh-http-proxy.conf reference
+=============================
+
+.. note::
+
+   This module is optional, and disabled by default. To know more about the HTTP Proxy feature
+   of The Bastion, please check the :doc:`/using/http_proxy` section
+
+Option List
+===========
