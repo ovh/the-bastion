@@ -14,7 +14,11 @@ sub load_configuration_file {
     # it won't allow symlinks either
     my $secure = $params{'secure'};
 
-    if ($secure) {
+    # if $rootonly is set, the $secure restriction apply, and
+    # in addition we won't load the file if it's o+r
+    my $rootonly = $params{'rootonly'};
+
+    if ($secure || $rootonly) {
         my @stat = lstat($file);
         if (@stat) {
             if ($stat[4] != 0 or $stat[5] != 0) {
@@ -25,6 +29,9 @@ sub load_configuration_file {
             }
             if (S_IMODE($stat[2]) & S_IWOTH) {
                 return R('ERR_SECURITY_VIOLATION', msg => "Configuration file ($file) is world-writable, report to your sysadmin.");
+            }
+            if ($rootonly && S_IMODE($stat[2]) & S_IROTH) {
+                return R('ERR_SECURITY_VIOLATION', msg => "Configuration file ($file) is world-readable, report to your sysadmin.");
             }
         }
 
