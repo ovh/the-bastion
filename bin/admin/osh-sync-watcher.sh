@@ -27,6 +27,17 @@ if [ ! -e "$rsyncfilterfile" ] ; then
     fi
 fi
 
+# set default values
+logdir=""
+syslog="local6"
+enabled=0
+timeout=120
+rshcmd=""
+remoteuser="bastionsync"
+remotehostlist=""
+# old deprecated config param:
+remotehost=""
+
 # load configuration
 # shellcheck source=etc/bastion/osh-sync-watcher.sh.dist
 . "$configfile"
