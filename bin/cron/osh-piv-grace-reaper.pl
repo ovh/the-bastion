@@ -27,8 +27,12 @@ else {
     }
 }
 
+# set default values
+$config = {} if ref $config ne 'HASH';
+$config->{'SyslogFacility'} //= 'local6';
+
 # logging
-if ($config && $config->{'SyslogFacility'}) {
+if ($config->{'SyslogFacility'}) {
     OVH::SimpleLog::setSyslog($config->{'SyslogFacility'});
 }
 
