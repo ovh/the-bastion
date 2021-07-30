@@ -5,38 +5,35 @@ osh-http-proxy.conf reference
 .. note::
 
    This module is optional, and disabled by default. To know more about the HTTP Proxy feature
-   of The Bastion, please check :doc:`/using/http_proxy`
+   of The Bastion, please check the :doc:`/using/http_proxy` section
 
 Option List
 ===========
 
-
-HTTP Proxy configuration
-------------------------
+HTTP Proxy configuration options
+--------------------------------
 
 These options modify the behavior of the HTTP Proxy, an optional module of The Bastion
 
-- :ref:`enabled`
-- :ref:`port`
-- :ref:`ssl_certificate`
-- :ref:`ssl_key`
-- :ref:`ciphers`
-- :ref:`insecure`
-- :ref:`min_servers`
-- :ref:`max_servers`
-- :ref:`min_spare_servers`
-- :ref:`max_spare_servers`
-- :ref:`timeout`
-- :ref:`log_request_response`
-- :ref:`log_request_response_max_size`
+- `enabled`_
+- `port`_
+- `ssl_certificate`_
+- `ssl_key`_
+- `ciphers`_
+- `insecure`_
+- `min_servers`_
+- `max_servers`_
+- `min_spare_servers`_
+- `max_spare_servers`_
+- `timeout`_
+- `log_request_response`_
+- `log_request_response_max_size`_
 
 Option Reference
 ================
 
 HTTP Proxy configuration
 ------------------------
-
-.. _enabled:
 
 enabled
 *******
@@ -47,8 +44,6 @@ enabled
 
 Whether the HTTP proxy daemon daemon is enabled or not. If it's not enabled, it'll exit when started. Of course, if you want to enable this daemon, you should **also** configure your init system to start it for you. Both sysV-style scripts and systemd unit files are provided. For systemd, using `systemctl enable osh-http-proxy.service` should be enough. For sysV-style inits, it depends on the scripts provided for your distro, but usually `update-rc.d osh-http-proxy defaults` then `update-rc.d osh-http-proxy enable` should do the trick.
 
-.. _port:
-
 port
 ****
 
@@ -57,8 +52,6 @@ port
 :Default: ``8443``
 
 The port to listen to. You can use ports < 1024, in which case privileges will be dropped after binding, but please ensure your systemd unit file starts the daemon as root in that case.
-
-.. _ssl_certificate:
 
 ssl_certificate
 ***************
@@ -69,8 +62,6 @@ ssl_certificate
 
 The file that contains the server SSL certificate in PEM format. For tests, install the ``ssl-cert`` package and point this configuration item to the snakeoil certs (which is the default).
 
-.. _ssl_key:
-
 ssl_key
 *******
 
@@ -79,8 +70,6 @@ ssl_key
 :Default: ``/etc/ssl/private/ssl-cert-snakeoil.key``
 
 The file that contains the server SSL key in PEM format. For tests, install the ``ssl-cert`` package and point this configuration item to the snakeoil certs (which is the default).
-
-.. _ciphers:
 
 ciphers
 *******
@@ -94,8 +83,6 @@ ciphers
 The ordered list the TLS server ciphers, in ``openssl`` classic format. Use ``openssl ciphers`` to see what your system supports,
 an empty list leaves the choice to your openssl libraries default values (system-dependent)
 
-.. _insecure:
-
 insecure
 ********
 
@@ -104,8 +91,6 @@ insecure
 :Default: ``false``
 
 Whether to ignore SSL certificate verification for the connection between the bastion and the devices
-
-.. _min_servers:
 
 min_servers
 ***********
@@ -116,8 +101,6 @@ min_servers
 
 Number of child processes to start at launch
 
-.. _max_servers:
-
 max_servers
 ***********
 
@@ -126,8 +109,6 @@ max_servers
 :Default: ``32``
 
 Hard maximum number of child processes that can be active at any given time no matter what
-
-.. _min_spare_servers:
 
 min_spare_servers
 *****************
@@ -138,8 +119,6 @@ min_spare_servers
 
 The daemon will ensure that there is at least this number of children idle & ready to accept new connections (as long as max_servers is not reached)
 
-.. _max_spare_servers:
-
 max_spare_servers
 *****************
 
@@ -148,8 +127,6 @@ max_spare_servers
 :Default: ``16``
 
 The daemon will kill *idle* children to keep their number below this maximum when traffic is low
-
-.. _timeout:
 
 timeout
 *******
@@ -160,8 +137,6 @@ timeout
 
 Timeout delay (in seconds) for the connection between the bastion and the devices
 
-.. _log_request_response:
-
 log_request_response
 ********************
 
@@ -170,8 +145,6 @@ log_request_response
 :Default: ``true``
 
 When enabled, the complete response of the device to the request we forwarded will be logged, otherwise we'll only log the response headers
-
-.. _log_request_response_max_size:
 
 log_request_response_max_size
 *****************************
