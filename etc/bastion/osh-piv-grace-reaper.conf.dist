@@ -1,3 +1,14 @@
+###################################################################
+## Config for /opt/bastion/bin/cron/osh-piv-grace-reaper.pl, the script
+## responsible for expiring the grace period of relaxed PIV policies.
+## This is a JSON file.
+###################################################################
 {
-    "SyslogFacility": "local6"
+# > Logging
+# >> These options configure the way the script logs its actions
+#
+# SyslogFacility (string)
+#    DESC: The syslog facility to use for logging the script output. If set to the empty string, we'll not log through syslog at all. If this configuration option is missing from your config file altogether, the default value will be used (local6), which means that we'll log to syslog.
+# DEFAULT: local6
+"SyslogFacility": "local6"
 }
