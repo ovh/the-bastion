@@ -1,30 +1,54 @@
-# THIS MUST BE A VALID SHELL SCRIPT
+###################################################################
+## Config for /opt/bastion/bin/cron/osh-backup-acl-keys.sh, the script
+## responsible for backing up the needed files to be able to rebuild
+## this bastion from scratch.
+## As it'll be sourced, THIS FILE MUST BE A VALID SHELL SCRIPT.
+###################################################################
 #
-# LOGFILE: file where to put script logs, if not defined, will not log into a file
-#LOGFILE=/var/log/bastion/osh-backup-acl-keys.log
+# > Logging
+# >> These options configure the way the script logs its actions
 #
-# LOG_FACILITY: will use syslog with the following facility to log, won't use syslog otherwise
-LOG_FACILITY=local6
+# LOGFILE (string, path to a file)
+#    DESC: File where the logs will be written to (don't forget to configure ``logrotate``!). Note that using this configuration option, the script will directly write to the file, without using syslog. If empty, won't log directly to any file.
+# DEFAULT: ""
+LOGFILE=""
 #
-# DESTDIR: directory where to put the .tar.gz files (it'll be created if needed)
-DESTDIR=/root/backups
+# LOG_FACILITY (string)
+#    DESC: The syslog facility to use for logging the script output. If set to the empty string, we'll not log through syslog at all. If this configuration option is missing from your config file altogether, the default value will be used (local6), which means that we'll log to syslog.
+# DEFAULT: "local6"
+LOG_FACILITY="local6"
 #
-# DAYSTOKEEP: number of days to keep backups for
+# > Backup policy
+# >> These options configure the backup policy to apply
+#
+# DESTDIR (path to a folder)
+#    DESC: Folder where to put the backup artefacts (``.tar.gz`` files). This folder will be created if needed. If empty or omitted, the script won't run: this option is mandatory.
+# EXAMPLE: "/root/backups"
+# DEFAULT: ""
+DESTDIR=""
+#
+# DAYSTOKEEP (int > 0)
+#    DESC: Number of days to keep the old backups on the filesystem before deleting them.
+# DEFAULT: 90
 DAYSTOKEEP=90
 #
-# GPGKEYS: list of gpg keys to encrypt to (see gpg --list-keys), separated by spaces.
-# example: GPGKEYS="41FDB9C7 DA97EFD1 339483FF"
-# if omitted or empty, archives will NOT be encrypted
+# GPGKEYS (string, space-separated list of GPG keys IDs)
+# DESC: List of public GPG keys to encrypt to (see ``gpg --list-keys``), these must be separated by spaces. Note that if this option is empty or omitted, backup artefacts will NOT be encrypted!
+# EXAMPLE: "41FDB9C7 DA97EFD1 339483FF"
+# DEFAULT: ""
 GPGKEYS=""
 #
-# PUSH_REMOTE: scp remote host push backups to
-# example: "push@1.2.3.4:~/backup/"
-# important: this will ONLY be enabled if GPGKEYS is not empty above, because
-# we will never push unencrypted backups!
-# Also, don't forget to put a trailing / (except if you want to push to the
-# remote HOME, in which case ending with a simple : works)
+# > Remote backup
+# >> These options configure how the script should push the encrypted backups to a remote system
+#
+# PUSH_REMOTE (string)
+#    DESC: The ``scp`` remote host push backups to. If empty or missing, won't push backups. This will also be the case if the ``GPGKEYS`` option above is empty or missing, because we will never push unencrypted backups. Don't forget to put a trailing ``/`` (except if you want to push to the remote ``$HOME``, in which case ending with a simple ``:`` works, as per standard ``scp``).
+# EXAMPLE: "push@1.2.3.4:~/backup/"
+# DEFAULT: ""
 PUSH_REMOTE=""
 #
-# PUSH_OPTIONS: additional options to pass to scp
-# example: "-i $HOME/.ssh/id_backup"
+# PUSH_OPTIONS (string)
+#    DESC: Additional options to pass to ``scp``, if needed.
+# EXAMPLE: "-i $HOME/.ssh/id_backup"
+# DEFAULT: ""
 PUSH_OPTIONS=""
