@@ -20,6 +20,16 @@ else
     gpgcmd="gpg"
 fi
 
+# setting default values
+LOGFILE=""
+LOG_FACILITY="local6"
+DESTDIR=""
+DAYSTOKEEP="90"
+GPGKEYS=""
+PUSH_REMOTE=""
+PUSH_OPTIONS=""
+
+# building config files list
 config_list=''
 if [ -f "$BASTION_ETC_DIR/osh-backup-acl-keys.conf" ]; then
     config_list="$BASTION_ETC_DIR/osh-backup-acl-keys.conf"
