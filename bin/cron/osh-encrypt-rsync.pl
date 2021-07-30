@@ -359,8 +359,8 @@ sub main {
     foreach my $configfile (@configfilelist) {
         _log "Configuration: loading configfile $configfile...";
         $fnret = OVH::Bastion::load_configuration_file(
-            file   => $configfile,
-            secure => 1,
+            file     => $configfile,
+            rootonly => 1,
         );
         if (not $fnret) {
             _err "Error while loading configuration from $configfile, aborting (" . $fnret->msg . ")";
@@ -392,11 +392,14 @@ sub main {
         }
     }
 
+    # default values
+    $config{'syslog_facility'} ||= 'local6';
+
     # ensure the various config files defined all the keywords we need
     foreach my $keyword (
         qw{
         signing_key signing_key_passphrase recipients encrypt_and_move_to_directory
-        encrypt_and_move_delay_days rsync_destination rsync_delay_before_remove_days
+        encrypt_and_move_delay_days rsync_delay_before_remove_days
         }
       )
     {

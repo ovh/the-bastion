@@ -1,40 +1,39 @@
 ###################################################################
-# Config for /opt/bastion/bin/admin/osh-encrypt-rsync.pl
-# This is a JSON file.
+## Config for /opt/bastion/bin/cron/osh-encrypt-rsync.pl, the script
+## responsible for signing and encrypting with GPG, then rotating and
+## pushing to an external system the produced ttyrec files.
+## This is a JSON file. Verify the syntax with the following command:
+## ``/opt/bastion/bin/cron/osh-encrypt-rsync.pl --config-test``
 ###################################################################
-
 {
-# logfile (string)
-#   value: filename with full absolute path
-#    desc: file where the logs will be written to (don't forget to configure logrotate!)
-# default: none (won't log to any file)
-# optional
-# "logfile": "/var/log/bastion/osh-encrypt-rsync.log",
-
+# > Logging
+# >> These options configure the way the script logs its actions
+#
+# logfile (string, path to a file)
+#    DESC: File where the logs will be written to (don't forget to configure ``logrotate``!). Note that using this configuration option, the script will directly write to the file, without using syslog. If empty, won't log directly to any file.
+# DEFAULT: ""
+"logfile": "",
+#
 # syslog_facility (string)
-#   value: syslog facility to log to
-#    desc: if not defined, we'll not use syslog
-# default: local6
-# optional
+#    DESC: The syslog facility to use for logging the script output. If set to the empty string, we'll not log through syslog at all. If this configuration option is missing from your config file altogether, the default value will be used (local6), which means that we'll log to syslog.
+# DEFAULT: local6
 "syslog_facility": "local6",
-
-# signing_key (string)
-#   value: GPG key ID (short or long)
-#    desc: ID of the key used to sign the ttyrec files (must be in the local keyring, cf gpg --list-secret-keys)
-# default: -
-# mandatory
+#
+# > Encryption and signing
+# >> These options configure how the script uses GPG to encrypt and sign the ttyrec files
+#
+# signing_key (string, GPG key ID in short or long format)
+#    DESC: ID of the GPG key used to sign the ttyrec files. The key must be in the local root keyring, check it with ``gpg --list-secret-keys``
+# DEFAULT: (none), setting a value is mandatory
 "signing_key": "FFFFFFFF",
-
+#
 # signing_key_passphrase (string)
-#   value: the passphrase of the signing_key
-#    desc: will be used by the script to unlock the key and sign with it
-# default: -
-# mandatory
+#    DESC: This passphrase should be able to unlock the ``signing_key`` defined above. As a side note, please ensure this configuration file only readable by root (0640), to protect this passphrase. As a security measure, the script will refuse to read the configuration otherwise.
+# DEFAULT: (none), setting a value is mandatory
 "signing_key_passphrase": "configure_this_passphrase",
-
-# encryption_recipients (array of array of strings)
-#  value: strings must be GPG key IDs (short or long)
-#   desc: ttyrecs will be encrypted with those GPG keys, possibly using multi-layer GPG encryption.
+#
+# recipients (array of array of strings, a string being a GPG key ID in short or long format)
+#   DESC: The ttyrecs will be encrypted with those GPG keys, possibly using multi-layer GPG encryption.
 #         Each sub-array is a layer, the first sub-array being the first encryption layer (which is also the last one for decryption)
 #         To completely decrypt a ttyrec, one would need at least one key of each layer.
 #         To encrypt only to a single layer and to only one key, simply use [ [ "KEYID" ] ].
@@ -44,53 +43,39 @@
 #         decrypt the second encryption layer (the first for decryption), and handle the now only auditor-protected file to the auditors.
 #         All public keys must be in the local keyring (gpg --list-keys).
 #         Don't forget to trust those keys "ultimately" in your keyring, too (gpg --edit-key ID)
-# default: -
-# mandatory
+# DEFAULT: (none), setting a value is mandatory
 "recipients": [
     [ "AAAAAAAA", "BBBBBBBB" ],
     [ "CCCCCCCC", "DDDDDDDD" ]
 ],
-
-# encrypt_and_move_to_directory (string)
-#   value: directory name (will be created if doesn't exist)
-#    desc: after encryption (and compression), move ttyrec files to subdirs of this directory
-# default: -
-# mandatory
+#
+# encrypt_and_move_to_directory (string, a valid directory name)
+#    DESC: After encryption (and compression), move ttyrec files to subdirs of this directory. It'll be created if it doesn't exist yet. You may want this directory to be the mount point of a remote filer, if you wish. If you change this, it's probably a good idea to ensure that the path is excluded from the master/slave synchronization, in ``/etc/bastion/osh-sync-watcher.rsyncfilter``. This is already the case for the default value.
+# DEFAULT: /home/.encrypt
 "encrypt_and_move_to_directory": "/home/.encrypt",
-
-# encrypt_and_move_delay_days (integer)
-#   value: int > 0
-#    desc: don't touch ttyrec files that have a modification time more recent than this
-# default: -
-# mandatory
+#
+# encrypt_and_move_delay_days (int > 0)
+#    DESC: Don't touch ttyrec files that have a modification time more recent than this amount of days. They won't be encrypted nor moved yet, and will still be readable by the ``selfPlaySession`` command.
+# DEFAULT: 14
 "encrypt_and_move_delay_days": 14,
-
+#
+# > Push files to a remote destination
+# >> These options configure the way the script uses rsync to optionally push the encrypted files out of the server
+#
 # rsync_destination (string)
-#   value: user@remotehost:/remote/dir/
-#    desc: string passed to rsync as a destination. If empty, will DISABLE rsync.
-# default: ""
-# example: user@remotebackup:/remote/dir
-# mandatory
+#    DESC: The value of this option will be passed to ``rsync`` as the destination. If empty, this will **disable** ``rsync``, meaning that the ttyrec files will be encrypted, but not moved out of the server.
+# DEFAULT: ""
+# EXAMPLE: user@remotebackup.example.org:/remote/dir
 "rsync_destination": "",
-
+#
 # rsync_rsh (string)
-#   value: any valid string that'll be passed to rsync's --rsh option
-#    desc: useful to specify an SSH key or an alternate SSH port for example. Not used if rsync is disabled.
-# example: ssh -p 222 -i /home/plop/.ssh/id_rsa_backup
-# default: none (--rsh won't be specified)
-# optional
-"rsync_rsh": "ssh -p 222 -i /root/.ssh/id_rsa_backup",
-
-# rsync_delay_before_remove_days (integer)
-#   value: int >= 0
-#    desc: after encryption/compression, and successful rsync to remote, wait for this amount of days before removing the files locally. Not used if rsync is disabled.
-# default: -
-# mandatory
-"rsync_delay_before_remove_days": 7
+#    DESC: The value of this option will be passed to ``rsync``'s ``--rsh`` option. This is useful to specify an SSH key or an alternate SSH port for example. This option is ignored when ``rsync`` is disabled (i.e. when ``rsync_destination`` is empty).
+# EXAMPLE: ssh -p 222 -i /root/.ssh/id_ed25519_backup
+# DEFAULT: ""
+"rsync_rsh": "",
+#
+# rsync_delay_before_remove_days (int >= 0)
+#    DESC: After encryption/compression, and successful rsync to remote, wait for this amount of days before removing the encrypted/compressed files locally. Specify 0 to remove the files as soon as they're transferred. This option is ignored when ``rsync`` is disabled (i.e. when ``rsync_destination`` is empty).
+# DEFAULT: 0
+"rsync_delay_before_remove_days": 0
 }
-
-
-
-
-
-
