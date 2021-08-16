@@ -1143,7 +1143,7 @@ else {
         $passwordFile = $fnretpass->value;
         osh_debug("going to use ssh with this password file : $passwordFile");
         print " will use SSH with password autologin\n\n" unless $quiet;
-        push @command, $OVH::Bastion::BASEPATH . '/bin/shell/autologin', 'ssh', $user, $ip, $port, $passwordFile, ($timeout ? $timeout : 45);
+        push @command, $OVH::Bastion::BASEPATH . '/bin/shell/autologin', 'ssh', $user, $hostto, $port, $passwordFile, ($timeout ? $timeout : 45);
 
     }
 
@@ -1159,7 +1159,7 @@ else {
         # also set password if allowed in bastion config (to allow users to enter a remote password interactively)
         push @preferredAuths, 'password' if $config->{'passwordAllowed'};
 
-        push @command, '/usr/bin/ssh', $ip, '-l', $user, '-p', $port;
+        push @command, '/usr/bin/ssh', $hostto, '-l', $user, '-p', $port;
 
         my @keysToTry;
         print " will try the following accesses you have: \n" unless $quiet;
