@@ -183,7 +183,9 @@ if (not $atleastonekey) {
     );
 }
 
-push @cmd, "--", $ip, $decoded;
+my $hostto = OVH::Bastion::ip2host($ip)->value || $ip;
+
+push @cmd, "--", $hostto, $decoded;
 
 =cut attempt to be more secure than even standard scp, but don't bother ...
 my ($additionalParams,$remoteFile) = ($2,$3);
