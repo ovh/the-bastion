@@ -45,3 +45,4 @@ packages = Data::Dumper File::Find FindBin Log::Log4perl DBI
 [-ValuesAndExpressions::ProhibitMagicNumbers]
 [-ValuesAndExpressions::ProhibitNoisyQuotes]
 [-Variables::ProhibitPunctuationVars]
+[-Variables::RequireInitializationForLocalVars]
