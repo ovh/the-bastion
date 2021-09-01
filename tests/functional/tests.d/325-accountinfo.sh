@@ -41,6 +41,7 @@ testsuite_accountinfo()
     json .value.ingress_piv_enforced 0 .value.always_active 1 .value.creation_information.by "$account0"
     json .value.creation_information.comment "this is a comment"
     json .value.already_seen_before 0 .value.last_activity null
+    json .value.max_inactive_days null
 
     # a2 connects, which will update already_seen_before
     success 325-accountinfo a2_connects $a2 --osh info
@@ -50,6 +51,31 @@ testsuite_accountinfo()
     success 325-accountinfo a1_accountinfo_a2_detailed2 $a1 --osh accountInfo --account $account2
     json .value.already_seen_before 1
     contain "Last seen on"
+
+    grant accountModify
+
+    # a0 changes a2 expiration policy
+    success 325-accountinfo a0_accountmodify_a2_expi_15 $a0 --osh accountModify --account $account2 --max-inactive-days 15
+
+    # a1 should see the updated field
+    success 325-accountinfo a1_accountinfo_a2_inactive_days $a1 --osh accountInfo --account $account2
+    json .value.max_inactive_days 15
+
+    # a0 changes a2 expiration policy
+    success 325-accountinfo a0_accountmodify_a2_expi_disabled $a0 --osh accountModify --account $account2 --max-inactive-days 0
+
+    # a1 should see the updated field
+    success 325-accountinfo a1_accountinfo_a2_inactive_days_disabled $a1 --osh accountInfo --account $account2
+    json .value.max_inactive_days 0
+
+    # a0 changes a2 expiration policy
+    success 325-accountinfo a0_accountmodify_a2_expi_default $a0 --osh accountModify --account $account2 --max-inactive-days -1
+
+    # a1 should see the updated field
+    success 325-accountinfo a1_accountinfo_a2_inactive_days_default $a1 --osh accountInfo --account $account2
+    json .value.max_inactive_days null
+
+    revoke accountModify
 
     # delete account1 & account2
     grant accountDelete

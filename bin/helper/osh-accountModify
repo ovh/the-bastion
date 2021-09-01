@@ -223,7 +223,7 @@ sub _toggle_yes_no {
 
 foreach my $tuple (@modify) {
     my ($key, $value) = $tuple =~ /^([a-zA-Z0-9-]+)=([a-zA-Z0-9-]+)$/;
-    next if (!$key || !$value);
+    next if (!$key || !defined $value);
     my $jsonkey = $key;
     $jsonkey =~ s/-/_/g;
 
@@ -333,6 +333,24 @@ foreach my $tuple (@modify) {
             }
             else {
                 osh_warn "... error while setting MFA policy: " . $fnret->msg;
+            }
+        }
+    }
+    elsif ($key eq 'max-inactive-days') {
+        osh_info "Changing the account expiration policy...";
+        if ($value !~ /^(?:\d+|-1)$/) {
+            osh_warn "Invalid parameter '$value', skipping";
+            $result{$jsonkey} = R('ERR_INVALID_PARAMETER');
+        }
+        else {
+            my %todo = ($value >= 0 ? (value => $value) : (delete => 1));
+            $fnret = OVH::Bastion::account_config(account => $account, %todo, %{OVH::Bastion::OPT_ACCOUNT_MAX_INACTIVE_DAYS()});
+            $result{$jsonkey} = $fnret;
+            if ($fnret) {
+                osh_info "... modification done";
+            }
+            else {
+                osh_warn "... error while setting the account expiration policy: " . $fnret->msg;
             }
         }
     }
