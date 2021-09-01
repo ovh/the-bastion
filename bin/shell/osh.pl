@@ -344,33 +344,34 @@ else {
 my $remainingOptions;
 ($result, $remainingOptions) = GetOptionsFromString(
     $beforeOptions,
-    "port|p=i"        => \my $optPort,
-    "verbose+"        => \my $verbose,
-    "tty|t"           => \my $tty,
-    "no-tty|T"        => \my $notty,
-    "user|u=s"        => \my $user,
-    "osh=s"           => \my $osh_command,
-    "telnet|e"        => \my $telnet,
-    "password=s"      => \my $passwordFile,
-    "P"               => \my $selfPassword,
-    "host|h=s"        => \my $host,
-    "help"            => \my $help,
-    "long-help"       => \my $longHelp,
-    "quiet|q"         => \my $quiet,
-    "timeout=i"       => \my $timeout,
-    "bind=s"          => \my $bind,
-    "debug"           => \my $debug,
-    "json"            => \my $json,
-    "json-greppable"  => \my $json_greppable,
-    "json-pretty"     => \my $json_pretty,
-    "always-escape"   => \my $_dummy1,              # not used as corresponding option has already been ninja-used above
-    "never-escape"    => \my $_dummy2,              # not used as corresponding option has already been ninja-used above
-    "interactive|i"   => \my $interactive,
-    "netconf"         => \my $netconf,
-    "wait"            => \my $wait,
-    "ssh-as=s"        => \my $sshAs,
-    "use-key=s"       => \my $useKey,
-    "kbd-interactive" => \my $userKbdInteractive,
+    "port|p=i"                  => \my $optPort,
+    "verbose+"                  => \my $verbose,
+    "tty|t"                     => \my $tty,
+    "no-tty|T"                  => \my $notty,
+    "user|u=s"                  => \my $user,
+    "osh=s"                     => \my $osh_command,
+    "telnet|e"                  => \my $telnet,
+    "password=s"                => \my $passwordFile,
+    "P"                         => \my $selfPassword,
+    "host|h=s"                  => \my $host,
+    "help"                      => \my $help,
+    "long-help"                 => \my $longHelp,
+    "quiet|q"                   => \my $quiet,
+    "timeout=i"                 => \my $timeout,
+    "bind=s"                    => \my $bind,
+    "debug"                     => \my $debug,
+    "json"                      => \my $json,
+    "json-greppable"            => \my $json_greppable,
+    "json-pretty"               => \my $json_pretty,
+    "always-escape"             => \my $_dummy1,                 # not used as corresponding option has already been ninja-used above
+    "never-escape"              => \my $_dummy2,                 # not used as corresponding option has already been ninja-used above
+    "interactive|i"             => \my $interactive,
+    "netconf"                   => \my $netconf,
+    "wait"                      => \my $wait,
+    "ssh-as=s"                  => \my $sshAs,
+    "use-key=s"                 => \my $useKey,
+    "kbd-interactive"           => \my $userKbdInteractive,
+    "fallback-password-delay=i" => \my $fallbackPasswordDelay,
 );
 if (not defined $realOptions) {
     help();
@@ -1125,7 +1126,7 @@ if ($telnet) {
         $passwordFile = $fnretpass->value;
         osh_debug("going to use telnet with this password file : $passwordFile");
         print " will use TELNET with password autologin\n\n" unless $quiet;
-        push @command, $OVH::Bastion::BASEPATH . '/bin/shell/autologin', 'telnet', $user, $ip, $port, $passwordFile, ($timeout ? $timeout : 45);
+        push @command, $OVH::Bastion::BASEPATH . '/bin/shell/autologin', 'telnet', $user, $ip, $port, $passwordFile, ($timeout ? $timeout : 45), ($fallbackPasswordDelay // 3);
     }
 
     # TELNET PASSWORD INTERACTIVE
@@ -1152,8 +1153,7 @@ else {
         $passwordFile = $fnretpass->value;
         osh_debug("going to use ssh with this password file : $passwordFile");
         print " will use SSH with password autologin\n\n" unless $quiet;
-        push @command, $OVH::Bastion::BASEPATH . '/bin/shell/autologin', 'ssh', $user, $ip, $port, $passwordFile, ($timeout ? $timeout : 45);
-
+        push @command, $OVH::Bastion::BASEPATH . '/bin/shell/autologin', 'ssh', $user, $ip, $port, $passwordFile, ($timeout ? $timeout : 45), ($fallbackPasswordDelay // 3);
     }
 
     # SSH EGRESS KEYS (and maybe password interactive as a fallback if passwordAllowed)
@@ -1531,13 +1531,14 @@ Usage (osh cmd): $bastionName --osh [OSH_COMMAND] [OSH_OPTIONS]
     that your shell will eat one level of quotes and backslashes. One working example:
     $bastionName srv1.example.org -- "perl -e 'use Data::Dumper; print Dumper(\\\@ARGV)' one 'two is 2' three"
 
-[OPTIONS (ssh)] :
-    --verbose,  -v       Enable verbose ssh
-    --tty,      -t       Force tty allocation
-    --no-tty,   -T       Prevent tty allocation
-    --use-key      FP    Explicitly specify the fingerprint of the egress key you want to use
-    --kbd-interactive    Enable the keyboard-interactive authentication scheme on egress connection
-    --netconf            Request to use netconf subsystem
+[OPTIONS (ssh)]
+    --verbose,  -v               Enable verbose ssh
+    --tty,      -t               Force tty allocation
+    --no-tty,   -T               Prevent tty allocation
+    --use-key      FP            Explicitly specify the fingerprint of the egress key you want to use
+    --kbd-interactive            Enable the keyboard-interactive authentication scheme on egress connection
+    --netconf                    Request to use netconf subsystem
+    --fallback-password-delay S  Amount of seconds to wait between subsequent tries in the SSH password autologin fallback mechanism (3).
 
 [OPTIONS (osh cmd)]
     --json              Return data in json format between JSON_START and JSON_END tags
