@@ -80,3 +80,17 @@ Those two connections are distinct, and the bastion logic merges those two so th
 Using ``ProxyCommand`` with the bastion doesn't make sense because with this option, your local ssh client expects to talk the SSH dialect on the STDIN of the ProxyCommand you're giving, and it'll try to use your local SSH key to authenticate you through it, which won't work as it's only used for the ingress connection. However, when you use the usual bastion alias, in STDIN you have the remote server terminal directly, all the SSH stuff has already been done.
 
 Attempting to summarize this a bit would be: ``ProxyCommand`` and ``JumpHost`` are useful when the server you're trying to connect to can't be accessed *network-wise* from where you stand, and needs to be accessed through some kind of proxy instead, where The Bastion's logic is to use two distinct SSH connections, and two distinct authentication phases, with two distinct SSH keys (yours for the ingress connection, and your bastion egress key for the egress connection).
+
+What is *session locking*?
+==========================
+
+Session locking can be enabled in the global configuration, through the :ref:`idleLockTimeout` option.
+
+When enabled, the interactive SSH session will automatically lock itself after a defined amount of idle time. Unlocking such a session can be done, but re-authentication is required, i.e. connecting to the bastion from another console, and using the :doc:`/plugins/open/unlock` command. Here, idle time is defined as keyboard input idle time, so even if a remote command might be running (such as ``tail -f``), the connection will still be considered idle if no input is detected. This is by design.
+
+Such as configuration can be required by policy or regulations, in some sensitive environments, to ensure opened connections are automatically cut off when unused. Locking such sessions can be an alternative to cutting (see the :ref:`idleKillTimeout` option) as it gives a chance to unlock the session before tearing the connection down. Both can also be used, such as locking first, then tearing down after more time has passed without the session being unlocked. Note that while a session is locked, any potentially running remote command will still be running, as locking the session will just hide the normal console output, and prevent any input to be registered. Unlocking the session will simply resume display to the console. Session locking can be seen as the equivalent of a desktop screensaver, but for SSH interactive sessions.
+
+A locked session looks like this:
+
+.. image:: /img/locked_session.png
+
