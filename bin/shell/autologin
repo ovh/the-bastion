@@ -4,19 +4,20 @@
 set ::env(TERM) ""
 
 # we need 6 arguments
-if { [llength $argv] < 6 } {
-    puts "BASTION SAYS: autologin usage error, expected 5 args: <ssh|telnet> <login> <ip> <port> <file_with_password> <timeout> [passthrough arguments to ssh or telnet]"
+if { [llength $argv] < 7 } {
+    puts "BASTION SAYS: autologin usage error, expected 6 args: <ssh|telnet> <login> <ip> <port> <file_with_password> <timeout> <fallback_delay> [passthrough arguments to ssh or telnet]"
     exit 1
 }
 
 # name our arguments
-set arg_prog      [lindex $argv 0]
-set arg_login     [lindex $argv 1]
-set arg_ip        [lindex $argv 2]
-set arg_port      [lindex $argv 3]
-set arg_file      [lindex $argv 4]
-set arg_timeout   [lindex $argv 5]
-set arg_remaining [lrange $argv 6 end]
+set arg_prog           [lindex $argv 0]
+set arg_login          [lindex $argv 1]
+set arg_ip             [lindex $argv 2]
+set arg_port           [lindex $argv 3]
+set arg_file           [lindex $argv 4]
+set arg_timeout        [lindex $argv 5]
+set arg_fallback_delay [lindex $argv 6]
+set arg_remaining      [lrange $argv 7 end]
 
 # start the program
 if { $arg_prog == "ssh" } {
@@ -40,11 +41,12 @@ set timeout $arg_timeout
 # if other non-critical error, return 101
 # if critical error, exits
 proc attempt_to_login args {
-    set tryid      [lindex $args 0]
-    set prog       [lindex $args 1]
-    set login      [lindex $args 2]
-    set file       [lindex $args 3]
-    set spawn_args [lindex $args 4]
+    set tryid              [lindex $args 0]
+    set prog               [lindex $args 1]
+    set login              [lindex $args 2]
+    set file               [lindex $args 3]
+    set arg_fallback_delay [lindex $args 4]
+    set spawn_args         [lindex $args 5]
 
     if { [file exists $file] == 0 } {
         if { $tryid == 0 } { puts "BASTION SAYS: file $file does not exist" }
@@ -56,7 +58,8 @@ proc attempt_to_login args {
     }
 
     if { $tryid > 0 } {
-        puts "BASTION SAYS: trying with fallback password..."
+        puts "BASTION SAYS: trying with fallback password $tryid after sleeping for $arg_fallback_delay seconds..."
+        sleep $arg_fallback_delay
     }
 
     # reading password (256 chars max)
@@ -102,10 +105,10 @@ proc attempt_to_login args {
 
 # try to login with the main password file
 set tryid 0
-set last_attempt [attempt_to_login $tryid $arg_prog $arg_login $arg_file $spawn_args]
+set last_attempt [attempt_to_login $tryid $arg_prog $arg_login $arg_file $arg_fallback_delay $spawn_args]
 while { $last_attempt == 100 && $tryid < 10 } {
     # auth failed, might want to try with the fallback
     incr tryid
-    set last_attempt [attempt_to_login $tryid $arg_prog $arg_login "$arg_file.$tryid" $spawn_args]
+    set last_attempt [attempt_to_login $tryid $arg_prog $arg_login "$arg_file.$tryid" $arg_fallback_delay $spawn_args]
 }
 exit $last_attempt
