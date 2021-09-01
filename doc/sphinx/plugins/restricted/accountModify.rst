@@ -59,6 +59,12 @@ Modify an account configuration
 
    If enabled, this account is immune to the idleLockTimeout and idleKillTimeout bastion-wide policy
 
+.. option:: --max-inactive-days DAYS                 
+
+   Set account expiration policy, overriding the global bastion configuration 'accountMaxInactiveDays'.
+
+                                               Setting this option to zero disables account expiration. Setting this option to -1 removes this account
+                                               expiration policy, i.e. the global bastion setting will apply.
 .. option:: --osh-only yes|no                        
 
    If enabled, this account can only use ``--osh`` commands, and can't connect anywhere through the bastion

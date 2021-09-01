@@ -116,6 +116,8 @@ use constant {
     OPT_ACCOUNT_ALWAYS_ACTIVE      => 'always_active',
     OPT_ACCOUNT_IDLE_IGNORE        => 'idle_ignore',
     OPT_ACCOUNT_OSH_ONLY           => 'osh_only',
+
+    OPT_ACCOUNT_MAX_INACTIVE_DAYS => {key => 'max_inactive_days', public => 1},
 };
 
 ###########
@@ -180,6 +182,12 @@ sub is_account_nonexpired {
     my $accountMaxInactiveDays = 0;
     my $fnret                  = OVH::Bastion::config('accountMaxInactiveDays');
     if ($fnret and $fnret->value > 0) {
+        $accountMaxInactiveDays = $fnret->value;
+    }
+
+    # some accounts might have a specific configuration overriding the global one
+    $fnret = OVH::Bastion::account_config(account => $sysaccount, %{OVH::Bastion::OPT_ACCOUNT_MAX_INACTIVE_DAYS()});
+    if ($fnret) {
         $accountMaxInactiveDays = $fnret->value;
     }
 

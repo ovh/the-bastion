@@ -274,6 +274,17 @@ if (OVH::Bastion::is_auditor(account => $self)) {
     $ret{'idle_ignore'} = OVH::Bastion::account_config(account => $account, key => OVH::Bastion::OPT_ACCOUNT_IDLE_IGNORE, public => 1) ? 1 : 0;
     osh_info "\n- Account is immune to idle counter-measures: " . ($ret{'idle_ignore'} ? colored('yes', 'green') : colored('no', 'blue'));
 
+    $ret{'max_inactive_days'} = OVH::Bastion::account_config(account => $account, %{OVH::Bastion::OPT_ACCOUNT_MAX_INACTIVE_DAYS()})->value;
+    if (!defined $ret{'max_inactive_days'}) {
+        osh_info "- Maximum number of days of inactivity before account is disabled: (default)";
+    }
+    elsif ($ret{'max_inactive_days'} == 0) {
+        osh_info "- Maximum number of days of inactivity before account is disabled: never";
+    }
+    else {
+        osh_info "- Maximum number of days of inactivity before account is disabled: " . $ret{'max_inactive_days'};
+    }
+
     my @command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
     push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountGetPasswordInfo';
     push @command, '--account', $account;

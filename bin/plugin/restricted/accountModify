@@ -21,6 +21,7 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
         "egress-strict-host-key-checking=s" => \$modify{'egress-strict-host-key-checking'},
         "personal-egress-mfa-required=s"    => \$modify{'personal-egress-mfa-required'},
         "idle-ignore=s"                     => \$modify{'idle-ignore'},
+        "max-inactive-days=i"               => \$modify{'max-inactive-days'},
         "osh-only=s"                        => \$modify{'osh-only'},
     },
     helptext => <<'EOF',
@@ -49,6 +50,9 @@ Usage: --osh SCRIPT_NAME --account ACCOUNT [--option value [--option value [...]
                                                using the personal keys of the account, POLICY can be 'password', 'totp', 'any' or 'none'
   --always-active yes|no                     Set or unset the account as always active (i.e. disable the check of the 'active' status on this account)
   --idle-ignore yes|no                       If enabled, this account is immune to the idleLockTimeout and idleKillTimeout bastion-wide policy
+  --max-inactive-days DAYS                   Set account expiration policy, overriding the global bastion configuration 'accountMaxInactiveDays'.
+                                               Setting this option to zero disables account expiration. Setting this option to -1 removes this account
+                                               expiration policy, i.e. the global bastion setting will apply.
   --osh-only yes|no                          If enabled, this account can only use ``--osh`` commands, and can't connect anywhere through the bastion
 EOF
 );
@@ -91,12 +95,16 @@ if ($modify{'personal-egress-mfa-required'} && !grep { $modify{'personal-egress-
     help();
     osh_exit 'ERR_INVALID_PARAMETER', "Expected option 'password', 'totp', 'any', 'none' to --personal-egress-mfa-required";
 }
+if ($modify{'max-inactive-days'} && $modify{'max-inactive-days'} !~ /^(?:\d+|-1)$/) {
+    help();
+    osh_exit "ERR_INVALID_PARAMETER", "Expected -1, 0, or a strictly positive number of days as parameter to --max-inactive-days";
+}
 
 my @command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
 push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountModify';
 push @command, '--account', $account;
 foreach my $key (keys %modify) {
-    push @command, '--modify', $key . '=' . $modify{$key} if $modify{$key};
+    push @command, '--modify', $key . '=' . $modify{$key} if defined $modify{$key};
 }
 
 osh_exit OVH::Bastion::helper(cmd => \@command);
