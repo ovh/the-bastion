@@ -575,6 +575,15 @@ my $ip = undef;
 
 # if: avoid loading Net::IP and BigInt if there's no host specified
 if ($host) {
+
+    # probably this "host" is in fact an option, but we didn't parse it because it's an unknown one,
+    # so we call the long_help() for the user, before exiting
+    if ($host =~ m{^--}) {
+        long_help();
+        main_exit OVH::Bastion::EXIT_GETOPTS_FAILED, 'getopts_failed', "Couldn't parse option '$host'";
+    }
+
+    # otherwise, resolve the host
     $fnret = OVH::Bastion::get_ip(host => $host);
 }
 if (!$fnret) {
