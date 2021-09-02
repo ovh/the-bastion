@@ -30,11 +30,11 @@ testsuite_accountinfo()
 
     # a0 should see basic info about a2
     success 325-accountinfo a0_accountinfo_a2_basic $a0 --osh accountInfo --account $account2
-    json_document '{"error_message":"OK","command":"accountInfo","error_code":"OK","value":{"always_active":1,"is_active":1,"allowed_commands":[],"groups":{}}}'
+    json_document '{"error_message":"OK","command":"accountInfo","error_code":"OK","value":{"always_active":1,"is_active":1,"allowed_commands":[],}}'
 
     # a1 should see detailed info about a2
     success 325-accountinfo a1_accountinfo_a2_detailed $a1 --osh accountInfo --account $account2
-    json .error_code OK .command accountInfo .value.always_active 1 .value.is_active 1 .value.allowed_commands "[]" .value.groups "{}"
+    json .error_code OK .command accountInfo .value.always_active 1 .value.is_active 1 .value.allowed_commands "[]"
     json .value.ingress_piv_policy null .value.personal_egress_mfa_required none .value.pam_auth_bypass 0
     json .value.password.min_days 0 .value.password.warn_days 7 .value.password.user "$account2" .value.password.password locked
     json .value.password.inactive_days -1 .value.password.date_disabled null .value.password.date_disabled_timestamp 0 .value.password.date_changed $(date +%Y-%m-%d)
