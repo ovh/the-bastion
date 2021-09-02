@@ -15,13 +15,14 @@ use OVH::Bastion::Plugin qw( :DEFAULT help );
 OVH::Bastion::Plugin::begin(
     argv     => \@ARGV,
     header   => "account information",
-    options  => {'account=s' => \my $account},
+    options  => {'account=s' => \my $account, "list-groups" => \my $listGroups},
     helptext => <<'EOF',
 Display some information about an account
 
-Usage: --osh SCRIPT_NAME --account ACCOUNT
+Usage: --osh SCRIPT_NAME --account ACCOUNT [--list-groups]
 
   --account ACCOUNT  The account name to work on
+  --list-groups      Show which groups the account has a role on
 EOF
 );
 
@@ -64,34 +65,37 @@ if (!@granted) {
 }
 $ret{'allowed_commands'} = \@granted;
 
-$fnret = OVH::Bastion::get_group_list(groupType => "key");
-$fnret or osh_exit $fnret;
-
-osh_info "\nThis account is part of the following groups:";
-
 my $result_hash = {};
-foreach my $name (sort keys %{$fnret->value}) {
-    my @flags;
-    push @flags, 'owner' if OVH::Bastion::is_group_owner(group => $name, account => $account);
-    push @flags, 'gatekeeper' if OVH::Bastion::is_group_gatekeeper(group => $name, account => $account);
-    push @flags, 'aclkeeper' if OVH::Bastion::is_group_aclkeeper(group => $name, account => $account);
-    push @flags, 'member' if OVH::Bastion::is_group_member(group => $name, account => $account);
-    push @flags, 'guest' if OVH::Bastion::is_group_guest(group => $name, account => $account);
-    if (@flags) {
-        my $line = sprintf "%18s", $name;
-        $line .= sprintf " %14s", colored(grep({ $_ eq 'owner' } @flags)      ? 'Owner'      : '-', 'red');
-        $line .= sprintf " %19s", colored(grep({ $_ eq 'gatekeeper' } @flags) ? 'GateKeeper' : '-', 'yellow');
-        $line .= sprintf " %18s", colored(grep({ $_ eq 'aclkeeper' } @flags)  ? 'ACLKeeper'  : '-', 'magenta');
-        $line .= sprintf " %15s", colored(grep({ $_ eq 'member' } @flags)     ? 'Member'     : '-', 'green');
-        $line .= sprintf " %14s", colored(grep({ $_ eq 'guest' } @flags)      ? 'Guest'      : '-', 'cyan');
-        osh_info $line;
-        $result_hash->{$name} = {flags => \@flags, name => $name};
+
+if ($listGroups) {
+    $fnret = OVH::Bastion::get_group_list(groupType => "key");
+    $fnret or osh_exit $fnret;
+
+    osh_info "\nThis account is part of the following groups:";
+
+    foreach my $name (sort keys %{$fnret->value}) {
+        my @flags;
+        push @flags, 'owner' if OVH::Bastion::is_group_owner(group => $name, account => $account);
+        push @flags, 'gatekeeper' if OVH::Bastion::is_group_gatekeeper(group => $name, account => $account);
+        push @flags, 'aclkeeper' if OVH::Bastion::is_group_aclkeeper(group => $name, account => $account);
+        push @flags, 'member' if OVH::Bastion::is_group_member(group => $name, account => $account);
+        push @flags, 'guest' if OVH::Bastion::is_group_guest(group => $name, account => $account);
+        if (@flags) {
+            my $line = sprintf "%18s", $name;
+            $line .= sprintf " %14s", colored(grep({ $_ eq 'owner' } @flags)      ? 'Owner'      : '-', 'red');
+            $line .= sprintf " %19s", colored(grep({ $_ eq 'gatekeeper' } @flags) ? 'GateKeeper' : '-', 'yellow');
+            $line .= sprintf " %18s", colored(grep({ $_ eq 'aclkeeper' } @flags)  ? 'ACLKeeper'  : '-', 'magenta');
+            $line .= sprintf " %15s", colored(grep({ $_ eq 'member' } @flags)     ? 'Member'     : '-', 'green');
+            $line .= sprintf " %14s", colored(grep({ $_ eq 'guest' } @flags)      ? 'Guest'      : '-', 'cyan');
+            osh_info $line;
+            $result_hash->{$name} = {flags => \@flags, name => $name};
+        }
     }
+    if (not keys %$result_hash) {
+        osh_info "(none)";
+    }
+    osh_info "\n";
 }
-if (not keys %$result_hash) {
-    osh_info "(none)";
-}
-osh_info "\n";
 
 $ret{'groups'} = $result_hash;
 

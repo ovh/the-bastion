@@ -9,7 +9,7 @@ Display some information about an account
 .. admonition:: usage
    :class: cmdusage
 
-   --osh accountInfo --account ACCOUNT
+   --osh accountInfo --account ACCOUNT [--list-groups]
 
 .. program:: accountInfo
 
@@ -17,6 +17,10 @@ Display some information about an account
 .. option:: --account ACCOUNT
 
    The account name to work on
+
+.. option:: --list-groups    
+
+   Show which groups the account has a role on
 
 Output example
 ==============
