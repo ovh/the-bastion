@@ -161,8 +161,9 @@ if ($header) {
     }
     if ($header =~ /Permission denied \(keyboard-interactive/) {
         push @comments, 'permission_denied';
-        my $keyboardInteractiveAllowed = OVH::Bastion::config('keyboardInteractiveAllowed')->value;
-        OVH::Bastion::osh_crit("BASTION SAYS: The remote server ($ip) wanted to use keyboard-interactive authentication, but it's not enabled on this bastion!");
+        if (!OVH::Bastion::config('keyboardInteractiveAllowed')->value) {
+            OVH::Bastion::osh_crit("BASTION SAYS: The remote server ($ip) wanted to use keyboard-interactive authentication, but it's not enabled on this bastion!");
+        }
     }
     if ($header =~ /Too many authentication failures/) {
         push @comments, 'too_many_auth_fail';
