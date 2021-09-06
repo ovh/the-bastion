@@ -23,6 +23,7 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
         "idle-ignore=s"                     => \$modify{'idle-ignore'},
         "max-inactive-days=i"               => \$modify{'max-inactive-days'},
         "osh-only=s"                        => \$modify{'osh-only'},
+        "mfa-any=s"                         => \$modify{'mfa-any'},
     },
     helptext => <<'EOF',
 Modify an account configuration
@@ -54,6 +55,11 @@ Usage: --osh SCRIPT_NAME --account ACCOUNT [--option value [--option value [...]
                                                Setting this option to zero disables account expiration. Setting this option to -1 removes this account
                                                expiration policy, i.e. the global bastion setting will apply.
   --osh-only yes|no                          If enabled, this account can only use ``--osh`` commands, and can't connect anywhere through the bastion
+  --mfa-any yes|no                           Control the ingress login requirements for pubkey and pam (when a password and/or TOTP is set).
+                                               When disabled, the user needs pubkey AND pam, this is the default.
+                                               When enabled, the user can authenticate with either pubkey OR pam.
+                                               If the account has no password/TOTP, this option has no effect, i.e: pubkey is used. Egress is not affected.
+
 EOF
 );
 
@@ -80,7 +86,7 @@ foreach my $key (qw{ mfa-password-required mfa-totp-required }) {
         osh_exit 'ERR_INVALID_PARAMETER', "Expected '--$key yes' or '--$key no' or '--$key bypass' instead of '--$key $modify{$key}'";
     }
 }
-foreach my $key (qw{ always-active pam-auth-bypass idle-ignore osh-only }) {
+foreach my $key (qw{ always-active pam-auth-bypass idle-ignore osh-only mfa-any }) {
     next unless $modify{$key};
     if (not grep { $modify{$key} eq $_ } qw{ yes no }) {
         help();

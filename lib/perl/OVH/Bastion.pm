@@ -103,6 +103,7 @@ use constant {
     MFA_TOTP_CONFIGURED_GROUP     => 'mfa-totp-configd',
     MFA_TOTP_BYPASS_GROUP         => 'mfa-totp-bypass',
     PAM_AUTH_BYPASS_GROUP         => 'bastion-nopam',
+    MFA_ANY_GROUP                 => 'mfa-any',
 
     TOTP_FILENAME => '.otp',
     TOTP_BASEDIR  => '/var/otp',

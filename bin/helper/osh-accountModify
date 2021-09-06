@@ -280,6 +280,49 @@ foreach my $tuple (@modify) {
             }
         }
     }
+    elsif ($key eq 'mfa-any') {
+        $fnret = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_ANY_GROUP);
+        if ($value eq 'yes') {
+            {
+                osh_info "Setting authentication requirements to pubkey OR pam (if a password/TOTP is set) for this account...";
+                if ($fnret) {
+                    osh_info "... no change was required";
+                    $result{$jsonkey} = R('OK_NO_CHANGE');
+                    last;
+                }
+
+                $fnret = OVH::Bastion::sys_addmembertogroup(user => $account, group => OVH::Bastion::MFA_ANY_GROUP, noisy_stderr => 1);
+                if (!$fnret) {
+                    osh_warn "... error while setting the alternative authentication option";
+                    $result{$jsonkey} = R('ERR_ADDING_TO_GROUP');
+                    last;
+                }
+
+                osh_info "... done, this account can now authenticate with either pubkey or pam (if a password/TOTP is set)";
+                $result{$jsonkey} = R('OK');
+            }
+        }
+        elsif ($value eq 'no') {
+            {
+                osh_info "Setting authentication to pubkey AND pam (if a password/TOTP is set) for this account...";
+                if (!$fnret) {
+                    osh_info "... no change was required";
+                    $result{$jsonkey} = R('OK_NO_CHANGE');
+                    last;
+                }
+
+                $fnret = OVH::Bastion::sys_delmemberfromgroup(user => $account, group => OVH::Bastion::MFA_ANY_GROUP, noisy_stderr => 1);
+                if (!$fnret) {
+                    osh_warn "... error while removing the alternative authentication option";
+                    $result{$jsonkey} = R('ERR_REMOVING_FROM_GROUP');
+                    last;
+                }
+
+                osh_info "... done, this account now requires to authenticate with pubkey AND pam (if a password/TOTP is set)";
+                $result{$jsonkey} = R('OK');
+            }
+        }
+    }
     elsif ($key eq 'mfa-password-required') {
         _mfa_toggle($key, $value, 'Password', OVH::Bastion::MFA_PASSWORD_REQUIRED_GROUP, OVH::Bastion::MFA_PASSWORD_BYPASS_GROUP);
     }

@@ -126,10 +126,11 @@ UsePAM yes
 # Unconditionally skip PAM auth for members of the bastion-nopam group
 Match Group bastion-nopam
     AuthenticationMethods publickey
-# if in one of the mfa groups, use pam
-Match Group mfa-totp-configd
-    AuthenticationMethods publickey,keyboard-interactive:pam
-Match Group mfa-password-configd
+# if in one of the mfa groups AND the mfa-any group, use publickey OR pam
+Match Group mfa-totp-configd,mfa-password-configd Group mfa-any
+    AuthenticationMethods publickey keyboard-interactive:pam
+# if in one of the mfa groups, use publickey AND pam
+Match Group mfa-totp-configd,mfa-password-configd
     AuthenticationMethods publickey,keyboard-interactive:pam
 # by default, always ask the publickey (no PAM)
 Match All
