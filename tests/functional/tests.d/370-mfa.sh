@@ -11,31 +11,31 @@ testsuite_mfa()
     grant accountModify
 
     # create account4
-    success mfa a0_create_a4 $a0 --osh accountCreate --always-active --account $account4 --uid $uid4 --public-key "\"$(cat $account4key1file.pub)\""
+    success a0_create_a4 $a0 --osh accountCreate --always-active --account $account4 --uid $uid4 --public-key "\"$(cat $account4key1file.pub)\""
     json .error_code OK .command accountCreate .value null
 
     # set account4 as mfa password required
-    success mfa a0_accountModify_passreq_a4 $a0 --osh accountModify --account $account4 --mfa-password-required yes
+    success a0_accountModify_passreq_a4 $a0 --osh accountModify --account $account4 --mfa-password-required yes
     json .error_code OK .command accountModify .value.mfa_password_required.error_code OK
 
     # set account4 as mfa password required (dupe)
-    success mfa a0_accountModify_passreq_a4_dupe $a0 --osh accountModify --account $account4 --mfa-password-required yes
+    success a0_accountModify_passreq_a4_dupe $a0 --osh accountModify --account $account4 --mfa-password-required yes
     json .error_code OK .command accountModify .value.mfa_password_required.error_code OK_NO_CHANGE
 
     # now try to connect with account4
-    run mfa a4_connect_with_passreq $a4 --osh groupList
+    run a4_connect_with_passreq $a4 --osh groupList
     retvalshouldbe 122
     json .error_code KO_MFA_PASSWORD_SETUP_REQUIRED
 
     # setup our password, step1
-    run mfa a4_setup_pass_step1of2 $a4f --osh selfMFASetupPassword --yes
+    run a4_setup_pass_step1of2 $a4f --osh selfMFASetupPassword --yes
     retvalshouldbe 124
     contain 'enter this:'
     a4_password_tmp=$(get_stdout | grep -Eo 'enter this: [a-zA-Z0-9_-]+' | sed -e 's/enter this: //')
 
     # setup our password, step2
     a4_password=']BkL>3x#T)g~~B#rLv^!T2&N'
-    script mfa a4_setup_pass_step2of2 "echo 'set timeout 30; \
+    script a4_setup_pass_step2of2 "echo 'set timeout 30; \
         spawn $a4 --osh selfMFASetupPassword --yes; \
         expect \":\" { sleep 0.2; send \"$a4_password_tmp\\n\"; }; \
         expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
@@ -51,7 +51,7 @@ testsuite_mfa()
     json .command selfMFASetupPassword .error_code OK
 
     # now try to connect after we have a pass
-    run mfa a4_connect_after_pass $a4f --osh groupList
+    run a4_connect_after_pass $a4f --osh groupList
     if [ "${capabilities[mfa]}" = 1 ] || [ "${capabilities[mfa-password]}" = 1 ]; then
         # now we need a password, we don't enter it so it'll timeout (124)
         retvalshouldbe 124
@@ -69,12 +69,12 @@ testsuite_mfa()
     if [ "${capabilities[pamtester]}" = 1 ]; then
         grant groupCreate
 
-        success mfa a0_create_g3 $a0 --osh groupCreate --group $group3 --algo rsa --size 4096 --owner $account4
+        success a0_create_g3 $a0 --osh groupCreate --group $group3 --algo rsa --size 4096 --owner $account4
 
         revoke groupCreate
 
         # setup group to force JIT egress MFA
-        script mfa a4_modify_g3_egress_mfa "echo 'set timeout 30; \
+        script a4_modify_g3_egress_mfa "echo 'set timeout 30; \
             spawn $a4 --osh groupModify --group $group3 --mfa-required any; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
@@ -86,7 +86,7 @@ testsuite_mfa()
         json .command groupModify .error_code OK
 
         # check that the MFA is set for the group
-        script mfa a4_verify_g3_egress_mfa "echo 'set timeout 30; \
+        script a4_verify_g3_egress_mfa "echo 'set timeout 30; \
             spawn $a4 --osh groupInfo --group $group3; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
@@ -99,7 +99,7 @@ testsuite_mfa()
         json .value.mfa_required any
 
         # add 127.7.7.7 to this group
-        script mfa a4_add_g3_server "echo 'set timeout 30; \
+        script a4_add_g3_server "echo 'set timeout 30; \
             spawn $a4 --osh groupAddServer --group $group3 --host 127.7.7.7 --user-any --port-any --force; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
@@ -110,7 +110,7 @@ testsuite_mfa()
         contain REGEX 'Password:|Password for'
 
         # connect to 127.7.7.7 with MFA JIT, bad password
-        script mfa a4_connect_g3_server_badpass "echo 'set timeout 45; \
+        script a4_connect_g3_server_badpass "echo 'set timeout 45; \
             spawn $a4 root@127.7.7.7; \
             expect \"is required (password)\" { sleep 0.1; }; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
@@ -130,7 +130,7 @@ testsuite_mfa()
         nocontain 'Permission denied'
 
         # connect to 127.7.7.7 with MFA JIT, good password
-        script mfa a4_connect_g3_server_goodpass "echo 'set timeout 30; \
+        script a4_connect_g3_server_goodpass "echo 'set timeout 30; \
             spawn $a4 root@127.7.7.7; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect \"is required (password)\" { sleep 0.1; }; \
@@ -145,15 +145,15 @@ testsuite_mfa()
         contain 'Permission denied'
 
         # create another account
-        success mfa a0_create_a3 $a0 --osh accountCreate --always-active --account $account3 --uid $uid3 --public-key "\"$(cat $account3key1file.pub)\""
+        success a0_create_a3 $a0 --osh accountCreate --always-active --account $account3 --uid $uid3 --public-key "\"$(cat $account3key1file.pub)\""
         json .error_code OK .command accountCreate .value null
 
         # set the account as bypass
-        success mfa a0_set_a3_as_robot $a0 --osh accountModify --account $account3 --mfa-password-required bypass
+        success a0_set_a3_as_robot $a0 --osh accountModify --account $account3 --mfa-password-required bypass
         json .command accountModify .error_code OK
 
         # add to JIT MFA group
-        script mfa a0_add_a3_as_member "echo 'set timeout 30; \
+        script a0_add_a3_as_member "echo 'set timeout 30; \
             spawn $a4 --osh groupAddMember --group $group3 --account $account3; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
@@ -162,28 +162,28 @@ testsuite_mfa()
         json .command groupAddMember .error_code OK
 
         # connect to 127.7.7.7 with MFA JIT, no MFA needed
-        run mfa a3_connect_g3_server_mfa_bypass $a3 root@127.7.7.7
+        run a3_connect_g3_server_mfa_bypass $a3 root@127.7.7.7
         retvalshouldbe 255
         nocontain 'pamtester: successfully authenticated'
         contain 'Permission denied'
 
         # remove the account bypass
-        success mfa a0_unset_a3_as_robot $a0 --osh accountModify --account $account3 --mfa-password-required no
+        success a0_unset_a3_as_robot $a0 --osh accountModify --account $account3 --mfa-password-required no
         json .command accountModify .error_code OK
 
         # connect to 127.7.7.7 with MFA JIT, password setup needed
-        run mfa a3_connect_mfa_jit_need_pass_setup $a3 root@127.7.7.7
+        run a3_connect_mfa_jit_need_pass_setup $a3 root@127.7.7.7
         json .error_code KO_MFA_ANY_SETUP_REQUIRED
 
         grant groupDelete
 
-        script mfa a0_delete_g3 "$a0 --osh groupDelete --group $group3 <<< \"$group3\""
+        script a0_delete_g3 "$a0 --osh groupDelete --group $group3 <<< \"$group3\""
 
         revoke groupDelete
 
         grant accountDelete
 
-        script mfa a0_delete_a3 $a0 --osh accountDelete --account $account3 "<<< \"Yes, do as I say and delete $account3, kthxbye\""
+        script a0_delete_a3 $a0 --osh accountDelete --account $account3 "<<< \"Yes, do as I say and delete $account3, kthxbye\""
         retvalshouldbe 0
         json .command accountDelete .error_code OK
 
@@ -193,7 +193,7 @@ testsuite_mfa()
     # change our password
     a4_password_new="rkw=*Ffyqs23"
     if [ "${capabilities[mfa]}" = 1 ] || [ "${capabilities[mfa-password]}" = 1 ]; then
-        script mfa a4_change_pass "echo 'set timeout 30; \
+        script a4_change_pass "echo 'set timeout 30; \
             spawn $a4 --osh selfMFASetupPassword --yes; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
@@ -206,7 +206,7 @@ testsuite_mfa()
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
         contain REGEX 'Password:|Password for'
     else
-        script mfa a4_change_pass "echo 'set timeout 30; \
+        script a4_change_pass "echo 'set timeout 30; \
             spawn $a4 --osh selfMFASetupPassword --yes; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect \":\" { sleep 0.2; send \"$a4_password_new\\n\"; }; \
@@ -225,7 +225,7 @@ testsuite_mfa()
     unset a4_password_new
 
     if [ "${capabilities[mfa]}" = 1 ] || [ "${capabilities[mfa-password]}" = 1 ]; then
-        script mfa a4_connect_with_pass "echo 'set timeout 30; \
+        script a4_connect_with_pass "echo 'set timeout 30; \
             spawn $a4 --osh groupList; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
@@ -238,30 +238,30 @@ testsuite_mfa()
     fi
 
     # set account4 as mfa totp required
-    success mfa a0_accountModify_totpreq_a4 $a0 --osh accountModify --account $account4 --mfa-totp-required yes
+    success a0_accountModify_totpreq_a4 $a0 --osh accountModify --account $account4 --mfa-totp-required yes
     json .error_code OK .command accountModify .value.mfa_totp_required.error_code OK
 
     # set account4 as mfa totp required (dupe)
-    success mfa a0_accountModify_totpreq_a4_dupe $a0 --osh accountModify --account $account4 --mfa-totp-required yes
+    success a0_accountModify_totpreq_a4_dupe $a0 --osh accountModify --account $account4 --mfa-totp-required yes
     json .error_code OK .command accountModify .value.mfa_totp_required.error_code OK_NO_CHANGE
 
     # now try to connect with account4
     if [ "${capabilities[mfa]}" = 1 ] || [ "${capabilities[mfa-password]}" = 1 ]; then
-        script mfa a4_connect_with_totpreq "echo 'set timeout 30; \
+        script a4_connect_with_totpreq "echo 'set timeout 30; \
             spawn $a4 --osh groupList; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
             lassign [wait] pid spawnid value value; \
             exit \$value' | expect -f -"
     else
-        run mfa a4_connect_with_totpreq $a4 --osh groupList
+        run a4_connect_with_totpreq $a4 --osh groupList
     fi
     retvalshouldbe 123
     json .error_code KO_MFA_TOTP_SETUP_REQUIRED
 
     if [ "${capabilities[mfa]}" = 1 ]; then
         # setup totp
-        script mfa a4_setup_totp "echo 'set timeout 30; \
+        script a4_setup_totp "echo 'set timeout 30; \
             spawn $a4 --osh selfMFASetupTOTP --no-confirm; \
             expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; }; \
@@ -278,7 +278,7 @@ testsuite_mfa()
         #a4_totp_code_4=$(get_stdout | grep -A4 'Your emergency scratch codes are:' | tail -n1 | tr -d '[:space:]')
 
         # login and fail without totp (timeout)
-        script mfa a4_connect_after_totp_fail "echo 'set timeout 30; \
+        script a4_connect_after_totp_fail "echo 'set timeout 30; \
             spawn $a4 --osh groupList; \
             expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
@@ -294,7 +294,7 @@ testsuite_mfa()
         nocontain 'JSON_OUTPUT'
 
         # success with password + totp
-        script mfa a4_connect_after_totp_ok "echo 'set timeout 30; \
+        script a4_connect_after_totp_ok "echo 'set timeout 30; \
             spawn $a4 --osh groupList; \
             expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect \"code:\" { sleep 0.2; send \"$a4_totp_code_1\\n\"; }; \
@@ -309,7 +309,7 @@ testsuite_mfa()
         json .command groupList .error_code OK_EMPTY
 
         # totp scratch codes don't work twice
-        script mfa a4_connect_after_totp_dupe "echo 'set timeout 30; \
+        script a4_connect_after_totp_dupe "echo 'set timeout 30; \
             spawn $a4 --osh groupList; \
             expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect \"code:\" { sleep 0.2; send \"$a4_totp_code_1\\n\"; }; \
@@ -325,23 +325,23 @@ testsuite_mfa()
         nocontain 'JSON_OUTPUT'
 
         # set pam bypass on account4 (dupe)
-        success mfa a0_set_pambypass_a4 $a0 --osh accountModify --account $account4 --pam-auth-bypass yes
+        success a0_set_pambypass_a4 $a0 --osh accountModify --account $account4 --pam-auth-bypass yes
         json .error_code OK .command accountModify .value.pam_auth_bypass.error_code OK
 
         # set pam bypass on account4
-        success mfa a0_set_pambypass_a4_dupe $a0 --osh accountModify --account $account4 --pam-auth-bypass yes
+        success a0_set_pambypass_a4_dupe $a0 --osh accountModify --account $account4 --pam-auth-bypass yes
         json .error_code OK .command accountModify .value.pam_auth_bypass.error_code OK_NO_CHANGE
 
         # we don't provide password or totp, it should work because bypass
-        success mfa a4_pam_auth_bypass $a4 --osh groupList
+        success a4_pam_auth_bypass $a4 --osh groupList
         json .command groupList .error_code OK_EMPTY
 
         # remove requirement of password and totp for account4, also remove bypass
-        success mfa a0_remove_mfa_req_a4 $a0 --osh accountModify --account $account4 --pam-auth-bypass no --mfa-totp-required no --mfa-password-required no
+        success a0_remove_mfa_req_a4 $a0 --osh accountModify --account $account4 --pam-auth-bypass no --mfa-totp-required no --mfa-password-required no
         json .error_code OK .command accountModify .value.pam_auth_bypass.error_code OK .value.mfa_totp_required.error_code OK .value.mfa_password_required.error_code OK
 
         # remove requirement of password and totp for account4, also remove bypass (dupe)
-        success mfa a0_remove_mfa_req_a4_dupe $a0 --osh accountModify --account $account4 --pam-auth-bypass no --mfa-totp-required no --mfa-password-required no
+        success a0_remove_mfa_req_a4_dupe $a0 --osh accountModify --account $account4 --pam-auth-bypass no --mfa-totp-required no --mfa-password-required no
         json .error_code OK .command accountModify .value.pam_auth_bypass.error_code OK_NO_CHANGE .value.mfa_totp_required.error_code OK_NO_CHANGE .value.mfa_password_required.error_code OK_NO_CHANGE
 
     # FIXME
@@ -378,7 +378,7 @@ testsuite_mfa()
     grant accountDelete
 
     # remove account
-    script mfa a0_delete_a4 $a0 --osh accountDelete --account $account4 "<<< \"Yes, do as I say and delete $account4, kthxbye\""
+    script a0_delete_a4 $a0 --osh accountDelete --account $account4 "<<< \"Yes, do as I say and delete $account4, kthxbye\""
     retvalshouldbe 0
     json .command accountDelete .error_code OK
 

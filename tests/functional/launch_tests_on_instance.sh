@@ -19,9 +19,6 @@ declare -A capabilities=( [ed25519]=1 [blacklist]=0 [mfa]=1 [mfa-password]=0 [pa
 
 # set the helptext now to get the proper default values
 help_text=$(cat <<EOF
-
-Usage: $0 [OPTIONS] <IP> <SSH_Port> <HTTP_Proxy_Port_or_Zero> <Remote_Admin_User_Name> <Admin_User_SSH_Key_Path> <Root_SSH_Key_Path>
-
 Test Options:
     --skip-consistency-check   Speed up tests by skipping the consistency check between every test
     --no-pause-on-fail         Don't pause when a test fails
@@ -45,6 +42,13 @@ EOF
 
 
 usage() {
+    if [ "${1:-}" != "light" ]; then
+        cat <<EOF
+
+Usage: $0 [OPTIONS] <IP> <SSH_Port> <HTTP_Proxy_Port_or_Zero> <Remote_Admin_User_Name> <Admin_User_SSH_Key_Path> <Root_SSH_Key_Path>
+
+EOF
+    fi
     echo "$help_text"
 }
 
@@ -80,6 +84,14 @@ do
             optname=${1/--has-/}
             optname=${optname/=*/}
             capabilities[$optname]=$optval
+            ;;
+        --help)
+            usage
+            exit 0
+            ;;
+        --help-light)
+            usage light
+            exit 0
             ;;
         -*)
             echo "Unknown option: $1"
@@ -172,8 +184,8 @@ fi
     r0="  $t ssh -F $mytmpdir/ssh_config -i $rootkeyfile           root@$remote_ip -p $remote_port -- "
 };
 
-grant()  { success prereq grantcmd  $a0 --osh accountGrantCommand  --account $account0 --command "$1"; }
-revoke() { success prereq revokecmd $a0 --osh accountRevokeCommand --account $account0 --command "$1"; }
+grant()  { success grantcmd  $a0 --osh accountGrantCommand  --account $account0 --command "$1"; }
+revoke() { success revokecmd $a0 --osh accountRevokeCommand --account $account0 --command "$1"; }
 
 cat >"$mytmpdir/ssh_config" <<EOF
    StrictHostKeyChecking no
@@ -269,22 +281,24 @@ run()
     # now prepare for the current test
     testno=$(( testno + 1 ))
     [ "$COUNTONLY" = 1 ] && return
-    name=$1
+    name="$modulename"
+    if [ -z "$name" ]; then
+        name="main"
+    fi
+    case="$1"
     shift
-    case=$1
-    shift
-    basename=$(printf '%03d-%s-%s' $testno $name $case | sed -re "s=/=_=g")
+    basename=$(printf '%04d-%s-%s' $testno $name $case | sed -re "s=/=_=g")
 
     # if we're about to run a script, keep a copy there
     if [ -x "$1" ] && [ "$#" -eq 1 ]; then
         cp "$1" "$outdir/$basename.script"
     fi
 
-    printf '%b %b*** [%03d/%03d] %b::%b %b(%b)%b\n' "$(prefix)" "$BOLD_CYAN" "$testno" "$testcount" "$name" "$case" "$NOC$DARKGRAY" "$*" "$NOC"
+    printf '%b %b*** [%04d/%04d] %b::%b %b(%b)%b\n' "$(prefix)" "$BOLD_CYAN" "$testno" "$testcount" "$name" "$case" "$NOC$DARKGRAY" "$*" "$NOC"
 
     # special case for scp: we need to wait a bit before terminating the test
     sleepafter=0
-    [ "$name" = "scp" ] && sleepafter=2
+    [[ $case =~ ^scp_ ]] && sleepafter=2
 
     # put an invalid value in this file, should be overwritten. we also use it as a lock file.
     echo -1 > $outdir/$basename.retval
@@ -325,12 +339,10 @@ run()
 }
 
 script() {
-    name=$1
-    shift
     section=$1
     shift
     if [ "$COUNTONLY" = 1 ]; then
-        run $name $section true
+        run $section true
         return
     fi
 
@@ -338,7 +350,7 @@ script() {
     echo "#! /usr/bin/env bash" > "$tmpscript"
     echo "$*" >> "$tmpscript"
     chmod 755 "$tmpscript"
-    run $name $section "$tmpscript"
+    run $section "$tmpscript"
     rm -f "$tmpscript"
 }
 
@@ -494,41 +506,56 @@ nocontain()
 
 configchg()
 {
-    success bastion configchange $r0 perl -pe "$*" -i $opt_remote_etc_bastion/bastion.conf
+    success configchange $r0 perl -pe "$*" -i "$opt_remote_etc_bastion/bastion.conf"
 }
+
+onfigsetquoted()
+{
+    success configset $r0 perl -pe 's=^\\\\x22'"$1"'\\\\x22.+=\\\\x22'"$1"'\\\\x22:\\\\x22'"$2"'\\\\x22,=' -i "$opt_remote_etc_bastion/bastion.conf"
+}
+
+configset()
+{
+    success configset $r0 perl -pe 's=^\\\\x22'"$1"'\\\\x22.+=\\\\x22'"$1"'\\\\x22:'"$2"',=' -i "$opt_remote_etc_bastion/bastion.conf"
+}
+
 
 sshclientconfigchg()
 {
-    success bastion sshclientconfigchange $r0 perl -pe "$*" -i /etc/ssh/ssh_config
+    success sshclientconfigchange $r0 perl -pe "$*" -i /etc/ssh/ssh_config
 }
 
 runtests()
 {
     # ensure syslog is clean
     ignorecodewarn 'Configuration error' # previous unit tests can provoke this
-    success bastion syslog_cleanup $r0 "\": > /var/log/bastion/bastion.log\""
+    success syslog_cleanup $r0 "\": > /var/log/bastion/bastion.log\""
 
+    modulename=main
     # backup the original default configuration on target side
     now=$(date +%s)
-    success bastion backupconfig $r0 "dd if=$opt_remote_etc_bastion/bastion.conf of=$opt_remote_etc_bastion/bastion.conf.bak.$now"
+    success backupconfig $r0 "dd if=$opt_remote_etc_bastion/bastion.conf of=$opt_remote_etc_bastion/bastion.conf.bak.$now"
 
     grant accountRevokeCommand
 
     for module in "$(dirname $0)"/tests.d/???-*.sh
     do
+        module="$(readlink -f "$module")"
+        modulename="$(basename "$module" .sh)"
         if [ -n "$opt_module" ] && [ "$opt_module" != "$(basename "$module")" ]; then
-            echo "### SKIPPING MODULE $(basename $module)"
+            echo "### SKIPPING MODULE $modulename"
             continue
         fi
-        echo "### RUNNING MODULE $(basename $module)"
+        echo "### RUNNING MODULE $modulename"
 
         # as this is a loop, we do the check in a reversed way, see any included module for more info:
         # shellcheck disable=SC1090
         source "$module" || true
-    done
 
-    # put the backed up configuration back
-    success bastion restoreconfig $r0 "dd if=$opt_remote_etc_bastion/bastion.conf.bak.$now of=$opt_remote_etc_bastion/bastion.conf"
+        # put the backed up configuration back after each module, just in case the module modified it
+        modulename=main
+        success configrestore $r0 "dd if=$opt_remote_etc_bastion/bastion.conf.bak.$now of=$opt_remote_etc_bastion/bastion.conf"
+    done
 }
 
 COUNTONLY=0

@@ -9,7 +9,7 @@ basedir=$(readlink -f "$(dirname "$0")"/../../..)
 namespace=the-bastion-test
 
 target="$1"
-shift
+shift || true
 
 # all remaining options will be passed as-is on the target docker, through target_role.sh to launch-tests-on-instance.sh
 
@@ -45,9 +45,12 @@ print_supported_targets() {
 
 if [ -z "$target" ] || [ "$target" = "--list-targets" ]; then
     if [ -z "$target" ]; then
-        echo "Usage: $0 <TARGET>" >&2
-        echo "Supported targets are: " >&2
-        print_supported_targets >&2
+        echo "Usage: $0 <TARGET> [additional options]"
+        echo
+        echo "Supported targets are: "
+        print_supported_targets
+        echo "These additional options are passed directly to the worker:"
+        "$basedir"/tests/functional/launch_tests_on_instance.sh --help-light
         exit 1
     else
         # shellcheck disable=SC2086

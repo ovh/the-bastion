@@ -9,31 +9,31 @@ testsuite_accountinfo()
 {
     grant accountCreate
     # create regular account to compare info access between auditor and non auditor
-    success 325-accountinfo a0_create_a1 $a0 --osh accountCreate --always-active --account $account1 --uid $uid1 --public-key "\"$(cat $account1key1file.pub)\""
+    success a0_create_a1 $a0 --osh accountCreate --always-active --account $account1 --uid $uid1 --public-key "\"$(cat $account1key1file.pub)\""
     json .error_code OK .command accountCreate .value null
 
     # create another target account we'll use for accountInfo
-    success 325-accountinfo a0_create_a2 $a0 --osh accountCreate --always-active --account $account2 --uid $uid2 --public-key "\"$(cat $account2key1file.pub)\"" --comment "\"'this is a comment'\""
+    success a0_create_a2 $a0 --osh accountCreate --always-active --account $account2 --uid $uid2 --public-key "\"$(cat $account2key1file.pub)\"" --comment "\"'this is a comment'\""
     json .error_code OK .command accountCreate .value null
     revoke accountCreate
 
     # grant account0 as admin
-    success 325-accountinfo set_a0_as_admin $r0 "\". $opt_remote_basedir/lib/shell/functions.inc; add_user_to_group_compat $account0 osh-admin\""
+    success set_a0_as_admin $r0 "\". $opt_remote_basedir/lib/shell/functions.inc; add_user_to_group_compat $account0 osh-admin\""
     configchg 's=^\\\\x22adminAccounts\\\\x22.+=\\\\x22adminAccounts\\\\x22:[\\\\x22'"$account0"'\\\\x22],='
 
     # grant account1 as auditor
-    success 325-accountinfo a0_grant_a1_as_auditor $a0 --osh accountGrantCommand --command auditor --account $account1
+    success a0_grant_a1_as_auditor $a0 --osh accountGrantCommand --command auditor --account $account1
 
     # grant accountInfo to a0 and a1
-    success 325-accountinfo a0_grant_a0_accountinfo $a0 --osh accountGrantCommand --command accountInfo --account $account0
-    success 325-accountinfo a0_grant_a1_accountinfo $a0 --osh accountGrantCommand --command accountInfo --account $account1
+    success a0_grant_a0_accountinfo $a0 --osh accountGrantCommand --command accountInfo --account $account0
+    success a0_grant_a1_accountinfo $a0 --osh accountGrantCommand --command accountInfo --account $account1
 
     # a0 should see basic info about a2
-    success 325-accountinfo a0_accountinfo_a2_basic $a0 --osh accountInfo --account $account2
-    json_document '{"error_message":"OK","command":"accountInfo","error_code":"OK","value":{"always_active":1,"is_active":1,"allowed_commands":[],}}'
+    success a0_accountinfo_a2_basic $a0 --osh accountInfo --account $account2
+    json_document '{"error_message":"OK","command":"accountInfo","error_code":"OK","value":{"always_active":1,"is_active":1,"allowed_commands":[],"groups":{}}}'
 
     # a1 should see detailed info about a2
-    success 325-accountinfo a1_accountinfo_a2_detailed $a1 --osh accountInfo --account $account2
+    success a1_accountinfo_a2_detailed $a1 --osh accountInfo --account $account2
     json .error_code OK .command accountInfo .value.always_active 1 .value.is_active 1 .value.allowed_commands "[]"
     json .value.ingress_piv_policy null .value.personal_egress_mfa_required none .value.pam_auth_bypass 0
     json .value.password.min_days 0 .value.password.warn_days 7 .value.password.user "$account2" .value.password.password locked
@@ -44,44 +44,44 @@ testsuite_accountinfo()
     json .value.max_inactive_days null
 
     # a2 connects, which will update already_seen_before
-    success 325-accountinfo a2_connects $a2 --osh info
+    success a2_connects $a2 --osh info
     json .command info .error_code OK
 
     # a1 should see the updated fields
-    success 325-accountinfo a1_accountinfo_a2_detailed2 $a1 --osh accountInfo --account $account2
+    success a1_accountinfo_a2_detailed2 $a1 --osh accountInfo --account $account2
     json .value.already_seen_before 1
     contain "Last seen on"
 
     grant accountModify
 
     # a0 changes a2 expiration policy
-    success 325-accountinfo a0_accountmodify_a2_expi_15 $a0 --osh accountModify --account $account2 --max-inactive-days 15
+    success a0_accountmodify_a2_expi_15 $a0 --osh accountModify --account $account2 --max-inactive-days 15
 
     # a1 should see the updated field
-    success 325-accountinfo a1_accountinfo_a2_inactive_days $a1 --osh accountInfo --account $account2
+    success a1_accountinfo_a2_inactive_days $a1 --osh accountInfo --account $account2
     json .value.max_inactive_days 15
 
     # a0 changes a2 expiration policy
-    success 325-accountinfo a0_accountmodify_a2_expi_disabled $a0 --osh accountModify --account $account2 --max-inactive-days 0
+    success a0_accountmodify_a2_expi_disabled $a0 --osh accountModify --account $account2 --max-inactive-days 0
 
     # a1 should see the updated field
-    success 325-accountinfo a1_accountinfo_a2_inactive_days_disabled $a1 --osh accountInfo --account $account2
+    success a1_accountinfo_a2_inactive_days_disabled $a1 --osh accountInfo --account $account2
     json .value.max_inactive_days 0
 
     # a0 changes a2 expiration policy
-    success 325-accountinfo a0_accountmodify_a2_expi_default $a0 --osh accountModify --account $account2 --max-inactive-days -1
+    success a0_accountmodify_a2_expi_default $a0 --osh accountModify --account $account2 --max-inactive-days -1
 
     # a1 should see the updated field
-    success 325-accountinfo a1_accountinfo_a2_inactive_days_default $a1 --osh accountInfo --account $account2
+    success a1_accountinfo_a2_inactive_days_default $a1 --osh accountInfo --account $account2
     json .value.max_inactive_days null
 
     # should work with accountcreate too
     grant accountCreate
-    success 325-accountinfo a0_accountcreate_a4_max_inactive_days $a0 --osh accountCreate --account $account4 --uid $uid4 --max-inactive-days 42 --no-key
+    success a0_accountcreate_a4_max_inactive_days $a0 --osh accountCreate --account $account4 --uid $uid4 --max-inactive-days 42 --no-key
     revoke accountCreate
 
     grant auditor
-    success 325-accountinfo a0_accountinfo_a4_max_inactive_days $a0 --osh accountInfo --account $account4
+    success a0_accountinfo_a4_max_inactive_days $a0 --osh accountInfo --account $account4
     json .value.max_inactive_days 42
     revoke auditor
 
@@ -89,9 +89,9 @@ testsuite_accountinfo()
 
     # delete account1 & account2
     grant accountDelete
-    success 325-accountinfo a0_delete_a1 $a0 --osh accountDelete --account $account1 --no-confirm
-    success 325-accountinfo a0_delete_a2 $a0 --osh accountDelete --account $account2 --no-confirm
-    success 325-accountinfo a0_delete_a4 $a0 --osh accountDelete --account $account4 --no-confirm
+    success a0_delete_a1 $a0 --osh accountDelete --account $account1 --no-confirm
+    success a0_delete_a2 $a0 --osh accountDelete --account $account2 --no-confirm
+    success a0_delete_a4 $a0 --osh accountDelete --account $account4 --no-confirm
     revoke accountDelete
 }
 
