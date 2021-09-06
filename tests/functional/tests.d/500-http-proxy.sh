@@ -11,12 +11,12 @@ testsuite_proxy()
     # as a --no-color or similar option doesn't seem to exist for curl.
 
     # check that the proxy is up
-    script 500-http-proxy monitoring "curl -ski https://$remote_ip:$remote_proxy_port/bastion-health-check | cat; exit \${PIPESTATUS[0]}"
+    script monitoring "curl -ski https://$remote_ip:$remote_proxy_port/bastion-health-check | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'running nominally'
 
     # and let's go
-    script 500-http-proxy noauth "curl -ski https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    script noauth "curl -ski https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 401 Authorization required (no auth provided)'
     contain 'Server: The Bastion'
@@ -26,7 +26,7 @@ testsuite_proxy()
     contain 'Content-Type: text/plain'
     contain 'No authentication provided, and authentication is mandatory'
 
-    script 500-http-proxy bad_auth_format "curl -ski -u test:test https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    script bad_auth_format "curl -ski -u test:test https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 400 Bad Request (bad login format)'
     contain 'Server: The Bastion'
@@ -36,7 +36,7 @@ testsuite_proxy()
     contain 'Content-Type: text/plain'
     contain 'Expected an Authorization line with credentials of the form'
 
-    script 500-http-proxy bad_auth "curl -ski -u test@test@test:test https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    script bad_auth "curl -ski -u test@test@test:test https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 403 Access Denied'
     contain 'Server: The Bastion'
@@ -47,13 +47,13 @@ testsuite_proxy()
     contain 'Incorrect username (test) or password (#REDACTED#, length=4)'
 
     # create valid credentials
-    success 500-http-proxy generate_proxy_password $a0 --osh selfGenerateProxyPassword --do-it
+    success generate_proxy_password $a0 --osh selfGenerateProxyPassword --do-it
     json .command selfGenerateProxyPassword .error_code OK
     local proxy_password
     proxy_password=$(get_json | jq -r '.value.password')
 
     # now try to use these
-    script 500-http-proxy good_auth_bad_host "curl -ski -u '$account0@test@test.invalid:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    script good_auth_bad_host "curl -ski -u '$account0@test@test.invalid:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 400 Bad Request (host not resolved)'
     contain 'Server: The Bastion'
@@ -68,13 +68,13 @@ testsuite_proxy()
     contain "Specified remote host couldn't be resolved through the DNS"
 
     # change credentials again
-    success 500-http-proxy generate_proxy_password2 $a0 --osh selfGenerateProxyPassword --do-it
+    success generate_proxy_password2 $a0 --osh selfGenerateProxyPassword --do-it
     json .command selfGenerateProxyPassword .error_code OK
     local proxy_password2
     proxy_password2=$(get_json | jq -r '.value.password')
 
     # attempt to use the previous credentials (and fail)
-    script 500-http-proxy bad_auth2 "curl -ski -u test@test@test:test https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    script bad_auth2 "curl -ski -u test@test@test:test https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 403 Access Denied'
     contain 'Server: The Bastion'
@@ -86,7 +86,7 @@ testsuite_proxy()
 
     proxy_password="$proxy_password2"
 
-    script 500-http-proxy good_auth_no_access "curl -ski -u '$account0@test@127.0.0.1:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    script good_auth_no_access "curl -ski -u '$account0@test@127.0.0.1:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 403 Access Denied (access denied to remote)'
     contain 'Server: The Bastion'
@@ -101,7 +101,7 @@ testsuite_proxy()
     contain 'Content-Type: text/plain'
     contain "This account doesn't have access to this user@host tuple (Access denied for $account0 to test@127.0.0.1:443)"
 
-    script 500-http-proxy good_auth_no_access_other_port "curl -ski -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    script good_auth_no_access_other_port "curl -ski -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 403 Access Denied (access denied to remote)'
     contain 'Server: The Bastion'
@@ -119,12 +119,12 @@ testsuite_proxy()
     # add ourselves access
     grant selfAddPersonalAccess
 
-    success 500-http-proxy add_personal_access $a0 --osh selfAddPersonalAccess --host 127.0.0.1 --port 9443 --user test --force
+    success add_personal_access $a0 --osh selfAddPersonalAccess --host 127.0.0.1 --port 9443 --user test --force
     json .command selfAddPersonalAccess .error_code OK
 
     revoke selfAddPersonalAccess
 
-    script 500-http-proxy missing_egress_pwd "curl -ski -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    script missing_egress_pwd "curl -ski -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 412 Precondition Failed (egress password missing)'
     contain 'Server: The Bastion'
@@ -140,11 +140,11 @@ testsuite_proxy()
     contain "Unable to find (or read) a password file in context 'self' and name '$account0'"
 
     # generate an egress password
-    success 500-http-proxy generate_egress_pwd $a0 --osh selfGeneratePassword --do-it
+    success generate_egress_pwd $a0 --osh selfGeneratePassword --do-it
     json .command selfGeneratePassword .error_code OK .value.account $account0 .value.context account
 
     # and retry
-    script 500-http-proxy bad_certificate "curl -ski -H 'X-Bastion-Enforce-Secure: 1' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    script bad_certificate "curl -ski -H 'X-Bastion-Enforce-Secure: 1' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     # not all versions of LWP add "(certificate verify failed)" at the end of the below error message, so omit it
     contain "HTTP/1.0 500 Can't connect to 127.0.0.1:9443"
@@ -160,7 +160,7 @@ testsuite_proxy()
     contain 'Content-Type: text/plain'
     contain "Can't connect to 127.0.0.1:9443"
 
-    script 500-http-proxy insecure "curl -ski -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    script insecure "curl -ski -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain "HTTP/1.0 200 OK"
     contain 'Server: The Bastion'
@@ -181,7 +181,7 @@ testsuite_proxy()
     contain "Content-Length: 64"
 
     # generate 1MB of data
-    script 500-http-proxy one_megabyte "curl -ski -H 'X-Test-Add-Response-Header-Content-Type: application/json' -H 'X-Test-Wanted-Response-Size: 1000000' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    script one_megabyte "curl -ski -H 'X-Test-Add-Response-Header-Content-Type: application/json' -H 'X-Test-Wanted-Response-Size: 1000000' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain "HTTP/1.0 200 OK"
     contain 'Server: The Bastion'
@@ -202,7 +202,7 @@ testsuite_proxy()
     contain "Content-Length: 1000000"
 
     # use a disallowed verb
-    script 500-http-proxy forbidden_verb "curl -ski -X OPTIONS -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    script forbidden_verb "curl -ski -X OPTIONS -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 400 Bad Request (method forbidden)'
     contain 'Server: The Bastion'
@@ -213,7 +213,7 @@ testsuite_proxy()
     contain 'Only GET and POST methods are allowed'
 
     # post some data
-    script 500-http-proxy post_data "curl -ski -d somedata -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    script post_data "curl -ski -d somedata -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain "HTTP/1.0 200 OK"
     contain 'Server: The Bastion'
