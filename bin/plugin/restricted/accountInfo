@@ -267,6 +267,9 @@ if (OVH::Bastion::is_auditor(account => $self)) {
     $ret{'pam_auth_bypass'} = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::PAM_AUTH_BYPASS_GROUP) ? 1 : 0;
     osh_info "- PAM authentication bypass is " . ($ret{'pam_auth_bypass'} ? colored('enabled', 'green') : colored('disabled', 'blue'));
 
+    $ret{'mfa_any'} = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_ANY_GROUP) ? 1 : 0;
+    osh_info "- Alternative authentication logic (allow both pubkey alone and PAM alone) is " . ($ret{'mfa_any'} ? colored('enabled', 'green') : colored('disabled', 'blue'));
+
     $ret{'personal_egress_mfa_required'} = OVH::Bastion::account_config(account => $account, key => "personal_egress_mfa_required")->value;
     $ret{'personal_egress_mfa_required'} ||= 'none';    # no config means no mfa
     osh_info "- MFA policy on personal accesses (using personal keys) on egress side is: " . $ret{'personal_egress_mfa_required'};
