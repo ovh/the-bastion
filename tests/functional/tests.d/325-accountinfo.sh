@@ -75,12 +75,23 @@ testsuite_accountinfo()
     success 325-accountinfo a1_accountinfo_a2_inactive_days_default $a1 --osh accountInfo --account $account2
     json .value.max_inactive_days null
 
+    # should work with accountcreate too
+    grant accountCreate
+    success 325-accountinfo a0_accountcreate_a4_max_inactive_days $a0 --osh accountCreate --account $account4 --uid $uid4 --max-inactive-days 42 --no-key
+    revoke accountCreate
+
+    grant auditor
+    success 325-accountinfo a0_accountinfo_a4_max_inactive_days $a0 --osh accountInfo --account $account4
+    json .value.max_inactive_days 42
+    revoke auditor
+
     revoke accountModify
 
     # delete account1 & account2
     grant accountDelete
     success 325-accountinfo a0_delete_a1 $a0 --osh accountDelete --account $account1 --no-confirm
     success 325-accountinfo a0_delete_a2 $a0 --osh accountDelete --account $account2 --no-confirm
+    success 325-accountinfo a0_delete_a4 $a0 --osh accountDelete --account $account4 --no-confirm
     revoke accountDelete
 }
 

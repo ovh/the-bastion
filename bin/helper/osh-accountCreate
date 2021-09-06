@@ -34,21 +34,22 @@ if (not defined $self) {
 # Fetch command options
 my $fnret;
 my ($result, @optwarns);
-my ($type, $account, $realmFrom, $uid, @pubKeys, $comment, $alwaysActive, $uidAuto, $oshOnly, $immutableKey, $ttl);
+my ($type, $account, $realmFrom, $uid, @pubKeys, $comment, $alwaysActive, $uidAuto, $oshOnly, $maxInactiveDays, $immutableKey, $ttl);
 eval {
     local $SIG{__WARN__} = sub { push @optwarns, shift };
     $result = GetOptions(
-        "type=s"        => sub { $type         //= $_[1] },
-        "from=s"        => sub { $realmFrom    //= $_[1] },
-        "uid=s"         => sub { $uid          //= $_[1] },
-        "account=s"     => sub { $account      //= $_[1] },
-        "always-active" => sub { $alwaysActive //= $_[1] },
-        "pubKey=s"      => \@pubKeys,
-        "comment=s"     => sub { $comment      //= $_[1] },
-        'uid-auto'      => sub { $uidAuto      //= $_[1] },
-        'osh-only'      => sub { $oshOnly      //= $_[1] },
-        'immutable-key' => sub { $immutableKey //= $_[1] },
-        'ttl=i'         => sub { $ttl          //= $_[1] },
+        "type=s"              => sub { $type            //= $_[1] },
+        "from=s"              => sub { $realmFrom       //= $_[1] },
+        "uid=s"               => sub { $uid             //= $_[1] },
+        "account=s"           => sub { $account         //= $_[1] },
+        "always-active"       => sub { $alwaysActive    //= $_[1] },
+        "pubKey=s"            => \@pubKeys,
+        "comment=s"           => sub { $comment         //= $_[1] },
+        'uid-auto'            => sub { $uidAuto         //= $_[1] },
+        'osh-only'            => sub { $oshOnly         //= $_[1] },
+        'max-inactive-days=i' => sub { $maxInactiveDays //= $_[1] },
+        'immutable-key'       => sub { $immutableKey    //= $_[1] },
+        'ttl=i'               => sub { $ttl             //= $_[1] },
     );
 };
 if ($@) { die $@ }
@@ -128,6 +129,10 @@ elsif ($uidAuto) {
 }
 
 #<PARAMS:UID
+
+if (defined $maxInactiveDays && $maxInactiveDays < 0) {
+    HEXIT('ERR_INVALID_PARAMETER', msg => "Expected a >= 0 amount of days for --max-inactive-days");
+}
 
 #>PARAMS
 my $ttygroup = "$account-tty";
@@ -374,6 +379,12 @@ else {
 # push this flag to prevent ssh/telnet usage
 if ($oshOnly) {
     $fnret = OVH::Bastion::account_config(account => $account, key => OVH::Bastion::OPT_ACCOUNT_OSH_ONLY, value => "yes");
+    $fnret or HEXIT($fnret);
+}
+
+# specific expiration policy. Note that 0 is a valid value (means "never").
+if (defined $maxInactiveDays) {
+    $fnret = OVH::Bastion::account_config(account => $account, %{OVH::Bastion::OPT_ACCOUNT_MAX_INACTIVE_DAYS()}, value => $maxInactiveDays);
     $fnret or HEXIT($fnret);
 }
 

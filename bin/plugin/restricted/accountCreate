@@ -19,6 +19,7 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
         'comment=s'           => \my $comment,
         'uid-auto'            => \my $uidAuto,
         'osh-only'            => \my $oshOnly,
+        'max-inactive-days=i' => \my $maxInactiveDays,
         'immutable-key'       => \my $immutableKey,
         'no-key'              => \my $noKey,
         'ttl=s'               => \my $ttl,
@@ -28,18 +29,20 @@ Create a new bastion account
 
 Usage: --osh SCRIPT_NAME --account ACCOUNT <--uid UID|--uid-auto> [OPTIONS]
 
-  --account NAME          Account name to create, NAME must contain only valid UNIX account name characters
-  --uid UID               Account system UID, also see --uid-auto
-  --uid-auto              Auto-select an UID from the allowed range (the upper available one will be used)
-  --always-active         This account's activation won't be challenged on connection, even if the bastion is globally
-                            configured to check for account activation
-  --osh-only              This account will only be able to use ``--osh`` commands, and can't connect anywhere through the bastion
-  --immutable-key         Deny any subsequent modification of the account key (selfAddKey and selfDelKey are denied)
-  --comment '"STRING"'    An optional comment when creating the account. Quote it twice as shown if you're under a shell.
-  --public-key '"KEY"'    Account public SSH key to deposit on the bastion, if not present,
-                            you'll be prompted interactively for it. Quote it twice as shown if your're under a shell.
-  --no-key                Don't prompt for an SSH key, no ingress public key will be installed
-  --ttl SECONDS|DURATION  Time after which the account will be deactivated (amount of seconds, or duration string such as "4d12h15m")
+  --account NAME            Account name to create, NAME must contain only valid UNIX account name characters
+  --uid UID                 Account system UID, also see --uid-auto
+  --uid-auto                Auto-select an UID from the allowed range (the upper available one will be used)
+  --always-active           This account's activation won't be challenged on connection, even if the bastion is globally
+                              configured to check for account activation
+  --osh-only                This account will only be able to use ``--osh`` commands, and can't connect anywhere through the bastion
+  --max-inactive-days DAYS  Set account expiration policy, overriding the global bastion configuration 'accountMaxInactiveDays',
+                              setting this option to zero disables account expiration.
+  --immutable-key           Deny any subsequent modification of the account key (selfAddKey and selfDelKey are denied)
+  --comment '"STRING"'      An optional comment when creating the account. Quote it twice as shown if you're under a shell.
+  --public-key '"KEY"'      Account public SSH key to deposit on the bastion, if not present,
+                              you'll be prompted interactively for it. Quote it twice as shown if your're under a shell.
+  --no-key                  Don't prompt for an SSH key, no ingress public key will be installed
+  --ttl SECONDS|DURATION    Time after which the account will be deactivated (amount of seconds, or duration string such as "4d12h15m")
 EOF
 );
 
@@ -93,6 +96,11 @@ if (defined $pubKey && $noKey) {
     osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "Can't use --public-key and --no-key at the same time";
 }
 
+if (defined $maxInactiveDays && $maxInactiveDays < 0) {
+    help();
+    osh_exit 'ERR_INVALID_PARAMETER', "Expected a >= 0 amount of days for --max-inactive-days";
+}
+
 if (!$pubKey && !$noKey) {
     $fnret = OVH::Bastion::get_supported_ssh_algorithms_list(way => 'ingress');
     $fnret or osh_exit $fnret;
@@ -126,9 +134,10 @@ push @command, "--type", "normal";
 push @command, "--account", $account;
 push @command, "--pubKey", $pubKey if !$noKey;
 push @command, "--always-active" if $alwaysActive;
-push @command, "--comment",  $comment if $comment;
-push @command, "--uid",      $uid     if defined $uid;
-push @command, "--osh-only", $oshOnly if $oshOnly;
+push @command, "--comment",           $comment         if $comment;
+push @command, "--uid",               $uid             if defined $uid;
+push @command, "--osh-only",          $oshOnly         if $oshOnly;
+push @command, "--max-inactive-days", $maxInactiveDays if defined $maxInactiveDays;
 push @command, "--uid-auto"      if $uidAuto;
 push @command, "--immutable-key" if $immutableKey;
 push @command, '--ttl', $ttl if $ttl;
