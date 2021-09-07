@@ -69,3 +69,10 @@ Modify an account configuration
 
    If enabled, this account can only use ``--osh`` commands, and can't connect anywhere through the bastion
 
+.. option:: --mfa-any yes|no                         
+
+   Control the ingress login requirements for pubkey and pam (when a password and/or TOTP is set).
+
+                                               When disabled, the user needs pubkey AND pam, this is the default.
+                                               When enabled, the user can authenticate with either pubkey OR pam.
+                                               If the account has no password/TOTP, this option has no effect, i.e: pubkey is used. Egress is not affected.
