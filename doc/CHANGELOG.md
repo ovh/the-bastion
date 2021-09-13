@@ -1,3 +1,17 @@
+## v3.05.00 - 2021/09/13
+- feat: support ``pam_faillock`` for Debian 11 (#163)
+- feat: add ``--fallback-password-delay`` (3) for ssh password autologin
+- enh: add ``max_inactive_days`` to account configuration (#230)
+- enh: accountInfo: add ``--list-groups``
+- enh: max account length is now 28 chars up from 18
+- enh: better error message when unknown option is used
+- enh: better use of account creation metadata
+- enh: config reading: add rootonly parameter
+- fix: ``accountCreate``: ``--uid-auto``: rare case where a free UID couldn't be found
+- doc: generate scripts doc reference for satellite scripts
+- doc: add faq about session locking (#226)
+- misc: a few other unimportant fixes
+
 ## v3.04.00 - 2021/07/02
 No changes since rc2.
 
