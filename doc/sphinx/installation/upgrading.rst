@@ -24,6 +24,11 @@ Note that if you're using an infrastructure automation tool such as Puppet, Ansi
 Version-specific upgrade instructions
 =====================================
 
+v3.05.00 - 2021/09/14
+*********************
+
+The maximum length of accounts is now 28 characters up from 18 characters previously. If you have setup a HA cluster with several bastion instances synchronized together, note that accounts longer than 18 characters will not be deemed as valid on not-yet upgraded instances of a cluster.
+
 v3.04.00 - 2021/07/02
 *********************
 
