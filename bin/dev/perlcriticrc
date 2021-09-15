@@ -42,6 +42,7 @@ packages = Data::Dumper File::Find FindBin Log::Log4perl DBI
 [-Subroutines::ProhibitExcessComplexity]
 [-ValuesAndExpressions::ProhibitConstantPragma]
 [-ValuesAndExpressions::ProhibitEmptyQuotes]
+[-ValuesAndExpressions::ProhibitEscapedCharacters]
 [-ValuesAndExpressions::ProhibitMagicNumbers]
 [-ValuesAndExpressions::ProhibitNoisyQuotes]
 [-Variables::ProhibitPunctuationVars]

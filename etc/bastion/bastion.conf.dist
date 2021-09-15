@@ -286,6 +286,16 @@
 #  DEFAULT: true
 "interactiveModeByDefault": true,
 #
+# interactiveModeProactiveMFAenabled (boolean)
+#     DESC: If enabled, the ``mfa`` command is allowed in interactive mode, to trigger a proactive MFA challenge, so that subsequent commands normally requiring MFA won't ask for it again.
+#  DEFAULT: true
+"interactiveModeProactiveMFAenabled": true,
+#
+# interactiveModeProactiveMFAexpiration (int >= 0 (seconds))
+#     DESC: If the above ``interactiveModeProactiveMFAenabled`` option is ``true``, then this is the amount of seconds after which the proactive MFA mode is automatically disengaged.
+#  DEFAULT: 900
+"interactiveModeProactiveMFAexpiration": 900,
+#
 # idleLockTimeout (int >= 0 (seconds))
 #     DESC: If set to a positive value >0, the number of seconds of input idle time after which the session is locked. If ``false``, disabled.
 #  DEFAULT: 0

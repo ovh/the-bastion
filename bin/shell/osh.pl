@@ -371,6 +371,7 @@ my $remainingOptions;
     "ssh-as=s"                  => \my $sshAs,
     "use-key=s"                 => \my $useKey,
     "kbd-interactive"           => \my $userKbdInteractive,
+    "proactive-mfa"             => \my $proactiveMfa,
     "fallback-password-delay=i" => \my $fallbackPasswordDelay,
 );
 if (not defined $realOptions) {
@@ -449,6 +450,22 @@ if ($bind) {
             main_exit OVH::Bastion::EXIT_CONFLICTING_OPTIONS, "invalid_bind", "Invalid binding IP specified ($bind)";
         }
     }
+}
+
+# if proactive MFA has been requested, do it here, before the code diverts to either
+# handling interactive session, plugins/osh commands, or a connection request
+if ($proactiveMfa) {
+    print "As proactive MFA has been requested, entering MFA phase.\n";
+    $fnret = OVH::Bastion::do_pamtester(self => $self, sysself => $sysself);
+    $fnret or main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', $fnret->msg);
+
+    # if we're still here, it succeeded
+    $ENV{'OSH_PROACTIVE_MFA'} = 1;
+}
+else {
+
+    # ensure this is unset no matter what
+    delete $ENV{'OSH_PROACTIVE_MFA'};
 }
 
 if ($interactive and not $ENV{'OSH_IN_INTERACTIVE_SESSION'}) {
@@ -958,9 +975,13 @@ if ($osh_command) {
         # and start the MFA phase if needed
         if ($MFArequiredForPlugin ne 'none' && !$skipMFA) {
             print "As this is required to run this plugin, entering MFA phase.\n";
-
-            $fnret = OVH::Bastion::do_pamtester(self => $self, sysself => $sysself);
-            $fnret or main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', $fnret->msg);
+            if ($ENV{'OSH_PROACTIVE_MFA'}) {
+                print "... you already validated MFA proactively.\n";
+            }
+            else {
+                $fnret = OVH::Bastion::do_pamtester(self => $self, sysself => $sysself);
+                $fnret or main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', $fnret->msg);
+            }
 
             # so that the remote server, which can be a bastion in case we're chaining, can enforce its own policy:
             $bastion_details{'mfa'} = {
@@ -1351,7 +1372,12 @@ if (!$logret) {
 if ($JITMFARequired) {
     my $skipMFA  = 0;
     my $realmMFA = 0;
-    print "As this is required for this host, entering MFA phase.\n";
+    if ($proactiveMfa) {
+        print "As proactive MFA has been requested, entering MFA phase.\n";
+    }
+    else {
+        print "As this is required for this host, entering MFA phase.\n";
+    }
     if ($JITMFARequired eq 'totp' && !$isMfaTOTPConfigured) {
         if ($hasMfaTOTPBypass) {
             $skipMFA = 1;
@@ -1400,6 +1426,9 @@ if ($JITMFARequired) {
     elsif ($realmMFA) {
         print "... you already validated MFA on the bastion you're coming from.\n";
     }
+    elsif ($ENV{'OSH_PROACTIVE_MFA'}) {
+        print "... you already validated MFA proactively.\n";
+    }
     else {
         $fnret = OVH::Bastion::do_pamtester(self => $self, sysself => $sysself);
         $fnret or main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', $fnret->msg);
@@ -1407,7 +1436,7 @@ if ($JITMFARequired) {
         # so that the remote server, which can be a bastion in case we're chaining, can enforce its own policy
         $bastion_details{'mfa'} = {
             validated => \1,
-            reason    => 'mfa_required_for_host',
+            reason    => ($proactiveMfa ? 'proactive_mfa' : 'mfa_required_for_host'),
             type      => {
                 password => $isMfaPasswordConfigured ? \1 : \0,
                 totp     => $isMfaTOTPConfigured     ? \1 : \0,

@@ -94,6 +94,8 @@ Options to customize the established sessions behaviour
 - `interactiveModeAllowed`_
 - `interactiveModeTimeout`_
 - `interactiveModeByDefault`_
+- `interactiveModeProactiveMFAenabled`_
+- `interactiveModeProactiveMFAexpiration`_
 - `idleLockTimeout`_
 - `idleKillTimeout`_
 - `warnBeforeLockSeconds`_
@@ -657,6 +659,28 @@ interactiveModeByDefault
 :Default: ``true``
 
 If ``true``, drops the user to interactive mode if nothing is specified on the command line. If ``false``, displays the help and exits with an error. Note that for ``true`` to have the expected effect, interactive mode must be enabled (see the ``interactiveModeAllowed`` option above).
+
+.. _interactiveModeProactiveMFAenabled:
+
+interactiveModeProactiveMFAenabled
+**********************************
+
+:Type: ``boolean``
+
+:Default: ``true``
+
+If enabled, the ``mfa`` command is allowed in interactive mode, to trigger a proactive MFA challenge, so that subsequent commands normally requiring MFA won't ask for it again.
+
+.. _interactiveModeProactiveMFAexpiration:
+
+interactiveModeProactiveMFAexpiration
+*************************************
+
+:Type: ``int >= 0 (seconds)``
+
+:Default: ``900``
+
+If the above ``interactiveModeProactiveMFAenabled`` option is ``true``, then this is the amount of seconds after which the proactive MFA mode is automatically disengaged.
 
 .. _idleLockTimeout:
 

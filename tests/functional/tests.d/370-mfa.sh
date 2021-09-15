@@ -144,6 +144,43 @@ testsuite_mfa()
         contain 'pamtester: successfully authenticated'
         contain 'Permission denied'
 
+        # test proactive mfa
+        script set_help_mfa $r0 "'"'echo \{\"mfa_required\":\ \"password\"\} > /etc/bastion/plugin.help.conf; chmod 644 /etc/bastion/plugin.help.conf'"'"
+        retvalshouldbe 0
+
+        script a4_mfa_help_jitmfa "echo 'set timeout 30; \
+            spawn $a4 --osh help; \
+            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
+            expect \"is required (password)\" { sleep 0.1; }; \
+            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
+            expect eof; \
+            lassign [wait] pid spawnid value value; \
+            exit \$value' | expect -f -"
+        retvalshouldbe 0
+        contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
+        contain REGEX 'Password:|Password for'
+        contain 'pamtester: successfully authenticated'
+        nocontain 'proactive MFA'
+
+        script a4_proactive_mfa_help "echo 'set timeout 30; \
+            spawn $a4 --osh help --proactive-mfa; \
+            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
+            expect \"is required (password)\" { sleep 0.1; }; \
+            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
+            expect eof; \
+            lassign [wait] pid spawnid value value; \
+            exit \$value' | expect -f -"
+        retvalshouldbe 0
+        contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
+        contain REGEX 'Password:|Password for'
+        contain 'pamtester: successfully authenticated'
+        contain 'proactive MFA'
+        json .command help .error_code OK
+
+        script remove_help_mfa $r0 "'"'rm -f /etc/bastion/plugin.help.conf'"'"
+        retvalshouldbe 0
+        # /proactive mfa
+
         # create another account
         success a0_create_a3 $a0 --osh accountCreate --always-active --account $account3 --uid $uid3 --public-key "\"$(cat $account3key1file.pub)\""
         json .error_code OK .command accountCreate .value null
