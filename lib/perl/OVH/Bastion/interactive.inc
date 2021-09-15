@@ -223,6 +223,18 @@ EOM
             }
             else {
                 system($0, '-c', "$realOptions --osh $line");
+
+                # in addition to the normal help, also advertise the interactive mode builtin commands:
+                if ($line eq 'help') {
+
+                    osh_info("Under interactive mode, additional builtin commands are supported:\n"
+                          . "- ssh [options] <server>  Connect to remote server, note that all the standard options\n"
+                          . "                             can be used (--port, etc.), refer to --long-help for a list.\n"
+                          . "- mfa                     Request an immediate MFA validation to elevate the current session,\n"
+                          . "                             to avoid getting a prompt for each JIT MFA-required command.\n"
+                          . "- nomfa                   Go back non-MFA elevated session.\n"
+                          . "- exit                    Quit the interactive mode, 'quit' and ^D can be used instead.\n");
+                }
             }
         }
 
