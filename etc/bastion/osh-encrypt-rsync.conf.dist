@@ -2,6 +2,13 @@
 ## Config for /opt/bastion/bin/cron/osh-encrypt-rsync.pl, the script
 ## responsible for signing and encrypting with GPG, then rotating and
 ## pushing to an external system the produced ttyrec files.
+##
+## Any file in /etc/bastion/osh-encrypt-rsync.conf.d will also be
+## parsed, in alphabetical order, and take precedence over any
+## option specified in this file.
+##
+## Please ensure this file is only readable by root.
+##
 ## This is a JSON file. Verify the syntax with the following command:
 ## ``/opt/bastion/bin/cron/osh-encrypt-rsync.pl --config-test``
 ###################################################################

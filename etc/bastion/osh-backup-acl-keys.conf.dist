@@ -1,9 +1,16 @@
-###################################################################
+######################################################################
 ## Config for /opt/bastion/bin/cron/osh-backup-acl-keys.sh, the script
 ## responsible for backing up the needed files to be able to rebuild
 ## this bastion from scratch.
+##
+## Any file in /etc/bastion/osh-backup-acl-keys.conf.d will also be
+## sourced, in alphabetical order, and take precedence over any
+## option specified in this file.
+##
+## Please ensure this file is only readable by root.
+##
 ## As it'll be sourced, THIS FILE MUST BE A VALID SHELL SCRIPT.
-###################################################################
+######################################################################
 #
 # > Logging
 # >> These options configure the way the script logs its actions
@@ -32,11 +39,24 @@ DESTDIR=""
 # DEFAULT: 90
 DAYSTOKEEP=90
 #
+# > Encryption and signing
+# >> These options configure how the script uses GPG to encrypt and sign the ttyrec files
+#
 # GPGKEYS (string, space-separated list of GPG keys IDs)
-# DESC: List of public GPG keys to encrypt to (see ``gpg --list-keys``), these must be separated by spaces. Note that if this option is empty or omitted, backup artefacts will NOT be encrypted!
+#    DESC: List of public GPG keys to encrypt to (see ``gpg --list-keys``), these must be separated by spaces. Note that if this option is empty or omitted, backup artefacts will NOT be encrypted!
 # EXAMPLE: "41FDB9C7 DA97EFD1 339483FF"
 # DEFAULT: ""
 GPGKEYS=""
+#
+# SIGNING_KEY (string, GPG key ID in short or long format)
+#    DESC: ID of the GPG key used to sign the ttyrec files. The key must be in the local root keyring, check it with ``gpg --list-secret-keys``. If empty, the archives will not be signed, but encrypted only (using the GPGKEYS configuration above).
+# DEFAULT: (none)
+SIGNING_KEY=""
+#
+# SIGNING_KEY_PASSPHRASE (string)
+#    DESC: This passphrase should be able to unlock the SIGNING_KEY defined above. As a side note, please ensure this configuration file only readable by root (0640), to protect this passphrase. As a security measure, the script will refuse to read the configuration otherwise.
+# DEFAULT: (none)
+SIGNING_KEY_PASSPHRASE=""
 #
 # > Remote backup
 # >> These options configure how the script should push the encrypted backups to a remote system
