@@ -8,19 +8,12 @@ use POSIX ();
 # autocompletion rules
 my @rules;
 
-sub interactive {
-    my %params         = @_;
-    my $realOptions    = $params{'realOptions'};
-    my $timeoutHandler = $params{'timeoutHandler'};
-    my $self           = $params{'self'};
-    my $fnret;
-
-    my $bastionName            = OVH::Bastion::config('bastionName')->value();
-    my $interactiveModeTimeout = OVH::Bastion::config('interactiveModeTimeout')->value() || 0;
-    my $slaveOrMaster          = (OVH::Bastion::config('readOnlySlaveMode')->value() ? 'slave' : 'master');
-
-    my $term = Term::ReadLine->new('Bastion Interactive');
-    ## no critic(ValuesAndExpressions::ProhibitEscapedCharacters)
+sub get_prompt {
+    my ($self, $bastionName, $slaveOrMaster) = @_;
+    my $mfaOk = "";
+    if ($ENV{'OSH_PROACTIVE_MFA'}) {
+        $mfaOk = "[" . "\001\033[33m\002" . "MFA-OK" . "\001\033[1;35m\002]";
+    }
     my $prompt = ""
       . "\001\033[0m\033[33m\002"
       . $self
@@ -31,11 +24,33 @@ sub interactive {
       . "\001\033[0m\033[36m\002"
       . $slaveOrMaster
       . "\001\033[1;35m\002" . ")"
+      . $mfaOk
       . "\001\033[0m\033[32m\002" . ">"
       . "\001\033[0m\002" . " ";
+    return $prompt;
+}
 
-    my $prompt_non_readline = $prompt;
+sub get_prompt_non_readline {
+    my %info                = @_;
+    my $prompt_non_readline = get_prompt(%info);
     $prompt_non_readline =~ s=\001|\002==g;
+    return $prompt_non_readline;
+}
+
+sub interactive {
+    my %params         = @_;
+    my $realOptions    = $params{'realOptions'};
+    my $timeoutHandler = $params{'timeoutHandler'};
+    my $self           = $params{'self'};
+    my $fnret;
+
+    my $bastionName                           = OVH::Bastion::config('bastionName')->value();
+    my $interactiveModeTimeout                = OVH::Bastion::config('interactiveModeTimeout')->value() || 0;
+    my $slaveOrMaster                         = (OVH::Bastion::config('readOnlySlaveMode')->value() ? 'slave' : 'master');
+    my $interactiveModeProactiveMFAexpiration = OVH::Bastion::config("interactiveModeProactiveMFAexpiration")->value;
+    my $proactiveMFAenabledTime               = 0;
+
+    my $term = Term::ReadLine->new('Bastion Interactive');
 
     print <<"EOM";
 
@@ -51,7 +66,7 @@ EOM
     $fnret or return ();
     my $pluginList = $fnret->value;
 
-    my @cmdlist = qw{ exit ssh };
+    my @cmdlist = qw{ exit ssh mfa enable nomfa end };
     foreach my $plugin (sort keys %$pluginList) {
         $fnret = OVH::Bastion::can_account_execute_plugin(plugin => $plugin, account => $self);
         next if !$fnret;
@@ -180,7 +195,7 @@ EOM
 
             # else, we just print stuff ourselves
             if ($item->{'pr'}) {
-                print "\n" . join("\n", @{$item->{'pr'}}) . "\n$prompt_non_readline$line";
+                print "\n" . join("\n", @{$item->{'pr'}}) . "\n" . get_prompt_non_readline($self, $bastionName, $slaveOrMaster) . $line;
                 return ();
             }
         }
@@ -203,9 +218,17 @@ EOM
 
     my $BASTION_USER = OVH::Bastion::get_user_from_env()->value;
     alarm($interactiveModeTimeout);
-    while (defined(my $line = $term->readline($prompt))) {
+    while (defined(my $line = $term->readline(get_prompt($self, $bastionName, $slaveOrMaster)))) {
         alarm(0);      # disable timeout
         $line =~ s/^\s+|\s+$//g;
+
+        # disable proactive MFA if it has expired. Even if the user just typed "enter" with no command.
+        if ($proactiveMFAenabledTime > 0 && $interactiveModeProactiveMFAexpiration && (time() - $proactiveMFAenabledTime) >= $interactiveModeProactiveMFAexpiration) {
+            print "MFA proactive mode has been disabled after " . OVH::Bastion::duration2human(seconds => $interactiveModeProactiveMFAexpiration)->value->{'duration'} . "\n";
+            $proactiveMFAenabledTime = 0;
+            delete $ENV{'OSH_PROACTIVE_MFA'};
+        }
+
         next if (length($line) == 0);                                    # ignore empty lines
         last if ($line eq 'exit' or $line eq 'quit' or $line eq 'q');    # break out of loop if asked
 
@@ -218,7 +241,46 @@ EOM
 
         {
             local $ENV{'OSH_IN_INTERACTIVE_SESSION'} = 1;
-            if ($line =~ /^ssh (.+)$/) {
+            if (lc($line) eq 'mfa' || $line =~ m{^en(a(b(le?)?)?)?$}) {
+                if (OVH::Bastion::config("interactiveModeProactiveMFAenabled")->value) {
+                    print "As proactive MFA validation has been requested, entering MFA phase.\n";
+                    $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $self);
+                    if (!$fnret) {
+                        warn_syslog("Couldn't get account details in interactive mode (" . $fnret->msg . ")");
+                        main_exit(OVH::Bastion::EXIT_ACCOUNT_INVALID(), "account_invalid", "Error while getting account details");
+                    }
+                    my $sysself = $fnret->value->{'sysaccount'};
+                    $fnret = OVH::Bastion::do_pamtester(self => $self, sysself => $sysself);
+                    if ($fnret) {
+                        print "Proactive MFA enabled, any command requiring MFA from now on will not ask you again.\n";
+                        if ($interactiveModeProactiveMFAexpiration > 0) {
+                            print "This mode will expire in " . OVH::Bastion::duration2human(seconds => $interactiveModeProactiveMFAexpiration)->value->{'human'} . "\n";
+                        }
+                        print "To exit this mode manually, type 'nomfa'.\n";
+                        $proactiveMFAenabledTime = time();
+                        $ENV{'OSH_PROACTIVE_MFA'} = 1;
+                    }
+                    else {
+                        print "MFA validation failed, as a consequence proactive MFA mode is NOT active.\n";
+                        $proactiveMFAenabledTime = 0;
+                        delete $ENV{'OSH_PROACTIVE_MFA'};
+                    }
+                }
+                else {
+                    print "Sorry, proactive MFA validation has been disabled in interactive mode by policy.\n";
+                }
+            }
+            elsif (lc($line) eq 'nomfa' || $line eq 'end') {
+                if ($ENV{'OSH_PROACTIVE_MFA'}) {
+                    print "Your proactive MFA validation has been forgotten.\n";
+                }
+                else {
+                    print "Nothing to do, you didn't proactively validate MFA.\n";
+                }
+                $proactiveMFAenabledTime = 0;
+                delete $ENV{'OSH_PROACTIVE_MFA'};
+            }
+            elsif ($line =~ /^ssh (.+)$/) {
                 system($0, '-c', "$realOptions $1");
             }
             else {
