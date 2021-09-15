@@ -31,7 +31,15 @@ These options configure the backup policy to apply
 
 - `DESTDIR`_
 - `DAYSTOKEEP`_
+
+Encryption and signing options
+------------------------------
+
+These options configure how the script uses GPG to encrypt and sign the ttyrec files
+
 - `GPGKEYS`_
+- `SIGNING_KEY`_
+- `SIGNING_KEY_PASSPHRASE`_
 
 Remote backup options
 ---------------------
@@ -88,6 +96,9 @@ DAYSTOKEEP
 
 Number of days to keep the old backups on the filesystem before deleting them.
 
+Encryption and signing
+----------------------
+
 GPGKEYS
 *******
 
@@ -98,6 +109,24 @@ GPGKEYS
 :Example: ``"41FDB9C7 DA97EFD1 339483FF"``
 
 List of public GPG keys to encrypt to (see ``gpg --list-keys``), these must be separated by spaces. Note that if this option is empty or omitted, backup artefacts will NOT be encrypted!
+
+SIGNING_KEY
+***********
+
+:Type: ``string, GPG key ID in short or long format``
+
+:Default: ``(none)``
+
+ID of the GPG key used to sign the ttyrec files. The key must be in the local root keyring, check it with ``gpg --list-secret-keys``. If empty, the archives will not be signed, but encrypted only (using the GPGKEYS configuration above).
+
+SIGNING_KEY_PASSPHRASE
+**********************
+
+:Type: ``string``
+
+:Default: ``(none)``
+
+This passphrase should be able to unlock the SIGNING_KEY defined above. As a side note, please ensure this configuration file only readable by root (0640), to protect this passphrase. As a security measure, the script will refuse to read the configuration otherwise.
 
 Remote backup
 -------------

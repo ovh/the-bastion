@@ -26,6 +26,8 @@ LOG_FACILITY="local6"
 DESTDIR=""
 DAYSTOKEEP="90"
 GPGKEYS=""
+SIGNING_KEY=""
+SIGNING_KEY_PASSPHRASE=""
 PUSH_REMOTE=""
 PUSH_OPTIONS=""
 
@@ -132,7 +134,12 @@ fi
 
 encryption_worked=0
 if [ -n "$GPGKEYS" ] ; then
-    cmdline=""
+    cmdline="--encrypt --batch"
+    sign=0
+    if [ -n "$SIGNING_KEY" ] && [ -n "$SIGNING_KEY_PASSPHRASE" ]; then
+        sign=1
+        cmdline="$cmdline --sign --local-user $SIGNING_KEY"
+    fi
     for recipient in $GPGKEYS
     do
         cmdline="$cmdline -r $recipient"
@@ -140,10 +147,21 @@ if [ -n "$GPGKEYS" ] ; then
     # just in case, encrypt all .tar.gz files we find in $DESTDIR
     while IFS= read -r -d '' file
     do
-        _log "Encrypting $file..."
+        if [ "$sign" = 1 ]; then
+            _log "Encrypting & signing $file..."
+        else
+            _log "Encrypting $file..."
+        fi
         rm -f "$file.gpg" # if the gpg file already exists, remove it
+
         # shellcheck disable=SC2086
-        if $gpgcmd --encrypt $cmdline "$file" ; then
+        if [ "$sign" = 1 ]; then
+            $gpgcmd $cmdline --passphrase-fd 0 "$file" <<< "$SIGNING_KEY_PASSPHRASE"; ret=$?
+        else
+            $gpgcmd $cmdline "$file"; ret=$?
+        fi
+
+        if [ "$ret" = 0 ]; then
             encryption_worked=1
             shred -u "$file" 2>/dev/null || rm -f "$file"
         else
