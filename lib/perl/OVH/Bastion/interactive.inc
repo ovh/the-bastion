@@ -217,7 +217,7 @@ EOM
         }
 
         {
-            local $ENV{'OSH_NO_INTERACTIVE'} = 1;
+            local $ENV{'OSH_IN_INTERACTIVE_SESSION'} = 1;
             if ($line =~ /^ssh (.+)$/) {
                 system($0, '-c', "$realOptions $1");
             }

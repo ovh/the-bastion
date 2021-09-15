@@ -386,7 +386,7 @@ if (not defined $realOptions) {
     }
 }
 
-if (!$quiet && $realm && !$ENV{'OSH_NO_INTERACTIVE'}) {
+if (!$quiet && $realm && !$ENV{'OSH_IN_INTERACTIVE_SESSION'}) {
     my $welcome =
       "You are now connected to " . colored($bastionName, "yellow") . ". Welcome, " . colored($remoteself, "yellow") . ", citizen of the " . colored($realm, "yellow") . " realm!";
     print colored("-" x (length($welcome) - 3 * 9) . "\n", "bold yellow");
@@ -451,7 +451,7 @@ if ($bind) {
     }
 }
 
-if ($interactive and not $ENV{'OSH_NO_INTERACTIVE'}) {
+if ($interactive and not $ENV{'OSH_IN_INTERACTIVE_SESSION'}) {
     if (not $config->{'interactiveModeAllowed'}) {
         main_exit OVH::Bastion::EXIT_INTERACTIVE_DISABLED, "interactive_disabled", "Interactive mode has been disabled on this bastion";
     }
