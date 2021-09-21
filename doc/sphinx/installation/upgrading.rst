@@ -24,6 +24,11 @@ Note that if you're using an infrastructure automation tool such as Puppet, Ansi
 Version-specific upgrade instructions
 =====================================
 
+v3.05.01 - 2021/09/22
+*********************
+
+In the configuration of the ``osh-backup-acl-keys`` script, a signing key can now be specified so that the backups are signed by the bastion key in addition to being encrypted to the admin(s) key(s). By default, the behaviour is the same as before: encrypt but not sign.
+
 v3.05.00 - 2021/09/14
 *********************
 
