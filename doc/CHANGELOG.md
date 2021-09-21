@@ -1,3 +1,8 @@
+## v3.05.01 - 2021/09/22
+- feat: add ``--proactive-mfa`` and ``mfa``/``nofa`` interactive commands
+- feat: ``osh-backup-acl-keys``: add the possibility to sign encrypted backups (#209)
+- doc: add help about the interactive builtin commands (#227)
+
 ## v3.05.00 - 2021/09/13
 - feat: support ``pam_faillock`` for Debian 11 (#163)
 - feat: add ``--fallback-password-delay`` (3) for ssh password autologin
