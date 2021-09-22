@@ -462,11 +462,6 @@ if ($proactiveMfa) {
     # if we're still here, it succeeded
     $ENV{'OSH_PROACTIVE_MFA'} = 1;
 }
-else {
-
-    # ensure this is unset no matter what
-    delete $ENV{'OSH_PROACTIVE_MFA'};
-}
 
 if ($interactive and not $ENV{'OSH_IN_INTERACTIVE_SESSION'}) {
     if (not $config->{'interactiveModeAllowed'}) {
