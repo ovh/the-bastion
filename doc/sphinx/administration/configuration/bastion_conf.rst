@@ -200,7 +200,7 @@ superOwnerAccounts
 
 :Default: ``[]``
 
-The list of accounts that are "Super Owners". They can run all group administrative commands, exactly as if they were implicitly owners of all the groups. Super Owners are only here as a last resort when the owners/gatekeepers/aclkeepers of a group are not available. Every command run by a Super Owner that would have failed if the account was not a Super Owner is logged explicitly as "Super Owner Override", you might want to add a rule for those in your SIEM. You can consider than the Super Owners have an implicit *sudo* for group management. Don't add here accounts that are bastion Admins, as they already inherit the Super Owner role.
+The list of accounts that are "Super Owners". They can run all group administrative commands, exactly as if they were implicitly owners of all the groups. Super Owners are only here as a last resort when the owners/gatekeepers/aclkeepers of a group are not available. Every command run by a Super Owner that would have failed if the account was not a Super Owner is logged explicitly as "Super Owner Override", you might want to add a rule for those in your SIEM. You can consider than the Super Owners have an implicit *sudo* for group management. Don't add here accounts that are bastion Admins, as they already inherit the Super Owner role. Don't forget to add them to the ``osh-superowner`` group too (system-wise), or they won't really be considered as "Super Owners": this is an additional security measure against privilege escalation.
 
 SSH Policies
 ------------
