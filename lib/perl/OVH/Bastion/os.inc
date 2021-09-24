@@ -47,9 +47,14 @@ sub _sys_autoretry {
     my $fnret;
     foreach my $try (1 .. 10) {
         $fnret = OVH::Bastion::execute(%params);
-        if (   ($fnret->value && $fnret->value->{'sysret'} == 10)
-            || ($fnret->value && $fnret->value->{'stdout'} && grep { /retry|lock/i } @{$fnret->value->{'stdout'}})
-            || ($fnret->value && $fnret->value->{'stderr'} && grep { /retry|lock/i } @{$fnret->value->{'stderr'}}))
+        if (
+            ($fnret->value && $fnret->value->{'sysret'} == 10)
+            || (
+                ($fnret->value && $fnret->value->{'sysret'} != 0)
+                && (   ($fnret->value->{'stdout'} && grep { /retry|lock/i } @{$fnret->value->{'stdout'}})
+                    || ($fnret->value->{'stderr'} && grep { /retry|lock/i } @{$fnret->value->{'stderr'}}))
+            )
+          )
         {
             # too much concurrency, sleep a bit and retry
             warn_syslog('Too much concurrency on try '
