@@ -77,14 +77,30 @@ if (OVH::Bastion::is_admin(account => $account, sudo => 1) && !OVH::Bastion::is_
     HEXIT('ERR_SECURITY_VIOLATION', msg => "You can't reset the TOTP of an admin without being admin yourself");
 }
 
+my $TOTPProvider = OVH::Bastion::config("TOTPProvider")->value;
+if ($TOTPProvider eq 'none') {
+    HEXIT('ERR_CONFIGURATION_ERROR', msg => "TOTP Provider has not been set, please report to your sysadmin");
+}
+elsif ($TOTPProvider eq 'google-authenticator') {
+
+    # for google-authenticator, attempt remove the .otp file (non-fatal)
+    if (!unlink($home . '/' . OVH::Bastion::TOTP_GAUTH_FILENAME)) {
+        warn_syslog("Couldn't remove the TOTP file ($!), this is not fatal, continuing anyway");
+    }
+}
+elsif ($TOTPProvider eq 'duo') {
+
+    # duo doesn't need any user-specific local cleanup
+}
+else {
+    # unknown provider, this shouldn't happen
+    HEXIT('ERR_CONFIGURATION_ERROR', msg => "An unknown TOTP provider has been provided, please check with your sysadmin.");
+}
+
+# remove the user from the TOTP configured group
 if (OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_TOTP_CONFIGURED_GROUP)) {
     $fnret = OVH::Bastion::sys_delmemberfromgroup(user => $account, group => OVH::Bastion::MFA_TOTP_CONFIGURED_GROUP);
     $fnret or HEXIT($fnret);
-}
-
-# remove the .otp file (non-fatal)
-if (!unlink($home . '/' . OVH::Bastion::TOTP_FILENAME)) {
-    osh_warn("Couldn't remove the TOTP file ($!), this is not fatal, continuing anyway");
 }
 
 osh_info "TOTP has been reset, " . ($account eq $self ? 'you' : $account) . " can re-enroll by using the `--osh selfMFASetupTOTP' command, if applicable";

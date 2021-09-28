@@ -105,8 +105,7 @@ use constant {
     PAM_AUTH_BYPASS_GROUP          => 'bastion-nopam',
     OSH_PUBKEY_AUTH_OPTIONAL_GROUP => 'osh-pubkey-auth-optional',
 
-    TOTP_FILENAME => '.otp',
-    TOTP_BASEDIR  => '/var/otp',
+    TOTP_GAUTH_FILENAME => '.otp',
 
     # authorized_keys file, relative to the user's HOME directory.
     # if you change this, also change it in lib/shell/functions.inc

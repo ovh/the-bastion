@@ -410,6 +410,14 @@
 # EXAMPLE: ["sudo","-n","-u","root","--","/sbin/pam_tally2","-u","%ACCOUNT%","-r"] or ["/usr/sbin/faillock","--reset"]
 "MFAPostCommand": [],
 #
+# TOTPProvider (string)
+#    DESC: Defines which is the provider of the TOTP MFA, that will be used for the ``(self|account)MFA(Setup|Reset)TOTP`` commands. Allowed values are:
+#          - none: no TOTP providers are defined, the corresponding setup commands won't be available.
+#          - google-authenticator: the pam_google_authenticator.so module will be used, along with its corresponding setup binary. This is the default, for backward compatibility reasons. This is also what is configured in the provided pam templates.
+#          - duo: enable the use of the Duo PAM module (pam_duo.so), of course you need to set it up correctly in your `/etc/pam.d/sshd` file.
+# DEFAULT: 'google-authenticator'
+"TOTPProvider": "google-authenticator",
+#
 #################
 # > Other options
 # >> These options are either discouraged (in which case this is explained in the description) or rarely need to be modified.

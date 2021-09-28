@@ -286,8 +286,9 @@ sub load_configuration {
 
     # 4/6) Strings that must be one item of a specific enum.
     foreach my $o (
-        {name => 'defaultAccountEgressKeyAlgorithm', default => 'rsa',     valid => [qw{ rsa ecdsa ed25519 }]},
-        {name => 'accountMFAPolicy',                 default => 'enabled', valid => [qw{ disabled enabled password-required totp-required any-required }]},
+        {name => 'defaultAccountEgressKeyAlgorithm', default => 'rsa',                  valid => [qw{ rsa ecdsa ed25519 }]},
+        {name => 'accountMFAPolicy',                 default => 'enabled',              valid => [qw{ disabled enabled password-required totp-required any-required }]},
+        {name => 'TOTPProvider',                     default => 'google-authenticator', valid => [qw{ none google-authenticator duo }]},
       )
     {
         # if not defined, set to default value

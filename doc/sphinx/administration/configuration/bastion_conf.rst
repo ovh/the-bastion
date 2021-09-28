@@ -120,6 +120,7 @@ Policies applying to the bastion accounts themselves
 - `MFAPasswordWarnDays`_
 - `MFAPasswordInactiveDays`_
 - `MFAPostCommand`_
+- `TOTPProvider`_
 
 Other options options
 ---------------------
@@ -904,6 +905,20 @@ When using JIT MFA (i.e. not directly by calling PAM from SSHD's configuration, 
 This can be used for example if you're using ``pam_tally2`` or ``pam_faillock`` in your PAM MFA configuration, ``pamtester`` can't reset the counter to zero because this is usually done in the ``account_mgmt`` PAM phase. You can use a script to reset it here.
 The magic token ``%ACCOUNT%`` will be replaced by the account name.
 Note that usually, ``pam_tally2`` can only be used by root (hence might require the proper sudoers configuration), while ``faillock`` can directly be used by unprivileged users to reset their counter.
+
+.. _TOTPProvider:
+
+TOTPProvider
+************
+
+:Type: ``string``
+
+:Default: ``'google-authenticator'``
+
+Defines which is the provider of the TOTP MFA, that will be used for the ``(self|account)MFA(Setup|Reset)TOTP`` commands. Allowed values are:
+- none: no TOTP providers are defined, the corresponding setup commands won't be available.
+- google-authenticator: the pam_google_authenticator.so module will be used, along with its corresponding setup binary. This is the default, for backward compatibility reasons. This is also what is configured in the provided pam templates.
+- duo: enable the use of the Duo PAM module (pam_duo.so), of course you need to set it up correctly in your `/etc/pam.d/sshd` file.
 
 Other options
 -------------
