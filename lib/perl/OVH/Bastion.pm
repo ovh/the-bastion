@@ -96,14 +96,14 @@ use constant {
 };
 
 use constant {
-    MFA_PASSWORD_REQUIRED_GROUP   => 'mfa-password-reqd',
-    MFA_PASSWORD_CONFIGURED_GROUP => 'mfa-password-configd',
-    MFA_PASSWORD_BYPASS_GROUP     => 'mfa-password-bypass',
-    MFA_TOTP_REQUIRED_GROUP       => 'mfa-totp-reqd',
-    MFA_TOTP_CONFIGURED_GROUP     => 'mfa-totp-configd',
-    MFA_TOTP_BYPASS_GROUP         => 'mfa-totp-bypass',
-    PAM_AUTH_BYPASS_GROUP         => 'bastion-nopam',
-    MFA_ANY_GROUP                 => 'mfa-any',
+    MFA_PASSWORD_REQUIRED_GROUP    => 'mfa-password-reqd',
+    MFA_PASSWORD_CONFIGURED_GROUP  => 'mfa-password-configd',
+    MFA_PASSWORD_BYPASS_GROUP      => 'mfa-password-bypass',
+    MFA_TOTP_REQUIRED_GROUP        => 'mfa-totp-reqd',
+    MFA_TOTP_CONFIGURED_GROUP      => 'mfa-totp-configd',
+    MFA_TOTP_BYPASS_GROUP          => 'mfa-totp-bypass',
+    PAM_AUTH_BYPASS_GROUP          => 'bastion-nopam',
+    OSH_PUBKEY_AUTH_OPTIONAL_GROUP => 'osh-pubkey-auth-optional',
 
     TOTP_FILENAME => '.otp',
     TOTP_BASEDIR  => '/var/otp',

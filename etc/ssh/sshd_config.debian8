@@ -136,9 +136,9 @@ UsePAM yes
 # Unconditionally skip PAM auth for members of the bastion-nopam group
 Match Group bastion-nopam
     AuthenticationMethods publickey
-# if in one of the mfa groups AND the mfa-any group, use publickey OR pam
-Match Group mfa-totp-configd,mfa-password-configd Group mfa-any
-    AuthenticationMethods publickey keyboard-interactive:pam
+# if in one of the mfa groups AND the osh-pubkey-auth-optional group, use publickey+pam OR pam
+Match Group mfa-totp-configd,mfa-password-configd Group osh-pubkey-auth-optional
+    AuthenticationMethods publickey,keyboard-interactive:pam keyboard-interactive:pam
 # if in one of the mfa groups, use publickey AND pam
 Match Group mfa-totp-configd,mfa-password-configd
     AuthenticationMethods publickey,keyboard-interactive:pam

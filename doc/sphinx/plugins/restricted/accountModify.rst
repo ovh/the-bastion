@@ -69,10 +69,12 @@ Modify an account configuration
 
    If enabled, this account can only use ``--osh`` commands, and can't connect anywhere through the bastion
 
-.. option:: --mfa-any yes|no                         
+.. option:: --pubkey-auth-optional yes|no            
 
-   Control the ingress login requirements for pubkey and pam (when a password and/or TOTP is set).
+   Make the public key optional on ingress for the account (default is 'no').
 
-                                               When disabled, the user needs pubkey AND pam, this is the default.
-                                               When enabled, the user can authenticate with either pubkey OR pam.
-                                               If the account has no password/TOTP, this option has no effect, i.e: pubkey is used. Egress is not affected.
+                                               When enabled the public key part of the authentication becomes optional when a password and/or TOTP is defined,
+                                               allowing to login with just the password/TOTP. If no password/TOTP is defined then the public key is the only way to authenticate,
+                                               because some form of authentication is always required.
+                                               When disabled, the public key is always required.
+                                               Egress is not affected.

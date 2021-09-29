@@ -1,13 +1,13 @@
 {
     "master_only": true,
     "interactive": [
-        "accountModify"                                                                                             , {"ac": ["--account"]},
-        "accountModify --account"                                                                                   , {"ac": ["<ACCOUNT>"]},
-        "accountModify --account \\S+"                                                                              , {"ac": ["--mfa-password-required","--mfa-totp-required","--pam-auth-bypass","--always-active","--egress-strict-host-key-checking","--personal-egress-mfa-required","--idle-ignore","--mfa-any"]},
-        "accountModify --account \\S+ .*(--mfa-password-required|--mfa-totp-required)"                              , {"ac": ["yes","no","bypass"]},
-        "accountModify --account \\S+ .*(--pam-auth-bypass|--mfa-auth-bypass|--always-active|idle-ignore|--mfa-any)", {"ac": ["yes","no"]},
-        "accountModify --account \\S+ .*(--egress-strict-host-key-checking)"                                        , {"ac": ["yes","accept-new","no","ask","default","bypass"]},
-        "accountModify --account \\S+ .*(--personal-egress-mfa-required)"                                           , {"ac": ["password","totp","any","none"]},
-        "accountModify --account \\S+ .*(yes|accept-new|no|bypass|ask|default|totp|password|none)"                  , {"ac": ["--mfa-password-required","--mfa-totp-required","--pam-auth-bypass","--always-active","--egress-strict-host-key-checking","--personal-egress-mfa-required","--idle-ignore","-mfa-any","<enter>"]}
+        "accountModify"                                                                                                          , {"ac": ["--account"]},
+        "accountModify --account"                                                                                                , {"ac": ["<ACCOUNT>"]},
+        "accountModify --account \\S+"                                                                                           , {"ac": ["--mfa-password-required","--mfa-totp-required","--pam-auth-bypass","--always-active","--egress-strict-host-key-checking","--personal-egress-mfa-required","--idle-ignore","--pubkey-auth-optional"]},
+        "accountModify --account \\S+ .*(--mfa-password-required|--mfa-totp-required)"                                           , {"ac": ["yes","no","bypass"]},
+        "accountModify --account \\S+ .*(--pam-auth-bypass|--mfa-auth-bypass|--always-active|idle-ignore|--pubkey-auth-optional)", {"ac": ["yes","no"]},
+        "accountModify --account \\S+ .*(--egress-strict-host-key-checking)"                                                     , {"ac": ["yes","accept-new","no","ask","default","bypass"]},
+        "accountModify --account \\S+ .*(--personal-egress-mfa-required)"                                                        , {"ac": ["password","totp","any","none"]},
+        "accountModify --account \\S+ .*(yes|accept-new|no|bypass|ask|default|totp|password|none)"                               , {"ac": ["--mfa-password-required","--mfa-totp-required","--pam-auth-bypass","--always-active","--egress-strict-host-key-checking","--personal-egress-mfa-required","--idle-ignore","--pubkey-auth-optional","<enter>"]}
     ]
 }

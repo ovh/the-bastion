@@ -872,7 +872,7 @@ if [ "$nothing" = 0 ]; then
     at_least_one_error=0
     for group in bastion-users \
       mfa-password-reqd mfa-password-bypass mfa-password-configd \
-      mfa-totp-reqd mfa-totp-bypass mfa-totp-configd bastion-nopam mfa-any
+      mfa-totp-reqd mfa-totp-bypass mfa-totp-configd bastion-nopam osh-pubkey-auth-optional
     do
         if getent group "$group" >/dev/null 2>&1; then
             :

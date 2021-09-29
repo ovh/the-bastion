@@ -131,14 +131,14 @@ foreach my $account (sort keys %$accounts) {
 
         $states{'can_connect'} = ($states{'is_active'} && !$states{'is_expired'}) ? 1 : 0;
 
-        $states{'mfa_password_required'}   = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_PASSWORD_REQUIRED_GROUP)   ? 1 : 0;
-        $states{'mfa_password_configured'} = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_PASSWORD_CONFIGURED_GROUP) ? 1 : 0;
-        $states{'mfa_password_bypass'}     = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_PASSWORD_BYPASS_GROUP)     ? 1 : 0;
-        $states{'mfa_totp_required'}       = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_TOTP_REQUIRED_GROUP)       ? 1 : 0;
-        $states{'mfa_totp_configured'}     = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_TOTP_CONFIGURED_GROUP)     ? 1 : 0;
-        $states{'mfa_totp_bypass'}         = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_TOTP_BYPASS_GROUP)         ? 1 : 0;
-        $states{'pam_auth_bypass'}         = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::PAM_AUTH_BYPASS_GROUP)         ? 1 : 0;
-        $states{'mfa_any'}                 = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_ANY_GROUP)                 ? 1 : 0;
+        $states{'mfa_password_required'}   = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_PASSWORD_REQUIRED_GROUP)    ? 1 : 0;
+        $states{'mfa_password_configured'} = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_PASSWORD_CONFIGURED_GROUP)  ? 1 : 0;
+        $states{'mfa_password_bypass'}     = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_PASSWORD_BYPASS_GROUP)      ? 1 : 0;
+        $states{'mfa_totp_required'}       = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_TOTP_REQUIRED_GROUP)        ? 1 : 0;
+        $states{'mfa_totp_configured'}     = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_TOTP_CONFIGURED_GROUP)      ? 1 : 0;
+        $states{'mfa_totp_bypass'}         = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_TOTP_BYPASS_GROUP)          ? 1 : 0;
+        $states{'pam_auth_bypass'}         = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::PAM_AUTH_BYPASS_GROUP)          ? 1 : 0;
+        $states{'pubkey_auth_optional'}    = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::OSH_PUBKEY_AUTH_OPTIONAL_GROUP) ? 1 : 0;
 
         if ($fnretPassword) {
             $states{"password_$_"} = $fnretPassword->value->{$account}{$_} for (keys %{$fnretPassword->value->{$account}});
@@ -160,7 +160,7 @@ foreach my $account (sort keys %$accounts) {
         push @mfaTOTP, 'bypass'   if $states{'mfa_totp_bypass'};
 
         osh_info sprintf(
-"%-18s %6d active:%-12s expired:%-12s can_connect:%-12s already_seen:%-12s mfa_password:%-25s mfa_totp:%-25s pam_bypass:%-12s mfa_any:%-12s pass_status:%-15s pass_changed:%-10s pass_min_days:%-3d pass_max_days:%-3d pass_warn_days:%-3d  %s\n",
+"%-18s %6d active:%-12s expired:%-12s can_connect:%-12s already_seen:%-12s mfa_password:%-25s mfa_totp:%-25s pam_bypass:%-12s pubkey_auth_optional:%-12s pass_status:%-15s pass_changed:%-10s pass_min_days:%-3d pass_max_days:%-3d pass_warn_days:%-3d  %s\n",
             $account,
             $accounts->{$account}{'uid'},
             tristate2str($states{'is_active'}),
@@ -169,8 +169,8 @@ foreach my $account (sort keys %$accounts) {
             tristate2str($states{'already_seen_before'}),
             @mfaPassword ? colored(join(',', @mfaPassword), 'green') : colored('-', 'blue'),
             @mfaTOTP     ? colored(join(',', @mfaTOTP),     'green') : colored('-', 'blue'),
-            tristate2str($states{'pam_auth_bypass'}, 1),
-            tristate2str($states{'mfa_any'},         1),
+            tristate2str($states{'pam_auth_bypass'},      1),
+            tristate2str($states{'pubkey_auth_optional'}, 1),
             (
                 $states{'password_password'} eq 'locked'
                 ? colored('locked', 'blue')
