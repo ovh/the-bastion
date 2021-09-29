@@ -60,7 +60,7 @@ Output example
   ~ - Additional TOTP authentication bypass is disabled for this account
   ~ - Additional TOTP authentication is disabled
   ~ - PAM authentication bypass is disabled
-  ~ - Alternative authentication logic (allow both pubkey alone and PAM alone) is disabled
+  ~ - Optional public key authentication is disabled
   ~ - MFA policy on personal accesses (using personal keys) on egress side is: password
 
   ~ Account PAM UNIX password information (used for password MFA):

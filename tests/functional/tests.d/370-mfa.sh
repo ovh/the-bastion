@@ -381,16 +381,18 @@ testsuite_mfa()
         success a0_remove_mfa_req_a4_dupe $a0 --osh accountModify --account $account4 --pam-auth-bypass no --mfa-totp-required no --mfa-password-required no
         json .error_code OK .command accountModify .value.pam_auth_bypass.error_code OK_NO_CHANGE .value.mfa_totp_required.error_code OK_NO_CHANGE .value.mfa_password_required.error_code OK_NO_CHANGE
 
-        # remove totp from account4 to simplify the following mfa-any tests
+        # pubkey-auth-optional
+
+        # remove totp from account4 to simplify the following tests
         grant accountMFAResetTOTP
 
-        success mfa a0_nototp_a4 $a0 --osh accountMFAResetTOTP --account $account4
+        success a0_nototp_a4 $a0 --osh accountMFAResetTOTP --account $account4
         json .command accountMFAResetTOTP .error_code OK
 
         revoke accountMFAResetTOTP
 
-        # no mfa-any, success with pubkey and password
-        script mfa a4_no_mfaany_login_pubkey_pam "echo 'set timeout 30; \
+        # pubkey-auth-optional disabled: success with pubkey and password
+        script a4_no_pubkeyauthoptional_login_pubkey_pam "echo 'set timeout 30; \
             spawn $a4 --osh groupList; \
             expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
@@ -401,8 +403,8 @@ testsuite_mfa()
         contain REGEX 'Password:|Password for'
         json .command groupList .error_code OK_EMPTY
 
-        # no mfa-any, fail with pubkey but no password (timeout)
-        script mfa a4_no_mfaany_login_pubkey_nopam $a4 --osh groupList
+        # pubkey-auth-optional disabled: fail with pubkey but no password (timeout)
+        script a4_no_pubkeyauthoptional_login_pubkey_nopam $a4 --osh groupList
         retvalshouldbe 124
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
         contain 'Your password expires on'
@@ -410,27 +412,35 @@ testsuite_mfa()
         contain REGEX 'Password:|Password for'
         nocontain 'JSON_OUTPUT'
 
-        # no mfa-any, fail with no pubkey (never gets to ask for the password)
-        script mfa a4_no_mfaany_login_nopubkey_pam $a4np --osh groupList
+        # pubkey-auth-optional disabled: fail with no pubkey (never gets to ask for the password)
+        script a4_no_pubkeyauthoptional_login_nopubkey_pam $a4np --osh groupList
         retvalshouldbe 255
         contain 'Permission denied (publickey).'
         nocontain 'password'
         nocontain 'JSON_OUTPUT'
 
-        # set mfa-any on account4
-        success mfa a0_set_mfaany_a4 $a0 --osh accountModify --account $account4 --mfa-any yes
-        json .error_code OK .command accountModify .value.mfa_any.error_code OK
+        # set pubkey-auth-optional on account4
+        success a0_set_pubkeyauthoptional_a4 $a0 --osh accountModify --account $account4 --pubkey-auth-optional yes
+        json .error_code OK .command accountModify .value.pubkey_auth_optional.error_code OK
 
-        # set mfa-any on account4 (dupe)
-        success mfa a0_set_mfaany_a4_dupe $a0 --osh accountModify --account $account4 --mfa-any yes
-        json .error_code OK .command accountModify .value.mfa_any.error_code OK_NO_CHANGE
+        # set pubkey-auth-optional on account4 (dupe)
+        success a0_set_pubkeyauthoptional_a4_dupe $a0 --osh accountModify --account $account4 --pubkey-auth-optional yes
+        json .error_code OK .command accountModify .value.pubkey_auth_optional.error_code OK_NO_CHANGE
 
-        # success with pubkey but no password
-        success mfa a4_mfaany_login_pubkey_nopam $a4 --osh groupList
+        # pubkey-auth-optional enabled: success with pubkey and password
+        script a4_pubkeyauthoptional_login_pubkey_pam "echo 'set timeout 30; \
+            spawn $a4 --osh groupList; \
+            expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; }; \
+            expect eof; \
+            lassign [wait] pid spawnid value value; \
+            exit \$value' | expect -f -"
+        retvalshouldbe 0
+        contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
+        contain REGEX 'Password:|Password for'
         json .command groupList .error_code OK_EMPTY
 
-        # success with password but no pubkey
-        script mfa a4_mfaany_login_nopubkey_pam "echo 'set timeout 30; \
+        # pubkey-auth-optional enabled: success with password only
+        script a4_pubkeyauthoptional_login_nopubkey_pam "echo 'set timeout 30; \
             spawn $a4np --osh groupList; \
             expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
@@ -441,13 +451,22 @@ testsuite_mfa()
         contain REGEX 'Password:|Password for'
         json .command groupList .error_code OK_EMPTY
 
-        # unset mfa-any on account4
-        success mfa a0_unset_mfaany_a4 $a0 --osh accountModify --account $account4 --mfa-any no
-        json .error_code OK .command accountModify .value.mfa_any.error_code OK
+        # pubkey-auth-optional enabled: fail with pubkey only
+        script a4_pubkeyauthoptional_login_pubkey_nopam $a4 --osh groupList
+        retvalshouldbe 124
+        contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
+        contain 'Your password expires on'
+        contain 'in 89 days'
+        contain REGEX 'Password:|Password for'
+        nocontain 'JSON_OUTPUT'
+
+        # unset pubkey-auth-optional on account4
+        success a0_unset_pubkeyauthoptional_a4 $a0 --osh accountModify --account $account4 --pubkey-auth-optional no
+        json .error_code OK .command accountModify .value.pubkey_auth_optional.error_code OK
 
         # unset mfa-any on account4 (dupe)
-        success mfa a0_unset_mfaany_a4_dupe $a0 --osh accountModify --account $account4 --mfa-any no
-        json .error_code OK .command accountModify .value.mfa_any.error_code OK_NO_CHANGE
+        success a0_unset_pubkeyauthoptional_a4_dupe $a0 --osh accountModify --account $account4 --pubkey-auth-optional no
+        json .error_code OK .command accountModify .value.pubkey_auth_optional.error_code OK_NO_CHANGE
 
 
 
