@@ -39,7 +39,7 @@ if ($ENV{'OSH_IN_INTERACTIVE_SESSION'}) {
 
 # first, check if the google-authenticator we have supports --issuer, if not, just omit it, it's not a deal-breaker
 $fnret = OVH::Bastion::execute(cmd => ['google-authenticator', '-h'], must_succeed => 1);
-$fnret or HEXIT($fnret);
+$fnret or osh_exit($fnret);
 my @additional_params;
 if (grep { /--issuer/ } @{$fnret->value->{'stdout'}}) {
     push @additional_params, "--issuer=" . OVH::Bastion::config('bastionName')->value;
