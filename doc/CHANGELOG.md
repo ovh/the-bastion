@@ -1,3 +1,9 @@
+## v3.06.00 - 2021/10/15
+- feat: accountModify: add --pubkey-auth-optional
+- fix: accountPIV: fix bad autocompletion rule
+- fix: groupdel: false positive in lock contention detection
+- doc: bastion.conf: add superowner system group requirement
+
 ## v3.05.01 - 2021/09/22
 - feat: add ``--proactive-mfa`` and ``mfa``/``nofa`` interactive commands
 - feat: ``osh-backup-acl-keys``: add the possibility to sign encrypted backups (#209)

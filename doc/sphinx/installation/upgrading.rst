@@ -24,6 +24,19 @@ Note that if you're using an infrastructure automation tool such as Puppet, Ansi
 Version-specific upgrade instructions
 =====================================
 
+v3.06.00 - 2021/10/15
+*********************
+
+The ``sshd_config`` templates have been modified to reflect the changes needed to use
+the new ``--pubkey-auth-optional`` parameter of :doc:`/plugins/restricted/accountModify` (`#237 <https://github.com/ovh/the-bastion/pull/237>`_).
+If you want to use it, don't forget to review your ``sshd_config`` and modify it accordingly: the templates can be found in ``etc/ssh/``.
+
+Note that misconfiguring `sshd` and `pam` together could at worst entirely disable sshd authentication.
+If you have a custom configuration, different from the templates we provide, please double-check
+that such corner case is not possible by design.
+A good way to ensure this is to review the `pam` configuration and ensure that there is no execution
+flow that pushes a `pam_success` value to the pam stack without requiring any form of authentication.
+
 v3.05.01 - 2021/09/22
 *********************
 
