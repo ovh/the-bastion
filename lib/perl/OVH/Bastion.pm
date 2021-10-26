@@ -93,6 +93,7 @@ use constant {
     EXIT_INVALID_REMOTE_USER         => 127,
     EXIT_INVALID_REMOTE_HOST         => 128,
     EXIT_PIV_REQUIRED                => 129,
+    EXIT_GET_HASH_FAILED             => 130,
 };
 
 use constant {
@@ -142,7 +143,7 @@ my %_autoload_files = (
     os => [
         qw{ sysinfo is_linux is_debian is_redhat is_bsd is_freebsd is_openbsd is_netbsd has_acls sys_useradd sys_groupadd sys_userdel sys_groupdel sys_addmembertogroup sys_delmemberfromgroup sys_changepassword sys_neutralizepassword sys_setpasswordpolicy sys_getpasswordinfo sys_getsudoersfolder sys_setfacl }
     ],
-    password => [qw{ get_hashes_from_password get_hashes_list }],
+    password => [qw{ get_hashes_from_password get_hashes_list is_valid_hash }],
     ssh      => [
         qw{ has_piv_helper verify_piv get_authorized_keys_from_file add_key_to_authorized_keys_file put_authorized_keys_to_file get_ssh_pub_key_info is_valid_public_key get_from_for_user_key generate_ssh_key get_bastion_ips get_supported_ssh_algorithms_list is_allowed_algo_and_size is_valid_fingerprint print_public_key account_ssh_config_get account_ssh_config_set ssh_ingress_keys_piv_apply is_effective_piv_account_policy_enabled }
     ],

@@ -65,7 +65,7 @@ sub get_group_keys {
 # on the access way that is tested. note that for e.g. group accesses, we don't
 # check if a given account has access to the group or not, we just check if the
 # group itself has access. this check must be done by our caller.
-# returns: { match, size, forceKey } for best match, if any
+# returns: { match, size, forceKey, forcePassword } for best match, if any
 sub is_access_way_granted {
     my %params = @_;
 
@@ -98,12 +98,13 @@ sub is_access_way_granted {
 "checking way $way/$account/$group with ignorePort=$ignorePort ignoreUser=$ignoreUser exactIpMatch=$exactIpMatch exactPortMatch=$exactPortMatch exactUserMatch=$exactUserMatch"
     );
 
-    my ($bestMatch, $bestMatchSize, $bestMatchComment, $forceKey);
+    my ($bestMatch, $bestMatchSize, $bestMatchComment, $forceKey, $forcePassword);
     foreach my $entry (@acl) {
-        my $allowedIp     = $entry->{'ip'};         # can be a prefix
-        my $allowedUser   = $entry->{'user'};       # can be undef (if any-user)
-        my $allowedPort   = $entry->{'port'};       # can be undef (if any-port)
-        my $localForceKey = $entry->{'forceKey'};
+        my $allowedIp          = $entry->{'ip'};              # can be a prefix
+        my $allowedUser        = $entry->{'user'};            # can be undef (if any-user)
+        my $allowedPort        = $entry->{'port'};            # can be undef (if any-port)
+        my $localForceKey      = $entry->{'forceKey'};
+        my $localForcePassword = $entry->{'forcePassword'};
 
         osh_debug("checking wanted "
               . (defined $wantedUser ? $wantedUser : '<u>') . '@'
@@ -114,7 +115,7 @@ sub is_access_way_granted {
               . (defined $allowedIp   ? $allowedIp   : '<u>') . ':'
               . (defined $allowedPort ? $allowedPort : '<u>'));
 
-        $allowedIp or next;                         # can't be empty
+        $allowedIp or next;    # can't be empty
 
         # first, check port stuff
         # if we get ignorePort, we skip the checks entirely
@@ -201,6 +202,7 @@ sub is_access_way_granted {
 
             # here, we got a perfect match
             $forceKey         = $localForceKey;
+            $forcePassword    = $localForcePassword;
             $bestMatch        = $allowedIp;
             $bestMatchComment = $entry->{'userComment'};
             $bestMatchSize    = undef;                     # not needed
@@ -217,6 +219,7 @@ sub is_access_way_granted {
                 osh_debug("... we got a slash match !");
                 if (not defined $bestMatchSize or $ipCheck->size() < $bestMatchSize) {
                     $forceKey         = $localForceKey;
+                    $forcePassword    = $localForcePassword;
                     $bestMatch        = $allowedIp;
                     $bestMatchComment = $entry->{'userComment'};
                     $bestMatchSize    = $ipCheck->size();
@@ -229,6 +232,7 @@ sub is_access_way_granted {
             if ($allowedIp eq $wantedIp) {
                 osh_debug("... we got a singleip match !");
                 $forceKey         = $localForceKey;
+                $forcePassword    = $localForcePassword;
                 $bestMatch        = $allowedIp;
                 $bestMatchComment = $entry->{'userComment'};
                 $bestMatchSize    = 1;
@@ -238,7 +242,7 @@ sub is_access_way_granted {
     }
 
     if (defined $bestMatch) {
-        return R('OK', value => {match => $bestMatch, size => $bestMatchSize, forceKey => $forceKey, comment => $bestMatchComment});
+        return R('OK', value => {match => $bestMatch, size => $bestMatchSize, forceKey => $forceKey, forcePassword => $forcePassword, comment => $bestMatchComment});
     }
     return R('KO_ACCESS_DENIED');
 }
@@ -505,7 +509,7 @@ sub print_acls {
     # also take this opportunity to remember the longest field for each column
     my @printRows;
     my @jsonRows;
-    my @columnNames       = qw( IP PORT USER ACCESS-BY ADDED-BY ADDED-AT EXPIRY? COMMENT FORCED-KEY );
+    my @columnNames       = qw( IP PORT USER ACCESS-BY ADDED-BY ADDED-AT EXPIRY? COMMENT FORCED-KEY FORCED-PASSWORD);
     my @printColumnLength = map { length } @columnNames;
     foreach my $contextAcl (@$acls) {
         my $type  = $contextAcl->{'type'};
@@ -519,8 +523,9 @@ sub print_acls {
             my $addedBy   = $entry->{'addedBy'}   || '-';
             my $addedDate = $entry->{'addedDate'} || '-';
             $addedDate = substr($addedDate, 0, 10);
-            my $forceKey = $entry->{'forceKey'} || '-';
-            my $expiry   = $entry->{'expiry'} ? (duration2human(seconds => ($entry->{'expiry'} - time()))->value->{'human'}) : '-';
+            my $forceKey      = $entry->{'forceKey'}      || '-';
+            my $forcePassword = $entry->{'forcePassword'} || '-';
+            my $expiry = $entry->{'expiry'} ? (duration2human(seconds => ($entry->{'expiry'} - time()))->value->{'human'}) : '-';
 
             # resolve reverse if asked for it
             my $ipReverse;
@@ -531,7 +536,8 @@ sub print_acls {
                 $ipReverse       ? $ipReverse       : $entry->{'ip'},
                 $entry->{'port'} ? $entry->{'port'} : '(any)',
                 $entry->{'user'} ? $entry->{'user'} : '(any)',
-                $accessType, $addedBy, $addedDate, $expiry, $entry->{'userComment'} || '-', $forceKey
+                $accessType, $addedBy, $addedDate, $expiry, $entry->{'userComment'} || '-',
+                $forceKey, $forcePassword
             );
 
             # if we have includes or excludes, match fields against the built regex
@@ -638,7 +644,7 @@ sub _is_in_any_net {
 # by calling is_access_way_granted() multiple times with the proper params.
 # it can also add the fullpath of the keys to try for allowed accesses if asked to
 # returns: arrayref of contextualized grants, contextualized-grant: { type, group, $granthashref }
-# granthashref: returned by is_access_way_granted, i.e. { match, size, forceKey }
+# granthashref: returned by is_access_way_granted, i.e. { match, size, forceKey, forcePassword }
 sub is_access_granted {
     my %params = @_;
 
@@ -1026,7 +1032,7 @@ sub get_acls {
 # this function simply returns the requested acl
 # i.e. personal or legacy access of an account, group access, or groupguest access.
 # it just calls get_acl_from_file() with the proper file location
-# returns: arrayref of entries, entry: { ip,user,port,forceKey,addedBy,addedDate,comment }
+# returns: arrayref of entries, entry: { ip,user,port,forceKey,forcePassword,addedBy,addedDate,comment }
 my %_cache_get_acl_way;
 
 sub get_acl_way {
@@ -1160,7 +1166,7 @@ sub _get_acl_from_file {
 
     my @entries;
     foreach my $line (@lines) {
-        my ($ip, $user, $port, $comment, $forceKey, $expiry, $addedBy, $addedDate, $extra, $comment, $userComment);
+        my ($ip, $user, $port, $comment, $forceKey, $forcePassword, $expiry, $addedBy, $addedDate, $extra, $comment, $userComment);
 
         # extract comment if any
         $line =~ s/(#.*)// and $comment = $1;
@@ -1224,6 +1230,15 @@ sub _get_acl_from_file {
                 $forceKey = $fnret->value->{'fingerprint'};
                 osh_debug("found a valid forced key <$forceKey>");
             }
+            if ($comment =~ s/# FORCEPASSWORD=(\S+)//) {
+                $fnret = OVH::Bastion::is_valid_hash(hash => $1);
+                if (!$fnret) {
+                    osh_debug("skipping line <$line> because invalid forcepassword hash ($1) found");
+                    next;
+                }
+                $forcePassword = $fnret->value->{'hash'};
+                osh_debug("found a valid forced password <$forcePassword>");
+            }
             if ($comment =~ s/# COMMENT=<([^>]+)>//) {
                 $userComment = $1;
             }
@@ -1236,15 +1251,16 @@ sub _get_acl_from_file {
 
         push @entries,
           {
-            ip          => $ip,
-            user        => $user,
-            port        => $port,
-            forceKey    => $forceKey,
-            expiry      => $expiry,
-            addedBy     => $addedBy,
-            addedDate   => $addedDate,
-            userComment => $userComment,
-            comment     => $extra,
+            ip            => $ip,
+            user          => $user,
+            port          => $port,
+            forceKey      => $forceKey,
+            forcePassword => $forcePassword,
+            expiry        => $expiry,
+            addedBy       => $addedBy,
+            addedDate     => $addedDate,
+            userComment   => $userComment,
+            comment       => $extra,
           };
     }
 

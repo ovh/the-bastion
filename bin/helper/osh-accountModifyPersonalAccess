@@ -46,19 +46,20 @@ if (not defined $self) {
 # Fetch command options
 my $fnret;
 my ($result, @optwarns);
-my ($account, $ip, $user, $port, $action, $ttl, $forceKey, $target, $comment);
+my ($account, $ip, $user, $port, $action, $ttl, $forceKey, $forcePassword, $target, $comment);
 eval {
     local $SIG{__WARN__} = sub { push @optwarns, shift };
     $result = GetOptions(
-        "account=s"   => sub { $account  //= $_[1] },
-        "ip=s"        => sub { $ip       //= $_[1] },
-        "user=s"      => sub { $user     //= $_[1] },
-        "port=i"      => sub { $port     //= $_[1] },
-        "action=s"    => sub { $action   //= $_[1] },
-        "ttl=i"       => sub { $ttl      //= $_[1] },
-        "force-key=s" => sub { $forceKey //= $_[1] },
-        "target=s"    => sub { $target   //= $_[1] },
-        "comment=s"   => sub { $comment  //= $_[1] },
+        "account=s"        => sub { $account       //= $_[1] },
+        "ip=s"             => sub { $ip            //= $_[1] },
+        "user=s"           => sub { $user          //= $_[1] },
+        "port=i"           => sub { $port          //= $_[1] },
+        "action=s"         => sub { $action        //= $_[1] },
+        "ttl=i"            => sub { $ttl           //= $_[1] },
+        "force-key=s"      => sub { $forceKey      //= $_[1] },
+        "force-password=s" => sub { $forcePassword //= $_[1] },
+        "target=s"         => sub { $target        //= $_[1] },
+        "comment=s"        => sub { $comment       //= $_[1] },
     );
 };
 if ($@) { die $@ }
@@ -97,15 +98,16 @@ $user and $machine = $user . '@' . $machine;
 
 # access_modify validates all its parameters, don't do it ourselves here for clarity
 $fnret = OVH::Bastion::access_modify(
-    way      => 'personal',
-    account  => $account,
-    action   => $action,
-    user     => $user,
-    ip       => $ip,
-    port     => $port,
-    ttl      => $ttl,
-    forceKey => $forceKey,
-    comment  => $comment,
+    way           => 'personal',
+    account       => $account,
+    action        => $action,
+    user          => $user,
+    ip            => $ip,
+    port          => $port,
+    ttl           => $ttl,
+    forceKey      => $forceKey,
+    forcePassword => $forcePassword,
+    comment       => $comment,
 );
 if ($fnret->err eq 'OK') {
     my $ttlmsg = $ttl ? ' (expires in ' . OVH::Bastion::duration2human(seconds => $ttl)->value->{'human'} . ')' : '';

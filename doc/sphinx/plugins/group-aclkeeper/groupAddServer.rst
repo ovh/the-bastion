@@ -55,6 +55,10 @@ Add an IP or IP block to a group's servers list
 
    Only use the key with the specified fingerprint to connect to the server (cf groupInfo)
 
+.. option:: --force-password HASH  
+
+   Only use the password with the specified hash to connect to the server (cf groupListPasswords)
+
 .. option:: --ttl SECONDS|DURATION 
 
    Specify a number of seconds (or a duration string, such as "1d7h8m") after which the access will automatically expire

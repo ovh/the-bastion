@@ -301,7 +301,8 @@ sub access_modify {
     my $group   = $params{'group'};                                                 # only for way=group or way=groupguest
     my $account = $params{'account'};                                               # only for way=personal
 
-    my $forceKey = $params{'forceKey'};
+    my $forceKey      = $params{'forceKey'};
+    my $forcePassword = $params{'forcePassword'};
 
     my $fnret;
 
@@ -382,6 +383,13 @@ sub access_modify {
         $fnret = OVH::Bastion::is_valid_fingerprint(fingerprint => $forceKey);
         $fnret or return $fnret;
         $forceKey = $fnret->value->{'fingerprint'};
+    }
+
+    # check password hash
+    if ($forcePassword) {
+        $fnret = OVH::Bastion::is_valid_hash(hash => $forcePassword);
+        $fnret or return $fnret;
+        $forcePassword = $fnret->value->{'hash'};
     }
 
     if ($ttl) {
@@ -486,7 +494,7 @@ sub access_modify {
         my $date         = $t->strftime($fmt);
         my $entryComment = "# $action by $requester on $date";
 
-        # if we're adding it, add comment and potential FORCEKEY
+        # if we're adding it, append other parameters as comments
         if ($action eq 'add') {
 
             $entry .= " $entryComment";
@@ -496,6 +504,9 @@ sub access_modify {
                 # hash is case-sensitive only for new SHA256 format
                 $forceKey = lc($forceKey) if ($forceKey !~ /^sha256:/i);
                 $entry .= " # FORCEKEY=" . $forceKey;
+            }
+            if ($forcePassword) {
+                $entry .= " # FORCEPASSWORD=" . $forcePassword;
             }
             if ($ttl) {
                 $entry .= " # EXPIRY=" . (time() + $ttl);
@@ -559,16 +570,17 @@ sub access_modify {
             severity => 'info',
             type     => 'acl',
             fields   => [
-                ['action',    $params{'action'}],
-                ['type',      $params{'way'}],
-                ['group',     $shortGroup],
-                ['account',   $params{'account'}],
-                ['user',      $params{'user'}],
-                ['ip',        $params{'ip'}],
-                ['port',      $params{'port'}],
-                ['ttl',       $params{'ttl'}],
-                ['force_key', $params{'forceKey'}],
-                ['comment',   $params{'comment'}],
+                ['action',         $params{'action'}],
+                ['type',           $params{'way'}],
+                ['group',          $shortGroup],
+                ['account',        $params{'account'}],
+                ['user',           $params{'user'}],
+                ['ip',             $params{'ip'}],
+                ['port',           $params{'port'}],
+                ['ttl',            $params{'ttl'}],
+                ['force_key',      $params{'forceKey'}],
+                ['force_password', $params{'forcePassword'}],
+                ['comment',        $params{'comment'}],
             ]
         );
         return R('OK', msg => $returnmsg) if $returnmsg;

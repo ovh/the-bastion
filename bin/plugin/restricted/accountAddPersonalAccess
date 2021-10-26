@@ -12,14 +12,15 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,
     header  => "adding personal access to a server on an account",
     options => {
-        "account=s"   => \my $account,
-        "user-any"    => \my $userAny,
-        "port-any"    => \my $portAny,
-        "scpup"       => \my $scpUp,
-        "scpdown"     => \my $scpDown,
-        "force-key=s" => \my $forceKey,
-        "ttl=s"       => \my $ttl,
-        "comment=s"   => \my $comment,
+        "account=s"        => \my $account,
+        "user-any"         => \my $userAny,
+        "port-any"         => \my $portAny,
+        "scpup"            => \my $scpUp,
+        "scpdown"          => \my $scpDown,
+        "force-key=s"      => \my $forceKey,
+        "force-password=s" => \my $forcePassword,
+        "ttl=s"            => \my $ttl,
+        "comment=s"        => \my $comment,
     },
     helptext => <<'EOF',
 Add a personal server access to an account
@@ -35,6 +36,7 @@ Usage: --osh SCRIPT_NAME --account ACCOUNT --host HOST [OPTIONS]
   --scpup                  Allow SCP upload, you--bastion-->server (omit --user in this case)
   --scpdown                Allow SCP download, you<--bastion--server (omit --user in this case)
   --force-key FINGERPRINT  Only use the key with the specified fingerprint to connect to the server (cf selfListEgressKeys)
+  --force-password HASH    Only use the password with the specified hash to connect to the server (cf accountListPasswords)
   --ttl SECONDS|DURATION   Specify a number of seconds (or a duration string, such as "1d7h8m") after which the access will automatically expire
   --comment "'ANY TEXT'"   Add a comment alongside this server. Quote it twice as shown if you're under a shell.
 
@@ -107,6 +109,12 @@ if ($forceKey) {
     $forceKey = $fnret->value->{'fingerprint'};
 }
 
+if ($forcePassword) {
+    $fnret = OVH::Bastion::is_valid_hash(hash => $forcePassword);
+    $fnret or osh_exit $fnret;
+    $forcePassword = $fnret->value->{'hash'};
+}
+
 osh_info "Can't verify if $account\'s personal key have been installed to the remote server, as you don't have access to his private keys, adding the access blindly";
 
 my @command = qw{ sudo -n -u allowkeeper -- /usr/bin/env perl -T };
@@ -118,6 +126,7 @@ push @command, '--ip', $ip;
 push @command, '--user', $user if $user;
 push @command, '--port', $port if $port;
 push @command, '--force-key', $forceKey if $forceKey;
+push @command, '--force-password', $forcePassword if $forcePassword;
 push @command, '--ttl', $ttl if $ttl;
 push @command, '--comment', $comment if $comment;
 
