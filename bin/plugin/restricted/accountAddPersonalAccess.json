@@ -9,14 +9,21 @@
         "accountAddPersonalAccess --account \\S+ --host \\S+ .*--port" , {"pr" : ["<PORT>"]},
         "accountAddPersonalAccess --account \\S+ --host \\S+ --user \\S+"                          , {"ac" : ["<enter>", "--port"]},
         "accountAddPersonalAccess --account \\S+ --host \\S+ --port \\S+"                          , {"ac" : ["<enter>", "--user"]},
-        "accountAddPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+" , {"ac" : ["--force-key","--ttl","<enter>"]},
+        "accountAddPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+" , {"ac" : ["--force-key","--force-password","--ttl","<enter>"]},
         "accountAddPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --ttl" , {"pr" : ["<SECONDS>"]},
-        "accountAddPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --ttl \\S+" , {"ac" : ["--force-key","<enter>"]},
-        "accountAddPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --ttl \\S+ --force-key" , {"pr" : ["<enter>"]},
+        "accountAddPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --ttl \\S+" , {"ac" : ["--force-key","--force-password","<enter>"]},
+        "accountAddPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --ttl \\S+ --force-key" , {"pr" : ["<FINGERPRINT>"]},
+        "accountAddPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --ttl \\S+ --force-key \\S+" , {"pr" : ["<enter>"]},
+        "accountAddPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --ttl \\S+ --force-password" , {"pr" : ["<HASH>"]},
+        "accountAddPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --ttl \\S+ --force-password \\S+" , {"pr" : ["<enter>"]},
         "accountAddPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --force-key" , {"pr" : ["<FINGERPRINT>"]},
         "accountAddPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --force-key \\S+" , {"ac" : ["--ttl","<enter>"]},
         "accountAddPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --force-key \\S+ --ttl" , {"pr" : ["<SECONDS>"]},
-        "accountAddPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --force-key \\S+ --ttl \\S+" , {"pr" : ["<enter>"]}
+        "accountAddPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --force-key \\S+ --ttl \\S+" , {"pr" : ["<enter>"]},
+        "accountAddPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --force-password" , {"pr" : ["<HASH>"]},
+        "accountAddPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --force-password \\S+" , {"ac" : ["--ttl","<enter>"]},
+        "accountAddPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --force-password \\S+ --ttl" , {"pr" : ["<SECONDS>"]},
+        "accountAddPersonalAccess --account \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --force-password \\S+ --ttl \\S+" , {"pr" : ["<enter>"]}
     ],
     "master_only": true
 }

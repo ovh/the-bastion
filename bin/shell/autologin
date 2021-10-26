@@ -4,8 +4,8 @@
 set ::env(TERM) ""
 
 # we need 6 arguments
-if { [llength $argv] < 7 } {
-    puts "BASTION SAYS: autologin usage error, expected 6 args: <ssh|telnet> <login> <ip> <port> <file_with_password> <timeout> <fallback_delay> [passthrough arguments to ssh or telnet]"
+if { [llength $argv] < 8 } {
+    puts "BASTION SAYS: autologin usage error, expected 6 args: <ssh|telnet> <login> <ip> <port> <file_with_password> <password_id> <timeout> <fallback_delay> [passthrough arguments to ssh or telnet]"
     exit 1
 }
 
@@ -15,9 +15,10 @@ set arg_login          [lindex $argv 1]
 set arg_ip             [lindex $argv 2]
 set arg_port           [lindex $argv 3]
 set arg_file           [lindex $argv 4]
-set arg_timeout        [lindex $argv 5]
-set arg_fallback_delay [lindex $argv 6]
-set arg_remaining      [lrange $argv 7 end]
+set arg_password_id    [lindex $argv 5]
+set arg_timeout        [lindex $argv 6]
+set arg_fallback_delay [lindex $argv 7]
+set arg_remaining      [lrange $argv 8 end]
 
 # start the program
 if { $arg_prog == "ssh" } {
@@ -103,12 +104,18 @@ proc attempt_to_login args {
     exit 5
 }
 
-# try to login with the main password file
+# if no specific pasword was requested, try to login with the main password file, then try the fallbacks
 set tryid 0
-set last_attempt [attempt_to_login $tryid $arg_prog $arg_login $arg_file $arg_fallback_delay $spawn_args]
-while { $last_attempt == 100 && $tryid < 10 } {
-    # auth failed, might want to try with the fallback
-    incr tryid
-    set last_attempt [attempt_to_login $tryid $arg_prog $arg_login "$arg_file.$tryid" $arg_fallback_delay $spawn_args]
+if { $arg_password_id == -1 } {
+    set last_attempt [attempt_to_login $tryid $arg_prog $arg_login $arg_file $arg_fallback_delay $spawn_args]
+    while { $last_attempt == 100 && $tryid < 10 } {
+        # auth failed, might want to try with the fallback
+        incr tryid
+        set last_attempt [attempt_to_login $tryid $arg_prog $arg_login "$arg_file.$tryid" $arg_fallback_delay $spawn_args]
+    }
+} elseif { $arg_password_id == 0 } {
+    set last_attempt [attempt_to_login $tryid $arg_prog $arg_login $arg_file $arg_fallback_delay $spawn_args]
+} else {
+    set last_attempt [attempt_to_login $tryid $arg_prog $arg_login "$arg_file.$arg_password_id" $arg_fallback_delay $spawn_args]
 }
 exit $last_attempt

@@ -1130,19 +1130,59 @@ print " allowed ... log on($saveFile)\n\n" if !$quiet;
 # now build the real command
 my @command;
 
+# if we are doing a password login, find the password(s)
+
+# for autologin, "-1" means "try the main password, then try the fallbacks", 0 means "try only the main password", and N means "try only the Nth fallback password"
+my $forcePasswordId = -1;
+
+if ($userPasswordClue) {
+
+    # locate main password file
+    my $fnretpass = OVH::Bastion::get_passfile(hint => $userPasswordClue, context => $userPasswordContext, self => ($remoteself || $sysself), tryLegacy => 1);
+    if (!$fnretpass) {
+        main_exit OVH::Bastion::EXIT_PASSFILE_NOT_FOUND, "passfile-not-found", $fnretpass->msg;
+    }
+    $passwordFile = $fnretpass->value;
+
+    # check if a specific password is forced
+    foreach my $grant (@{$fnret->value}) {
+
+        # only keep the grant matching the password clue and context AND with a forced password
+        if (
+            $grant->{'forcePassword'}
+            && (   ($userPasswordContext eq 'self' && $grant->{'type'} eq 'personal')
+                || ($userPasswordContext eq 'group' && $grant->{'type'} eq 'group-member' && $grant->{'group'} eq $userPasswordClue))
+          )
+        {
+
+            # fetch the hashes of the main password and all its fallbacks
+            my $fnrethashes;
+            if   ($userPasswordContext eq 'self') { $fnrethashes = OVH::Bastion::get_hashes_list(context => 'account', account => $userPasswordClue); }
+            else                                  { $fnrethashes = OVH::Bastion::get_hashes_list(context => 'group',   group   => $userPasswordClue); }
+            if (!$fnrethashes) { main_exit(OVH::Bastion::EXIT_GET_HASH_FAILED, "get_hashes_list", $fnrethashes->msg); }
+
+            # is our forced password's hash one of them ?
+            for my $id (0 .. $#{$fnrethashes->value}) {
+                foreach my $hash (values(%{$fnrethashes->value->[$id]->{'hashes'}})) {
+                    if ($grant->{'forcePassword'} eq $hash) { $forcePasswordId = $id; print " forcing password with hash: " . $grant->{'forcePassword'} . "\n\n" unless $quiet }
+                }
+            }
+
+            # if the password was not found, abort
+            if ($forcePasswordId == -1) { main_exit(OVH::Bastion::EXIT_PASSFILE_NOT_FOUND, "forced-password-not-found", "The forced password could not be found"); }
+        }
+    }
+}
+
 # if we want telnet (not ssh)
 if ($telnet) {
 
     # TELNET PASSWORD AUTOLOGIN
     if ($userPasswordClue) {
-        my $fnretpass = OVH::Bastion::get_passfile(hint => $userPasswordClue, context => $userPasswordContext, self => ($remoteself || $sysself), tryLegacy => 1);
-        if (!$fnretpass) {
-            main_exit OVH::Bastion::EXIT_PASSFILE_NOT_FOUND, "passfile-not-found", $fnretpass->msg;
-        }
-        $passwordFile = $fnretpass->value;
         osh_debug("going to use telnet with this password file : $passwordFile");
         print " will use TELNET with password autologin\n\n" unless $quiet;
-        push @command, $OVH::Bastion::BASEPATH . '/bin/shell/autologin', 'telnet', $user, $ip, $port, $passwordFile, ($timeout ? $timeout : 45), ($fallbackPasswordDelay // 3);
+        push @command, $OVH::Bastion::BASEPATH . '/bin/shell/autologin', 'telnet', $user, $ip, $port,
+          $passwordFile, $forcePasswordId, ($timeout ? $timeout : 45), ($fallbackPasswordDelay // 3);
     }
 
     # TELNET PASSWORD INTERACTIVE
@@ -1162,14 +1202,10 @@ else {
         push @preferredAuths, 'keyboard-interactive';
         push @preferredAuths, 'password';
 
-        my $fnretpass = OVH::Bastion::get_passfile(hint => $userPasswordClue, context => $userPasswordContext, self => ($remoteself || $sysself), tryLegacy => 1);
-        if (!$fnretpass) {
-            main_exit OVH::Bastion::EXIT_PASSFILE_NOT_FOUND, "passfile-not-found", $fnretpass->msg;
-        }
-        $passwordFile = $fnretpass->value;
         osh_debug("going to use ssh with this password file : $passwordFile");
         print " will use SSH with password autologin\n\n" unless $quiet;
-        push @command, $OVH::Bastion::BASEPATH . '/bin/shell/autologin', 'ssh', $user, $ip, $port, $passwordFile, ($timeout ? $timeout : 45), ($fallbackPasswordDelay // 3);
+        push @command, $OVH::Bastion::BASEPATH . '/bin/shell/autologin', 'ssh', $user, $ip, $port,
+          $passwordFile, $forcePasswordId, ($timeout ? $timeout : 45), ($fallbackPasswordDelay // 3);
     }
 
     # SSH EGRESS KEYS (and maybe password interactive as a fallback if passwordAllowed)
@@ -1510,7 +1546,7 @@ sub help {
 =cut
 
     print STDERR <<"EOF" ;
-    
+
 The Bastion v$OVH::Bastion::VERSION quick usage examples:
 
     Connect to a server:              $bastionName admin\@srv1.example.org

@@ -154,4 +154,24 @@ sub get_hashes_list {
     return R('OK', value => \@ret);
 }
 
+sub is_valid_hash {
+    my %params = @_;
+    my $hash   = $params{'hash'};
+
+    if (not $hash) {
+        return R('ERR_MISSING_PARAMETER', msg => "Missing parameter 'hash'");
+    }
+    elsif ($hash =~ /^\$1\$[a-zA-Z0-9]+\$[a-zA-Z0-9\.\/]+$/) {
+        return R('OK', value => {type => 'md5crypt', hash => $hash});
+    }
+    elsif ($hash =~ /^\$5\$[a-zA-Z0-9]+\$[a-zA-Z0-9\.\/]+$/) {
+        return R('OK', value => {type => 'sha256crypt', hash => $hash});
+    }
+    elsif ($hash =~ /^\$6\$[a-zA-Z0-9]+\$[a-zA-Z0-9\.\/]+$/) {
+        return R('OK', value => {type => 'sha512crypt', hash => $hash});
+    }
+    return R('ERR_INVALID_PARAMETER',
+        msg => 'Specified hash is invalid, examples of hashes: $1$Pl44$BEyG04AjjH0TRhLuhAs4A1 $5$8BzocSDA$Hu/FdA/KrFe9HFWvXL4F5csJFxV1HlrLt4c3AOac5N5');
+}
+
 1;

@@ -50,6 +50,10 @@ Add a personal server access on your account
 
    Only use the key with the specified fingerprint to connect to the server (cf selfListEgressKeys)
 
+.. option:: --force-password HASH  
+
+   Only use the password with the specified hash to connect to the server (cf selfListPasswords)
+
 .. option:: --ttl SECONDS|DURATION 
 
    Specify a number of seconds (or a duration string, such as "1d7h8m") after which the access will automatically expire
