@@ -352,7 +352,7 @@ my $remainingOptions;
     "osh=s"                     => \my $osh_command,
     "telnet|e"                  => \my $telnet,
     "password=s"                => \my $passwordFile,
-    "P"                         => \my $selfPassword,
+    "self-password|P"           => \my $selfPassword,
     "host|h=s"                  => \my $host,
     "help"                      => \my $help,
     "long-help"                 => \my $longHelp,
