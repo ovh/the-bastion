@@ -11,17 +11,13 @@
         "selfAddPersonalAccess --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --ttl" , {"pr" : ["<SECONDS>"]},
         "selfAddPersonalAccess --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --ttl \\S+" , {"ac" : ["--force-key","--force-password","<enter>"]},
         "selfAddPersonalAccess --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --ttl \\S+ --force-key" , {"pr" : ["<FINGERPRINT>"]},
-        "selfAddPersonalAccess --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --ttl \\S+ --force-key \\S+" , {"pr" : ["<enter>"]},
         "selfAddPersonalAccess --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --ttl \\S+ --force-password" , {"pr" : ["<HASH>"]},
-        "selfAddPersonalAccess --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --ttl \\S+ --force-password \\S+" , {"pr" : ["<enter>"]},
+        "selfAddPersonalAccess --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --ttl \\S+ --force-(key|password) \\S+" , {"pr" : ["<enter>"]},
         "selfAddPersonalAccess --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --force-key" , {"pr" : ["<FINGERPRINT>"]},
-        "selfAddPersonalAccess --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --force-key \\S+" , {"ac" : ["--ttl","<enter>"]},
-        "selfAddPersonalAccess --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --force-key \\S+ --ttl" , {"pr" : ["<SECONDS>"]},
-        "selfAddPersonalAccess --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --force-key \\S+ --ttl \\S+" , {"pr" : ["<enter>"]},
         "selfAddPersonalAccess --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --force-password" , {"pr" : ["<HASH>"]},
-        "selfAddPersonalAccess --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --force-password \\S+" , {"ac" : ["--ttl","<enter>"]},
-        "selfAddPersonalAccess --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --force-password \\S+ --ttl" , {"pr" : ["<SECONDS>"]},
-        "selfAddPersonalAccess --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --force-password \\S+ --ttl \\S+" , {"pr" : ["<enter>"]}
+        "selfAddPersonalAccess --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --force-(key|password) \\S+" , {"ac" : ["--ttl","<enter>"]},
+        "selfAddPersonalAccess --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --force-(key|password) \\S+ --ttl" , {"pr" : ["<SECONDS>"]},
+        "selfAddPersonalAccess --host \\S+ --(port|user) \\S+ --(port|user) \\S+ --force-(key|password) \\S+ --ttl \\S+" , {"ac" : ["<enter>"]}
     ],
     "master_only": true
 }
