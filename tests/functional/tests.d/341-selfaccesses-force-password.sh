@@ -56,8 +56,8 @@ testsuite_selfaccesses_force_password()
     fi
 
 
-    # the tests for personal and group access are almost the same
-    for mode in personal group
+    # the tests for personal/group/guest accesses are almost the same
+    for mode in personal group-member group-guest
     do
         # create account1, it will be used to connect to account4
         grant accountCreate
@@ -65,7 +65,7 @@ testsuite_selfaccesses_force_password()
         json .error_code OK .command accountCreate
         revoke accountCreate
 
-        if test $mode = "personal"
+        if [ $mode = "personal" ]
         then
             # in personal mode, we manipulate account1's own personal accesses to connect to account4
             target="--account ${account1}"
@@ -81,8 +81,8 @@ testsuite_selfaccesses_force_password()
             grant accountListPasswords
             grant accountAddPersonalAccess
             grant accountDelPersonalAccess
-        else
-            # in group mode, account1 is a member of group1 and we manipulate group1's accesses to connect to account4
+        else # group-*
+            # in group mode, account1 is a member/guest of group1 and we manipulate group1's accesses to connect to account4
             target="--group ${group1}"
             gen_pass_plugin="groupGeneratePassword"
             list_pass_plugin="groupListPasswords"
@@ -97,9 +97,24 @@ testsuite_selfaccesses_force_password()
             json .error_code OK .command groupCreate
             revoke groupCreate
 
-            # add account1 as member
-            success g1_member_a1 $a0 --osh groupAddMember --group $group1 --account $account1
-            json .error_code OK .command groupAddMember
+            if [ $mode = "group-member" ]
+            then
+                # add account1 as member
+                success g1_member_a1 $a0 --osh groupAddMember --group $group1 --account $account1
+                json .error_code OK .command groupAddMember
+            else # group-guest
+                # add a temporary group server, so we can set the groupAddGuestAccess, the user/host/port are the same for all connections
+                success g1_add_tmpserver $a0 --osh $add_access_plugin $target --host $remote_ip --user $account4 --port $remote_port
+                json .error_code OK .command $add_access_plugin
+
+                # add account1 guest access
+                success g1_guest_a1 $a0 --osh groupAddGuestAccess --group $group1 --account $account1 --host $remote_ip --user $account4 --port $remote_port
+                json .error_code OK .command groupAddGuestAccess
+
+                # remove temporary server
+                success g1_del_tmpserver $a0 --osh $del_access_plugin $target --host $remote_ip --user $account4 --port $remote_port
+                json .error_code OK .command $del_access_plugin
+            fi
         fi
 
         # missing hash
@@ -121,8 +136,14 @@ testsuite_selfaccesses_force_password()
 
         grant accountListAccesses
         success ${mode}_listaccess $a0 --osh accountListAccesses --account $account1
-        contain "FORCED-PASSWORD"
-        json .error_code OK .command accountListAccesses .value[0].acl[0].forcePassword $fake_hash
+        json .error_code OK .command accountListAccesses
+        if [ $mode = "group-guest" ]
+        then
+            nocontain "FORCED-PASSWORD" # guests don't see all accesses infos
+        else
+            contain "FORCED-PASSWORD"
+            json .value[0].acl[0].forcePassword $fake_hash
+        fi
         revoke accountListAccesses
 
         success ${mode}_del_a4_fp_fake $a0 --osh $del_access_plugin $target --host $remote_ip --user $account4 --port $remote_port
@@ -144,8 +165,8 @@ testsuite_selfaccesses_force_password()
         # fetch checksums for a1|g1's second and third egress passwords
         success ${mode}_listpass $a0 --osh $list_pass_plugin $target
         json .error_code OK .command $list_pass_plugin
-        password2_sha256=$(get_json |  jq '.value[1].hashes.sha256crypt' | sed -e 's/"//g')
-        password3_sha256=$(get_json |  jq '.value[2].hashes.sha256crypt' | sed -e 's/"//g')
+        password2_sha256=$(get_json | jq -r '.value[1].hashes.sha256crypt')
+        password3_sha256=$(get_json | jq -r '.value[2].hashes.sha256crypt')
 
         # account1 => account4 *without* force-password: success because the correct password is one of the fallbacks
         success ${mode}_add_a4_nofp $a0 --osh $add_access_plugin $target --host $remote_ip --user $account4 --port $remote_port

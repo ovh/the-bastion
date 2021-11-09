@@ -1151,7 +1151,7 @@ if ($userPasswordClue) {
         if (
             $grant->{'forcePassword'}
             && (   ($userPasswordContext eq 'self' && $grant->{'type'} eq 'personal')
-                || ($userPasswordContext eq 'group' && $grant->{'type'} eq 'group-member' && $grant->{'group'} eq $userPasswordClue))
+                || ($userPasswordContext eq 'group' && $grant->{'type'} =~ /^group-(member|guest)$/ && $grant->{'group'} eq $userPasswordClue))
           )
         {
 
