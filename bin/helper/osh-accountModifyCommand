@@ -21,6 +21,8 @@ local $| = 1;
 #
 # Globals
 #
+$SIG{'HUP'}  = 'IGNORE';    # continue even when attached terminal is closed (we're called with setsid on supported systems anyway)
+$SIG{'PIPE'} = 'IGNORE';    # continue even if osh_info gets a SIGPIPE because there's no longer a terminal
 $ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/pkg/bin';
 my ($self) = $ENV{'SUDO_USER'} =~ m{^([a-zA-Z0-9._-]+)$};
 if (not defined $self) {
