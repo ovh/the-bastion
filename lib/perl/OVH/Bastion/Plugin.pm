@@ -9,6 +9,9 @@ use lib dirname(__FILE__) . '/../../../../lib/perl';
 use OVH::Bastion;
 use OVH::Result;
 
+$SIG{'HUP'}  = 'IGNORE';    # continue even when attached terminal is closed (we're called with setsid on supported systems anyway)
+$SIG{'PIPE'} = 'IGNORE';    # continue even if osh_info gets a SIGPIPE because there's no longer a terminal
+
 $| = 1;
 
 use Exporter 'import';

@@ -3,13 +3,14 @@ package OVH::Bastion;
 
 use common::sense;
 
-use IO::Handle;
-use IPC::Open3;
-use Symbol 'gensym';
-use IO::Select;
-use POSIX ":sys_wait_h";
-use JSON;
 use Config;
+use Fcntl 'SEEK_CUR';
+use IO::Handle;
+use IO::Select;
+use IPC::Open3;
+use JSON;
+use POSIX ":sys_wait_h";
+use Symbol 'gensym';
 
 # Get signal names, i.e. signal 9 is SIGKILL, etc.
 my %signum2string;
@@ -109,6 +110,9 @@ sub execute {
     my $currently_in_json_block = 0;
     my %bytesnb;
 
+    # maximum number of warns() to call, to avoid flooding the logs
+    my $warnLimit = 5;
+
     # always monitor our child stdout and stderr
     my $select = IO::Select->new($child_stdout, $child_stderr);
     binmode $child_stdin;
@@ -185,8 +189,19 @@ sub execute {
                             my $written = syswrite STDERR, $buffer, $readsize, $offset;
                             if (not defined $written) {
 
-                                # oww, abort writing for this cycle
-                                warn("execute(): error while syswriting($!) on stderr, aborting this cycle");
+                                # is the fd still open? (maybe we got a SIGPIPE or a SIGHUP)
+                                # don't use tell() here, we use syseek() for unbuffered i/o,
+                                # note that if we're at the position "0", it's still true (see doc).
+                                my $previousError = $!;
+                                if (!sysseek(STDERR, 0, SEEK_CUR)) {
+                                    warn("execute(): error while syswriting($previousError/$!) on stderr, the filehandle is closed, will no longer attempt to write to it")
+                                      if $warnLimit-- > 0;
+                                    $noisy_stderr = 0;
+                                }
+                                else {
+                                    # oww, abort writing for this cycle
+                                    warn("execute(): error while syswriting($previousError) on stderr, aborting this cycle") if $warnLimit-- > 0;
+                                }
                                 last;
                             }
                             $offset += $written;
@@ -223,8 +238,19 @@ sub execute {
                             my $written = syswrite STDOUT, $buffer, $readsize, $offset;
                             if (not defined $written) {
 
-                                # oww, abort writing for this cycle
-                                warn("execute(): error while syswriting($!) on stdout, aborting this cycle");
+                                # is the fd still open? (maybe we got a SIGPIPE or a SIGHUP)
+                                # don't use tell() here, we use syseek() for unbuffered i/o,
+                                # note that if we're at the position "0", it's still true (see doc).
+                                my $previousError = $!;
+                                if (!sysseek(STDOUT, 0, SEEK_CUR)) {
+                                    warn("execute(): error while syswriting($previousError/$!) on stdout, the filehandle is closed, will no longer attempt to write to it")
+                                      if $warnLimit-- > 0;
+                                    $noisy_stdout = 0;
+                                }
+                                else {
+                                    # oww, abort writing for this cycle
+                                    warn("execute(): error while syswriting($previousError) on stdout, aborting this cycle") if $warnLimit-- > 0;
+                                }
                                 last;
                             }
                             $offset += $written;
