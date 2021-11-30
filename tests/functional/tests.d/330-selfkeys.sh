@@ -179,7 +179,7 @@ EOS
     account1key1fp=$(get_json | $jq '.value.keys[0].fingerprint')
 
     script  flood   $a1 -osh selfAddIngressKey '<' /dev/urandom
-    retvalshouldbe 255
+    retvalshouldbe 0
 
     script  privkey $a1 -osh selfAddIngressKey '<<< "-----BEGIN DSA PRIVATE KEY-----
     MIIBugIBAAKBgQCawvohH0r9B4NxdaYHiBT5pLWDe14o3MTE3WwtKF0l7az+zw0P"'

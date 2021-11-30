@@ -13,23 +13,7 @@ use File::Basename;
 use lib dirname(__FILE__) . '/../../lib/perl';
 use OVH::Result;
 use OVH::Bastion;
-local $| = 1;
-
-#
-# Globals
-#
-$SIG{'HUP'}  = 'IGNORE';    # continue even when attached terminal is closed (we're called with setsid on supported systems anyway)
-$SIG{'PIPE'} = 'IGNORE';    # continue even if osh_info gets a SIGPIPE because there's no longer a terminal
-$ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/pkg/bin';
-my ($self) = $ENV{'SUDO_USER'} =~ m{^([a-zA-Z0-9._-]+)$};
-if (not defined $self) {
-    if ($< == 0) {
-        $self = 'root';
-    }
-    else {
-        HEXIT('ERR_SUDO_NEEDED', msg => 'This command must be run under sudo');
-    }
-}
+use OVH::Bastion::Helper;
 
 # Fetch command options
 my $fnret;
