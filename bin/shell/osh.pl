@@ -1155,6 +1155,7 @@ if ($userPasswordClue) {
           )
         {
 
+            # FIXME: force-password and force-key don't work yet for guest accesses, see #256
             # fetch the hashes of the main password and all its fallbacks
             my $fnrethashes;
             if   ($userPasswordContext eq 'self') { $fnrethashes = OVH::Bastion::get_hashes_list(context => 'account', account => $userPasswordClue); }

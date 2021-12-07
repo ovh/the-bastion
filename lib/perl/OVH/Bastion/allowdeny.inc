@@ -786,14 +786,14 @@ sub is_access_granted {
 
             # the guy must have a guest access but the group itself must also still have access
             if ($grantedGuest && $grantedGroup) {
-                push @grants, {type => 'group-guest', group => $shortGroup, %{$grantedGroup->value}};
+                push @grants, {type => 'group-guest', group => $shortGroup, %{$grantedGuest->value}};
                 osh_debug("is_access_granted: adding grantedGuest to grants because is guest and group has access");
             }
 
             # special legacy case; we also check if account has a legacy access for ip AND that the group ALSO has access to this ip
             if ($grantedLegacy && $grantedGroup) {
                 osh_debug("is_access_granted: adding grantedLegacy to grants because legacy not null and group has access");
-                push @grants, {type => 'group-guest-legacy', group => $shortGroup, %{$grantedGroup->value}};
+                push @grants, {type => 'group-guest-legacy', group => $shortGroup, %{$grantedLegacy->value}};
             }
         }
         else {
