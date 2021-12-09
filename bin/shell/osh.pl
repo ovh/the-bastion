@@ -1158,19 +1158,31 @@ if ($userPasswordClue) {
             # FIXME: force-password and force-key don't work yet for guest accesses, see #256
             # fetch the hashes of the main password and all its fallbacks
             my $fnrethashes;
-            if   ($userPasswordContext eq 'self') { $fnrethashes = OVH::Bastion::get_hashes_list(context => 'account', account => $userPasswordClue); }
-            else                                  { $fnrethashes = OVH::Bastion::get_hashes_list(context => 'group',   group   => $userPasswordClue); }
-            if (!$fnrethashes) { main_exit(OVH::Bastion::EXIT_GET_HASH_FAILED, "get_hashes_list", $fnrethashes->msg); }
+            if ($userPasswordContext eq 'self') {
+                $fnrethashes = OVH::Bastion::get_hashes_list(context => 'account', account => $userPasswordClue);
+            }
+            else {
+                $fnrethashes = OVH::Bastion::get_hashes_list(context => 'group', group => $userPasswordClue);
+            }
+
+            if (!$fnrethashes) {
+                main_exit(OVH::Bastion::EXIT_GET_HASH_FAILED, "get_hashes_list", $fnrethashes->msg);
+            }
 
             # is our forced password's hash one of them ?
             for my $id (0 .. $#{$fnrethashes->value}) {
                 foreach my $hash (values(%{$fnrethashes->value->[$id]->{'hashes'}})) {
-                    if ($grant->{'forcePassword'} eq $hash) { $forcePasswordId = $id; print " forcing password with hash: " . $grant->{'forcePassword'} . "\n\n" unless $quiet }
+                    if ($grant->{'forcePassword'} eq $hash) {
+                        $forcePasswordId = $id;
+                        print " forcing password with hash: " . $grant->{'forcePassword'} . "\n\n" unless $quiet;
+                    }
                 }
             }
 
             # if the password was not found, abort
-            if ($forcePasswordId == -1) { main_exit(OVH::Bastion::EXIT_PASSFILE_NOT_FOUND, "forced-password-not-found", "The forced password could not be found"); }
+            if ($forcePasswordId == -1) {
+                main_exit(OVH::Bastion::EXIT_PASSFILE_NOT_FOUND, "forced-password-not-found", "The forced password could not be found");
+            }
         }
     }
 }
