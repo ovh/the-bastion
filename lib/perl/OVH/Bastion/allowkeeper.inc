@@ -114,7 +114,7 @@ sub is_valid_uid {
 sub get_next_available_uid {
     my %params = @_;
 
-    # if true, also check for the availablility of the corresponding GID:
+    # if true, also check for the availability of the corresponding GID:
     my $available_gid = $params{'available_gid'};
 
     # if true, also check for the availability of the corresponding GID + the ttyrec offset:
