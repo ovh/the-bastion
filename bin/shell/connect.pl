@@ -29,15 +29,16 @@ sub exit_sig {
         );
     }
 
+    # nullify my own handlers so that they don't get re-executed when my parent
+    # exits because of the signal, and I get sent back a SIGHUP (see Prctl below)
+    $SIG{$_} = 'IGNORE' for qw{ INT HUP TERM SEGV };
+
     # signal my current process group
     kill $sig, 0;
 
     exit(117);    # EXIT_GOT_SIGNAL
 }
-$SIG{'INT'}  = \&exit_sig;
-$SIG{'HUP'}  = \&exit_sig;
-$SIG{'TERM'} = \&exit_sig;
-$SIG{'SEGV'} = \&exit_sig;
+$SIG{$_} = \&exit_sig for qw{ INT HUP TERM SEGV };
 
 # beautify for ps
 local $0 = '' . __FILE__ . ' ' . join(' ', @command);
