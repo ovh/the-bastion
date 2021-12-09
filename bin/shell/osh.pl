@@ -8,7 +8,7 @@ use lib dirname(__FILE__) . '/../../lib/perl';
 use OVH::Result;
 use OVH::Bastion;
 
-use Getopt::Long qw(GetOptionsFromString :config pass_through no_ignore_case);
+use Getopt::Long qw(GetOptionsFromString :config pass_through no_ignore_case no_auto_abbrev);
 use Sys::Hostname;
 use POSIX qw(strftime);
 use Term::ANSIColor;
@@ -26,9 +26,6 @@ $SIG{$_} = \&exit_sig for qw{ INT TERM SEGV HUP PIPE };
 #
 # Do just what is needed before the first call to main_exit in the code flow
 #
-
-# tell Getopt::Long to not try to be smart, it messes up with plugins
-Getopt::Long::Configure("no_auto_abbrev");
 
 # safe umask
 umask(0027);

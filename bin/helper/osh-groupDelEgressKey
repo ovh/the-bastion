@@ -7,7 +7,7 @@
 
 #>HEADER
 use common::sense;
-use Getopt::Long;
+use Getopt::Long qw(:config no_auto_abbrev no_ignore_case);
 
 use File::Basename;
 use lib dirname(__FILE__) . '/../../lib/perl';
@@ -16,7 +16,6 @@ use OVH::Bastion::Helper;
 use OVH::Result;
 
 # Fetch command options
-Getopt::Long::Configure("no_auto_abbrev");
 my $fnret;
 my ($result, @optwarns);
 my ($group,  $id);
