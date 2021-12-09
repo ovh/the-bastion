@@ -537,7 +537,7 @@ sub generate_ssh_key {
     my $sshKeyName = $folder . '/id_' . $algo . $size . '_' . $prefix . '.' . time();
 
     if (-e $sshKeyName) {
-        HEXIT('ERR_KEY_ALREADY_EXISTS', msg => "Can't forge key, generated name already exists");
+        return R('ERR_KEY_ALREADY_EXISTS', msg => "Can't forge key, generated name already exists");
     }
 
     my $bastionName = OVH::Bastion::config('bastionName');
