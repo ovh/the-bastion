@@ -5,6 +5,7 @@ LABEL maintainer="stephane.lesimple+bastion@ovhcloud.com"
 COPY bin/admin/install-ttyrec.sh bin/admin/install-yubico-piv-checker.sh bin/admin/packages-check.sh /opt/bastion/bin/admin/
 COPY lib/shell                                                                                       /opt/bastion/lib/shell/
 RUN ["/opt/bastion/bin/admin/packages-check.sh","-i","-d","-s"]
+RUN ["/usr/bin/chmod","u+s","/usr/bin/ping","/usr/sbin/fping"]
 RUN ["/opt/bastion/bin/admin/install-ttyrec.sh","-r"]
 RUN ["/opt/bastion/bin/admin/install-yubico-piv-checker.sh","-r"]
 

@@ -7,7 +7,7 @@
 
 testsuite_plugins()
 {
-    success withHost $a0 --osh ping -w 2 --host 127.0.0.1 -c 2
+    success ping_withHost $a0 --osh ping -w 2 --host 127.0.0.1 -c 2
     json .command     ping .error_code  OK
     # in some tests environments, ping is not allowed...
     _sysret=$(get_json | $jq .value.sysret)
@@ -20,7 +20,7 @@ testsuite_plugins()
     fi
     unset _sysret
 
-    success withoutHost $a0 --osh ping -c 1 127.0.0.1 -w 1
+    success ping_withoutHost $a0 --osh ping -c 1 127.0.0.1 -w 1
     json .command    ping .error_code  OK
     _sysret=$(get_json | $jq .value.sysret)
     if [ "$_sysret" = 0 ]; then
@@ -32,7 +32,7 @@ testsuite_plugins()
     fi
     unset _sysret
 
-    success loss $a0 --osh ping 192.0.2.1 -w 1 -c 1
+    success ping_loss $a0 --osh ping 192.0.2.1 -w 1 -c 1
     json .command ping .error_code OK
     _sysret=$(get_json | $jq .value.sysret)
     if [ "$_sysret" = 1 ]; then
@@ -44,7 +44,7 @@ testsuite_plugins()
     fi
     unset _sysret
 
-    success withHost $a0 --osh nc --port 22 --host 127.0.0.1 --timeout 1
+    success nc_withHost $a0 --osh nc --port 22 --host 127.0.0.1 --timeout 1
     json $(cat <<EOS
     .command nc
     .error_code OK
@@ -55,7 +55,7 @@ testsuite_plugins()
 EOS
     )
 
-    success withoutHost $a0 --osh nc 127.0.0.1 22 --timeout 1
+    success nc_withoutHost $a0 --osh nc 127.0.0.1 22 --timeout 1
     json $(cat <<EOS
     .command nc
     .error_code OK
@@ -66,7 +66,7 @@ EOS
 EOS
     )
 
-    success closed $a0 --osh nc 127.0.0.1 1 --timeout 1
+    success nc_closed $a0 --osh nc 127.0.0.1 1 --timeout 1
     json $(cat <<EOS
     .command nc
     .error_code OK
@@ -77,7 +77,7 @@ EOS
 EOS
     )
 
-    success timeout $a0 --osh nc --timeout 1 192.0.2.1 22
+    success nc_timeout $a0 --osh nc --timeout 1 192.0.2.1 22
     json $(cat <<EOS
     .command nc
     .error_code OK
@@ -88,17 +88,11 @@ EOS
 EOS
     )
 
-    # tests can fail under e.g. OpenSUSE + docker because of raw sockets: ignore those cases
-    success withHost $a0 --osh alive --host 127.0.0.1
-    if ! get_stdout | grep -q "can't create raw socket"; then
-        json .command alive .error_code OK .value.waited_for 0
-    fi
-
-    success withoutHost $a0 --osh alive 127.0.0.1
+    success alive_withHost $a0 --osh alive --host 127.0.0.1
     json .command alive .error_code OK .value.waited_for 0
-    if ! get_stdout | grep -q "can't create raw socket"; then
-        json .command alive .error_code OK .value.waited_for 0
-    fi
+
+    success alive_withoutHost $a0 --osh alive 127.0.0.1
+    json .command alive .error_code OK .value.waited_for 0
 }
 
 testsuite_plugins

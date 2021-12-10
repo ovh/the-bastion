@@ -57,11 +57,15 @@ push @command, $host;
 while (1) {
     $fnret = OVH::Bastion::execute(cmd => \@command, noisy_stdout => 1, noisy_stderr => 1);
     if ($fnret->err eq 'ERR_EXEC_FAILED') {
-        osh_exit $fnret if $command[0] eq 'ping';
-        @command = qw{ ping -c 1 -w 1 -- };
-        push @command, $host;
-        $isFping = 0;
-        next;
+        if ($isFping) {
+
+            # maybe fping doesn't work, fallback to ping
+            @command = qw{ ping -c 1 -w 1 -- };
+            push @command, $host;
+            $isFping = 0;
+            next;
+        }
+        osh_exit $fnret;    # we tried both ping and fping :(
     }
     $fnret or osh_exit $fnret;
     if ($fnret->value->{'sysret'} == 0) {
