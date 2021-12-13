@@ -1,3 +1,14 @@
+## v3.07.00 - 2021/12/13
+- feat: add support for Duo PAM auth as MFA (#249)
+- feat: new access option: `--force-password <HASH>`, to only try one specific egress password (#256)
+- fix: add helpers handling of SIGPIPE/SIGHUP
+- fix: avoid double-close log messages on SIGHUP
+- fix: `--self-password` was missing as a `-P` synonym (#257)
+- fix: tests under OpenSUSE (fping raw sockets)
+- chore: ensure proper Getopt::Long options are set everywhere
+- chore: move HEXIT() to helper module, use HEXIT only in helpers
+- chore: factorize helpers header
+
 ## v3.06.00 - 2021/10/15
 - feat: accountModify: add --pubkey-auth-optional
 - fix: accountPIV: fix bad autocompletion rule
