@@ -57,7 +57,7 @@ use OVH::Result;
 
 use parent qw( Exporter );
 our @EXPORT =                                                       ## no critic (AutomaticExportation)
-  qw( osh_header osh_footer osh_exit osh_debug osh_info osh_warn osh_crit osh_ok warn_syslog );
+  qw( osh_header osh_footer osh_exit osh_debug osh_info osh_warn osh_crit osh_ok warn_syslog info_syslog );
 
 our $AUTOLOAD;
 
@@ -136,7 +136,7 @@ my %_autoload_files = (
     execute       => [qw{ sysret2human execute execute_simple result_from_helper helper_decapsulate helper }],
     interactive   => [qw{ interactive }],
     jail          => [qw{ jailify }],
-    log           => [qw{ syslog syslog_close syslogFormatted warn_syslog log_access_insert log_access_update log_access_get }],
+    log           => [qw{ syslog syslog_close syslogFormatted warn_syslog info_syslog log_access_insert log_access_update log_access_get }],
     mock          => [
         qw{ enable_mocking is_mocking set_mock_data mock_get_account_entry mock_get_account_accesses mock_get_account_personal_accesses mock_get_account_legacy_accesses mock_get_group_accesses mock_get_account_guest_accesses }
     ],

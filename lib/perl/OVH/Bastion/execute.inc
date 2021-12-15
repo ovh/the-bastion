@@ -110,8 +110,8 @@ sub execute {
     my $currently_in_json_block = 0;
     my %bytesnb;
 
-    # maximum number of warns() to call, to avoid flooding the logs
-    my $warnLimit = 5;
+    # maximum number of code_info() to call, to avoid flooding the logs
+    my $infoLimit = 5;
 
     # always monitor our child stdout and stderr
     my $select = IO::Select->new($child_stdout, $child_stderr);
@@ -157,11 +157,11 @@ sub execute {
                 # if size 0, it means it's an EOF, if undef, it's an error
                 if (not $nbread) {
 
-                    # error, we'll warn and close
+                    # error, we'll log to syslog and close. as this might be user-induced, use info instead of warn
                     if (not defined $nbread) {
 
                         # awwww, not cool at all
-                        warn("execute(): error while sysreading($!), closing fh!");
+                        info_syslog("execute(): error while sysreading($!), closing fh!");
                     }
 
                     # we got an EOF on this fh, remove it from the monitor list
@@ -194,13 +194,13 @@ sub execute {
                                 # note that if we're at the position "0", it's still true (see doc).
                                 my $previousError = $!;
                                 if (!sysseek(STDERR, 0, SEEK_CUR)) {
-                                    warn("execute(): error while syswriting($previousError/$!) on stderr, the filehandle is closed, will no longer attempt to write to it")
-                                      if $warnLimit-- > 0;
+                                    info_syslog("execute(): error while syswriting($previousError/$!) on stderr, the filehandle is closed, will no longer attempt to write to it")
+                                      if $infoLimit-- > 0;
                                     $noisy_stderr = 0;
                                 }
                                 else {
-                                    # oww, abort writing for this cycle
-                                    warn("execute(): error while syswriting($previousError) on stderr, aborting this cycle") if $warnLimit-- > 0;
+                                    # oww, abort writing for this cycle. as this might be user-induced, use info instead of warn
+                                    info_syslog("execute(): error while syswriting($previousError) on stderr, aborting this cycle") if $infoLimit-- > 0;
                                 }
                                 last;
                             }
@@ -243,13 +243,13 @@ sub execute {
                                 # note that if we're at the position "0", it's still true (see doc).
                                 my $previousError = $!;
                                 if (!sysseek(STDOUT, 0, SEEK_CUR)) {
-                                    warn("execute(): error while syswriting($previousError/$!) on stdout, the filehandle is closed, will no longer attempt to write to it")
-                                      if $warnLimit-- > 0;
+                                    info_syslog("execute(): error while syswriting($previousError/$!) on stdout, the filehandle is closed, will no longer attempt to write to it")
+                                      if $infoLimit-- > 0;
                                     $noisy_stdout = 0;
                                 }
                                 else {
-                                    # oww, abort writing for this cycle
-                                    warn("execute(): error while syswriting($previousError) on stdout, aborting this cycle") if $warnLimit-- > 0;
+                                    # oww, abort writing for this cycle. as this might be user-induced, use info instead of warn.
+                                    info_syslog("execute(): error while syswriting($previousError) on stdout, aborting this cycle") if $infoLimit-- > 0;
                                 }
                                 last;
                             }
