@@ -30,6 +30,8 @@ if (!$result) {
     HEXIT('ERR_BAD_OPTIONS', msg => "Error parsing options: @optwarns");
 }
 
+OVH::Bastion::Helper::check_spurious_args();
+
 if (not $account) {
     HEXIT('ERR_MISSING_PARAMETER', msg => "Missing argument 'account'");
 }
