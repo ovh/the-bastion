@@ -1,0 +1,48 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+use Term::ANSIColor qw{ colored };
+use POSIX qw{ strftime };
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+my ($account);
+OVH::Bastion::Plugin::begin(
+    argv    => \@ARGV,
+    header  => "unlock an account",
+    options => {
+        "account=s" => \$account
+    },
+    helptext => <<'EOF',
+Unlock an account locked by pam_tally, pam_tally2 or pam_faillock
+
+Usage: --osh SCRIPT_NAME --account ACCOUNT
+
+  --account ACCOUNT  Account to work on
+EOF
+);
+#
+# code
+#
+my $fnret;
+if (not $account) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing 'account' parameter";
+}
+
+# Here we parse account name
+$fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
+$fnret
+  or osh_exit $fnret;
+$account = $fnret->value->{'account'};
+my @command = qw{ sudo -n -u root -- };
+push @command, qw{ /usr/bin/env perl -T };
+push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountUnlock';
+push @command, ('--account', $account);
+osh_exit(
+    OVH::Bastion::helper(
+        cmd => \@command
+    )
+);
