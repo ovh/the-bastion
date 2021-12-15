@@ -40,6 +40,8 @@ eval {
 };
 if ($@) { die $@ }
 
+OVH::Bastion::Helper::check_spurious_args();
+
 if (!$result) {
     local $" = ", ";
     HEXIT('ERR_BAD_OPTIONS', msg => "Error parsing options: @optwarns");

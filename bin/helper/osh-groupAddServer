@@ -42,6 +42,8 @@ if (!$result) {
     HEXIT('ERR_BAD_OPTIONS', msg => "Error parsing options: @optwarns");
 }
 
+OVH::Bastion::Helper::check_spurious_args();
+
 if (not $ip or not $group or not $action) {
     HEXIT('ERR_MISSING_PARAMETER', msg => "Missing argument 'ip' or 'group' or 'action'");
 }

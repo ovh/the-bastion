@@ -44,6 +44,8 @@ if (!$result) {
     HEXIT('ERR_BAD_OPTIONS', msg => "Error parsing options: @optwarns");
 }
 
+OVH::Bastion::Helper::check_spurious_args();
+
 osh_debug("groupSetRole: checking preconditions");
 $fnret = OVH::Bastion::Plugin::groupSetRole::preconditions(self => $self, account => $account, group => $group, action => $action, type => $type, sudo => 1, silentoverride => 1);
 osh_debug("groupSetRole: checking preconditions result: $fnret");

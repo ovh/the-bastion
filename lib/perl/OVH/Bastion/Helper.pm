@@ -37,6 +37,15 @@ sub HEXIT {    ## no critic (ArgUnpacking)
     exit 0;
 }
 
+# Used after Getopt::Long::GetOptions() in each helper, to ensure there are no unparsed/spurious args
+sub check_spurious_args {
+    if (@ARGV) {
+        local $" = ", ";
+        warn_syslog("Spurious arguments on command line: @ARGV");
+        HEXIT('ERR_BAD_OPTIONS', msg => "Spurious arguments on command line: @ARGV");
+    }
+}
+
 #
 # This code has to be ran for all helpers before they attempt to do anything useful,
 # and as we're only use'd by helpers, we include it here directly on top-level.
