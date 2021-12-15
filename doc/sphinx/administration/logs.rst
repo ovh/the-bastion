@@ -136,7 +136,7 @@ duration
 warn, die
 *********
 
-These logs are produced when Perl emits a warning (using the ``warn()`` call), or respectively when Perl halts abruptly due to a ``die()`` call. This should not happen during nominal use.
+These logs are produced when Perl emits a warning (using the ``warn()`` call), or respectively when Perl halts abruptly due to a ``die()`` call. This should not happen during nominal use. You might want to keep a look on those messages if they're produced.
 
 Example::
 
@@ -161,16 +161,32 @@ trace
 warn-info, die-info
 *******************
 
-These logs are produced when some known portion of code (including libraries) called ``warn()`` or ``die()`` but in a known case that can happen during nominal use.
+These logs are produced when some known portion of code (including libraries) called ``warn()`` or ``die()`` but in a known case that can happen during nominal use. Don't use these logs to directly trigger an alert, but you can keep an eye on those, as e.g. an unusually high number of occurences in a short time may be a weak signal that somebody or something is misbehaving.
 
 The fields are the same than the ones specified above for **warn** and **die**.
+
+.. _log_codeinfo:
+
+code-info
+*********
+
+These logs are produced when some portion of the code encounters an minor issue that is worth logging, to e.g. help debugging an issue or understanding what happened in a specific use-case, for example if a user-session ended abruptly. These logs are not the result of an error on the bastion configuration and don't mandate immediate admin attention.
+
+Example::
+
+   Dec 25 14:56:11 myhostname bastion: code-info uniqid="93b27ad9eb4c" version="3.07.00" pid="3709643" ppid="3709642" sysuser="lechuck" sudo_user="" uid="8423" gid="8423" msg="Configuration error for plugin selfGenerateEgressKey on the 'disabled' key: expected a boolean, casted 'no' into false" FIXME
+
+Fields:
+
+msg
+   A human-readable text describing the error
 
 .. _log_codewarn:
 
 code-warning
 ************
 
-This log is produced when some portion of the code encounters an unexpected issue or abnormality that is worth logging.
+These logs are produced when some portion of the code encounters an unexpected issue or abnormality that is worth logging. They'll usually not be emitted due to a bad user interaction, but rather if the bastion is misconfigured, or for anything that might need some attention or fixing from the admins.
 
 Example::
 

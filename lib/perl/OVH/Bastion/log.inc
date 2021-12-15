@@ -121,6 +121,14 @@ sub warn_syslog {
     );
 }
 
+sub info_syslog {
+    my $msg = shift;
+    return syslogFormatted(
+        type   => 'code-info',
+        fields => [['msg' => $msg]]
+    );
+}
+
 sub _sql_update_db {
     my %params  = @_;
     my $sqltype = $params{'sqltype'};
