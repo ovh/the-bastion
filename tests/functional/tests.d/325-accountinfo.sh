@@ -55,6 +55,21 @@ testsuite_accountinfo()
     json .value.already_seen_before 1
     contain "Last seen on"
 
+    # try to unlock
+    grant accountUnlock
+
+    run a0_unlock_a1 $a0 --osh accountUnlock --account $account1
+    json .command accountUnlock
+    if [ "$OS_FAMILY" = Linux ]; then
+        retvalshouldbe 0
+        json .error_code OK
+    else
+        retvalshouldbe 100
+        json .error_code ERR_UNSUPPORTED_FEATURE
+    fi
+
+    revoke accountUnlock
+
     grant accountModify
 
     # a0 changes a2 expiration policy

@@ -22,6 +22,7 @@ restricted plugins
    accountPIV
    accountRevokeCommand
    accountUnexpire
+   accountUnlock
    groupCreate
    groupDelete
    realmCreate

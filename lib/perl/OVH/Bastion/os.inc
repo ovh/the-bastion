@@ -586,4 +586,14 @@ sub sys_setfacl {
     return R('OK');
 }
 
+sub is_in_path {
+    my %params = @_;
+    my $binary = $params{'binary'};
+
+    foreach my $path (split /:/, $ENV{'PATH'}) {
+        return R('OK', value => "$path/$binary") if -f -x "$path/$binary";
+    }
+    return R('KO', msg => "$binary was not found in PATH");
+}
+
 1;
