@@ -145,21 +145,30 @@ testsuite_mfa()
         contain 'Permission denied'
 
         # test proactive mfa
-        script set_help_mfa $r0 "'"'echo \{\"mfa_required\":\ \"password\"\} > /etc/bastion/plugin.help.conf; chmod 644 /etc/bastion/plugin.help.conf'"'"
+        script set_help_mfa $r0 "'"'echo \{\"mfa_required\":\ \"password\"\} > '"$opt_remote_etc_bastion"'/plugin.help.conf; chmod 644 '"$opt_remote_etc_bastion"'/plugin.help.conf'"'"
         retvalshouldbe 0
 
-        script a4_mfa_help_jitmfa "echo 'set timeout 30; \
-            spawn $a4 --osh help; \
-            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
-            expect \"is required (password)\" { sleep 0.1; }; \
-            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
-            expect eof; \
-            lassign [wait] pid spawnid value value; \
-            exit \$value' | expect -f -"
+        if [ "$OS_FAMILY" = FreeBSD ]; then
+            script a4_mfa_help_jitmfa "echo 'set timeout 30; \
+                spawn $a4 --osh help; \
+                expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
+                expect eof; \
+                lassign [wait] pid spawnid value value; \
+                exit \$value' | expect -f -"
+        else
+            script a4_mfa_help_jitmfa "echo 'set timeout 30; \
+                spawn $a4 --osh help; \
+                expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
+                expect \"is required (password)\" { sleep 0.1; }; \
+                expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
+                expect eof; \
+                lassign [wait] pid spawnid value value; \
+                exit \$value' | expect -f -"
+            contain 'pamtester: successfully authenticated'
+        fi
         retvalshouldbe 0
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
         contain REGEX 'Password:|Password for'
-        contain 'pamtester: successfully authenticated'
         nocontain 'proactive MFA'
 
         script a4_proactive_mfa_help "echo 'set timeout 30; \
@@ -177,7 +186,7 @@ testsuite_mfa()
         contain 'proactive MFA'
         json .command help .error_code OK
 
-        script remove_help_mfa $r0 "'"'rm -f /etc/bastion/plugin.help.conf'"'"
+        script remove_help_mfa $r0 "'"'rm -f '"$opt_remote_etc_bastion"'/plugin.help.conf'"'"
         retvalshouldbe 0
         # /proactive mfa
 

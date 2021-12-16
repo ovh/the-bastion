@@ -86,10 +86,7 @@ The following OS are also tested with each release:
 
 \*\*: Note that these have partial MFA support, due to their reduced set of available `pam` plugins. Support for either an additional password or TOTP factor can be configured, but not both at the same time. The code is actually known to work on FreeBSD/HardenedBSD 10+, but it's only regularly tested under 13.0.
 
-Other BSD variants partially work but are unsupported and discouraged as they have a severe limitation over the maximum number of supplementary groups (causing problems for group membership and restricted commands checks), no filesystem-level ACL support and missing MFA:
-
-- OpenBSD 5.4+
-- NetBSD 7+
+Other BSD variants, namely OpenBSD 5.4+ and NetBSD 7+ partially work but are unsupported and discouraged as they have a severe limitation over the maximum number of supplementary groups, causing problems for group membership and restricted commands checks, as well as no filesystem-level ACL support and missing PAM support (hence no MFA).
 
 ### Zero assumption on your environment
 

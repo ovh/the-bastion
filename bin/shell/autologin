@@ -1,11 +1,15 @@
-#!/usr/bin/expect -f
+#!/usr/bin/env expect
 # vim: set filetype=expect ts=4 sw=4 sts=4 et:
+
+# To debug this script, you may want to uncomment the two following lines:
+#exp_internal 1
 #strace 2
+
 set ::env(TERM) ""
 
 # we need 6 arguments
 if { [llength $argv] < 8 } {
-    puts "BASTION SAYS: autologin usage error, expected 6 args: <ssh|telnet> <login> <ip> <port> <file_with_password> <password_id> <timeout> <fallback_delay> [passthrough arguments to ssh or telnet]"
+    puts {BASTION SAYS: autologin usage error, expected 6 args: <ssh|telnet> <login> <ip> <port> <file_with_password> <password_id> <timeout> <fallback_delay> [passthrough arguments to ssh or telnet]}
     exit 1
 }
 
@@ -81,17 +85,22 @@ proc attempt_to_login args {
 
     # send password
     expect {
-        -re "Password:|password:" { send -- "$pass" }
+        -re {[Pp]assword:|Password for [a-zA-Z0-9@._-]+:} { send -- "$pass" }
         eof     { puts "BASTION SAYS: connection aborted"; exit 3 }
         timeout { puts "BASTION SAYS: timed out while waiting for password prompt"; exit 3 }
     }
 
     # do we have a login success with interactive prompt?
     expect {
+        # prompts
         "#" { interact; exit 0 }
         ">" { interact; exit 0 }
+        # 'enable' prompt on a network device
         "(enable)" { interact; exit 0 }
-        -re "Password:|password:|Authentication failed|Permission denied" {
+        # a successful login on a bastion (mainly for tests)
+        -exact "the-bastion-" { interact; exit 0 }
+        # login failure messages
+        -re {[Pp]assword:|Password for [a-zA-Z0-9@_-]+:|Authentication failed|Permission denied|UNIX authentication refused} {
             if { $tryid == 0 } { puts "BASTION SAYS: authentication failed!" }
             close
             wait

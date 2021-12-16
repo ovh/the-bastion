@@ -219,7 +219,12 @@ if [ "$OS_FAMILY" = FreeBSD ]; then
         home_mp=/
     fi
     if ! mount | awk '{ if($3=="'"$home_mp"'"){print;exit} }' | grep -q -w acls; then
-        action_error "No. Please modify your /etc/fstab accordingly, and run \`mount -u -o acls $home_mp' to apply the change on-the-fly."
+        if mount | awk '{ if($3=="'"$home_mp"'"){print;exit} }' | grep -q -w zfs; then
+            action_error "No. This is a ZFS mount, which might not be POSIX acls compliant (nfsv4acls supported only)."
+            action_error "You can still try to enable POSIX acls by running \`mount -u -o acls $home_mp' to apply the change on-the-fly."
+        else
+            action_error "No. Please modify your /etc/fstab accordingly, and run \`mount -u -o acls $home_mp' to apply the change on-the-fly."
+        fi
         exit 1
     else
         action_done
