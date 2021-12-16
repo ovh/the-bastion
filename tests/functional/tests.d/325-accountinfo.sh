@@ -36,12 +36,15 @@ testsuite_accountinfo()
     success a1_accountinfo_a2_detailed $a1 --osh accountInfo --account $account2
     json .error_code OK .command accountInfo .value.always_active 1 .value.is_active 1 .value.allowed_commands "[]"
     json .value.ingress_piv_policy null .value.personal_egress_mfa_required none .value.pam_auth_bypass 0
-    json .value.password.min_days 0 .value.password.warn_days 7 .value.password.user "$account2" .value.password.password locked
-    json .value.password.inactive_days -1 .value.password.date_disabled null .value.password.date_disabled_timestamp 0 .value.password.date_changed $(date +%Y-%m-%d)
+    json .value.password.min_days 0 .value.password.user "$account2" .value.password.password locked
+    json .value.password.inactive_days -1 .value.password.date_disabled null .value.password.date_disabled_timestamp 0
     json .value.ingress_piv_enforced 0 .value.always_active 1 .value.creation_information.by "$account0"
     json .value.creation_information.comment "this is a comment"
     json .value.already_seen_before 0 .value.last_activity null
     json .value.max_inactive_days null
+    if [ "$OS_FAMILY" = Linux ]; then
+        .value.password.date_changed $(date +%Y-%m-%d)
+    fi
 
     # a2 connects, which will update already_seen_before
     success a2_connects $a2 --osh info

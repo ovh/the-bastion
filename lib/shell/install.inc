@@ -183,11 +183,12 @@ action_auto() {
         *debian*) action_package deb;;
         *rhel*)   action_package rpm;;
         *suse*)   action_package rpm;;
+        freebsd)  action_static;;
         *)
             if [ "$OS_FAMILY" = Linux ]; then
                 action_static
             else
-                echo "This script doesn't support this OS yet ($DISTRO_LIKE)" >&2
+                echo "This script doesn't support this OS yet ($OS_FAMILY/$DISTRO_LIKE)" >&2
                 exit 1
             fi;;
     esac
@@ -205,7 +206,7 @@ install_main() {
             d) action_package deb; exit 0;;
             r) action_package rpm; exit 0;;
             a) action_auto;        exit 0;;
-            h) usage;              exit 0;;
+            h) install_usage;      exit 0;;
             ?) echo "Invalid option: -$OPTARG"; usage; exit 1;;
         esac
     done
