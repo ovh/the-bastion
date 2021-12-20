@@ -94,3 +94,9 @@ A locked session looks like this:
 
 .. image:: /img/locked_session.png
 
+Can I use Ansible over The Bastion?
+===================================
+
+Yes, you can, by using a wrapper available `here <https://github.com/ovh/the-bastion-ansible-wrapper>`_.
+
+Please note however that some Ansible modules may not use the builtin SSH command of Ansible, which we override with our wrapper, but some other mechanism we can't hook into. This is for example the case of the `network_cli` module of Ansible, which underneath uses Paramiko, a Python library to handle SSH connections, which prevents our wrapper to be used (see `this GitHub issue <https://github.com/ovh/the-bastion/issues/254>`_ for more information).
