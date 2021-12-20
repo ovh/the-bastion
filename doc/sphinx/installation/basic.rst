@@ -26,24 +26,22 @@ We published a Puppet module to handle The Bastion configuration and prerequisit
 
 The following Linux distros are tested with each release, but as this is a security product, you are *warmly* advised to run it on the latest up-to-date stable version of your favorite OS:
 
-- Debian 10 (Buster), 9 (Stretch)
-- RHEL/CentOS 8.x (8.3.2011, 8.2.2004, 8.1.1911), 7.x (7.9.2009, 7.8.2003, 7.7.1908)
+- Debian 11 (Bullseye), Debian 10 (Buster), 9 (Stretch)
+- RHEL/CentOS 8.x, 7.x
+- RockyLinux 8.x
 - Ubuntu LTS 20.04, 18.04, 16.04
-- OpenSUSE Leap 15.3\*, 15.2\*
+- OpenSUSE Leap 15.3\*
 
 \*: Note that these versions have no out-of-the-box MFA support, as they lack packaged versions of ``pamtester``, ``pam-google-authenticator``, or both. Of course, you may compile those yourself.
 Any other so-called `modern` Linux version are not tested with each release, but should work with no or minor adjustments.
 
 The following OS are also tested with each release:
 
-- FreeBSD/HardenedBSD 12.1\*\*
+- FreeBSD/HardenedBSD 13.0\*\*
 
-\*\*: Note that these have partial MFA support, due to their reduced set of available ``pam`` plugins. Support for either an additional password or TOTP factor can be configured, but not both at the same time. The code is actually known to work on FreeBSD/HardenedBSD 10+, but it's only regularly tested under 12.1.
+\*\*: Note that these have partial MFA support, due to their reduced set of available ``pam`` plugins. Support for either an additional password or TOTP factor can be configured, but not both at the same time. The code is actually known to work on FreeBSD/HardenedBSD 10+, but it's only regularly tested under 13.0.
 
-Other BSD variants partially work but are unsupported and discouraged as they have a severe limitation over the maximum number of supplementary groups (causing problems for group membership and restricted commands checks), no filesystem-level ACL support and missing MFA:
-
-- OpenBSD 5.4+
-- NetBSD 7+
+Other BSD variants, such as OpenBSD and NetBSD, are unsupported as they have a severe limitation over the maximum number of supplementary groups, causing problems for group membership and restricted commands checks, as well as no filesystem-level ACL support and missing PAM support (hence no MFA).
 
 In any case, you are expected to install this on a properly secured machine (including, but not limited to: ``iptables``/``pf``, reduced-set of installed software and daemons, general system hardening, etc.). If you use Debian, following the `CIS Hardening guidelines <https://www.cisecurity.org/benchmark/debian_linux/>`_ is a good start. We have `a tool <https://github.com/ovh/debian-cis>`_ to check for compliance against these guidelines. If you use Debian and don't yet have your own hardened template, this script should help you getting up to speed, and ensuring your hardened host stays hardened over time, through a daily audit you might want to setup through cron.
 

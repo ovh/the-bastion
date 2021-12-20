@@ -25,4 +25,3 @@ RUN ["/opt/bastion/bin/admin/install","--new-install"]
 ENTRYPOINT /opt/bastion/docker/entrypoint.sh
 
 # TESTOPT --has-mfa=1 --has-pamtester=1 --has-piv=1
-# TESTFROM centos:8.3.2011 centos:8.2.2004 centos:8.1.1911

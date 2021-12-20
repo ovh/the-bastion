@@ -68,8 +68,8 @@ PubkeyAuthentication yes
 # ... (set to yes if sshpass is to be used)
 PasswordAuthentication no
 # ChallengeResponseAuthentication=yes forces KbdInteractiveAuthentication=yes in the openssh code!
-ChallengeResponseAuthentication no
-KbdInteractiveAuthentication no
+ChallengeResponseAuthentication yes
+KbdInteractiveAuthentication yes
 # ... not host-based
 HostbasedAuthentication no
 # now we specify the auth methods order we want for manual ssh calls.
@@ -80,7 +80,7 @@ HostbasedAuthentication no
 # specified hereafter will be ignored. if you want to force-disable
 # a method, set it to "no" in the list above, as those will never be
 # overridden by the code.
-PreferredAuthentications publickey
+PreferredAuthentications publickey,keyboard-interactive
 
 # === LOGIN ###
 

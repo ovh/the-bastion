@@ -43,7 +43,7 @@ testsuite_accountinfo()
     json .value.already_seen_before 0 .value.last_activity null
     json .value.max_inactive_days null
     if [ "$OS_FAMILY" = Linux ]; then
-        .value.password.date_changed $(date +%Y-%m-%d)
+        json .value.password.date_changed $(date +%Y-%m-%d)
     fi
 
     # a2 connects, which will update already_seen_before

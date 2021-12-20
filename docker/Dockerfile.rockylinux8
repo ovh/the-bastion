@@ -1,4 +1,4 @@
-FROM centos:7
+FROM rockylinux:8
 LABEL maintainer="stephane.lesimple+bastion@ovhcloud.com"
 
 # cache builds efficiently: just copy the scripts to install packages first

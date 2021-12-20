@@ -76,7 +76,7 @@ elif echo "$DISTRO_LIKE" | grep -q -w rhel; then
             expect openssh-server nc bash perl-CGI perl(Test::More) passwd \
             cracklib-dicts perl-Time-Piece perl-Time-HiRes diffutils \
             perl-Sys-Syslog pamtester google-authenticator qrencode-libs \
-            util-linux-user perl-LWP-Protocol-https"
+            util-linux-user perl-LWP-Protocol-https findutils"
     if [ "$DISTRO_VERSION_MAJOR" = 7 ]; then
         wanted_list="$wanted_list fortune-mod coreutils"
     fi
@@ -87,10 +87,14 @@ elif echo "$DISTRO_LIKE" | grep -q -w rhel; then
     if [ "$opt_install" = 1 ]; then
             if [ "$DISTRO_VERSION_MAJOR" = 8 ]; then
                 # in December 2020, they added "-Linux" to their repo name, so trying both combinations
-                for repo in CentOS-PowerTools CentOS-Extras CentOS-Linux-PowerTools CentOS-Linux-Extras
+                # also try with "Rocky-" for RockyLinux
+                for repo in PowerTools Extras
                 do
-                    test -f /etc/yum.repos.d/$repo.repo || continue
-                    sed -i -e 's/enabled=.*/enabled=1/g' /etc/yum.repos.d/$repo.repo
+                    for prefix in CentOS CentOS-Linux Rocky
+                    do
+                        test -f /etc/yum.repos.d/$prefix-$repo.repo || continue
+                        sed -i -e 's/enabled=.*/enabled=1/g' /etc/yum.repos.d/$prefix-$repo.repo
+                    done
                 done
             fi
             if command -v dnf >/dev/null; then
