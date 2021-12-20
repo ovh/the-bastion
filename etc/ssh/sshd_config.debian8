@@ -113,9 +113,6 @@ AcceptEnv LANG LC_*
 
 # === SYSTEM ===
 
-# Use kernel sandbox mechanisms where possible in unprivilegied processes (seccomp)
-UsePrivilegeSeparation sandbox
-
 # sshd log level at verbose in auth facility for auditing purposes
 LogLevel VERBOSE
 SyslogFacility AUTH

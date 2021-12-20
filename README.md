@@ -72,10 +72,11 @@ Also don't forget to customize your `bastion.conf` file, which can be found in `
 
 Linux distros below are tested with each release, but as this is a security product, you are **warmly** advised to run it on the latest up-to-date stable version of your favorite OS:
 
-- Debian 10 (Buster), 9 (Stretch)
-- RHEL/CentOS 8.x (8.3.2011, 8.2.2004, 8.1.1911), 7.x (7.9.2009, 7.8.2003, 7.7.1908)
+- Debian 11 (Bullseye), Debian 10 (Buster), 9 (Stretch)
+- RHEL/CentOS 8.x, 7.x
+- RockyLinux 8.x
 - Ubuntu LTS 20.04, 18.04, 16.04
-- OpenSUSE Leap 15.3\*, 15.2\*
+- OpenSUSE Leap 15.3\*
 
 \*: Note that these versions have no out-of-the-box MFA support, as they lack packaged versions of `pamtester`, `pam-google-authenticator`, or both. Of course, you may compile those yourself.
 Any other so-called "modern" Linux version are not tested with each release, but should work with no or minor adjustments.
@@ -86,7 +87,7 @@ The following OS are also tested with each release:
 
 \*\*: Note that these have partial MFA support, due to their reduced set of available `pam` plugins. Support for either an additional password or TOTP factor can be configured, but not both at the same time. The code is actually known to work on FreeBSD/HardenedBSD 10+, but it's only regularly tested under 13.0.
 
-Other BSD variants, namely OpenBSD 5.4+ and NetBSD 7+ partially work but are unsupported and discouraged as they have a severe limitation over the maximum number of supplementary groups, causing problems for group membership and restricted commands checks, as well as no filesystem-level ACL support and missing PAM support (hence no MFA).
+Other BSD variants, such as OpenBSD and NetBSD, are unsupported as they have a severe limitation over the maximum number of supplementary groups, causing problems for group membership and restricted commands checks, as well as no filesystem-level ACL support and missing PAM support (hence no MFA).
 
 ### Zero assumption on your environment
 

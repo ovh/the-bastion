@@ -72,19 +72,21 @@ RekeyLimit 512M 6h
 PubkeyAuthentication yes
 # ... not password
 PasswordAuthentication no
-# ... not keyboard interactive
-KbdInteractiveAuthentication no
-# ... not challenge-response
-ChallengeResponseAuthentication no
+# ... keyboard interactive (needed for MFA through PAM)
+KbdInteractiveAuthentication yes
+# ... challenge-response (needed for MFA through PAM)
+ChallengeResponseAuthentication yes
 # ... not host-based
 HostbasedAuthentication no
 
 # just in case, we also explicitly deny empty passwords
 PermitEmptyPasswords no
 
-# root login is allowed only with public keys, not passwords
-# this can be disabled entirely for auditing reasons (forcing admins to use sudo)
-PermitRootLogin without-password
+# this needs to be set at "yes" to allow PAM keyboard-interactive authentication,
+# which is not a security issue because the AuthenticationMethods below force the use of
+# either publickey or publickey+keyboard-interactive, hence password-only login is never
+# possible, for root or any other account for that matter
+PermitRootLogin yes
 
 # === LOGIN ===
 
@@ -102,9 +104,6 @@ AcceptEnv LANG LC_*
 
 # === SYSTEM ===
 
-# Use kernel sandbox mechanisms where possible in unprivilegied processes (seccomp)
-UsePrivilegeSeparation sandbox
-
 # sshd log level at verbose in auth facility for auditing purposes
 LogLevel VERBOSE
 SyslogFacility AUTH
@@ -114,3 +113,20 @@ StrictModes yes
 
 # never use dns (slows down connections)
 UseDNS no
+
+# === AuthenticationMethods vs potential root OTP vs potential user MFA ===
+# 2FA has been configured for root, so we force pubkey+PAM for it
+#Match User root
+#    AuthenticationMethods publickey,keyboard-interactive:pam
+# Unconditionally skip PAM auth for members of the bastion-nopam group
+Match Group bastion-nopam
+    AuthenticationMethods publickey
+# if in one of the mfa groups AND the osh-pubkey-auth-optional group, use publickey+pam OR pam
+Match Group mfa-totp-configd,mfa-password-configd Group osh-pubkey-auth-optional
+    AuthenticationMethods publickey,keyboard-interactive:pam keyboard-interactive:pam
+# if in one of the mfa groups, use publickey AND pam
+Match Group mfa-totp-configd,mfa-password-configd
+    AuthenticationMethods publickey,keyboard-interactive:pam
+# by default, always ask the publickey (no PAM)
+Match All
+    AuthenticationMethods publickey

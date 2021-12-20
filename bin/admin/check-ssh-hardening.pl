@@ -394,8 +394,7 @@ check_config_value 'IgnoreRHosts', 'no',  'yes';
 check_config_value 'StrictModes',  'yes', 'yes';
 check_config_value 'PermitRootLogin', 'yes', [qw{ no without-password forbid-password }];
 check_config_value 'PermitEmptyPasswords', 'no', 'no';
-check_config_value 'UsePrivilegeSeparation', 'yes', [qw{ yes sandbox }];
-check_config_value 'PermitTunnel',           'yes', [qw{ 0 no }];
+check_config_value 'PermitTunnel', 'yes', [qw{ 0 no }];
 check_config_value 'AllowAgentForwarding', 'yes', 'no';
 check_config_value 'AllowTcpForwarding',   'yes', 'no';
 

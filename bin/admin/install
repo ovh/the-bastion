@@ -244,6 +244,7 @@ fi
 if [ "${opt[modify-ssh-config]}" = 1 ] || [ "${opt[modify-sshd-config]}" = 1 ] ; then
     action_doing "Find which ssh/sshd config templates to install on $OS_FAMILY $LINUX_DISTRO $DISTRO_VERSION"
     short_suffix_name=$(echo "$LINUX_DISTRO$DISTRO_VERSION_MAJOR" | sed -re "s/[^a-z0-9]//")
+    [ "$short_suffix_name" = "rocky8" ] && short_suffix_name=centos8
     filesuffix=default
     if [ -e "$basedir/etc/ssh/sshd_config.$short_suffix_name" ] && [ -e "$basedir/etc/ssh/ssh_config.$short_suffix_name" ]; then
         filesuffix=$short_suffix_name
@@ -253,8 +254,10 @@ if [ "${opt[modify-ssh-config]}" = 1 ] || [ "${opt[modify-sshd-config]}" = 1 ] ;
                 filesuffix=debian7
             elif [ "$DISTRO_VERSION_MAJOR" -le 16 ]; then
                 filesuffix=debian8
-            else
+            elif [ "$DISTRO_VERSION_MAJOR" -le 18 ]; then
                 filesuffix=debian10
+            else
+                filesuffix=debian11
             fi
         elif echo "$DISTRO_LIKE" | grep -q -w suse; then
             filesuffix=opensuse15
