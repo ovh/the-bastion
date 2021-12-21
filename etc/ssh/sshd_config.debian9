@@ -130,7 +130,9 @@ UseDNS no
 UsePAM yes
 
 # === AuthenticationMethods vs potential root OTP vs potential user MFA ===
-# 2FA has been configured for root, so we force pubkey+PAM for it
+# If 2FA has been configured for root, we force pubkey+PAM for it. If this is the case
+# on your system, uncomment the next two lines (see
+# https://ovh.github.io/the-bastion/installation/advanced.html#fa-root-authentication)
 #Match User root
 #    AuthenticationMethods publickey,keyboard-interactive:pam
 # Unconditionally skip PAM auth for members of the bastion-nopam group
