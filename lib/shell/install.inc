@@ -54,18 +54,30 @@ set_download_url() {
     # shellcheck disable=SC2064
     trap "rm -f $payload" EXIT
 
-    maxtries=60
-    for try in $(seq 1 $maxtries); do
-        _apicall "$RELEASE_API_URL" > "$payload"
-        if command -v jq >/dev/null; then
-            # If we have jq, we can do it properly
-            urls="$(jq -r '.[0].assets|.[]|.browser_download_url' < "$payload")"
-        elif perl -MJSON -e 1 2>/dev/null; then
-            # If we don't, there's a good chance we have Perl with the JSON module, use it
-            urls="$(perl -MJSON -e 'undef $/; $d=decode_json(<>); exit if ref $d ne "ARRAY"; foreach(@{ $d->[0]{assets} || [] }) { print $_->{browser_download_url}."\n" }' "$payload")"
+    # shellcheck disable=SC2034
+    for try in 1 2; do
+
+        if [ "$USE_DEFAULT_URLS" = 1 ]; then
+            urls="$(default_urls)"
         else
-            # Otherwise, go the ugly way, don't bother the user in installing jq just for this need
-            urls="$(grep -Eo 'https://[a-z0-9./_-]+' "$payload")"
+            _apicall "$RELEASE_API_URL" > "$payload"
+
+            if [ ! -s "$payload" ]; then
+                action_error "API returned an empty body, did we hit the query limit? Auto-retrying with hardcoded URLs"
+                USE_DEFAULT_URLS=1
+                continue
+            fi
+
+            if command -v jq >/dev/null; then
+                # If we have jq, we can do it properly
+                urls="$(jq -r '.[0].assets|.[]|.browser_download_url' < "$payload")"
+            elif perl -MJSON -e 1 2>/dev/null; then
+                # If we don't, there's a good chance we have Perl with the JSON module, use it
+                urls="$(perl -MJSON -e 'undef $/; $d=decode_json(<>); exit if ref $d ne "ARRAY"; foreach(@{ $d->[0]{assets} || [] }) { print $_->{browser_download_url}."\n" }' "$payload")"
+            else
+                # Otherwise, go the ugly way, don't bother the user in installing jq just for this need
+                urls="$(grep -Eo 'https://[a-z0-9./_-]+' "$payload")"
+            fi
         fi
 
         url="$(echo "$urls" | grep -E "$pattern" | head -n1)"
@@ -74,18 +86,12 @@ set_download_url() {
             # success
             action_detail "$url"
             return 0
-        elif [ ! -s "$payload" ]; then
-            action_error "API returned an empty body, did we hit the query limit?"
-            if [ "$CI" = "true" ]; then
-                action_detail "... CI environment detected, try $try out of $maxtries, sleeping and retrying..."
-                sleep 63
-                continue
-            fi
-            exit 1
         elif [ -z "$urls" ]; then
             action_error "Couldn't find any URL in the returned body, did we hit the query limit? Body follows:"
             cat "$payload"
-            exit 1
+            action_error "Auto-retrying with hardcoded URLs"
+            USE_DEFAULT_URLS=1
+            continue
         else
             action_error "Couldn't find a proper URL for your architecture ($arch), looked for pattern '$pattern'. You may have to compile $PROGRAM_NAME yourself!"
             action_detail "Maybe the release asset naming pattern has changed and we're not aware, if you think one of the packages below match your OS & arch, you may download & install them manually:"
@@ -95,8 +101,8 @@ set_download_url() {
             exit 1
         fi
     done
-    # if we're here, we've reached maxtries
-    action_error "Reached max tries, aborting"
+
+    # unreachable code, but fail just in case
     exit 1
 }
 
