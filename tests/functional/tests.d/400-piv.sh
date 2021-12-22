@@ -143,8 +143,10 @@ EOF
     json .command selfListIngressKeys .error_code OK '.value.keys|length' 2
 
     # sleep to ensure grace expires
-    echo "sleeping 10 seconds to wait for grace expiration"
-    [ "$COUNTONLY" != 1 ] && sleep 10
+    if [ "$COUNTONLY" != 1 ]; then
+        echo "sleeping 10 seconds to wait for grace expiration"
+        sleep 10
+    fi
 
     # manually launch the grace reaper (normally done by cron)
     echo "manually launching piv grace reaper..."
