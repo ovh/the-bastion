@@ -23,7 +23,7 @@ Test Options:
     --skip-consistency-check   Speed up tests by skipping the consistency check between every test
     --no-pause-on-fail         Don't pause when a test fails
     --log-prefix=X             Prefix all logs by this name
-    --module=X                 Only test this module (specify a filename found in \`functional/tests.d/\`)
+    --module=X                 Only test this module (specify a filename found in \`functional/tests.d/\`), can be specified multiple times
 
 Remote OS directory locations:
     --remote-etc-bastion=X     Override the default remote bastion configuration directory (default: $opt_remote_etc_bastion)
@@ -72,13 +72,13 @@ do
             opt_log_prefix="$optval"
             ;;
         --module=*)
-            opt_module="$optval"
             if [ ! -e "$basedir/tests/functional/tests.d/$optval" ]; then
-                echo "Unknown module specified '$opt_module', supported modules are:"
+                echo "Unknown module specified '$optval', supported modules are:"
                 cd "$basedir/tests/functional/tests.d"
                 ls -- ???-*.sh
                 exit 1
             fi
+            opt_module="$opt_module $optval"
             ;;
         --has-*=*)
             optname=${1/--has-/}
@@ -528,11 +528,12 @@ sshclientconfigchg()
 
 runtests()
 {
+    modulename=main
+
     # ensure syslog is clean
     ignorecodewarn 'Configuration error' # previous unit tests can provoke this
     success syslog_cleanup $r0 "\": > /var/log/bastion/bastion.log\""
 
-    modulename=main
     # backup the original default configuration on target side
     now=$(date +%s)
     success backupconfig $r0 "dd if=$opt_remote_etc_bastion/bastion.conf of=$opt_remote_etc_bastion/bastion.conf.bak.$now"
@@ -543,9 +544,18 @@ runtests()
     do
         module="$(readlink -f "$module")"
         modulename="$(basename "$module" .sh)"
-        if [ -n "$opt_module" ] && [ "$opt_module" != "$(basename "$module")" ]; then
-            echo "### SKIPPING MODULE $modulename"
-            continue
+        if [ -n "$opt_module" ]; then
+            skip=1
+            for wantedmod in $opt_module
+            do
+                if [ "$wantedmod" = "$(basename "$module")" ]; then
+                    skip=0
+                fi
+            done
+            if [ "$skip" = 1 ]; then
+                echo "### SKIPPING MODULE $modulename"
+                continue
+            fi
         fi
         echo "### RUNNING MODULE $modulename"
 
