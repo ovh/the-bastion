@@ -149,7 +149,6 @@ EOF
     fi
 
     # manually launch the grace reaper (normally done by cron)
-    echo "manually launching piv grace reaper..."
     success grace_reaper $r0 $opt_remote_basedir/bin/cron/osh-piv-grace-reaper.pl
 
     # account1 should no longer be able to connect, as PIV grace expired

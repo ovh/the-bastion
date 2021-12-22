@@ -2,14 +2,16 @@
 # vim: set filetype=perl ts=4 sw=4 sts=4 et:
 use strict;
 use warnings;
+use 5.010;
 
-use GnuPG;    # pragma optional module
 use File::Temp;
 use File::Basename;
 use File::Find;
 use File::Path;
+use File::Copy;
 use Getopt::Long;
 use Fcntl qw{ :flock };
+use IPC::Open3;
 
 use File::Basename;
 use lib dirname(__FILE__) . '/../../lib/perl';
@@ -18,15 +20,93 @@ use OVH::Bastion;
 use OVH::SimpleLog;
 
 my %config;
-my ($dryRun, $configTest, $forceRsync, $noDelete, $encryptOnly, $rsyncOnly, $verbose);
+my ($dryRun, $configTest, $forceRsync, $forceEncrypt, $noDelete, $encryptOnly, $rsyncOnly, $verbose, $help);
 local $| = 1;
 
-my $isoldversion = ($GnuPG::VERSION ge '0.18') ? 0 : 1;
+sub is_new_gpg {
+    state $cached_response;
+    return $cached_response if defined $cached_response;
+
+    open(my $stdout, "-|", qw{ gpg --dump-options }) or die "is gnupg installed? ($!)";
+    $cached_response = 0;
+    while (<$stdout>) {
+        $cached_response = 1 if /--pinentry-mode/;
+    }
+    close($stdout);
+
+    return $cached_response;
+}
+
+sub gpg_sign {
+    my %params = @_;
+    my @cmd    = qw{ gpg --batch --trust-model always --sign --passphrase-fd 0 };
+    push @cmd, qw{ --pinentry-mode loopback } if is_new_gpg();
+    push @cmd, "-v" if $config{'trace'};
+    push @cmd, '--local-user', $params{'signkey'}, '--output', '-', $params{'infile'};
+
+    my $outfile;
+    if (!open($outfile, '>', $params{'outfile'})) {
+        _err "Failed to open output file: $!";
+        return 1;
+    }
+
+    my ($pid, $in, $out);
+    eval { $pid = open3($in, $out, '>&STDERR', @cmd); };
+    if ($@) {
+        _err "Failed to run gpg_sign(): $!";
+        return 1;
+    }
+    print {$in} $config{'signing_key_passphrase'};
+    close($in);
+
+    while (<$out>) {
+        print {$outfile} $out;
+    }
+
+    waitpid($pid, 0);
+    close($out);
+    close($outfile);
+
+    return 0;    # success
+}
+
+sub gpg_encrypt {
+    my %params = @_;
+    my @cmd    = qw{ gpg --batch --yes --trust-model always --encrypt };
+    if ($params{'signkey'}) {
+        push @cmd, qw{ --passphrase-fd 0 };
+        push @cmd, qw{ --pinentry-mode loopback } if is_new_gpg();
+        push @cmd, '--local-user', $params{'signkey'};
+    }
+    push @cmd, "-v" if $config{'trace'};
+    foreach my $recipient (@{$params{'recipients'}}) {
+        push @cmd, "-r", $recipient;
+    }
+
+    push @cmd, '--output', $params{'outfile'};
+    push @cmd, $params{'infile'};
+
+    my ($pid, $infh);
+    eval { $pid = open3($infh, '>&STDOUT', '>&STDERR', @cmd); };
+    if ($@) {
+        _err "Failed to run gpg_sign(): $!";
+        return 1;
+    }
+    if ($params{'signkey'}) {
+        print {$infh} $config{'signing_key_passphrase'};
+    }
+    close($infh);
+
+    # ensure gpg is done
+    waitpid($pid, 0);
+
+    return 0;    # success
+}
 
 sub test_config {
+    my $error;
 
     # normalize / define defaults / quick checks
-
     $config{'trace'} = $config{'trace'} ? 1 : 0;
 
     if (not exists $config{'recipients'}) {
@@ -54,31 +134,26 @@ sub test_config {
     }
 
     # ok, check if my gpg conf is good
-    my $input = File::Temp->new(UNLINK => 1, TMPDIR => 1);
-    print {$input} time();
-    close($input);
+    my $infile = File::Temp->new(UNLINK => 1, TMPDIR => 1);
+    print {$infile} time();
+    close($infile);
 
-    _log "Testing signature with key $config{signing_key}... ";
-    eval {
-        my $gpgtest = GnuPG->new(trace => $config{'trace'});
-        my $outfile = File::Temp->new(UNLINK => 1, TMPDIR => 1);
+    _log "Testing signature with key $config{'signing_key'}... ";
+    my $outfile = File::Temp->new(UNLINK => 1, TMPDIR => 1);
 
-        # first, check we can sign
-        $gpgtest->sign(plaintext => $input . "", output => $outfile . "", "local-user" => $config{signing_key}, passphrase => $config{signing_key_passphrase});
-        if (not -s $outfile) {
-            die "Couldn't sign with the specified key $config{signing_key}, check your configuration";
-        }
-    };
-    if ($@) {
-        if ($@ =~ /BAD_PASSPHRASE/) {
-            _err "Bad passphrase for signing key $config{signing_key}";
-            return 1;
-        }
-        elsif ($@ =~ /expected NEED_PASSPHRASE/) {
-            _err "Signing key $config{signing_key} was not found";
-            return 1;
-        }
-        _err "When testing signing key: $@";
+    # first, check we can sign
+    $error = gpg_sign(
+        infile     => $infile,
+        outfile    => $outfile,
+        signkey    => $config{'signing_key'},
+        passphrase => $config{'signing_key_passphrase'}
+    );
+    if ($error) {
+        _err "Couldn't sign with the specified key $config{'signing_key'}, check your configuration";
+        return 1;
+    }
+    if (!-s $outfile) {
+        _err "Couldn't sign with the specified key $config{'signing_key'} (output file is empty), check your configuration";
         return 1;
     }
 
@@ -89,51 +164,43 @@ sub test_config {
         }
     }
 
-    eval {
-        foreach my $recipient (keys %recipients_uniq) {
-            _log "Testing encryption for recipient $recipient... ";
-            my $gpgtest = GnuPG->new(trace => $config{'trace'});
+    foreach my $recipient (keys %recipients_uniq) {
+        _log "Testing encryption for recipient $recipient... ";
 
-            # then, check we can encrypt to each of the recipients
-            my $outfile        = File::Temp->new(UNLINK => 1, TMPDIR => 1);
-            my $recipientparam = $isoldversion ? $recipient : [$recipient, $recipient];
-            $gpgtest->encrypt(plaintext => $input . "", output => $outfile . "", recipient => $recipientparam);
-            if (not -s $outfile) {
-                die "Couldn't encrypt for the specified recipient <$recipient>, check your configuration";
-            }
+        # then, check we can encrypt to each of the recipients
+        $outfile = File::Temp->new(UNLINK => 1, TMPDIR => 1);
+        $error   = gpg_encrypt(
+            infile     => $infile,
+            outfile    => $outfile,
+            recipients => [$recipient]
+        );
+        if ($error) {
+            _err "Couldn't encrypt for the specified recipient <$recipient>, check your configuration";
+            return 1;
         }
-    };
-    if ($@) {
-        _err "When testing recipient key: $@";
-        return 1;
-    }
-
-    if ($isoldversion and keys %recipients_uniq > 1) {
-        _err "You have an old version of the GnuPG module that doesn't support multiple recipients, sorry.";
-        return 1;
+        if (not -s $outfile) {
+            _err "Couldn't encrypt for the specified recipient <$recipient> (output file is empty), check your configuration";
+            return 1;
+        }
     }
 
     _log "Testing encryption for all recipients + signature... ";
-    eval {
-        my $gpgtest = GnuPG->new(trace => $config{'trace'});
 
-        # then, encrypt to all the recipients, sign, and check the signature
-        my $outfile        = File::Temp->new(UNLINK => 1, TMPDIR => 1);
-        my $recipientparam = $isoldversion ? (keys %recipients_uniq)[0] : [keys %recipients_uniq];
-        $gpgtest->encrypt(
-            plaintext    => $input . "",
-            output       => $outfile . "",
-            recipient    => $recipientparam,
-            sign         => 1,
-            "local-user" => $config{signing_key},
-            passphrase   => $config{signing_key_passphrase}
-        );
-        if (not -s $outfile) {
-            die "Couldn't encrypt and sign, check your configuration";
-        }
-    };
-    if ($@) {
-        _err "When testing encrypt+sign: $@";
+    # then, encrypt to all the recipients, sign, and check the signature
+    $outfile = File::Temp->new(UNLINK => 1, TMPDIR => 1);
+    $error   = gpg_encrypt(
+        infile     => $infile,
+        outfile    => $outfile,
+        recipients => [keys %recipients_uniq],
+        signkey    => $config{'signing_key'},
+        passphrase => $config{'signing_key_passphrase'}
+    );
+    if ($error) {
+        _err "Couldn't encrypt and sign, check your configuration";
+        return 1;
+    }
+    if (not -s $outfile) {
+        _err "Couldn't encrypt and sign (output file is empty), check your configuration";
         return 1;
     }
 
@@ -169,7 +236,7 @@ sub encrypt_multi {
         my $error = encrypt_once(
             source_file      => $current_source_file,
             destination_file => $current_destination_file,
-            recipients       => ($isoldversion ? $recipients_array->[0] : $recipients_array)
+            recipients       => $recipients_array,
         );
         if ($layer > 1 and $layer <= $layers) {
 
@@ -196,34 +263,31 @@ sub encrypt_once {
     my $source_file      = $params{'source_file'};
     my $destination_file = $params{'destination_file'};
     my $recipients       = $params{'recipients'};
+    my $error;
 
     if (not -f $source_file and not $dryRun) {
         _err "encrypt_once: source file $source_file is not a file!";
         return 1;
     }
 
-    # don't care ... overwrite
-    # TODO check if GnuPG overwrites silently or dies
-    #if (-f $destination_file)
-    #{
-    #    _err "encrypt_once: destination file $destination_file already exists!";
-    #    return 1;
-    #}
+    if (-f $destination_file) {
+        _log "encrypt_once: destination file $destination_file already exists, renaming!";
+        move($destination_file, "$destination_file.old." . time());
+    }
 
-    my $GPG = GnuPG->new(trace => $config{'trace'});
-    eval {
-        $dryRun
-          or $GPG->encrypt(
-            plaintext    => $source_file,
-            output       => $destination_file,
-            recipient    => $recipients,
-            sign         => 1,
-            "local-user" => $config{signing_key},
-            passphrase   => $config{signing_key_passphrase}
-          );
-    };
-    if ($@) {
-        _err "encrypt_once: when working on $source_file => $destination_file, got error $@";
+    $error = gpg_encrypt(
+        infile     => $source_file,
+        outfile    => $destination_file,
+        recipients => $recipients,
+        signkey    => $config{'signing_key'},
+        passphrase => $config{'signing_key_passphrase'},
+    );
+    if ($error) {
+        _err "encrypt_once: failed encrypting $source_file to $destination_file";
+        return 1;
+    }
+    if (!-s $destination_file) {
+        _err "encrypt_once: failed encrypting $source_file to $destination_file (destination is empty)";
         return 1;
     }
     return 0;    # no error
@@ -293,43 +357,66 @@ sub directory_filter {    ## no critic (RequireArgUnpacking)
         my @out = ();
         foreach (@_) {
             if (-d "/home/$_/ttyrec") {
-
-                #_log("DBG: filtering /home, $_ is OK");
                 push @out, $_ if -d "/home/$_/ttyrec";
-            }
-            else {
-                ;         #_log("DBG: filtering /home, $_ is COMPLETELY OUT");
             }
         }
         return @out;
     }
     if ($File::Find::dir =~ m{^/home/[^/]+($|/ttyrec)}) {
 
-        #_log("DBG: yep ok $File::Find::dir");
         return @_;
     }
 
-    #_log("DBG: quickill $File::Find::dir");
     return ();
+}
+
+sub print_usage {
+    print <<"EOF";
+
+    $0 [options]
+
+    --dry-run        Don't actually compress/encrypt/rsync, just show what would be done
+    --config-test    Test the validity of the config file
+    --verbose        More logs
+
+    rsync phase:
+    --no-delete      During the encrypt phase, don't delete the source files after successful encryption
+    --rsync-only     Skip the encrypt phase, just rsync the already encrypted & moved files
+    --force-rsync    Don't wait for the configured number of days before rsyncing files, do it immediately
+
+    encryption phase:
+    --encrypt-only   Skip the rsync phase, just encrypt & move the files
+    --force-encrypt  Don't wait for the configured number of days before encrypting & moving files, do it immediately
+
+EOF
+    return;
 }
 
 sub main {
     _log "Starting...";
 
     if (
-        not GetOptions(
-            "dry-run"      => \$dryRun,
-            "config-test"  => \$configTest,
-            "no-delete"    => \$noDelete,
-            "encrypt-only" => \$encryptOnly,
-            "rsync-only"   => \$rsyncOnly,
-            "force-rsync"  => \$forceRsync,
-            "verbose"      => \$verbose,
+        !GetOptions(
+            "dry-run"       => \$dryRun,
+            "config-test"   => \$configTest,
+            "no-delete"     => \$noDelete,
+            "encrypt-only"  => \$encryptOnly,
+            "rsync-only"    => \$rsyncOnly,
+            "force-rsync"   => \$forceRsync,
+            "force-encrypt" => \$forceEncrypt,
+            "verbose"       => \$verbose,
+            "help"          => \$help,
         )
       )
     {
         _err "Error while parsing command-line options";
+        print_usage();
         return 1;
+    }
+
+    if ($help) {
+        print_usage();
+        return 0;
     }
 
     # we can have CONFIGDIR/osh-encrypt-rsync.conf
@@ -412,7 +499,10 @@ sub main {
     OVH::SimpleLog::setSyslog($config{'syslog_facility'}) if $config{'syslog_facility'};
 
     if ($forceRsync) {
-        config { 'rsync_delay_days' } = 0;
+        $config{'rsync_delay_days'} = 0;
+    }
+    if ($forceEncrypt) {
+        $config{'encrypt_and_move_delay_days'} = 0;
     }
 
     if (test_config() != 0) {
@@ -501,8 +591,9 @@ sub main {
 
                 # remove empty directories
                 _log "Removing now empty directories...";
-                system("find " . $config{'encrypt_and_move_to_directory'} . " -type d ! -wholename " . $config{'encrypt_and_move_to_directory'} . " -delete 2>/dev/null")
-                  ;    # errors would be printed for non empty dirs, we don't care
+
+                # errors would be printed for non empty dirs, we don't care
+                system("find " . $config{'encrypt_and_move_to_directory'} . " -type d ! -wholename " . $config{'encrypt_and_move_to_directory'} . " -delete 2>/dev/null");
 
                 chdir $prevdir;
             }

@@ -35,11 +35,11 @@ if echo "$DISTRO_LIKE" | grep -q -w debian; then
     wanted_list="libcommon-sense-perl libjson-perl libnet-netmask-perl libnet-ip-perl \
                 libnet-dns-perl libdbd-sqlite3-perl libterm-readkey-perl libdatetime-perl \
                 fortunes-bofh-excuses sudo fping \
-                xz-utils sqlite3 binutils acl libtimedate-perl libgnupg-perl gnupg rsync \
+                xz-utils sqlite3 binutils acl libtimedate-perl gnupg rsync \
                 libjson-xs-perl inotify-tools lsof curl libterm-readline-gnu-perl \
                 libwww-perl libdigest-sha-perl libnet-ssleay-perl \
                 libnet-server-perl cryptsetup mosh expect openssh-server locales \
-                coreutils netcat bash libcgi-pm-perl iputils-ping"
+                coreutils netcat bash libcgi-pm-perl iputils-ping tar"
     # workaround for debian/armhf: curl fails to validate some SSL certificates,
     # whereas wget succeeds; this is needed for e.g. install-ttyrec.sh
     if [ "$(uname -m)" = armv7l ]; then
@@ -70,13 +70,13 @@ if echo "$DISTRO_LIKE" | grep -q -w debian; then
 elif echo "$DISTRO_LIKE" | grep -q -w rhel; then
     wanted_list="perl-JSON perl-Net-Netmask perl-Net-IP \
             perl-Net-DNS perl-DBD-SQLite perl-TermReadKey \
-            sudo fping xz sqlite binutils acl gnupg rsync perl-DateTime \
+            sudo fping xz sqlite binutils acl gnupg2 rsync perl-DateTime \
             perl-JSON-XS inotify-tools lsof curl perl-Term-ReadLine-Gnu \
             perl-libwww-perl perl-Digest perl-Net-Server cryptsetup mosh \
             expect openssh-server nc bash perl-CGI perl(Test::More) passwd \
             cracklib-dicts perl-Time-Piece perl-Time-HiRes diffutils \
             perl-Sys-Syslog pamtester google-authenticator qrencode-libs \
-            util-linux-user perl-LWP-Protocol-https findutils"
+            util-linux-user perl-LWP-Protocol-https findutils tar"
     if [ "$DISTRO_VERSION_MAJOR" = 7 ]; then
         wanted_list="$wanted_list fortune-mod coreutils"
     fi
@@ -115,14 +115,13 @@ elif echo "$DISTRO_LIKE" | grep -q -w suse; then
     wanted_list="perl-common-sense perl-JSON perl-Net-Netmask perl-Net-IP \
             perl-Net-DNS perl-DBD-SQLite perl-TermReadKey perl-DateTime \
             fortune sudo fping \
-            xz sqlite binutils acl gnupg rsync \
+            xz sqlite binutils acl gpg2 rsync \
             perl-JSON-XS inotify-tools lsof curl perl-TermReadLine-Gnu \
             perl-libwww-perl perl-Digest perl-IO-Socket-SSL \
             perl-Net-Server cryptsetup mosh expect openssh \
             coreutils netcat-openbsd bash perl-CGI iputils \
             perl-Time-HiRes perl-Unix-Syslog hostname perl-LWP-Protocol-https"
-        wanted_list="$wanted_list google-authenticator-libpam"
-            # perl-GnuPG
+        wanted_list="$wanted_list google-authenticator-libpam tar"
     [ "$opt_syslogng" = 1 ] && wanted_list="$wanted_list syslog-ng"
     [ "$opt_ttyrec" = 1 ] && wanted_list="$wanted_list ovh-ttyrec"
     [ "$opt_supervisor" = 1 ] && wanted_list="$wanted_list python-supervisor python-setuptools"
@@ -140,8 +139,8 @@ elif echo "$DISTRO_LIKE" | grep -q -w suse; then
     installed="FIXME"
     install_cmd="zypper install"
 elif [ "$OS_FAMILY" = FreeBSD ]; then
-    wanted_list="base64 coreutils rsync bash sudo pamtester p5-JSON p5-JSON-XS \
-            p5-common-sense p5-DateTime p5-Net-IP p5-GnuPG p5-DBD-SQLite p5-Net-Netmask \
+    wanted_list="base64 coreutils rsync bash sudo pamtester p5-JSON p5-JSON-XS gnupg \
+            p5-common-sense p5-DateTime p5-Net-IP p5-DBD-SQLite p5-Net-Netmask lsof \
             p5-Term-ReadKey expect fping p5-Net-Server p5-CGI p5-LWP-Protocol-https"
     install_cmd="pkg add"
     installed=""

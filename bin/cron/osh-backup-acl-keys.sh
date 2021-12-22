@@ -14,12 +14,6 @@ exit_fail() {
     exit 1
 }
 
-if command -v gpg1 >/dev/null 2>&1; then
-    gpgcmd="gpg1"
-else
-    gpgcmd="gpg"
-fi
-
 # setting default values
 LOGFILE=""
 LOG_FACILITY="local6"
@@ -47,7 +41,7 @@ fi
 
 # load the config files only if they're owned by root:root and mode is o-rwx
 for file in $config_list; do
-    if [ "$(find "$file" -uid 0 -gid 0 ! -perm /o+rwx | wc -l)" = 1 ] ; then
+    if check_secure "$file"; then
         # shellcheck source=etc/bastion/osh-backup-acl-keys.conf.dist
         . "$file"
     else
@@ -78,7 +72,8 @@ mkdir -p "$DESTDIR"
 tarfile="$DESTDIR/backup-$(date +'%Y-%m-%d').tar.gz"
 _log "Creating $tarfile..."
 supp_entries=""
-for entry in /root/.gnupg /root/.ssh /var/otp
+for entry in /root/.gnupg /root/.ssh /var/otp /etc/master.passwd /etc/pwd.db /etc/spwd.db \
+    /etc/passwd /etc/group /etc/shadow /etc/gshadow /etc/bastion /usr/local/etc/bastion
 do
     [ -e "$entry" ] && supp_entries="$supp_entries $entry"
 done
@@ -101,7 +96,7 @@ do
         --exclude="*.gpg" \
         --exclude="*.gz" \
         --exclude="*.zst" \
-        /home/ /etc/passwd /etc/group /etc/shadow /etc/gshadow /etc/bastion /etc/ssh $supp_entries 2>"$tarstderr"; ret=$?
+        /home/ /etc/ssh $supp_entries 2>"$tarstderr"; ret=$?
     set -e
     if [ $ret -eq 0 ]; then
         _log "File created"
@@ -134,7 +129,13 @@ fi
 
 encryption_worked=0
 if [ -n "$GPGKEYS" ] ; then
-    cmdline="--encrypt --batch"
+    cmdline="--encrypt --batch --trust-model always"
+
+    # this only exists on recent gnupg versions (>= 2.1)
+    if gpg --dump-options | grep -q -- --pinentry-mode; then
+        cmdline="$cmdline --pinentry-mode loopback"
+    fi
+
     sign=0
     if [ -n "$SIGNING_KEY" ] && [ -n "$SIGNING_KEY_PASSPHRASE" ]; then
         sign=1
@@ -144,6 +145,7 @@ if [ -n "$GPGKEYS" ] ; then
     do
         cmdline="$cmdline -r $recipient"
     done
+
     # just in case, encrypt all .tar.gz files we find in $DESTDIR
     while IFS= read -r -d '' file
     do
@@ -156,9 +158,9 @@ if [ -n "$GPGKEYS" ] ; then
 
         # shellcheck disable=SC2086
         if [ "$sign" = 1 ]; then
-            $gpgcmd $cmdline --passphrase-fd 0 "$file" <<< "$SIGNING_KEY_PASSPHRASE"; ret=$?
+            gpg $cmdline --passphrase-fd 0 "$file" <<< "$SIGNING_KEY_PASSPHRASE"; ret=$?
         else
-            $gpgcmd $cmdline "$file"; ret=$?
+            gpg $cmdline "$file"; ret=$?
         fi
 
         if [ "$ret" = 0 ]; then
