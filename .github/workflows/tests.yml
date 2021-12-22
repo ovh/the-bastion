@@ -6,7 +6,7 @@ on:
 
 jobs:
     tests_short:
-        name: Short (Debian 10 only)
+        name: Short (deb10 only, no cc)
         runs-on: ubuntu-latest
         if: contains(github.event.pull_request.labels.*.name, 'tests:short')
         steps:
@@ -26,7 +26,7 @@ jobs:
         steps:
         - uses: actions/checkout@v2
         - name: run tests inside a ${{ matrix.platform }} docker
-          run: tests/functional/docker/docker_build_and_run_tests.sh ${{ matrix.platform }} --no-pause-on-fail
+          run: tests/functional/docker/docker_build_and_run_tests.sh ${{ matrix.platform }} --skip-consistency-check --no-pause-on-fail
           env:
             DOCKER_TTY: false
 
