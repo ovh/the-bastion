@@ -58,7 +58,28 @@ While it's working, you can proceed to the section below.
 Generating and importing the admins GPG key
 *******************************************
 
-You should import on the bastion one or more **public** GPG keys that'll be used for encryption. If you don't already have a GPG key for this, you can generate one. As this is the admin GPG key, don't generate it on the bastion itself. On the desk of the administrator (you?), you can run for example:
+You should import on the bastion one or more **public** GPG keys that'll be used for encryption. If you don't already have a GPG key for this, you can generate one. As this is the admin GPG key, don't generate it on the bastion itself, but on the desk of the administrator (you?) instead.
+
+If you're running a reasonably recent GnuPG version (and the bastion does, too), i.e. GnuPG >= 2.1.x, then you can generate an Ed25519 key by running:
+
+.. code-block:: shell
+   :emphasize-lines: 1-8
+
+    myname='John Doe'
+    email='jd@example.org'
+    bastion='mybastion4.example.org'
+    pass=$(pwgen -sy 12 1)
+    echo "The passphrase for the key will be: $pass"
+    gpg --batch --pinentry-mode loopback --passphrase-fd 0 --quick-generate-key "$myname <$email>" ed25519 sign 0 <<< "$pass"
+    fpr=$(gpg --list-keys "$myname <$email>" | grep -Eo '[A-F0-9]{40}')
+    gpg --batch --pinentry-mode loopback --passphrase-fd 0 --quick-add-key "$fpr" cv25519 encr 0 <<< "$pass"
+
+    gpg: key 3F379CA7ECDF0537 marked as ultimately trusted
+    gpg: directory '/home/user/.gnupg/openpgp-revocs.d' created
+    gpg: revocation certificate stored as '/home/user/.gnupg/openpgp-revocs.d/3DFB21E3857F562A603BD4F83F379CA7ECDF0537.rev'
+
+
+If you or the bastion is using an older version of GnuPG, or you are unsure and/or prefer compatibility over speed or security, you can fallback to an RSA 4096 key:
 
 .. code-block:: shell
    :emphasize-lines: 1-9
@@ -83,17 +104,26 @@ You should import on the bastion one or more **public** GPG keys that'll be used
     gpg: key D2BDF9B5 marked as ultimately trusted
     gpg: done
 
-Of course, adjust the ``myname``, ``email`` and ``bastion`` variables accordingly. Write down the passphrase in a secure vault. All bastions admins will need it if they are to decrypt ttyrec files later for inspection, and also decrypt the backup should a restore be needed. When the key is done being generated, get the public key with ``gpg -a --export D2BDF9B5``, using the proper key ID that you just generated. Copy it to your clipboard, then back to the bastion, paste it at the following prompt:
+Of course, in both snippets above, adjust the ``myname``, ``email`` and ``bastion`` variables accordingly. Write down the passphrase in a secure vault. All bastions admins will need it if they are to decrypt ttyrec files later for inspection, and also decrypt the backup should a restore be needed. When the key is done being generated, get the public key with:
 
 .. code-block:: shell
+   :emphasize-lines: 1
+
+   gpg -a --export "$myname <$email>"
+
+Copy it to your clipboard, then back to the bastion, paste it at the following prompt:
+
+.. code-block:: shell
+   :emphasize-lines: 1
 
     /opt/bastion/bin/admin/setup-gpg.sh --import
 
 Also export the private admins GPG key to a secure vault (if you want the same key to be shared by the admins):
 
 .. code-block:: shell
+   :emphasize-lines: 1
 
-    gpg --export-secret-keys --armor D2BDF9B5
+    gpg --export-secret-keys --armor "$myname <$email>"
 
 Rotation, encryption & backup of ttyrec files
 =============================================

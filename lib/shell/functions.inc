@@ -328,6 +328,35 @@ get_file_gid_compat()
     stat -c "%g" "$1"
 }
 
+# return true (0) if (perms are o-rwx AND uid = gid = 0)
+check_secure()
+{
+
+    # check that perms are o-rwx
+    local cmd
+    if [ "$OS_FAMILY" = FreeBSD ]; then
+        cmd="stat -f %p"
+    else
+        cmd="stat -c %a"
+    fi
+    if ! $cmd "$1" | grep -q '0$'; then
+        return 1
+    fi
+
+    # check uid/gid
+    if [ "$OS_FAMILY" = FreeBSD ]; then
+        cmd="stat -f %u%g"
+    else
+        cmd="stat -c %u%g"
+    fi
+    if [ "$($cmd "$1")" != '00' ]; then
+        return 1
+    fi
+
+    # all good
+    return 0
+}
+
 _logtag="$(basename "$0")[$$]"
 __log()
 {

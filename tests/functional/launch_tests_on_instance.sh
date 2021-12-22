@@ -183,6 +183,48 @@ fi
     a4f="$tf ssh -F $mytmpdir/ssh_config -i $account4key1file $account4@$remote_ip -p $remote_port -- $js "
     a4np="$t ssh -F $mytmpdir/ssh_config -o PubkeyAuthentication=no $account4@$remote_ip -p $remote_port -- $js "
     r0="  $t ssh -F $mytmpdir/ssh_config -i $rootkeyfile           root@$remote_ip -p $remote_port -- "
+
+    # gpg has a terrible tendency to block on the pseudo-random number generator because it
+    # reads from /dev/random instead of /dev/urandom for bad reasons. so, just hardcode a pubkey here
+    admins_gpg_key_pub='
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+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
+=hEcM
+-----END PGP PUBLIC KEY BLOCK-----
+'
 };
 
 grant()  { success grantcmd  $a0 --osh accountGrantCommand  --account $account0 --command "$1"; }

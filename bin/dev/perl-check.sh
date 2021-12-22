@@ -5,9 +5,6 @@ basedir=$(readlink -f "$(dirname "$0")"/../..)
 # shellcheck source=lib/shell/functions.inc
 . "$basedir"/lib/shell/functions.inc
 
-# skip this script entirely if asked
-[ "$1" = "--test-quick" ] && [ "$2" = 1 ] && exit 0
-
 cmdline='-Mstrict -Mwarnings'
 (( fails=0 ))
 action_doing "Checking perl files syntax"
@@ -15,11 +12,6 @@ for i in $(find "$basedir"/bin -type f ! -name "*.orig") $(find "$basedir"/lib/p
 do
     i=$(readlink -f "$i")
     if head -n1 "$i" | grep -Eq '/perl|/env perl' || head -n2 "$i" | grep -Eq '^package ' ; then
-        # FIXME remove below block when we get rid of GnuPG perl module in below script
-        if [ "$i" = "$basedir/bin/cron/osh-encrypt-rsync.pl" ] && echo "$DISTRO_LIKE" | grep -qw -e rhel -e suse; then
-            action_detail "${BLUE}$i${NOC}: skipping"
-            continue
-        fi
         action_detail "${BLUE}$i${NOC}"
         if grep -q -- 'perl -T' "$i"; then
             # shellcheck disable=SC2086

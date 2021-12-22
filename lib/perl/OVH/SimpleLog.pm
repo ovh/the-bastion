@@ -108,7 +108,7 @@ sub _display {
         $level = 'info' if (!grep { $level eq $_ } qw{ warn err });
         eval { Sys::Syslog::syslog($level, $fullmsg); };
         if ($@) {
-            osh_warn("Couldn't syslog, report to administrator ($@)");
+            print STDERR "Couldn't syslog, report to administrator ($@)\n";
         }
     }
 
