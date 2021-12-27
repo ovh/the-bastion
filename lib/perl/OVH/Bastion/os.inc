@@ -3,10 +3,9 @@ package OVH::Bastion;
 
 use common::sense;
 
-my $_sysinfo_cache;
-
 sub sysinfo {
-    if (not defined $_sysinfo_cache) {
+    state $cached_response;
+    if (not defined $cached_response) {
         my $fnret = OVH::Bastion::execute(cmd => [qw{ uname -sr }]);
 
         if ($fnret and $fnret->value and $fnret->value->{'stdout'}) {
@@ -14,13 +13,13 @@ sub sysinfo {
             my $flavor = 'unknown';
             $flavor = 'debian' if -f "/etc/debian_version";
             $flavor = 'redhat' if -f "/etc/redhat-release";
-            $_sysinfo_cache = R('OK', value => {system => $system, release => $release, flavor => $flavor});
+            $cached_response = R('OK', value => {system => $system, release => $release, flavor => $flavor});
         }
         else {
-            $_sysinfo_cache = R('OK', value => {system => 'unknown', release => 'unknown', flavor => 'unknown'});
+            $cached_response = R('OK', value => {system => 'unknown', release => 'unknown', flavor => 'unknown'});
         }
     }
-    return $_sysinfo_cache;
+    return $cached_response;
 }
 
 sub is_linux { return R($^O eq 'linux' ? 'OK' : 'KO'); }

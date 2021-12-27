@@ -754,15 +754,14 @@ sub get_group_list {
     return $_cache_get_group_list{$groupType};
 }
 
-my $_cache_get_account_list = undef;
-
 sub get_account_list {
     my %params   = @_;
     my $accounts = $params{'accounts'} || [];
     my $cache    = $params{'cache'};            # if true, allow cache use
+    state $cached_response;
 
-    if ($cache and $_cache_get_account_list) {
-        return $_cache_get_account_list;
+    if ($cache and $cached_response) {
+        return $cached_response;
     }
 
     my %users;
@@ -785,8 +784,8 @@ sub get_account_list {
             $users{$name} = {name => $name, uid => $uid, gid => $gid, home => $dir, shell => $shell};
         }
     }
-    $_cache_get_account_list = R('OK', value => \%users);
-    return $_cache_get_account_list;
+    $cached_response = R('OK', value => \%users);
+    return $cached_response;
 }
 
 sub get_realm_list {

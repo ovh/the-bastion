@@ -654,19 +654,18 @@ sub _write_log {
     return;
 }
 
-my $_log_access_update_done = 0;
-
 sub log_access_update {
     my %params    = @_;
     my $account   = $params{'account'};
     my $insert_id = $params{'insert_id'};
     my $db_name   = $params{'db_name'};
     my $uniq_id   = $params{'uniq_id'};
+    state $update_done;
     my $fnret;
 
     # ensure we never get called more than once in a process
-    return R('OK_DUPLICATE') if $_log_access_update_done;
-    $_log_access_update_done = 1;
+    return R('OK_DUPLICATE') if $update_done;
+    $update_done = 1;
 
     # if we get a valid account, we'll try to log to its files, if enabled.
     # if not, or if its invalid, still try to log what we can (hence don't return here)
