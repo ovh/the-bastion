@@ -18,32 +18,38 @@ EOF
 }
 
 set_download_url() {
-    pattern="$1"
+    local pattern="$1"
+    local verbosity=""
 
     action_doing "Looking for download tool..."
     if command -v wget >/dev/null; then
         action_done wget
+        verbosity="-q"
+        [ "$CI" = true ] && verbosity="-v"
         _apicall() {
-            wget -q -O - --header="Accept: application/vnd.github.v3+json" "$1" || true
+            wget $verbosity -O - --header="Accept: application/vnd.github.v3+json" "$1" || true
         }
         _download() {
-            wget -q "$1"
+            wget $verbosity "$1"
         }
     elif command -v fetch >/dev/null; then
         action_done fetch
+        [ "$CI" = true ] && verbosity="-v"
         _apicall() {
-            fetch -o - "$1" || true
+            fetch $verbosity -o - "$1" || true
         }
         _download() {
-            fetch "$1"
+            fetch $verbosity "$1"
         }
     elif command -v curl >/dev/null; then
         action_done curl
+        verbosity="-s"
+        [ "$CI" = true ] && verbosity="-v"
         _apicall() {
-            curl -sL -H 'Accept: application/vnd.github.v3+json' "$1" || true
+            curl $verbosity -L -H 'Accept: application/vnd.github.v3+json' "$1" || true
         }
         _download() {
-            curl -sL -O "$1"
+            curl $verbosity -L -O "$1"
         }
     else
         action_error "Couldn't find wget, curl nor fetch"
