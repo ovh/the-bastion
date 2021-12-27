@@ -70,7 +70,7 @@ set_download_url() {
 
             if command -v jq >/dev/null; then
                 # If we have jq, we can do it properly
-                urls="$(jq -r '.[0].assets|.[]|.browser_download_url' < "$payload")"
+                urls="$(jq -r '.[0].assets|.[]|.browser_download_url' < "$payload" || true)"
             elif perl -MJSON -e 1 2>/dev/null; then
                 # If we don't, there's a good chance we have Perl with the JSON module, use it
                 urls="$(perl -MJSON -e 'undef $/; $d=decode_json(<>); exit if ref $d ne "ARRAY"; foreach(@{ $d->[0]{assets} || [] }) { print $_->{browser_download_url}."\n" }' "$payload")"
