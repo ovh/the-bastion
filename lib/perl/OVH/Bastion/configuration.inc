@@ -685,11 +685,11 @@ sub plugin_config {
             }
 
             # 2of2) load from /etc config (will NOT override plugin.json keys)
-            $fnret = OVH::Bastion::load_configuration_file(file => "/etc/bastion/plugin.$plugin.conf", secure => 1);
+            $fnret = OVH::Bastion::load_configuration_file(file => OVH::Bastion::main_configuration_directory() . "/plugin.$plugin.conf", secure => 1);
             if ($fnret->err eq 'KO_CANNOT_OPEN_FILE') {
 
                 # chmod error, don't fail silently
-                warn_syslog("Can't read configuration file '/etc/bastion/plugin.$plugin.conf'");
+                warn_syslog("Can't read configuration file '" . OVH::Bastion::main_configuration_directory() . "/plugin.$plugin.conf'");
                 return R('ERR_CONFIGURATION_ERROR', msg => "Configuration file has improper rights, ask your sysadmin!");
             }
             if ($fnret && ref $fnret->value eq 'HASH') {

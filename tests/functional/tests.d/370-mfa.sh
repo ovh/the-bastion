@@ -190,24 +190,15 @@ testsuite_mfa()
         script set_help_mfa $r0 "'"'echo \{\"mfa_required\":\ \"password\"\} > '"$opt_remote_etc_bastion"'/plugin.help.conf; chmod 644 '"$opt_remote_etc_bastion"'/plugin.help.conf'"'"
         retvalshouldbe 0
 
-        if [ "$OS_FAMILY" = FreeBSD ]; then
-            script a4_mfa_help_jitmfa "echo 'set timeout 30; \
-                spawn $a4 --osh help; \
-                expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
-                expect eof; \
-                lassign [wait] pid spawnid value value; \
-                exit \$value' | expect -f -"
-        else
-            script a4_mfa_help_jitmfa "echo 'set timeout 30; \
-                spawn $a4 --osh help; \
-                expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
-                expect \"is required (password)\" { sleep 0.1; }; \
-                expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
-                expect eof; \
-                lassign [wait] pid spawnid value value; \
-                exit \$value' | expect -f -"
-            contain 'pamtester: successfully authenticated'
-        fi
+        script a4_mfa_help_jitmfa "echo 'set timeout 30; \
+            spawn $a4 --osh help; \
+            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
+            expect \"is required (password)\" { sleep 0.1; }; \
+            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
+            expect eof; \
+            lassign [wait] pid spawnid value value; \
+            exit \$value' | expect -f -"
+        contain 'pamtester: successfully authenticated'
         retvalshouldbe 0
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
         contain REGEX 'Password:|Password for'
