@@ -57,13 +57,12 @@ sub main_configuration_directory {
     return "/etc/bastion";
 }
 
-my $_cache_config = undef;
-
 sub load_configuration {
     my %params    = @_;
     my $mock_data = $params{'mock_data'};
     my $noisy     = $params{'noisy'};       # print warnings/errors on stdout in addition to syslog
     my $test      = $params{'test'};        # noisy + also print missing configuration options
+    state $cached_response;
 
     # do NOT use warn_syslog in this func, or any other function that needs to read configuration,
     # or we might end up in an infinite loop: store errors we wanna log at the end
@@ -79,11 +78,11 @@ sub load_configuration {
         }
 
         # mock data always overrides cache
-        undef $_cache_config;
+        undef $cached_response;
     }
 
-    if (ref $_cache_config eq 'HASH') {
-        return R('OK', value => $_cache_config);
+    if (ref $cached_response eq 'HASH') {
+        return R('OK', value => $cached_response);
     }
 
     my $C;
@@ -528,7 +527,7 @@ sub load_configuration {
     $C->{'fanciness'} = 'full'  if $C->{'fanciness'} eq 'genz';
 
     # OK we're done
-    $_cache_config = $C;
+    $cached_response = $C;
 
     # now that we cached our result, we can call warn_syslog() without risking an infinite loop
     warn_syslog($_,                                                                          $noisy) for @errors;

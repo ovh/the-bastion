@@ -597,11 +597,10 @@ sub get_bastion_ips {
     return R('OK', value => \@checkedIps);
 }
 
-my $_cache_get_supported_ssh_algorithms_list_runtime = undef;
-
 sub get_supported_ssh_algorithms_list {
     my %params = @_;
     my $way    = $params{'way'};    # ingress or egress
+    state @cached_runtime_list;
 
     if (not $way) {
         return R('ERR_MISSING_PARAMETER', msg => 'Missing required argument way in get_supported_ssh_algorithms_list');
@@ -618,8 +617,8 @@ sub get_supported_ssh_algorithms_list {
 
     # other vary, detect this by running openssh client -V
     my @supportedList;
-    if (ref $_cache_get_supported_ssh_algorithms_list_runtime eq 'ARRAY') {
-        @supportedList = @{$_cache_get_supported_ssh_algorithms_list_runtime};
+    if (@cached_runtime_list) {
+        @supportedList = @cached_runtime_list;
     }
     else {
         push @supportedList, 'rsa';    # rsa is always supported
@@ -630,7 +629,7 @@ sub get_supported_ssh_algorithms_list {
                     my $version = $1;
                     push @supportedList, 'ecdsa'   if ($version gt "5.7");
                     push @supportedList, 'ed25519' if ($version gt "6.5");
-                    $_cache_get_supported_ssh_algorithms_list_runtime = \@supportedList;
+                    @cached_runtime_list = @supportedList;
                     last;
                 }
             }
