@@ -9,13 +9,9 @@
 # also try creating an account with it (code paths from selfAddIngressKey and accountCreate differ)
 _ingress_from_test()
 {
-    name="$1"
-    ip1="$2"
-    ip2="$3"
-    keytoadd="$4"
-    fingerprint="$5"
+    local testname="$1" ip1="$2" ip2="$3" keytoadd="$4" fingerprint="$5"
 
-    script $name "echo '$keytoadd' | $a1 --osh selfAddIngressKey"
+    script $testname "echo '$keytoadd' | $a1 --osh selfAddIngressKey"
     retvalshouldbe 0
     json .value.connect_only_from[0] $ip1
     json .value.connect_only_from[1] $ip2
@@ -27,7 +23,7 @@ _ingress_from_test()
         json .value.key.prefix "from=\"$ip1,$ip2\""
     fi
 
-    success $name $a1 --osh selfListIngressKeys
+    success $testname $a1 --osh selfListIngressKeys
     json .value.keys[1].from_list[0] $ip1
     json .value.keys[1].from_list[1] $ip2
     if [ "$ip1" = null ] && [ "$ip2" = null ]; then
@@ -36,18 +32,18 @@ _ingress_from_test()
         json .value.keys[1].prefix "from=\"$ip1,$ip2\""
     fi
 
-    success $name $a1 --osh selfDelIngressKey -f "$fingerprint"
+    success $testname $a1 --osh selfDelIngressKey -f "$fingerprint"
 
     # now on account creation
     grant accountCreate
 
-    script $name "echo '$keytoadd' | $a0 --osh accountCreate --account $account2 --uid $uid2"
+    script $testname "echo '$keytoadd' | $a0 --osh accountCreate --account $account2 --uid $uid2"
     json .error_code OK .command accountCreate .value null
 
     revoke accountCreate
     grant accountListIngressKeys
 
-    success $name $a0 --osh accountListIngressKeys --account $account2
+    success $testname $a0 --osh accountListIngressKeys --account $account2
     json .value.keys[0].from_list[0] $ip1
     json .value.keys[0].from_list[1] $ip2
     if [ "$ip1" = null ] && [ "$ip2" = null ]; then
@@ -59,7 +55,7 @@ _ingress_from_test()
     revoke accountListIngressKeys
     grant accountDelete
 
-    script $name "$a0 --osh accountDelete --account $account2" "<<< \"Yes, do as I say and delete $account2, kthxbye\""
+    script $testname "$a0 --osh accountDelete --account $account2" "<<< \"Yes, do as I say and delete $account2, kthxbye\""
     retvalshouldbe 0
     json .error_code OK .command accountDelete
 
