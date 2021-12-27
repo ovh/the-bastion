@@ -212,6 +212,15 @@ install_main() {
         exit 1
     fi
 
+    # in CI mode, delay a random amount of time, to avoid getting blocked
+    # when several runs are started in parallel
+    if [ "$CI" = true ]; then
+        amount=$(( RANDOM % 10 * 3 ))
+        action_doing "Sleeping $amount seconds in CI mode..."
+        sleep $amount
+        action_done
+    fi
+
     while getopts :sdrah arg; do
         case "$arg" in
             s) action_static;      exit 0;;
