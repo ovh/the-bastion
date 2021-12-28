@@ -21,7 +21,7 @@ if [ "$1" = "--big-only" ]; then
             tokill="$tokill $pid"
             (( ++nb ))
         fi
-    done < <(lsof -a -n -c ttyrec 2>/dev/null -- /home/ 2>/dev/null)
+    done < <(lsof -a -n -c ttyrec -- /home/ 2>/dev/null)
     if [ -n "$tokill" ]; then
         _log "Rotating $nb big ttyrec files..."
         # add || true to avoid script termination due to TOCTTOU and set -e

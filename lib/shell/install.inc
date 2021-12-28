@@ -213,7 +213,7 @@ install_main() {
             r) action_package rpm; exit 0;;
             a) action_auto;        exit 0;;
             h) install_usage;      exit 0;;
-            ?) echo "Invalid option: -$OPTARG"; usage; exit 1;;
+            *) echo "Invalid option: -$OPTARG"; usage; exit 1;;
         esac
     done
     install_usage

@@ -560,7 +560,7 @@ runtests()
 }
 
 COUNTONLY=0
-echo === running unit tests ===
+echo '=== running unit tests ==='
 # a while read loop doesn't work well here:
 # shellcheck disable=SC2044
 for f in $(find "$basedir/tests/unit/" -mindepth 1 -maxdepth 1 -type f -name "*.pl" -print)
@@ -575,11 +575,11 @@ done
 
 COUNTONLY=1
 testno=0
-echo === counting functional tests ===
+echo '=== counting functional tests ==='
 runtests
 testcount=$testno
 
-echo === will run $testcount functional tests ===
+echo "=== will run $testcount functional tests ==="
 COUNTONLY=0
 testno=0
 runtests
