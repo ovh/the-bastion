@@ -270,19 +270,9 @@ If you want to use ``SSHFP`` (for a bastion, you should), generate the records a
 Harden the SSH configuration
 ****************************
 
-You can use this script:
+Using our SSH templates is a good start in any case. If you want to go further, there are a lot of online resources to help you harden your SSH configuration, and audit a running SSHd server. As the field evolves continuously, we don't want to recommend one particularly here, as it might get out of date rapidly, but looking for `ssh audit <https://github.com/search?q=ssh+audit>`_ on GitHub is probably a good start. Of course, this also depends on your environment, and you might not be able to harden your SSHd configuration as much as you would like.
 
-.. code-block:: shell
-
-    /opt/bastion/bin/admin/check-ssh-hardening.pl
-
-Note that this script doesn't check everything, just a few items. If you want a complete audit of your SSH configuration, there are other tools available. Using our SSH templates is also a good start.
-
-The script also supports generating custom moduli for your installation. The following command will generate moduli of 8192 bits size. Note that it'll take several hours:
-
-.. code-block:: shell
-
-    /opt/bastion/bin/admin/check-ssh-hardening.pl --generate-moduli 8192
+Note that for The Bastion, both sides can be independently hardened: the ingress part is handled in ``sshd_config``, and the egress part is handled in ``ssh_config``.
 
 2FA root authentication
 ***********************
