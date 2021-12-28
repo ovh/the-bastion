@@ -174,7 +174,7 @@ These logs are produced when some portion of the code encounters an minor issue 
 
 Example::
 
-   Dec 25 14:56:11 myhostname bastion: code-info uniqid="93b27ad9eb4c" version="3.07.00" pid="3709643" ppid="3709642" sysuser="lechuck" sudo_user="" uid="8423" gid="8423" msg="Configuration error for plugin selfGenerateEgressKey on the 'disabled' key: expected a boolean, casted 'no' into false" FIXME
+   Dec 25 14:56:11 myhostname bastion: code-info uniqid="98d2f32b1a2d" version="3.07.00" pid="3708843" ppid="3708842" sysuser="lechuck" sudo_user="" uid="8423" gid="8423" msg="execute(): error while syswriting(Broken pipe) on stderr, aborting this cycle"
 
 Fields:
 
