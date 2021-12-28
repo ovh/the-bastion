@@ -9,16 +9,12 @@ basedir=$(readlink -f "$(dirname "$0")"/../..)
 opt_dev=0
 opt_install=0
 opt_syslogng=0
-opt_ttyrec=0
-opt_supervisor=0
 while builtin getopts "distv" opt; do
     # shellcheck disable=SC2154
     case "$opt" in
         "d") opt_dev=1;;
         "i") opt_install=1;;
         "s") opt_syslogng=1;;
-        "t") opt_ttyrec=1;;
-        "v") opt_supervisor=1;;
         *)  echo "Error $opt"; exit 1;;
     esac
 done
@@ -55,8 +51,6 @@ if echo "$DISTRO_LIKE" | grep -q -w debian; then
         wanted_list="$wanted_list liblinux-prctl-perl libpam-google-authenticator pamtester"
     fi
     [ "$opt_syslogng" = 1 ] && wanted_list="$wanted_list syslog-ng syslog-ng-core"
-    [ "$opt_ttyrec" = 1 ] && wanted_list="$wanted_list ovh-ttyrec"
-    [ "$opt_supervisor" = 1 ] && wanted_list="$wanted_list supervisor"
 
     if [ "$opt_install" = 1 ]; then
             export DEBIAN_FRONTEND=noninteractive
@@ -83,8 +77,6 @@ elif echo "$DISTRO_LIKE" | grep -q -w rhel; then
         wanted_list="$wanted_list util-linux-user"
     fi
     [ "$opt_syslogng" = 1 ] && wanted_list="$wanted_list syslog-ng"
-    [ "$opt_ttyrec" = 1 ] && wanted_list="$wanted_list ovh-ttyrec"
-    [ "$opt_supervisor" = 1 ] && wanted_list="$wanted_list supervisor"
 
     if [ "$opt_install" = 1 ]; then
             if [ "$DISTRO_VERSION_MAJOR" = 8 ]; then
@@ -125,14 +117,8 @@ elif echo "$DISTRO_LIKE" | grep -q -w suse; then
             perl-Time-HiRes perl-Unix-Syslog hostname perl-LWP-Protocol-https \
             google-authenticator-libpam tar"
     [ "$opt_syslogng" = 1 ] && wanted_list="$wanted_list syslog-ng"
-    [ "$opt_ttyrec" = 1 ] && wanted_list="$wanted_list ovh-ttyrec"
-    [ "$opt_supervisor" = 1 ] && wanted_list="$wanted_list python-supervisor python-setuptools"
 
     if [ "$opt_install" = 1 ]; then
-        if [ "$opt_supervisor" = 1 ]; then
-            zypper addrepo https://download.opensuse.org/repositories/home:bmanojlovic/openSUSE_Leap_15.0/home:bmanojlovic.repo
-            zypper refresh
-        fi
         # shellcheck disable=SC2086
         zypper install -y $wanted_list
         exit $?
