@@ -177,8 +177,8 @@ fi
 # push to remote if needed
 if [ -n "$PUSH_REMOTE" ] && [ "$encryption_worked" = 1 ] && [ -r "$tarfile.gpg" ] ; then
     _log "Pushing backup file ($tarfile.gpg) remotely..."
-    # shellcheck disable=SC2086
     set +e
+    # shellcheck disable=SC2086
     scp $PUSH_OPTIONS "$tarfile.gpg" "$PUSH_REMOTE"; ret=$?
     set -e
     if [ $ret -eq 0 ]; then

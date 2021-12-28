@@ -14,9 +14,9 @@ LINUX_DISTRO=unknown
 DISTRO_VERSION=''
 DISTRO_LIKE=''
 if [ -e /etc/os-release ]; then
-    LINUX_DISTRO=$(grep '^ID=' /etc/os-release | cut -d= -f2 | tr -d '"')
-    DISTRO_LIKE=$(grep '^ID_LIKE=' /etc/os-release | cut -d= -f2 | tr -d '"')
-    DISTRO_VERSION=$(grep '^VERSION_ID=' /etc/os-release | cut -d= -f2 | tr -d '"')
+    LINUX_DISTRO=$(grep '^ID=' /etc/os-release | cut -d= -f2 | tr -d '"' || true)
+    DISTRO_LIKE=$(grep '^ID_LIKE=' /etc/os-release | cut -d= -f2 | tr -d '"' || true)
+    DISTRO_VERSION=$(grep '^VERSION_ID=' /etc/os-release | cut -d= -f2 | tr -d '"' || true)
 fi
 if [ -z "$LINUX_DISTRO" ] || [ -z "$DISTRO_VERSION" ]; then
     if command -v lsb_release >/dev/null 2>&1; then
@@ -24,22 +24,21 @@ if [ -z "$LINUX_DISTRO" ] || [ -z "$DISTRO_VERSION" ]; then
         DISTRO_VERSION=$(lsb_release -sr)
     elif [ -e /etc/debian_version ]; then
         LINUX_DISTRO=debian
-        DISTRO_VERSION=$(cat /etc/debian_version)
-        # special case while bullseye is not yet released
-        if [ "$DISTRO_VERSION" = "bullseye/sid" ]; then
-            DISTRO_VERSION=11
-        fi
+        DISTRO_VERSION=$(< /etc/debian_version)
     elif [ -e /etc/redhat-release ]; then
         LINUX_DISTRO=redhat
     fi
 fi
-if [ "$DISTRO_VERSION" = "buster/sid" ]; then
-    DISTRO_VERSION=10
+
+# special case while bookworm is not yet released
+if [ "$DISTRO_VERSION" = "bookworm/sid" ]; then
+    DISTRO_VERSION=12
 fi
+
 LINUX_DISTRO=$(echo "$LINUX_DISTRO" | tr '[:upper:]' '[:lower:]' | tr -d ' ')
 # shellcheck disable=SC2034
 DISTRO_VERSION_MAJOR=$(echo "$DISTRO_VERSION" | grep -Eo '^[0-9]+' || true)
-[ -z "$DISTRO_LIKE" ] && DISTRO_LIKE="$LINUX_DISTRO"
+: "${DISTRO_LIKE:=$LINUX_DISTRO}"
 
 # no longer needed, but keep if for a few versions so that non-restarted daemons are still happy
 # shellcheck disable=SC2034

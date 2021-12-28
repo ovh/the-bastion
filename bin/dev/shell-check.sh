@@ -5,38 +5,71 @@ basedir=$(readlink -f "$(dirname "$0")"/../..)
 # shellcheck source=lib/shell/functions.inc
 . "$basedir"/lib/shell/functions.inc
 
-unset dockertag
-if [ "$1" = "docker" ]; then
-    dockertag=v0.7.1
-fi
-if [ -n "$2" ]; then
-    dockertag="$2"
+cd "$basedir" || exit 254
+
+# $1:
+# - docker, use shellcheck's docker
+# - system, use any installed shellcheck, this is the default if not specified
+# - anything_else, attempt to use shellcheck's docker with this tag
+
+# $2:
+# - (empty), check all known shell files
+# - anything_else, check only this file
+
+if [ "${1:-system}" = system ]; then
+    unset dockertag
+elif [ "$1" = docker ]; then
+    dockertag=v0.8.0
+else
+    dockertag="$1"
 fi
 
-(( fails=0 ))
-if [ -n "$dockertag" ]; then
+shellcheck_opts="-Calways -W 0 -x -o deprecate-which,avoid-nullary-conditions,add-default-case"
+
+run_shellcheck() {
+    local ret
+    action_detail "${BLUE}$1${NOC}"
+    if [ -n "${dockertag:-}" ]; then
+        # shellcheck disable=SC2086
+        docker run --rm -v "$PWD:/mnt" "koalaman/shellcheck:$dockertag" $shellcheck_opts "$1"; ret=$?
+    else
+        # shellcheck disable=SC2086
+        shellcheck $shellcheck_opts "$1"; ret=$?
+    fi
+    return $ret
+}
+
+(( fails=0 )) || true
+if [ -n "${dockertag:-}" ]; then
     action_doing "Checking shell files syntax using shellcheck:$dockertag docker"
 else
-    action_doing "Checking shell files syntax"
+    action_doing "Checking shell files syntax using system shellcheck"
 fi
 
-cd "$basedir" || exit 254
-for i in $(find . -type f ! -name "*.swp" -print0 | xargs -r0 grep -l 'set filetype=sh')
-do
-    action_detail "${BLUE}$i${NOC}"
-    if [ -n "$dockertag" ]; then
-        docker run --rm -v "$PWD:/mnt" "koalaman/shellcheck:$dockertag" -Calways -W 0 -x -o deprecate-which,avoid-nullary-conditions,add-default-case "$i"; ret=$?
+if [ -z "${2:-}" ]; then
+    for i in $(find . -type f ! -name "*.swp" ! -name "*.orig" ! -name "*.rej" -print0 | xargs -r0 grep -l 'set filetype=sh')
+    do
+        run_shellcheck "$i"; ret=$?
+        if [ $ret != 0 ]; then
+            (( fails++ ))
+        fi
+        if [ $ret = 3 ] || [ $ret = 4 ]; then
+            echo "${RED}WARNING: your shellcheck seems too old (code $ret), please upgrade it or use a more recent docker tag!${NOC}" >&2
+        fi
+    done
+
+    if [ "$fails" -ne 0 ] ; then
+        action_error "Got $fails errors"
     else
-        shellcheck -x "$i"; ret=$?
+        action_done "success"
     fi
-    if [ "$ret" != 0 ]; then
-        (( fails++ ))
-    fi
-done
-
-if [ "$fails" -ne 0 ] ; then
-    action_error "Got $fails errors"
+    exit "$fails"
 else
-    action_done "success"
+    run_shellcheck "$2"; ret=$?
+    if [ "$ret" -ne 0 ] ; then
+        action_error
+    else
+        action_done
+    fi
+    exit $ret
 fi
-exit "$fails"
