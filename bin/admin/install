@@ -49,7 +49,6 @@ set_default_options()
     opt[overwrite-cron]=1
     opt[syslog-ng]=1
     opt[overwrite-syslog-ng]=1
-    opt[migration-grant-aclkeeper-to-gatekeepers]=0
     opt[check-ttyrec]=1
     opt[install-fake-ttyrec]=0
 }
@@ -98,6 +97,7 @@ while [ -n "$1" ]; do
         set_default_options
     else
         # "--[no]-wait" is no longer used, but to keep compatibility, we keep it here (ignored)
+        # same for --migration-grant-aclkeeper-to-gatekeepers
         foundoption=0
         for allowedopt in modify-banner modify-sshd-config modify-ssh-config modify-motd modify-umask \
             modify-pam-lastlog remove-weak-moduli regen-hostkeys overwrite-logrotate overwrite-cron \
@@ -196,13 +196,6 @@ Usage:
     --[no-]check-ttyrec          verify that the ttyrec installed version is compatible with our code [N, U, M]
     --[no-]install-fake-ttyrec   install a fake ttyrec binary if ttyrec is not present; useful mainly for tests,
                                  or if you *really* don't want to use the real ttyrec
-
-    ONE-SHOT MIGRATION OPTIONS:
-
-    --migration-grant-aclkeeper-to-gatekeepers
-        Only useful when you're migrating from a version that doesn't implement the notion of aclkeeper (<2.21.00)
-        to a version that does (>=2.21.00): this option grants the aclkeeper right to all preexisting gatekeepers,
-        this helps ensuring a smooth transition from the users perspective
 
 EOF
     exit 1
@@ -351,68 +344,6 @@ if [ "$nothing" = 0 ]; then
         else
             action_error
         fi
-    else
-        action_na
-    fi
-
-    # remove obsolete logrotate files if needed
-    if [ "${opt[logrotate]}" = 1 ]; then
-        action_doing "Remove obsolete logrotate files..."
-        at_least_one_changed=0
-        for obsolete in osh-proxy-http osh-update-active-users
-        do
-            if [ -e "$ETC_DIR/logrotate.d/$obsolete" ]; then
-                at_least_one_changed=1
-                rm -f "$ETC_DIR/logrotate.d/$obsolete"
-            fi
-        done
-    fi
-    if [ "$at_least_one_changed" = 1 ]; then
-        action_done
-    else
-        action_na
-    fi
-
-    # remove obsolete cron files if needed
-    if [ "${opt[cron]}" = 1 ]; then
-        action_doing "Remove obsolete cron files..."
-        at_least_one_changed=0
-        for obsolete in osh-backupAclKeys osh-compressOldSqlite osh-encryptRsyncTtyrec \
-            osh-lingeringSessionsReaper osh-orphanedHomedir osh-pivGraceReaper \
-            osh-protectLogs osh-rotateTtyrec osh-activeUsers
-        do
-            if [ -e "$CRON_DIR/$obsolete" ]; then
-                at_least_one_changed=1
-                rm -f "$CRON_DIR/$obsolete"
-            fi
-        done
-    fi
-    if [ "$at_least_one_changed" = 1 ]; then
-        action_done
-    else
-        action_na
-    fi
-
-    action_doing "Move $BASTION_ETC_DIR/proxy-http.conf if needed"
-    if [ -f $BASTION_ETC_DIR/proxy-http.conf ] && ! [ -e $BASTION_ETC_DIR/osh-http-proxy.conf ]; then
-        mv $BASTION_ETC_DIR/proxy-http.conf $BASTION_ETC_DIR/osh-http-proxy.conf
-        action_done
-    else
-        action_na
-    fi
-
-    action_doing "Move $BASTION_ETC_DIR/sync-watcher-rsync.filter if needed"
-    if [ -f $BASTION_ETC_DIR/sync-watcher-rsync.filter ] && ! [ -e $BASTION_ETC_DIR/osh-sync-watcher.rsyncfilter ]; then
-        mv $BASTION_ETC_DIR/sync-watcher-rsync.filter $BASTION_ETC_DIR/osh-sync-watcher.rsyncfilter
-        action_done
-    else
-        action_na
-    fi
-
-    action_doing "Move $BASTION_ETC_DIR/sync-watcher.sh if needed"
-    if [ -f $BASTION_ETC_DIR/sync-watcher.sh ] && ! [ -e $BASTION_ETC_DIR/osh-sync-watcher.sh ]; then
-        mv $BASTION_ETC_DIR/sync-watcher.sh $BASTION_ETC_DIR/osh-sync-watcher.sh
-        action_done
     else
         action_na
     fi
@@ -624,45 +555,6 @@ if [ "$nothing" = 0 ]; then
     fi
     chmod 0755 /home/passkeeper
 
-    # rename potential old groups to new names
-    action_doing "Rename legacy group to new names"
-    at_least_one_changed=0
-    for i in accountListBastionKeys:accountListEgressKeys \
-        selfAddPrivateAccess:selfAddPersonalAccess \
-        selfDelPrivateAccess:selfDelPersonalAccess \
-        accountAddPrivateAccess:accountAddPersonalAccess \
-        accountDelPrivateAccess:accountDelPersonalAccess \
-        accountListKeys:accountListIngressKeys \
-        accountResetKeys:accountResetIngressKeys
-    do
-        old=osh-$(echo "$i" | cut -d: -f1)
-        new=osh-$(echo "$i" | cut -d: -f2)
-        if getent group "$old" >/dev/null ; then
-            at_least_one_changed=1
-            # old group exists, does the new one exist too?
-            action_detail "Old group $old found"
-            if getent group "$new" >/dev/null ; then
-                # weird, both groups exist, just delete the old one
-                if groupdel "$old" ; then
-                    action_detail "New group $new already existed, just deleted $old"
-                else
-                    action_error "Error while attempting to delete $old"
-                fi
-            else
-                if group_rename_compat "$old" "$new"; then
-                    action_detail "Renamed $old to $new"
-                else
-                    action_error "Error while attempting to rename $old to $new"
-                fi
-            fi
-        fi
-    done
-    if [ "$at_least_one_changed" = 1 ]; then
-        action_done
-    else
-        action_na
-    fi
-
     # add groups for specific modules
     action_doing "Create needed system groups"
     at_least_one_changed=0
@@ -677,22 +569,6 @@ if [ "$nothing" = 0 ]; then
             groupadd_compat "$i"
             action_detail "$i created"
         fi
-    done
-    if [ "$at_least_one_changed" = 1 ]; then
-        action_done
-    else
-        action_na
-    fi
-
-    # fix bad authorized_keys2 contents created in some cases before v2.30.00
-    action_doing "Fixing potential buggy keys in $AK_FILE contents"
-    at_least_one_changed=0
-    for account in $(getent passwd | grep ":$basedir/bin/shell/osh.pl$" | cut -d: -f1); do
-        test -f "/home/$account/$AK_FILE" || continue
-        grep -Eq '^from="[^ ]+"(ssh-|ecdsa-)' "/home/$account/$AK_FILE" || continue
-        at_least_one_changed=1
-        action_detail "... $account"
-        sed_compat 's/^(from="[^ ]+")(ssh-|ecdsa-)/\1 \2/g' "/home/$account/$AK_FILE"
     done
     if [ "$at_least_one_changed" = 1 ]; then
         action_done
@@ -803,46 +679,6 @@ if [ "$nothing" = 0 ]; then
     chown "$UID0":allowkeeper /var/log/bastion
     chmod 0710 /var/log/bastion
     action_done
-
-    # move old "always_active" flags to the new way
-    action_doing "Convert oldschool always_active flags if any"
-    at_least_one_changed=0
-    while IFS= read -r -d '' i
-    do
-        at_least_one_changed=1
-        account=$(echo "$i" | cut -d/ -f3 | cut -d. -f2)
-        if [ -z "$account" ] || ! [ -d "/home/$account" ] ; then
-            action_detail "unrecognized file, or account '$account' no longer existing, removing"
-        else
-            filename="/home/allowkeeper/$account/config.always_active"
-            echo yes > "$filename"
-            chmod 0644 "$filename"
-            chown allowkeeper:allowkeeper "$filename"
-            action_detail "converted $account"
-        fi
-        rm -v "$i"
-    done < <(find /home/ -mindepth 1 -maxdepth 1 -type f -name ".*.always_active" -print0)
-    if [ "$at_least_one_changed" = 1 ]; then
-        action_done
-    else
-        action_na
-    fi
-
-    # migration auto: ensure all groups have their corresponding aclkeeper group
-    action_doing "Creating missing aclkeeper groups where needed"
-        at_least_one_changed=0
-        for grp in $(getent group | cut -d: -f1 | grep -- '-gatekeeper$' | sed -e 's/-gatekeeper$//'); do
-            if ! getent group "$grp-aclkeeper" >/dev/null ; then
-                action_detail "... creating $grp-aclkeeper"
-                groupadd_compat "$grp-aclkeeper" HIGH
-                at_least_one_changed=1
-            fi
-        done
-    if [ "$at_least_one_changed" = 1 ]; then
-        action_done
-    else
-        action_na
-    fi
 
     # ensuring proper ACLs on group homes
     action_doing "Ensuring proper ACLs on group homes and allowed.ip"
@@ -1072,14 +908,6 @@ if [ "$nothing" = 0 ]; then
         action_na
     else
         action_done
-    fi
-
-    action_doing "Removing potentially bogus directories"
-    if [ -d /nonexistent ]; then
-        rmdir /nonexistent 2>/dev/null || true
-        action_done
-    else
-        action_na
     fi
 
     action_doing "Replacing legacy o+w by bastion-users/g+w"
@@ -1388,7 +1216,7 @@ fi
 
 if [ "${opt[remove-weak-moduli]}" = 1 ]; then
     # remove low moduli
-    action_doing "Remove weak moduli"
+    action_doing "Remove weak moduli (less than 4K)"
     if [ -e $SSH_DIR/moduli ] ; then
         tmpmod=$(mktemp)
         awk '$5 >= 4095' $SSH_DIR/moduli > "$tmpmod"
@@ -1400,22 +1228,6 @@ if [ "${opt[remove-weak-moduli]}" = 1 ]; then
         fi
         rm -f "$tmpmod"
     fi
-fi
-
-# optional migration: grant aclkeeper to gatekeepers
-if [ "${opt[migration-grant-aclkeeper-to-gatekeepers]}" = 1 ] ; then
-    action_doing "Migration: giving the aclkeeper right to all gatekeepers"
-        for grp in $(getent group | cut -d: -f1 | grep -- '-gatekeeper$' | sed -e 's/-gatekeeper$//'); do
-            action_detail "... checking group $grp"
-            for gatek in $(getent group "$grp-gatekeeper" | cut -d: -f4 | tr "," "\\n"); do
-                action_detail "... $grp: granting $gatek as aclkeeper"
-                add_user_to_group_compat "$gatek" "$grp-aclkeeper"; ret=$?
-                if [ $ret -ne 0 ]; then
-                    action_warn "Error while adding $gatek to $grp-aclkeeper!"
-                fi
-            done
-        done
-    action_done
 fi
 
 # lastly, check for ttyrec version and yell if it's not the proper one
