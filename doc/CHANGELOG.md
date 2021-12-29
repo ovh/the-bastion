@@ -1,3 +1,17 @@
+## v3.08.00 - 2022/01/04
+- feat: move scripts to GnuPG 2.x, add tests & doc
+- feat: add new OSes (Debian "Bullseye" 11, RockyLinux 8.x) and deprecate
+    old ones (OpenSUSE Leap 15.2, older minor releases of CentOS 7.x and 8.x)
+- feat: add the ``accountUnlock`` restricted plugin
+- enh: detect silent password change failures
+- enh: ``batch``: detect when asked to start a plugin requiring MFA
+- enh: rewrite ``packages-check.sh``, ``perl-tidy.sh`` and ``shell-check.sh`` with
+    more features and deprecated code removed
+- feat: add the ``code-info`` syslog type in addition to ``code-warn``
+- enh: tests: ``--module`` can now be specified multiple times
+- fix: FreeBSD tests & portions of code, regression since v3.03.99-rc2
+- chore: install: remove obsolete upgrading sections for pre-v3.x versions
+
 ## v3.07.00 - 2021/12/13
 - feat: add support for Duo PAM auth as MFA (#249)
 - feat: new access option: `--force-password <HASH>`, to only try one specific egress password (#256)
@@ -87,7 +101,8 @@ No changes since rc2.
 - fix: execute(): remove osh_warn on tainted params to avoid exposing arguments on coding error
 - fix: `groupModify`: deny early if user is not an owner of the group
 - enh: `groupInfo`: nicer message when no egress key exists
-- enh: `install`: use in-place overwrite for sudoers files, the 3-seconds wait by default has been removed (and the `--no-wait` parameter now does nothing)
+- enh: `install`: use in-place overwrite for sudoers files, the 3-seconds wait by default has been removed
+    (and the `--no-wait` parameter now does nothing)
 - fix: `interactive`: omit inactivity message warning when set to 0 seconds
 - a few other internal fixes here and there
 
@@ -173,7 +188,8 @@ No changes since rc2.
 
 ## v3.00.01 - 2020/11/06
 - feat: add OpenSUSE 15.2 to the officially supported distros
-- enh: install-ttyrec.sh: replaces build-and-install-ttyrec.sh, no longer builds in-place but prefers .deb and .rpm packages & falls back to precompiled static binaries otherwise
+- enh: install-ttyrec.sh: replaces build-and-install-ttyrec.sh, no longer builds in-place but prefers .deb
+    and .rpm packages & falls back to precompiled static binaries otherwise
 - enh: packages-check.sh: add qrencode-libs for RHEL/CentOS
 - enh: provide a separated Dockerfile for the sandbox, squashing useless layers
 - doc: a lot of fixes here and there

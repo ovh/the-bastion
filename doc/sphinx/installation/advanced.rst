@@ -152,13 +152,13 @@ Once you are done with you configuration, you might want to test it by running:
 
 .. code-block:: shell
 
-    /opt/bastion/bin/admin/osh-encrypt-rsync.pl --config-test
+    /opt/bastion/bin/cron/osh-encrypt-rsync.pl --config-test
 
 Or even go further by starting the script in dry-run mode:
 
 .. code-block:: shell
 
-    /opt/bastion/bin/admin/osh-encrypt-rsync.pl --dry-run
+    /opt/bastion/bin/cron/osh-encrypt-rsync.pl --dry-run
 
 Configuring keys, accounts & groups remote backup
 =================================================
@@ -178,7 +178,7 @@ start the script manually:
 .. code-block:: shell
    :emphasize-lines: 1
 
-    /opt/bastion/bin/admin/osh-backup-acl-keys.sh
+    /opt/bastion/bin/cron/osh-backup-acl-keys.sh
 
     Pushing backup file (/root/backups/backup-2020-05-25.tar.gz.gpg) remotely...
     backup-2020-05-25.tar.gz.gpg
