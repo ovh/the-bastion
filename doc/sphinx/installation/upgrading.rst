@@ -27,6 +27,93 @@ See the ``--help`` for a more fine-grained upgrade path if needed.
 Version-specific upgrade instructions
 =====================================
 
+v3.08.00 - 2022/01/04
+*********************
+
+This version replaces usage of GnuPG 1.x by GnuPG 2.x for the backup/encrypt/rsync satellite scripts, namely:
+
+- ``bin/cron/osh-backup-acl-keys.sh``
+- ``bin/cron/osh-encrypt-rsync.pl``
+
+These are optionally used to help you backup your system, and encrypt/move out ttyrec files.
+If you don't use these scripts and never configured them as seen in the :doc:`/installation/advanced` section,
+then you have nothing to do.
+
+The script ``setup-gpg.sh`` will now create an Ed25519 key by default, instead of a 4K RSA key.
+This type of key is usually seen as more secure (elliptic curve cryptography), and faster than RSA keys.
+If you have already configured your system, then the above scripts will continue using the previously generated
+RSA key, unless you generate a new key and reference it in the scripts configuration files.
+
+If you want to generate new Ed25519 keys instead of using your preexisting RSA keys, you may proceed
+to the :ref:`Ed25519 section below <upgrading_ed25519>`.
+
+Otherwise, on the first run, GnuPG 2.x should transparently import the 1.x keyring.
+To verify that it worked correctly, you may want to try:
+
+.. code-block:: shell
+
+   /opt/bastion/bin/cron/osh-encrypt-rsync.pl --config-test
+
+If you see *Config test passed*, and you're okay using your preexisting 4K RSA key, then you may stop here.
+
+If the test fails, and you know that before upgrading, this script worked correctly, then you might need to
+manually import the GnuPG 1.x public keys:
+
+.. code-block:: shell
+
+   gpg1 --armor --export | gpg --import
+
+Then, try again:
+
+.. code-block:: shell
+
+   /opt/bastion/bin/cron/osh-encrypt-rsync.pl --config-test
+
+If you don't see any errors here, you're done.
+
+If you still see errors, then you might need to manually import the private key:
+
+.. code-block:: shell
+
+   gpg1 --armor --export-secret-keys | gpg --import
+
+You may get asked for a password for the bastion secret key, which should be found in
+``/etc/bastion/osh-encrypt-rsync.conf.d/50-gpg-bastion-key.conf`` if you previously used the script to generate it.
+
+A last config test should now work:
+
+.. code-block:: shell
+
+   /opt/bastion/bin/cron/osh-encrypt-rsync.pl --config-test
+
+If you prefer to generate Ed25519 keys instead, then you can proceed to the next section.
+
+.. _upgrading_ed25519:
+
+Ed25519
+-------
+
+If you want to replace your RSA key by an Ed25519 one (which is optional), then you don't need to import the
+GnuPG 1.x keys as outlined above but you may run instead:
+
+.. code-block:: shell
+
+   /opt/bastion/bin/admin/setup-gpg.sh generate --overwrite
+
+Once the key has been generated, you may also want to generate a new admin key, by following this
+:ref:`section <installation/advanced:Generating and importing the admins GPG key>` of the Advanced Installation documentation.
+Note that you'll need to use the ``--overwrite`` parameter when importing:
+
+.. code-block:: shell
+
+   /opt/bastion/bin/admin/setup-gpg.sh import --overwrite
+
+Once done, a config test should work:
+
+.. code-block:: shell
+
+   /opt/bastion/bin/cron/osh-encrypt-rsync.pl --config-test
+
 v3.07.00 - 2021/12/13
 *********************
 
