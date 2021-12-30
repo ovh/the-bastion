@@ -2,7 +2,8 @@
 Advanced Installation
 =====================
 
-This section goes further in explaining how to setup your bastion. You should have completed the :doc:`basic installation<basic>` first.
+This section goes further in explaining how to setup your bastion.
+You should have completed the :doc:`basic installation<basic>` first.
 
 Encryption & signature GPG keys
 ===============================
@@ -12,17 +13,20 @@ There are 2 pairs of GPG keys being used by the bastion:
 - The *bastion GPG key*
 
   * The **private** key is used by the **bastion** to **sign** the ttyrec files
-  * The **public** key is used by the **admins** to **verify** the signature and prove non-repudiation and non-tampering of the ttyrec files
+  * The **public** key is used by the **admins** to **verify** the signature and prove
+    non-repudiation and non-tampering of the ttyrec files
 
 - The *admins GPG key*
 
   * The **public** key is used by the **bastion** to **encrypt** the backups and the ttyrec files
-  * The **private** key is used by the **admins** to **decrypt** the backups when a restore operation is needed, and the ttyrec files
+  * The **private** key is used by the **admins** to **decrypt** the backups when
+    a restore operation is needed, and the ttyrec files
 
 Generating the bastion GPG key
 ******************************
 
-Generate a GPG key that will be used by the bastion to sign files, this might take a while especially if the server is idle:
+Generate a GPG key that will be used by the bastion to sign files,
+this might take a while especially if the server is idle:
 
 .. code-block:: shell
    :emphasize-lines: 1
@@ -58,9 +62,12 @@ While it's working, you can proceed to the section below.
 Generating and importing the admins GPG key
 *******************************************
 
-You should import on the bastion one or more **public** GPG keys that'll be used for encryption. If you don't already have a GPG key for this, you can generate one. As this is the admin GPG key, don't generate it on the bastion itself, but on the desk of the administrator (you?) instead.
+You should import on the bastion one or more **public** GPG keys that'll be used for encryption.
+If you don't already have a GPG key for this, you can generate one. As this is the admin GPG key,
+don't generate it on the bastion itself, but on the desk of the administrator (you?) instead.
 
-If you're running a reasonably recent GnuPG version (and the bastion does, too), i.e. GnuPG >= 2.1.x, then you can generate an Ed25519 key by running:
+If you're running a reasonably recent GnuPG version (and the bastion does, too),
+i.e. GnuPG >= 2.1.x, then you can generate an Ed25519 key by running:
 
 .. code-block:: shell
    :emphasize-lines: 1-8
@@ -79,7 +86,8 @@ If you're running a reasonably recent GnuPG version (and the bastion does, too),
     gpg: revocation certificate stored as '/home/user/.gnupg/openpgp-revocs.d/3DFB21E3857F562A603BD4F83F379CA7ECDF0537.rev'
 
 
-If you or the bastion is using an older version of GnuPG, or you are unsure and/or prefer compatibility over speed or security, you can fallback to an RSA 4096 key:
+If you or the bastion is using an older version of GnuPG, or you are unsure and/or prefer compatibility
+over speed or security, you can fallback to an RSA 4096 key:
 
 .. code-block:: shell
    :emphasize-lines: 1-9
@@ -104,7 +112,10 @@ If you or the bastion is using an older version of GnuPG, or you are unsure and/
     gpg: key D2BDF9B5 marked as ultimately trusted
     gpg: done
 
-Of course, in both snippets above, adjust the ``myname``, ``email`` and ``bastion`` variables accordingly. Write down the passphrase in a secure vault. All bastions admins will need it if they are to decrypt ttyrec files later for inspection, and also decrypt the backup should a restore be needed. When the key is done being generated, get the public key with:
+Of course, in both snippets above, adjust the ``myname``, ``email`` and ``bastion`` variables accordingly.
+Write down the passphrase in a secure vault. All bastions admins will need it if they are to decrypt ttyrec files
+later for inspection, and also decrypt the backup should a restore be needed.
+When the key is done being generated, get the public key with:
 
 .. code-block:: shell
    :emphasize-lines: 1
@@ -128,10 +139,14 @@ Also export the private admins GPG key to a secure vault (if you want the same k
 Rotation, encryption & backup of ttyrec files
 =============================================
 
-You should already have all the needed GPG keys at the proper places, by following "Setup the encryption & signature GPG keys" section above.
+You should already have all the needed GPG keys at the proper places,
+by following "Setup the encryption & signature GPG keys" section above.
 
 The configuration file is located in ``/etc/bastion/osh-encrypt-rsync.conf``.
-You can ignore the ``signing_key``, ``signing_key_passphrase`` and ``recipients`` options, as these have been auto-filled when you generated the GPG keys, by dropping configuration files in the ``/etc/bastion/osh-encrypt-rsync.conf.d`` directory. Any file there takes precedence over the global configuration file.
+You can ignore the ``signing_key``, ``signing_key_passphrase`` and ``recipients`` options,
+as these have been auto-filled when you generated the GPG keys, by dropping configuration files
+in the ``/etc/bastion/osh-encrypt-rsync.conf.d`` directory.
+Any file there takes precedence over the global configuration file.
 
 Once you are done with you configuration, you might want to test it by running:
 
@@ -148,11 +163,17 @@ Or even go further by starting the script in dry-run mode:
 Configuring keys, accounts & groups remote backup
 =================================================
 
-Everything that is needed to restore a bastion from backup (keys, accounts, groups, etc.) is backed up daily in ``/root/backups`` by default. If you followed the "Setup the encryption & signature GPG keys" section above, these backups will be encrypted automatically.
+Everything that is needed to restore a bastion from backup (keys, accounts, groups, etc.) is backed up daily
+in ``/root/backups`` by default. If you followed the "Setup the encryption & signature GPG keys" section above,
+these backups will be encrypted automatically.
 
-If you want to push these backups to a remote location, which is warmly advised, you have to specify the remote location to ``scp`` the backup archives to. The configuration file is ``/etc/bastion/osh-backup-acl-keys.conf``, and you should specify the ``PUSH_REMOTE`` and ``PUSH_OPTIONS``.
+If you want to push these backups to a remote location, which is warmly advised,
+you have to specify the remote location to ``scp`` the backup archives to.
+The configuration file is ``/etc/bastion/osh-backup-acl-keys.conf``,
+and you should specify the ``PUSH_REMOTE`` and ``PUSH_OPTIONS``.
 
-To verify that the script is correctly able to connect remotely (and also validate the remote hostkey), start the script manually:
+To verify that the script is correctly able to connect remotely (and also validate the remote hostkey),
+start the script manually:
 
 .. code-block:: shell
    :emphasize-lines: 1
@@ -163,29 +184,44 @@ To verify that the script is correctly able to connect remotely (and also valida
     backup-2020-05-25.tar.gz.gpg
     100%   21MB  20.8MB/s   00:00
 
-Also verify that the extension is ``.gpg``, as seen above, which indicates that the script successfully encrypted the backup.
+Also verify that the extension is ``.gpg``, as seen above,
+which indicates that the script successfully encrypted the backup.
 
 Logs/Syslog
 ===========
 
-It is advised to use syslog for The Bastion application logs. This can be configured in ``/etc/bastion/bastion.conf`` with the parameter ``enableSyslog``.
+It is advised to use syslog for The Bastion application logs.
+This can be configured in ``/etc/bastion/bastion.conf`` with the parameter ``enableSyslog``.
 
-There is a default ``syslog-ng`` configuration provided, if you happen to use it. The file can be found as ``etc/syslog-ng/conf.d/20-bastion.conf.dist`` in the repository. Please read the comments in the file to know how to integrate it properly in your system.
+There is a default ``syslog-ng`` configuration provided, if you happen to use it.
+The file can be found as ``etc/syslog-ng/conf.d/20-bastion.conf.dist`` in the repository.
+Please read the comments in the file to know how to integrate it properly in your system.
 
 Clustering (High Availability)
 ==============================
 
-The bastions can work in a cluster, with N instances. In that case, there is one *master* instance, where any modification command can be used (creating accounts, deleting groups, granting accesses), and N-1 *slave* instances, where only *readonly* actions are permitted. Note that any instance can be used to connect to infrastructures, so in effect all instances can always be used at the same time. You may set up a DNS round-robin hostname, with all the instances IPs declared, so that clients automatically choose a random instance, without having to rely on another external component such as a load-balancer. Note that if you do this, you'll need all the instances to share the same SSH host keys.
+The bastions can work in a cluster, with N instances. In that case, there is one *master* instance,
+where any modification command can be used (creating accounts, deleting groups, granting accesses),
+and N-1 *slave* instances, where only *readonly* actions are permitted.
+Note that any instance can be used to connect to infrastructures, so in effect all instances can always be used
+at the same time. You may set up a DNS round-robin hostname, with all the instances IPs declared,
+so that clients automatically choose a random instance, without having to rely on another external component
+such as a load-balancer. Note that if you do this, you'll need all the instances to share the same SSH host keys.
 
 Setting up a slave bastion
 **************************
 
-Before, setting up the slave bastion, you should have the two bastions up and running (follow the normal installation documentation).
+Before, setting up the slave bastion, you should have the two bastions up and running
+(follow the normal installation documentation).
 
 On the slave
 ------------
 
-The sync of the  ``passwd`` and ``group`` files can have adverse effects on a newly installed machine where the packages where not installed in the same order than on the master, hence having different UIDs for the same users. The following commands are known to fix all the problems that could arise in that case, on an classic Debian machine, that has ``puppet``, ``postfix``, ``ossec`` and ``bind`` installed (disregard any *file or directory not found* message):
+The sync of the  ``passwd`` and ``group`` files can have adverse effects on a newly installed machine where
+the packages where not installed in the same order than on the master, hence having different UIDs for the same users.
+The following commands are known to fix all the problems that could arise in that case, on an classic Debian machine,
+that has ``puppet``, ``postfix``, ``ossec`` and ``bind`` installed
+(disregard any *file or directory not found* message):
 
 .. code-block:: shell
 
@@ -211,15 +247,20 @@ Then, on the slave, set the ``readOnlySlaveMode`` option in the ``/etc/bastion/b
 
     vim /etc/bastion/bastion.conf
 
-This will instruct the bastion to deny any modification plugin, so that changes can only be done through the master instance.
+This will instruct the bastion to deny any modification plugin,
+so that changes can only be done through the master instance.
 
-Then, append the master bastion synchronization public SSH keyfile, found in ``~root/.ssh/id_master2slave.pub`` on the master instance, to ``~bastionsync/.ssh/authorized_keys`` on the slave, with the following prefix: ``from="IP.OF.THE.MASTER",restrict``
+Then, append the master bastion synchronization public SSH keyfile,
+found in ``~root/.ssh/id_master2slave.pub`` on the master instance,
+to ``~bastionsync/.ssh/authorized_keys`` on the slave,
+with the following prefix: ``from="IP.OF.THE.MASTER",restrict``
 
 Hence the file should look like this:
 
     ``from="198.51.100.42",restrict ssh-ed25519 AAA[...]``
 
-Note that if you're using an old OpenSSH before version 7.2, the prefix should be instead: ``from="IP.OF.THE.MASTER",no-port-forwarding,no-agent-forwarding,no-X11-forwarding,no-pty,no-user-rc``.
+Note that if you're using an old OpenSSH before version 7.2, the prefix should be instead:
+``from="IP.OF.THE.MASTER",no-port-forwarding,no-agent-forwarding,no-X11-forwarding,no-pty,no-user-rc``.
 
 On the master
 -------------
@@ -228,13 +269,16 @@ On the master
 
 .. code-block:: shell
 
-    rsync -vaA --numeric-ids --dry-run --delete --filter "merge /etc/bastion/osh-sync-watcher.rsyncfilter" --rsh "ssh -i /root/.ssh/id_master2slave" / bastionsync@IP.OF.THE.SLAVE:/
+    rsync -vaA --numeric-ids --dry-run --delete --filter "merge /etc/bastion/osh-sync-watcher.rsyncfilter"
+    --rsh "ssh -i /root/.ssh/id_master2slave" / bastionsync@IP.OF.THE.SLAVE:/
 
-- Check that it's not trying to rsync too much stuff (if you have weird things in your ``/home``, you might want to edit ``/etc/bastion/osh-sync-watcher.rsyncfilter`` to exclude that stuff)
+- Check that it's not trying to rsync too much stuff (if you have weird things in your ``/home``,
+  you might want to edit ``/etc/bastion/osh-sync-watcher.rsyncfilter`` to exclude that stuff)
 
 - Once you're happy with the output, retry without the ``--dry-run``
 
-- When it's done, run it immediately again to ensure it still work, because ``/etc/passwd`` and ``/etc/group`` will have been overwritten on the slave
+- When it's done, run it immediately again to ensure it still work,
+  because ``/etc/passwd`` and ``/etc/group`` will have been overwritten on the slave
 
 - Then, edit the configuration on the master:
 
@@ -249,7 +293,8 @@ On the master
     systemctl enable osh-sync-watcher
     systemctl start osh-sync-watcher
 
-- You can check the logs (if you configured ``syslog`` instead, which is encouraged, then the logfile depends on your syslog daemon configuration)
+- You can check the logs (if you configured ``syslog`` instead, which is encouraged,
+  then the logfile depends on your syslog daemon configuration)
 
 .. code-block:: shell
 
@@ -270,21 +315,33 @@ If you want to use ``SSHFP`` (for a bastion, you should), generate the records a
 Harden the SSH configuration
 ****************************
 
-Using our SSH templates is a good start in any case. If you want to go further, there are a lot of online resources to help you harden your SSH configuration, and audit a running SSHd server. As the field evolves continuously, we don't want to recommend one particularly here, as it might get out of date rapidly, but looking for `ssh audit <https://github.com/search?q=ssh+audit>`_ on GitHub is probably a good start. Of course, this also depends on your environment, and you might not be able to harden your SSHd configuration as much as you would like.
+Using our SSH templates is a good start in any case. If you want to go further, there are a lot of online resources
+to help you harden your SSH configuration, and audit a running SSHd server.
+As the field evolves continuously, we don't want to recommend one particularly here,
+as it might get out of date rapidly, but looking for `ssh audit <https://github.com/search?q=ssh+audit>`_ on GitHub
+is probably a good start. Of course, this also depends on your environment, and you might not be able to harden
+your SSHd configuration as much as you would like.
 
-Note that for The Bastion, both sides can be independently hardened: the ingress part is handled in ``sshd_config``, and the egress part is handled in ``ssh_config``.
+Note that for The Bastion, both sides can be independently hardened:
+the ingress part is handled in ``sshd_config``, and the egress part is handled in ``ssh_config``.
 
 2FA root authentication
 ***********************
 
-The bastion supports TOTP (Time-based One Time Password), to further secure high profile accesses. This section covers the configuration of 2FA root authentication on the bastion itself. TOTP can also be enabled for regular bastion users, but this is covered in another section. To enable 2FA root authentication, run on the bastion:
+The bastion supports TOTP (Time-based One Time Password), to further secure high profile accesses.
+This section covers the configuration of 2FA root authentication on the bastion itself.
+TOTP can also be enabled for regular bastion users, but this is covered in another section.
+To enable 2FA root authentication, run on the bastion:
 
 .. code-block:: shell
 
     script -c "google-authenticator -t -Q UTF8 -r 3 -R 15 -s /var/otp/root -w 2 -e 4 -D" /root/qrcode
 
-Of course, you can check the ``--help`` and adjust the options accordingly. The example given above has sane defaults, but you might want to adjust if needed.
-Now, flash this QR code with your phone, using a TOTP application. You might want to copy the QR code somewhere safe in case you need to flash it on some other phone, by exporting the ``base64`` version of it:
+Of course, you can check the ``--help`` and adjust the options accordingly.
+The example given above has sane defaults, but you might want to adjust if needed.
+Now, flash this QR code with your phone, using a TOTP application.
+You might want to copy the QR code somewhere safe in case you need to flash it on some other phone,
+by exporting the ``base64`` version of it:
 
 .. code-block:: shell
 
@@ -294,9 +351,11 @@ Copy this in your password manager (for example). You can then delete the ``/roo
 
 You have then two configuration adjustments to do.
 
-- First, ensure you have installed the provided ``/etc/pam.d/sshd`` file, or at least the corresponding line to enable the TOTP pam plugin in your configuration.
+- First, ensure you have installed the provided ``/etc/pam.d/sshd`` file, or at least the corresponding line
+  to enable the TOTP pam plugin in your configuration.
 
-- Second, ensure that your ``/etc/ssh/sshd_config`` file calls PAM for root authentication. In the provided templates, there is a commented snippet to do it. The uncommented snippet looks like this:
+- Second, ensure that your ``/etc/ssh/sshd_config`` file calls PAM for root authentication.
+  In the provided templates, there is a commented snippet to do it. The uncommented snippet looks like this:
 
 .. code-block:: shell
 
@@ -304,12 +363,15 @@ You have then two configuration adjustments to do.
     Match User root
         AuthenticationMethods publickey,keyboard-interactive:pam
 
-Note that first, the usual publickey method will be used, then control will be passed to PAM. This is where the ``/etc/pam.d/sshd`` configuration will apply.
+Note that first, the usual publickey method will be used, then control will be passed to PAM.
+This is where the ``/etc/pam.d/sshd`` configuration will apply.
 
 Now, you should be asked for the TOTP the next time you try to login through ssh as root.
-In case something goes wrong with the new configuration, be sure to keep your already opened existing connection to be able to fix the problem without falling back to console access.
+In case something goes wrong with the new configuration, be sure to keep your already opened existing
+connection to be able to fix the problem without falling back to console access.
 
-Once this has been tested, you can (and probably should) also protect the direct root console access to your machine with TOTP, including a snippet similar to this one:
+Once this has been tested, you can (and probably should) also protect the direct root console access
+to your machine with TOTP, including a snippet similar to this one:
 
 .. code-block:: shell
 
