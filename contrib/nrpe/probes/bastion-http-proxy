@@ -1,0 +1,133 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+#
+# DESC: Warn if the bastion HTTPS proxy is down
+
+use strict;
+use warnings;
+use File::Basename;
+use Getopt::Long;
+use LWP::UserAgent;
+use IO::Socket::SSL;
+use JSON;
+
+my $PROBE_NAME = basename($0);
+my $debug;
+
+## no critic (Subroutines::RequireArgUnpacking)
+## no critic (Subroutines::RequireFinalReturn)
+
+sub _out {
+    my ($criticity, $msg) = @_;
+    printf "%s %4s - %s\n", $PROBE_NAME, $criticity, $msg;
+}
+
+sub _dbg  { _out('dbg',  $_[0]) if $debug; }
+sub _info { _out('info', $_[0]); }
+sub _warn { _out('WARN', $_[0]); }
+sub _err  { _out('ERR!', $_[0]); }
+
+sub success { my $msg = shift; _info($msg) if $msg; _info("status=OK");      exit(0); }
+sub warning { my $msg = shift; _warn($msg) if $msg; _info("status=WARN");    exit(1); }
+sub failure { my $msg = shift; _err($msg)  if $msg; _info("status=FAILURE"); exit(2); }
+sub unknown { my $msg = shift; _err($msg)  if $msg; _info("status=UNKNOWN"); exit(3); }
+
+# OPTIONS
+
+my $host         = "127.0.0.1";
+my $DEFAULT_PORT = 8443;
+my $disabledOk   = 0;             # don't warn if proxy is disabled
+my $port;
+
+GetOptions(
+    "help"        => \my $help,
+    "debug!"      => \$debug,
+    "host=s"      => \$host,
+    "port=i"      => \$port,
+    "disabled-ok" => \$disabledOk,
+) or unknown("Failed parsing command-line");
+
+# attempt to get a better shot at the default port
+my $json_data;
+if (open(my $conf, "<", "/etc/bastion/osh-http-proxy.conf")) {
+    _dbg("opened https bastion config");
+    local $/ = undef;
+    $json_data = <$conf>;
+    close($conf);
+
+    $json_data =~ s/#.*//g;
+    my $json;
+    eval { $json = decode_json($json_data); };
+    if ($@) {
+        _dbg("error decoding json ($@), keeping default port to $DEFAULT_PORT, and assuming proxy is enabled");
+        $json->{'enabled'} = 1;
+    }
+
+    # if config has a port and no port is specified on cmdline
+    if ($json->{'port'} && !$port) {
+        $port = $json->{'port'};
+        _dbg("will use port $port as default, from config");
+    }
+
+    # proxy is disabled by config
+    if (!$json->{'enabled'}) {
+        if ($disabledOk) {
+            success("Proxy is disabled, and got --disabled-ok");
+        }
+        else {
+            _warn("Proxy is disabled, but didn't get --disabled-ok, attempting to test nevertheless");
+        }
+    }
+
+    close($conf);
+}
+else {
+    if ($disabledOk) {
+        success("Specified --disabled-ok but couldn't find config file, assuming it's not installed");
+    }
+    _dbg("Couldn't open https bastion config, keeping default port to $DEFAULT_PORT");
+}
+
+$port = $DEFAULT_PORT if not defined $port;
+
+# HELP
+
+if ($help) {
+    print <<"EOF";
+
+$PROBE_NAME [options]
+
+        --help          This help message
+        --debug         Increase verbosity of logs
+        --host HOST     Host to connect to. Default: $host
+        --port PORT     Port to connect to. Default: $port (tentatively
+                        autodected from the HTTPS Bastion proxy configuration)
+        --disabled-ok   Return success even if Proxy is disabled (from config)
+
+EOF
+    unknown();
+}
+
+# CODE
+
+# verify_hostname == 0 is ok because that's not what we're verifying here
+my $ua = LWP::UserAgent->new(
+    agent    => 'NRPE',
+    ssl_opts => {
+        verify_hostname => 0,
+        SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_NONE
+    }
+);
+my $result = $ua->get("https://$host:$port/bastion-health-check");
+
+_info("Got HTTP result code " . $result->code);
+
+if ($result->code == 200) {
+    success("> $_") for split /\n/, $result->decoded_content;
+}
+elsif ($result->code == 202) {
+    warning("> $_") for split /\n/, $result->decoded_content;    # daemon should be reloaded
+}
+else {
+    failure("> $_") for split /\n/, $result->decoded_content;
+}

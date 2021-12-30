@@ -1,0 +1,60 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+#
+# DESC: Warn if bastion is locked (/home encrypted)
+
+use strict;
+use warnings;
+use File::Basename;
+use Getopt::Long;
+
+my $PROBE_NAME = basename($0);
+my $debug;
+
+## no critic (Subroutines::RequireArgUnpacking)
+## no critic (Subroutines::RequireFinalReturn)
+
+sub _out {
+    my ($criticity, $msg) = @_;
+    printf "%s %4s - %s\n", $PROBE_NAME, $criticity, $msg;
+}
+
+sub _dbg  { _out('dbg',  $_[0]) if $debug; }
+sub _info { _out('info', $_[0]); }
+sub _warn { _out('WARN', $_[0]); }
+sub _err  { _out('ERR!', $_[0]); }
+
+sub success { my $msg = shift; _info($msg) if $msg; _info("status=OK");      exit(0); }
+sub warning { my $msg = shift; _warn($msg) if $msg; _info("status=WARN");    exit(1); }
+sub failure { my $msg = shift; _err($msg)  if $msg; _info("status=FAILURE"); exit(2); }
+sub unknown { my $msg = shift; _err($msg)  if $msg; _info("status=UNKNOWN"); exit(3); }
+
+# OPTIONS
+
+GetOptions(
+    "help"   => \my $help,
+    "debug!" => \$debug,
+) or unknown("Failed parsing command-line");
+
+# HELP
+
+if ($help) {
+    print <<"EOF";
+
+$PROBE_NAME [options]
+
+        --help                   This help message
+        --debug                  Increase verbosity of logs
+
+EOF
+    unknown();
+}
+
+# CODE
+
+if (-d "/home/allowkeeper") {
+    _dbg("/home/allowkeeper exists and is a directory");
+    success("bastion /home is unlocked");
+}
+_dbg("/home/allowkeeper doesn't exists or is not a directory");
+failure("bastion /home is locked!");
