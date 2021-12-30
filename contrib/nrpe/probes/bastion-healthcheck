@@ -1,0 +1,107 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+#
+# DESC: Check that the bastion code works (healtheck)
+
+use strict;
+use warnings;
+use File::Basename;
+use Getopt::Long;
+
+my $PROBE_NAME = basename($0);
+my $debug;
+
+## no critic (Subroutines::RequireArgUnpacking)
+## no critic (Subroutines::RequireFinalReturn)
+
+sub _out {
+    my ($criticity, $msg) = @_;
+    printf "%s %4s - %s\n", $PROBE_NAME, $criticity, $msg;
+}
+
+sub _dbg  { _out('dbg',  $_[0]) if $debug; }
+sub _info { _out('info', $_[0]); }
+sub _warn { _out('WARN', $_[0]); }
+sub _err  { _out('ERR!', $_[0]); }
+
+sub success { my $msg = shift; _info($msg) if $msg; _info("status=OK");      exit(0); }
+sub warning { my $msg = shift; _warn($msg) if $msg; _info("status=WARN");    exit(1); }
+sub failure { my $msg = shift; _err($msg)  if $msg; _info("status=FAILURE"); exit(2); }
+sub unknown { my $msg = shift; _err($msg)  if $msg; _info("status=UNKNOWN"); exit(3); }
+
+# OPTIONS
+
+my $host           = "127.0.0.1";
+my $port           = 22;
+my $account        = 'healthcheck';
+my $keyfile        = '/home/healthcheck/.ssh/id_healthcheck';
+my $kbdinteractive = 0;
+
+GetOptions(
+    "help"            => \my $help,
+    "debug!"          => \$debug,
+    "host=s"          => \$host,
+    "port=i"          => \$port,
+    "account=s"       => \$account,
+    "keyfile=s"       => \$keyfile,
+    "kbd-interactive" => \$kbdinteractive,
+) or unknown("Failed parsing command-line");
+
+# HELP
+
+if ($help) {
+    print <<"EOF";
+
+$PROBE_NAME [options]
+
+        --help              This help message
+        --debug             Increase verbosity of logs
+        --host HOST         Host to connect to. Default: $host
+        --port PORT         Port to connect to. Default: $port
+        --account ACCOUNT   Account name to use to authenticate. Default: $account
+        --keyfile PATH      Path to the private SSH key file to authenticate. Defaut: $keyfile
+        --kbd-interactive   Allow keyboard-interactive authentication. Default: $kbdinteractive
+
+        Note: don't specify an other option than --help to get the proper default values.
+
+EOF
+    unknown();
+}
+
+# CODE
+
+if ($account !~ /^[a-zA-Z0-9._-]+$/) {
+    unknown("Specified account is invalid ($account)");
+}
+
+if ($host !~ /^[a-zA-Z0-9._-]+$/) {
+    unknown("Specified host is invalid ($host)");
+}
+
+if ($port <= 0 || $port > 65535) {
+    unknown("Specified port is invalid ($port)");
+}
+
+if (!-f -r $keyfile) {
+    unknown("Specified keyfile '$keyfile' is not readable or not a file");
+}
+
+# first; check that sudo is healthy
+_dbg("Checking sudo viability...");
+my $sysret = system(qw{ sudo -n -v });
+if ($sysret != 0) {
+    critical("sudo is broken!");
+}
+
+my @cmd = ('ssh', '-l', $account, '-i', $keyfile, '-p', $port);
+if ($kbdinteractive) {
+    push @cmd, ('-o', 'KbdInteractiveAuthentication=yes', '-o', 'PreferredAuthentications=publickey,keyboard-interactive');
+}
+push @cmd, ($host, '--', '-q', '--osh', 'info');
+_dbg("Executing: " . join(" ", @cmd));
+
+$sysret = system(@cmd);
+if ($sysret == 0) {
+    success("Connection worked and ended successfully");
+}
+failure("Connection failed (SSH return code = " . ($sysret >> 8) . ")");

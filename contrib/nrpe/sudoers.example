@@ -1,0 +1,5 @@
+# This is a sudoers example file for The Bastion contrib NRPE probes. Adjust to your system.
+
+nagios     ALL=(healthcheck) NOPASSWD: /opt/bastion/contrib/nrpe/probes/bastion-healthcheck
+nagios     ALL=(root)        NOPASSWD: /opt/bastion/contrib/nrpe/probes/bastion-version
+

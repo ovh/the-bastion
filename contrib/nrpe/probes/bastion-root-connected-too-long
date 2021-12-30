@@ -1,0 +1,192 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+#
+# DESC: Check that a process with attached tty running as root
+#       is not there since more than X hours
+
+use strict;
+use warnings;
+use File::Basename;
+use List::Util qw/first/;
+use IPC::Open3 'open3';
+use Getopt::Long;
+$SIG{'CHLD'} = 'IGNORE';    # don't bother using waitpid on this short-lived probe
+
+my $PROBE_NAME = basename($0);
+my $debug;
+
+## no critic (Subroutines::RequireArgUnpacking)
+## no critic (Subroutines::RequireFinalReturn)
+
+sub _out {
+    my ($criticity, $msg) = @_;
+    printf "%s %4s - %s\n", $PROBE_NAME, $criticity, $msg;
+}
+
+sub _dbg  { _out('dbg',  $_[0]) if $debug; }
+sub _info { _out('info', $_[0]); }
+sub _warn { _out('WARN', $_[0]); }
+sub _err  { _out('ERR!', $_[0]); }
+
+sub success { my $msg = shift; _info($msg) if $msg; _info("status=OK");      exit(0); }
+sub warning { my $msg = shift; _warn($msg) if $msg; _info("status=WARN");    exit(1); }
+sub failure { my $msg = shift; _err($msg)  if $msg; _info("status=FAILURE"); exit(2); }
+sub unknown { my $msg = shift; _err($msg)  if $msg; _info("status=UNKNOWN"); exit(3); }
+
+# OPTIONS
+
+my $warnAfterMinutes = 30;
+my $critAfterMinutes = 120;
+
+GetOptions(
+    "help"                 => \my $help,
+    "debug!"               => \$debug,
+    "warn-after-minutes=i" => \$warnAfterMinutes,
+    "crit-after-minutes=i" => \$critAfterMinutes,
+) or unknown("Failed parsing command-line");
+
+# HELP
+
+if ($help) {
+    print <<"EOF";
+
+$PROBE_NAME [options]
+
+        --help                   This help message
+        --debug                  Increase verbosity of logs
+        --warn-after-minutes NB  Exit with a WARN exit code after a root process has been logged in for more than
+                                 this amount of minutes. Use 0 to never WARN. Default: $warnAfterMinutes
+        --crit-after-minutes NB  Exit with a CRIT exit code after a root process has been logged in for more than
+                                 this amount of minutes. Use 0 to never CRIT. Default: $critAfterMinutes
+
+        Note: don't specify an other option than --help to get the proper default values.
+
+EOF
+    unknown();
+}
+
+# CODE
+
+_dbg("Getting system clock tick");
+my ($stdin, $stdout);
+eval { open3($stdin, $stdout, '>&STDERR', qw{ getconf CLK_TCK }); };
+if ($@) {
+    unknown("Couldn't start 'getconf' process");
+}
+close($stdin);
+
+my $clockTick = <$stdout>;
+close($stdout);
+chomp($clockTick);
+_dbg("clocktick is $clockTick");
+
+_dbg("Getting uptime");
+open(my $fh, '<', "/proc/uptime") or unknown("Cannot open /proc/uptime: $!");
+my $uptimeData = <$fh>;
+close $fh;
+my $uptime;
+if ($uptimeData =~ /^(\d+)/) {
+    $uptime = $1;
+}
+else {
+    unknown("Cannot parse uptime! '$uptimeData'");
+}
+
+_dbg("Uptime is $uptime seconds");
+
+_dbg('Getting the list of processes that have a tty');
+$stdin = $stdout = undef;
+eval { open3($stdin, $stdout, '>&STDERR', qw{ ps aho pid }); };
+if ($@) {
+    unknown("Couldn't start 'ps' process");
+}
+close($stdin);
+my @pidlist = <$stdout>;
+close($stdout);
+s/^\s+|\s+$//g for @pidlist;
+_dbg('Found ' . (scalar @pidlist) . ' PIDs having a tty');
+
+my $criticalCount = 0;
+my $warningCount  = 0;
+
+PID: foreach my $pid (@pidlist) {
+    next if $pid !~ /^\d+$/;
+    my $fh;
+    if (not open($fh, '<', "/proc/$pid/status")) {
+        _dbg("Couldn't open /proc/$pid/status ($!), probably a disappeared process (race condition)");
+        next;
+    }
+    while (<$fh>) {
+        next if (not /^[UG]id:/);    # parse Uid / Gid numbers
+        my ($id1, $id2, undef, $id4) = /(\d+)/g;
+        next PID if (not grep { $_ == 0 } ($id1, $id2, $id4));    # Root detected
+        _dbg("process $pid running as root, analyzing tty");
+
+        # Checking if exe is agetty, as it triggers the probe but is NOT a security issue
+        my $binary = readlink("/proc/$pid/exe");
+        chomp($binary);
+        _dbg("Binary is $binary");
+
+        # The regex with 'deleted' handles upgrade of binaries, which are tagged deleted in proc/exe
+        next PID if ($binary =~ m{^(/usr)?/s?bin/agetty( \(deleted\))?$});
+        next PID if ($binary =~ m{^/usr/bin/sudo( \(deleted\))?$});
+        next PID if ($binary =~ m{^(/usr)?/bin/minijail0( \(deleted\))?$});
+
+        _dbg("check age of $pid");
+        my $stat;
+        if (not open($stat, '<', "/proc/$pid/stat")) {
+            _dbg("couldn't open /proc/$pid/stat ($!), probably a disappeared process (race condition), getting to the next one");
+            next PID;
+        }
+        my @stats = split(/\s+/, <$stat>);
+        close $stat;
+
+        my $startTime     = $stats[21];                            # in %llu, number of clock ticks, see man 5 proc
+        my $processUptime = $uptime - ($startTime / $clockTick);
+        $processUptime = int($processUptime / 60);                 # minutes conversion
+
+        _dbg("$pid Up since $processUptime minutes");
+
+        # Get guilty Admin
+        my $guilty = '??UNKNOWN??';
+        if (open(my $envfh, "<", "/proc/$pid/environ")) {
+            my $guiltyEnv = first { /LC_BASTION=(\w+)/ } <$envfh>;
+            if (defined $guiltyEnv and $guiltyEnv =~ /LC_BASTION=(\w+)/) {
+                $guilty = $1;
+            }
+            close $envfh;
+        }
+
+        # Get cmdline
+        my $cmdline = '??UNKNOWN??';
+        if (open(my $envfh, "<", "/proc/$pid/cmdline")) {
+            $cmdline = <$envfh>;
+            chomp $cmdline;
+            close $envfh;
+
+            # Just in case the cmdline contains sensitive info, we just keep the first word
+            $cmdline =~ s/ .+//;
+        }
+
+        if ($critAfterMinutes > 0 && $processUptime > $critAfterMinutes) {
+            _info "Root process $pid ($cmdline) by $guilty, up for $processUptime minutes (> than $critAfterMinutes min)";
+            $criticalCount += 1;
+        }
+        elsif ($warnAfterMinutes > 0 && $processUptime > $warnAfterMinutes) {
+            _info "Root process $pid ($cmdline) by $guilty, up for $processUptime minutes (> than $warnAfterMinutes min)";
+            $warningCount += 1;
+        }
+    }
+    close $fh;
+}
+
+# check Results
+if ($criticalCount) {
+    failure("$criticalCount critical cases found");
+}
+elsif ($warningCount) {
+    warning("$warningCount warning cases found");
+}
+
+# is ok
+success("No long-lived root process found");

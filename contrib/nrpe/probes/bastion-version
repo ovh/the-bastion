@@ -1,0 +1,131 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+#
+# DESC: Warn if a more recent bastion version is available
+
+use strict;
+use warnings;
+use File::Basename;
+use Getopt::Long;
+
+my $PROBE_NAME = basename($0);
+my $debug;
+
+## no critic (Subroutines::RequireArgUnpacking)
+## no critic (Subroutines::RequireFinalReturn)
+## no critic (InputOutput::ProhibitBacktickOperators)
+
+sub _out {
+    my ($criticity, $msg) = @_;
+    printf "%s %4s - %s\n", $PROBE_NAME, $criticity, $msg;
+}
+
+sub _dbg  { _out('dbg',  $_[0]) if $debug; }
+sub _info { _out('info', $_[0]); }
+sub _warn { _out('WARN', $_[0]); }
+sub _err  { _out('ERR!', $_[0]); }
+
+sub success { my $msg = shift; _info($msg) if $msg; _info("status=OK");      exit(0); }
+sub warning { my $msg = shift; _warn($msg) if $msg; _info("status=WARN");    exit(1); }
+sub failure { my $msg = shift; _err($msg)  if $msg; _info("status=FAILURE"); exit(2); }
+sub unknown { my $msg = shift; _err($msg)  if $msg; _info("status=UNKNOWN"); exit(3); }
+
+# OPTIONS
+
+GetOptions(
+    "help"            => \my $help,
+    "debug!"          => \$debug,
+    "basedir=s"       => \my $basedir,
+    "no-warn-on-diff" => \my $noWarnOnDiff,
+) or unknown("Failed parsing command-line");
+
+# HELP
+
+if ($help) {
+    print <<"EOF";
+
+$PROBE_NAME [options]
+
+        --help             This help message
+        --debug            Increase verbosity of logs
+        --basedir DIR      Specify the base directory of The Bastion (default: /opt/bastion)
+        --no-warn-on-diff  Never return a WARN code even if we find a git diff
+
+EOF
+    unknown();
+}
+
+$basedir ||= "/opt/bastion";
+
+# CODE
+
+# get current version
+my $current_version;
+if (open(my $fh, '<', "$basedir/lib/perl/OVH/Bastion.pm")) {
+    while (<$fh>) {
+        if (m{^\s*our\s+\$VERSION\s*=\s*.([0-9a-zA-Z.-]+)}) {
+            $current_version = $1;
+        }
+    }
+    close($fh);
+    if ($current_version) {
+        _info("Bastion version $current_version found");
+    }
+    else {
+        unknown("Couldn't find version in Bastion.pm file!");
+    }
+}
+else {
+    unknown("Couldn't find current bastion version ($!)");
+}
+
+my @out;
+my $ret;
+
+if (!chdir("$basedir")) {
+    unknown("Couldn't chdir to $basedir!");
+}
+
+@out = qx{git rev-parse --abbrev-ref HEAD};
+$ret = $?;
+if ($ret != 0) {
+    _info("Bastion main path is not a git repo, or failed to rev-parse");
+}
+else {
+    _dbg("output: $_") for @out;
+    my $branch = $out[0];
+    chomp $branch;
+    _info("Bastion is on branch $branch");
+}
+
+@out = qx{git rev-parse HEAD};
+$ret = $?;
+if ($ret != 0) {
+    _info("Bastion main path is not a git repo, or failed to rev-parse");
+}
+else {
+    _dbg("output: $_") for @out;
+    my $commit = $out[0];
+    chomp $commit;
+    _info("Bastion is on commit $commit");
+}
+
+@out = qx{git diff};
+if ($ret != 0) {
+    _info("Bastion main path is not a git repo, or failed to diff");
+}
+else {
+    _dbg("output: $_") for @out;
+    my $difflines = @out;
+    if ($difflines > 0) {
+        if ($noWarnOnDiff) {
+            success("Found $difflines lines of diff");
+        }
+        else {
+            warning("Found $difflines lines of diff");
+        }
+    }
+    else {
+        success("Found no git diff");
+    }
+}
