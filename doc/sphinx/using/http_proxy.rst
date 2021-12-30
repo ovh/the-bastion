@@ -7,34 +7,47 @@ HTTPS Proxy
 Introduction
 ============
 
-In addition to securing your SSH accesses, by splitting the authentication part (ingress connection) and the authorization part (egress connection), The Bastion can do a similar job for HTTPS connections.
+In addition to securing your SSH accesses, by splitting the authentication part (ingress connection)
+and the authorization part (egress connection), The Bastion can do a similar job for HTTPS connections.
 
-Note that there is an overhead (depending on your hardware setup) of several hundreds of milliseconds for each query-response trip, due to the fact that multiple processes are spawned for each query, to ensure proper security containment to the calling account's system user. It's probably a bad idea to use on a multi-million queries/day workload, or if each added millisecond to the query-response trip impacts the QoS of your service.
+Note that there is an overhead (depending on your hardware setup) of several hundreds of milliseconds
+for each query-response trip, due to the fact that multiple processes are spawned for each query,
+to ensure proper security containment to the calling account's system user.
+It's probably a bad idea to use on a multi-million queries/day workload,
+or if each added millisecond to the query-response trip impacts the QoS of your service.
 
-The primary use is for network devices, that happen to have more and more HTTPS APIs in addition to the usual ``conf terminal`` available through SSH. As the same commands are usually available from HTTPS and SSH on these devices, it would be too bad to secure the access to SSH through the bastion, but leave direct access to their HTTPS API!
+The primary use is for network devices, that happen to have more and more HTTPS APIs in addition
+to the usual ``conf terminal`` available through SSH. As the same commands are usually available from
+HTTPS and SSH on these devices, it would be too bad to secure the access to SSH through the bastion,
+but leave direct access to their HTTPS API!
 
 Query workflow
 ==============
 
-The workflow is similar to the one used by SSH, e.g. two distinct connections (ingress and egress), with the egress connection using credentials stored on the bastion:
+The workflow is similar to the one used by SSH, e.g. two distinct connections (ingress and egress),
+with the egress connection using credentials stored on the bastion:
 
 - A client makes an HTTP request to the proxy, with the following information embedded in:
 
   - The type of request (GET or POST)
   - The complete URI, including the host of the remote HTTPS server it would like to send the request to
   - Potential body data for POST requests
-  - Credentials to authenticate to the proxy on the ingress connection, namely the bastion account name and its proxy password (set by ``selfGenerateProxyPassword``)
+  - Credentials to authenticate to the proxy on the ingress connection, namely the
+    bastion account name and its proxy password (set by ``selfGenerateProxyPassword``)
   - User name to use to authenticate on the remote HTTPS server (for the egress connection)
 
 - The bastion checks the provided credentials to authenticate the request against a known account (authentication part)
-- The bastion verifies whether the just-authenticated account has access rights to connect to the remote server as the specified remote user (authorization part)
-- The bastion uses the (group or personal) credentials stored on the bastion, to passthrough the HTTP request to the remote server, as the specified remote user
+- The bastion verifies whether the just-authenticated account has access rights to connect to the remote server
+  as the specified remote user (authorization part)
+- The bastion uses the (group or personal) credentials stored on the bastion,
+  to passthrough the HTTP request to the remote server, as the specified remote user
 - The bastion forwards the response to the client
 
 Setting up the HTTPS Proxy
 ==========================
 
-You should enable the HTTPS Proxy daemon, and configure it. Please check the :doc:`/administration/configuration/osh-http-proxy_conf` for more information.
+You should enable the HTTPS Proxy daemon, and configure it.
+Please check the :doc:`/administration/configuration/osh-http-proxy_conf` for more information.
 
 Running a query through the proxy
 =================================
@@ -50,7 +63,14 @@ Once the proxy is running, we can try to query it:
    curl https://bastion1.example.org:8443/
    No authentication provided, and authentication is mandatory
 
-Of course, the proxy only accepts to work when one is properly authenticated to it. To do this, one should have an account on the bastion, and use the :doc:`/plugins/open/selfGenerateProxyPassword` command so that a new ingress password is set for their account. They'll then be able to authenticate to the proxy using the HTTP basic-auth method, and try to send a request to a remote server. To keep a high compatibility with HTTP clients and libraries that can be used on the ingress side, all the additional data required by the bastion to properly authenticate, authorize and passthrough the request is encoded in the *user* part of the widely supported HTTP Authorize header (basic-auth). The *password* part corresponds to the password we've generated just above.
+Of course, the proxy only accepts to work when one is properly authenticated to it.
+To do this, one should have an account on the bastion, and use the :doc:`/plugins/open/selfGenerateProxyPassword`
+command so that a new ingress password is set for their account. They'll then be able to authenticate to the proxy
+using the HTTP basic-auth method, and try to send a request to a remote server.
+To keep a high compatibility with HTTP clients and libraries that can be used on the ingress side,
+all the additional data required by the bastion to properly authenticate, authorize and passthrough the request
+is encoded in the *user* part of the widely supported HTTP Authorize header (basic-auth).
+The *password* part corresponds to the password we've generated just above.
 
 The format of the *user* part is as follows:
 
@@ -59,7 +79,9 @@ The format of the *user* part is as follows:
    BASTION_ACCOUNT@REMOTE_USER@REMOTE_HOST%REMOTE_PORT
 
 The **%REMOTE_PORT** part is optional, and defaults to **443** if omitted.
-For example, to send a **GET /info** request to the remote network device named **router12.example.org** on the default port **443**, using the remote account **monitoring**, through the **bastion1.example.org** bastion, having the HTTPS Proxy listening on its port **8443** and a bastion account **robot-mon**, one can use **curl**:
+For example, to send a **GET /info** request to the remote network device named **router12.example.org** on
+the default port **443**, using the remote account **monitoring**, through the **bastion1.example.org** bastion,
+having the HTTPS Proxy listening on its port **8443** and a bastion account **robot-mon**, one can use **curl**:
 
 .. code-block:: none
    :emphasize-lines: 1
@@ -68,16 +90,24 @@ For example, to send a **GET /info** request to the remote network device named 
    Enter host password for user 'robot-mon@monitoring@router12.example.org':
    This account doesn't have access to this user@host tuple (Access denied for robot-mon to monitoring@router12.example.org:443)
 
-A password will be prompted: the password generated by ``selfGenerateProxyPassword`` should be entered. Remember: this is to authenticate yourself to the bastion (ingress connection), then the bastion will authenticate itself to the remote machine (egress connection), using credentials stored on the bastion, that your account must have access to.
+A password will be prompted: the password generated by ``selfGenerateProxyPassword`` should be entered.
+Remember: this is to authenticate yourself to the bastion (ingress connection), then the bastion will authenticate
+itself to the remote machine (egress connection), using credentials stored on the bastion,
+that your account must have access to.
 
-In the above case, we entered the password correctly, but our account doesn't have access to the requested host `monitoring@router12.example.org`. This is what we need to do now.
+In the above case, we entered the password correctly, but our account doesn't have access to
+the requested host `monitoring@router12.example.org`. This is what we need to do now.
 
 Access declaration
 ------------------
 
-The access check is the same than the one done for SSH accesses, which means that oneself can have access to a remote host either through a :ref:`personal access <accessManagementPersonalAccesses>` or a :ref:`group access <accessManagementGroupAccesses>`.
+The access check is the same than the one done for SSH accesses, which means that oneself
+can have access to a remote host either through a :ref:`personal access <accessManagementPersonalAccesses>` or
+a :ref:`group access <accessManagementGroupAccesses>`.
 
-To get granted access to a remote device, through a personal access, either the :doc:`/plugins/restricted/selfAddPersonalAccess` or the :doc:`/plugins/restricted/accountAddPersonalAccess` shall be used (both are restricted commands) such as:
+To get granted access to a remote device, through a personal access, either
+the :doc:`/plugins/restricted/selfAddPersonalAccess` or the :doc:`/plugins/restricted/accountAddPersonalAccess` shall
+be used (both are restricted commands) such as:
 
 .. code-block:: none
    :emphasize-lines: 1
@@ -86,7 +116,8 @@ To get granted access to a remote device, through a personal access, either the 
 
 Note the use of ``--force`` to skip the SSH connection test, which is useless in our case.
 
-To use a group access instead, one of the :ref:`aclkeepers <accessManagementGroupRoles>` of the group should use :doc:`/plugins/group-aclkeeper/groupAddServer`, such as:
+To use a group access instead, one of the :ref:`aclkeepers <accessManagementGroupRoles>` of the group
+should use :doc:`/plugins/group-aclkeeper/groupAddServer`, such as:
 
 .. code-block:: none
    :emphasize-lines: 1
@@ -100,7 +131,11 @@ Egress password
 For personal accesses
 *********************
 
-If access to a remote device is granted to you through a personal access (using either the ``selfAddPersonalAccess`` or ``accountAddPersonalAccess`` commands), you must first generate a new set of credentials that will be stored on your bastion account, for egress connections. This is the equivalent of your personal egress keys for SSH, but in that case it's a password that will be used to authenticate using basic-auth to the remote server. You can generate this password using the ``selfGeneratePassword`` command:
+If access to a remote device is granted to you through a personal access (using either the ``selfAddPersonalAccess``
+or ``accountAddPersonalAccess`` commands), you must first generate a new set of credentials that will be stored
+on your bastion account, for egress connections. This is the equivalent of your personal egress keys for SSH,
+but in that case it's a password that will be used to authenticate using basic-auth to the remote server.
+You can generate this password using the ``selfGeneratePassword`` command:
 
 .. code-block:: none
    :emphasize-lines: 1
@@ -120,8 +155,10 @@ If access to a remote device is granted to you through a personal access (using 
    │ This new password will now be used by default.
    ╰─────────────────────────────────────────────────────</selfGeneratePassword>───
 
-As you can see, the password is stored on your bastion account, and is not printed: only its hashes are. With this information, the corresponding remote account can be provisioned on the device (usually, a network device).
-In our above example, an account named **monitoring** would have to be created on the remote device, using one of these hashes. Prefer to use the most secure hashing algorithm supported by the remote device.
+As you can see, the password is stored on your bastion account, and is not printed: only its hashes are.
+With this information, the corresponding remote account can be provisioned on the device (usually, a network device).
+In our above example, an account named **monitoring** would have to be created on the remote device,
+using one of these hashes. Prefer to use the most secure hashing algorithm supported by the remote device.
 
 To get your password (hash) list, you can use ``selfListPasswords``:
 
@@ -148,12 +185,15 @@ To get your password (hash) list, you can use ``selfListPasswords``:
    │ 
    ╰────────────────────────────────────────────────────────</selfListPasswords>───
 
-If the ``selfGeneratePassword`` command is used several times, the newly generated password will always override the previous one. Still, all the previous passwords are kept (archived) for good measure, and can be restored manually by a bastion admin. These passwords are named *Fallback passwords* in the output of ``selfListPasswords``.
+If the ``selfGeneratePassword`` command is used several times, the newly generated password will always override
+the previous one. Still, all the previous passwords are kept (archived) for good measure, and can be restored
+manually by a bastion admin. These passwords are named *Fallback passwords* in the output of ``selfListPasswords``.
 
 For group accesses
 ******************
 
-If the access to the remote device is given through a group, then the group's own credentials will be used. To this effect, one of the group owners should use the :doc:`/plugins/group-owner/groupGeneratePassword` command:
+If the access to the remote device is given through a group, then the group's own credentials will be used.
+To this effect, one of the group owners should use the :doc:`/plugins/group-owner/groupGeneratePassword` command:
 
 .. code-block:: none
    :emphasize-lines: 1
@@ -169,8 +209,11 @@ If the access to the remote device is given through a group, then the group's ow
    │ This new password will now be used by default.
    ╰────────────────────────────────────────────────────</groupGeneratePassword>───
 
-As with the personal egress passwords, the password is stored on the bastion only, and is not printed: only its hashes are. With this information, the corresponding remote account can be provisioned on the device (usually, a network device).
-In our above example, an account named **monitoring** would have to be created on the remote device, using one of these hashes. Prefer to use the most secure hashing algorithm supported by the remote device.
+As with the personal egress passwords, the password is stored on the bastion only, and is not printed:
+only its hashes are. With this information, the corresponding remote account can be provisioned
+on the device (usually, a network device).
+In our above example, an account named **monitoring** would have to be created on the remote device,
+using one of these hashes. Prefer to use the most secure hashing algorithm supported by the remote device.
 
 To get the group's password (hash) list, one can use the :doc:`/plugins/open/groupListPasswords` command:
 
@@ -191,4 +234,7 @@ To get the group's password (hash) list, one can use the :doc:`/plugins/open/gro
    │ ... sha512crypt: $6$gyxMyjao$YNhZJPXZa4r838XKg2tfvvoV/Dtm5HKsyKt18BnvFfT.y.hZuSXRX9GhM4mA0hUsO9f0UBisO/WiK3vF/9qsL1
    ╰───────────────────────────────────────────────────────</groupListPasswords>───
 
-If the ``groupGeneratePassword`` command is used several times, the newly generated password will always override the previous one. Still, all the previous passwords are kept (archived) for good measure, and can be restored manually by a bastion admin. These passwords are named *Fallback passwords* in the output of ``groupListPasswords``.
+If the ``groupGeneratePassword`` command is used several times, the newly generated password will always
+override the previous one. Still, all the previous passwords are kept (archived) for good measure,
+and can be restored manually by a bastion admin.
+These passwords are named *Fallback passwords* in the output of ``groupListPasswords``.
