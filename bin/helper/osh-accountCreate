@@ -325,7 +325,7 @@ if (!$fnret) {
 $fnret = OVH::Bastion::account_config(account => $account, key => "creation_timestamp", value => time());
 if (!$fnret) {
     osh_warn("Couldn't store creation timestamp (" . $fnret->msg . "), continuing anyway");
-    warn_syslog("While creating account '$account', couldn't store creaation timestamp: " . $fnret->msg);
+    warn_syslog("While creating account '$account', couldn't store creation timestamp: " . $fnret->msg);
 }
 
 if ($ttl) {
