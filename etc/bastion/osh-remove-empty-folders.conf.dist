@@ -34,18 +34,18 @@ LOGFILE=""
 # DEFAULT: "local6"
 LOG_FACILITY="local6"
 #
-# > Script options
+# > Behavior
 # >> These options govern the behavior of the script
 #
 # ENABLED (0 or 1)
 #    DESC: If set to 1, the script is enabled and will attempt to garbage-collect empty directories located
-#          in /home/*/ttyrec. If set to anything else, the script is considered disabled and will not run.
+#          in ``/home/*/ttyrec``. If set to anything else, the script is considered disabled and will not run.
 # DEFAULT: 1
 ENABLED=1
 #
 # MTIME_DAYS (int, >= 0)
 #    DESC: The amount of days the empty folder must have been empty before considering a removal. You probably
-#            don't need to change the default value, unless you want to ensure that a given folder has not been
-#            used since some time before removing it (this has no impact as folders are re-created as needed).
+#          don't need to change the default value, unless you want to ensure that a given folder has not been
+#          used since some time before removing it (this has no impact as folders are re-created as needed).
 # DEFAULT: 1
 MTIME_DAYS=1

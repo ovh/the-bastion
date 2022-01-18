@@ -1,0 +1,13 @@
+=======================================
+osh-remove-empty-folders.conf reference
+=======================================
+
+.. note::
+
+   The osh-remove-empty-folders script is called by cron and is responsible
+   for cleaning up the ``ttyrec/`` directory of users homes, which may contain
+   a high amount of empty folders for busy users connecting to a lot of
+   different servers, as we create one folder per destination IP.
+
+Option List
+===========
