@@ -376,3 +376,21 @@ _err()
 {
     __log err "ERROR: $*" >&2
 }
+
+exit_fail()
+{
+    if [ -n "${1:-}" ]; then
+        _err "$1"
+    fi
+    trap - EXIT
+    exit 1
+}
+
+exit_success()
+{
+    if [ -n "${1:-}" ]; then
+        _log "$1"
+    fi
+    trap - EXIT
+    exit 0
+}

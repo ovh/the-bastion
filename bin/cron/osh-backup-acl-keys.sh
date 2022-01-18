@@ -9,11 +9,6 @@ basedir=$(readlink -f "$(dirname "$0")"/../..)
 
 trap "_err 'Unexpected termination!'" EXIT
 
-exit_fail() {
-    trap - EXIT
-    exit 1
-}
-
 # setting default values
 LOGFILE=""
 LOG_FACILITY="local6"
@@ -35,8 +30,7 @@ if [ -d "$BASTION_ETC_DIR/osh-backup-acl-keys.conf.d" ]; then
 fi
 
 if [ -z "$config_list" ]; then
-    _err "No configuration loaded, aborting"
-    exit_fail
+    exit_fail "No configuration loaded, aborting"
 fi
 
 # load the config files only if they're owned by root:root and mode is o-rwx
@@ -45,8 +39,7 @@ for file in $config_list; do
         # shellcheck source=etc/bastion/osh-backup-acl-keys.conf.dist
         . "$file"
     else
-        _err "Configuration file not secure ($file), aborting."
-        exit_fail
+        exit_fail "Configuration file not secure ($file), aborting."
     fi
 done
 
@@ -56,13 +49,11 @@ if [ -n "$LOGFILE" ] ; then
 fi
 
 if [ -z "$DESTDIR" ] ; then
-    _err "$0: Missing DESTDIR in configuration, aborting."
-    exit_fail
+    exit_fail "$0: Missing DESTDIR in configuration, aborting."
 fi
 
 if ! echo "$DAYSTOKEEP" | grep -Eq '^[0-9]+$' ; then
-    _err "$0: Invalid specified DAYSTOKEEP value ($DAYSTOKEEP), aborting."
-    exit_fail
+    exit_fail "$0: Invalid specified DAYSTOKEEP value ($DAYSTOKEEP), aborting."
 fi
 
 _log "Starting backup..."
@@ -123,8 +114,7 @@ do
     fi
 done
 if [ "$try" = "$maxtries" ]; then
-    _err "Failed creating tar archive after $maxtries tries!"
-    exit_fail
+    exit_fail "Failed creating tar archive after $maxtries tries!"
 fi
 
 encryption_worked=0
@@ -165,7 +155,11 @@ if [ -n "$GPGKEYS" ] ; then
 
         if [ "$ret" = 0 ]; then
             encryption_worked=1
-            shred -u "$file" 2>/dev/null || rm -f "$file"
+            if command -v shred >/dev/null; then
+                shred -u "$file"
+            else
+                rm -f "$file"
+            fi
         else
             _err "Encryption failed"
         fi
@@ -192,6 +186,7 @@ fi
 _log "Cleaning up old backups..."
 find "$DESTDIR/" -mindepth 1 -maxdepth 1 -type f -name 'backup-????-??-??.tar.gz'     -mtime +"$DAYSTOKEEP" -delete
 find "$DESTDIR/" -mindepth 1 -maxdepth 1 -type f -name 'backup-????-??-??.tar.gz.gpg' -mtime +"$DAYSTOKEEP" -delete
+
 _log "Done"
 trap - EXIT
 exit 0
