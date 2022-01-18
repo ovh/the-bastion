@@ -90,6 +90,13 @@ testsuite_scripts()
     nocontain "ERROR:"
     nocontain "Unexpected termination"
 
+    # ttyrec subfolders cleanup
+    success ttyrec_cleanup $r0 /opt/bastion/bin/cron/osh-remove-empty-folders.sh
+    contain "Done"
+    nocontain "WARN:"
+    nocontain "ERROR:"
+    nocontain "Unexpected termination"
+
     # create and account and connect one to have a ttyrec file
 
     grant accountCreate

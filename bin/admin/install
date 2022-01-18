@@ -382,7 +382,9 @@ if [ "$nothing" = 0 ]; then
                     continue
                 fi
                 action_detail "... we will overwrite $destfile"
-            elif [ "$(basename "$file")" = "osh-encrypt-rsync.conf.dist" ] || [ "$(basename "$file")" = "osh-backup-acl-keys.conf.dist" ]; then
+            elif [ "$(basename "$file")" = "osh-encrypt-rsync.conf.dist"        ] || \
+                 [ "$(basename "$file")" = "osh-backup-acl-keys.conf.dist"      ] || \
+                 [ "$(basename "$file")" = "osh-remove-empty-folders.conf.dist" ]; then
                 # special case for those files: if we have the $file.d dir available, don't do anything
                 if [ -d "$destfile".d ]; then
                     action_detail "... won't copy file to $destfile as we have $destfile.d"
@@ -420,7 +422,7 @@ if [ "$nothing" = 0 ]; then
         done
     done
 
-    for base in osh-encrypt-rsync.conf osh-backup-acl-keys.conf; do
+    for base in osh-encrypt-rsync.conf osh-backup-acl-keys.conf osh-remove-empty-folders.conf; do
         if [ -f "$BASTION_ETC_DIR/$base" ]; then
             chmod 0600 "$BASTION_ETC_DIR/$base"
         fi

@@ -1,0 +1,3 @@
+# remove empty directories in /home/*/ttyrec/ so that we don't end up with hundreds of thousands of directories
+# a weekly run is way enough
+%RANDOM1%0:59% %RANDOM2%4:7% * * 1 root /opt/bastion/bin/cron/osh-remove-empty-folders.sh >/dev/null
