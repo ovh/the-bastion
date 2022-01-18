@@ -77,7 +77,10 @@ if (not -e "/home/$group/allowed.ip" or not -e "/home/keykeeper/$group") {
     HEXIT('ERR_INVALID_GROUP', msg => "Sorry, but $shortGroup doesn't seem to be a legit bastion group");
 }
 
-if (not -d "/home/oldkeeper") {
+# do the stuff
+osh_info("Backing up group directory...");
+
+if (!-d "/home/oldkeeper") {
     mkdir "/home/oldkeeper";
 }
 chown 0, 0, "/home/oldkeeper";
@@ -93,15 +96,27 @@ my $suffix = 'at-' . time() . '.by-' . $self;
 
 my $fulldir = "/home/oldkeeper/groups/$group.$suffix";
 if (-e $fulldir) {
-    exitError("Errr... $fulldir exists?!");
+    HEXIT('ERR_BACKUP_DIR_COLLISION', msg => "This shouldn't happen, $fulldir already exists!");
 }
 
 mkdir $fulldir;
 chown 0, 0, $fulldir;
 chmod 0700, $fulldir;
 
-move("/home/$group",           "$fulldir/$group-home");
-move("/home/keykeeper/$group", "$fulldir/$group-keykeeper");
+# from now on, as we're starting to move/remove/delete things, errors will be non fatal
+# because we're trying to cleanup as much as we can, the idea is to log errors to the
+# syslog, and then report to the user (and in the final formatted log) that we
+# had issues and somebody might want to have a look
+my $nbErrors = 0;
+
+if (!move("/home/$group", "$fulldir/$group-home")) {
+    warn_syslog("Error while backing up to-be-deleted '/home/$group' to '$fulldir/$group-home': $!, continuing anyway...");
+    $nbErrors++;
+}
+if (!move("/home/keykeeper/$group", "$fulldir/$group-keykeeper")) {
+    warn_syslog("Error while backing up to-be-deleted '/home/keykeeper/$group' to '$fulldir/$group-keykeeper': $!, continuing anyway...");
+    $nbErrors++;
+}
 
 # now tar.gz the directory, this is important because inside we'll keep the
 # old GID of the group, and we don't want GID-orphaned files on our filesystem, it's
@@ -110,15 +125,32 @@ my @tarcmd = qw{ tar czf };
 push @tarcmd, $fulldir . '.tar.gz';
 push @tarcmd, '--acls' if OVH::Bastion::has_acls();
 push @tarcmd, '--one-file-system', '-p', '--remove-files', $fulldir;
+
 $fnret = OVH::Bastion::execute(cmd => \@tarcmd, must_succeed => 1);
 if (!$fnret) {
-    osh_warn("Couldn't tar the backup homedir of this group (" . $fnret->msg . "), proceeding anyway.");
+    warn_syslog("Couldn't tar the backup homedir of this group (" . $fnret->msg . "), proceeding anyway.");
+    my $i = 0;
+    foreach (@{$fnret->value->{'stderr'} || []}) {
+        warn_syslog("tar: $_");
+        if (++$i >= 10) {
+            warn_syslog("more tar errors, suppressing");
+            last;
+        }
+    }
+    $nbErrors++;
+}
+
+if (-e "$fulldir.tar.gz") {
+    chmod 0000, "$fulldir.tar.gz";
+}
+
+# if the folder still exists, tar failed in some way, warn the admins
+if (-d $fulldir) {
     chmod 0000, $fulldir;
+    warn_syslog("While archiving the group '$group', $fulldir still exists, manual cleanup might be needed");
+    $nbErrors++;
 }
-else {
-    chmod 0000, $fulldir . '.tar.gz';
-    unlink($fulldir);
-}
+osh_info("Backup done");
 
 # remove dead symlinks in users homes
 my $dh;
@@ -131,14 +163,18 @@ if (opendir($dh, "/home/allowkeeper")) {
         foreach my $file ("$dir/allowed.ip.$shortGroup", "$dir/allowed.partial.$shortGroup") {
             if (-e $file || -l $file) {
                 osh_info "Removing $file...";
-                unlink($file);
+                if (!unlink($file)) {
+                    warn_syslog("Couldn't remove symlink '$file': $!");
+                    $nbErrors++;
+                }
             }
         }
     }
     close($dh);
 }
 else {
-    osh_warn("Couldn't open /home/allowkeeper ?!");
+    warn_syslog("Couldn't open /home/allowkeeper to cleanup symlinks: $!");
+    $nbErrors++;
 }
 
 # trying to remove main and gatekeeper and owner groups
@@ -152,15 +188,19 @@ foreach my $todelete ("$group-owner", "$group-aclkeeper", "$group-gatekeeper", $
             foreach my $member (@$members) {
                 osh_info "... removing $member from group $todelete";
                 $fnret = OVH::Bastion::sys_delmemberfromgroup(user => $member, group => $todelete, noisy_stderr => 1);
-                $fnret->err eq 'OK'
-                  or HEXIT('ERR_DELUSER_FAILED', msg => "Error while attempting to remove member $member from group $todelete (" . $fnret->msg . ")");
+                if ($fnret->err ne 'OK') {
+                    warn_syslog("Error while attempting to remove member $member from group $todelete (" . $fnret->msg . "), proceeding anyway");
+                    $nbErrors++;
+                }
             }
         }
 
         if ($todelete eq $group) {
             osh_info "Deleting main user of group $todelete...", $fnret = OVH::Bastion::sys_userdel(user => $todelete, noisy_stderr => 1);
-            $fnret->err eq 'OK'
-              or HEXIT('ERR_DELUSER_FAILED', msg => "Error while attempting to delete main user of group $todelete (" . $fnret->msg . ")");
+            if ($fnret->err ne 'OK') {
+                warn_syslog("Error while attempting to delete main user of group $todelete (" . $fnret->msg . "), proceeding anyway");
+                $nbErrors++;
+            }
         }
 
         # some OSes delete the main group of user if it has the same name
@@ -170,8 +210,10 @@ foreach my $todelete ("$group-owner", "$group-aclkeeper", "$group-gatekeeper", $
         if ($fnret) {
             osh_info "Deleting group $todelete...";
             $fnret = OVH::Bastion::sys_groupdel(group => $todelete, noisy_stderr => 1);
-            $fnret
-              or HEXIT('ERR_DELGROUP_FAILED', msg => "Error while attempting to delete group $todelete (" . $fnret->msg . ")");
+            if ($fnret->err ne 'OK') {
+                warn_syslog("Error while attempting to delete group $todelete (" . $fnret->msg . "), proceeding anyway");
+                $nbErrors++;
+            }
         }
     }
     else {
@@ -183,12 +225,13 @@ foreach my $todelete ("$group-owner", "$group-aclkeeper", "$group-gatekeeper", $
 $fnret = OVH::Bastion::execute(cmd => [$OVH::Bastion::BASEPATH . '/bin/sudogen/generate-sudoers.sh', 'delete', 'group', $group], must_succeed => 1, noisy_stdout => 1);
 if (!$fnret) {
     warn_syslog("Error during group deletion of '$group', couldn't delete sudoers file: " . $fnret->msg);
+    $nbErrors++;
 }
 
 OVH::Bastion::syslogFormatted(
     severity => 'info',
     type     => 'group',
-    fields   => [['action', 'delete'], ['group', $shortGroup],]
+    fields   => [['action', 'delete'], ['group', $shortGroup], ['errors', $nbErrors]]
 );
 
-HEXIT('OK');
+HEXIT('OK', value => {group => $group, operation => 'deleted', errors => $nbErrors + 0}, msg => "Group $group has been deleted");
