@@ -1,3 +1,7 @@
+## v3.08.01 - 2022/01/19
+- feat: add osh-remove-empty-folders.sh script
+- enh: better errror detection and logging in accountDelete & groupDelete
+
 ## v3.08.00 - 2022/01/04
 - feat: move scripts to GnuPG 2.x, add tests & doc
 - feat: add new OSes (Debian "Bullseye" 11, RockyLinux 8.x) and deprecate

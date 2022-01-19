@@ -27,6 +27,18 @@ See the ``--help`` for a more fine-grained upgrade path if needed.
 Version-specific upgrade instructions
 =====================================
 
+v3.08.01 - 2022/01/19
+*********************
+
+The upgrade path from the preceding version is straightforward, however you might want to know that there is
+a new satellite script: ``osh-remove-empty-folders.sh``, run by cron and enabled by default,
+whose job is to garbage-collect empty folders that may be piling up in busy users' homes,
+under their ``ttyrec`` folder.
+
+You can find more information in `the documentation 
+<https://ovh.github.io/the-bastion/administration/configuration/osh-remove-empty-folders_conf.html>`_, the script
+is enabled by default because it can do no harm.
+
 v3.08.00 - 2022/01/04
 *********************
 
