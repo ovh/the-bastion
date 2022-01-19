@@ -54,7 +54,7 @@ fi
 
 # first, we list all the directories to get a count
 _log "Counting the number of directories before the cleanup..."
-nbdirs_before=$(find /home/ -mindepth 3 -maxdepth 3 -type d -mtime +$MTIME_DAYS -regextype egrep -regex '^/home/[^/]+/ttyrec/[0-9.]+$' -print | wc -l)
+nbdirs_before=$(find /home/ -mindepth 3 -maxdepth 3 -type d -regextype egrep -regex '^/home/[^/]+/ttyrec/[0-9.]+$' -print | wc -l)
 
 _log "We have $nbdirs_before directories, removing empty ones..."
 # then we pass them all through rmdir, it'll just fail on non-empty ones.
@@ -63,7 +63,7 @@ find /home/ -mindepth 3 -maxdepth 3 -type d -mtime +$MTIME_DAYS -regextype egrep
 
 # finally, see how many directories remain
 _log "Counting the number of directories after the cleanup..."
-nbdirs_after=$(find /home/ -mindepth 3 -maxdepth 3 -type d -mtime +$MTIME_DAYS -regextype egrep -regex '^/home/[^/]+/ttyrec/[0-9.]+$' -print | wc -l)
+nbdirs_after=$(find /home/ -mindepth 3 -maxdepth 3 -type d -regextype egrep -regex '^/home/[^/]+/ttyrec/[0-9.]+$' -print | wc -l)
 
 _log "Finally deleted $((nbdirs_before - nbdirs_after)) directories in this run"
 
