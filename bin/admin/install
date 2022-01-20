@@ -431,6 +431,11 @@ if [ "$nothing" = 0 ]; then
         fi
     done
 
+    # remove deprecated cron files
+    if [ "${opt[cron]}" = 1 ]; then
+        rm -f "$CRON_DIR/osh-compress-old-logs"
+    fi
+
     # ensure the includedir is present in global sudoers conf
     action_doing "Add include directory in sudoers if needed"
     if [ ! -e $SUDOERS_FILE ] ; then
