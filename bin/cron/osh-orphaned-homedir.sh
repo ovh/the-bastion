@@ -7,9 +7,11 @@ basedir=$(readlink -f "$(dirname "$0")"/../..)
 # shellcheck source=lib/shell/functions.inc
 . "$basedir"/lib/shell/functions.inc
 
-LOG_FACILITY=local6
+# default config values for this script
+:
 
-trap "_err 'Unexpected termination!'" EXIT
+# set error trap, read config, setup logging, exit early if script is disabled, etc.
+script_init osh-orphaned-homedir config_optional check_secure_lax
 
 # first, verify that we're not a master instance, if this is the case, do nothing
 set +e
@@ -29,10 +31,10 @@ set -e
 
 case $ret in
     0)   _log "Checking orphaned home directories...";;
-    100) _log "We're a master instance, don't do anything"; trap - EXIT; exit 0;;
-    101) _err "Couldn't load the main bastion configurationg, aborting"; trap - EXIT; exit 1;;
-    102) _err "Invalid main bastion configuration, aborting"; trap - EXIT; exit 1;;
-    *)   _err "Unknown return code ($ret), aborting"; trap - EXIT; exit 1;;
+    100) _log "We're a master instance, don't do anything"; exit_success;;
+    101) exit_fail "Couldn't load the main bastion configurationg, aborting";;
+    102) exit_fail "Invalid main bastion configuration, aborting";;
+    *)   exit_fail "Unknown return code ($ret), aborting";;
 esac
 
 while IFS= read -r -d '' dir
@@ -49,9 +51,7 @@ do
     if [ -n "$user" ] || [ -n "$group" ]; then
 
         # wow, `find' lied to us?!
-        _err "Would have archived $dir, but it seems the user ($uid=$user) or the group ($gid=$group) actually still exists (!), aborting the script"
-        trap - EXIT
-        exit 1
+        exit_fail "Would have archived $dir, but it seems the user ($uid=$user) or the group ($gid=$group) actually still exists (!), aborting the script"
     fi
 
     archive="/home/oldkeeper/orphaned/$(basename "$dir").at-$(date +%s).by-orphaned-homedir-script.tar.gz"
@@ -91,5 +91,4 @@ do
     fi
 done < <(find /home/ -mindepth 1 -maxdepth 1 -type d -nouser -nogroup -mmin +3 -print0)
 
-_log "Done"
-trap - EXIT
+exit_success

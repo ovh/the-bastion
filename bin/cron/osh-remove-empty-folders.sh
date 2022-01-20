@@ -12,45 +12,11 @@ basedir=$(readlink -f "$(dirname "$0")"/../..)
 # shellcheck source=lib/shell/functions.inc
 . "$basedir"/lib/shell/functions.inc
 
-trap "_err 'Unexpected termination!'" EXIT
-
-# setting default values
-LOGFILE=""
-LOG_FACILITY="local6"
-ENABLED=1
+# default config values for this script
 MTIME_DAYS=1
 
-# building config files list
-config_list=''
-if [ -f "$BASTION_ETC_DIR/osh-remove-empty-folders.conf" ]; then
-    config_list="$BASTION_ETC_DIR/osh-remove-empty-folders.conf"
-fi
-if [ -d "$BASTION_ETC_DIR/osh-remove-empty-folders.conf.d" ]; then
-    config_list="$config_list $(find "$BASTION_ETC_DIR/osh-remove-empty-folders.conf.d" -mindepth 1 -maxdepth 1 -type f -name "*.conf" | sort)"
-fi
-
-if [ -z "$config_list" ]; then
-    exit_fail "No configuration loaded, aborting"
-fi
-
-# load the config files only if they're owned by root:root and mode is o-rwx
-for file in $config_list; do
-    if check_secure "$file"; then
-        # shellcheck source=etc/bastion/osh-remove-empty-folders.conf.dist
-        . "$file"
-    else
-        exit_fail "Configuration file not secure ($file), aborting."
-    fi
-done
-
-# shellcheck disable=SC2153
-if [ -n "$LOGFILE" ] ; then
-    exec &>> >(tee -a "$LOGFILE")
-fi
-
-if [ "$ENABLED" != 1 ]; then
-    exit_success "Script is disabled"
-fi
+# set error trap, read config, setup logging, exit early if script is disabled, etc.
+script_init osh-remove-empty-folders config_optional check_secure_lax
 
 # first, we list all the directories to get a count
 _log "Counting the number of directories before the cleanup..."
@@ -70,4 +36,4 @@ _log "Finally deleted $((nbdirs_before - nbdirs_after)) directories in this run"
 # note that there is a slight TOCTTOU in the counting, as some external process might actually *add*
 # directories so our count might be slightly wrong, but as this is just for logging sake, this is not an issue
 
-exit_success "Done"
+exit_success

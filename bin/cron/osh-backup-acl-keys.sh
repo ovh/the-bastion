@@ -7,11 +7,7 @@ basedir=$(readlink -f "$(dirname "$0")"/../..)
 # shellcheck source=lib/shell/functions.inc
 . "$basedir"/lib/shell/functions.inc
 
-trap "_err 'Unexpected termination!'" EXIT
-
-# setting default values
-LOGFILE=""
-LOG_FACILITY="local6"
+# default config values for this script
 DESTDIR=""
 DAYSTOKEEP="90"
 GPGKEYS=""
@@ -20,33 +16,8 @@ SIGNING_KEY_PASSPHRASE=""
 PUSH_REMOTE=""
 PUSH_OPTIONS=""
 
-# building config files list
-config_list=''
-if [ -f "$BASTION_ETC_DIR/osh-backup-acl-keys.conf" ]; then
-    config_list="$BASTION_ETC_DIR/osh-backup-acl-keys.conf"
-fi
-if [ -d "$BASTION_ETC_DIR/osh-backup-acl-keys.conf.d" ]; then
-    config_list="$config_list $(find "$BASTION_ETC_DIR/osh-backup-acl-keys.conf.d" -mindepth 1 -maxdepth 1 -type f -name "*.conf" | sort)"
-fi
-
-if [ -z "$config_list" ]; then
-    exit_fail "No configuration loaded, aborting"
-fi
-
-# load the config files only if they're owned by root:root and mode is o-rwx
-for file in $config_list; do
-    if check_secure "$file"; then
-        # shellcheck source=etc/bastion/osh-backup-acl-keys.conf.dist
-        . "$file"
-    else
-        exit_fail "Configuration file not secure ($file), aborting."
-    fi
-done
-
-# shellcheck disable=SC2153
-if [ -n "$LOGFILE" ] ; then
-    exec &>> >(tee -a "$LOGFILE")
-fi
+# set error trap, read config, setup logging, exit early if script is disabled, etc.
+script_init osh-backup-acl-keys config_mandatory check_secure
 
 if [ -z "$DESTDIR" ] ; then
     exit_fail "$0: Missing DESTDIR in configuration, aborting."
@@ -187,6 +158,4 @@ _log "Cleaning up old backups..."
 find "$DESTDIR/" -mindepth 1 -maxdepth 1 -type f -name 'backup-????-??-??.tar.gz'     -mtime +"$DAYSTOKEEP" -delete
 find "$DESTDIR/" -mindepth 1 -maxdepth 1 -type f -name 'backup-????-??-??.tar.gz.gpg' -mtime +"$DAYSTOKEEP" -delete
 
-_log "Done"
-trap - EXIT
-exit 0
+exit_success

@@ -6,9 +6,11 @@ basedir=$(readlink -f "$(dirname "$0")"/../..)
 # shellcheck source=lib/shell/functions.inc
 . "$basedir"/lib/shell/functions.inc
 
-LOG_FACILITY=local6
+# default config values for this script
+:
 
-trap "_err 'Unexpected termination!'" EXIT
+# set error trap, read config, setup logging, exit early if script is disabled, etc.
+script_init osh-rotate-ttyrec config_optional check_secure_lax
 
 if [ "$1" = "--big-only" ]; then
     _log "Rotating big ttyrec files..."
@@ -36,5 +38,5 @@ else
         _log "No ttyrec files to rotate"
     fi
 fi
-_log "Done"
-trap - EXIT
+
+exit_success
