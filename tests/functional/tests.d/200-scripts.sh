@@ -47,14 +47,6 @@ testsuite_scripts()
     nocontain "ERROR:"
     nocontain "Unexpected termination"
 
-    # compress old logs
-
-    success compress_old_logs $r0 /opt/bastion/bin/cron/osh-compress-old-logs.sh
-    contain "Done"
-    nocontain "WARN:"
-    nocontain "ERROR:"
-    nocontain "Unexpected termination"
-
     # lingering sessions reaper
 
     success lingering_sessions_reaper $r0 /opt/bastion/bin/cron/osh-lingering-sessions-reaper.sh

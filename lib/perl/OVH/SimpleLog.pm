@@ -21,6 +21,11 @@ my $FACILITY;
 # Program name
 my $PROGNAME;
 
+# Incremented at each call of _err and _warn, count can be
+# fetched with nb_errors() and nb_warnings()
+my $nb_errors   = 0;
+my $nb_warnings = 0;
+
 BEGIN {
     # Extract program base name
     $PROGNAME = $0;
@@ -59,9 +64,9 @@ sub closeSyslog {
     return 1;
 }
 
-sub _log  { _display('LOG',  @_); return 1; }    ## no critic (RequireArgUnpacking,ProhibitUnusedPrivateSubroutines)
-sub _warn { _display('WARN', @_); return 1; }    ## no critic (RequireArgUnpacking,ProhibitUnusedPrivateSubroutines)
-sub _err  { _display('ERR',  @_); return 1; }    ## no critic (RequireArgUnpacking,ProhibitUnusedPrivateSubroutines)
+sub _log  { _display('LOG',  @_); return 1; }                    ## no critic (RequireArgUnpacking,ProhibitUnusedPrivateSubroutines)
+sub _warn { _display('WARN', @_); $nb_warnings++; return 1; }    ## no critic (RequireArgUnpacking,ProhibitUnusedPrivateSubroutines)
+sub _err  { _display('ERR',  @_); $nb_errors++; return 1; }      ## no critic (RequireArgUnpacking,ProhibitUnusedPrivateSubroutines)
 
 #   Display a message
 sub _display {
@@ -114,6 +119,9 @@ sub _display {
 
     return 1;
 }
+
+sub nb_errors   { return $nb_errors; }
+sub nb_warnings { return $nb_warnings; }
 
 END {
     close($LOG_FH) if (defined $LOG_FH);
