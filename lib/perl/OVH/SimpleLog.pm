@@ -23,8 +23,8 @@ my $PROGNAME;
 
 # Incremented at each call of _err and _warn, count can be
 # fetched with nb_errors() and nb_warnings()
-my $nb_errors   = 0;
-my $nb_warnings = 0;
+my $NB_ERRORS   = 0;
+my $NB_WARNINGS = 0;
 
 BEGIN {
     # Extract program base name
@@ -65,8 +65,8 @@ sub closeSyslog {
 }
 
 sub _log  { _display('LOG',  @_); return 1; }                    ## no critic (RequireArgUnpacking,ProhibitUnusedPrivateSubroutines)
-sub _warn { _display('WARN', @_); $nb_warnings++; return 1; }    ## no critic (RequireArgUnpacking,ProhibitUnusedPrivateSubroutines)
-sub _err  { _display('ERR',  @_); $nb_errors++; return 1; }      ## no critic (RequireArgUnpacking,ProhibitUnusedPrivateSubroutines)
+sub _warn { _display('WARN', @_); $NB_WARNINGS++; return 1; }    ## no critic (RequireArgUnpacking,ProhibitUnusedPrivateSubroutines)
+sub _err  { _display('ERR',  @_); $NB_ERRORS++; return 1; }      ## no critic (RequireArgUnpacking,ProhibitUnusedPrivateSubroutines)
 
 #   Display a message
 sub _display {
@@ -109,9 +109,11 @@ sub _display {
     # Push to syslog (only if a facility has been defined, which means openlog() has been called)
     if ($FACILITY) {
 
-        $level = lc($level);
-        $level = 'info' if (!grep { $level eq $_ } qw{ warn err });
-        eval { Sys::Syslog::syslog($level, $fullmsg); };
+        # valid levels: DEBUG, INFO, NOTICE, WARNING, ERR, EMERG
+        my $priority = uc($level);
+        $priority = 'WARNING' if $priority eq 'WARN';
+        $priority = 'INFO'    if (!grep { $priority eq $_ } qw{ DEBUG NOTICE WARNING ERR EMERG });
+        eval { Sys::Syslog::syslog($priority, $fullmsg); };
         if ($@) {
             print STDERR "Couldn't syslog, report to administrator ($@)\n";
         }
@@ -120,8 +122,8 @@ sub _display {
     return 1;
 }
 
-sub nb_errors   { return $nb_errors; }
-sub nb_warnings { return $nb_warnings; }
+sub nb_errors   { return $NB_ERRORS; }
+sub nb_warnings { return $NB_WARNINGS; }
 
 END {
     close($LOG_FH) if (defined $LOG_FH);

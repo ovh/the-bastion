@@ -6,9 +6,11 @@ basedir=$(readlink -f "$(dirname "$0")"/../..)
 # shellcheck source=lib/shell/functions.inc
 . "$basedir"/lib/shell/functions.inc
 
-LOG_FACILITY=local6
+# default config values for this script
+:
 
-trap "_err 'Unexpected termination!'" EXIT
+# set error trap, read config, setup logging, exit early if script is disabled, etc.
+script_init osh-lingering-sessions-reaper config_optional check_secure_lax
 
 _log "Terminating lingering sessions..."
 
@@ -48,5 +50,4 @@ if [ -n "$tokill" ]; then
     _log "Terminated $nb orphan sshd sessions (pids$tokill)"
 fi
 
-_log "Done"
-trap - EXIT
+exit_success

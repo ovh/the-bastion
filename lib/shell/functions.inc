@@ -327,10 +327,9 @@ get_file_gid_compat()
     stat -c "%g" "$1"
 }
 
-# return true (0) if (perms are o-rwx AND uid = gid = 0)
-check_secure()
+# used by check_secure() and check_secure_lax()
+__check_secure()
 {
-
     # check that perms are o-rwx
     local cmd
     if [ "$OS_FAMILY" = FreeBSD ]; then
@@ -338,7 +337,7 @@ check_secure()
     else
         cmd="stat -c %a"
     fi
-    if ! $cmd "$1" | grep -q '0$'; then
+    if ! $cmd "$1" | grep -q "${2:-0$}"; then
         return 1
     fi
 
@@ -356,6 +355,22 @@ check_secure()
     return 0
 }
 
+# return true (0) if (perms are o-rwx AND uid = gid = 0)
+# useful to test the safeness of a configuration file containing credentials
+check_secure()
+{
+    # file chmod must end in 0 (o-rwx)
+    __check_secure "$1" "0$"
+}
+
+# return true (0) if (perms are o-w AND uid = gid = 0)
+# useful to test the safeness of a configuration file driving a script run by root
+check_secure_lax()
+{
+    # file chmod must end in 0, 1, 4 or 5 (o-w)
+    __check_secure "$1" "[0145]$"
+}
+
 _logtag="$(basename "$0")[$$]"
 __log()
 {
@@ -368,13 +383,17 @@ _log()
 {
     __log info "$*"
 }
+NB_WARN=0
 _warn()
 {
     __log warn "WARN: $*"
+    (( ++NB_WARN ))
 }
+NB_ERR=0
 _err()
 {
     __log err "ERROR: $*" >&2
+    (( ++NB_ERR ))
 }
 
 exit_fail()
@@ -390,7 +409,62 @@ exit_success()
 {
     if [ -n "${1:-}" ]; then
         _log "$1"
+    else
+        _log "Done, got $NB_ERR error(s) and $NB_WARN warning(s)."
     fi
     trap - EXIT
     exit 0
+}
+
+# common func used by all osh-*.sh satellite scripts
+# setup default config vars, load script config,
+# setup logging, and exit early if script is disabled.
+script_init() {
+    trap "_err 'Unexpected termination!'" EXIT
+
+    local script_name="${1:-}"
+    # config_optional or config_mandatory
+    local config_mandatory="${2:-config_optional}"
+    # check_secure or check_secure_lax
+    local config_file_security="${3:-check_secure}"
+
+    # setting default common config values
+    LOGFILE=""
+    LOG_FACILITY="local6"
+    ENABLED=1
+
+    # building config files list
+    local config_list=''
+    if [ -f "$BASTION_ETC_DIR/$script_name.conf" ]; then
+        config_list="$BASTION_ETC_DIR/$script_name.conf"
+    fi
+    if [ -d "$BASTION_ETC_DIR/$script_name.conf.d" ]; then
+        config_list="$config_list $(find "$BASTION_ETC_DIR/$script_name.conf.d" \
+            -mindepth 1 -maxdepth 1 -type f -name "*.conf" | sort)"
+    fi
+
+    if [ "$config_mandatory" != config_optional ] && [ -z "$config_list" ]; then
+        exit_fail "No configuration loaded, aborting"
+    fi
+
+    # load the config files only if they're owned by root:root and mode is o-rwx
+    for file in $config_list; do
+        if [ "$config_file_security" = check_secure ] && check_secure "$file"; then
+            . "$file"
+        elif [ "$config_file_security" = check_secure_lax ] && check_secure_lax "$file"; then
+            . "$file"
+        else
+            exit_fail "Configuration file not secure ($file), aborting."
+        fi
+    done
+
+    # setup logging to a logfile, if enabled
+    # shellcheck disable=SC2153
+    if [ -n "$LOGFILE" ] ; then
+        exec &>> >(tee -a "$LOGFILE")
+    fi
+
+    if [ "$ENABLED" != 1 ]; then
+        exit_success "Script is disabled"
+    fi
 }

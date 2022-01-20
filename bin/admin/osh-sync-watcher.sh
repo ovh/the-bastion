@@ -122,6 +122,7 @@ do
         # shellcheck disable=SC2206
         remotehosts=( $remotehostlist )
         remotehostslen=${#remotehosts[@]}
+        nberrs=0
         for i in "${!remotehosts[@]}"
         do
             remote=${remotehosts[i]}
@@ -133,15 +134,26 @@ do
             fi
 
             _log "$remote: [Server $((i+1))/$remotehostslen - Step 1/3] syncing needed data..."
-            rsync -vaA --numeric-ids --delete --filter "merge $rsyncfilterfile" --rsh "$rshcmd -p $remoteport" / "$remoteuser@$remote:/"
-            _log "$remote: [Server $((i+1))/$remotehostslen - Step 1/3] sync ended with return value $?"
+            rsync -vaA --numeric-ids --delete --filter "merge $rsyncfilterfile" --rsh "$rshcmd -p $remoteport" / "$remoteuser@$remote:/"; ret=$?
+            _log "$remote: [Server $((i+1))/$remotehostslen - Step 1/3] sync ended with return value $ret"
+            if [ "$ret" != 0 ]; then (( ++nberrs )); fi
 
             _log "$remote: [Server $((i+1))/$remotehostslen - Step 2/3] syncing lastlog files from master to slave, only if master version is newer..."
-            rsync -vaA --numeric-ids --update --include '/' --include '/home/' --include '/home/*/' --include '/home/*/lastlog' --exclude='*' --rsh "$rshcmd -p $remoteport" / "$remoteuser@$remote:/"
-            _log "$remote: [Server $((i+1))/$remotehostslen - Step 2/3] sync ended with return value $?"
+            rsync -vaA --numeric-ids --update --include '/' --include '/home/' --include '/home/*/' --include '/home/*/lastlog' \
+                --exclude='*' --rsh "$rshcmd -p $remoteport" / "$remoteuser@$remote:/"; ret=$?
+            _log "$remote: [Server $((i+1))/$remotehostslen - Step 2/3] sync ended with return value $ret"
+            if [ "$ret" != 0 ]; then (( ++nberrs )); fi
 
             _log "$remote: [Server $((i+1))/$remotehostslen - Step 3/3] syncing lastlog files from slave to master, only if slave version is newer..."
-            find /home -mindepth 2 -maxdepth 2 -type f -name lastlog | rsync -vaA --numeric-ids --update --prune-empty-dirs --include='/' --include='/home' --include='/home/*/' --include-from=- --exclude='*' --rsh "$rshcmd -p $remoteport" "$remoteuser@$remote:/" /
-            _log "$remote: [Server $((i+1))/$remotehostslen - Step 3/3] sync ended with return value $?"
+            find /home -mindepth 2 -maxdepth 2 -type f -name lastlog | rsync -vaA --numeric-ids --update --prune-empty-dirs --include='/' \
+                --include='/home' --include='/home/*/' --include-from=- --exclude='*' --rsh "$rshcmd -p $remoteport" "$remoteuser@$remote:/" /; ret=$?
+            _log "$remote: [Server $((i+1))/$remotehostslen - Step 3/3] sync ended with return value $ret"
+            if [ "$ret" != 0 ]; then (( ++nberrs )); fi
         done
+
+        if [ "$nberrs" = 0 ]; then
+            _log "All secondaries have been synchronized successfully"
+        else
+            _err "Encountered $nberrs error(s) while synchronizing, see above"
+        fi
 done

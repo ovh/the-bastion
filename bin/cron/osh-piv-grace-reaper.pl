@@ -117,4 +117,4 @@ foreach my $account (%{$fnret->value}) {
     }
 }
 
-_log "Done";
+_log "Done, got " . (OVH::SimpleLog::nb_errors()) . " error(s) and " . (OVH::SimpleLog::nb_warnings()) . " warning(s).";
