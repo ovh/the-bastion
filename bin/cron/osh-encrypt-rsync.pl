@@ -107,7 +107,7 @@ sub config_load_and_lint {
     my $fnret;
 
     # Useful when erroring before we had a chance to actually read the config,
-    # and the configured syslog_facility value. This will be overriden below once we
+    # and the configured syslog_facility value. This will be overridden below once we
     # know what the user configured.
     OVH::SimpleLog::setSyslog('local6');
 
