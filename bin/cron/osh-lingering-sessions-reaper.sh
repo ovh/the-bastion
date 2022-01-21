@@ -7,7 +7,7 @@ basedir=$(readlink -f "$(dirname "$0")"/../..)
 . "$basedir"/lib/shell/functions.inc
 
 # default config values for this script
-:
+MAX_AGE=86400
 
 # set error trap, read config, setup logging, exit early if script is disabled, etc.
 script_init osh-lingering-sessions-reaper config_optional check_secure_lax
@@ -19,7 +19,7 @@ nb=0
 # shellcheck disable=SC2162
 while read etimes pid tty
 do
-    if [ "$tty" = "?" ] && [ "$etimes" -gt 86400 ]; then
+    if [ "$tty" = "?" ] && [ "$etimes" -gt "$MAX_AGE" ]; then
         tokill="$tokill $pid"
         (( ++nb ))
     fi
@@ -36,7 +36,7 @@ nb=0
 # shellcheck disable=SC2162
 while read etimes pid tty user
 do
-    if [ "$tty" = "?" ] && [ "$user" != "root" ] && [ "$etimes" -gt 86400 ]; then
+    if [ "$tty" = "?" ] && [ "$user" != "root" ] && [ "$etimes" -gt "$MAX_AGE" ]; then
         if [ "$(ps --no-header --ppid "$pid" | wc -l)" = 0 ]; then
             tokill="$tokill $pid"
             (( ++nb ))
