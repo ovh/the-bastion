@@ -1,0 +1,2 @@
+# Check each 5 minutes that we don't have dangling guests still having access to keys
+*/5 * * * * root /opt/bastion/bin/cron/osh-cleanup-guest-key-access.pl >/dev/null
