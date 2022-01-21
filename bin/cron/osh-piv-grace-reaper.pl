@@ -8,7 +8,16 @@ use OVH::Bastion;
 use OVH::Result;
 use OVH::SimpleLog;
 
+# this'll be used in syslog
+$ENV{'UNIQID'} = OVH::Bastion::generate_uniq_id()->value;
+
 my $fnret;
+
+# abort early if we're not a master instance
+if (OVH::Bastion::config('readOnlySlaveMode')->value) {
+    _log "We're not a master instance, don't do anything";
+    exit 0;
+}
 
 $fnret = OVH::Bastion::load_configuration_file(
     file     => OVH::Bastion::main_configuration_directory() . "/osh-piv-grace-reaper.conf",
@@ -17,13 +26,18 @@ $fnret = OVH::Bastion::load_configuration_file(
 );
 
 my $config;
-if (not $fnret) {
-    _err "Error while loading configuration, continuing anyway with default values...";
+if (!$fnret) {
+    if (-e OVH::Bastion::main_configuration_directory() . "/osh-piv-grace-reaper.conf") {
+        _warn "Error while loading configuration, continuing anyway with default values...";
+    }
+    else {
+        _log "No configuration file found, using default config values...";
+    }
 }
 else {
     $config = $fnret->value;
     if (ref $config ne 'HASH') {
-        _err "Invalid data returned while loading configuration, continuing anyway with default values...";
+        _warn "Invalid data returned while loading configuration, continuing anyway with default values...";
     }
 }
 
@@ -44,10 +58,6 @@ if (!$fnret) {
     _err "Couldn't get account list: " . $fnret->msg;
     exit 1;
 }
-
-# this'll be used in syslog
-$ENV{'UNIQID'} = OVH::Bastion::generate_uniq_id()->value;
-
 foreach my $account (sort keys %{$fnret->value}) {
 
     # if account doesn't have PIV grace, we have nothing to do
