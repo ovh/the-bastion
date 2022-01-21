@@ -549,23 +549,27 @@ EOF
 sub main {
     _log "Starting...";
 
-    if (
-        !GetOptions(
-            "dry-run"       => \$dryRun,
-            "config-test"   => \$configTest,
-            "no-delete"     => \$noDelete,
-            "encrypt-only"  => \$encryptOnly,
-            "rsync-only"    => \$rsyncOnly,
-            "force-delete"  => \$forceDelete,
-            "force-encrypt" => \$forceEncrypt,
-            "verbose+"      => \$verbose,
-            "help"          => \$help,
-        )
-      )
     {
-        _err "Error while parsing command-line options";
-        print_usage();
-        return 1;
+        my $optwarn = 'Unknown error';
+        local $SIG{'__WARN__'} = sub { $optwarn = shift; };
+        if (
+            !GetOptions(
+                "dry-run"       => \$dryRun,
+                "config-test"   => \$configTest,
+                "no-delete"     => \$noDelete,
+                "encrypt-only"  => \$encryptOnly,
+                "rsync-only"    => \$rsyncOnly,
+                "force-delete"  => \$forceDelete,
+                "force-encrypt" => \$forceEncrypt,
+                "verbose+"      => \$verbose,
+                "help"          => \$help,
+            )
+          )
+        {
+            _err "Error while parsing command-line options: $optwarn";
+            print_usage();
+            return 1;
+        }
     }
 
     if ($help) {
