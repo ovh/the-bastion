@@ -746,8 +746,7 @@ sub get_group_list {
             and not grep { $name eq $_ } qw{ keykeeper keyreader })
         {
             $name =~ s/^key//;
-            my @members = split(/ /, $members);
-            $groups{$name} = {gid => $gid, members => split(/ /, $members)};
+            $groups{$name} = {gid => $gid, members => [split(/ /, $members)]} if ($name ne '');
         }
     }
     $_cache_get_group_list{$groupType} = R('OK', value => \%groups);
