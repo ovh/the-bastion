@@ -8,7 +8,7 @@ osh-encrypt-rsync.conf reference
    and optionally pushing the recorded ``ttyrec`` files to a distant server, along
    with the user logs (``/home/*/*.log``) and user sqlite files (``/home/*/*.sqlite``).
    The global log and sqlite files are also handled (located in ``/home/logkeeper/``).
-   Note that logs send through syslog are NOT managed by this script.
+   Note that logs sent through syslog are NOT managed by this script.
 
 .. warning::
 
