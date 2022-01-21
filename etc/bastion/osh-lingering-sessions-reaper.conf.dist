@@ -1,0 +1,49 @@
+################################################################################
+## Config for /opt/bastion/bin/cron/osh-lingering-sessions-reaper.sh, the script
+## responsible for terminating lingering sessions that no longer have any tty
+## attached nor parent PID.
+##
+## Any file in /etc/bastion/osh-lingering-sessions-reaper.conf.d will also be
+## sourced, in alphabetical order, and take precedence over any
+## option specified in this file.
+##
+## Please ensure this file is only readable by root.
+##
+## As it'll be sourced, THIS FILE MUST BE A VALID SHELL SCRIPT.
+################################################################################
+#
+# > Logging
+# >> These options configure the way the script logs its actions
+#
+# LOGFILE (string, path to a file)
+#    DESC: File where the logs will be written to (don't forget to configure ``logrotate``!).
+#          Note that using this configuration option, the script will directly write to the file, without using syslog.
+#          If empty, won't log directly to any file.
+# DEFAULT: ""
+LOGFILE=""
+#
+# LOG_FACILITY (string)
+#    DESC: The syslog facility to use for logging the script output.
+#          If set to the empty string, we'll not log through syslog at all.
+#          If this configuration option is missing from your config file altogether,
+#          the default value will be used (local6), which means that we'll log to syslog.
+# DEFAULT: "local6"
+LOG_FACILITY="local6"
+#
+# > Behavior
+# >> These options govern the behavior of the script
+#
+# ENABLED (0 or 1)
+#    DESC: If set to 1, the script is enabled and will terminate lingering sessions that no longer have any
+#          tty attached nor parent PID, and have been running for more than MAX_AGE seconds. Note that this only
+#          removes orphan sessions that no longer seem to be attached to any client. Still alive sessions, even
+#          if older than MAX_AGE seconds, will be kept.
+#          If set to anything else, the script is considered disabled and will not run.
+# DEFAULT: 1
+ENABLED=1
+#
+# MAX_AGE (int >= 0)
+#    DESC: The minimum number of seconds a session must have been opened before being considered as possibly
+#          a lingering orphan session.
+# DEFAULT: 86400
+MAX_AGE=86400
