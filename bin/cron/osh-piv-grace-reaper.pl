@@ -48,7 +48,7 @@ if (!$fnret) {
 # this'll be used in syslog
 $ENV{'UNIQID'} = OVH::Bastion::generate_uniq_id()->value;
 
-foreach my $account (%{$fnret->value}) {
+foreach my $account (sort keys %{$fnret->value}) {
 
     # if account doesn't have PIV grace, we have nothing to do
     $fnret = OVH::Bastion::account_config(account => $account, public => 1, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_GRACE);
