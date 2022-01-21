@@ -73,6 +73,13 @@ testsuite_scripts()
     nocontain "ERROR:"
     nocontain "Unexpected termination"
 
+    # cleanup guest key access
+
+    success cleanup_guest_key_access $r0 /opt/bastion/bin/cron/osh-cleanup-guest-key-access.pl
+    contain "Done"
+    nocontain "WARN:"
+    nocontain "ERROR:"
+
     # encrypt rsync (nothing to encrypt)
 
     success encrypt_rsync_none $r0 /opt/bastion/bin/cron/osh-encrypt-rsync.pl
@@ -80,7 +87,6 @@ testsuite_scripts()
     contain "Done"
     nocontain "WARN:"
     nocontain "ERROR:"
-    nocontain "Unexpected termination"
 
     # ttyrec subfolders cleanup
     success ttyrec_cleanup $r0 /opt/bastion/bin/cron/osh-remove-empty-folders.sh
