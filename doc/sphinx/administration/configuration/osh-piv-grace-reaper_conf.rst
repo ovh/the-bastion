@@ -16,7 +16,14 @@ Logging options
 
 These options configure the way the script logs its actions
 
-- `SyslogFacility`_
+- `syslog_facility`_
+
+Behaviour options
+-----------------
+
+These options govern the behaviour of the script
+
+- `enabled`_
 
 Option Reference
 ================
@@ -24,12 +31,24 @@ Option Reference
 Logging
 -------
 
-SyslogFacility
-**************
+syslog_facility
+***************
 
 :Type: ``string``
 
 :Default: ``local6``
 
 The syslog facility to use for logging the script output. If set to the empty string, we'll not log through syslog at all. If this configuration option is missing from your config file altogether, the default value will be used (local6), which means that we'll log to syslog.
+
+Behaviour
+---------
+
+enabled
+*******
+
+:Type: ``bool``
+
+:Default: ``true``
+
+If not set to `true` (or a true value), the script will not run.
 

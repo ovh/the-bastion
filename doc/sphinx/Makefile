@@ -31,13 +31,16 @@ plugins:
 	@bash build-plugins-help.sh
 
 config_doc_ref:
-	@env GLOBAL_REFS=1 perl build-config-doc-ref.pl bastion.conf                  < ../../etc/bastion/bastion.conf.dist                   > administration/configuration/bastion_conf.rst
-	@                  perl build-config-doc-ref.pl osh-http-proxy.conf           < ../../etc/bastion/osh-http-proxy.conf.dist            > administration/configuration/osh-http-proxy_conf.rst
-	@                  perl build-config-doc-ref.pl osh-encrypt-rsync.conf        < ../../etc/bastion/osh-encrypt-rsync.conf.dist         > administration/configuration/osh-encrypt-rsync_conf.rst
-	@                  perl build-config-doc-ref.pl osh-backup-acl-keys.conf      < ../../etc/bastion/osh-backup-acl-keys.conf.dist       > administration/configuration/osh-backup-acl-keys_conf.rst
-	@                  perl build-config-doc-ref.pl osh-piv-grace-reaper.conf     < ../../etc/bastion/osh-piv-grace-reaper.conf.dist      > administration/configuration/osh-piv-grace-reaper_conf.rst
-	@                  perl build-config-doc-ref.pl osh-sync-watcher.sh           < ../../etc/bastion/osh-sync-watcher.sh.dist            > administration/configuration/osh-sync-watcher_sh.rst
-	@                  perl build-config-doc-ref.pl osh-remove-empty-folders.conf < ../../etc/bastion/osh-remove-empty-folders.conf.dist  > administration/configuration/osh-remove-empty-folders_conf.rst
+	env GLOBAL_REFS=1 perl build-config-doc-ref.pl bastion.conf                       < ../../etc/bastion/bastion.conf.dist                       > administration/configuration/bastion_conf.rst
+	                  perl build-config-doc-ref.pl osh-backup-acl-keys.conf           < ../../etc/bastion/osh-backup-acl-keys.conf.dist           > administration/configuration/osh-backup-acl-keys_conf.rst
+	                  perl build-config-doc-ref.pl osh-cleanup-guest-key-access.conf  < ../../etc/bastion/osh-cleanup-guest-key-access.conf.dist  > administration/configuration/osh-cleanup-guest-key-access_conf.rst
+	                  perl build-config-doc-ref.pl osh-encrypt-rsync.conf             < ../../etc/bastion/osh-encrypt-rsync.conf.dist             > administration/configuration/osh-encrypt-rsync_conf.rst
+	                  perl build-config-doc-ref.pl osh-http-proxy.conf                < ../../etc/bastion/osh-http-proxy.conf.dist                > administration/configuration/osh-http-proxy_conf.rst
+	                  perl build-config-doc-ref.pl osh-lingering-sessions-reaper.conf < ../../etc/bastion/osh-lingering-sessions-reaper.conf.dist > administration/configuration/osh-lingering-sessions-reaper_conf.rst
+	                  perl build-config-doc-ref.pl osh-orphaned-homedir.conf          < ../../etc/bastion/osh-orphaned-homedir.conf.dist          > administration/configuration/osh-orphaned-homedir_conf.rst
+	                  perl build-config-doc-ref.pl osh-piv-grace-reaper.conf          < ../../etc/bastion/osh-piv-grace-reaper.conf.dist          > administration/configuration/osh-piv-grace-reaper_conf.rst
+	                  perl build-config-doc-ref.pl osh-remove-empty-folders.conf      < ../../etc/bastion/osh-remove-empty-folders.conf.dist      > administration/configuration/osh-remove-empty-folders_conf.rst
+	                  perl build-config-doc-ref.pl osh-sync-watcher.sh                < ../../etc/bastion/osh-sync-watcher.sh.dist                > administration/configuration/osh-sync-watcher_sh.rst
 
 reflist:
 	@python3 -m sphinx.ext.intersphinx _build/html/objects.inv

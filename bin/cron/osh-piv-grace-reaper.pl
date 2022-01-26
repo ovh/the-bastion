@@ -42,11 +42,17 @@ else {
 
 # set default values
 $config = {} if ref $config ne 'HASH';
-$config->{'SyslogFacility'} //= 'local6';
+$config->{'syslog_facility'} //= ($config->{'SyslogFacility'} // 'local6');
+$config->{'enabled'}         //= ($config->{'Enabled'}        // 1);
 
 # logging
-if ($config->{'SyslogFacility'}) {
-    OVH::SimpleLog::setSyslog($config->{'SyslogFacility'});
+if ($config->{'syslog_facility'}) {
+    OVH::SimpleLog::setSyslog($config->{'syslog_facility'});
+}
+
+if (!$config->{'enabled'}) {
+    _log "Script is disabled.";
+    exit 0;
 }
 
 _log "Looking for accounts with a PIV grace...";
