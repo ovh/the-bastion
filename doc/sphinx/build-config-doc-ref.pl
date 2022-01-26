@@ -6,6 +6,7 @@ use warnings;
 use FindBin;
 
 my %h;
+my @header;
 my @out;
 my $section;
 my %sections;
@@ -33,40 +34,45 @@ sub dumpdoc {
     return;
 }
 
-my $state = '';
+my $state = 'start';
 while (<STDIN>) {
-    $ENV{'DEBUG'} && print;
+    printf STDERR "%9s line=%s", $state, $_ if $ENV{'DEBUG'};
     next if /^\s*$/;
-    if (m{^# ([a-zA-Z0-9_]+) \((.+)\)}) {
+    if ($state eq 'start') {
+        if (m{^## (.+)}) {
+            push @header, "   $1";
+        }
+        elsif (m{^###} && @header) {
+            $state = '';
+        }
+        else {
+            next;
+        }
+    }
+    elsif (m{^# ([a-zA-Z0-9_]+) \((.+)\)}) {
         $h{param} = $1;
         $h{type}  = $2;
-        $ENV{'DEBUG'} && print "--- state=name\n";
         $state = 'name';
     }
     elsif (m{^#\s+DESC:\s+(.+)$}) {
         $h{desc} = $1;
-        $ENV{'DEBUG'} && print "--- state=desc\n";
         $state = 'desc';
     }
     elsif (m{^#\s+EXAMPLE:\s+(.+)$}) {
         $h{example} = $1;
-        $ENV{'DEBUG'} && print "--- state=example\n";
         $state = 'example';
     }
     elsif (m{^#\s+DEFAULT:\s+(.+)$}) {
         $h{default} = $1;
-        $ENV{'DEBUG'} && print "--- state=default\n";
         $state = 'default';
     }
     elsif (m{^#\s{0,11}(.*)$} && exists $h{desc} && $state eq 'desc') {
         $h{desc} .= "\n$1";
     }
     elsif ((m{^"([^"]+)"} && $h{param} eq $1) || (m{^([A-Za-z0-9_]+)=} && $h{param} eq $1)) {
-        $ENV{'DEBUG'} && print "--- state=param\n";
         $state = 'param';
     }
     elsif (m{^#$} && $state eq 'param') {
-        $ENV{'DEBUG'} && print "--- state=(empty)\n";
         $state = '';
         dumpdoc();
     }
@@ -89,10 +95,26 @@ while (<STDIN>) {
 dumpdoc();
 
 if (open(my $fh, "<", "$FindBin::Bin/../sphinx-reference-headers/$document.header")) {
-    local $/;
-    my $contents = <$fh>;
+    my $contents = do { local $/; <$fh>; };
     close($fh);
     print $contents;
+}
+elsif (@header) {
+    print "=" x length($document) . "\n";
+    print "$document\n";
+    print "=" x length($document) . "\n";
+    print <<'EOF';
+
+.. note::
+
+EOF
+    print join("\n", @header);
+    print <<'EOF';
+
+
+Option List
+===========
+EOF
 }
 else {
     print STDERR "No header found in '$FindBin::Bin/../sphinx-reference-headers/$document.header'\n";

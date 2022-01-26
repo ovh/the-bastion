@@ -1,10 +1,14 @@
 ############################################################################################
-## Config for the HTTP Proxy of The Bastion.
-## This is a JSON file, its syntax must be valid at all times. To verify:
-## => grep -v ^# /etc/bastion/osh-http-proxy.conf|python -mjson.tool>/dev/null && echo OK
-##
-## If you're on a production bastion you can verify it can properly load its configuration:
-## => perl -I/opt/bastion/lib/perl -MOVH::Bastion -e 'die OVH::Bastion::load_configuration_file(file => "/etc/bastion/osh-http-proxy.conf")'
+#@ Configuration for the HTTP Proxy of The Bastion.
+#@
+#@ This is a JSON file, its syntax must be valid at all times. To verify:
+#@ => grep -v ^# /etc/bastion/osh-http-proxy.conf|python -mjson.tool>/dev/null && echo OK
+#@
+#@ If you're on a production bastion you can verify it can properly load its configuration:
+#@ => perl -I/opt/bastion/lib/perl -MOVH::Bastion -e 'die OVH::Bastion::load_configuration_file(file => "/etc/bastion/osh-http-proxy.conf")'
+#@
+## This module is optional, and disabled by default. To know more about the HTTP Proxy
+## feature of The Bastion, please check the :doc:`/using/http_proxy` section
 ############################################################################################
 {
 # > HTTP Proxy configuration

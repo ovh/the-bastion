@@ -21,9 +21,8 @@ if (OVH::Bastion::config('readOnlySlaveMode')->value) {
 }
 
 $fnret = OVH::Bastion::load_configuration_file(
-    file     => OVH::Bastion::main_configuration_directory() . "/osh-cleanup-guest-access.conf",
-    secure   => 1,
-    keywords => [qw{ SyslogFacility }],
+    file   => OVH::Bastion::main_configuration_directory() . "/osh-cleanup-guest-access.conf",
+    secure => 1,
 );
 
 my $config;
@@ -44,11 +43,17 @@ else {
 
 # set default values
 $config = {} if ref $config ne 'HASH';
-$config->{'SyslogFacility'} //= 'local6';
+$config->{'syslog_facility'} //= ($config->{'SyslogFacility'} // 'local6');
+$config->{'enabled'}         //= ($config->{'Enabled'}        // 1);
 
 # logging
-if ($config->{'SyslogFacility'}) {
-    OVH::SimpleLog::setSyslog($config->{'SyslogFacility'});
+if ($config->{'syslog_facility'}) {
+    OVH::SimpleLog::setSyslog($config->{'syslog_facility'});
+}
+
+if (!$config->{'enabled'}) {
+    _log "Script is disabled.";
+    exit 0;
 }
 
 # command-line
