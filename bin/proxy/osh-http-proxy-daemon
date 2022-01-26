@@ -11,9 +11,8 @@ $ENV{'FORCE_STDERR'} = 1;
 $ENV{'PATH'}         = '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/pkg/bin';
 
 my $fnret = OVH::Bastion::load_configuration_file(
-    file     => OVH::Bastion::main_configuration_directory() . "/osh-http-proxy.conf",
-    secure   => 1,
-    keywords => [qw{ enabled port ssl_key ssl_certificate }],
+    file   => OVH::Bastion::main_configuration_directory() . "/osh-http-proxy.conf",
+    secure => 1,
 );
 if (not $fnret) {
     osh_warn "Error loading configuration: " . $fnret->msg;

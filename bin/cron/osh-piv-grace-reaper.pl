@@ -20,9 +20,8 @@ if (OVH::Bastion::config('readOnlySlaveMode')->value) {
 }
 
 $fnret = OVH::Bastion::load_configuration_file(
-    file     => OVH::Bastion::main_configuration_directory() . "/osh-piv-grace-reaper.conf",
-    secure   => 1,
-    keywords => [qw{ SyslogFacility }],
+    file   => OVH::Bastion::main_configuration_directory() . "/osh-piv-grace-reaper.conf",
+    secure => 1,
 );
 
 my $config;
