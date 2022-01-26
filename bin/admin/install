@@ -862,12 +862,12 @@ if [ "$nothing" = 0 ]; then
     fi
 
     action_doing "Ensuring all bastion accounts are in the bastion-users group"
-    bastion_users_members=$(getent group bastion-users | cut -d: -f4)
+    bastion_users_members=$(getent group bastion-users | cut -d: -f4 | tr , " ")
     at_least_one_changed=0
     at_least_one_error=0
     for account in $(getent passwd | grep ":$basedir/bin/shell/osh.pl$" | cut -d: -f1) proxyhttp
     do
-        if ! echo "$bastion_users_members" | tr "," "\\n" | grep -q -w "$account"; then
+        if ! echo "$bastion_users_members" | grep -q -w "$account"; then
             action_detail "... $account"
             add_user_to_group_compat "$account" "bastion-users" || at_least_one_error=1
             at_least_one_changed=1
