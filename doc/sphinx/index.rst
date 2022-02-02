@@ -27,28 +27,63 @@ Those wouldn't be possible with a "simple" jumphost. More technical details on t
 OK, tell me more!
 =================
 
-This documentation is organized in several sections. The first one is a :doc:`presentation<presentation/index>` of the main functionalities, principles, and use cases of the bastion.
+This documentation is organized in several sections. The first one is a **PRESENTATION** of the main functionalities, principles, and use cases of the bastion.
 
-The second section explains how to :doc:`get the bastion running<installation/index>`, including how to set up a quick playground using Docker if you want to get your hands dirty quickly.
+The second section explains the **INSTALLATION** procedure, including how to set up a quick playground using Docker if you want to get your hands dirty quickly.
 
-The third section focuses on :doc:`how to use<using/index>` the bastion, from the perspective of the different roles, such as bastion users, group owners, bastion admins, etc.
+The third section focuses on the **USAGE** of the bastion, from the perspective of the different roles, such as bastion users, group owners, bastion admins, etc.
 
-The fourth section is about the proper :doc:`administration<administration/index>` of the bastion itself. If you're about to be the person in charge of managing the bastion for your company, you want to read that one carefully!
+The fourth section is about the proper **ADMINISTRATION** of the bastion itself. If you're about to be the person in charge of managing the bastion for your company, you want to read that one carefully!
 
-The fifth section is the complete reference of all the :doc:`plugins<plugins/index>`, that are the commands used to interact with the bastion accounts, groups, accesses, credentials, and more.
+The fifth section is the complete reference of all the **PLUGINS** that are the commands used to interact with the bastion accounts, groups, accesses, credentials, and more.
 
-The last section is the unavoidable and iconic :doc:`Frequently Asked Questions<faq>`.
+The unavoidable and iconic FAQ is also available under the **PRESENTATION** section.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Table of contents
+   :caption: Presentation
 
-   presentation/index
-   installation/index
-   using/index
-   administration/index
-   plugins/index
+   presentation/principles
+   presentation/features
+   presentation/security
    faq
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Installation
+
+   installation/basic
+   installation/advanced
+   installation/upgrading
+   installation/docker
+   installation/tests
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Usage
+
+   using/basics/index
+   using/piv
+   using/scp
+   using/http_proxy
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Administration
+
+   administration/configuration/index
+   administration/logs
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Plugins
+
+   plugins/admin/index.rst
+   plugins/group-aclkeeper/index.rst
+   plugins/group-gatekeeper/index.rst
+   plugins/group-owner/index.rst
+   plugins/open/index.rst
+   plugins/restricted/index.rst
 
 Indices and tables
 ==================

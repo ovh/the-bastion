@@ -252,4 +252,4 @@ by somebody granted to the *accountCreate* command), using the bastion own comma
 But more about this in the section *Using the bastion*.
 
 Now that your bastion is installed, you can either check the :doc:`advanced installation<advanced>` documentation,
-or head over to the :doc:`using the bastion<../using/index>` section.
+or head over to the **USAGE** section on the left menu.
