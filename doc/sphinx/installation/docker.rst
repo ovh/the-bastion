@@ -70,7 +70,7 @@ The sandbox image is available for the following architectures: ``linux/386``, `
 
     bastion <remote_account_name>@<remote_machine_host_or_ip>
 
-That's it! You can head over to the :doc:`using the bastion<../using/index>` section for more information.
+That's it! You can head over to the **USAGE** section on the left menu for more information.
 Be sure to check the help of the bastion with ``bastion --help``,
 along with the help of each osh plugin with ``bastion --osh command --help``.
 

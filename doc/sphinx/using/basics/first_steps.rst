@@ -24,7 +24,7 @@ You can do two categories of things on the bastion:
 
 - Connect to infrastructures through it
 - Interact with the bastion itself, for example to manage your account, and/or groups,
-  through so-called :doc:`/plugins/index` aka *osh commands*
+  through so-called **PLUGINS** aka *osh commands*
 
 Plugins
 *******
@@ -78,7 +78,7 @@ You can have more information about any command by using ``--help`` with it:
 
    bssh --osh selfAddIngressKey --help
 
-See :doc:`/plugins/index` for more information about the plugins.
+See the **PLUGINS** section on the left menu, for more information about the plugins.
 
 Instead of using ``--osh`` to call plugins, you can enter the special *interactive mode*, by saying:
 
@@ -267,4 +267,4 @@ Let's see what we did exactly during this session:
    ~ Starting from the next line, the Total Recall begins. Press CTRL+C to jolt awake.
 
 Now that you've connected to your first server, using a personal access,
-you may want to learn more about the :doc:`<access_management>`, or directly dive into the :doc:`/plugins/index`.
+you may want to learn more about the :doc:`<access_management>`, or directly dive into the **PLUGINS** on the left menu.

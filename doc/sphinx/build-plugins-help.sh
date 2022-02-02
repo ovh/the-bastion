@@ -62,19 +62,20 @@ do
     } > "$docfile"
 done
 
-pluginindex="doc/sphinx/plugins/index.rst"
-print_title "Bastion plugins" > "$pluginindex"
-cat >>"$pluginindex" <<EOF
-.. toctree::
-
-EOF
+## no longer needed for now
+#pluginindex="doc/sphinx/plugins/index.rst"
+#print_title "Bastion plugins" > "$pluginindex"
+#cat >>"$pluginindex" <<EOF
+#.. toctree::
+#
+#EOF
 
 for section in $(find doc/sphinx/plugins -mindepth 1 -maxdepth 1 -type d | LC_ALL=C sort)
 do
     indexfile="$section/index.rst"
     section=$(basename "$section")
     echo "Working on $section"
-    echo "   $section/index.rst" >> "$pluginindex"
+    #echo "   $section/index.rst" >> "$pluginindex"
     print_title "$section plugins" > "$indexfile"
     cat >>"$indexfile" <<EOF
 .. toctree::
