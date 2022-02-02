@@ -1,11 +1,19 @@
-#################################################################################################
+###############################################################################
 ## Main config for The Bastion.
 ## This is a JSON file, its syntax must be valid at all times. To verify:
-## => grep -v ^# /etc/bastion/bastion.conf|python -mjson.tool>/dev/null && echo OK
+## > grep -v ^# /etc/bastion/bastion.conf|python -mjson.tool>/dev/null && echo OK
 ##
 ## If you're on a production bastion you can verify it can properly load its configuration:
-## => perl -I/opt/bastion/lib/perl -MOVH::Bastion -e 'OVH::Bastion::load_configuration(test=>1)'
-#################################################################################################
+## > perl -I/opt/bastion/lib/perl -MOVH::Bastion -e 'OVH::Bastion::load_configuration(test=>1)'
+##
+#@ .. note::
+#@
+#@   The Bastion has a lot of configuration options so that you can tailor it
+#@   to your needs. However, if you're just beggining and would like to get
+#@   started quickly, just configure the ``Main Options``.
+#@   All the other options have sane defaults that can still be customized
+#@   at a later time.
+###############################################################################
 {
 ################
 # > Main Options

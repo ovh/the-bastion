@@ -1,23 +1,25 @@
-###########################################################################
-## Config for /opt/bastion/bin/cron/osh-remove-empty-folders.sh, the script
-## responsible for getting rid of empty folders in the ttyrec/ folder of
-## every user (located in their home). This is mainly useful on bastions
-## were some type of users (or robots) might connect to a very high number
-## of always-changing IPs, hence having folders piling up in their ttyrec/
-## folder, as each IP has its own folder. Of course, this script will only
-## remove empty folders, and never remove a single actual file.
+###############################################################################
+## Config for ``bin/cron/osh-remove-empty-folders.sh``
 ##
-## Any file in /etc/bastion/osh-remove-empty-folders.conf.d will also be
+## Any file in ``/etc/bastion/osh-remove-empty-folders.conf.d`` will also be
 ## sourced, in alphabetical order, and take precedence over any
 ## option specified in this file.
 ##
-## Please ensure this file is only readable by root.
+## Please ensure this file is owned by root and not world-writable.
 ##
 ## As it'll be sourced, THIS FILE MUST BE A VALID SHELL SCRIPT.
-###########################################################################
+##
+#@ .. note::
+#@
+#@    This script is called by cron and is responsible for getting rid of empty
+#@    folders in the ``ttyrec/`` directory of users homes, which may contain a
+#@    high amount of empty folders for busy users connecting to a lot of
+#@    different servers, as we create one folder per destination IP.
+#@    Of course, this script will only remove empty folders, never actual files.
+###############################################################################
 #
-# > Logging
-# >> These options configure the way the script logs its actions
+# > Logging & activation
+# >> Script logging configuration and script activation
 #
 # LOGFILE (string, path to a file)
 #    DESC: File where the logs will be written to (don't forget to configure ``logrotate``!).

@@ -1,11 +1,12 @@
-=============================
-osh-http-proxy.conf reference
-=============================
+===================
+osh-http-proxy.conf
+===================
 
-.. note::
+ .. note::
 
-   This module is optional, and disabled by default. To know more about the HTTP Proxy feature
-   of The Bastion, please check the :doc:`/using/http_proxy` section
+    This module is optional, and disabled by default.
+    To know more about the HTTP Proxy feature of The Bastion,
+    please check the :doc:`/using/http_proxy` section
 
 Option List
 ===========
@@ -42,7 +43,13 @@ enabled
 
 :Default: ``false``
 
-Whether the HTTP proxy daemon daemon is enabled or not. If it's not enabled, it'll exit when started. Of course, if you want to enable this daemon, you should **also** configure your init system to start it for you. Both sysV-style scripts and systemd unit files are provided. For systemd, using `systemctl enable osh-http-proxy.service` should be enough. For sysV-style inits, it depends on the scripts provided for your distro, but usually `update-rc.d osh-http-proxy defaults` then `update-rc.d osh-http-proxy enable` should do the trick.
+Whether the HTTP proxy daemon daemon is enabled or not. If it's not enabled, it'll exit when started.
+Of course, if you want to enable this daemon, you should **also** configure your init system to start it
+for you. Both sysV-style scripts and systemd unit files are provided.
+For systemd, using `systemctl enable osh-http-proxy.service` should be enough.
+For sysV-style inits, it depends on the scripts provided for your distro,
+but usually `update-rc.d osh-http-proxy defaults` then `update-rc.d osh-http-proxy enable` should
+do the trick.
 
 port
 ****
@@ -51,7 +58,8 @@ port
 
 :Default: ``8443``
 
-The port to listen to. You can use ports < 1024, in which case privileges will be dropped after binding, but please ensure your systemd unit file starts the daemon as root in that case.
+The port to listen to. You can use ports < 1024, in which case privileges will be dropped after binding,
+but please ensure your systemd unit file starts the daemon as root in that case.
 
 ssl_certificate
 ***************
@@ -60,7 +68,9 @@ ssl_certificate
 
 :Default: ``/etc/ssl/certs/ssl-cert-snakeoil.pem``
 
-The file that contains the server SSL certificate in PEM format. For tests, install the ``ssl-cert`` package and point this configuration item to the snakeoil certs (which is the default).
+The file that contains the server SSL certificate in PEM format.
+For tests, install the ``ssl-cert`` package and point this configuration item
+to the snakeoil certs (which is the default).
 
 ssl_key
 *******
@@ -69,7 +79,9 @@ ssl_key
 
 :Default: ``/etc/ssl/private/ssl-cert-snakeoil.key``
 
-The file that contains the server SSL key in PEM format. For tests, install the ``ssl-cert`` package and point this configuration item to the snakeoil certs (which is the default).
+The file that contains the server SSL key in PEM format.
+For tests, install the ``ssl-cert`` package and point this configuration item
+to the snakeoil certs (which is the default).
 
 ciphers
 *******
@@ -80,8 +92,9 @@ ciphers
 
 :Example: ``"ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256"``
 
-The ordered list the TLS server ciphers, in ``openssl`` classic format. Use ``openssl ciphers`` to see what your system supports,
-an empty list leaves the choice to your openssl libraries default values (system-dependent)
+The ordered list the TLS server ciphers, in ``openssl`` classic format. Use ``openssl ciphers``
+to see what your system supports, an empty list leaves the choice to your openssl libraries default
+values (system-dependent)
 
 insecure
 ********
@@ -117,7 +130,8 @@ min_spare_servers
 
 :Default: ``8``
 
-The daemon will ensure that there is at least this number of children idle & ready to accept new connections (as long as max_servers is not reached)
+The daemon will ensure that there is at least this number of children idle & ready to accept
+new connections (as long as max_servers is not reached)
 
 max_spare_servers
 *****************
@@ -144,7 +158,8 @@ log_request_response
 
 :Default: ``true``
 
-When enabled, the complete response of the device to the request we forwarded will be logged, otherwise we'll only log the response headers
+When enabled, the complete response of the device to the request we forwarded will be logged,
+otherwise we'll only log the response headers
 
 log_request_response_max_size
 *****************************
@@ -153,5 +168,11 @@ log_request_response_max_size
 
 :Default: ``65536``
 
-This option only applies when `log_request_response` is true (see above). When set to zero, the complete response will be logged in the account's home log directory, including the body, regardless of its size. If set to a positive integer, the query response will only be partially logged, with full status and headers but the body only up to the specified size. This is a way to avoid turning off request response logging completely on very busy bastions, by ensuring logs growth don't get out of hand, as some responses to queries can take megabytes, with possibly limited added value to traceability.
+This option only applies when `log_request_response` is true (see above).
+When set to zero, the complete response will be logged in the account's home log directory,
+including the body, regardless of its size. If set to a positive integer,
+the query response will only be partially logged, with full status and headers but the body only up
+to the specified size. This is a way to avoid turning off request response logging completely on
+very busy bastions, by ensuring logs growth don't get out of hand, as some responses to queries can
+take megabytes, with possibly limited added value to traceability.
 

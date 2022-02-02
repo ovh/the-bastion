@@ -1,12 +1,13 @@
-======================
-bastion.conf reference
-======================
+============
+bastion.conf
+============
 
-.. note::
+ .. note::
 
-   The Bastion has a lot of configuration options so that you can tailor it to your needs.
-   However, if you're just starting and would like to get started quickly, just configure
-   the ``Main Options``. All the other options have sane defaults that can still be customized
+   The Bastion has a lot of configuration options so that you can tailor it
+   to your needs. However, if you're just beggining and would like to get
+   started quickly, just configure the ``Main Options``.
+   All the other options have sane defaults that can still be customized
    at a later time.
 
 Option List

@@ -1,12 +1,14 @@
-=============================
-osh-sync-watcher.sh reference
-=============================
+===================
+osh-sync-watcher.sh
+===================
 
-.. note::
+ .. note::
 
-   The osh-sync-watcher daemon is responsible for ensuring secondary bastions are synced
-   up to their primary. If you don't have such HA setup, you can ignore this config file.
-   For more information, see :ref:`installation/advanced:clustering (high availability)`.
+    This daemon is responsible for ensuring secondary bastions
+    are synced up to their primary at all times.
+    If you don't have such HA setup, you can ignore this config file.
+    For more information, refer to
+    :ref:`installation/advanced:clustering (high availability)`.
 
 Option List
 ===========
@@ -14,7 +16,7 @@ Option List
 Logging options
 ---------------
 
-These options configure the way the daemon logs its actions
+These options configure the way the script logs its actions
 
 - `logdir`_
 - `syslog`_
