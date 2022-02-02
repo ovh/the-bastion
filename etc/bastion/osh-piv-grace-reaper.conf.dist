@@ -1,19 +1,30 @@
-###################################################################
-## Config for /opt/bastion/bin/cron/osh-piv-grace-reaper.pl, the script
-## responsible for expiring the grace period of relaxed PIV policies.
+###############################################################################
+## Config for ``bin/cron/osh-piv-grace-reaper.pl``
 ## This is a JSON file.
-###################################################################
+##
+## This is a JSON file, to verify its syntax:
+## > grep -v ^# /etc/bastion/osh-piv-grace-reaper.conf|python -mjson.tool>/dev/null && echo OK
+##
+## You can also verify that the code can load the configuration file:
+## > perl -I/opt/bastion/lib/perl -MOVH::Bastion -e 'die OVH::Bastion::load_configuration_file(file => "/etc/bastion/osh-piv-grace-reaper.conf")'
+##
+#@ .. note::
+#@
+#@   This script is called by cron and is responsible for removing temporary
+#@   grace periods on PIV policies, once they expire. If you don't use PIV keys,
+#@   this script won't do anything (see :doc:`/using/piv`).
+###############################################################################
 {
-# > Logging
-# >> These options configure the way the script logs its actions
+# > Logging & activation
+# >> Script logging configuration and script activation
 #
 # syslog_facility (string)
-#    DESC: The syslog facility to use for logging the script output. If set to the empty string, we'll not log through syslog at all. If this configuration option is missing from your config file altogether, the default value will be used (local6), which means that we'll log to syslog.
+#    DESC: The syslog facility to use for logging the script output.
+#          If set to the empty string, we'll not log through syslog at all.
+#          If this configuration option is missing from your config file altogether,
+#          the default value will be used (local6), which means that we'll log to syslog.
 # DEFAULT: local6
-"syslog_facility": "local6"
-#
-# > Behaviour
-# >> These options govern the behaviour of the script
+"syslog_facility": "local6",
 #
 # enabled (bool)
 #    DESC: If not set to `true` (or a true value), the script will not run.

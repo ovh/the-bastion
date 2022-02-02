@@ -1,12 +1,15 @@
-=========================
-osh-piv-grace-reaper.conf
-=========================
+=================================
+osh-cleanup-guest-key-access.conf
+=================================
 
  .. note::
 
-   This script is called by cron and is responsible for removing temporary
-   grace periods on PIV policies, once they expire. If you don't use PIV keys,
-   this script won't do anything (see :doc:`/using/piv`).
+   This script is called by cron and is responsible for cleaning up dangling
+   accesses to group keys for group guests that no longer have access to any
+   server of the group. This happens when the last access a guest have on a
+   group has a TTL, and this TTL expires.
+   This is a basic background task of The Bastion, hence there is not much
+   to configure. You can still disable this script below, if needs be.
 
 Option List
 ===========

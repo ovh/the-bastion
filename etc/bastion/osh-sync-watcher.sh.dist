@@ -1,12 +1,18 @@
-###################################################################
-## Config for /opt/bastion/bin/admin/osh-sync-watcher.sh, the daemon
-## responsible for ensuring secondaries bastions are kept up to date
-## from the primary.
+###############################################################################
+## Config for ``bin/admin/osh-sync-watcher.sh``
 ## As it'll be sourced, THIS FILE MUST BE A VALID SHELL SCRIPT.
-###################################################################
+##
+#@ .. note::
+#@
+#@    This daemon is responsible for ensuring secondary bastions
+#@    are synced up to their primary at all times.
+#@    If you don't have such HA setup, you can ignore this config file.
+#@    For more information, refer to
+#@    :ref:`installation/advanced:clustering (high availability)`.
+###############################################################################
 #
 # > Logging
-# >> These options configure the way the daemon logs its actions
+# >> These options configure the way the script logs its actions
 #
 # logdir (string)
 #    DESC: Directory where the logs will be written to. Note that using this configuration option, the script will directly write to a file, without using syslog. If empty, won't log directly to a file.

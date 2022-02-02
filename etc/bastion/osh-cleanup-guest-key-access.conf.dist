@@ -1,17 +1,24 @@
 ###############################################################################
-#@ Config for /opt/bastion/bin/cron/osh-cleanup-guest-key-access.pl
-#@ This is a JSON file.
+## Config for ``bin/cron/osh-cleanup-guest-key-access.pl``
 ##
-## This script is called by cron and is responsible for cleaning up dangling
-## accesses to group keys for group guests that no longer have access to any
-## server of the group. This happens when the last access a guest have on a
-## group has a TTL, and this TTL expires.
-## This is a basic background task of The Bastion, hence there is not much
-## to configure. You can still disable this script below, if needs be.
+## This is a JSON file, to verify its syntax:
+## > grep -v ^# /etc/bastion/osh-cleanup-guest-key-access.conf|python -mjson.tool>/dev/null && echo OK
+##
+## You can also verify that the code can load the configuration file:
+## > perl -I/opt/bastion/lib/perl -MOVH::Bastion -e 'die OVH::Bastion::load_configuration_file(file => "/etc/bastion/osh-cleanup-guest-key-access.conf")'
+##
+#@ .. note::
+#@
+#@   This script is called by cron and is responsible for cleaning up dangling
+#@   accesses to group keys for group guests that no longer have access to any
+#@   server of the group. This happens when the last access a guest have on a
+#@   group has a TTL, and this TTL expires.
+#@   This is a basic background task of The Bastion, hence there is not much
+#@   to configure. You can still disable this script below, if needs be.
 ###############################################################################
 {
-# > Logging
-# >> These options configure the way the script logs its actions
+# > Logging & activation
+# >> Script logging configuration and script activation
 #
 # syslog_facility (string)
 #    DESC: The syslog facility to use for logging the script output.
@@ -20,9 +27,6 @@
 #          the default value will be used (local6), which means that we'll log to syslog.
 # DEFAULT: local6
 "syslog_facility": "local6",
-#
-# > Behaviour
-# >> These options govern the behaviour of the script
 #
 # enabled (bool)
 #    DESC: If not set to `true` (or a true value), the script will not run.

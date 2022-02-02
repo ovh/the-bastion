@@ -1,35 +1,58 @@
-######################################################################
-## Config for /opt/bastion/bin/cron/osh-backup-acl-keys.sh, the script
-## responsible for backing up the needed files to be able to rebuild
-## this bastion from scratch.
+###############################################################################
+## Config for ``bin/cron/osh-backup-acl-keys.sh``
 ##
-## Any file in /etc/bastion/osh-backup-acl-keys.conf.d will also be
+## Any file in ``/etc/bastion/osh-backup-acl-keys.conf.d`` will also be
 ## sourced, in alphabetical order, and take precedence over any
 ## option specified in this file.
 ##
-## Please ensure this file is only readable by root.
+## Please ensure this file is owned by root and readable by root only.
 ##
 ## As it'll be sourced, THIS FILE MUST BE A VALID SHELL SCRIPT.
-######################################################################
+##
+#@ .. note::
+#@
+#@    This script is called by cron and is responsible
+#@    for backing up the bastion configuration, users & groups lists,
+#@    credentials, and everything needed to be able to restore a functioning
+#@    bastion from scratch.
+#@
+#@ .. warning::
+#@
+#@    If left unconfigured, this script won't do anything,
+#@    and you won't have backups, unless this task is handled by
+#@    some other external system.
+###############################################################################
 #
-# > Logging
-# >> These options configure the way the script logs its actions
+# > Logging & activation
+# >> Script logging configuration and script activation
 #
 # LOGFILE (string, path to a file)
-#    DESC: File where the logs will be written to (don't forget to configure ``logrotate``!). Note that using this configuration option, the script will directly write to the file, without using syslog. If empty, won't log directly to any file.
+#    DESC: File where the logs will be written to (don't forget to configure ``logrotate``!).
+#          Note that using this configuration option, the script will directly write to the file, without using syslog.
+#          If empty, won't log directly to any file.
 # DEFAULT: ""
 LOGFILE=""
 #
 # LOG_FACILITY (string)
-#    DESC: The syslog facility to use for logging the script output. If set to the empty string, we'll not log through syslog at all. If this configuration option is missing from your config file altogether, the default value will be used (local6), which means that we'll log to syslog.
+#    DESC: The syslog facility to use for logging the script output.
+#          If set to the empty string, we'll not log through syslog at all.
+#          If this configuration option is missing from your config file altogether,
+#          the default value will be used (local6), which means that we'll log to syslog.
 # DEFAULT: "local6"
 LOG_FACILITY="local6"
+#
+# ENABLED (0 or 1)
+#    DESC: If set to 1, the script is enabled and will run when started by crond.
+# DEFAULT: 1
+ENABLED=1
 #
 # > Backup policy
 # >> These options configure the backup policy to apply
 #
 # DESTDIR (path to a folder)
-#    DESC: Folder where to put the backup artefacts (``.tar.gz`` files). This folder will be created if needed. If empty or omitted, the script won't run: this option is mandatory.
+#    DESC: Folder where to put the backup artefacts (``.tar.gz`` files).
+#          This folder will be created if needed. If empty or omitted,
+#          the script won't run: this option is mandatory.
 # EXAMPLE: "/root/backups"
 # DEFAULT: ""
 DESTDIR=""
@@ -43,18 +66,23 @@ DAYSTOKEEP=90
 # >> These options configure how the script uses GPG to encrypt and sign the ttyrec files
 #
 # GPGKEYS (string, space-separated list of GPG keys IDs)
-#    DESC: List of public GPG keys to encrypt to (see ``gpg --list-keys``), these must be separated by spaces. Note that if this option is empty or omitted, backup artefacts will NOT be encrypted!
+#    DESC: List of public GPG keys to encrypt to (see ``gpg --list-keys``), these must be separated by spaces.
+#          Note that if this option is empty or omitted, backup artefacts will NOT be encrypted!
 # EXAMPLE: "41FDB9C7 DA97EFD1 339483FF"
 # DEFAULT: ""
 GPGKEYS=""
 #
 # SIGNING_KEY (string, GPG key ID in short or long format)
-#    DESC: ID of the GPG key used to sign the ttyrec files. The key must be in the local root keyring, check it with ``gpg --list-secret-keys``. If empty, the archives will not be signed, but encrypted only (using the GPGKEYS configuration above).
+#    DESC: ID of the GPG key used to sign the ttyrec files.
+#          The key must be in the local root keyring, check it with ``gpg --list-secret-keys``.
+#          If empty, the archives will not be signed, but encrypted only (using the GPGKEYS configuration above).
 # DEFAULT: (none)
 SIGNING_KEY=""
 #
 # SIGNING_KEY_PASSPHRASE (string)
-#    DESC: This passphrase should be able to unlock the SIGNING_KEY defined above. As a side note, please ensure this configuration file only readable by root (0640), to protect this passphrase. As a security measure, the script will refuse to read the configuration otherwise.
+#    DESC: This passphrase should be able to unlock the SIGNING_KEY defined above.
+#          Please ensure this configuration file only readable by root (0640), to protect this passphrase.
+#          As a security measure, the script will refuse to read the configuration otherwise.
 # DEFAULT: (none)
 SIGNING_KEY_PASSPHRASE=""
 #
@@ -62,8 +90,12 @@ SIGNING_KEY_PASSPHRASE=""
 # >> These options configure how the script should push the encrypted backups to a remote system
 #
 # PUSH_REMOTE (string)
-#    DESC: The ``scp`` remote host push backups to. If empty or missing, won't push backups. This will also be the case if the ``GPGKEYS`` option above is empty or missing, because we will never push unencrypted backups. Don't forget to put a trailing ``/`` (except if you want to push to the remote ``$HOME``, in which case ending with a simple ``:`` works, as per standard ``scp``).
-# EXAMPLE: "push@1.2.3.4:~/backup/"
+#    DESC: The ``scp`` remote host push backups to. If empty or missing, won't push backups.
+#          This will also be the case if the ``GPGKEYS`` option above is empty or missing,
+#          because we will never push unencrypted backups.
+#          Don't forget to put a trailing ``/`` (except if you want to push to the remote ``$HOME``,
+#          in which case ending with a simple ``:`` works, as per standard ``scp``).
+# EXAMPLE: "push@192.0.2.4:~/backup/"
 # DEFAULT: ""
 PUSH_REMOTE=""
 #

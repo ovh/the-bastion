@@ -39,20 +39,17 @@ while (<STDIN>) {
     printf STDERR "%9s line=%s", $state, $_ if $ENV{'DEBUG'};
     next if /^\s*$/;
     if ($state eq 'start') {
-        if (m{^## (.+)}) {
-            push @header, "   $1";
+        if (m{^###}) {
+            $state = '' if @header;
         }
-        elsif (m{^###} && @header) {
-            $state = '';
-        }
-        else {
-            next;
+        elsif (m{^#@(.*)$}) {
+            push @header, $1;
         }
     }
     elsif (m{^# ([a-zA-Z0-9_]+) \((.+)\)}) {
         $h{param} = $1;
         $h{type}  = $2;
-        $state = 'name';
+        $state    = 'name';
     }
     elsif (m{^#\s+DESC:\s+(.+)$}) {
         $h{desc} = $1;
@@ -102,19 +99,9 @@ if (open(my $fh, "<", "$FindBin::Bin/../sphinx-reference-headers/$document.heade
 elsif (@header) {
     print "=" x length($document) . "\n";
     print "$document\n";
-    print "=" x length($document) . "\n";
-    print <<'EOF';
-
-.. note::
-
-EOF
+    print "=" x length($document) . "\n\n";
     print join("\n", @header);
-    print <<'EOF';
-
-
-Option List
-===========
-EOF
+    print "\n\nOption List\n===========\n";
 }
 else {
     print STDERR "No header found in '$FindBin::Bin/../sphinx-reference-headers/$document.header'\n";

@@ -2,27 +2,30 @@
 osh-backup-acl-keys.conf
 ========================
 
-.. note::
+ .. note::
 
-   The osh-backup-acl-keys script is called by cron and is responsible for backing up
-   the bastion configuration, users & groups lists, credentials, and everything needed
-   to be able to restore a functioning bastion from scratch.
+    This script is called by cron and is responsible
+    for backing up the bastion configuration, users & groups lists,
+    credentials, and everything needed to be able to restore a functioning
+    bastion from scratch.
 
-.. warning::
+ .. warning::
 
-   If left unconfigured, this script won't do anything, and you won't have backups,
-   unless this task is handled by some other external system.
+    If left unconfigured, this script won't do anything,
+    and you won't have backups, unless this task is handled by
+    some other external system.
 
 Option List
 ===========
 
-Logging options
----------------
+Logging & activation options
+----------------------------
 
-These options configure the way the script logs its actions
+Script logging configuration and script activation
 
 - `LOGFILE`_
 - `LOG_FACILITY`_
+- `ENABLED`_
 
 Backup policy options
 ---------------------
@@ -52,8 +55,8 @@ These options configure how the script should push the encrypted backups to a re
 Option Reference
 ================
 
-Logging
--------
+Logging & activation
+--------------------
 
 LOGFILE
 *******
@@ -62,7 +65,9 @@ LOGFILE
 
 :Default: ``""``
 
-File where the logs will be written to (don't forget to configure ``logrotate``!). Note that using this configuration option, the script will directly write to the file, without using syslog. If empty, won't log directly to any file.
+File where the logs will be written to (don't forget to configure ``logrotate``!).
+Note that using this configuration option, the script will directly write to the file, without using syslog.
+If empty, won't log directly to any file.
 
 LOG_FACILITY
 ************
@@ -71,7 +76,19 @@ LOG_FACILITY
 
 :Default: ``"local6"``
 
-The syslog facility to use for logging the script output. If set to the empty string, we'll not log through syslog at all. If this configuration option is missing from your config file altogether, the default value will be used (local6), which means that we'll log to syslog.
+The syslog facility to use for logging the script output.
+If set to the empty string, we'll not log through syslog at all.
+If this configuration option is missing from your config file altogether,
+the default value will be used (local6), which means that we'll log to syslog.
+
+ENABLED
+*******
+
+:Type: ``0 or 1``
+
+:Default: ``1``
+
+If set to 1, the script is enabled and will run when started by crond.
 
 Backup policy
 -------------
@@ -85,7 +102,9 @@ DESTDIR
 
 :Example: ``"/root/backups"``
 
-Folder where to put the backup artefacts (``.tar.gz`` files). This folder will be created if needed. If empty or omitted, the script won't run: this option is mandatory.
+Folder where to put the backup artefacts (``.tar.gz`` files).
+This folder will be created if needed. If empty or omitted,
+the script won't run: this option is mandatory.
 
 DAYSTOKEEP
 **********
@@ -108,7 +127,8 @@ GPGKEYS
 
 :Example: ``"41FDB9C7 DA97EFD1 339483FF"``
 
-List of public GPG keys to encrypt to (see ``gpg --list-keys``), these must be separated by spaces. Note that if this option is empty or omitted, backup artefacts will NOT be encrypted!
+List of public GPG keys to encrypt to (see ``gpg --list-keys``), these must be separated by spaces.
+Note that if this option is empty or omitted, backup artefacts will NOT be encrypted!
 
 SIGNING_KEY
 ***********
@@ -117,7 +137,9 @@ SIGNING_KEY
 
 :Default: ``(none)``
 
-ID of the GPG key used to sign the ttyrec files. The key must be in the local root keyring, check it with ``gpg --list-secret-keys``. If empty, the archives will not be signed, but encrypted only (using the GPGKEYS configuration above).
+ID of the GPG key used to sign the ttyrec files.
+The key must be in the local root keyring, check it with ``gpg --list-secret-keys``.
+If empty, the archives will not be signed, but encrypted only (using the GPGKEYS configuration above).
 
 SIGNING_KEY_PASSPHRASE
 **********************
@@ -126,7 +148,9 @@ SIGNING_KEY_PASSPHRASE
 
 :Default: ``(none)``
 
-This passphrase should be able to unlock the SIGNING_KEY defined above. As a side note, please ensure this configuration file only readable by root (0640), to protect this passphrase. As a security measure, the script will refuse to read the configuration otherwise.
+This passphrase should be able to unlock the SIGNING_KEY defined above.
+Please ensure this configuration file only readable by root (0640), to protect this passphrase.
+As a security measure, the script will refuse to read the configuration otherwise.
 
 Remote backup
 -------------
@@ -138,9 +162,13 @@ PUSH_REMOTE
 
 :Default: ``""``
 
-:Example: ``"push@1.2.3.4:~/backup/"``
+:Example: ``"push@192.0.2.4:~/backup/"``
 
-The ``scp`` remote host push backups to. If empty or missing, won't push backups. This will also be the case if the ``GPGKEYS`` option above is empty or missing, because we will never push unencrypted backups. Don't forget to put a trailing ``/`` (except if you want to push to the remote ``$HOME``, in which case ending with a simple ``:`` works, as per standard ``scp``).
+The ``scp`` remote host push backups to. If empty or missing, won't push backups.
+This will also be the case if the ``GPGKEYS`` option above is empty or missing,
+because we will never push unencrypted backups.
+Don't forget to put a trailing ``/`` (except if you want to push to the remote ``$HOME``,
+in which case ending with a simple ``:`` works, as per standard ``scp``).
 
 PUSH_OPTIONS
 ************

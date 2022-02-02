@@ -1,19 +1,23 @@
-################################################################################
-## Config for /opt/bastion/bin/cron/osh-lingering-sessions-reaper.sh, the script
-## responsible for terminating lingering sessions that no longer have any tty
-## attached nor parent PID.
+###############################################################################
+## Config for ``bin/cron/osh-lingering-sessions-reaper.sh``
 ##
-## Any file in /etc/bastion/osh-lingering-sessions-reaper.conf.d will also be
+## Any file in ``/etc/bastion/osh-lingering-sessions-reaper.conf.d`` will also be
 ## sourced, in alphabetical order, and take precedence over any
 ## option specified in this file.
 ##
-## Please ensure this file is only readable by root.
+## Please ensure this file is owned by root and not world-writable.
 ##
 ## As it'll be sourced, THIS FILE MUST BE A VALID SHELL SCRIPT.
-################################################################################
+##
+#@ .. note::
+#@
+#@    This script is called by cron and is responsible for terminating
+#@    lingering sessions that no longer have any tty attached nor parent PID,
+#@    and have been running for some time.
+###############################################################################
 #
-# > Logging
-# >> These options configure the way the script logs its actions
+# > Logging & activation
+# >> Script logging configuration and script activation
 #
 # LOGFILE (string, path to a file)
 #    DESC: File where the logs will be written to (don't forget to configure ``logrotate``!).
@@ -30,20 +34,17 @@ LOGFILE=""
 # DEFAULT: "local6"
 LOG_FACILITY="local6"
 #
-# > Behavior
-# >> These options govern the behavior of the script
-#
 # ENABLED (0 or 1)
-#    DESC: If set to 1, the script is enabled and will terminate lingering sessions that no longer have any
-#          tty attached nor parent PID, and have been running for more than MAX_AGE seconds. Note that this only
-#          removes orphan sessions that no longer seem to be attached to any client. Still alive sessions, even
-#          if older than MAX_AGE seconds, will be kept.
-#          If set to anything else, the script is considered disabled and will not run.
+#    DESC: If set to 1, the script is enabled and will run when started by crond.
 # DEFAULT: 1
 ENABLED=1
 #
+# > Main
+# >> These options govern the behavior of the script
+#
 # MAX_AGE (int >= 0)
-#    DESC: The minimum number of seconds a session must have been opened before being considered as possibly
-#          a lingering orphan session.
+#    DESC: The minimum number of seconds a session must have been opened before
+#          being considered as possibly a lingering orphan session.
+#          Still alive sessions, even older than MAX_AGE seconds, will be kept.
 # DEFAULT: 86400
 MAX_AGE=86400
