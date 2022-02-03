@@ -170,10 +170,10 @@ if (OVH::Bastion::is_auditor(account => $self)) {
         }
         else {
             $ret{'creation_information'} = $creation_info;
-            if ($creation_info->{'time_utc'}) {
-                my $createdOnStr = $creation_info->{'time_utc'};
-                if ($creation_info->{'time_local'} && $creation_info->{'time_utc'} ne $creation_info->{'time_local'}) {
-                    $createdOnStr .= " / " . $creation_info->{'time_local'};
+            if ($creation_info->{'datetime_utc'}) {
+                my $createdOnStr = $creation_info->{'datetime_utc'};
+                if ($creation_info->{'datetime_local'} && $creation_info->{'datetime_utc'} ne $creation_info->{'datetime_local'}) {
+                    $createdOnStr .= " / " . $creation_info->{'datetime_local'};
                 }
                 $createdOnStr = sprintf(
                     "Created on %s (%s ago)",
