@@ -1,3 +1,14 @@
+## v3.09.00 - 2022/02/09
+- feat: osh-encrypt-rsync.pl: handle sqlite and user logs along with ttyrec files
+- remove: compress-old-logs.sh script, as osh-encrypt-rsync does the job now
+- feat: add osh-cleanup-guest-key-access.pl script
+- feat: add NRPE probes in contrib/
+- enh: cron scripts: factorize common code and standardize logging & config
+- fix: accountInfo: missing creation date on non-json output
+- fix: osh-remove-empty-folders: fix folders counting (logging only)
+- doc: better menu organization and more complete config files reference
+- chore: remove CentOS 8 from tests, as it is now EOL (RockyLinux 8 is supported)
+
 ## v3.08.01 - 2022/01/19
 - feat: add osh-remove-empty-folders.sh script
 - enh: better errror detection and logging in accountDelete & groupDelete

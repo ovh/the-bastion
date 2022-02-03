@@ -27,6 +27,34 @@ See the ``--help`` for a more fine-grained upgrade path if needed.
 Version-specific upgrade instructions
 =====================================
 
+v3.09.00 - 2022/02/09
+*********************
+
+This version updates are merely around the satellite system scripts instead of the main code itself.
+
+- The ``osh-encrypt-rsync.pl`` script now also handles the account's access log and sql logs,
+  in addition to the ttyrec files.
+  A number of new options have been added to this script's config file, these options have sane defaults but you
+  might still want to review those, namely `encrypt_and_move_user_logs_delay_days <https://ovh.github.io/the-bastion/administration/configuration/osh-encrypt-rsync_conf.html#encrypt-and-move-user-logs-delay-days>`_
+  and `encrypt_and_move_user_sqlites_delay_days <https://ovh.github.io/the-bastion/administration/configuration/osh-encrypt-rsync_conf.html#encrypt-and-move-user-sqlites-delay-days>`_.
+
+- As a result of the previous feature, the ``compress-old-logs.sh`` script has been retired.
+
+- A new script, ``osh-cleanup-guest-key-access.pl``, has been added. It is enabled by default, though it can
+  be disabled if you have a good reason to do so. Please refer to its `documentation <https://ovh.github.io/thge-bastion/administration/configuration/osh-cleanup-guest-key-access_conf.html>`_ for more
+  information.
+
+- All scripts that are automatically run by cron and reside under the ``bin/cron`` subfolder now have their own
+  configuration file in ``/etc/bastion``, even for simple scripts that only have two configuration knobs: their
+  logging facility and whether they should be enabled or not. It is now recommended to use these configuration knobs
+  to disable the scripts you don't want to see running, instead of removing their corresponding file in the
+  ``/etc/cron.d`` folder, as any future update of the bastion would install them back.
+
+- The logging format has been standardized across these scripts, to ensure the newly included NRPE probes can detect
+  errors in the scripts more easily. By default the logs are going through syslog, using the ``local6`` facility,
+  which ends up in the ``/var/log/bastion/bastion-scripts.log`` folder if you're using our stock ``syslog-ng``
+  configuration. The NRPE probes are available in the ``contrib/nrpe`` directory.
+
 v3.08.01 - 2022/01/19
 *********************
 
