@@ -33,7 +33,7 @@ The following Linux distros are tested with each release, but as this is a secur
 you are *warmly* advised to run it on the latest up-to-date stable version of your favorite OS:
 
 - Debian 11 (Bullseye), Debian 10 (Buster), 9 (Stretch)
-- RHEL/CentOS 8.x, 7.x
+- CentOS 7.x
 - RockyLinux 8.x
 - Ubuntu LTS 20.04, 18.04, 16.04
 - OpenSUSE Leap 15.3\*

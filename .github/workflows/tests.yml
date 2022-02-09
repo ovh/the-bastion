@@ -34,7 +34,7 @@ jobs:
         name: Full
         strategy:
             matrix:
-                platform: [centos7, centos8, rockylinux8, debian9, debian10, debian11, 'opensuse15@opensuse/leap:15.3', ubuntu1604, ubuntu1804, ubuntu2004]
+                platform: [centos7, rockylinux8, debian9, debian10, debian11, 'opensuse15@opensuse/leap:15.3', ubuntu1604, ubuntu1804, ubuntu2004]
         runs-on: ubuntu-latest
         if: contains(github.event.pull_request.labels.*.name, 'tests:full')
         steps:
