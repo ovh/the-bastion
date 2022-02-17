@@ -595,4 +595,84 @@ sub is_in_path {
     return R('KO', msg => "$binary was not found in PATH");
 }
 
+# as setpwent/endpwent can have side effects to any getpwent used between
+# them, possibly in other parts of the program, encapsulate everything here
+# to avoid side effects
+sub sys_getent_pw {
+    my %params = @_;
+    my $cache  = $params{'cache'};
+    state $cached_response;
+
+    if ($cache && $cached_response) {
+        return $cached_response;
+    }
+
+    my @all;
+
+    # end/set: for some reason, if we don't end() before set(), there seem
+    # to be a cache somewhere, and we get entries that have been
+    # deleted (milli)seconds before. This behaviour is undocumented, as set()
+    # is supposed to reset the pointer, and a no mention of a cache is done
+    # anywhere. Luckily, pPrepending the set() with an end() seems to
+    # reliably fix the issue on all tested OSes.
+    endpwent();
+    setpwent();
+    while (my @line = getpwent()) {
+        push @all,
+          {
+            name    => $line[0],
+            passwd  => $line[1],
+            uid     => $line[2],
+            gid     => $line[3],
+            quota   => $line[4],
+            comment => $line[5],
+            gcos    => $line[6],
+            dir     => $line[7],
+            shell   => $line[8],
+            expire  => $line[9],
+          };
+    }
+    endpwent();
+
+    $cached_response = R('OK', value => \@all);
+    return $cached_response;
+}
+
+# as setgrent/endgrent can have side effects to any getgrent used between
+# them, possibly in other parts of the program, encapsulate everything here
+# to avoid side effects
+sub sys_getent_gr {
+    my %params = @_;
+    my $cache  = $params{'cache'};
+    state $cached_response;
+
+    if ($cache && $cached_response) {
+        return $cached_response;
+    }
+
+    my @all;
+
+    # end/set: for some reason, if we don't end() before set(), there seem
+    # to be a cache somewhere, and we get entries that have been
+    # deleted (milli)seconds before. This behaviour is undocumented, as set()
+    # is supposed to reset the pointer, and a no mention of a cache is done
+    # anywhere. Luckily, pPrepending the set() with an end() seems to
+    # reliably fix the issue on all tested OSes.
+    endgrent();
+    setgrent();
+    while (my @line = getgrent()) {
+        push @all,
+          {
+            name    => $line[0],
+            passwd  => $line[1],
+            gid     => $line[2],
+            members => [split(/ /, $line[3])],
+          };
+    }
+    endgrent();
+
+    $cached_response = R('OK', value => \@all);
+    return $cached_response;
+}
+
 1;

@@ -6,61 +6,64 @@ use common::sense;
 
 use Time::Piece;    # $t->strftime
 
-# used to speedup extensive calls to is_user_in_group() and is_group_existing(),
-# if our caller allows us:
-my %_cache_getgrnam;
-
-# Check if user belongs to a specific group
+# Check if a system user belongs to a specific system group
 sub is_user_in_group {
     my %params = @_;
     my $group  = $params{'group'};
     my $user   = $params{'user'} || OVH::Bastion::get_user_from_env()->value;
-    my $cache  = $params{'cache'};                                              # if true, allow cache use from potential previous calls
+    my $cache  = $params{'cache'};                                              # if true, allow cache use of sys_getent_gr()
 
     # mandatory keys
     if (!$user || !$group) {
         return R('ERR_MISSING_PARAMETER', msg => "Missing parameter 'user' or 'group'");
     }
 
-    # if we're not allowed to use cache, call getgrnam() in all cases.
-    # if we're allowed to use it; only call getgrnam() if we have no cache for this group
-    if (!$cache || (!$_cache_getgrnam{$group} || ref $_cache_getgrnam{$group} ne 'ARRAY')) {
-        $_cache_getgrnam{$group} = [(getgrnam($group))];
+    # try to use sys_getent_gr()'s cache is available and allowed by caller.
+    # we loop through all the system groups to find the proper one, then
+    # check whether $user appears in the member list
+    foreach my $gr (@{OVH::Bastion::sys_getent_gr(cache => $cache)->value}) {
+        next if $gr->{'name'} ne $group;
+        if (grep { $user eq $_ } @{$gr->{'members'} || []}) {
+            return R('OK', value => {account => $user});
+        }
+        else {
+            return R('KO_NOT_IN_GROUP', msg => "Account $user doesn't belong to the group $group");
+        }
     }
-    my ($groupname, $passwd, $gid, $members) = @{$_cache_getgrnam{$group}};
-    my @membersList = split / /, $members;
-
-    if (grep { $user eq $_ } @membersList) {
-        return R('OK', value => {account => $user});
-    }
-    return R('KO_NOT_IN_GROUP', msg => "Account $user doesn't belong to the group $group");
+    return R('KO_GROUP_NOT_FOUND', msg => "The group $group doesn't exist");
 }
 
-# does this group exist ?
-# uses %_cache_getgrnam defined above
+# does this system group exist ? if it happens to be mapped to a bastion group,
+# also return the corresponding "shortGroup" (with the "key" prefix removed)
 sub is_group_existing {
-    my %params = @_;
-    my $group  = $params{'group'};
-    my $cache  = $params{'cache'};    # if true, allow cache use from potential previous calls
+    my %params              = @_;
+    my $group               = $params{'group'};
+    my $cache               = $params{'cache'};                 # if true, allow cache use from potential previous calls
+    my $user_friendly_error = $params{'user_friendly_error'};
 
     if (!$group) {
         return R('ERR_MISSING_PARAMETER', msg => "Missing parameter 'group'");
     }
 
-    # if we're not allowed to use cache, call getgrnam() in all cases.
-    # if we're allowed to use it; only call getgrnam() if we have no cache for this group
-    if (!$cache || (!$_cache_getgrnam{$group} || ref $_cache_getgrnam{$group} ne 'ARRAY')) {
-        $_cache_getgrnam{$group} = [(getgrnam($group))];
-    }
-    my ($groupname, $passwd, $gid, $members) = @{$_cache_getgrnam{$group}};
-    if ($groupname) {
+    # try to use sys_getent_gr()'s cache is available and allowed by caller.
+    # we loop through all the system groups to find the proper one
+    foreach my $gr (@{OVH::Bastion::sys_getent_gr(cache => $cache)->value}) {
+        next if $gr->{'name'} ne $group;
         my (undef, $shortGroup) = $group =~ m{^(key)?(.+)};
-        return R('OK', value => {group => $group, shortGroup => $shortGroup, gid => $gid, keyhome => "/home/keykeeper/$group", members => [split(/ /, $members)]});
+        return R(
+            'OK',
+            value => {
+                group      => $group,
+                shortGroup => $shortGroup,
+                gid        => $gr->{'gid'},
+                keyhome    => "/home/keykeeper/$group",
+                members    => $gr->{'members'},
+            }
+        );
     }
 
-    if ($params{'user_friendly_error'}) {
-
-        # build a user-compatible error message, as it can make its way through osh_exit()
+    # build a user-compatible error message if asked to, as it can make its way through osh_exit()
+    if ($user_friendly_error) {
         $group =~ s/^key//;
         return R('KO_GROUP_NOT_FOUND', msg => "The bastion group '$group' doesn't exist.\nYou may use groupList --all to see all existing groups.");
     }
@@ -244,42 +247,52 @@ sub is_account_valid {
     return R('ERR_IMPOSSIBLE_CASE');
 }
 
-# check that this account is present on the bastion
-# it also returns untainted data, including splitting by realm where applicable
-my %_cache_getpwnam;
-
 sub is_account_existing {
     my %params            = @_;
     my $account           = $params{'account'};
-    my $checkBastionShell = $params{'checkBastionShell'};    # check if this account is a bastion user
-    my $cache             = $params{'cache'};                # allow cache use to speedup commands that don't modify accounts but may call us extensively, i.e. groupList
+    my $checkBastionShell = $params{'checkBastionShell'};                                                             # check if this account is a bastion user
+    my $cache             = $params{'cache'};                                                                         # allow cache use
 
     if (!$account) {
         return R('ERR_MISSING_PARAMETER', msg => "Missing parameter 'account'");
     }
 
-    # if we're not allowed to use cache, call getpwnam() in all cases.
-    # if we're allowed to use it; only call getpwnam() if we have no cache for this account
-    if (!$cache || (!$_cache_getpwnam{$account} || ref $_cache_getpwnam{$account} ne 'ARRAY')) {
-        $_cache_getpwnam{$account} = [(getpwnam($account))];
-    }
-    my ($name, $passwd, $uid, $gid, $quota, $comment, $gcos, $dir, $shell, $expire) = @{$_cache_getpwnam{$account}};
+    my %entry;
     if (OVH::Bastion::is_mocking()) {
-        ($name, $passwd, $uid, $gid, $gcos, $dir, $shell) = OVH::Bastion::mock_get_account_entry(account => $account);
+        my @fields = OVH::Bastion::mock_get_account_entry(account => $account);
+        %entry = (
+            name   => $fields[0],
+            passwd => $fields[1],
+            uid    => $fields[2],
+            gid    => $fields[3],
+            gcos   => $fields[4],
+            dir    => $fields[5],
+            shell  => $fields[6],
+        );
     }
-    if ($name) {
-        my ($newname) = $name =~ m{([a-zA-Z0-9._-]+)};
-        return R('ERR_SECURITY_VIOLATION', msg => "Forbidden characters in account name") if ($newname ne $name);
-        $name = $newname;    # untaint
+    else {
+        # try to use sys_getent_pw()'s cache is available and allowed by caller.
+        # we loop through all the system accounts to find the proper one
+        foreach my $pw (@{OVH::Bastion::sys_getent_pw(cache => $cache)->value}) {
+            next if $pw->{'name'} ne $account;
+            %entry = %$pw;
+            last;
+        }
+    }
 
-        if ($checkBastionShell && $shell ne $OVH::Bastion::BASEPATH . "/bin/shell/osh.pl") {
+    if (%entry) {
+        my ($newname) = $entry{'name'} =~ m{([a-zA-Z0-9._-]+)};
+        return R('ERR_SECURITY_VIOLATION', msg => "Forbidden characters in account name") if ($newname ne $entry{'name'});
+        $entry{'name'} = $newname;    # untaint
+
+        if ($checkBastionShell && $entry{'shell'} ne $OVH::Bastion::BASEPATH . "/bin/shell/osh.pl") {
             return R('KO_NOT_FOUND', msg => "Account '$account' doesn't exist");    # msg is the same as below, voluntarily
         }
 
-        my ($newdir) = $dir =~ m{([/a-zA-Z0-9._-]+)};                               # untaint
-        return R('ERR_SECURITY_VIOLATION', msg => "Forbidden characters in account home directory") if ($newdir ne $dir);
-        $dir = $newdir;                                                             # untaint
-        return R('OK', value => {uid => $uid, gid => $gid, dir => $dir, account => $name});
+        my ($newdir) = $entry{'dir'} =~ m{([/a-zA-Z0-9._-]+)};                      # untaint
+        return R('ERR_SECURITY_VIOLATION', msg => "Forbidden characters in account home directory") if ($newdir ne $entry{'dir'});
+        $entry{'dir'} = $newdir;                                                    # untaint
+        return R('OK', value => {uid => $entry{'uid'}, gid => $entry{'gid'}, dir => $entry{'dir'}, account => $entry{'name'}});
     }
     return R('KO_NOT_FOUND', msg => "Account '$account' doesn't exist");
 }
@@ -722,97 +735,114 @@ sub add_user_to_group {
     return R('OK');
 }
 
-my %_cache_get_group_list;
-
+# return the list of the bastion groups (i.e. not the system group list)
 sub get_group_list {
-    my %params    = @_;
-    my $groupType = $params{'groupType'};
-    my $cache     = $params{'cache'};       # if true, allow cache use
+    my %params = @_;
+    my $cache  = $params{'cache'};    # if true, allow cache use
+    state $cached_response;
 
-    if ($cache and $_cache_get_group_list{$groupType}) {
-        return $_cache_get_group_list{$groupType};
+    # if we've been called before and can use the cache, just return it
+    if ($cache and $cached_response) {
+        return $cached_response;
     }
 
     my %groups;
-    setgrent();
-    while (my @nextgroup = getgrent()) {
-        my ($name, $passwd, $gid, $members) = @nextgroup;
 
-        # also be nice and fill this cache for our sibling funcs
-        $_cache_getgrnam{$name} = \@nextgroup;
-        if (    $groupType eq 'key'
-            and $name =~ /^key/
-            and $name !~ /-(?:owner|gatekeeper|aclkeeper)$/
-            and not grep { $name eq $_ } qw{ keykeeper keyreader })
+    # sys_getent_gr() might have been called before, and has its own cache,
+    # so also try to use its cache if allowed and available.
+    # we loop through all the system groups and only retain those starting
+    # with "key", and not finishing in -owner, -gatekeeper or -aclkeeper.
+    # we also exclude special builtin groups (keykeeper and keyreader)
+    foreach my $gr (@{OVH::Bastion::sys_getent_gr(cache => $cache)->value}) {
+        if (   $gr->{'name'} =~ /^key/
+            && $gr->{'name'} !~ /-(?:owner|gatekeeper|aclkeeper)$/
+            && !grep { $gr->{'name'} eq $_ } qw{ keykeeper keyreader })
         {
-            $name =~ s/^key//;
-            $groups{$name} = {gid => $gid, members => [split(/ /, $members)]} if ($name ne '');
+            $gr->{'name'} =~ s/^key//;
+            $groups{$gr->{'name'}} = {gid => $gr->{'gid'}, members => $gr->{'members'}} if ($gr->{'name'} ne '');
         }
     }
-    $_cache_get_group_list{$groupType} = R('OK', value => \%groups);
-    return $_cache_get_group_list{$groupType};
+    $cached_response = R('OK', value => \%groups);
+    return $cached_response;
 }
 
+# return the list of bastion accounts (i.e. not the system user list)
 sub get_account_list {
     my %params   = @_;
     my $accounts = $params{'accounts'} || [];
     my $cache    = $params{'cache'};            # if true, allow cache use
     state $cached_response;
 
-    if ($cache and $cached_response) {
+    # if we've been called before and can use the cache, just return it
+    # don't do it if we're asked to only return a subset of all the accounts
+    if ($cache && $cached_response && !@$accounts) {
         return $cached_response;
     }
 
     my %users;
 
+    # sys_getent_pw() might have been called before, and has its own cache,
+    # so also try to use its cache if allowed and available.
+    # we loop through all the accounts known to the OS
+    foreach my $pw (@{OVH::Bastion::sys_getent_pw(cache => $cache)->value}) {
+
+        # if $accounts has been specified, only consider those
+        next if (@$accounts && !grep { $pw->{'name'} eq $_ } @$accounts);
+
+        # skip invalid accounts
+        next if not OVH::Bastion::is_bastion_account_valid_and_existing(account => $pw->{'name'});
+
+        # add proper accounts, only include a subset of the fields we got
+        $users{$pw->{'name'}} = {name => $pw->{'name'}, gid => $pw->{'gid'}, home => $pw->{'dir'}, shell => $pw->{'shell'}, uid => $pw->{'uid'}};
+    }
+
     if (@$accounts) {
-        foreach (@$accounts) {
-            my ($name, $passwd, $uid, $gid, $quota, $comment, $gcos, $dir, $shell, $expire) = getpwnam($_);
-            next unless OVH::Bastion::is_bastion_account_valid_and_existing(account => $name);
-            $users{$name} = {name => $name, uid => $uid, gid => $gid, home => $dir, shell => $shell};
-        }
+        return R('OK', value => \%users);
     }
     else {
-        setpwent();
-        while (my @nextaccount = getpwent()) {
-            my ($name, $passwd, $uid, $gid, $quota, $comment, $gcos, $dir, $shell, $expire) = @nextaccount;
-
-            # also be nice and fill this cache for our sibling funcs
-            $_cache_getpwnam{$name} = \@nextaccount;
-            next unless OVH::Bastion::is_bastion_account_valid_and_existing(account => $name);
-            $users{$name} = {name => $name, uid => $uid, gid => $gid, home => $dir, shell => $shell};
-        }
+        $cached_response = R('OK', value => \%users);
+        return $cached_response;
     }
-    $cached_response = R('OK', value => \%users);
-    return $cached_response;
 }
 
 sub get_realm_list {
     my %params = @_;
     my $realms = $params{'realms'} || [];
+    my $cache  = $params{'cache'};          # if true, allow cache use
+    state $cached_response;
+
+    # if we've been called before and can use the cache, just return it
+    # don't do it if we're asked to only return a subset of all the accounts
+    if ($cache && $cached_response && !@$realms) {
+        return $cached_response;
+    }
 
     my %users;
 
-    setpwent();
+    # sys_getent_pw() might have been called before, and has its own cache,
+    # so also try to use its cache if allowed and available.
+    # we loop through all the accounts known to the OS
+    foreach my $pw (@{OVH::Bastion::sys_getent_pw(cache => $cache)->value}) {
+
+        # if $realms has been specified, only consider those
+        next if (@$realms && !grep { $pw->{'name'} eq "realm_$_" } @$realms);
+
+        # skip invalid realms
+        next if not OVH::Bastion::is_bastion_account_valid_and_existing(account => $pw->{'name'}, accountType => "realm");
+
+        # add proper realms
+        my $name = $pw->{'name'};
+        $name =~ s{^realm_}{};
+        $users{$name} = {name => $name};
+    }
 
     if (@$realms) {
-        foreach (@$realms) {
-            my ($name, $passwd, $uid, $gid, $quota, $comment, $gcos, $dir, $shell, $expire) = getpwnam("realm_" . $_);
-            next unless OVH::Bastion::is_bastion_account_valid_and_existing(account => $name, accountType => "realm");
-            $name =~ s{^realm_}{};
-            $users{$name} = {name => $name};
-        }
+        return R('OK', value => \%users);
     }
     else {
-        setpwent();
-        while (my ($name, $passwd, $uid, $gid, $quota, $comment, $gcos, $dir, $shell, $expire) = getpwent()) {
-            next unless OVH::Bastion::is_bastion_account_valid_and_existing(account => $name, accountType => "realm");
-            $name =~ s{^realm_}{};
-            $users{$name} = {name => $name};
-        }
+        $cached_response = R('OK', value => \%users);
+        return $cached_response;
     }
-
-    return R('OK', value => \%users);
 }
 
 # check if account is a bastion admin (gives access to adminXyz commands)
