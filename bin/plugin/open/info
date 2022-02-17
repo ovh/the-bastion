@@ -118,9 +118,9 @@ osh_info sprintf("\nI am %s, aka %s", colored(Sys::Hostname::hostname(), 'green'
 $ret{'hostname'}     = Sys::Hostname::hostname();
 $ret{'bastion_name'} = $config->{'bastionName'};
 
-$fnret = OVH::Bastion::get_account_list();
+$fnret = OVH::Bastion::get_account_list(cache => 1);
 my $nbaccounts = $fnret ? keys %{$fnret->value} : '?';
-$fnret = OVH::Bastion::get_group_list(groupType => 'key');
+$fnret = OVH::Bastion::get_group_list(cache => 1);
 my $nbgroups = $fnret ? keys %{$fnret->value} : '?';
 osh_info "I have " . colored($nbaccounts, 'green') . " registered accounts and " . colored($nbgroups, 'green') . " groups";
 $ret{'registered_accounts'} = $nbaccounts;

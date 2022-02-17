@@ -36,7 +36,7 @@ EOF
 
 my $fnret;
 
-$fnret = OVH::Bastion::get_group_list(groupType => "key");
+$fnret = OVH::Bastion::get_group_list();
 $fnret or osh_exit $fnret;
 
 my $includere = OVH::Bastion::build_re_from_wildcards(wildcards => \@includes, implicit_contains => 1)->value;
