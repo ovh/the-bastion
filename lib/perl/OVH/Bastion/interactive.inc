@@ -8,7 +8,7 @@ use POSIX ();
 # autocompletion rules
 my @rules;
 
-sub get_prompt {
+sub _get_prompt {
     my ($self, $bastionName, $slaveOrMaster) = @_;
     my $mfaOk = "";
     if ($ENV{'OSH_PROACTIVE_MFA'}) {
@@ -30,9 +30,9 @@ sub get_prompt {
     return $prompt;
 }
 
-sub get_prompt_non_readline {
+sub _get_prompt_non_readline {
     my %info                = @_;
-    my $prompt_non_readline = get_prompt(%info);
+    my $prompt_non_readline = _get_prompt(%info);
     $prompt_non_readline =~ s=\001|\002==g;
     return $prompt_non_readline;
 }
@@ -195,7 +195,7 @@ EOM
 
             # else, we just print stuff ourselves
             if ($item->{'pr'}) {
-                print "\n" . join("\n", @{$item->{'pr'}}) . "\n" . get_prompt_non_readline($self, $bastionName, $slaveOrMaster) . $line;
+                print "\n" . join("\n", @{$item->{'pr'}}) . "\n" . _get_prompt_non_readline($self, $bastionName, $slaveOrMaster) . $line;
                 return ();
             }
         }
@@ -218,7 +218,7 @@ EOM
 
     my $BASTION_USER = OVH::Bastion::get_user_from_env()->value;
     alarm($interactiveModeTimeout);
-    while (defined(my $line = $term->readline(get_prompt($self, $bastionName, $slaveOrMaster)))) {
+    while (defined(my $line = $term->readline(_get_prompt($self, $bastionName, $slaveOrMaster)))) {
         alarm(0);      # disable timeout
         $line =~ s/^\s+|\s+$//g;
 
