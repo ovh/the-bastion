@@ -223,13 +223,13 @@ osh_info("Backup done");
 osh_info "Removing '$account' group membership from 'keyreader' user";
 $fnret = OVH::Bastion::sys_delmemberfromgroup(user => "keyreader", group => $account);
 if (!$fnret) {
-    warn_syslog("Couldn't delete '$account' group membership from 'keyreader' user, proceeding anyway");
+    warn_syslog("Couldn't delete '$account' group membership from 'keyreader' user ($fnret), proceeding anyway");
     $nbErrors++;
 }
 osh_info "Deleting system user '$account'...";
 $fnret = OVH::Bastion::sys_userdel(user => $account);
 if (!$fnret) {
-    warn_syslog("Couldn't delete system user '$account', proceeding anyway");
+    warn_syslog("Couldn't delete system user '$account' ($fnret), proceeding anyway");
     $nbErrors++;
 }
 
@@ -239,7 +239,7 @@ if ($fnret) {
     osh_info "Deleting account main group '$account'...";
     $fnret = OVH::Bastion::sys_groupdel(group => $account);
     if (!$fnret) {
-        warn_syslog("Couldn't delete account main group '$account', proceeding anyway");
+        warn_syslog("Couldn't delete account main group '$account' ($fnret), proceeding anyway");
         $nbErrors++;
     }
 }
@@ -248,7 +248,7 @@ if (defined $ttygroup) {
     osh_info "Deleting group $ttygroup...";
     $fnret = OVH::Bastion::sys_groupdel(group => $ttygroup);
     if (!$fnret) {
-        warn_syslog("Couldn't delete group '$ttygroup', proceeding anyway");
+        warn_syslog("Couldn't delete group '$ttygroup' ($fnret), proceeding anyway");
         $nbErrors++;
     }
 }
