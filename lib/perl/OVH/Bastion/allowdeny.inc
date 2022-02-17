@@ -340,9 +340,8 @@ sub ip2host {
     return R('OK', value => $host);
 }
 
-# Return an array containing the groups for which user is a member of
-my %_cache_get_user_groups;
-
+# returns a list of the bastion groups (more precisely, the system group names
+# mapped to these groups) a user is member of.
 sub get_user_groups {
     my %params = @_;
     my $user   = $params{'user'} || $params{'account'};
@@ -353,19 +352,16 @@ sub get_user_groups {
         return R('ERR_MISSING_PARAMETER', msg => "Missing parameter 'account'");
     }
 
-    if (not %_cache_get_user_groups) {
-
-        # build cache, it'll be faster than even one exec `id -nG` anyway
-        setgrent();
-        while (my ($name, $passwd, $gid, $members) = getgrent()) {
-            foreach my $member (split / /, $members) {
-                push @{$_cache_get_user_groups{$member}}, $name;
-            }
+    # try to use sys_getent_gr()'s cache if available and allowed by caller.
+    # we loop through all the system groups to find the ones having user
+    # as a meember
+    my @groups;
+    foreach my $gr (@{OVH::Bastion::sys_getent_gr(cache => $cache)->value}) {
+        if (grep { $user eq $_ } @{$gr->{'members'} || []}) {
+            push @groups, $gr->{'name'};
         }
-        setgrent();
     }
 
-    my @groups = @{$_cache_get_user_groups{$user} || []};
     my @availableGroups;
     foreach my $group (@groups) {
         if ($group =~ /^key.+-(gatekeeper|aclkeeper|owner)$/) {
