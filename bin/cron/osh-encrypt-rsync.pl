@@ -374,7 +374,16 @@ sub encrypt_multi {
 
             # transient file
             _log " ... deleting transient file $current_source_file" if $verbose;
-            $dryRun or unlink $current_source_file;
+            if (!$dryRun) {
+                if (!unlink $current_source_file) {
+
+                    # maybe it is +a? try to -a it blindly and retry
+                    system('chattr', '-a', $current_source_file);
+                    if (!unlink $current_source_file) {
+                        _warn "Couldn't delete transient file '$current_source_file' ($!)";
+                    }
+                }
+            }
         }
         if ($error) {
             $success = 0;
@@ -385,7 +394,16 @@ sub encrypt_multi {
     }
     if ($success and $remove_source_on_success) {
         _log " ... removing source file $source_file" if $verbose;
-        $dryRun or unlink $source_file;
+        if (!$dryRun) {
+            if (!unlink $source_file) {
+
+                # maybe it is +a? try to -a it blindly and retry
+                system('chattr', '-a', $source_file);
+                if (!unlink $source_file) {
+                    _warn "Couldn't delete source file '$source_file' ($!)";
+                }
+            }
+        }
     }
     return !$success;
 }
