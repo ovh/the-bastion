@@ -451,8 +451,11 @@ sub potentially_work_on_this_file {
     }
     else {
         # ignore this file
+        _log "Ignoring file $_" if ($verbose >= 2);
         return;
     }
+
+    _log "Considering file $_" if ($verbose >= 2);
 
     # we might not have the right to touch some filetypes, as per config
     return if ($file_delay < 0);
@@ -502,22 +505,28 @@ sub potentially_work_on_this_file {
 
 sub directory_filter {    ## no critic (RequireArgUnpacking)
 
-    # /home ? check the subdirs
+    # /home? check the subdirs and add them one by one if they are a bastion account's home
     if ($File::Find::dir eq '/home') {
         my @out = ();
         foreach (@_) {
-            push @out, $_ if -e "/home/$_/lastlog";
-            if (-d "/home/$_/ttyrec") {
-                push @out, $_ if -d "/home/$_/ttyrec";
+            if (-e "/home/$_/lastlog" || -e "/home/$_/ttyrec") {
+                push @out, $_;
             }
         }
-        return @out;
+        my @sorted = sort @out;
+        if ($verbose >= 2) {
+            _log "Filter: adding directory $_" for @sorted;
+        }
+        return @sorted;
     }
-    if ($File::Find::dir =~ m{^/home/[^/]+($|/ttyrec)}) {
 
+    # /home/*/ttyrec/*? check all subdirs/files up to infinite depth
+    if ($File::Find::dir =~ m{^/home/[^/]+($|/ttyrec)}) {
+        _log "Filter: adding all files of " . $File::Find::dir . ": " . join(", ", @_) if ($verbose >= 2);
         return @_;
     }
 
+    _log "Filter: not adding anything from " . $File::Find::dir if ($verbose >= 2);
     return ();
 }
 
