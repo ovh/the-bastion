@@ -228,6 +228,15 @@ sub config_load_and_lint {
 
     $config{'rsync_destination'} //= '';
     $config{'rsync_rsh'}         //= '';
+    $config{'verbose'}           //= 0;
+
+    if ($config{'verbose'} !~ /^\d+$/) {
+        _warn "config error: verbose is not an integer >= 0, defaulting to 0";
+        $config{'verbose'} = 0;
+    }
+
+    # if $verbose is 0, then no cmdline override has been done, so we use the config value:
+    $verbose ||= $config{'verbose'};
 
     # ensure the various config files defined all the keywords we need
     foreach my $keyword (qw{ signing_key signing_key_passphrase }) {
@@ -611,14 +620,12 @@ sub main {
         $config{'rsync_delay_before_remove_days'} = 0;
     }
     if ($forceEncrypt) {
-        foreach my $type (qw{ ttyrec user_logs useer_sqlites }) {
+        foreach my $type (qw{ ttyrec user_logs user_sqlites }) {
 
             # keep config at -1 if it's set at -1 (i.e. filetype disabled)
             $config{"encrypt_and_move_${type}_delay_days"} = 0 if $config{"encrypt_and_move_${type}_delay_days"} > 0;
         }
     }
-
-    $verbose ||= $config{'verbose'};
 
     if (config_test() != 0) {
         _err "Config test failed, aborting";
