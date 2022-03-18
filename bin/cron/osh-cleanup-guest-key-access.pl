@@ -21,13 +21,13 @@ if (OVH::Bastion::config('readOnlySlaveMode')->value) {
 }
 
 $fnret = OVH::Bastion::load_configuration_file(
-    file   => OVH::Bastion::main_configuration_directory() . "/osh-cleanup-guest-access.conf",
+    file   => OVH::Bastion::main_configuration_directory() . "/osh-cleanup-guest-key-access.conf",
     secure => 1,
 );
 
 my $config;
 if (!$fnret) {
-    if (-e OVH::Bastion::main_configuration_directory() . "/osh-cleanup-guest-access.conf") {
+    if (-e OVH::Bastion::main_configuration_directory() . "/osh-cleanup-guest-key-access.conf") {
         _warn "Error while loading configuration, continuing anyway with default values...";
     }
     else {
