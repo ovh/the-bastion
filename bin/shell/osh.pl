@@ -1119,12 +1119,12 @@ if ($fnret and $fnret->value() =~ /yes/) {
 }
 else {
     $fnret = OVH::Bastion::is_access_granted(
-        account  => $self,
-        user     => $user,
-        ipfrom   => $ipfrom,
-        ip       => $ip,
-        port     => $port,
-        wantKeys => 1
+        account => $self,
+        user    => $user,
+        ipfrom  => $ipfrom,
+        ip      => $ip,
+        port    => $port,
+        details => 1
     );
 }
 
@@ -1163,6 +1163,14 @@ if (!$fnret) {
 }
 
 # else, keep calm and carry on
+my @accessList = @{$fnret->value || []};
+
+if ($osh_debug) {
+    require Data::Dumper;
+    osh_debug("access list array:");
+    osh_debug(Data::Dumper::Dumper(\@accessList));
+}
+
 # build ttyrec command that'll prefix the real command
 my $ttyrec_fnret = OVH::Bastion::build_ttyrec_cmdline(
     ip            => $ip,
@@ -1195,52 +1203,51 @@ my $forcePasswordId = -1;
 if ($userPasswordClue) {
 
     # locate main password file
-    my $fnretpass = OVH::Bastion::get_passfile(
+    $fnret = OVH::Bastion::get_passfile(
         hint      => $userPasswordClue,
         context   => $userPasswordContext,
         self      => ($remoteself || $sysself),
         tryLegacy => 1
     );
-    if (!$fnretpass) {
-        main_exit OVH::Bastion::EXIT_PASSFILE_NOT_FOUND, "passfile-not-found", $fnretpass->msg;
+    if (!$fnret) {
+        main_exit OVH::Bastion::EXIT_PASSFILE_NOT_FOUND, "passfile-not-found", $fnret->msg;
     }
-    $passwordFile = $fnretpass->value;
+    $passwordFile = $fnret->value;
 
     # check if a specific password is forced
-    foreach my $grant (@{$fnret->value}) {
+    foreach my $access (@accessList) {
 
         # only keep the grant matching the password clue and context AND with a forced password
         if (
-            $grant->{'forcePassword'}
+            $access->{'forcePassword'}
             && (
-                ($userPasswordContext eq 'self' && $grant->{'type'} eq 'personal')
+                ($userPasswordContext eq 'self' && $access->{'type'} eq 'personal')
                 || (   $userPasswordContext eq 'group'
-                    && $grant->{'type'} =~ /^group-(member|guest)$/
-                    && $grant->{'group'} eq $userPasswordClue)
+                    && $access->{'type'} =~ /^group-(member|guest)$/
+                    && $access->{'group'} eq $userPasswordClue)
             )
           )
         {
 
             # FIXME: force-password and force-key don't work yet for guest accesses, see #256
             # fetch the hashes of the main password and all its fallbacks
-            my $fnrethashes;
             if ($userPasswordContext eq 'self') {
-                $fnrethashes = OVH::Bastion::get_hashes_list(context => 'account', account => $userPasswordClue);
+                $fnret = OVH::Bastion::get_hashes_list(context => 'account', account => $userPasswordClue);
             }
             else {
-                $fnrethashes = OVH::Bastion::get_hashes_list(context => 'group', group => $userPasswordClue);
+                $fnret = OVH::Bastion::get_hashes_list(context => 'group', group => $userPasswordClue);
             }
 
-            if (!$fnrethashes) {
-                main_exit(OVH::Bastion::EXIT_GET_HASH_FAILED, "get_hashes_list", $fnrethashes->msg);
+            if (!$fnret) {
+                main_exit(OVH::Bastion::EXIT_GET_HASH_FAILED, "get_hashes_list", $fnret->msg);
             }
 
             # is our forced password's hash one of them ?
-            for my $id (0 .. $#{$fnrethashes->value}) {
-                foreach my $hash (values(%{$fnrethashes->value->[$id]->{'hashes'}})) {
-                    if ($grant->{'forcePassword'} eq $hash) {
+            for my $id (0 .. $#{$fnret->value}) {
+                foreach my $hash (values(%{$fnret->value->[$id]->{'hashes'}})) {
+                    if ($access->{'forcePassword'} eq $hash) {
                         $forcePasswordId = $id;
-                        print " forcing password with hash: " . $grant->{'forcePassword'} . "\n\n" unless $quiet;
+                        print " forcing password with hash: " . $access->{'forcePassword'} . "\n\n" unless $quiet;
                     }
                 }
             }
@@ -1305,7 +1312,7 @@ else {
 
         my @keysToTry;
         print " will try the following accesses you have: \n" unless $quiet;
-        foreach my $access (@{$fnret->value || []}) {
+        foreach my $access (@accessList) {
             foreach my $key (@{$access->{'sortedKeys'} || []}) {
                 my $keyinfo = $access->{'keys'}{$key};
                 my $type    = $access->{'type'} . " of " . $access->{'group'};

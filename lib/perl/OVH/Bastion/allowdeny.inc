@@ -682,10 +682,10 @@ sub is_access_granted {
     my $listOnly = $params{'listOnly'};         # don't open the files, just return file names
     my $noexec   = $params{'noexec'};           # passed to is_valid_public_key
 
-    my $wantKeys = delete $params{'wantKeys'};  # if set, look for and return ssh keys along with allowed accesses
+    my $details = delete $params{'details'}; # if set, look for and return ssh keys + config data along with allowed accesses
 
-    delete $params{'way'};                      # WE specify this parameter, not our caller
-    delete $params{'group'};                    # WE specify this parameter, not our caller
+    delete $params{'way'};                   # WE specify this parameter, not our caller
+    delete $params{'group'};                 # WE specify this parameter, not our caller
 
     my @grants;
     my $fnret;
@@ -835,12 +835,12 @@ sub is_access_granted {
         }
         else {
             # should not happen
-            osh_debug("is_access_granted: $account is in group $shortGroup but is neither member or guest !!?");
+            warn_syslog("is_access_granted: $account is in group $shortGroup but is neither member or guest !!?");
         }
     }
 
-    # 3/3 fill up keys if asked to
-    if ($wantKeys) {
+    # 3/3 fill up keys and other metadata info (mfa, idle lock/kill timeout) if asked to
+    if ($details) {
         foreach my $access (@grants) {
             undef $fnret;
             my $mfaFnret;
@@ -863,7 +863,8 @@ sub is_access_granted {
                 $mfaFnret = OVH::Bastion::account_config(key => "personal_egress_mfa_required", account => $sysaccount);
             }
             else {
-                ;    # unknown access type? no key!
+                # unknown access type? no key!
+                warn_syslog("Unknown access type '" . $access->{'type'} . "' found, ignoring");
             }
             if ($fnret) {
 

@@ -126,12 +126,12 @@ my $userToCheck = $1 eq 't' ? '!scpupload' : '!scpdownload';    ## no critic (Ca
 my %keys;
 osh_debug("Checking access 1/2 of $self to $machine...");
 $fnret = OVH::Bastion::is_access_granted(
-    account  => $self,
-    user     => $user,
-    ipfrom   => $ENV{'OSH_IP_FROM'},
-    ip       => $ip,
-    port     => $port,
-    wantKeys => 1
+    account => $self,
+    user    => $user,
+    ipfrom  => $ENV{'OSH_IP_FROM'},
+    ip      => $ip,
+    port    => $port,
+    details => 1
 );
 if (not $fnret) {
     my $msg = "Sorry, but you don't seem to have access to $machine";
@@ -156,7 +156,7 @@ $fnret = OVH::Bastion::is_access_granted(
     ip             => $ip,
     port           => $port,
     exactUserMatch => 1,
-    wantKeys       => 1
+    details        => 1
 );
 if (not $fnret) {
     my $msg = "Sorry, but even if you have ssh access to $machine, you still need to be granted specifically for scp";
