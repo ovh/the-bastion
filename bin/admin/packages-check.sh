@@ -41,7 +41,8 @@ if echo "$DISTRO_LIKE" | grep -q -w debian; then
     if [ "$(uname -m)" = armv7l ]; then
         wanted_list="$wanted_list wget"
     fi
-    [ "$opt_dev" = 1 ] && wanted_list="$wanted_list libperl-critic-perl perltidy shellcheck openssl"
+    [ "$opt_dev" = 1 ] && wanted_list="$wanted_list libperl-critic-perl libtest-deep-perl perltidy shellcheck openssl wget"
+
     if { [ "$LINUX_DISTRO" = debian ] && [ "$DISTRO_VERSION_MAJOR" -lt 9 ]; } ||
        { [ "$LINUX_DISTRO" = ubuntu ] && [ "$DISTRO_VERSION_MAJOR" -le 16 ]; }; then
         wanted_list="$wanted_list openssh-blacklist openssh-blacklist-extra"

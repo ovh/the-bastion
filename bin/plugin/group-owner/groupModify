@@ -12,19 +12,33 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,
     header  => "modify the configuration of a group",
     options => {
-        "group=s"           => \my $group,
-        "mfa-required=s"    => \my $mfaRequired,
-        "guest-ttl-limit=s" => \my $ttl,
+        "group=s"             => \my $group,
+        "mfa-required=s"      => \my $mfaRequired,
+        "idle-lock-timeout=s" => \my $idleLockTimeout,
+        "idle-kill-timeout=s" => \my $idleKillTimeout,
+        "guest-ttl-limit=s"   => \my $ttl,
     },
     helptext => <<'EOF',
 Modify the configuration of a group
 
 Usage: --osh SCRIPT_NAME --group GROUP [--mfa-required password|totp|any|none] [--guest-ttl-limit DURATION]
 
-  --group            GROUP                    Name of the group to modify
-  --mfa-required     password|totp|any|none   Enforce UNIX password requirement, or TOTP requirement, or any MFA requirement, when connecting to a server of the group
-  --guest-ttl-limit  DURATION                 This group will enforce TTL setting, on guest access creation, to be set, and not to a higher value than DURATION,
-                                                set to zero to allow guest accesses creation without any TTL set (default)
+  --group             GROUP                    Name of the group to modify
+  --mfa-required      password|totp|any|none   Enforce UNIX password requirement, or TOTP requirement, or any MFA requirement, when connecting to a server of the group
+  --idle-lock-timeout DURATION|0|-1            Overrides the global setting (`idleLockTimeout`), to the specified duration. If set to 0, disables `idleLockTimeout` for
+                                                 this group. If set to -1, remove this group override and use the global setting instead.
+  --idle-kill-timeout DURATION|0|-1            Overrides the global setting (`idleKillTimeout`), to the specified duration. If set to 0, disables `idleKillTimeout` for
+                                                 this group. If set to -1, remove this group override and use the global setting instead.
+  --guest-ttl-limit   DURATION                 This group will enforce TTL setting, on guest access creation, to be set, and not to a higher value than DURATION,
+                                                 set to zero to allow guest accesses creation without any TTL set (default)
+
+Note that `--idle-lock-timeout` and `--idle-kill-timeout` will NOT be applied for catch-all groups (having 0.0.0.0/0 in their server list).
+
+If a server is in exactly one group an account is a member of, then its values of `--idle-lock-timeout` and `--idle-kill-timeout`, if set,
+will prevail over the global setting. The global setting can be seen with `--osh info`.
+
+Otherwise, the most restrictive setting (i.e. the one with the lower strictly positive duration) between
+all the considered groups and the global setting, will be used.
 EOF
 );
 
@@ -34,14 +48,22 @@ if (!$group) {
     help();
     osh_exit 'ERR_MISSING_PARAMETER', "Missing mandatory parameter 'group'";
 }
-if (!$mfaRequired && !defined $ttl) {
+if (!$mfaRequired && !defined $ttl && !defined $idleLockTimeout && !defined $idleKillTimeout) {
     help();
     osh_exit 'ERR_MISSING_PARAMETER', "Nothing to modify";
 }
-if (defined $ttl) {
-    $fnret = OVH::Bastion::is_valid_ttl(ttl => $ttl);
-    $fnret or osh_exit $fnret;
-    $ttl = $fnret->value->{'seconds'};
+foreach my $item (\$ttl, \$idleLockTimeout, \$idleKillTimeout) {
+    if (defined $$item && $$item != -1) {
+        $fnret = OVH::Bastion::is_valid_ttl(ttl => $$item);
+        $fnret or osh_exit $fnret;
+        $$item = $fnret->value->{'seconds'};
+    }
+}
+
+# ttl doesn't allow -1 as a valid value, check that
+if ($ttl == -1) {
+    osh_exit 'ERR_INVALID_PARAMETER',
+      "Invalid TTL (-1), expected an amount of seconds, or a duration string such as '2d8h15m'";
 }
 
 $fnret = OVH::Bastion::is_valid_group_and_existing(group => $group, groupType => 'key');
@@ -66,5 +88,7 @@ push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-groupModify';
 push @command, '--group', $group;
 push @command, '--mfa-required', $mfaRequired if $mfaRequired;
 push @command, '--guest-ttl-limit', $ttl if defined $ttl;
+push @command, '--idle-lock-timeout', $idleLockTimeout if defined $idleLockTimeout;
+push @command, '--idle-kill-timeout', $idleKillTimeout if defined $idleKillTimeout;
 
 osh_exit OVH::Bastion::helper(cmd => \@command);
