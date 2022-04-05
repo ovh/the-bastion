@@ -842,36 +842,42 @@ sub is_access_granted {
     # 3/3 fill up keys and other metadata info (mfa, idle lock/kill timeout) if asked to
     if ($details) {
         foreach my $access (@grants) {
-            undef $fnret;
-            my $mfaFnret;
+            my %data;
             if ($access->{'type'} =~ /^group/ and $access->{'group'}) {
-                $fnret = OVH::Bastion::get_group_keys(
+                $data{'keys'} = OVH::Bastion::get_group_keys(
                     group    => $access->{'group'},
                     listOnly => $listOnly,
                     noexec   => $noexec,
                     forceKey => $access->{'forceKey'}
                 );
-                $mfaFnret = OVH::Bastion::group_config(key => "mfa_required", group => $access->{'group'});
+                $data{'mfa'} = OVH::Bastion::group_config(key => "mfa_required", group => $access->{'group'});
+                $data{'idle_lock_timeout'} = OVH::Bastion::group_config(%{OVH::Bastion::OPT_GROUP_IDLE_LOCK_TIMEOUT()},
+                    group => $access->{'group'});
+                $data{'idle_kill_timeout'} = OVH::Bastion::group_config(%{OVH::Bastion::OPT_GROUP_IDLE_KILL_TIMEOUT()},
+                    group => $access->{'group'});
             }
             elsif ($access->{'type'} =~ /^personal/) {
-                $fnret = OVH::Bastion::get_personal_account_keys(
+                $data{'keys'} = OVH::Bastion::get_personal_account_keys(
                     account  => $sysaccount,
                     listOnly => $listOnly,
                     noexec   => $noexec,
                     forceKey => $access->{'forceKey'}
                 );
-                $mfaFnret = OVH::Bastion::account_config(key => "personal_egress_mfa_required", account => $sysaccount);
+                $data{'mfa'} =
+                  OVH::Bastion::account_config(key => "personal_egress_mfa_required", account => $sysaccount);
             }
             else {
                 # unknown access type? no key!
                 warn_syslog("Unknown access type '" . $access->{'type'} . "' found, ignoring");
             }
-            if ($fnret) {
+            if ($data{'keys'}) {
 
                 # TODO implement $access->{forceKey} check to include only the proper key
-                $access->{'keys'}        = $fnret->value->{'keys'};
-                $access->{'sortedKeys'}  = $fnret->value->{'sortedKeys'};
-                $access->{'mfaRequired'} = $mfaFnret->value if $mfaFnret;
+                $access->{'keys'}            = $data{'keys'}->value->{'keys'};
+                $access->{'sortedKeys'}      = $data{'keys'}->value->{'sortedKeys'};
+                $access->{'mfaRequired'}     = $data{'mfa'}->value if $data{'mfa'};
+                $access->{'idleLockTimeout'} = $data{'idle_lock_timeout'}->value if $data{'idle_lock_timeout'};
+                $access->{'idleKillTimeout'} = $data{'idle_kill_timeout'}->value if $data{'idle_kill_timeout'};
             }
         }
     }

@@ -18,13 +18,15 @@ use OVH::Result;
 # Fetch command options
 my $fnret;
 my ($result, @optwarns);
-my ($group, $mfaRequired, $ttl);
+my ($group, $mfaRequired, $ttl, $idleLockTimeout, $idleKillTimeout);
 eval {
     local $SIG{__WARN__} = sub { push @optwarns, shift };
     $result = GetOptions(
-        "group=s"           => sub { $group //= $_[1] },
-        "mfa-required=s"    => \$mfaRequired,
-        "guest-ttl-limit=i" => \$ttl,
+        "group=s"             => sub { $group //= $_[1] },
+        "mfa-required=s"      => \$mfaRequired,
+        "guest-ttl-limit=i"   => \$ttl,
+        "idle-lock-timeout=i" => \$idleLockTimeout,
+        "idle-kill-timeout=i" => \$idleKillTimeout,
     );
 };
 if ($@) { die $@ }
@@ -40,8 +42,9 @@ if (!$group) {
     HEXIT('ERR_MISSING_PARAMETER', msg => "Missing argument 'group'");
 }
 
-if (!$mfaRequired && !defined $ttl) {
-    HEXIT('ERR_MISSING_PARAMETER', msg => "Missing argument 'mfa-required' or 'guest-ttl-limit'");
+if (!$mfaRequired && !defined $ttl && !defined $idleLockTimeout && !defined $idleKillTimeout) {
+    HEXIT('ERR_MISSING_PARAMETER',
+        msg => "Missing argument 'mfa-required', 'guest-ttl-limit', 'idle-lock-timeout' or 'idle-kill-timeout'");
 }
 
 #<HEADER
@@ -86,6 +89,69 @@ if (defined $mfaRequired) {
         osh_warn "... invalid option '$mfaRequired'";
         $result{'mfa_required'} = R('ERR_INVALID_PARAMETER');
     }
+}
+
+my %idleTimeout = (
+    lock => {
+        name  => "idle lock timeout",
+        key   => \%{OVH::Bastion::OPT_GROUP_IDLE_LOCK_TIMEOUT()},
+        value => $idleLockTimeout,
+    },
+    kill => {
+        name  => "idle kill timeout",
+        key   => \%{OVH::Bastion::OPT_GROUP_IDLE_KILL_TIMEOUT()},
+        value => $idleKillTimeout,
+    },
+);
+
+foreach my $item (keys %idleTimeout) {
+    next if !defined $idleTimeout{$item}{'value'};
+
+    osh_info "Modifying " . $idleTimeout{$item}{'name'} . " policy of group...";
+    if ($idleTimeout{$item}{'value'} >= 0) {
+        $fnret = OVH::Bastion::group_config(
+            group => $group,
+            %{$idleTimeout{$item}{'key'}}, value => $idleTimeout{$item}{'value'}
+        );
+        if ($fnret) {
+            if ($idleTimeout{$item}{'value'} == 0) {
+                osh_info "... done, this group's " . $idleTimeout{$item}{'name'} . " policy is now set to: disabled";
+            }
+            else {
+                osh_info "... done, this group is now configured to use a "
+                  . $idleTimeout{$item}{'name'}
+                  . " policy of "
+                  . OVH::Bastion::duration2human(seconds => $idleTimeout{$item}{'value'})->value->{'human'};
+            }
+        }
+        else {
+            osh_warn "... error while setting the group-specific "
+              . $idleTimeout{$item}{'name'}
+              . " policy ("
+              . $fnret->msg . ")";
+            warn_syslog "Error setting the group-specific "
+              . $idleTimeout{$item}{'name'}
+              . " policy of $group ("
+              . $fnret->msg . ")";
+        }
+    }
+    else {
+        $fnret = OVH::Bastion::group_config(group => $group, %{$idleTimeout{$item}{'key'}}, delete => 1);
+        if ($fnret) {
+            osh_info "... done, this group will now use the global " . $idleTimeout{$item}{'name'} . " policy";
+        }
+        else {
+            osh_warn "... error while removing the group-specific "
+              . $idleTimeout{$item}{'name'}
+              . " policy ("
+              . $fnret->msg . ")";
+            warn_syslog "Error removing the group-specific "
+              . $idleTimeout{$item}{'name'}
+              . " policy of $group ("
+              . $fnret->msg . ")";
+        }
+    }
+    $result{$idleTimeout{$item}{'key'}} = $fnret;
 }
 
 if (defined $ttl) {

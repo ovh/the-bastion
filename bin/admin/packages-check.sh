@@ -41,7 +41,8 @@ if echo "$DISTRO_LIKE" | grep -q -w debian; then
     if [ "$(uname -m)" = armv7l ]; then
         wanted_list="$wanted_list wget"
     fi
-    [ "$opt_dev" = 1 ] && wanted_list="$wanted_list libperl-critic-perl perltidy shellcheck openssl"
+    [ "$opt_dev" = 1 ] && wanted_list="$wanted_list libperl-critic-perl libtest-deep-perl perltidy shellcheck openssl wget"
+
     if { [ "$LINUX_DISTRO" = debian ] && [ "$DISTRO_VERSION_MAJOR" -lt 9 ]; } ||
        { [ "$LINUX_DISTRO" = ubuntu ] && [ "$DISTRO_VERSION_MAJOR" -le 16 ]; }; then
         wanted_list="$wanted_list openssh-blacklist openssh-blacklist-extra"
@@ -70,13 +71,14 @@ elif echo "$DISTRO_LIKE" | grep -q -w rhel; then
             expect openssh-server netcat bash perl-CGI perl-Test-Simple passwd \
             cracklib-dicts perl-Time-Piece perl-Time-HiRes diffutils \
             perl-Sys-Syslog pamtester google-authenticator qrencode-libs \
-            perl-LWP-Protocol-https findutils tar"
+            perl-LWP-Protocol-https perl-Test-Deep findutils tar"
     if [ "$DISTRO_VERSION_MAJOR" = 7 ]; then
         wanted_list="$wanted_list fortune-mod coreutils util-linux"
     else
         wanted_list="$wanted_list util-linux-user"
     fi
     [ "$opt_syslogng" = 1 ] && wanted_list="$wanted_list syslog-ng"
+
 
     if [ "$opt_install" = 1 ]; then
             if [ "$DISTRO_VERSION_MAJOR" = 8 ]; then
@@ -115,7 +117,7 @@ elif echo "$DISTRO_LIKE" | grep -q -w suse; then
             perl-Net-Server cryptsetup mosh expect openssh \
             coreutils netcat-openbsd bash perl-CGI iputils \
             perl-Time-HiRes perl-Unix-Syslog hostname perl-LWP-Protocol-https \
-            google-authenticator-libpam tar"
+            google-authenticator-libpam tar perl-Test-Deep"
     [ "$opt_syslogng" = 1 ] && wanted_list="$wanted_list syslog-ng"
 
     if [ "$opt_install" = 1 ]; then
@@ -129,7 +131,8 @@ elif echo "$DISTRO_LIKE" | grep -q -w suse; then
 elif [ "$OS_FAMILY" = FreeBSD ]; then
     wanted_list="base64 coreutils rsync bash sudo pamtester p5-JSON p5-JSON-XS gnupg \
             p5-common-sense p5-DateTime p5-Net-IP p5-DBD-SQLite p5-Net-Netmask lsof \
-            p5-Term-ReadKey expect fping p5-Net-Server p5-CGI p5-LWP-Protocol-https"
+            p5-Term-ReadKey expect fping p5-Net-Server p5-CGI p5-LWP-Protocol-https \
+            p5-Test-Deep"
     install_cmd="pkg add"
     installed=""
     for i in $wanted_list
