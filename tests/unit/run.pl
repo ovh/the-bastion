@@ -2,6 +2,7 @@
 # vim: set filetype=perl ts=4 sw=4 sts=4 et:
 use common::sense;
 use Test::More;
+use Test::Deep;
 
 use File::Basename;
 use lib dirname(__FILE__) . '/../../lib/perl';
@@ -46,6 +47,9 @@ OVH::Bastion::load_configuration(
         ],
         bastionName => "mock",
 
+        idleLockTimeout => 17,
+        idleKillTimeout => 29,
+
         # all options below are bool, we'll test for their normalization
         enableSyslog           => 1,
         enableGlobalAccessLog  => JSON::true,
@@ -60,6 +64,98 @@ OVH::Bastion::load_configuration(
 );
 
 # TESTS
+my $fnret;
+
+$fnret = OVH::Bastion::build_ttyrec_cmdline(
+    ip      => "127.0.0.1",
+    port    => 7979,
+    user    => "randomuser",
+    account => "bastionuser",
+    uniqid  => 'cafed00dcafe',
+    home    => "/home/randomuser",
+);
+cmp_deeply(
+    $fnret->value->{'saveFile'},
+    re(
+        qr{^\Q/home/randomuser/ttyrec/127.0.0.1/20\E\d\d-\d\d-\d\d.\d\d\-\d\d\-\d\d\.\d{6}\Q.cafed00dcafe.bastionuser.randomuser.127.0.0.1.7979.ttyrec\E$}
+    ),
+    "build_ttyrec_cmdline saveFile"
+);
+cmp_deeply(
+    $fnret->value->{'cmd'},
+    [
+        'ttyrec',
+        '-f',
+        $fnret->value->{'saveFile'},
+        '-F',
+        '/home/randomuser/ttyrec/127.0.0.1/%Y-%m-%d.%H-%M-%S.#usec#.cafed00dcafe.bastionuser.randomuser.127.0.0.1.7979.ttyrec',
+        '-k',
+        29,
+        '-t',
+        17,
+        '-s',
+        "To unlock, use '--osh unlock' from another console",
+        '-k',
+        29,
+    ],
+    "build_ttyrec_cmdline cmd"
+);
+
+$fnret = OVH::Bastion::build_ttyrec_cmdline_part1of2(
+    ip      => "127.0.0.1",
+    port    => 7979,
+    user    => "randomuser",
+    account => "bastionuser",
+    uniqid  => 'cafed00dcafe',
+    home    => "/home/randomuser",
+);
+cmp_deeply(
+    $fnret->value->{'saveFile'},
+    re(
+        qr{^\Q/home/randomuser/ttyrec/127.0.0.1/20\E\d\d-\d\d-\d\d.\d\d\-\d\d\-\d\d\.\d{6}\Q.cafed00dcafe.bastionuser.randomuser.127.0.0.1.7979.ttyrec\E$}
+    ),
+    "build_ttyrec_cmdline_part1of2 saveFile"
+);
+cmp_deeply(
+    $fnret->value->{'cmd'},
+    [
+        'ttyrec',
+        '-f',
+        $fnret->value->{'saveFile'},
+        '-F',
+        '/home/randomuser/ttyrec/127.0.0.1/%Y-%m-%d.%H-%M-%S.#usec#.cafed00dcafe.bastionuser.randomuser.127.0.0.1.7979.ttyrec'
+    ],
+    "build_ttyrec_cmdline_part1of2 cmd"
+);
+$fnret = OVH::Bastion::build_ttyrec_cmdline_part2of2(
+    input           => $fnret->value,
+    idleKillTimeout => 88,
+    idleLockTimeout => 99,
+);
+cmp_deeply(
+    $fnret->value->{'saveFile'},
+    re(
+        qr{^\Q/home/randomuser/ttyrec/127.0.0.1/20\E\d\d-\d\d-\d\d.\d\d\-\d\d\-\d\d\.\d{6}\Q.cafed00dcafe.bastionuser.randomuser.127.0.0.1.7979.ttyrec\E$}
+    ),
+    "build_ttyrec_cmdline_part2of2 saveFile"
+);
+cmp_deeply(
+    $fnret->value->{'cmd'},
+    [
+        'ttyrec',
+        '-f',
+        $fnret->value->{'saveFile'},
+        '-F',
+        '/home/randomuser/ttyrec/127.0.0.1/%Y-%m-%d.%H-%M-%S.#usec#.cafed00dcafe.bastionuser.randomuser.127.0.0.1.7979.ttyrec',
+        '-k',
+        88,
+        '-t',
+        99,
+        '-s',
+        "To unlock, use '--osh unlock' from another console"
+    ],
+    "build_ttyrec_cmdline_part2of2 cmd"
+);
 
 is(OVH::Bastion::config("bastionName")->value, "mock", "bastion name is mocked");
 
