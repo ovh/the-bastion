@@ -184,15 +184,25 @@ if (   OVH::Bastion::is_group_owner(group => $shortGroup, account => $self, supe
 
     $fnret = OVH::Bastion::group_config(group => $group, %{OVH::Bastion::OPT_GROUP_IDLE_KILL_TIMEOUT()});
     if ($fnret && defined $fnret->value && $fnret->value =~ /^-?\d+$/) {
-        osh_warn "Specific idle kill timeout: idle sessions on servers of this group will be cut after "
-          . OVH::Bastion::duration2human(seconds => $fnret->value)->value->{'duration'};
+        if ($fnret->value == 0) {
+            osh_warn "Specific idle kill timeout: idle sessions on servers of this group will NOT be cut";
+        }
+        else {
+            osh_warn "Specific idle kill timeout: idle sessions on servers of this group will be cut after "
+              . OVH::Bastion::duration2human(seconds => $fnret->value)->value->{'duration'};
+        }
         $result_hash->{'idle_kill_timeout'} = $fnret->value;
     }
 
     $fnret = OVH::Bastion::group_config(group => $group, => %{OVH::Bastion::OPT_GROUP_IDLE_LOCK_TIMEOUT()});
     if ($fnret && defined $fnret->value && $fnret->value =~ /^-?\d+$/) {
-        osh_warn "Specific idle lock timeout: idle sessions on servers of this group will be locked after "
-          . OVH::Bastion::duration2human(seconds => $fnret->value)->value->{'duration'};
+        if ($fnret->value == 0) {
+            osh_warn "Specific idle lock timeout: idle sessions on servers of this group will NOT be locked";
+        }
+        else {
+            osh_warn "Specific idle lock timeout: idle sessions on servers of this group will be locked after "
+              . OVH::Bastion::duration2human(seconds => $fnret->value)->value->{'duration'};
+        }
         $result_hash->{'idle_lock_timeout'} = $fnret->value;
     }
 }
