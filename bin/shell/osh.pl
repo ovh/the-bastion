@@ -1433,17 +1433,15 @@ else {
             osh_debug("Account is immune to idle");
         }
         else {
-            if ($config->{'idleLockTimeout'}) {
+            if ($idleTimeout{'lock'}) {
                 print(  "  /!\\ Your session will be locked after "
-                      . $config->{'idleLockTimeout'}
+                      . $idleTimeout{'lock'}
                       . " seconds of inactivity, use `--osh unlock' to unlock it\n");
             }
-            if ($config->{'idleKillTimeout'}) {
-                print(  "  /!\\ Your session will be killed after "
-                      . $config->{'idleKillTimeout'}
-                      . " seconds of inactivity.\n");
+            if ($idleTimeout{'kill'}) {
+                print("  /!\\ Your session will be killed after " . $idleTimeout{'kill'} . " seconds of inactivity.\n");
             }
-            print "\n" if ($config->{'idleLockTimeout'} || $config->{'idleKillTimeout'});
+            print "\n" if ($idleTimeout{'lock'} || $idleTimeout{'kill'});
         }
     }
 
