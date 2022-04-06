@@ -89,12 +89,11 @@ cmp_deeply(
         $fnret->value->{'saveFile'},
         '-F',
         '/home/randomuser/ttyrec/127.0.0.1/%Y-%m-%d.%H-%M-%S.#usec#.cafed00dcafe.bastionuser.randomuser.127.0.0.1.7979.ttyrec',
-        '-k',
-        29,
         '-t',
         17,
         '-s',
-        "To unlock, use '--osh unlock' from another console"
+        "To unlock, use '--osh unlock' from another console" '-k',
+        29,
     ],
     "build_ttyrec_cmdline cmd"
 );
@@ -145,12 +144,12 @@ cmp_deeply(
         $fnret->value->{'saveFile'},
         '-F',
         '/home/randomuser/ttyrec/127.0.0.1/%Y-%m-%d.%H-%M-%S.#usec#.cafed00dcafe.bastionuser.randomuser.127.0.0.1.7979.ttyrec',
-        '-k',
-        88,
         '-t',
         99,
         '-s',
-        "To unlock, use '--osh unlock' from another console"
+        "To unlock, use '--osh unlock' from another console",
+        '-k',
+        88,
     ],
     "build_ttyrec_cmdline_part2of2 cmd"
 );

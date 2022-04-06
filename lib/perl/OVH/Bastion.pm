@@ -1069,15 +1069,11 @@ sub build_ttyrec_cmdline_part1of2 {
     );
     if ($fnret && $fnret->value =~ /yes/) {
         osh_debug("Account is immune to idle, not adding ttyrec commandline parameters");
+        return R('OK', value => {saveFile => $saveFile, cmd => \@ttyrec, idleIgnore => 1});
     }
     else {
-        my $warnBeforeLockSeconds = OVH::Bastion::config('warnBeforeLockSeconds')->value;
-        my $warnBeforeKillSeconds = OVH::Bastion::config('warnBeforeKillSeconds')->value;
-        push @ttyrec, '--warn-before-lock', $warnBeforeLockSeconds if $warnBeforeLockSeconds;
-        push @ttyrec, '--warn-before-kill', $warnBeforeKillSeconds if $warnBeforeKillSeconds;
+        return R('OK', value => {saveFile => $saveFile, cmd => \@ttyrec, idleIgnore => 0});
     }
-
-    return R('OK', value => {saveFile => $saveFile, cmd => \@ttyrec});
 }
 
 # call this after build_ttyrec_cmdline_part1of2, don't forget to
@@ -1096,12 +1092,25 @@ sub build_ttyrec_cmdline_part2of2 {
 
     my @cmd = @{$input->{'cmd'}};
 
-    my $idleLockTimeout = $params{'idleLockTimeout'};
-    my $idleKillTimeout = $params{'idleKillTimeout'};
+    # if account is immune to idle, don't add these params to ttyrec cmdline
+    if (!$input->{'idleIgnore'}) {
+        my $idleLockTimeout = $params{'idleLockTimeout'};
+        if ($idleLockTimeout) {
+            push @cmd, '-t', $idleLockTimeout;
+            push @cmd, '-s', "To unlock, use '--osh unlock' from another console";
 
-    push @cmd, '-k', $idleKillTimeout                                     if $idleKillTimeout;
-    push @cmd, '-t', $idleLockTimeout                                     if $idleLockTimeout;
-    push @cmd, '-s', "To unlock, use '--osh unlock' from another console" if $idleLockTimeout;
+            my $warnBeforeLockSeconds = OVH::Bastion::config('warnBeforeLockSeconds')->value;
+            push @cmd, '--warn-before-lock', $warnBeforeLockSeconds if $warnBeforeLockSeconds;
+        }
+
+        my $idleKillTimeout = $params{'idleKillTimeout'};
+        if ($idleKillTimeout) {
+            push @cmd, '-k', $idleKillTimeout;
+
+            my $warnBeforeKillSeconds = OVH::Bastion::config('warnBeforeKillSeconds')->value;
+            push @cmd, '--warn-before-kill', $warnBeforeKillSeconds if $warnBeforeKillSeconds;
+        }
+    }
 
     my $ttyrecAdditionalParameters = OVH::Bastion::config('ttyrecAdditionalParameters')->value;
     push @cmd, @$ttyrecAdditionalParameters if @$ttyrecAdditionalParameters;
