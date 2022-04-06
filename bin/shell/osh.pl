@@ -1283,6 +1283,60 @@ if ($telnet) {
 else {
     my @preferredAuths;
 
+    # we first compute the correct idle-kill-timeout and idle-lock-timeout value,
+    # as these can be overriden for group accesses, see the help of groupModify command
+    # for details on the algorithm's logic, it is also commented below.
+    # First, we init the vars with the global setting.
+    my %idleTimeout = (
+        kill => OVH::Bastion::config("idleKillTimeout")->value,
+        lock => OVH::Bastion::config("idleLockTimeout")->value,
+    );
+
+    # Then, gather all the timeouts overrides that may be defined for the matching groups
+    my %idleTimeoutsOverride = (kill => [], lock => []);
+    foreach my $access (@accessList) {
+        next if ($access->{'type'} !~ /^group/);
+        push @{$idleTimeoutsOverride{'kill'}}, $access->{'idleKillTimeout'}
+          if (defined $access->{'idleKillTimeout'} && $access->{'size'} != 2**32);
+        push @{$idleTimeoutsOverride{'lock'}}, $access->{'idleLockTimeout'}
+          if (defined $access->{'idleLockTimeout'} && $access->{'size'} != 2**32);
+    }
+
+    # Now, decide what to apply for each timeout setting
+    foreach my $timeout (qw{ kill lock }) {
+        if (@{$idleTimeoutsOverride{$timeout}} == 0) {
+
+            # zero override, we'll use the global setting,
+            # $idleTimeout{$timeout} is already inited to the global setting
+            osh_debug("idle_timeout: no override for $timeout, using global setting");
+        }
+        elsif (@{$idleTimeoutsOverride{$timeout}} == 1) {
+
+            # exactly one match, use it
+            $idleTimeout{$timeout} = $idleTimeoutsOverride{$timeout}[0];
+            osh_debug("idle_timeout: exactly one override for $timeout, using it");
+        }
+        else {
+            osh_debug("idle_timeout: more than one override for $timeout, using the most restrictive one");
+
+            # more than one match, so we add the global setting to the pile
+            push @{$idleTimeoutsOverride{$timeout}}, $idleTimeout{$timeout};
+
+            # and choose the most restrictive one (lowest positive integer)
+            $idleTimeout{$timeout} = (sort { $a <=> $b } grep { $_ > 0 } @{$idleTimeoutsOverride{$timeout}})[0];
+        }
+        osh_debug("idle_timeout: finally using " . $idleTimeout{$timeout} . " for $timeout");
+    }
+
+    # adjust the ttyrec cmdline with these parameters
+    $ttyrec_fnret = OVH::Bastion::build_ttyrec_cmdline_part2of2(
+        input           => $ttyrec_fnret->value,
+        idleLockTimeout => $idleTimeout{'lock'},
+        idleKillTimeout => $idleTimeout{'kill'}
+    );
+    main_exit(OVH::Bastion::EXIT_TTYREC_CMDLINE_FAILED, "ttyrec_failed", $ttyrec_fnret->msg) if !$ttyrec_fnret;
+    @ttyrec = @{$ttyrec_fnret->value->{'cmd'}};
+
     # SSH PASSWORD AUTOLOGIN
     if ($userPasswordClue) {
 
@@ -1309,60 +1363,6 @@ else {
         push @preferredAuths, 'password' if $config->{'passwordAllowed'};
 
         push @command, '/usr/bin/ssh', $ip, '-l', $user, '-p', $port;
-
-        # before listing the accesses and the keys they use, first compute the correct
-        # idle-kill-timeout and idle-lock-timeout value, as these can be overriden for group accesses,
-        # see the help of groupModify command for details on the algorithm's logic, it is also commented below
-        # First, we init the vars with the global setting.
-        my %idleTimeout = (
-            kill => OVH::Bastion::config("idleKillTimeout")->value,
-            lock => OVH::Bastion::config("idleLockTimeout")->value,
-        );
-
-        # Then, gather all the timeouts overrides that may be defined for the matching groups
-        my %idleTimeoutsOverride = (kill => [], lock => []);
-        foreach my $access (@accessList) {
-            next if ($access->{'type'} !~ /^group/);
-            push @{$idleTimeoutsOverride{'kill'}}, $access->{'idleKillTimeout'}
-              if (defined $access->{'idleKillTimeout'} && $access->{'size'} != 2**32);
-            push @{$idleTimeoutsOverride{'lock'}}, $access->{'idleLockTimeout'}
-              if (defined $access->{'idleLockTimeout'} && $access->{'size'} != 2**32);
-        }
-
-        # Now, decide what to apply for each timeout setting
-        foreach my $timeout (qw{ kill lock }) {
-            if (@{$idleTimeoutsOverride{$timeout}} == 0) {
-
-                # zero override, we'll use the global setting,
-                # $idleTimeout{$timeout} is already inited to the global setting
-                osh_debug("idle_timeout: no override for $timeout, using global setting");
-            }
-            elsif (@{$idleTimeoutsOverride{$timeout}} == 1) {
-
-                # exactly one match, use it
-                $idleTimeout{$timeout} = $idleTimeoutsOverride{$timeout}[0];
-                osh_debug("idle_timeout: exactly one override for $timeout, using it");
-            }
-            else {
-                osh_debug("idle_timeout: more than one override for $timeout, using the most restrictive one");
-
-                # more than one match, so we add the global setting to the pile
-                push @{$idleTimeoutsOverride{$timeout}}, $idleTimeout{$timeout};
-
-                # and choose the most restrictive one (lowest positive integer)
-                $idleTimeout{$timeout} = (sort { $a <=> $b } grep { $_ > 0 } @{$idleTimeoutsOverride{$timeout}})[0];
-            }
-            osh_debug("idle_timeout: finally using " . $idleTimeout{$timeout} . " for $timeout");
-        }
-
-        # adjust the ttyrec cmdline with these parameters
-        $ttyrec_fnret = OVH::Bastion::build_ttyrec_cmdline_part2of2(
-            input           => $ttyrec_fnret->value,
-            idleLockTimeout => $idleTimeout{'lock'},
-            idleKillTimeout => $idleTimeout{'kill'}
-        );
-        main_exit(OVH::Bastion::EXIT_TTYREC_CMDLINE_FAILED, "ttyrec_failed", $ttyrec_fnret->msg) if !$ttyrec_fnret;
-        @ttyrec = @{$ttyrec_fnret->value->{'cmd'}};
 
         my @keysToTry;
         print " will try the following accesses you have: \n" unless $quiet;
