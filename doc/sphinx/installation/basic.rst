@@ -66,9 +66,20 @@ Great care has been taken to write secure, tested code, but of course this is wo
 is a hacker highway. Ensuring that all the layers below the bastion code (the operating system
 and the hardware it's running on) is your job.
 
+2. Connect to your server as root
+=================================
+
+You'll need to be connected to your server as root to perform the installation. If you're using root password
+authentication through SSH to do so, note that during the installation, as the SSH server configuration
+will be hardened, the SSH password authentication will be disabled server-wide.
+
+Hence, to access your server, please set up an SSH public key authentication instead of a password authentication,
+and do so before proceeding with the next steps. Otherwise you might lose access to your own server once the
+SSH hardening will be in effect, as password authentication will then be disabled.
+
 .. _install-basic_get-the-code:
 
-2. Get the code
+3. Get the code
 ===============
 
 The bastion code usually lives under ``/opt/bastion``.
@@ -97,7 +108,7 @@ You should end up with directories such as ``bin``, ``lib``, etc. directly under
 
 .. _install-basic_install-packages:
 
-3. Install the needed packages
+4. Install the needed packages
 ==============================
 
 For the supported Linux distros (see above), you can simply run:
@@ -132,7 +143,7 @@ you'll also need to install the ``yubico-piv-checker`` `helper tool <https://git
 
 .. _install-basic_encrypt-home:
 
-4. Encrypt /home
+5. Encrypt /home
 ================
 
 Strictly speaking, this step is optional, but if you skip it, know that all the SSH private keys and session
@@ -164,7 +175,7 @@ in the script. It can happen if your kernel doesn't have the necessary features 
 
 .. _install-basic_setup:
 
-5. Setup bastion and system configuration
+6. Setup bastion and system configuration
 =========================================
 
 The following script will do that for you. There are several possibilities here.
@@ -204,7 +215,7 @@ There are other templates available in the same directory, for the other support
 
 .. _install-basic_review-config:
 
-6. Review the configuration
+7. Review the configuration
 ===========================
 
 Base configuration files have been copied, you should review the main configuration and modify it to your needs:
@@ -215,7 +226,7 @@ Base configuration files have been copied, you should review the main configurat
 
 .. _install-basic_perl-check:
 
-7. Check that the code works on your machine
+8. Check that the code works on your machine
 ============================================
 
 This script will verify that all required modules are installed:
@@ -226,7 +237,7 @@ This script will verify that all required modules are installed:
 
 .. _install-basic_first-account:
 
-8. Manually create our first bastion account
+9. Manually create our first bastion account
 ============================================
 
 Just launch this script, replacing *USERNAME* by the username you want to use:
