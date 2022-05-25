@@ -2,8 +2,8 @@
 alive
 ======
 
-Ping a host and exist as soon as it answers
-===========================================
+Ping a host and exit as soon as it answers
+==========================================
 
 
 This command can be used to monitor a host that is expected to go back online soon.
