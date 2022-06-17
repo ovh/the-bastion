@@ -20,10 +20,11 @@ use OVH::Bastion::Helper;
 # Fetch command options
 my $fnret;
 my ($result, @optwarns);
-my ($type, $account, $realmFrom, $uid, @pubKeys, $comment, $alwaysActive, $uidAuto, $oshOnly, $maxInactiveDays, $immutableKey, $ttl);
+my ($forceKeyFrom, $type, $account, $realmFrom, $uid, @pubKeys, $comment, $alwaysActive, $uidAuto, $oshOnly, $maxInactiveDays, $immutableKey, $ttl);
 eval {
     local $SIG{__WARN__} = sub { push @optwarns, shift };
     $result = GetOptions(
+        "force-key-from=s"    => sub { $forceKeyFrom    //= $_[1] },    # only to be used by the install script
         "type=s"              => sub { $type            //= $_[1] },
         "from=s"              => sub { $realmFrom       //= $_[1] },
         "uid=s"               => sub { $uid             //= $_[1] },
@@ -180,7 +181,7 @@ if ($prefix) {
     }
 }
 
-$fnret = OVH::Bastion::get_from_for_user_key(userProvidedIpList => \@userProvidedIpList);
+$fnret = OVH::Bastion::get_from_for_user_key(userProvidedIpList => \@userProvidedIpList, forcedList => ($forceKeyFrom ? [$forceKeyFrom] : []));
 $fnret or HEXIT($fnret);
 
 my $from    = $fnret->value->{'from'};

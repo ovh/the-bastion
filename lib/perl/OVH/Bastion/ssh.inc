@@ -460,6 +460,7 @@ EOS
 sub get_from_for_user_key {
     my %params             = @_;
     my $userProvidedIpList = $params{'userProvidedIpList'} || [];    # arrayref
+    my $forcedList         = $params{'forcedList'} || [];            # arrayref
     my $key                = $params{'key'};
 
     my $ingressKeysFrom              = OVH::Bastion::config('ingressKeysFrom');
@@ -473,6 +474,11 @@ sub get_from_for_user_key {
 
     if ($ingressKeysFromAllowOverride->value and scalar @$userProvidedIpList) {
         @ipList = @$userProvidedIpList;
+    }
+
+    # if not empty, override everything by this list
+    if (@$forcedList) {
+        @ipList = @$forcedList;
     }
 
     my @ipListVerified = grep { OVH::Bastion::is_valid_ip(ip => $_, allowPrefixes => 1) } @ipList;
