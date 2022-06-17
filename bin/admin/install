@@ -767,7 +767,7 @@ if [ "$nothing" = 0 ]; then
             action_error "Error while generating the SSH key"
         else
             chmod 0444 "$UID0HOME/id_healthcheck.pub"
-            USER="$UID0" HOME="$UID0HOME" "$basedir"/bin/plugin/restricted/accountCreate '' '' '' '' --account healthcheck --uid-auto --always-active --immutable-key --osh-only < "$UID0HOME/id_healthcheck.pub"
+            USER="$UID0" HOME="$UID0HOME" "$basedir"/bin/plugin/restricted/accountCreate '' '' '' '' --account healthcheck --uid-auto --always-active --immutable-key --osh-only --force-key-from "127.0.0.1" < "$UID0HOME/id_healthcheck.pub"
             if ! getent passwd healthcheck >/dev/null 2>&1; then
                 action_error "Couldn't create the healthcheck account"
             else

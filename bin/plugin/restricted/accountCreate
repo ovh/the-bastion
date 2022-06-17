@@ -12,6 +12,7 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,
     header  => "create a new bastion account",
     options => {
+        'force-key-from=s'    => \my $forceKeyFrom,      # only to be used under root by the install script
         'uid=i'               => \my $uid,
         'account=s'           => \my $account,
         'always-active'       => \my $alwaysActive,
@@ -140,6 +141,7 @@ push @command, "--osh-only", if $oshOnly;
 push @command, "--max-inactive-days", $maxInactiveDays if defined $maxInactiveDays;
 push @command, "--uid-auto"      if $uidAuto;
 push @command, "--immutable-key" if $immutableKey;
-push @command, '--ttl', $ttl if $ttl;
+push @command, '--ttl',            $ttl          if $ttl;
+push @command, '--force-key-from', $forceKeyFrom if ($forceKeyFrom && $< == 0 && $> == 0);    # only to be used under root by the install script
 
 osh_exit OVH::Bastion::helper(cmd => \@command);
