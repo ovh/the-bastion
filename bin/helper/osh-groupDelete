@@ -10,7 +10,6 @@
 #>HEADER
 use common::sense;
 use Getopt::Long qw(:config no_auto_abbrev no_ignore_case);
-use File::Copy qw(move);
 
 use File::Basename;
 use lib dirname(__FILE__) . '/../../lib/perl';
@@ -109,12 +108,20 @@ chmod 0700, $fulldir;
 # had issues and somebody might want to have a look
 my $nbErrors = 0;
 
-if (!move("/home/$group", "$fulldir/$group-home")) {
-    warn_syslog("Error while backing up to-be-deleted '/home/$group' to '$fulldir/$group-home': $!, continuing anyway...");
+# File::Copy::move() sometimes craps itself when it gets -EXDEV from the OS, and doesn't
+# compensate for it, while /bin/mv does...
+$fnret = OVH::Bastion::execute_simple(cmd => ['mv', "/home/$group", "$fulldir/$group-home"], must_succeed => 1);
+if (!$fnret) {
+    my $msg = substr($fnret->value->{'output'}, 0, 128);
+    $msg =~ s=[^a-zA-Z0-9./_-]=_=g;
+    warn_syslog("Error while backing up to-be-deleted '/home/$group' to '$fulldir/$group-home' ($msg), continuing anyway...");
     $nbErrors++;
 }
-if (!move("/home/keykeeper/$group", "$fulldir/$group-keykeeper")) {
-    warn_syslog("Error while backing up to-be-deleted '/home/keykeeper/$group' to '$fulldir/$group-keykeeper': $!, continuing anyway...");
+$fnret = OVH::Bastion::execute_simple(cmd => ['mv', "/home/keykeeper/$group", "$fulldir/$group-keykeeper"], must_succeed => 1);
+if (!$fnret) {
+    my $msg = substr($fnret->value->{'output'}, 0, 128);
+    $msg =~ s=[^a-zA-Z0-9./_-]=_=g;
+    warn_syslog("Error while backing up to-be-deleted '/home/keykeeper/$group' to '$fulldir/$group-keykeeper' ($msg), continuing anyway...");
     $nbErrors++;
 }
 
