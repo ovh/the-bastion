@@ -28,5 +28,5 @@ Ping a remote host from the bastion
 
 .. option:: -w TIMEOUT 
 
-   Exit unconditionally after this amount of seconds
+   Exit unconditionally after this amount of seconds (default & max: 86400)
 

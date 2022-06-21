@@ -25,7 +25,7 @@ Usage: --osh SCRIPT_NAME [--host HOST] [-c COUNT] [-s PKTSZ] [-t TTL] [-w TIMEOU
   --host HOST  Remote host to ping
   -c COUNT     Number of pings to send (default: infinite)
   -t TTL       TTL to set in the ICMP packet (default: OS dependent)
-  -w TIMEOUT   Exit unconditionally after this amount of seconds
+  -w TIMEOUT   Exit unconditionally after this amount of seconds (default & max: 86400)
 EOF
 );
 
@@ -45,6 +45,11 @@ if (not $host) {
     osh_exit 'ERR_MISSING_PARAMETER', "Missing required host parameter";
 }
 
+# restore default handlers (exit) for HUP and PIPE, we don't want to have this
+# plugin looping endlessly in the void when there's no longer a terminal attached
+$SIG{'PIPE'} = 'DEFAULT';
+$SIG{'HUP'}  = 'DEFAULT';
+
 my @command = qw{ ping };
 if ($count and $count > 0) {
     push @command, ('-c', $count);
@@ -55,9 +60,13 @@ if ($packetsize and $packetsize > 0 and $packetsize < 10000) {
 if ($ttl and $ttl > 0 and $ttl < 256) {
     push @command, ('-t', $ttl);
 }
-if ($deadline and $deadline > 0 and $deadline <= 3600) {
-    push @command, (OVH::Bastion::is_freebsd() ? '-t' : '-w', $deadline);
-}
+
+# ensure there's always a deadline, to avoid having a plugin running for months,
+# especially because this one caches stdout to be able to compute stats at the
+# end, and return these in the JSON output
+$deadline = 86400 if (!$deadline || $deadline < 0 || $deadline > 86400);
+push @command, (OVH::Bastion::is_freebsd() ? '-t' : '-w', $deadline);
+
 push @command, $host;
 
 osh_info "Pinging $host...";
