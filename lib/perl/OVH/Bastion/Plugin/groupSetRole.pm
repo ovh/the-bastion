@@ -340,7 +340,8 @@ sub act {
         }
     }
 
-    if ($fnret) {
+    # don't log on OK_NO_CHANGE, only on OK
+    if ($fnret->err eq 'OK') {
         OVH::Bastion::syslogFormatted(
             severity => 'info',
             type     => 'membership',
