@@ -35,5 +35,8 @@ foreach my $key (@{$fnret->value || []}) {
     $key->{'from_list'} = delete $key->{'fromList'};
     push @result, $key;
 }
+if (!@result) {
+    osh_info "No ingress keys configured for your account!";
+}
 
 osh_ok({keys => \@result, account => $self});
