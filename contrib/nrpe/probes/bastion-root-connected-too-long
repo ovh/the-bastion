@@ -135,7 +135,9 @@ PID: foreach my $pid (@pidlist) {
         _dbg("check age of $pid");
         my $stat;
         if (not open($stat, '<', "/proc/$pid/stat")) {
-            _dbg("couldn't open /proc/$pid/stat ($!), probably a disappeared process (race condition), getting to the next one");
+            _dbg(
+                "couldn't open /proc/$pid/stat ($!), probably a disappeared process (race condition), getting to the next one"
+            );
             next PID;
         }
         my @stats = split(/\s+/, <$stat>);
@@ -169,11 +171,13 @@ PID: foreach my $pid (@pidlist) {
         }
 
         if ($critAfterMinutes > 0 && $processUptime > $critAfterMinutes) {
-            _info "Root process $pid ($cmdline) by $guilty, up for $processUptime minutes (> than $critAfterMinutes min)";
+            _info
+              "Root process $pid ($cmdline) by $guilty, up for $processUptime minutes (> than $critAfterMinutes min)";
             $criticalCount += 1;
         }
         elsif ($warnAfterMinutes > 0 && $processUptime > $warnAfterMinutes) {
-            _info "Root process $pid ($cmdline) by $guilty, up for $processUptime minutes (> than $warnAfterMinutes min)";
+            _info
+              "Root process $pid ($cmdline) by $guilty, up for $processUptime minutes (> than $warnAfterMinutes min)";
             $warningCount += 1;
         }
     }

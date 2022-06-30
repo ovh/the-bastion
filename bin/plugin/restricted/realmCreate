@@ -71,7 +71,8 @@ if (!$pubKey) {
     if (grep { 'rsa' eq $_ } @algoList) {
         osh_info "RSA    : strongness[###..] speed[#....], use `ssh-keygen -t rsa -b 4096' to generate one";
     }
-    osh_info "\nThis should be the egress key of the group named 'realm' from the other side (your paste won't be echoed).";
+    osh_info
+      "\nThis should be the egress key of the group named 'realm' from the other side (your paste won't be echoed).";
     $pubKey = <STDIN>;
     ## use critic
 }

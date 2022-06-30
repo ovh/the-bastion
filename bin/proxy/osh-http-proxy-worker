@@ -56,7 +56,14 @@ sub log_and_exit {
     OVH::Bastion::log_access_insert(%merged);
 
     push @headers, ["X-Bastion-Local-Status" => $code];
-    OVH::Bastion::json_output(R('OK', value => {code => $code, msg => $msg, body => $body . "\n", headers => \@headers, allowed => $merged{'allowed'}}), no_delimiters => 1);
+    OVH::Bastion::json_output(
+        R(
+            'OK',
+            value =>
+              {code => $code, msg => $msg, body => $body . "\n", headers => \@headers, allowed => $merged{'allowed'}}
+        ),
+        no_delimiters => 1
+    );
     exit 0;
 }
 
@@ -119,7 +126,12 @@ if ($group) {
 }
 
 if (!OVH::Bastion::is_valid_port(port => $remoteport)) {
-    log_and_exit(400, "Bad Request (bad port number)", "Port number is out of range", {comment => "invalid_port_number"});
+    log_and_exit(
+        400,
+        "Bad Request (bad port number)",
+        "Port number is out of range",
+        {comment => "invalid_port_number"}
+    );
 }
 
 $log_params{'portto'} = $remoteport;
@@ -143,7 +155,12 @@ if ($remotemachine !~ /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/) {
         $remotemachine = $1;    # untaint
     }
     else {
-        log_and_exit(400, "Bad Request (host not resolved)", "Specified remote host couldn't be resolved through the DNS", {comment => "host_not_found"});
+        log_and_exit(
+            400,
+            "Bad Request (host not resolved)",
+            "Specified remote host couldn't be resolved through the DNS",
+            {comment => "host_not_found"}
+        );
     }
 }
 else {
@@ -160,7 +177,8 @@ $fnret = OVH::Bastion::account_config(account => $account, key => "proxyhttphash
 if (not $fnret or not $fnret->value) {
 
     # bad login because we couldn't open the proper file
-    log_and_exit(403, "Access Denied", "No password configured for you, $account", {comment => "no_password_for_login"});
+    log_and_exit(403, "Access Denied", "No password configured for you, $account",
+        {comment => "no_password_for_login"});
 }
 my $storedhash = $fnret->value;
 chomp $storedhash;
@@ -169,11 +187,21 @@ chomp $storedhash;
 if ($storedhash !~ /^\$(?<cipher>[a-zA-Z0-9]{1,2})\$(?<salt>[^\$]+)\$[^\$]+$/) {
 
     # the hash we have stored in the bastion is fucked :(
-    log_and_exit(500, "Internal Error (malformed hash)", "Please contact a bastion admin\n", {comment => "malformed_hash"});
+    log_and_exit(
+        500,
+        "Internal Error (malformed hash)",
+        "Please contact a bastion admin\n",
+        {comment => "malformed_hash"}
+    );
 }
 
 if ($storedhash ne crypt($account . ':' . $pass, '$' . $+{'cipher'} . '$' . $+{'salt'})) {
-    log_and_exit(403, "Access Denied", "Incorrect username ($account) or password (#REDACTED#, length=" . length($pass) . ")", {comment => "bad_login_password"});
+    log_and_exit(
+        403,
+        "Access Denied",
+        "Incorrect username ($account) or password (#REDACTED#, length=" . length($pass) . ")",
+        {comment => "bad_login_password"}
+    );
 }
 undef $pass;
 undef $storedhash;
@@ -215,9 +243,22 @@ push @headers,                 ["X-Bastion-Auth-Mode" => $authmode];
 push @{$log_params{'custom'}}, ['auth_mode'           => $authmode];
 
 # check if account or group has the right to access $user@$remotemachine, time: 50ms (to re-compute)
-$fnret = OVH::Bastion::is_access_granted(account => $account, user => $user, ipfrom => $ENV{'REMOTE_ADDR'}, ip => $remotemachine, port => $remoteport, listOnly => 1, sudo => 1);
+$fnret = OVH::Bastion::is_access_granted(
+    account  => $account,
+    user     => $user,
+    ipfrom   => $ENV{'REMOTE_ADDR'},
+    ip       => $remotemachine,
+    port     => $remoteport,
+    listOnly => 1,
+    sudo     => 1
+);
 if (not $fnret) {
-    log_and_exit(403, "Access Denied (access denied to remote)", "This account doesn't have access to this user\@host tuple ($fnret)\n", {comment => "access_denied"});
+    log_and_exit(
+        403,
+        "Access Denied (access denied to remote)",
+        "This account doesn't have access to this user\@host tuple ($fnret)\n",
+        {comment => "access_denied"}
+    );
 }
 else {
     # check that the way we were asked to use (personal access, group access) is actually allowed for this account
@@ -259,7 +300,12 @@ if (open(my $pwdfile, '<', $fnret->value)) {
     chomp $device_password;
 }
 else {
-    log_and_exit(500, "Internal Error (egress password unreadable)", "Couldn't read the $context '$user' egress password\n", {comment => "cannot_read_password"});
+    log_and_exit(
+        500,
+        "Internal Error (egress password unreadable)",
+        "Couldn't read the $context '$user' egress password\n",
+        {comment => "cannot_read_password"}
+    );
 }
 
 # Now build the UA for the request between bastion and remote device
@@ -321,7 +367,11 @@ if ($childpid == 0) {
 
     # if we get a HTTP/1.0 500 Can't connect to A.B.C.D:443 (SSL connect attempt failed error:1425F102:SSL routines:ssl_choose_client_version:unsupported protocol)
     # ... then the device might be old and support TLS v1.0 maximum only. let's retry that silently if our caller allows
-    if ($allow_downgrade && $res && $res->code == 500 && $res->message =~ /ssl_choose_client_version:unsupported protocol/) {
+    if (   $allow_downgrade
+        && $res
+        && $res->code == 500
+        && $res->message =~ /ssl_choose_client_version:unsupported protocol/)
+    {
         $downgraded = 1;
         $ua->ssl_opts('SSL_version' => 'TLSv1');
         $res = $ua->request($req);
@@ -402,7 +452,10 @@ my $body_to_log = "(BODY OMITTED)";
 if ($res && $log_request_response) {
     $log_request_response_max_size //= 65536;
     if ($log_request_response_max_size && length($res->decoded_content) > $log_request_response_max_size) {
-        $body_to_log = substr($res->decoded_content, 0, $log_request_response_max_size / 2) . '[...snip...]' . substr($res->decoded_content, -$log_request_response_max_size / 2);
+        $body_to_log =
+            substr($res->decoded_content, 0, $log_request_response_max_size / 2)
+          . '[...snip...]'
+          . substr($res->decoded_content, -$log_request_response_max_size / 2);
     }
     else {
         $body_to_log = $res->decoded_content;
@@ -414,13 +467,19 @@ my @t                 = localtime($now[0]);
 my @headerlog         = ($uniqid, $now[0], $now[1], POSIX::strftime("%Y/%m/%d.%H:%M:%S", @t));
 my $headers_as_string = $res ? join("", $res->{'_headers'}->as_string("\n")) : '';
 my $logfile           = sprintf("%s/%s.txt", $finaldir, POSIX::strftime("%F", @t));
-my $logline =
-  sprintf(""
+my $logline           = sprintf(
+    ""
       . "--- BASTION_REQUEST UNIQID=%s TIMESTAMP=%d.%06d DATE=%s ---\n%s\n"
       . "--- DEVICE_ANSWER UNIQID=%s TIMESTAMP=%d.%06d DATE=%s ---\n%s\n"
       . "--- END UNIQID=%s TIMESTAMP=%d.%06d DATE=%s ---\n\n",
-    @headerlog, $req->as_string(), @headerlog, $res ? sprintf("%s %s\n%s\n%s", $res->protocol, $res->status_line, $headers_as_string, $body_to_log) : '(DEVICE TIMEOUT)',
-    @headerlog,);
+    @headerlog,
+    $req->as_string(),
+    @headerlog,
+    $res
+    ? sprintf("%s %s\n%s\n%s", $res->protocol, $res->status_line, $headers_as_string, $body_to_log)
+    : '(DEVICE TIMEOUT)',
+    @headerlog,
+);
 $logline =~ s/^(Authorization:).+/$1 (removed)/mgi;
 
 if (open(my $log, '>>', $logfile)) {

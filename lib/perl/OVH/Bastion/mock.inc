@@ -30,7 +30,8 @@ sub mock_get_account_entry {
 
     my $h = $_mock_data->{'accounts'}{$account};
     return () if !$h;
-    return ($account, "x", $h->{'uid'}, $h->{'gid'}, $h->{'gecos'}, "/home/$account", $OVH::Bastion::BASEPATH . "/bin/shell/osh.pl");
+    return ($account, "x", $h->{'uid'}, $h->{'gid'}, $h->{'gecos'}, "/home/$account",
+        $OVH::Bastion::BASEPATH . "/bin/shell/osh.pl");
 }
 
 sub mock_get_account_accesses {

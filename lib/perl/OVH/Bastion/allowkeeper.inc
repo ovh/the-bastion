@@ -11,7 +11,7 @@ sub is_user_in_group {
     my %params = @_;
     my $group  = $params{'group'};
     my $user   = $params{'user'} || OVH::Bastion::get_user_from_env()->value;
-    my $cache  = $params{'cache'};                                              # if true, allow cache use of sys_getent_gr()
+    my $cache = $params{'cache'};    # if true, allow cache use of sys_getent_gr()
 
     # mandatory keys
     if (!$user || !$group) {
@@ -65,7 +65,9 @@ sub is_group_existing {
     # build a user-compatible error message if asked to, as it can make its way through osh_exit()
     if ($user_friendly_error) {
         $group =~ s/^key//;
-        return R('KO_GROUP_NOT_FOUND', msg => "The bastion group '$group' doesn't exist.\nYou may use groupList --all to see all existing groups.");
+        return R('KO_GROUP_NOT_FOUND',
+            msg =>
+              "The bastion group '$group' doesn't exist.\nYou may use groupList --all to see all existing groups.");
     }
     return R('KO_GROUP_NOT_FOUND', msg => "Group '$group' doesn't exist");
 }
@@ -141,7 +143,8 @@ sub get_next_available_uid {
         # if $available_gid, also check if the corresponding GID is available
         # if $available_gid_ttyrec, also check if the corresponding GID + the ttyrec offset is available
         if (   (!$available_gid || !scalar(getgrgid($next)))
-            && (!$available_gid_ttyrec || !scalar(getgrgid($next + OVH::Bastion::config('ttyrecGroupIdOffset')->value))))
+            && (!$available_gid_ttyrec || !scalar(getgrgid($next + OVH::Bastion::config('ttyrecGroupIdOffset')->value)))
+          )
         {
             $found = 1;
             last;
@@ -160,7 +163,8 @@ sub is_bastion_account_valid_and_existing {
     $fnret or return $fnret;
     my %values = %{$fnret->value()};
     my ($account, $realm, $sysaccount, $remoteaccount) = @values{qw{ account realm sysaccount remoteaccount}};
-    $fnret = OVH::Bastion::is_account_existing(account => $sysaccount, checkBastionShell => 1, cache => $params{'cache'});
+    $fnret =
+      OVH::Bastion::is_account_existing(account => $sysaccount, checkBastionShell => 1, cache => $params{'cache'});
     $fnret or return $fnret;
     $fnret->value->{'account'}       = $account;
     $fnret->value->{'sysaccount'}    = $sysaccount;
@@ -173,10 +177,9 @@ sub is_bastion_account_valid_and_existing {
 sub is_account_valid {
     my %params  = @_;
     my $account = $params{'account'};
-    my $accountType =
-      $params{'accountType'} || 'normal';    # normal (local account or $realm/$remoteself formatted account) | group (must start with key*) | realm (must start with realm_*)
-    my $localOnly = $params{'localOnly'};    # for accountType == normal, disallow realm-formatted accounts ($realm/$remoteself)
-    my $realmOnly = $params{'realmOnly'};    # for accountType == normal, allow only realm-formatted accounts ($realm/$remoteself)
+    my $accountType = $params{'accountType'} || 'normal'; # normal (local account or $realm/$remoteself formatted account) | group (must start with key*) | realm (must start with realm_*)
+    my $localOnly   = $params{'localOnly'};               # for accountType == normal, disallow realm-formatted accounts ($realm/$remoteself)
+    my $realmOnly   = $params{'realmOnly'};               # for accountType == normal, allow only realm-formatted accounts ($realm/$remoteself)
 
     if (!$account) {
         return R('ERR_MISSING_PARAMETER', msg => "Missing parameter 'account'");
@@ -228,7 +231,7 @@ sub is_account_valid {
         elsif (length($2) < 2) {
             return R('KO_TOO_SMALL', msg => "Remote account name is too short, length($2) < 2");
         }
-        return R('OK', value => {sysaccount => "realm_$1", realm => $1, remoteaccount => $2, account => "$1/$2"});    # untainted
+        return R('OK', value => {sysaccount => "realm_$1", realm => $1, remoteaccount => $2, account => "$1/$2"}); # untainted
     }
     elsif ($account =~ m/^([a-zA-Z0-9._-]+)$/) {
         if (length($1) < 2) {
@@ -239,7 +242,7 @@ sub is_account_valid {
         elsif (length($1) > 28) {
             return R('KO_TOO_LONG', msg => "$whatis name is too long, length($1) > 28");
         }
-        return R('OK', value => {sysaccount => $1, realm => undef, remoteaccount => undef, account => $1});           # untainted
+        return R('OK', value => {sysaccount => $1, realm => undef, remoteaccount => undef, account => $1});  # untainted
     }
     else {
         return R('KO_FORBIDDEN_CHARS', msg => "$whatis name contains forbidden characters $account");
@@ -250,8 +253,8 @@ sub is_account_valid {
 sub is_account_existing {
     my %params            = @_;
     my $account           = $params{'account'};
-    my $checkBastionShell = $params{'checkBastionShell'};                                                             # check if this account is a bastion user
-    my $cache             = $params{'cache'};                                                                         # allow cache use
+    my $checkBastionShell = $params{'checkBastionShell'};    # check if this account is a bastion user
+    my $cache             = $params{'cache'};                # allow cache use
 
     if (!$account) {
         return R('ERR_MISSING_PARAMETER', msg => "Missing parameter 'account'");
@@ -282,17 +285,20 @@ sub is_account_existing {
 
     if (%entry) {
         my ($newname) = $entry{'name'} =~ m{([a-zA-Z0-9._-]+)};
-        return R('ERR_SECURITY_VIOLATION', msg => "Forbidden characters in account name") if ($newname ne $entry{'name'});
+        return R('ERR_SECURITY_VIOLATION', msg => "Forbidden characters in account name")
+          if ($newname ne $entry{'name'});
         $entry{'name'} = $newname;    # untaint
 
         if ($checkBastionShell && $entry{'shell'} ne $OVH::Bastion::BASEPATH . "/bin/shell/osh.pl") {
-            return R('KO_NOT_FOUND', msg => "Account '$account' doesn't exist");    # msg is the same as below, voluntarily
+            return R('KO_NOT_FOUND', msg => "Account '$account' doesn't exist"); # msg is the same as below, voluntarily
         }
 
-        my ($newdir) = $entry{'dir'} =~ m{([/a-zA-Z0-9._-]+)};                      # untaint
-        return R('ERR_SECURITY_VIOLATION', msg => "Forbidden characters in account home directory") if ($newdir ne $entry{'dir'});
-        $entry{'dir'} = $newdir;                                                    # untaint
-        return R('OK', value => {uid => $entry{'uid'}, gid => $entry{'gid'}, dir => $entry{'dir'}, account => $entry{'name'}});
+        my ($newdir) = $entry{'dir'} =~ m{([/a-zA-Z0-9._-]+)};                   # untaint
+        return R('ERR_SECURITY_VIOLATION', msg => "Forbidden characters in account home directory")
+          if ($newdir ne $entry{'dir'});
+        $entry{'dir'} = $newdir;                                                 # untaint
+        return R('OK',
+            value => {uid => $entry{'uid'}, gid => $entry{'gid'}, dir => $entry{'dir'}, account => $entry{'name'}});
     }
     return R('KO_NOT_FOUND', msg => "Account '$account' doesn't exist");
 }
@@ -301,18 +307,18 @@ sub is_account_existing {
 sub access_modify {
     my %params = @_;
 
-    my $action = $params{'action'};                                                 # add or del
+    my $action = $params{'action'};                                              # add or del
 
-    my $user = $params{'user'};                                                     # if undef, means a user-wildcard access
-    my $ip   = $params{'ip'};                                                       # can be a single ip or prefix
-    my $port = $params{'port'};                                                     # if undef, means a port-wildcard access
+    my $user = $params{'user'};    # if undef, means a user-wildcard access
+    my $ip   = $params{'ip'};      # can be a single ip or prefix
+    my $port = $params{'port'};    # if undef, means a port-wildcard access
 
     my $ttl     = $params{'ttl'};
     my $comment = $params{'comment'};
 
-    my $way     = $params{'way'};                                                   # group, groupguest, personal
-    my $group   = $params{'group'};                                                 # only for way=group or way=groupguest
-    my $account = $params{'account'};                                               # only for way=personal
+    my $way     = $params{'way'};        # group, groupguest, personal
+    my $group   = $params{'group'};      # only for way=group or way=groupguest
+    my $account = $params{'account'};    # only for way=personal
 
     my $forceKey      = $params{'forceKey'};
     my $forcePassword = $params{'forcePassword'};
@@ -331,8 +337,9 @@ sub access_modify {
 
     # check way
     if ($way eq 'personal') {
-        return R('ERR_INVALID_PARAMETER', msg => "Group parameter specified with way=personal")   if defined $group;
-        return R('ERR_MISSING_PARAMETER', msg => "Account parameter mandatory with way=personal") if not defined $account;
+        return R('ERR_INVALID_PARAMETER', msg => "Group parameter specified with way=personal") if defined $group;
+        return R('ERR_MISSING_PARAMETER', msg => "Account parameter mandatory with way=personal")
+          if not defined $account;
     }
     elsif ($way eq 'group') {
         return R('ERR_MISSING_PARAMETER', msg => "Group parameter mandatory with way=group")   if not defined $group;
@@ -429,18 +436,30 @@ sub access_modify {
 
     if ($way eq 'personal') {
         if ($requester eq $account) {
-            push @one_should_succeed, OVH::Bastion::is_user_in_group(user => $requester, group => 'osh-self' . ucfirst($action) . 'PersonalAccess', sudo => 1);
+            push @one_should_succeed,
+              OVH::Bastion::is_user_in_group(
+                user  => $requester,
+                group => 'osh-self' . ucfirst($action) . 'PersonalAccess',
+                sudo  => 1
+              );
         }
 
         # this is not a else here: somebody who has the account* right doesn't need the self* right
-        push @one_should_succeed, OVH::Bastion::is_user_in_group(user => $requester, group => 'osh-account' . ucfirst($action) . 'PersonalAccess', sudo => 1);
+        push @one_should_succeed,
+          OVH::Bastion::is_user_in_group(
+            user  => $requester,
+            group => 'osh-account' . ucfirst($action) . 'PersonalAccess',
+            sudo  => 1
+          );
     }
     elsif ($way eq 'group') {
         $expected_running_as = $group;
-        push @one_should_succeed, OVH::Bastion::is_group_aclkeeper(account => $requester, group => $shortGroup, superowner => 1, sudo => 1);
+        push @one_should_succeed,
+          OVH::Bastion::is_group_aclkeeper(account => $requester, group => $shortGroup, superowner => 1, sudo => 1);
     }
     elsif ($way eq 'groupguest') {
-        push @one_should_succeed, OVH::Bastion::is_group_gatekeeper(account => $requester, group => $shortGroup, superowner => 1, sudo => 1);
+        push @one_should_succeed,
+          OVH::Bastion::is_group_gatekeeper(account => $requester, group => $shortGroup, superowner => 1, sudo => 1);
     }
 
     if ($running_as ne $expected_running_as) {
@@ -449,12 +468,17 @@ sub access_modify {
     }
 
     if (grep({ $_ } @one_should_succeed) == 0 && $requester ne 'root') {
-        warn_syslog("Security violation: requesting user '$requester' doesn't have the right to do that (way=$way, group=" . ($shortGroup ? '<u>' : $shortGroup) . ")");
+        warn_syslog(
+                "Security violation: requesting user '$requester' doesn't have the right to do that (way=$way, group="
+              . ($shortGroup ? '<u>' : $shortGroup)
+              . ")");
         return R('ERR_SECURITY_VIOLATION', msg => "You're not allowed to do that");
     }
 
     # now, check if the access we're being asked to change is already in place or not
-    osh_debug("for action $action of $user\@$ip:$port of way $way with account=$account and group=$group, checking if already granted");
+    osh_debug(
+        "for action $action of $user\@$ip:$port of way $way with account=$account and group=$group, checking if already granted"
+    );
     $fnret = OVH::Bastion::is_access_way_granted(
         user       => $user,
         ip         => $ip,
@@ -545,7 +569,8 @@ sub access_modify {
             else {
                 return R('ERR_CANNOT_OPEN_FILE', msg => "Error opening $file: $!");
             }
-            my $ttlmsg = $ttl ? (' (expires in ' . OVH::Bastion::duration2human(seconds => $ttl)->value->{'human'} . ')') : '';
+            my $ttlmsg =
+              $ttl ? (' (expires in ' . OVH::Bastion::duration2human(seconds => $ttl)->value->{'human'} . ')') : '';
             $returnmsg = "Access to $machine successfully added$ttlmsg";
         }
         elsif ($action eq 'del') {
@@ -793,7 +818,13 @@ sub get_account_list {
         next if not OVH::Bastion::is_bastion_account_valid_and_existing(account => $pw->{'name'});
 
         # add proper accounts, only include a subset of the fields we got
-        $users{$pw->{'name'}} = {name => $pw->{'name'}, gid => $pw->{'gid'}, home => $pw->{'dir'}, shell => $pw->{'shell'}, uid => $pw->{'uid'}};
+        $users{$pw->{'name'}} = {
+            name  => $pw->{'name'},
+            gid   => $pw->{'gid'},
+            home  => $pw->{'dir'},
+            shell => $pw->{'shell'},
+            uid   => $pw->{'uid'}
+        };
     }
 
     if (@$accounts) {
@@ -828,7 +859,8 @@ sub get_realm_list {
         next if (@$realms && !grep { $pw->{'name'} eq "realm_$_" } @$realms);
 
         # skip invalid realms
-        next if not OVH::Bastion::is_bastion_account_valid_and_existing(account => $pw->{'name'}, accountType => "realm");
+        next
+          if not OVH::Bastion::is_bastion_account_valid_and_existing(account => $pw->{'name'}, accountType => "realm");
 
         # add proper realms
         my $name = $pw->{'name'};
@@ -863,8 +895,12 @@ sub is_admin {
 
         # only legit case is if we have osh.pl under sudo because of an admin (adminSudo / ssh-as), check this
         if (not OVH::Bastion::is_admin(account => $ENV{'SUDO_USER'}, sudo => 1)) {
-            warn_syslog("is_admin(): wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'} . " from account " . $params{'account'});
-            return R('ERR_SECURITY_VIOLATION', msg => "Wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'});
+            warn_syslog("is_admin(): wasn't expected to be called under sudo, but was, with user "
+                  . $ENV{'SUDO_USER'}
+                  . " from account "
+                  . $params{'account'});
+            return R('ERR_SECURITY_VIOLATION',
+                msg => "Wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'});
         }
     }
 
@@ -893,8 +929,12 @@ sub is_super_owner {
 
         # only legit case is if we have osh.pl under sudo because of an admin (adminSudo / ssh-as), check this
         if (not OVH::Bastion::is_admin(account => $ENV{'SUDO_USER'}, sudo => 1)) {
-            warn_syslog("is_super_owner(): wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'} . " from account " . $params{'account'});
-            return R('ERR_SECURITY_VIOLATION', msg => "Wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'});
+            warn_syslog("is_super_owner(): wasn't expected to be called under sudo, but was, with user "
+                  . $ENV{'SUDO_USER'}
+                  . " from account "
+                  . $params{'account'});
+            return R('ERR_SECURITY_VIOLATION',
+                msg => "Wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'});
         }
     }
 
@@ -924,8 +964,12 @@ sub is_auditor {
 
         # only legit case is if we have osh.pl under sudo because of an admin (adminSudo / ssh-as), check this
         if (not OVH::Bastion::is_admin(account => $ENV{'SUDO_USER'}, sudo => 1)) {
-            warn_syslog("is_auditor(): wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'} . " from account " . $params{'account'});
-            return R('ERR_SECURITY_VIOLATION', msg => "Wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'});
+            warn_syslog("is_auditor(): wasn't expected to be called under sudo, but was, with user "
+                  . $ENV{'SUDO_USER'}
+                  . " from account "
+                  . $params{'account'});
+            return R('ERR_SECURITY_VIOLATION',
+                msg => "Wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'});
         }
     }
 
@@ -940,7 +984,7 @@ sub _has_group_role {
     my $role       = $params{'role'};          # regular or gatekeeper or owner
     my $superowner = $params{'superowner'};    # allow superowner (will always return yes if so)
     my $sudo       = $params{'sudo'};          # are we run under sudo ?
-    my $cache      = $params{'cache'};         # allow cache use (for commands that don't modify accounts or groups, such as groupList)
+    my $cache = $params{'cache'}; # allow cache use (for commands that don't modify accounts or groups, such as groupList)
     my $fnret;
 
     if (not $account) {
@@ -953,8 +997,12 @@ sub _has_group_role {
 
         # only legit case is if we have osh.pl under sudo because of an admin (adminSudo / ssh-as), check this
         if (not OVH::Bastion::is_admin(account => $ENV{'SUDO_USER'}, sudo => 1)) {
-            warn_syslog("_has_group_role(): wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'} . " from account " . $params{'account'});
-            return R('ERR_SECURITY_VIOLATION', msg => "Wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'});
+            warn_syslog("_has_group_role(): wasn't expected to be called under sudo, but was, with user "
+                  . $ENV{'SUDO_USER'}
+                  . " from account "
+                  . $params{'account'});
+            return R('ERR_SECURITY_VIOLATION',
+                msg => "Wasn't expected to be called under sudo, but was, with user " . $ENV{'SUDO_USER'});
         }
     }
 
@@ -1103,7 +1151,8 @@ sub is_valid_ttl {
         return R('OK', value => {seconds => $seconds + 0});
     }
 
-    return R('KO_INVALID_PARAMETER', msg => "Invalid TTL ($ttl), expected an amount of seconds, or a duration string such as '2d8h15m'");
+    return R('KO_INVALID_PARAMETER',
+        msg => "Invalid TTL ($ttl), expected an amount of seconds, or a duration string such as '2d8h15m'");
 }
 
 # used by groupList and accountList

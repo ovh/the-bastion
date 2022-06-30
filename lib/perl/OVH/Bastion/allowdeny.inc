@@ -13,14 +13,17 @@ sub get_personal_account_keys {
     my $forceKey = $params{'forceKey'};
     my $fnret;
 
-    $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account, accountType => ($account =~ /^realm_/ ? "realm" : "normal"));
+    $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(
+        account     => $account,
+        accountType => ($account =~ /^realm_/ ? "realm" : "normal")
+    );
     $fnret or return $fnret;
     $account = $fnret->value->{'account'};    # untainted version
 
     return _get_pub_keys_from_directory(
-        dir         => "/home/$account/.ssh",
-        pattern     => qr/^private\.pub$|^id_[a-z0-9]+[_.]private\.\d+\.pub$/,
-        listOnly    => $listOnly,                                                # don't be slow and don't parse the keys (by calling ssh-keygen -lf)
+        dir     => "/home/$account/.ssh",
+        pattern => qr/^private\.pub$|^id_[a-z0-9]+[_.]private\.\d+\.pub$/,
+        listOnly    => $listOnly,             # don't be slow and don't parse the keys (by calling ssh-keygen -lf)
         forceKey    => $forceKey,
         wantPrivate => 1,
     );
@@ -31,7 +34,7 @@ my %_cache_get_group_keys;
 sub get_group_keys {
     my %params   = @_;
     my $group    = $params{'group'};
-    my $cache    = $params{'cache'};                                             # allow cache use (useful for multicall)
+    my $cache    = $params{'cache'};              # allow cache use (useful for multicall)
     my $listOnly = $params{'listOnly'} ? 1 : 0;
     my $forceKey = $params{'forceKey'};
     my $fnret;
@@ -69,21 +72,21 @@ sub get_group_keys {
 sub is_access_way_granted {
     my %params = @_;
 
-    my $exactIpMatch   = $params{'exactIpMatch'};      # $ip must be explicitly allowed (not given through a wider slash or a 0.0.0.0/0 in grantfile)
-    my $exactPortMatch = $params{'exactPortMatch'};    # $port must be explicitly allowed (port wildcards in grantfile will be ignored)
-    my $exactUserMatch = $params{'exactUserMatch'};    # $user must be explicitly allowed (user wildcards in grantfile will be ignored)
-    my $exactMatch     = $params{'exactMatch'};        # sets exactIpMatch exactPortMatch and exactUserMatch
+    my $exactIpMatch = $params{'exactIpMatch'}; # $ip must be explicitly allowed (not given through a wider slash or a 0.0.0.0/0 in grantfile)
+    my $exactPortMatch = $params{'exactPortMatch'}; # $port must be explicitly allowed (port wildcards in grantfile will be ignored)
+    my $exactUserMatch = $params{'exactUserMatch'}; # $user must be explicitly allowed (user wildcards in grantfile will be ignored)
+    my $exactMatch     = $params{'exactMatch'};     # sets exactIpMatch exactPortMatch and exactUserMatch
 
-    my $ignoreUser = $params{'ignoreUser'};            # ignore remote user COMPLETELY (plop@, or root@, or <nil>@ will all match)
-    my $ignorePort = $params{'ignorePort'};            # ignore port COMPLETELY (port 22, 2345, or port-wildcard will all match)
+    my $ignoreUser = $params{'ignoreUser'};  # ignore remote user COMPLETELY (plop@, or root@, or <nil>@ will all match)
+    my $ignorePort = $params{'ignorePort'};  # ignore port COMPLETELY (port 22, 2345, or port-wildcard will all match)
 
-    my $wantedUser = $params{'user'};                  # if undef, means we look for a user wildcard allow
-    my $wantedIp   = $params{'ip'};                    # can be a single IP or a prefix
-    my $wantedPort = $params{'port'};                  # if undef, means we look for a port wildcard allow
+    my $wantedUser = $params{'user'};        # if undef, means we look for a user wildcard allow
+    my $wantedIp   = $params{'ip'};          # can be a single IP or a prefix
+    my $wantedPort = $params{'port'};        # if undef, means we look for a port wildcard allow
 
-    my $way     = $params{'way'};                      # personal|group|groupguest|legacy
-    my $group   = $params{'group'};                    # only meaningful and needed if type=group or type=groupguest
-    my $account = $params{'account'};                  # only meaningful and needed if type=personal or type=groupguest
+    my $way     = $params{'way'};            # personal|group|groupguest|legacy
+    my $group   = $params{'group'};          # only meaningful and needed if type=group or type=groupguest
+    my $account = $params{'account'};        # only meaningful and needed if type=personal or type=groupguest
 
     my $fnret;
 
@@ -95,7 +98,7 @@ sub is_access_way_granted {
     my @acl = @{$fnret->value || []};
 
     osh_debug(
-"checking way $way/$account/$group with ignorePort=$ignorePort ignoreUser=$ignoreUser exactIpMatch=$exactIpMatch exactPortMatch=$exactPortMatch exactUserMatch=$exactUserMatch"
+        "checking way $way/$account/$group with ignorePort=$ignorePort ignoreUser=$ignoreUser exactIpMatch=$exactIpMatch exactPortMatch=$exactPortMatch exactUserMatch=$exactUserMatch"
     );
 
     my ($bestMatch, $bestMatchSize, $bestMatchComment, $forceKey, $forcePassword);
@@ -242,7 +245,16 @@ sub is_access_way_granted {
     }
 
     if (defined $bestMatch) {
-        return R('OK', value => {match => $bestMatch, size => $bestMatchSize, forceKey => $forceKey, forcePassword => $forcePassword, comment => $bestMatchComment});
+        return R(
+            'OK',
+            value => {
+                match         => $bestMatch,
+                size          => $bestMatchSize,
+                forceKey      => $forceKey,
+                forcePassword => $forcePassword,
+                comment       => $bestMatchComment
+            }
+        );
     }
     return R('KO_ACCESS_DENIED');
 }
@@ -301,7 +313,7 @@ sub get_ip {
         my $as_text;
         undef $err;
         eval {
-            ($err, $as_text) = getnameinfo($item->{'addr'}, NI_NUMERICHOST);    # NI flag: don't use dns, just unpack the binary 'addr'
+            ($err, $as_text) = getnameinfo($item->{'addr'}, NI_NUMERICHOST); # NI flag: don't use dns, just unpack the binary 'addr'
         };
         if (not $@ and not $err) {
             $iplist{$as_text} = 1;
@@ -384,10 +396,10 @@ sub _get_pub_keys_from_directory {
     my %params      = @_;
     my $dir         = $params{'dir'};
     my $pattern     = $params{'pattern'};
-    my $listOnly    = $params{'listOnly'};       # don't open the files, just return file names
-    my $noexec      = $params{'noexec'};         # passed to is_valid_public_key
+    my $listOnly    = $params{'listOnly'};     # don't open the files, just return file names
+    my $noexec      = $params{'noexec'};       # passed to is_valid_public_key
     my $forceKey    = $params{'forceKey'};
-    my $wantPrivate = $params{'wantPrivate'};    # if set, will return the fullpath of the private key, not the public one
+    my $wantPrivate = $params{'wantPrivate'};  # if set, will return the fullpath of the private key, not the public one
     my $fnret;
 
     osh_debug("looking for pub keys in dir $dir as user $ENV{'USER'}");
@@ -437,7 +449,11 @@ sub _get_pub_keys_from_directory {
 
                 # stop when we find a key or at EOF
                 chomp $line;
-                $fnret = OVH::Bastion::is_valid_public_key(way => 'egress', pubKey => $line, noexec => ($noexec && !$forceKey));
+                $fnret = OVH::Bastion::is_valid_public_key(
+                    way    => 'egress',
+                    pubKey => $line,
+                    noexec => ($noexec && !$forceKey)
+                );
                 if (!$fnret) {
                     osh_debug("key in $file is not valid: " . $fnret->err);
                     osh_debug($fnret->msg);
@@ -485,7 +501,16 @@ sub duration2human {
     my $duration = $d ? sprintf('%dd+%02d:%02d:%02d', $d, $h, $m, $s) : sprintf('%02d:%02d:%02d', $h, $m, $s);
 
     # we keep the 'date' key for backwards compat, it's the same as 'datetime_local'
-    return R('OK', value => {duration => $duration, date => $date_local, datetime_local => $date_local, datetime_utc => $date_utc, human => "$duration ($date_local)"});
+    return R(
+        'OK',
+        value => {
+            duration       => $duration,
+            date           => $date_local,
+            datetime_local => $date_local,
+            datetime_utc   => $date_utc,
+            human          => "$duration ($date_local)"
+        }
+    );
 }
 
 sub print_acls {
@@ -521,7 +546,8 @@ sub print_acls {
             $addedDate = substr($addedDate, 0, 10);
             my $forceKey      = $entry->{'forceKey'}      || '-';
             my $forcePassword = $entry->{'forcePassword'} || '-';
-            my $expiry = $entry->{'expiry'} ? (duration2human(seconds => ($entry->{'expiry'} - time()))->value->{'human'}) : '-';
+            my $expiry =
+              $entry->{'expiry'} ? (duration2human(seconds => ($entry->{'expiry'} - time()))->value->{'human'}) : '-';
 
             # resolve reverse if asked for it
             my $ipReverse;
@@ -529,10 +555,10 @@ sub print_acls {
             $entry->{'reverseDns'} = $ipReverse;
 
             my @row = (
-                $ipReverse       ? $ipReverse       : $entry->{'ip'},
-                $entry->{'port'} ? $entry->{'port'} : '(any)',
-                $entry->{'user'} ? $entry->{'user'} : '(any)',
-                $accessType, $addedBy, $addedDate, $expiry, $entry->{'userComment'} || '-',
+                $ipReverse ? $ipReverse : $entry->{'ip'}, $entry->{'port'} ? $entry->{'port'} : '(any)',
+                $entry->{'user'} ? $entry->{'user'} : '(any)', $accessType,
+                $addedBy,  $addedDate,
+                $expiry,   $entry->{'userComment'} || '-',
                 $forceKey, $forcePassword
             );
 
@@ -668,13 +694,17 @@ sub is_access_granted {
     # 0a/3 check if we're in a forbidden network. if we are, just bail out
     my $forbiddenNetworks = OVH::Bastion::config('forbiddenNetworks')->value;
     $fnret = _is_in_any_net(ip => $ip, networks => $forbiddenNetworks);
-    return R('KO_ACCESS_DENIED', msg => "Can't connect you to $ip as it's part of the forbidden networks of this bastion (see --osh info)") if $fnret->is_ok;
+    return R('KO_ACCESS_DENIED',
+        msg => "Can't connect you to $ip as it's part of the forbidden networks of this bastion (see --osh info)")
+      if $fnret->is_ok;
 
     # 0b/3 check if we're not outside of the bastion allowed networks, if we are, just bail out
     my $allowedNetworks = OVH::Bastion::config('allowedNetworks')->value;
     if (@$allowedNetworks) {
         $fnret = _is_in_any_net(ip => $ip, networks => $allowedNetworks);
-        return R('KO_ACCESS_DENIED', msg => "Can't connect you to $ip as it's not part of the allowed networks of this bastion (see --osh info)") if $fnret->is_ko;
+        return R('KO_ACCESS_DENIED',
+            msg => "Can't connect you to $ip as it's not part of the allowed networks of this bastion (see --osh info)")
+          if $fnret->is_ko;
     }
 
     # 0c/3 check if there are more complex "ingressToEgressRules" defined, and potentially bail out whether needed
@@ -706,13 +736,19 @@ sub is_access_granted {
             }
 
             # is_ko: we're in exclusive mode, stop checking and deny
-            return R('KO_ACCESS_DENIED', msg => "Can't connect you to $ip, as it's not part of the allowed networks given where you're connecting from ($ipfrom)");
+            return R('KO_ACCESS_DENIED',
+                msg =>
+                  "Can't connect you to $ip, as it's not part of the allowed networks given where you're connecting from ($ipfrom)"
+            );
         }
         elsif ($policy eq 'DENY') {
             if ($fnret->is_ok) {
 
                 # egress matches: we have been asked to deny
-                return R('KO_ACCESS_DENIED', msg => "Can't connect you to $ip, as it's not part of the allowed networks given where you're connecting from ($ipfrom)");
+                return R('KO_ACCESS_DENIED',
+                    msg =>
+                      "Can't connect you to $ip, as it's not part of the allowed networks given where you're connecting from ($ipfrom)"
+                );
             }
 
             # is_ko: egress doesn't match, check next rule
@@ -752,7 +788,10 @@ sub is_access_granted {
 
     # 2/3 check groups
     $fnret = OVH::Bastion::get_user_groups(account => $sysaccount);
-    osh_debug("is_access_granted: get_user_groups of $sysaccount says " . $fnret->msg . " with grouplist " . Data::Dumper::Dumper($fnret->value));
+    osh_debug("is_access_granted: get_user_groups of $sysaccount says "
+          . $fnret->msg
+          . " with grouplist "
+          . Data::Dumper::Dumper($fnret->value));
 
     foreach my $group (@{$fnret->value || []}) {
 
@@ -777,7 +816,8 @@ sub is_access_granted {
         elsif (OVH::Bastion::is_group_guest(group => $shortGroup, account => $account, sudo => $params{'sudo'})) {
 
             # normal guest case
-            my $grantedGuest = is_access_way_granted(%params, way => "groupguest", group => $shortGroup, account => $account);
+            my $grantedGuest =
+              is_access_way_granted(%params, way => "groupguest", group => $shortGroup, account => $account);
             osh_debug("is_access_granted: grantedGuest=" . Data::Dumper::Dumper($grantedGuest));
 
             # the guy must have a guest access but the group itself must also still have access
@@ -788,7 +828,8 @@ sub is_access_granted {
 
             # special legacy case; we also check if account has a legacy access for ip AND that the group ALSO has access to this ip
             if ($grantedLegacy && $grantedGroup) {
-                osh_debug("is_access_granted: adding grantedLegacy to grants because legacy not null and group has access");
+                osh_debug(
+                    "is_access_granted: adding grantedLegacy to grants because legacy not null and group has access");
                 push @grants, {type => 'group-guest-legacy', group => $shortGroup, %{$grantedLegacy->value}};
             }
         }
@@ -804,11 +845,21 @@ sub is_access_granted {
             undef $fnret;
             my $mfaFnret;
             if ($access->{'type'} =~ /^group/ and $access->{'group'}) {
-                $fnret    = OVH::Bastion::get_group_keys(group => $access->{'group'}, listOnly => $listOnly, noexec => $noexec, forceKey => $access->{'forceKey'});
+                $fnret = OVH::Bastion::get_group_keys(
+                    group    => $access->{'group'},
+                    listOnly => $listOnly,
+                    noexec   => $noexec,
+                    forceKey => $access->{'forceKey'}
+                );
                 $mfaFnret = OVH::Bastion::group_config(key => "mfa_required", group => $access->{'group'});
             }
             elsif ($access->{'type'} =~ /^personal/) {
-                $fnret    = OVH::Bastion::get_personal_account_keys(account => $sysaccount, listOnly => $listOnly, noexec => $noexec, forceKey => $access->{'forceKey'});
+                $fnret = OVH::Bastion::get_personal_account_keys(
+                    account  => $sysaccount,
+                    listOnly => $listOnly,
+                    noexec   => $noexec,
+                    forceKey => $access->{'forceKey'}
+                );
                 $mfaFnret = OVH::Bastion::account_config(key => "personal_egress_mfa_required", account => $sysaccount);
             }
             else {
@@ -897,7 +948,7 @@ sub ssh_test_access_way {
     if (not @keyList) {
         return R('OK_NO_KEYS_TO_TEST',
             msg =>
-"Couldn't find any accessible SSH key to test connection with, you're probably adding access to an account or a group you don't have access to yourself, nevermind, will continue"
+              "Couldn't find any accessible SSH key to test connection with, you're probably adding access to an account or a group you don't have access to yourself, nevermind, will continue"
         );
     }
 
@@ -928,7 +979,9 @@ sub ssh_test_access_way {
     $fnret = OVH::Bastion::execute(cmd => \@command, noisy_stderr => 1);
     $fnret or return $fnret;
 
-    if (grep { $fnret->value->{'sysret'} eq $_ } (0, OVH::Bastion::EXIT_ACCOUNT_INVALID(), OVH::Bastion::EXIT_HOST_NOT_FOUND())) {
+    if (grep { $fnret->value->{'sysret'} eq $_ }
+        (0, OVH::Bastion::EXIT_ACCOUNT_INVALID(), OVH::Bastion::EXIT_HOST_NOT_FOUND()))
+    {
         return R('OK');
     }
 
@@ -968,16 +1021,21 @@ sub get_acls {
     # ... normal way
     my $grantedPersonal = OVH::Bastion::get_acl_way(way => 'personal', account => $account);
     osh_debug("get_acls: grantedPersonal=" . Data::Dumper::Dumper($grantedPersonal));
-    push @acls, {type => 'personal', acl => $grantedPersonal->value} if ($grantedPersonal && @{$grantedPersonal->value});
+    push @acls, {type => 'personal', acl => $grantedPersonal->value}
+      if ($grantedPersonal && @{$grantedPersonal->value});
 
     # ... legacy way
     my $grantedLegacy = OVH::Bastion::get_acl_way(way => 'legacy', account => $account);
     osh_debug("get_acls: grantedLegacy=" . Data::Dumper::Dumper($grantedLegacy));
-    push @acls, {type => 'personal-legacy', acl => $grantedLegacy->value} if ($grantedLegacy && @{$grantedLegacy->value});
+    push @acls, {type => 'personal-legacy', acl => $grantedLegacy->value}
+      if ($grantedLegacy && @{$grantedLegacy->value});
 
     # 2/3 check groups
     $fnret = OVH::Bastion::get_user_groups(account => $sysaccount);
-    osh_debug("get_acls: get_user_groups of $sysaccount says " . $fnret->msg . " with grouplist " . Data::Dumper::Dumper($fnret->value));
+    osh_debug("get_acls: get_user_groups of $sysaccount says "
+          . $fnret->msg
+          . " with grouplist "
+          . Data::Dumper::Dumper($fnret->value));
 
     foreach my $group (@{$fnret->value || []}) {
 
@@ -997,24 +1055,28 @@ sub get_acls {
 
             # normal member case, just reuse $grantedGroup
             osh_debug("get_acls: adding grantedGroup to grants because is member");
-            push @acls, {type => 'group-member', group => $shortGroup, acl => $grantedGroup->value} if ($grantedGroup && @{$grantedGroup->value});
+            push @acls, {type => 'group-member', group => $shortGroup, acl => $grantedGroup->value}
+              if ($grantedGroup && @{$grantedGroup->value});
         }
         elsif (OVH::Bastion::is_group_guest(group => $shortGroup, account => $account)) {
 
             # normal guest case
-            my $grantedGuest = OVH::Bastion::get_acl_way(way => "groupguest", group => $shortGroup, account => $account);
+            my $grantedGuest =
+              OVH::Bastion::get_acl_way(way => "groupguest", group => $shortGroup, account => $account);
             osh_debug("get_acls: grantedGuest=" . Data::Dumper::Dumper($grantedGuest));
 
             # the guy must have a guest access but the group itself must also still have access
             if ($grantedGuest && $grantedGroup) {
                 osh_debug("get_acls: adding grantedGuest to grants because is guest and group has access");
-                push @acls, {type => 'group-guest', group => $shortGroup, acl => $grantedGuest->value} if @{$grantedGuest->value};
+                push @acls, {type => 'group-guest', group => $shortGroup, acl => $grantedGuest->value}
+                  if @{$grantedGuest->value};
             }
 
             # special legacy case; we also check if account has a legacy access for ip AND that the group ALSO has access to this ip
             if ($grantedLegacy && $grantedGroup) {
                 osh_debug("get_acls: adding grantedLegacy to grants because legacy not null and group has access");
-                push @acls, {type => 'group-guest-legacy', group => $shortGroup, acl => $grantedLegacy->value} if @{$grantedLegacy->value};
+                push @acls, {type => 'group-guest-legacy', group => $shortGroup, acl => $grantedLegacy->value}
+                  if @{$grantedLegacy->value};
             }
         }
         else {
@@ -1068,10 +1130,12 @@ sub get_acl_way {
     if ($way eq 'personal') {
         return R('ERR_MISSING_PARAMETER', msg => "Missing parameter 'account' for $way way") if not $account;
         if (OVH::Bastion::is_mocking()) {
-            return _get_acl_from_file(mock_data => OVH::Bastion::mock_get_account_personal_accesses(account => $account));
+            return _get_acl_from_file(
+                mock_data => OVH::Bastion::mock_get_account_personal_accesses(account => $account));
         }
         if (!(-f -r "/home/allowkeeper/$sysaccount/$prefix.private")) {
-            return R('ERR_PERMISSION_DENIED', msg => "Couldn't open permission file with your current rights or it doesn't exist");
+            return R('ERR_PERMISSION_DENIED',
+                msg => "Couldn't open permission file with your current rights or it doesn't exist");
         }
         $_cache_get_acl_way{$key} = _get_acl_from_file(file => "/home/allowkeeper/$sysaccount/$prefix.private");
     }
@@ -1086,7 +1150,8 @@ sub get_acl_way {
             $_cache_get_acl_way{$key} = R('OK_EMPTY', value => []);
         }
         elsif (!(-f -r "/home/allowkeeper/$sysaccount/$prefix.ip")) {
-            return R('ERR_PERMISSION_DENIED', msg => "Couldn't open permission file with your current rights or it doesn't exist");
+            return R('ERR_PERMISSION_DENIED',
+                msg => "Couldn't open permission file with your current rights or it doesn't exist");
         }
         else {
             $_cache_get_acl_way{$key} = _get_acl_from_file(file => "/home/allowkeeper/$sysaccount/$prefix.ip");
@@ -1098,30 +1163,38 @@ sub get_acl_way {
             return _get_acl_from_file(mock_data => OVH::Bastion::mock_get_group_accesses(group => $group));
         }
         if (!(-f -r "/home/$group/$prefix.ip")) {
-            return R('ERR_PERMISSION_DENIED', msg => "Couldn't open permission file with your current rights or it doesn't exist");
+            return R('ERR_PERMISSION_DENIED',
+                msg => "Couldn't open permission file with your current rights or it doesn't exist");
         }
         $_cache_get_acl_way{$key} = _get_acl_from_file(file => "/home/$group/$prefix.ip");
     }
     elsif ($way eq 'groupguest') {
-        return R('ERR_MISSING_PARAMETER', msg => "Missing parameter 'account' or 'group' for $way way") if (not $group or not $account);
+        return R('ERR_MISSING_PARAMETER', msg => "Missing parameter 'account' or 'group' for $way way")
+          if (not $group or not $account);
         if (OVH::Bastion::is_mocking()) {
-            return _get_acl_from_file(mock_data => OVH::Bastion::mock_get_account_guest_accesses(group => $group, account => $account));
+            return _get_acl_from_file(
+                mock_data => OVH::Bastion::mock_get_account_guest_accesses(group => $group, account => $account));
         }
-        if (-f "/home/allowkeeper/$sysaccount/$prefix.private" && !-e "/home/allowkeeper/$sysaccount/$prefix.partial.$shortGroup") {
+        if (-f "/home/allowkeeper/$sysaccount/$prefix.private"
+            && !-e "/home/allowkeeper/$sysaccount/$prefix.partial.$shortGroup")
+        {
 
             # guest file doesn't exist: no guest rights
             $_cache_get_acl_way{$key} = R('OK_EMPTY', value => []);
         }
         elsif (!(-f -r "/home/allowkeeper/$sysaccount/$prefix.partial.$shortGroup")) {
-            return R('ERR_PERMISSION_DENIED', msg => "Couldn't open permission file with your current rights or it doesn't exist");
+            return R('ERR_PERMISSION_DENIED',
+                msg => "Couldn't open permission file with your current rights or it doesn't exist");
         }
         else {
-            $_cache_get_acl_way{$key} = _get_acl_from_file(file => "/home/allowkeeper/$sysaccount/$prefix.partial.$shortGroup");
+            $_cache_get_acl_way{$key} =
+              _get_acl_from_file(file => "/home/allowkeeper/$sysaccount/$prefix.partial.$shortGroup");
         }
     }
 
     return $_cache_get_acl_way{$key} if exists $_cache_get_acl_way{$key};
-    return R('ERR_INVALID_PARAMETER', msg => "Expected a parameter way with allowed values [personal,legacy,group,groupguest]");
+    return R('ERR_INVALID_PARAMETER',
+        msg => "Expected a parameter way with allowed values [personal,legacy,group,groupguest]");
 }
 
 # returns the parsed contents of an allowkeeper-style file
@@ -1162,7 +1235,10 @@ sub _get_acl_from_file {
 
     my @entries;
     foreach my $line (@lines) {
-        my ($ip, $user, $port, $comment, $forceKey, $forcePassword, $expiry, $addedBy, $addedDate, $extra, $comment, $userComment);
+        my (
+            $ip,     $user,    $port,      $comment, $forceKey, $forcePassword,
+            $expiry, $addedBy, $addedDate, $extra,   $comment,  $userComment
+        );
 
         # extract comment if any
         $line =~ s/(#.*)// and $comment = $1;

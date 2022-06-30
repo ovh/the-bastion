@@ -96,13 +96,17 @@ foreach my $host (@hosts) {
     # relaunch the user's shell (aka osh.pl) to connect to the host
     my @cmd = ($ENV{'SHELL'}, '-c', "--quiet $shellc -- $command");
 
-    $fnret = OVH::Bastion::execute(cmd => \@cmd, noisy_stderr => 1, noisy_stdout => 1, expects_stdin => $noStdin ? 0 : 1);
+    $fnret =
+      OVH::Bastion::execute(cmd => \@cmd, noisy_stderr => 1, noisy_stdout => 1, expects_stdin => $noStdin ? 0 : 1);
     if ($fnret and $fnret->value() and $fnret->value()->{'sysret'} != 0 and not $noPauseOnFailure) {
-        osh_warn("Last command failed (return code: " . $fnret->value()->{'sysret'} . "), press ENTER to continue or CTRL+C to stop here");
+        osh_warn("Last command failed (return code: "
+              . $fnret->value()->{'sysret'}
+              . "), press ENTER to continue or CTRL+C to stop here");
         <STDIN>;
     }
 
-    $ret{$host} = {stderr => $fnret->value->{'stderr'}, stdout => $fnret->value->{'stdout'}, sysret => $fnret->value->{'sysret'}};
+    $ret{$host} =
+      {stderr => $fnret->value->{'stderr'}, stdout => $fnret->value->{'stdout'}, sysret => $fnret->value->{'sysret'}};
 }
 
 osh_ok(\%ret);

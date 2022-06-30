@@ -47,7 +47,15 @@ if (!$result) {
 OVH::Bastion::Helper::check_spurious_args();
 
 osh_debug("groupSetRole: checking preconditions");
-$fnret = OVH::Bastion::Plugin::groupSetRole::preconditions(self => $self, account => $account, group => $group, action => $action, type => $type, sudo => 1, silentoverride => 1);
+$fnret = OVH::Bastion::Plugin::groupSetRole::preconditions(
+    self           => $self,
+    account        => $account,
+    group          => $group,
+    action         => $action,
+    type           => $type,
+    sudo           => 1,
+    silentoverride => 1
+);
 osh_debug("groupSetRole: checking preconditions result: $fnret");
 $fnret or HEXIT($fnret);
 
@@ -109,7 +117,8 @@ elsif ($action eq 'del') {
         $fnret or HEXIT($fnret);
         foreach my $pRemoteaccount (@{$fnret->value}) {
             next if ($pRemoteaccount eq $remoteaccount);
-            $otherMembers++ if OVH::Bastion::is_group_member(account => "$realm/$pRemoteaccount", group => $shortGroup, sudo => 1);
+            $otherMembers++
+              if OVH::Bastion::is_group_member(account => "$realm/$pRemoteaccount", group => $shortGroup, sudo => 1);
         }
     }
     if (!$otherMembers) {

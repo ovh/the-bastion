@@ -64,9 +64,9 @@ sub closeSyslog {
     return 1;
 }
 
-sub _log  { _display('LOG',  @_); return 1; }                    ## no critic (RequireArgUnpacking,ProhibitUnusedPrivateSubroutines)
-sub _warn { _display('WARN', @_); $NB_WARNINGS++; return 1; }    ## no critic (RequireArgUnpacking,ProhibitUnusedPrivateSubroutines)
-sub _err  { _display('ERR',  @_); $NB_ERRORS++; return 1; }      ## no critic (RequireArgUnpacking,ProhibitUnusedPrivateSubroutines)
+sub _log { _display('LOG', @_); return 1; }    ## no critic (RequireArgUnpacking,ProhibitUnusedPrivateSubroutines)
+sub _warn { _display('WARN', @_); $NB_WARNINGS++; return 1; } ## no critic (RequireArgUnpacking,ProhibitUnusedPrivateSubroutines)
+sub _err { _display('ERR', @_); $NB_ERRORS++; return 1; } ## no critic (RequireArgUnpacking,ProhibitUnusedPrivateSubroutines)
 
 #   Display a message
 sub _display {

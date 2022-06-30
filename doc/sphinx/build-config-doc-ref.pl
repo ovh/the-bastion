@@ -23,12 +23,17 @@ sub dumpdoc {
         die "attempting to dump data but section=$section" if !$section;
         push @{$sections{$section}}, $h{param};
         push @out, (".. _$h{param}:\n", "\n") if $ENV{'GLOBAL_REFS'};
-        push @out, "$h{param}\n", "*" x length($h{param}) . "\n", "\n", ":Type: ``$h{type}``\n", "\n", ":Default: ``$h{default}``\n", "\n";
+        push @out, "$h{param}\n", "*" x length($h{param}) . "\n", "\n", ":Type: ``$h{type}``\n", "\n",
+          ":Default: ``$h{default}``\n", "\n";
         push @out, (":Example: ``$h{example}``\n", "\n") if $h{example};
         push @out, "$h{desc}\n", "\n";
     }
     else {
-        die "something is missing: " . ($h{param} ? "" : "param ") . ($h{default} ? "" : "default ") . ($h{desc} ? "" : "desc ") . ($h{type} ? "" : "type") . "\n";
+        die "something is missing: "
+          . ($h{param}   ? "" : "param ")
+          . ($h{default} ? "" : "default ")
+          . ($h{desc}    ? "" : "desc ")
+          . ($h{type}    ? "" : "type") . "\n";
     }
     %h = ();
     return;

@@ -9,14 +9,14 @@ use lib dirname(__FILE__) . '/../../../../lib/perl';
 use OVH::Bastion;
 use OVH::Result;
 
-$SIG{'HUP'}  = 'IGNORE';    # continue even when attached terminal is closed (we're called with setsid on supported systems anyway)
+$SIG{'HUP'} = 'IGNORE'; # continue even when attached terminal is closed (we're called with setsid on supported systems anyway)
 $SIG{'PIPE'} = 'IGNORE';    # continue even if osh_info gets a SIGPIPE because there's no longer a terminal
 
 $| = 1;
 
 use Exporter 'import';
-our ($user, $ip, $host, $port, $scriptName, $self, $sysself, $realm, $remoteself, $HOME, $savedArgs);    ## no critic (ProhibitPackageVars)
-our @EXPORT    = qw( $user $ip $host $port $scriptName $self $sysself $realm $remoteself $HOME $savedArgs );    ## no critic (ProhibitAutomaticExportation)
+our ($user, $ip, $host, $port, $scriptName, $self, $sysself, $realm, $remoteself, $HOME, $savedArgs); ## no critic (ProhibitPackageVars)
+our @EXPORT = qw( $user $ip $host $port $scriptName $self $sysself $realm $remoteself $HOME $savedArgs ); ## no critic (ProhibitAutomaticExportation)
 our @EXPORT_OK = qw( help );
 
 my $_helptext;
@@ -121,7 +121,8 @@ sub begin {
         osh_exit;
     }
 
-    $fnret = OVH::Result::R('OK', value => {sysaccount => $self, account => $self, realm => undef, remoteaccount => undef});
+    $fnret =
+      OVH::Result::R('OK', value => {sysaccount => $self, account => $self, realm => undef, remoteaccount => undef});
     if ($< == 0) {
         ;    # called by root, don't verify if it's a bastion account (because it's not)
     }
@@ -142,7 +143,8 @@ sub begin {
         osh_exit 'ERR_MISSING_HOME', "Error with your HOME directory ($HOME), please report to your sysadmin.";
     }
     if ($sysself ne $ENV{'USER'}) {
-        osh_exit 'ERR_INVALID_USER', "Error with your USER (\"$sysself\" vs \"$ENV{'USER'}\"), please report to your sysadmin.";
+        osh_exit 'ERR_INVALID_USER',
+          "Error with your USER (\"$sysself\" vs \"$ENV{'USER'}\"), please report to your sysadmin.";
     }
 
     # only unparsed options are remaining there

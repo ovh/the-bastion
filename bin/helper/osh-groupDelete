@@ -114,14 +114,17 @@ $fnret = OVH::Bastion::execute_simple(cmd => ['mv', "/home/$group", "$fulldir/$g
 if (!$fnret) {
     my $msg = substr($fnret->value->{'output'}, 0, 128);
     $msg =~ s=[^a-zA-Z0-9./_-]=_=g;
-    warn_syslog("Error while backing up to-be-deleted '/home/$group' to '$fulldir/$group-home' ($msg), continuing anyway...");
+    warn_syslog("Error while backing up to-be-deleted '/home/$group' to '$fulldir/$group-home' ($msg)"
+          . ", continuing anyway...");
     $nbErrors++;
 }
-$fnret = OVH::Bastion::execute_simple(cmd => ['mv', "/home/keykeeper/$group", "$fulldir/$group-keykeeper"], must_succeed => 1);
+$fnret =
+  OVH::Bastion::execute_simple(cmd => ['mv', "/home/keykeeper/$group", "$fulldir/$group-keykeeper"], must_succeed => 1);
 if (!$fnret) {
     my $msg = substr($fnret->value->{'output'}, 0, 128);
     $msg =~ s=[^a-zA-Z0-9./_-]=_=g;
-    warn_syslog("Error while backing up to-be-deleted '/home/keykeeper/$group' to '$fulldir/$group-keykeeper' ($msg), continuing anyway...");
+    warn_syslog("Error while backing up to-be-deleted '/home/keykeeper/$group' to '$fulldir/$group-keykeeper' ($msg)"
+          . ", continuing anyway...");
     $nbErrors++;
 }
 
@@ -196,16 +199,21 @@ foreach my $todelete ("$group-owner", "$group-aclkeeper", "$group-gatekeeper", $
                 osh_info "... removing $member from group $todelete";
                 $fnret = OVH::Bastion::sys_delmemberfromgroup(user => $member, group => $todelete, noisy_stderr => 1);
                 if ($fnret->err ne 'OK') {
-                    warn_syslog("Error while attempting to remove member $member from group $todelete (" . $fnret->msg . "), proceeding anyway");
+                    warn_syslog("Error while attempting to remove member $member from group $todelete ("
+                          . $fnret->msg
+                          . "), proceeding anyway");
                     $nbErrors++;
                 }
             }
         }
 
         if ($todelete eq $group) {
-            osh_info "Deleting main user of group $todelete...", $fnret = OVH::Bastion::sys_userdel(user => $todelete, noisy_stderr => 1);
+            osh_info "Deleting main user of group $todelete...",
+              $fnret = OVH::Bastion::sys_userdel(user => $todelete, noisy_stderr => 1);
             if ($fnret->err ne 'OK') {
-                warn_syslog("Error while attempting to delete main user of group $todelete (" . $fnret->msg . "), proceeding anyway");
+                warn_syslog("Error while attempting to delete main user of group $todelete ("
+                      . $fnret->msg
+                      . "), proceeding anyway");
                 $nbErrors++;
             }
         }
@@ -218,7 +226,8 @@ foreach my $todelete ("$group-owner", "$group-aclkeeper", "$group-gatekeeper", $
             osh_info "Deleting group $todelete...";
             $fnret = OVH::Bastion::sys_groupdel(group => $todelete, noisy_stderr => 1);
             if ($fnret->err ne 'OK') {
-                warn_syslog("Error while attempting to delete group $todelete (" . $fnret->msg . "), proceeding anyway");
+                warn_syslog(
+                    "Error while attempting to delete group $todelete (" . $fnret->msg . "), proceeding anyway");
                 $nbErrors++;
             }
         }
@@ -229,7 +238,11 @@ foreach my $todelete ("$group-owner", "$group-aclkeeper", "$group-gatekeeper", $
 }
 
 # remove sudoers if it's there
-$fnret = OVH::Bastion::execute(cmd => [$OVH::Bastion::BASEPATH . '/bin/sudogen/generate-sudoers.sh', 'delete', 'group', $group], must_succeed => 1, noisy_stdout => 1);
+$fnret = OVH::Bastion::execute(
+    cmd          => [$OVH::Bastion::BASEPATH . '/bin/sudogen/generate-sudoers.sh', 'delete', 'group', $group],
+    must_succeed => 1,
+    noisy_stdout => 1
+);
 if (!$fnret) {
     warn_syslog("Error during group deletion of '$group', couldn't delete sudoers file: " . $fnret->msg);
     $nbErrors++;
@@ -241,4 +254,8 @@ OVH::Bastion::syslogFormatted(
     fields   => [['action', 'delete'], ['group', $shortGroup], ['errors', $nbErrors]]
 );
 
-HEXIT('OK', value => {group => $group, operation => 'deleted', errors => $nbErrors + 0}, msg => "Group $group has been deleted");
+HEXIT(
+    'OK',
+    value => {group => $group, operation => 'deleted', errors => $nbErrors + 0},
+    msg   => "Group $group has been deleted"
+);

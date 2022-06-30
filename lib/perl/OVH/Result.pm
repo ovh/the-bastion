@@ -70,7 +70,8 @@ sub TO_JSON {
         error_code    => $self->err,
         value         => $self->value,
         error_message => $self->msg,
-    } if (ref $self eq 'OVH::Result');
+      }
+      if (ref $self eq 'OVH::Result');
     return {};
 }
 

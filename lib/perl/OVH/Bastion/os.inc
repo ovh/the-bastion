@@ -76,7 +76,11 @@ sub _sys_autoretry {
     }
 
     # failed too many times, log the detailed error in our system log, warn the user and return what we have
-    warn_syslog('Too much concurrency running command "' . join(" ", $params{'cmd'}) . '", returned ' . $fnret->msg . ', gave up');
+    warn_syslog('Too much concurrency running command "'
+          . join(" ", $params{'cmd'})
+          . '", returned '
+          . $fnret->msg
+          . ', gave up');
     warn "Couldn't apply modifications (concurrency problem?)";
     return $fnret;
 }
@@ -466,8 +470,19 @@ sub sys_getpasswordinfo {
         $fnret = OVH::Bastion::execute(cmd => ['getent', 'shadow', $user]);
         $fnret or return $fnret;
         return R('KO_NOT_FOUND') if ($fnret->value->{'sysret'} != 0);
-        if ($fnret->value->{'stdout'}->[0] =~ m{^([^:]*):([^:]*):([^:]*):([^:]*):([^:]*):([^:]*):([^:]*):([^:]*):([^:]*)$}) {
-            %ret = (user => $1, password => $2, epoch_changed_days => $3, min_days => $4, max_days => $5, warn_days => $6, inactive_days => $7, epoch_disabled_days => $8);
+        if ($fnret->value->{'stdout'}->[0] =~
+            m{^([^:]*):([^:]*):([^:]*):([^:]*):([^:]*):([^:]*):([^:]*):([^:]*):([^:]*)$})
+        {
+            %ret = (
+                user                => $1,
+                password            => $2,
+                epoch_changed_days  => $3,
+                min_days            => $4,
+                max_days            => $5,
+                warn_days           => $6,
+                inactive_days       => $7,
+                epoch_disabled_days => $8
+            );
         }
         else {
             return R('ERR_CANNOT_PARSE_SHADOW');
@@ -505,7 +520,8 @@ sub sys_getpasswordinfo {
     }
     require POSIX;
     $ret{'date_changed_timestamp'} = 86400 * delete($ret{'epoch_changed_days'}) + 0;
-    $ret{'date_changed'}           = $ret{'date_changed_timestamp'} ? POSIX::strftime("%Y-%m-%d", localtime($ret{'date_changed_timestamp'})) : undef;
+    $ret{'date_changed'} =
+      $ret{'date_changed_timestamp'} ? POSIX::strftime("%Y-%m-%d", localtime($ret{'date_changed_timestamp'})) : undef;
     $ret{'min_days'} += 0;
     $ret{'max_days'} += 0;
     $ret{'max_days'} = -1 if $ret{'max_days'} >= 9999;
@@ -513,7 +529,8 @@ sub sys_getpasswordinfo {
     $ret{'inactive_days'} = -1 if $ret{'inactive_days'} eq '';
     $ret{'inactive_days'} += 0;
     $ret{'date_disabled_timestamp'} = 86400 * delete($ret{'epoch_disabled_days'}) + 0;
-    $ret{'date_disabled'}           = $ret{'date_disabled_timestamp'} ? POSIX::strftime("%Y-%m-%d", localtime($ret{'date_disabled_timestamp'})) : undef;
+    $ret{'date_disabled'} =
+      $ret{'date_disabled_timestamp'} ? POSIX::strftime("%Y-%m-%d", localtime($ret{'date_disabled_timestamp'})) : undef;
     return R('OK', value => \%ret);
 }
 
@@ -562,7 +579,8 @@ sub sys_setfacl {
                 push @perms, $1;    # untaint
             }
             if (@perms != 3) {
-                return R('ERR_GETFACL_PARSE_FAILED_FREEBSD', msg => "Couldn't parse getfacl output to set prerequisite default ACL");
+                return R('ERR_GETFACL_PARSE_FAILED_FREEBSD',
+                    msg => "Couldn't parse getfacl output to set prerequisite default ACL");
             }
 
             # apply the default ACL

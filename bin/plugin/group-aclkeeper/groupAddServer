@@ -54,23 +54,26 @@ my $fnret;
 
 if (not $group or not $ip) {
     help();
-    osh_exit 'ERR_MISSING_PARAMETER', "Missing mandatory parameter 'host' or 'group' (or host didn't resolve correctly)";
+    osh_exit 'ERR_MISSING_PARAMETER',
+      "Missing mandatory parameter 'host' or 'group' (or host didn't resolve correctly)";
 }
 
 if ($user and $userAny) {
     help();
-    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "A user was specified, but --user-any used, these are incompatible, please think about what you're doing";
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS',
+      "A user was specified, but --user-any used, these are incompatible, please think about what you're doing";
 }
 
 if ($scpUp and $scpDown) {
     help();
-    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "You specified both --scpup and --scpdown, if you want to grant both, please do it in two separate commands";
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS',
+      "You specified both --scpup and --scpdown, if you want to grant both, please do it in two separate commands";
 }
 
 if (($scpUp or $scpDown) and ($user or $userAny)) {
     help();
     osh_exit 'ERR_INCOMPATIBLE_PARAMETERS',
-"To grant SCP access, first ensure SSH access is granted to the machine (with the --user you need, or --user-any), then grant with --scpup and/or --scpdown, omitting --user/--user-any";
+      "To grant SCP access, first ensure SSH access is granted to the machine (with the --user you need, or --user-any), then grant with --scpup and/or --scpdown, omitting --user/--user-any";
 }
 $user = '!scpupload'   if $scpUp;
 $user = '!scpdownload' if $scpDown;
@@ -82,7 +85,8 @@ if (not $user and not $userAny) {
 
 if ($portAny and $port) {
     help();
-    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "A port was specified, but --port-any used, these are incompatible, please think about what you're doing";
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS',
+      "A port was specified, but --port-any used, these are incompatible, please think about what you're doing";
 }
 
 if (not $port and not $portAny) {
@@ -120,10 +124,19 @@ if ($forcePassword) {
 #
 
 $fnret = OVH::Bastion::is_group_aclkeeper(account => $self, group => $shortGroup, superowner => 1);
-$fnret or osh_exit 'ERR_NOT_GROUP_ACLKEEPER', "Sorry, you must be an aclkeeper of group $shortGroup to be able to add servers to it";
+$fnret
+  or osh_exit 'ERR_NOT_GROUP_ACLKEEPER',
+  "Sorry, you must be an aclkeeper of group $shortGroup to be able to add servers to it";
 
 if (not $force) {
-    $fnret = OVH::Bastion::ssh_test_access_way(group => $group, user => $user, port => $port, ip => $ip, forceKey => $forceKey, forcePassword => $forcePassword);
+    $fnret = OVH::Bastion::ssh_test_access_way(
+        group         => $group,
+        user          => $user,
+        port          => $port,
+        ip            => $ip,
+        forceKey      => $forceKey,
+        forcePassword => $forcePassword
+    );
     if ($fnret->is_ok and $fnret->err ne 'OK') {
 
         # we have something to say, say it

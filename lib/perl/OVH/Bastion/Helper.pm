@@ -54,7 +54,7 @@ sub check_spurious_args {
 $| = 1;
 
 # Don't let helpers be interrupted too easily
-$SIG{'HUP'}  = 'IGNORE';    # continue even when attached terminal is closed (we're called with setsid on supported systems anyway)
+$SIG{'HUP'} = 'IGNORE'; # continue even when attached terminal is closed (we're called with setsid on supported systems anyway)
 $SIG{'PIPE'} = 'IGNORE';    # continue even if osh_info gets a SIGPIPE because there's no longer a terminal
 
 # Ensure the PATH is not tainted, and has sane values

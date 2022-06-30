@@ -31,7 +31,12 @@ EOF
 
 # be nice and try to guessify a host as first param
 # if user said --osh ping mymachine.example.org
-if (not $host and not $ip and ref $remainingOptions eq 'ARRAY' and @$remainingOptions == 1 and $remainingOptions->[0] =~ /^([a-zA-Z0-9][a-zA-Z0-9.-]{1,})$/) {
+if (    not $host
+    and not $ip
+    and ref $remainingOptions eq 'ARRAY'
+    and @$remainingOptions == 1
+    and $remainingOptions->[0] =~ /^([a-zA-Z0-9][a-zA-Z0-9.-]{1,})$/)
+{
     $host = $remainingOptions->[0];
 }
 
@@ -85,7 +90,7 @@ foreach (@{$fnret->value->{'stdout'}}) {
 
     ## no critic (ProhibitUnusedCapture) # false positive
     if (
-m{(?<packets_transmitted>\d+) packets? transmitted, (?<packets_received>\d+)( packets)? received, (?<packets_loss_percentage>\d+)(\.\d+)?% packet loss(, time (?<ping_duration>\d+))?}
+        m{(?<packets_transmitted>\d+) packets? transmitted, (?<packets_received>\d+)( packets)? received, (?<packets_loss_percentage>\d+)(\.\d+)?% packet loss(, time (?<ping_duration>\d+))?}
       )
     {
         @$result_hash{keys %+} = values %+;

@@ -90,7 +90,10 @@ sub process_account {
 
         my @shortGroups = sort keys %byGroups;
         if ($byPersonal and keys %byGroups) {
-            osh_info "$account has access by his " . colored('personal', 'red') . " key and by the following groups: " . colored(join(' ', @shortGroups), "green");
+            osh_info "$account has access by his "
+              . colored('personal', 'red')
+              . " key and by the following groups: "
+              . colored(join(' ', @shortGroups), "green");
             $result_hash->{$account} = {personal_access => 1, group_access => [sort keys %byGroups]};
         }
         elsif ($byPersonal) {

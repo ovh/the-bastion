@@ -46,7 +46,10 @@ if ($self eq 'root') {
 }
 else {
     # need to perform another security check
-    $fnret = OVH::Bastion::is_user_in_group(user => $self, group => ($account eq 'root' ? "osh-rootListIngressKeys" : "osh-accountListIngressKeys"));
+    $fnret = OVH::Bastion::is_user_in_group(
+        user  => $self,
+        group => ($account eq 'root' ? "osh-rootListIngressKeys" : "osh-accountListIngressKeys")
+    );
     if (!$fnret) {
         HEXIT('ERR_SECURITY_VIOLATION', msg => "You're not allowed to run this, dear $self");
     }

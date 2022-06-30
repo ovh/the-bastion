@@ -120,7 +120,10 @@ foreach my $shortGroup (sort keys %$groups) {
             next;
         }
         elsif ($fnret->err eq 'OK') {
-            _log "<$shortGroup/$account> The account still has " . (@{$fnret->value}) . " accesses to the group, skipping" if $verbose;
+            _log "<$shortGroup/$account> The account still has "
+              . (@{$fnret->value})
+              . " accesses to the group, skipping"
+              if $verbose;
             next;
         }
         elsif ($fnret->err eq 'OK_EMPTY' && !@{$fnret->value}) {
@@ -128,7 +131,8 @@ foreach my $shortGroup (sort keys %$groups) {
             # this is a guest, but no ACL remains (probably the last one had a TTL),
             # so we'll cleanup this guest
             if ($dryRun) {
-                _log "<$shortGroup/$account> The account is a guest of group but has no remaining access, would have cleaned up in non-dry-run mode";
+                _log
+                  "<$shortGroup/$account> The account is a guest of group but has no remaining access, would have cleaned up in non-dry-run mode";
                 next;
             }
             _log "<$shortGroup/$account> The account is a guest of group but has no remaining access, cleaning up...";

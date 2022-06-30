@@ -55,18 +55,20 @@ if ($user and $userAny) {
 }
 if ($scpUp and $scpDown) {
     help();
-    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "You specified both --scpup and --scpdown, if you want to grant both, please do it in two separate commands";
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS',
+      "You specified both --scpup and --scpdown, if you want to grant both, please do it in two separate commands";
 }
 if (($scpUp or $scpDown) and ($user or $userAny)) {
     help();
     osh_exit 'ERR_INCOMPATIBLE_PARAMETERS',
-"To grant SCP access, first ensure SSH access is granted to the machine (with the --user you need, or --user-any), then grant with --scpup and/or --scpdown, omitting --user/--user-any";
+      "To grant SCP access, first ensure SSH access is granted to the machine (with the --user you need, or --user-any), then grant with --scpup and/or --scpdown, omitting --user/--user-any";
 }
 $user = '!scpupload'   if $scpUp;
 $user = '!scpdownload' if $scpDown;
 
 if (not $user and not $userAny) {
-    osh_warn "You didn't specify --user or --user-any, defaulting to --user-any, this will no longer be implicit in future versions";
+    osh_warn
+      "You didn't specify --user or --user-any, defaulting to --user-any, this will no longer be implicit in future versions";
     $userAny = 1;
 
     #help();
@@ -78,7 +80,8 @@ if ($port and $portAny) {
     osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "You specified both --port and --port-any, please check what you're doing";
 }
 if (not $port and not $portAny) {
-    osh_warn "You didn't specify --port or --port-any, defaulting to --port-any, this will no longer be implicit in future versions";
+    osh_warn
+      "You didn't specify --port or --port-any, defaulting to --port-any, this will no longer be implicit in future versions";
     $portAny = 1;
 
     #help();
@@ -104,7 +107,14 @@ if ($forcePassword) {
 }
 
 if (not $force) {
-    $fnret = OVH::Bastion::ssh_test_access_way(account => $self, user => $user, port => $port, ip => $ip, forceKey => $forceKey, forcePassword => $forcePassword);
+    $fnret = OVH::Bastion::ssh_test_access_way(
+        account       => $self,
+        user          => $user,
+        port          => $port,
+        ip            => $ip,
+        forceKey      => $forceKey,
+        forcePassword => $forcePassword
+    );
     if ($fnret->is_ok and $fnret->err ne 'OK') {
 
         # we have something to say, say it

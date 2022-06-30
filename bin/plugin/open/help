@@ -31,19 +31,25 @@ my @knownPlugins = (
             qw{ selfListIngressKeys selfResetIngressKeys selfAddIngressKey selfDelIngressKey
               selfGenerateProxyPassword selfMFASetupPassword selfMFAResetPassword selfMFASetupTOTP selfMFAResetTOTP }
         ],
-        'manage your egress credentials (bastion->server)' => [qw{ selfListEgressKeys selfGenerateEgressKey selfDelEgressKey selfGeneratePassword selfListPasswords }],
-        'manage your accesses to servers'                  => [qw{ selfListAccesses selfAddPersonalAccess selfDelPersonalAccess selfForgetHostKey }],
-        'manage your current sessions'                     => [qw{ lock unlock }],
-        'review past sessions'                             => [qw{ selfListSessions selfPlaySession }],
-        'other commands'                                   => [qw{ selfModify }],
+        'manage your egress credentials (bastion->server)' =>
+          [qw{ selfListEgressKeys selfGenerateEgressKey selfDelEgressKey selfGeneratePassword selfListPasswords }],
+        'manage your accesses to servers' =>
+          [qw{ selfListAccesses selfAddPersonalAccess selfDelPersonalAccess selfForgetHostKey }],
+        'manage your current sessions' => [qw{ lock unlock }],
+        'review past sessions'         => [qw{ selfListSessions selfPlaySession }],
+        'other commands'               => [qw{ selfModify }],
     ],
     'MANAGE OTHER ACCOUNTS' => [
-        'manage bastion accounts'                              => [qw{ accountList accountCreate accountCreateOvh accountDelete accountUnexpire accountModify accountPIV }],
-        'manage accounts ingress credentials (them->bastion)'  => [qw{ accountListIngressKeys accountResetIngressKeys accountMFAResetPassword accountMFAResetTOTP }],
-        'manage accounts egress credentials (bastion->server)' => [qw{ accountListEgressKeys accountGeneratePassword accountListPasswords }],
-        'manage access to restricted commands'                 => [qw{ accountGrantCommand accountRevokeCommand accountInfo }],
-        'manage another account accesses to servers'           => [qw{ accountListAccesses accountAddPersonalAccess accountDelPersonalAccess whoHasAccessTo }],
-        'review past sessions'                                 => [qw{ accountListSessions globalListSessions }],
+        'manage bastion accounts' =>
+          [qw{ accountList accountCreate accountCreateOvh accountDelete accountUnexpire accountModify accountPIV }],
+        'manage accounts ingress credentials (them->bastion)' =>
+          [qw{ accountListIngressKeys accountResetIngressKeys accountMFAResetPassword accountMFAResetTOTP }],
+        'manage accounts egress credentials (bastion->server)' =>
+          [qw{ accountListEgressKeys accountGeneratePassword accountListPasswords }],
+        'manage access to restricted commands' => [qw{ accountGrantCommand accountRevokeCommand accountInfo }],
+        'manage another account accesses to servers' =>
+          [qw{ accountListAccesses accountAddPersonalAccess accountDelPersonalAccess whoHasAccessTo }],
+        'review past sessions' => [qw{ accountListSessions globalListSessions }],
     ],
     'MANAGE GROUPS' => [
         'information and lifecycle' => [qw{ groupInfo groupListServers groupList groupCreate groupDelete }],
@@ -51,9 +57,10 @@ my @knownPlugins = (
             qw{ groupAddGatekeeper groupDelGatekeeper groupAddAclkeeper groupDelAclkeeper
               groupAddOwner groupDelOwner groupTransmitOwnership groupGenerateEgressKey groupDelEgressKey groupModify }
         ],
-        'egress passwords commands'                  => [qw{ groupListPasswords groupGeneratePassword groupDelPassword }],
-        'gatekeeper commands to manage members'      => [qw{ groupAddMember groupDelMember }],
-        'gatekeeper commands to manage guests'       => [qw{ groupListGuestAccesses groupAddGuestAccess groupDelGuestAccess }],
+        'egress passwords commands'             => [qw{ groupListPasswords groupGeneratePassword groupDelPassword }],
+        'gatekeeper commands to manage members' => [qw{ groupAddMember groupDelMember }],
+        'gatekeeper commands to manage guests' =>
+          [qw{ groupListGuestAccesses groupAddGuestAccess groupDelGuestAccess }],
         'aclkeeper commands to manage group servers' => [qw{ groupAddServer groupDelServer }],
     ],
     'BASTION ADMIN' => [
@@ -128,7 +135,8 @@ while ($i < scalar @knownPlugins) {
                 $curLen = 0;
             }
             $curLen += length($fnret->value->{'plugin'});
-            push @{$availableCommands[$curIndex]}, colored($fnret->value->{'plugin'}, $colorpanel{$fnret->value->{'type'}});
+            push @{$availableCommands[$curIndex]},
+              colored($fnret->value->{'plugin'}, $colorpanel{$fnret->value->{'type'}});
         }
         if (@availableCommands) {
             if (not $mainCategoryNamePrinted) {

@@ -78,7 +78,8 @@ sub _mfa_toggle {
     # if the value is != bypass, remove the account from the bypass group
     if ($value ne 'bypass') {
         if (OVH::Bastion::is_user_in_group(user => $account, group => $mfaGroupBypass)) {
-            $fnret = OVH::Bastion::sys_delmemberfromgroup(user => $account, group => $mfaGroupBypass, noisy_stderr => 1);
+            $fnret =
+              OVH::Bastion::sys_delmemberfromgroup(user => $account, group => $mfaGroupBypass, noisy_stderr => 1);
             if (!$fnret) {
                 osh_warn "... error while removing the bypass option for this account";
                 $result{$jsonkey} = R('ERR_REMOVING_FROM_GROUP');
@@ -115,7 +116,8 @@ sub _mfa_toggle {
             return;
         }
 
-        osh_info "... done, this account is now required to setup a password with --osh selfMFASetup$mfaName on the next connection, before being allowed to do anything else";
+        osh_info("... done, this account is now required to setup a password with --osh selfMFASetup$mfaName ",
+            "on the next connection, before being allowed to do anything else");
         $result{$jsonkey} = R('OK');
     }
     elsif ($value eq 'no') {
@@ -133,8 +135,11 @@ sub _mfa_toggle {
             return;
         }
 
-        osh_info
-"... done, this account is no longer required to setup a password, however if there's already a password configured, it'll still be required (if this is not expected, the password can be reset with --osh accountMFAResetPassword command)";
+        osh_info(
+            "... done, this account is no longer required to setup a password, however if there's already ",
+            "a password configured, it'll still be required (if this is not expected, the password can be reset ",
+            "with --osh accountMFAResetPassword command)"
+        );
         $result{$jsonkey} = R('OK');
     }
     elsif ($value eq 'bypass') {
@@ -153,8 +158,12 @@ sub _mfa_toggle {
             return;
         }
 
-        osh_info
-"... done, this account will no longer have to setup a password, even if this is enforced by the default global policy.\nHowever if there's already a password configured, it'll still be required (if this is not expected, the password can be reset with --osh accountMFAResetPassword command)";
+        osh_info(
+            "... done, this account will no longer have to setup a password, even if this is enforced ",
+            "by the default global policy.\n",
+            "However if there's already a password configured, it'll still be required (if this is not expected, ",
+            "the password can be reset with --osh accountMFAResetPassword command)"
+        );
         $result{$jsonkey} = R('OK');
     }
     return;
@@ -216,13 +225,23 @@ foreach my $tuple (@modify) {
 
     osh_debug "working on tuple key=$key value=$value";
     if ($key eq 'always-active') {
-        $result{$jsonkey} = _toggle_yes_no(value => $value, keyfile => OVH::Bastion::OPT_ACCOUNT_ALWAYS_ACTIVE, keyname => 'always-active');
+        $result{$jsonkey} = _toggle_yes_no(
+            value   => $value,
+            keyfile => OVH::Bastion::OPT_ACCOUNT_ALWAYS_ACTIVE,
+            keyname => 'always-active'
+        );
     }
     elsif ($key eq 'idle-ignore') {
-        $result{$jsonkey} = _toggle_yes_no(value => $value, keyfile => OVH::Bastion::OPT_ACCOUNT_IDLE_IGNORE, keyname => 'idle-ignore');
+        $result{$jsonkey} =
+          _toggle_yes_no(value => $value, keyfile => OVH::Bastion::OPT_ACCOUNT_IDLE_IGNORE, keyname => 'idle-ignore');
     }
     elsif ($key eq 'osh-only') {
-        $result{$jsonkey} = _toggle_yes_no(value => $value, public => 0, keyfile => OVH::Bastion::OPT_ACCOUNT_OSH_ONLY, keyname => 'osh-only');
+        $result{$jsonkey} = _toggle_yes_no(
+            value   => $value,
+            public  => 0,
+            keyfile => OVH::Bastion::OPT_ACCOUNT_OSH_ONLY,
+            keyname => 'osh-only'
+        );
     }
     elsif ($key eq 'pam-auth-bypass') {
         $fnret = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::PAM_AUTH_BYPASS_GROUP);
@@ -235,7 +254,11 @@ foreach my $tuple (@modify) {
                     last;
                 }
 
-                $fnret = OVH::Bastion::sys_addmembertogroup(user => $account, group => OVH::Bastion::PAM_AUTH_BYPASS_GROUP, noisy_stderr => 1);
+                $fnret = OVH::Bastion::sys_addmembertogroup(
+                    user         => $account,
+                    group        => OVH::Bastion::PAM_AUTH_BYPASS_GROUP,
+                    noisy_stderr => 1
+                );
                 if (!$fnret) {
                     osh_warn "... error while setting the bypass option";
                     $result{$jsonkey} = R('ERR_ADDING_TO_GROUP');
@@ -255,7 +278,11 @@ foreach my $tuple (@modify) {
                     last;
                 }
 
-                $fnret = OVH::Bastion::sys_delmemberfromgroup(user => $account, group => OVH::Bastion::PAM_AUTH_BYPASS_GROUP, noisy_stderr => 1);
+                $fnret = OVH::Bastion::sys_delmemberfromgroup(
+                    user         => $account,
+                    group        => OVH::Bastion::PAM_AUTH_BYPASS_GROUP,
+                    noisy_stderr => 1
+                );
                 if (!$fnret) {
                     osh_warn "... error while removing the bypass option";
                     $result{$jsonkey} = R('ERR_REMOVING_FROM_GROUP');
@@ -268,7 +295,8 @@ foreach my $tuple (@modify) {
         }
     }
     elsif ($key eq 'pubkey-auth-optional') {
-        $fnret = OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::OSH_PUBKEY_AUTH_OPTIONAL_GROUP);
+        $fnret =
+          OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::OSH_PUBKEY_AUTH_OPTIONAL_GROUP);
         if ($value eq 'yes') {
             {
                 osh_info "Making public key authentication optional for this account...";
@@ -278,14 +306,19 @@ foreach my $tuple (@modify) {
                     last;
                 }
 
-                $fnret = OVH::Bastion::sys_addmembertogroup(user => $account, group => OVH::Bastion::OSH_PUBKEY_AUTH_OPTIONAL_GROUP, noisy_stderr => 1);
+                $fnret = OVH::Bastion::sys_addmembertogroup(
+                    user         => $account,
+                    group        => OVH::Bastion::OSH_PUBKEY_AUTH_OPTIONAL_GROUP,
+                    noisy_stderr => 1
+                );
                 if (!$fnret) {
                     osh_warn "... error while setting the optional pubkey option";
                     $result{$jsonkey} = R('ERR_ADDING_TO_GROUP');
                     last;
                 }
 
-                osh_info "... done, this account can now authenticate with or without a pubkey if a password/TOTP is set";
+                osh_info("... done, this account can now authenticate with or without a pubkey ",
+                    "if a password/TOTP is set");
                 $result{$jsonkey} = R('OK');
             }
         }
@@ -298,7 +331,11 @@ foreach my $tuple (@modify) {
                     last;
                 }
 
-                $fnret = OVH::Bastion::sys_delmemberfromgroup(user => $account, group => OVH::Bastion::OSH_PUBKEY_AUTH_OPTIONAL_GROUP, noisy_stderr => 1);
+                $fnret = OVH::Bastion::sys_delmemberfromgroup(
+                    user         => $account,
+                    group        => OVH::Bastion::OSH_PUBKEY_AUTH_OPTIONAL_GROUP,
+                    noisy_stderr => 1
+                );
                 if (!$fnret) {
                     osh_warn "... error while removing the optional pubkey option";
                     $result{$jsonkey} = R('ERR_REMOVING_FROM_GROUP');
@@ -311,7 +348,11 @@ foreach my $tuple (@modify) {
         }
     }
     elsif ($key eq 'mfa-password-required') {
-        _mfa_toggle($key, $value, 'Password', OVH::Bastion::MFA_PASSWORD_REQUIRED_GROUP, OVH::Bastion::MFA_PASSWORD_BYPASS_GROUP);
+        _mfa_toggle(
+            $key, $value, 'Password',
+            OVH::Bastion::MFA_PASSWORD_REQUIRED_GROUP,
+            OVH::Bastion::MFA_PASSWORD_BYPASS_GROUP
+        );
     }
     elsif ($key eq 'mfa-totp-required') {
         _mfa_toggle($key, $value, 'TOTP', OVH::Bastion::MFA_TOTP_REQUIRED_GROUP, OVH::Bastion::MFA_TOTP_BYPASS_GROUP);
@@ -335,10 +376,18 @@ foreach my $tuple (@modify) {
                 # special case: for 'default', we actually remove the StrictHostKeyChecking option
                 undef $value;
             }
-            $fnret = OVH::Bastion::account_ssh_config_set(account => $account, key => "StrictHostKeyChecking", value => $value);
+            $fnret = OVH::Bastion::account_ssh_config_set(
+                account => $account,
+                key     => "StrictHostKeyChecking",
+                value   => $value
+            );
             $result{$jsonkey} = $fnret;
             if ($fnret) {
-                $fnret = OVH::Bastion::account_ssh_config_set(account => $account, key => "UserKnownHostsFile", value => $hostsFile);
+                $fnret = OVH::Bastion::account_ssh_config_set(
+                    account => $account,
+                    key     => "UserKnownHostsFile",
+                    value   => $hostsFile
+                );
                 $result{$jsonkey} = $fnret;
             }
             if ($fnret) {
@@ -350,13 +399,15 @@ foreach my $tuple (@modify) {
         }
     }
     elsif ($key eq 'personal-egress-mfa-required') {
-        osh_info "Changing the MFA policy for egress connections using the personal access (and keys) of the account...";
+        osh_info
+          "Changing the MFA policy for egress connections using the personal access (and keys) of the account...";
         if (not grep { $value eq $_ } qw{ password totp any none }) {
             osh_warn "Invalid parameter '$value', skipping";
             $result{$jsonkey} = R('ERR_INVALID_PARAMETER');
         }
         else {
-            $fnret = OVH::Bastion::account_config(account => $account, key => "personal_egress_mfa_required", value => $value);
+            $fnret =
+              OVH::Bastion::account_config(account => $account, key => "personal_egress_mfa_required", value => $value);
             $result{$jsonkey} = $fnret;
             if ($fnret) {
                 osh_info "... modification done";
@@ -374,7 +425,10 @@ foreach my $tuple (@modify) {
         }
         else {
             my %todo = ($value >= 0 ? (value => $value) : (delete => 1));
-            $fnret = OVH::Bastion::account_config(account => $account, %todo, %{OVH::Bastion::OPT_ACCOUNT_MAX_INACTIVE_DAYS()});
+            $fnret = OVH::Bastion::account_config(
+                account => $account,
+                %todo, %{OVH::Bastion::OPT_ACCOUNT_MAX_INACTIVE_DAYS()}
+            );
             $result{$jsonkey} = $fnret;
             if ($fnret) {
                 osh_info "... modification done";

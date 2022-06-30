@@ -13,8 +13,8 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,
     header  => "add a new public key to your account",
     options => {
-        "pubKey|public-key=s" => \my $pubKey,        # 'pubKey' is a deprecated name, keep it to not break scripts or people
-        "piv"                 => \my $pivExplicit,
+        "pubKey|public-key=s" => \my $pubKey,    # 'pubKey' is a deprecated name, keep it to not break scripts or people
+        "piv" => \my $pivExplicit,
     },
     helptext => <<'EOF',
 Add a new ingress public key to your account
@@ -47,12 +47,15 @@ my $pivEffectivePolicyEnabled = OVH::Bastion::is_effective_piv_account_policy_en
 # before requesting the ssh pubkey, if we have to do PIV, check we have the piv helper
 if (!OVH::Bastion::has_piv_helper()) {
     if ($pivExplicit) {
-        osh_exit R('KO_PIV_NOT_AVAILABLE', msg => "This bastion doesn't have PIV capabilities due to missing prerequisites. Please retry without --piv.");
+        osh_exit R('KO_PIV_NOT_AVAILABLE',
+            msg =>
+              "This bastion doesn't have PIV capabilities due to missing prerequisites. Please retry without --piv.");
     }
     elsif ($pivEffectivePolicyEnabled) {
         warn_syslog("selfAddIngressKey: $self is required to use PIV keys but we're missing the PIV helper");
         osh_exit R('KO_PIV_NOT_AVAILABLE',
-            msg => "You are required per the bastion policy to only use PIV keys but we're missing some prerequisites to validate PIV keys. "
+            msg =>
+              "You are required per the bastion policy to only use PIV keys but we're missing some prerequisites to validate PIV keys. "
               . "This is a configuration error, please contact your nearest sysadmin.");
     }
 }
@@ -76,10 +79,12 @@ if (not defined $pubKey) {
     osh_info "\nIn any case, don't save it without a passphrase.";
 
     if (OVH::Bastion::config('ingressKeysFromAllowOverride')->value) {
-        osh_info 'You can prepend your key with a from="IP1,IP2,..." as this bastion policy allows ingress keys "from" override by users';
+        osh_info
+          'You can prepend your key with a from="IP1,IP2,..." as this bastion policy allows ingress keys "from" override by users';
     }
     else {
-        osh_info 'Any from="IP1,IP2,..." you include will be ignored, as this bastion policy refuses ingress keys "from" override by users';
+        osh_info
+          'Any from="IP1,IP2,..." you include will be ignored, as this bastion policy refuses ingress keys "from" override by users';
     }
 
     $pubKey = <STDIN>;
@@ -123,19 +128,25 @@ if ($pivExplicit || $pivEffectivePolicyEnabled) {
 
     osh_info " ";
     osh_info "Thanks, now please paste the PIV key certificate of your generated key in PEM format.";
-    osh_info "This snippet should also start with '-----BEGIN CERTIFICATE-----' and end with '-----END CERTIFICATE-----':";
+    osh_info
+      "This snippet should also start with '-----BEGIN CERTIFICATE-----' and end with '-----END CERTIFICATE-----':";
     osh_info " ";
     $fnret = readPEMFromSTDIN();
     $fnret or osh_exit $fnret;
     $key->{'pivKeyCertificate'} = $fnret->value;
     osh_info " ";
 
-    $fnret = OVH::Bastion::verify_piv(key => $key->{'line'}, attestationCertificate => $key->{'pivAttestationCertificate'}, keyCertificate => $key->{'pivKeyCertificate'});
+    $fnret = OVH::Bastion::verify_piv(
+        key                    => $key->{'line'},
+        attestationCertificate => $key->{'pivAttestationCertificate'},
+        keyCertificate         => $key->{'pivKeyCertificate'}
+    );
     $key->{'isPiv'}   = ($fnret ? 1 : 0);
     $key->{'pivInfo'} = $fnret->value if $fnret;
 
     if (!$key->{'isPiv'}) {
-        osh_exit R('ERR_PIV_VALIDATION_FAILED', msg => "Those certificates didn't successfully validate the provided PIV key, aborting!");
+        osh_exit R('ERR_PIV_VALIDATION_FAILED',
+            msg => "Those certificates didn't successfully validate the provided PIV key, aborting!");
     }
 }
 
@@ -144,7 +155,8 @@ if ($pivExplicit || $pivEffectivePolicyEnabled) {
 $fnret = OVH::Bastion::get_from_for_user_key(userProvidedIpList => $key->{'fromList'}, key => $key);
 $fnret or osh_exit $fnret;
 
-$key->{'info'} = sprintf("ADDED_BY=%s USING=%s UNIQID=%s TIMESTAMP=%s DATETIME=%s VERSION=%s", $self, $scriptName, $ENV{'UNIQID'}, time(), DateTime->now(), $OVH::Bastion::VERSION);
+$key->{'info'} = sprintf("ADDED_BY=%s USING=%s UNIQID=%s TIMESTAMP=%s DATETIME=%s VERSION=%s",
+    $self, $scriptName, $ENV{'UNIQID'}, time(), DateTime->now(), $OVH::Bastion::VERSION);
 
 $fnret = OVH::Bastion::add_key_to_authorized_keys_file(file => $allowedKeyFile, key => $key);
 $fnret or osh_exit $fnret;

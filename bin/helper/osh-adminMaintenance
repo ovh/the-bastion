@@ -75,9 +75,11 @@ if ($action eq 'set') {
         print $fh $message;
     }
     else {
-        osh_warn "Couldn't write the maintenance message ($!), but we're still setting the maintenance mode, users just won't see your maintenance message.";
+        osh_warn("Couldn't write the maintenance message ($!), but we're still setting the maintenance mode ",
+            ", users just won't see your maintenance message.");
     }
-    $retmsg = "Maintenance mode is now enabled, new connections are disallowed (except for admins).\nGiven reason: $message";
+    $retmsg =
+      "Maintenance mode is now enabled, new connections are disallowed (except for admins).\nGiven reason: $message";
 }
 elsif ($action eq 'unset') {
     if (-e '/home/allowkeeper/maintenance') {

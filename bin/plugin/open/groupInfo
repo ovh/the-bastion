@@ -61,7 +61,10 @@ $result_hash->{'owners'}      = $roles{'owner'};
 $result_hash->{'aclkeepers'}  = $roles{'aclkeeper'};
 $result_hash->{'gatekeepers'} = $roles{'gatekeeper'};
 
-osh_info "Group " . $shortGroup . "'s Owners are: " . colored(@{$roles{'owner'}} ? join(" ", sort @{$roles{'owner'}}) : '-', "red");
+osh_info "Group "
+  . $shortGroup
+  . "'s Owners are: "
+  . colored(@{$roles{'owner'}} ? join(" ", sort @{$roles{'owner'}}) : '-', "red");
 osh_info "Group "
   . $shortGroup
   . "'s GateKeepers (managing the members/guests list) are: "
@@ -111,7 +114,10 @@ if (   OVH::Bastion::is_group_owner(group => $shortGroup, account => $self, supe
             }
         }
     }
-    osh_info "Group " . $shortGroup . "'s Members (with access to ALL the group servers) are: " . colored(@members ? join(" ", sort @members) : '-', "red");
+    osh_info "Group "
+      . $shortGroup
+      . "'s Members (with access to ALL the group servers) are: "
+      . colored(@members ? join(" ", sort @members) : '-', "red");
 
     my %guest_details;
     my @guest_text;
@@ -125,7 +131,10 @@ if (   OVH::Bastion::is_group_owner(group => $shortGroup, account => $self, supe
         push @guest_text,      $guest . "[" . $guest_details{$guest} . "]";
         push @filtered_guests, $guest;
     }
-    osh_info "Group " . $shortGroup . "'s Guests (with access to SOME of the group servers) are: " . colored(@filtered_guests ? join(" ", @guest_text) : '-', "red");
+    osh_info "Group "
+      . $shortGroup
+      . "'s Guests (with access to SOME of the group servers) are: "
+      . colored(@filtered_guests ? join(" ", @guest_text) : '-', "red");
 
     # deprecated in v2.18.00+
     $result_hash->{'full_members'}    = \@members;
@@ -151,13 +160,16 @@ if (   OVH::Bastion::is_group_owner(group => $shortGroup, account => $self, supe
     # policies
     $fnret = OVH::Bastion::group_config(group => $group, key => 'mfa_required');
     if ($fnret && $fnret->value eq 'password') {
-        osh_warn "MFA Required: when connecting to servers of this group, users will be asked for an additional authentication factor (password)";
+        osh_warn
+          "MFA Required: when connecting to servers of this group, users will be asked for an additional authentication factor (password)";
     }
     elsif ($fnret && $fnret->value eq 'totp') {
-        osh_warn "MFA Required: when connecting to servers of this group, users will be asked for an additional authentication factor (TOTP)";
+        osh_warn
+          "MFA Required: when connecting to servers of this group, users will be asked for an additional authentication factor (TOTP)";
     }
     elsif ($fnret && $fnret->value eq 'any') {
-        osh_warn "MFA Required: When connecting to servers of this group, users will be asked for an additional authentication factor";
+        osh_warn
+          "MFA Required: When connecting to servers of this group, users will be asked for an additional authentication factor";
     }
     if ($fnret && $fnret->value ne 'none') {
         $result_hash->{'mfa_required'} = $fnret->value;
@@ -165,7 +177,8 @@ if (   OVH::Bastion::is_group_owner(group => $shortGroup, account => $self, supe
 
     $fnret = OVH::Bastion::group_config(group => $group, key => 'guest_ttl_limit');
     if ($fnret) {
-        osh_warn "Guest TTL enforced: guest accesses must have a TTL with a maximum duration of " . OVH::Bastion::duration2human(seconds => $fnret->value)->value->{'duration'};
+        osh_warn "Guest TTL enforced: guest accesses must have a TTL with a maximum duration of "
+          . OVH::Bastion::duration2human(seconds => $fnret->value)->value->{'duration'};
         $result_hash->{'guest_ttl_limit'} = $fnret->value;
     }
 }

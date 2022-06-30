@@ -82,7 +82,8 @@ elsif ($TOTPProvider eq 'duo') {
 }
 else {
     # unknown provider, this shouldn't happen
-    HEXIT('ERR_CONFIGURATION_ERROR', msg => "An unknown TOTP provider has been provided, please check with your sysadmin.");
+    HEXIT('ERR_CONFIGURATION_ERROR',
+        msg => "An unknown TOTP provider has been provided, please check with your sysadmin.");
 }
 
 # remove the user from the TOTP configured group
@@ -91,5 +92,7 @@ if (OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_
     $fnret or HEXIT($fnret);
 }
 
-osh_info "TOTP has been reset, " . ($account eq $self ? 'you' : $account) . " can re-enroll by using the `--osh selfMFASetupTOTP' command, if applicable";
+osh_info "TOTP has been reset, "
+  . ($account eq $self ? 'you' : $account)
+  . " can re-enroll by using the `--osh selfMFASetupTOTP' command, if applicable";
 HEXIT('OK');

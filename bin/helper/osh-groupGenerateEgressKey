@@ -77,7 +77,8 @@ my $keykeeper_uid = (getpwnam('keykeeper'))[2];
 my $group_gid     = (getgrnam($group))[2];
 
 if (!$keykeeper_uid || !$group_gid) {
-    warn_syslog("Couldn't get the uid of keykeeper ($keykeeper_uid) or gid of $group ($group_gid) while $self is attempting to generate a new key with algo $algo and size $size");
+    warn_syslog("Couldn't get the uid of keykeeper ($keykeeper_uid) or gid of $group ($group_gid) while $self "
+          . "is attempting to generate a new key with algo $algo and size $size");
     HEXIT('ERR_INTERNAL', msg => "Couldn't fetch the required account or group IDs");
 }
 

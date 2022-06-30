@@ -35,27 +35,31 @@ sub sysret2human {
         );
     }
     else {
-        return R('OK', value => {coredump => \0, signal => undef, status => $sysret >> 8}, msg => sprintf("status %d", $sysret >> 8));
+        return R(
+            'OK',
+            value => {coredump => \0, signal => undef, status => $sysret >> 8},
+            msg   => sprintf("status %d", $sysret >> 8)
+        );
     }
 }
 
 ## no critic(ControlStructures::ProhibitDeepNests)
 sub execute {
-    my %params           = @_;
-    my $cmd              = $params{'cmd'};                 # command to execute, must be an array ref (with possible parameters)
-    my $expects_stdin    = $params{'expects_stdin'};       # the command called expects stdin, pipe caller stdin to it
-    my $noisy_stdout     = $params{'noisy_stdout'};        # capture stdout but print it too
-    my $noisy_stderr     = $params{'noisy_stderr'};        # capture stderr but print it too
-    my $is_helper        = $params{'is_helper'};           # hide JSON returns from stdout even if noisy_stdout
-    my $is_binary        = $params{'is_binary'};           # used for e.g. scp, don't bother mimicking readline(), we lose debug and stdout/stderr are NOT returned to caller
-    my $stdin_str        = $params{'stdin_str'};           # string to push to the STDIN of the command
-    my $must_succeed     = $params{'must_succeed'};        # if the executed command returns a non-zero exit value, turn OK_NON_ZERO_EXIT to ERR_NON_ZERO_EXIT
-    my $max_stdout_bytes = $params{'max_stdout_bytes'};    # if the amount of stored stdout bytes exceeds this, halt the command and return to caller
-    my $system           = $params{'system'};              # if set to 1, will use system() instead of open3(), needed for some plugins
+    my %params        = @_;
+    my $cmd           = $params{'cmd'};            # command to execute, must be an array ref (with possible parameters)
+    my $expects_stdin = $params{'expects_stdin'};  # the command called expects stdin, pipe caller stdin to it
+    my $noisy_stdout  = $params{'noisy_stdout'};   # capture stdout but print it too
+    my $noisy_stderr  = $params{'noisy_stderr'};   # capture stderr but print it too
+    my $is_helper     = $params{'is_helper'};      # hide JSON returns from stdout even if noisy_stdout
+    my $is_binary = $params{'is_binary'}; # used for e.g. scp, don't bother mimicking readline(), we lose debug and stdout/stderr are NOT returned to caller
+    my $stdin_str = $params{'stdin_str'}; # string to push to the STDIN of the command
+    my $must_succeed = $params{'must_succeed'}; # if the executed command returns a non-zero exit value, turn OK_NON_ZERO_EXIT to ERR_NON_ZERO_EXIT
+    my $max_stdout_bytes = $params{'max_stdout_bytes'}; # if the amount of stored stdout bytes exceeds this, halt the command and return to caller
+    my $system           = $params{'system'};           # if set to 1, will use system() instead of open3(), needed for some plugins
 
     $noisy_stderr = $noisy_stdout = 1 if ($ENV{'PLUGIN_DEBUG'} or $is_binary);
 
-    my $readsize = $is_binary ? 16384 : 1;                 # XXX needs to be enhanced to be > 1 even for non-binary
+    my $readsize = $is_binary ? 16384 : 1;              # XXX needs to be enhanced to be > 1 even for non-binary
     my $fnret;
 
 =cut only to debug slow calls
@@ -194,13 +198,16 @@ sub execute {
                                 # note that if we're at the position "0", it's still true (see doc).
                                 my $previousError = $!;
                                 if (!sysseek(STDERR, 0, SEEK_CUR)) {
-                                    info_syslog("execute(): error while syswriting($previousError/$!) on stderr, the filehandle is closed, will no longer attempt to write to it")
-                                      if $infoLimit-- > 0;
+                                    info_syslog(
+                                        "execute(): error while syswriting($previousError/$!) on stderr, the filehandle is closed, will no longer attempt to write to it"
+                                    ) if $infoLimit-- > 0;
                                     $noisy_stderr = 0;
                                 }
                                 else {
                                     # oww, abort writing for this cycle. as this might be user-induced, use info instead of warn
-                                    info_syslog("execute(): error while syswriting($previousError) on stderr, aborting this cycle") if $infoLimit-- > 0;
+                                    info_syslog(
+                                        "execute(): error while syswriting($previousError) on stderr, aborting this cycle"
+                                    ) if $infoLimit-- > 0;
                                 }
                                 last;
                             }
@@ -213,7 +220,7 @@ sub execute {
 
                         # if this is a newline, push it to our output array
                         if ($buffer eq $/) {
-                            osh_debug("stderr($pid): " . $lineBuffer{'stderr'}) unless $noisy_stderr;    # avoid double print
+                            osh_debug("stderr($pid): " . $lineBuffer{'stderr'}) unless $noisy_stderr; # avoid double print
                             push @{$output{'stderr'}}, $lineBuffer{'stderr'};
                             $lineBuffer{'stderr'} = '';
                         }
@@ -243,13 +250,16 @@ sub execute {
                                 # note that if we're at the position "0", it's still true (see doc).
                                 my $previousError = $!;
                                 if (!sysseek(STDOUT, 0, SEEK_CUR)) {
-                                    info_syslog("execute(): error while syswriting($previousError/$!) on stdout, the filehandle is closed, will no longer attempt to write to it")
-                                      if $infoLimit-- > 0;
+                                    info_syslog(
+                                        "execute(): error while syswriting($previousError/$!) on stdout, the filehandle is closed, will no longer attempt to write to it"
+                                    ) if $infoLimit-- > 0;
                                     $noisy_stdout = 0;
                                 }
                                 else {
                                     # oww, abort writing for this cycle. as this might be user-induced, use info instead of warn.
-                                    info_syslog("execute(): error while syswriting($previousError) on stdout, aborting this cycle") if $infoLimit-- > 0;
+                                    info_syslog(
+                                        "execute(): error while syswriting($previousError) on stdout, aborting this cycle"
+                                    ) if $infoLimit-- > 0;
                                 }
                                 last;
                             }
@@ -260,7 +270,7 @@ sub execute {
                     # mimic line-based reading (for debug, and also data will be returned to caller)
                     if (not $is_binary) {
                         if ($buffer eq $/) {
-                            osh_debug("stdout($pid): " . $lineBuffer{'stdout'}) unless $noisy_stdout;    # avoid double print
+                            osh_debug("stdout($pid): " . $lineBuffer{'stdout'}) unless $noisy_stdout; # avoid double print
                             push @{$output{'stdout'}}, $lineBuffer{'stdout'};
                             if ($noisy_stdout and $is_helper) {
 
@@ -359,9 +369,9 @@ sub execute {
 # while execute_simple() uses a buffer of 16K instead, which is several orders of
 # magnitude faster for commands outputting large amounts of data (several megabytes) for example.
 sub execute_simple {
-    my %params       = @_;
-    my $cmd          = $params{'cmd'};             # command to execute, must be an array ref (with possible parameters)
-    my $must_succeed = $params{'must_succeed'};    # if the executed command returns a non-zero exit value, turn OK_NON_ZERO_EXIT to ERR_NON_ZERO_EXIT
+    my %params = @_;
+    my $cmd    = $params{'cmd'};    # command to execute, must be an array ref (with possible parameters)
+    my $must_succeed = $params{'must_succeed'}; # if the executed command returns a non-zero exit value, turn OK_NON_ZERO_EXIT to ERR_NON_ZERO_EXIT
 
     my $fnret;
 
@@ -454,7 +464,8 @@ sub result_from_helper {
         }
     }
     if (not @json) {
-        return R('ERR_HELPER_RETURN_EMPTY', msg => "The helper didn't return any data, maybe it crashed, please report to your sysadmin!");
+        return R('ERR_HELPER_RETURN_EMPTY',
+            msg => "The helper didn't return any data, maybe it crashed, please report to your sysadmin!");
     }
     my $json_decoded;
     eval { $json_decoded = decode_json(join("\n", @json)); };
@@ -475,7 +486,14 @@ sub helper {
     my $expects_stdin = $params{'expects_stdin'};
     my $stdin_str     = $params{'stdin_str'};
 
-    my $fnret = OVH::Bastion::execute(cmd => \@command, noisy_stdout => 1, noisy_stderr => 1, is_helper => 1, expects_stdin => $expects_stdin, stdin_str => $stdin_str);
+    my $fnret = OVH::Bastion::execute(
+        cmd           => \@command,
+        noisy_stdout  => 1,
+        noisy_stderr  => 1,
+        is_helper     => 1,
+        expects_stdin => $expects_stdin,
+        stdin_str     => $stdin_str
+    );
     $fnret or return R('ERR_HELPER_FAILED', "something went wrong in helper script (" . $fnret->msg . ")");
 
     $fnret = OVH::Bastion::result_from_helper($fnret->value->{'stdout'});

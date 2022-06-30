@@ -49,16 +49,18 @@ EOF
 );
 
 if (not $ip and $host) {
-    osh_exit 'ERR_INVALID_HOST', "Specified host ($host) didn't resolve correctly, fix your DNS or specify the IP instead";
+    osh_exit 'ERR_INVALID_HOST',
+      "Specified host ($host) didn't resolve correctly, fix your DNS or specify the IP instead";
 }
 if ($scpUp and $scpDown) {
     help();
-    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "You specified both --scpup and --scpdown, if you want to grant both, please do it in two separate commands";
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS',
+      "You specified both --scpup and --scpdown, if you want to grant both, please do it in two separate commands";
 }
 if (($scpUp or $scpDown) and ($user or $userAny)) {
     help();
     osh_exit 'ERR_INCOMPATIBLE_PARAMETERS',
-"To grant SCP access, first ensure SSH access is granted to the machine (with the --user you need, or --user-any), then grant with --scpup and/or --scpdown, omitting --user/--user-any";
+      "To grant SCP access, first ensure SSH access is granted to the machine (with the --user you need, or --user-any), then grant with --scpup and/or --scpdown, omitting --user/--user-any";
 }
 
 my $realUser = $user;

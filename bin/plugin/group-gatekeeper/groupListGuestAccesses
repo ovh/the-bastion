@@ -59,5 +59,10 @@ if (not @{$fnret->value}) {
     osh_ok R('OK_EMPTY', msg => "This account doesn't seem to have any guest access to this group");
 }
 
-OVH::Bastion::print_acls(acls => [{type => 'group-guest', group => $shortGroup, acl => $fnret->value}], reverse => $reverse, includes => \@includes, excludes => \@excludes);
+OVH::Bastion::print_acls(
+    acls     => [{type => 'group-guest', group => $shortGroup, acl => $fnret->value}],
+    reverse  => $reverse,
+    includes => \@includes,
+    excludes => \@excludes
+);
 osh_ok($fnret->value);

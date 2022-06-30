@@ -95,7 +95,8 @@ if (@errors) {
     if (@errors == 2) {
         HEXIT('ERR_INTERNAL', msg => "Couldn't delete the requested key, more information available in the system log");
     }
-    HEXIT('ERR_INTERNAL', msg => "Couldn't delete one of the files constituting the key, more information available in the system log");
+    HEXIT('ERR_INTERNAL',
+        msg => "Couldn't delete one of the files constituting the key, more information available in the system log");
 }
 
 OVH::Bastion::syslogFormatted(

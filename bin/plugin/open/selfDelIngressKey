@@ -36,12 +36,14 @@ my $fnret;
 
 if ($fingerprintToDelete and defined $indexToDelete) {
     help();
-    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "You can't specify a line to delete AND a fingerprint to delete at the same time";
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS',
+      "You can't specify a line to delete AND a fingerprint to delete at the same time";
 }
 
 # first, get all the authorized_keys present in the file
 my $allowedKeyFile = $HOME . '/' . OVH::Bastion::AK_FILE;
-$fnret = OVH::Bastion::get_authorized_keys_from_file(file => $allowedKeyFile, includeInvalid => 1, includePivDisabled => 1);
+$fnret =
+  OVH::Bastion::get_authorized_keys_from_file(file => $allowedKeyFile, includeInvalid => 1, includePivDisabled => 1);
 $fnret or osh_exit $fnret;
 
 my %fingerprint2index;
@@ -50,8 +52,9 @@ my %validKeys;
 # FIXME check cases with piv disabled keys, RSA keys not respecting the config (too small), and fully invalid keylines
 foreach my $key (@{$fnret->value || []}) {
     OVH::Bastion::print_public_key(key => $key, id => $key->{'index'}, err => $key->{'err'});
-    $fingerprint2index{$key->{'fingerprint'}} = $key->{'index'} if (OVH::Bastion::is_valid_fingerprint(fingerprint => $key->{'fingerprint'}));
-    $validKeys{$key->{'index'}}               = $key            if $key->{'err'} eq 'OK';
+    $fingerprint2index{$key->{'fingerprint'}} = $key->{'index'}
+      if (OVH::Bastion::is_valid_fingerprint(fingerprint => $key->{'fingerprint'}));
+    $validKeys{$key->{'index'}} = $key if $key->{'err'} eq 'OK';
 }
 
 # Do we have anything to delete ?
@@ -63,7 +66,8 @@ elsif (keys %validKeys == 1) {
     osh_exit 'ERR_ONLY_ONE_KEY', "You can't delete the only valid key you have!";
 }
 elsif (not defined $indexToDelete and not defined $fingerprintToDelete) {
-    osh_info "Type the key ID you want to delete then press ENTER (" . (join(',', sort { $a <=> $b } keys %validKeys)) . "):";
+    osh_info "Type the key ID you want to delete then press ENTER ("
+      . (join(',', sort { $a <=> $b } keys %validKeys)) . "):";
     $indexToDelete = <STDIN>;
     chomp $indexToDelete;
 }
@@ -91,7 +95,10 @@ if (not exists $validKeys{$indexToDelete}) {
 my $deletedKey = delete $validKeys{$indexToDelete};
 
 # data: keep the keys order in the new file, instead of having it randomized
-$fnret = OVH::Bastion::put_authorized_keys_to_file(file => $allowedKeyFile, data => [map { $validKeys{$_} } sort keys %validKeys]);
+$fnret = OVH::Bastion::put_authorized_keys_to_file(
+    file => $allowedKeyFile,
+    data => [map { $validKeys{$_} } sort keys %validKeys]
+);
 $fnret or osh_exit $fnret;
 
 osh_exit R('OK', msg => "Key ID $indexToDelete successfully deleted", value => {deleted_key => $deletedKey});

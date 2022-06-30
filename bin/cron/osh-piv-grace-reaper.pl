@@ -66,7 +66,11 @@ if (!$fnret) {
 foreach my $account (sort keys %{$fnret->value}) {
 
     # if account doesn't have PIV grace, we have nothing to do
-    $fnret = OVH::Bastion::account_config(account => $account, public => 1, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_GRACE);
+    $fnret = OVH::Bastion::account_config(
+        account => $account,
+        public  => 1,
+        key     => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_GRACE
+    );
     next if !$fnret;
 
     # we have PIV grace set for this account
@@ -82,7 +86,12 @@ foreach my $account (sort keys %{$fnret->value}) {
 
     # it is: remove it
     _log "... grace for $account is expired, removing it";
-    $fnret = OVH::Bastion::account_config(account => $account, public => 1, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_GRACE, delete => 1);
+    $fnret = OVH::Bastion::account_config(
+        account => $account,
+        public  => 1,
+        key     => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_GRACE,
+        delete  => 1
+    );
     if (!$fnret) {
         warn_syslog("Couldn't remove grace flag for $account: " . $fnret->msg);
         _err "... couldn't remove grace flag for $account";
