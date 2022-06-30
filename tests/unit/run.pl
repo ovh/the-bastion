@@ -69,36 +69,111 @@ is(OVH::Bastion::is_account_valid(account => "in valid")->err, "KO_FORBIDDEN_CHA
 
 is(OVH::Bastion::is_account_valid(account => "root")->err, "KO_FORBIDDEN_NAME", "is_account_valid('root')");
 
-ok(OVH::Bastion::is_bastion_account_valid_and_existing(account => "me")->is_ok, "is_bastion_account_valid_and_existing('me')");
+ok(OVH::Bastion::is_bastion_account_valid_and_existing(account => "me")->is_ok,
+    "is_bastion_account_valid_and_existing('me')");
 
 is_deeply(
-    OVH::Bastion::is_access_granted(account => "me", user => "remote", ipfrom => "1.2.3.4", ip => "5.6.7.8", port => "9876"),
+    OVH::Bastion::is_access_granted(
+        account => "me",
+        user    => "remote",
+        ipfrom  => "1.2.3.4",
+        ip      => "5.6.7.8",
+        port    => "9876"
+    ),
     R('KO_ACCESS_DENIED', msg => 'Access denied for me to remote@5.6.7.8:9876'),
     "is_access_granted(me) on denied machine"
 );
 
-ok(OVH::Bastion::is_access_granted(account => "me", user => "me", ipfrom => "1.1.1.1", ip => "1.2.3.4", port => "9876")->is_ok, "is_access_granted(me) on allowed machine");
+ok(
+    OVH::Bastion::is_access_granted(
+        account => "me",
+        user    => "me",
+        ipfrom  => "1.1.1.1",
+        ip      => "1.2.3.4",
+        port    => "9876"
+    )->is_ok,
+    "is_access_granted(me) on allowed machine"
+);
 
-is(OVH::Bastion::is_access_granted(account => "wildcard", user => "root", ipfrom => "10.15.15.15", ip => "1.2.3.4", port => "9876")->err,
-    "KO_ACCESS_DENIED", "is_access_granted(wildcard) on disallowed machine due to ingressToEgressRules #1");
+is(
+    OVH::Bastion::is_access_granted(
+        account => "wildcard",
+        user    => "root",
+        ipfrom  => "10.15.15.15",
+        ip      => "1.2.3.4",
+        port    => "9876"
+    )->err,
+    "KO_ACCESS_DENIED",
+    "is_access_granted(wildcard) on disallowed machine due to ingressToEgressRules #1"
+);
 
-is(OVH::Bastion::is_access_granted(account => "wildcard", user => "root", ipfrom => "10.19.1.2", ip => "1.2.3.4", port => "9876")->err,
-    "KO_ACCESS_DENIED", "is_access_granted(wildcard) on disallowed machine due to ingressToEgressRules #1");
+is(
+    OVH::Bastion::is_access_granted(
+        account => "wildcard",
+        user    => "root",
+        ipfrom  => "10.19.1.2",
+        ip      => "1.2.3.4",
+        port    => "9876"
+    )->err,
+    "KO_ACCESS_DENIED",
+    "is_access_granted(wildcard) on disallowed machine due to ingressToEgressRules #1"
+);
 
-ok(OVH::Bastion::is_access_granted(account => "wildcard", user => "root", ipfrom => "10.19.1.2", ip => "10.20.1.2", port => "9876")->is_ok,
-    "is_access_granted(wildcard) on allowed machine due to ingressToEgressRules #1");
+ok(
+    OVH::Bastion::is_access_granted(
+        account => "wildcard",
+        user    => "root",
+        ipfrom  => "10.19.1.2",
+        ip      => "10.20.1.2",
+        port    => "9876"
+    )->is_ok,
+    "is_access_granted(wildcard) on allowed machine due to ingressToEgressRules #1"
+);
 
-ok(OVH::Bastion::is_access_granted(account => "wildcard", user => "root", ipfrom => "192.168.42.1", ip => "192.168.42.4", port => "9876")->is_ok,
-    "is_access_granted(wildcard) on allowed machine due to ingressToEgressRules #2");
+ok(
+    OVH::Bastion::is_access_granted(
+        account => "wildcard",
+        user    => "root",
+        ipfrom  => "192.168.42.1",
+        ip      => "192.168.42.4",
+        port    => "9876"
+    )->is_ok,
+    "is_access_granted(wildcard) on allowed machine due to ingressToEgressRules #2"
+);
 
-ok(OVH::Bastion::is_access_granted(account => "wildcard", user => "root", ipfrom => "192.168.42.1", ip => "5.6.7.8", port => "9876")->is_ok,
-    "is_access_granted(wildcard) on allowed machine due to ingressToEgressRules #2");
+ok(
+    OVH::Bastion::is_access_granted(
+        account => "wildcard",
+        user    => "root",
+        ipfrom  => "192.168.42.1",
+        ip      => "5.6.7.8",
+        port    => "9876"
+    )->is_ok,
+    "is_access_granted(wildcard) on allowed machine due to ingressToEgressRules #2"
+);
 
-is(OVH::Bastion::is_access_granted(account => "wildcard", user => "root", ipfrom => "192.168.43.1", ip => "192.168.42.4", port => "9876")->err,
-    "KO_ACCESS_DENIED", "is_access_granted(wildcard) on disallowed machine due to ingressToEgressRules #3");
+is(
+    OVH::Bastion::is_access_granted(
+        account => "wildcard",
+        user    => "root",
+        ipfrom  => "192.168.43.1",
+        ip      => "192.168.42.4",
+        port    => "9876"
+    )->err,
+    "KO_ACCESS_DENIED",
+    "is_access_granted(wildcard) on disallowed machine due to ingressToEgressRules #3"
+);
 
-ok(OVH::Bastion::is_access_granted(account => "wildcard", user => "root", ipfrom => "192.168.43.1", ip => "5.6.7.8", port => "9876")->is_ok,
-    "is_access_granted(wildcard) on allowed machine due to ingressToEgressRules catch-all");
+ok(
+    OVH::Bastion::is_access_granted(
+        account => "wildcard",
+        user    => "root",
+        ipfrom  => "192.168.43.1",
+        ip      => "5.6.7.8",
+        port    => "9876"
+    )->is_ok,
+    "is_access_granted(wildcard) on allowed machine due to ingressToEgressRules catch-all"
+);
 
 # check that "bool" type options are correctly normalized
 is(OVH::Bastion::config("enableSyslog")->value,             1, "config bool(1)");
@@ -238,7 +313,10 @@ is(
 );
 
 is(
-    OVH::Bastion::build_re_from_wildcards(wildcards => ["azerty", "st*ar", "que?stion", "c*ompl?i*cated*"], implicit_contains => 1)->value,
+    OVH::Bastion::build_re_from_wildcards(
+        wildcards         => ["azerty", "st*ar", "que?stion", "c*ompl?i*cated*"],
+        implicit_contains => 1
+    )->value,
     qr/^.*azerty.*$|^st.*ar$|^que.stion$|^c.*ompl.i.*cated.*$/,
     "build_re_from_wildcards() 2"
 );

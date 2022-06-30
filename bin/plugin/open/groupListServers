@@ -61,7 +61,8 @@ if (
     osh_exit(
         R(
             'KO_ACCESS_DENIED',
-            msg => "Sorry, you're neither a member or aclkeeper of group $shortGroup, you can't list the servers of this group.\n"
+            msg =>
+              "Sorry, you're neither a member or aclkeeper of group $shortGroup, you can't list the servers of this group.\n"
               . "If you think you should be able to, use groupInfo to get contact info."
         )
     );
@@ -71,8 +72,16 @@ $fnret = OVH::Bastion::get_acl_way(way => 'group', group => $shortGroup);
 $fnret or osh_exit $fnret;
 
 if (not @{$fnret->value}) {
-    osh_ok R('OK_EMPTY', msg => "This group is empty, if you are an aclkeeper of this group, you might want to add servers to it with groupAddServer");
+    osh_ok R('OK_EMPTY',
+        msg =>
+          "This group is empty, if you are an aclkeeper of this group, you might want to add servers to it with groupAddServer"
+    );
 }
 
-OVH::Bastion::print_acls(acls => [{type => 'group', group => $shortGroup, acl => $fnret->value}], reverse => $reverse, includes => \@includes, excludes => \@excludes);
+OVH::Bastion::print_acls(
+    acls     => [{type => 'group', group => $shortGroup, acl => $fnret->value}],
+    reverse  => $reverse,
+    includes => \@includes,
+    excludes => \@excludes
+);
 osh_ok($fnret->value);

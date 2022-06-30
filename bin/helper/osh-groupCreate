@@ -145,7 +145,8 @@ osh_info("Creating groups");
 foreach my $tocreate ($group, "$group-aclkeeper", "$group-gatekeeper", "$group-owner") {
     $fnret = OVH::Bastion::sys_groupadd(group => $tocreate, noisy_stderr => 1);
     $fnret->err eq 'OK'
-      or HEXIT('ERR_GROUPADD_FAILED', msg => "Error while running groupadd command for $tocreate (" . $fnret->msg . ")");
+      or
+      HEXIT('ERR_GROUPADD_FAILED', msg => "Error while running groupadd command for $tocreate (" . $fnret->msg . ")");
 }
 
 osh_debug("Creating directory");
@@ -156,9 +157,11 @@ osh_info("Creating user corresponding to group $shortGroup");
 
 # if a comment has been set, we'll store it as the user's GECOS corresponding to the group name
 # user is member of the group, cannot login and have no password
-$fnret = OVH::Bastion::sys_useradd(user => $group, gid => $group, shell => undef, comment => $comment, noisy_stderr => 1);
+$fnret =
+  OVH::Bastion::sys_useradd(user => $group, gid => $group, shell => undef, comment => $comment, noisy_stderr => 1);
 $fnret->err eq 'OK'
-  or HEXIT('ERR_USERADD_FAILED', msg => "Error while adding corresponding user of group $shortGroup (" . $fnret->msg . ")");
+  or HEXIT('ERR_USERADD_FAILED',
+    msg => "Error while adding corresponding user of group $shortGroup (" . $fnret->msg . ")");
 
 # Building /home/$group
 OVH::Bastion::touch_file("/home/$group/allowed.ip");
@@ -178,7 +181,9 @@ foreach my $command (
 }
 chmod 0751, "/home/$group" if !OVH::Bastion::has_acls();
 
-foreach my $gr ("$group-owner", "$group-gatekeeper", "$group-aclkeeper", "osh-whoHasAccessTo", "osh-auditor", "osh-superowner") {
+foreach my $gr ("$group-owner", "$group-gatekeeper", "$group-aclkeeper", "osh-whoHasAccessTo", "osh-auditor",
+    "osh-superowner")
+{
     OVH::Bastion::sys_setfacl(target => "/home/$group", perms => "g:$gr:x")
       or HEXIT('ERR_SETFACL_FAILED', msg => "Error setting ACLs on group homedir");
 }
@@ -249,7 +254,11 @@ if (!$no_key) {
 
 # allowed to sudo for the group
 osh_info("Configuring sudoers for this group");
-$fnret = OVH::Bastion::execute(cmd => [$OVH::Bastion::BASEPATH . '/bin/sudogen/generate-sudoers.sh', 'create', 'group', $group], must_succeed => 1, noisy_stdout => 1);
+$fnret = OVH::Bastion::execute(
+    cmd          => [$OVH::Bastion::BASEPATH . '/bin/sudogen/generate-sudoers.sh', 'create', 'group', $group],
+    must_succeed => 1,
+    noisy_stdout => 1
+);
 $fnret or HEXIT('ERR_CANNOT_CREATE_SUDOERS', msg => "An error occurred while creating sudoers for this group");
 
 OVH::Bastion::syslogFormatted(

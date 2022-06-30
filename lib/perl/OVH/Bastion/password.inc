@@ -63,9 +63,12 @@ sub get_hashes_from_password {
     }
 
     my %ret;
-    $ret{'md5crypt'}    = crypt($password, '$1$' . _get_salt_for_password(password => $password, nonce => '$1', len => 4)->value . '$');
-    $ret{'sha256crypt'} = crypt($password, '$5$' . _get_salt_for_password(password => $password, nonce => '$5', len => 8)->value . '$');
-    $ret{'sha512crypt'} = crypt($password, '$6$' . _get_salt_for_password(password => $password, nonce => '$6', len => 8)->value . '$');
+    $ret{'md5crypt'} =
+      crypt($password, '$1$' . _get_salt_for_password(password => $password, nonce => '$1', len => 4)->value . '$');
+    $ret{'sha256crypt'} =
+      crypt($password, '$5$' . _get_salt_for_password(password => $password, nonce => '$5', len => 8)->value . '$');
+    $ret{'sha512crypt'} =
+      crypt($password, '$6$' . _get_salt_for_password(password => $password, nonce => '$6', len => 8)->value . '$');
 
     # some OSes have a broken crypt() that doesn't generate invalid hashes, undef those
     $ret{'sha256crypt'} = undef if $ret{'sha256crypt'} !~ m{^\$5\$};
@@ -171,7 +174,9 @@ sub is_valid_hash {
         return R('OK', value => {type => 'sha512crypt', hash => $1});
     }
     return R('ERR_INVALID_PARAMETER',
-        msg => 'Specified hash is invalid, examples of hashes: $1$Pl44$BEyG04AjjH0TRhLuhAs4A1 $5$8BzocSDA$Hu/FdA/KrFe9HFWvXL4F5csJFxV1HlrLt4c3AOac5N5');
+        msg =>
+          'Specified hash is invalid, examples of hashes: $1$Pl44$BEyG04AjjH0TRhLuhAs4A1 $5$8BzocSDA$Hu/FdA/KrFe9HFWvXL4F5csJFxV1HlrLt4c3AOac5N5'
+    );
 }
 
 1;

@@ -74,7 +74,8 @@ sub preconditions {
     my %params = @_;
     my $fnret;
 
-    my ($self, $group, $algo, $size, $account, $sudo, $context) = @params{qw{  self   group   algo   size   account   sudo   context}};
+    my ($self, $group, $algo, $size, $account, $sudo, $context) =
+      @params{qw{  self   group   algo   size   account   sudo   context}};
 
     if (!$algo || !$context) {
         return R('ERR_MISSING_PARAMETER', msg => "Missing argument algo[$algo] or context[$context]");
@@ -102,10 +103,23 @@ sub preconditions {
 
         $fnret = OVH::Bastion::is_group_owner(group => $shortGroup, account => $self, superowner => 1, sudo => $sudo);
         if (!$fnret) {
-            return R('ERR_NOT_GROUP_OWNER', msg => "Sorry, you're not an owner of group $shortGroup, which is needed to manage its egress keys ($fnret)");
+            return R('ERR_NOT_GROUP_OWNER',
+                msg =>
+                  "Sorry, you're not an owner of group $shortGroup, which is needed to manage its egress keys ($fnret)"
+            );
         }
 
-        return R('OK', value => {group => $group, shortGroup => $shortGroup, keyhome => $keyhome, algo => $algo, size => $size, context => $context});
+        return R(
+            'OK',
+            value => {
+                group      => $group,
+                shortGroup => $shortGroup,
+                keyhome    => $keyhome,
+                algo       => $algo,
+                size       => $size,
+                context    => $context
+            }
+        );
     }
     elsif ($context eq 'account') {
         if (!$account) {

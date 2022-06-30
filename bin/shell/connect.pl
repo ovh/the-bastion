@@ -6,7 +6,8 @@ use common::sense;
 # that is launching us. we don't use GetOpts or such, as this is not
 # user-modifiable anyway. We're mainly passing parameters we will need
 # in this short script. some of them can sometimes be undef. this is normal.
-my ($ip, $port, $sshClientHasOptionE, $userPasswordClue, $saveFile, $insert_id, $db_name, $uniq_id, $self, @command) = @ARGV;
+my ($ip, $port, $sshClientHasOptionE, $userPasswordClue, $saveFile, $insert_id, $db_name, $uniq_id, $self, @command) =
+  @ARGV;
 
 # on signal (HUP happens a lot), still try to log in db
 sub exit_sig {
@@ -72,7 +73,9 @@ if (open(my $fh, '<', "/proc/" . getppid() . '/cmdline')) {
 
     # admin debug case: local su
     elsif (@pargv == 5 and $pargv[0] eq 'su' and $pargv[1] eq '-l' and $pargv[3] eq '-c') {
-        print STDERR "\n\nHmm, hijack of " . $pargv[2] . " by root detected... debug I guess... okay, but it's really because it's you.\n\n";
+        print STDERR "\n\nHmm, hijack of "
+          . $pargv[2]
+          . " by root detected... debug I guess... okay, but it's really because it's you.\n\n";
     }
 
     # mosh
@@ -134,7 +137,8 @@ if ($sshClientHasOptionE) {
     if (open(my $sshdebug, '<', $saveFile . '.sshdebug')) {
         while (<$sshdebug>) {
             print
-              unless /^debug|^key_load_public:|OpenSSL|^Authenticated to|^Transferred:|^Bytes per second:|^\s*$|client-session/;
+              unless
+              /^debug|^key_load_public:|OpenSSL|^Authenticated to|^Transferred:|^Bytes per second:|^\s*$|client-session/;
         }
         close($sshdebug);
     }
@@ -148,30 +152,39 @@ if (open(my $fh_ttyrec, '<', $saveFile)) {
     close($fh_ttyrec);
 }
 elsif (-r "$saveFile.zst") {
-    my $fnret = OVH::Bastion::execute(cmd => ['zstd', '-d', '-c', "$saveFile.zst"], max_stdout_bytes => 2000, must_succeed => 1);
+    my $fnret =
+      OVH::Bastion::execute(cmd => ['zstd', '-d', '-c', "$saveFile.zst"], max_stdout_bytes => 2000, must_succeed => 1);
     $header = join("\n", @{$fnret->value->{'stdout'} || []}) if $fnret;
 }
 
 if ($header) {
     if ($header =~ /Permission denied \(publickey/) {
         push @comments, 'permission_denied';
-        OVH::Bastion::osh_crit("BASTION SAYS: The remote server ($ip) refused all the keys we tried (see the list just above), there are FOUR things to verify:");
+        OVH::Bastion::osh_crit(
+            "BASTION SAYS: The remote server ($ip) refused all the keys we tried (see the list just above), there are FOUR things to verify:"
+        );
         OVH::Bastion::osh_warn(
-"1) Check the remote account's authorized_keys on $ip, did you add the proper key there? (personal key or group key)\n2) Did you tell the bastion you added a key to the remote server, so it knows it has to use it? See the actually used keys just above. If you didn't, do it with selfAddPersonalAccess or groupAddServer.\n3) Check the from=\"\" part of the remote account's authorized_keys' keyline. Are all the bastion IPs present? Master and slave(s)? See groupInfo or selfListEgressKeys to get the proper keyline to copy/paste.\n4) Did you check the 3 above points carefully? Really? Because if you did, you wouldn't be reading this 4th bullet point, as your problem would already be fixed ;)"
+            "1) Check the remote account's authorized_keys on $ip, did you add the proper key there? (personal key or group key)\n2) Did you tell the bastion you added a key to the remote server, so it knows it has to use it? See the actually used keys just above. If you didn't, do it with selfAddPersonalAccess or groupAddServer.\n3) Check the from=\"\" part of the remote account's authorized_keys' keyline. Are all the bastion IPs present? Master and slave(s)? See groupInfo or selfListEgressKeys to get the proper keyline to copy/paste.\n4) Did you check the 3 above points carefully? Really? Because if you did, you wouldn't be reading this 4th bullet point, as your problem would already be fixed ;)"
         );
     }
     if ($header =~ /Permission denied \(keyboard-interactive/) {
         push @comments, 'permission_denied';
         if (!OVH::Bastion::config('keyboardInteractiveAllowed')->value) {
-            OVH::Bastion::osh_crit("BASTION SAYS: The remote server ($ip) wanted to use keyboard-interactive authentication, but it's not enabled on this bastion!");
+            OVH::Bastion::osh_crit(
+                "BASTION SAYS: The remote server ($ip) wanted to use keyboard-interactive authentication, but it's not enabled on this bastion!"
+            );
         }
     }
     if ($header =~ /Too many authentication failures/) {
         push @comments, 'too_many_auth_fail';
-        OVH::Bastion::osh_crit("BASTION SAYS: The remote server ($ip) disconnected us before we got a chance to try all the keys we wanted to (see the list just above).");
+        OVH::Bastion::osh_crit(
+            "BASTION SAYS: The remote server ($ip) disconnected us before we got a chance to try all the keys we wanted to (see the list just above)."
+        );
         OVH::Bastion::osh_warn(
-            "This usually happens if there are too many keys to try, for example if you have numerous personal keys of if $ip is in many groups you have access to.");
-        OVH::Bastion::osh_warn("Either reduce the number of keys to try, or modify $ip\'s sshd \"MaxAuthTries\" configuration option.");
+            "This usually happens if there are too many keys to try, for example if you have numerous personal keys of if $ip is in many groups you have access to."
+        );
+        OVH::Bastion::osh_warn(
+            "Either reduce the number of keys to try, or modify $ip\'s sshd \"MaxAuthTries\" configuration option.");
     }
     push @comments, 'hostkey_changed' if $header =~ /IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY/;
     push @comments, 'hostkey_saved'   if $header =~ /Warning: Permanently added /;
@@ -190,8 +203,11 @@ if ($header) {
         # be nice and explain to the user cf ticket BASTION-10
         if ($userPasswordClue) {
             my $bastionName = OVH::Bastion::config('bastionName')->value;
-            OVH::Bastion::osh_crit("BASTION SAYS: Password authentication is blocked because of the hostkey mismatch on $ip.");
-            OVH::Bastion::osh_crit("If you are aware of this change, remove the hostkey cache with `$bastionName --osh selfForgetHostKey --host $ip --port $port'");
+            OVH::Bastion::osh_crit(
+                "BASTION SAYS: Password authentication is blocked because of the hostkey mismatch on $ip.");
+            OVH::Bastion::osh_crit(
+                "If you are aware of this change, remove the hostkey cache with `$bastionName --osh selfForgetHostKey --host $ip --port $port'"
+            );
         }
     }
 
@@ -199,7 +215,9 @@ if ($header) {
     if ($header =~ /strict checking/) {
         my $bastionName = OVH::Bastion::config('bastionName')->value;
         OVH::Bastion::osh_crit("BASTION SAYS: Connection has been blocked because of the hostkey mismatch on $ip.");
-        OVH::Bastion::osh_crit("If you are aware of this change, remove the hostkey cache with `$bastionName --osh selfForgetHostKey --host $ip --port $port'");
+        OVH::Bastion::osh_crit(
+            "If you are aware of this change, remove the hostkey cache with `$bastionName --osh selfForgetHostKey --host $ip --port $port'"
+        );
     }
 }
 else {

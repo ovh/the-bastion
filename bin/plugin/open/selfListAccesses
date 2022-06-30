@@ -48,5 +48,11 @@ if (not @{$fnret->value}) {
 
 osh_info "Dear $self, you have access to the following servers:\n";
 
-OVH::Bastion::print_acls(acls => $fnret->value, reverse => $reverse, hideGroups => $hideGroups, includes => \@includes, excludes => \@excludes);
+OVH::Bastion::print_acls(
+    acls       => $fnret->value,
+    reverse    => $reverse,
+    hideGroups => $hideGroups,
+    includes   => \@includes,
+    excludes   => \@excludes
+);
 osh_ok($fnret);

@@ -67,7 +67,8 @@ not defined $account and $account = $self;
 
 #>RIGHTSCHECK
 if ($target eq 'self' && $self ne $account) {
-    HEXIT('ERR_SECURITY_VIOLATION', msg => "Attempted to modify another account while you're only allowed to do it on yourself");
+    HEXIT('ERR_SECURITY_VIOLATION',
+        msg => "Attempted to modify another account while you're only allowed to do it on yourself");
 }
 
 #<RIGHTSCHECK
@@ -101,8 +102,18 @@ if ($fnret->err eq 'OK') {
     my $ttlmsg = $ttl ? ' (expires in ' . OVH::Bastion::duration2human(seconds => $ttl)->value->{'human'} . ')' : '';
     HEXIT(
         'OK',
-        value => {action => $action, account => $account, ip => $ip, user => $user, port => $port, ttl => $ttl, comment => $comment},
-        msg   => $action eq 'add' ? "Access to $machine was added to account $account$ttlmsg" : "Access to $machine was removed from account $account$ttlmsg"
+        value => {
+            action  => $action,
+            account => $account,
+            ip      => $ip,
+            user    => $user,
+            port    => $port,
+            ttl     => $ttl,
+            comment => $comment
+        },
+        msg => $action eq 'add'
+        ? "Access to $machine was added to account $account$ttlmsg"
+        : "Access to $machine was removed from account $account$ttlmsg"
     );
 }
 elsif ($fnret->err eq 'OK_NO_CHANGE') {

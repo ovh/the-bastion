@@ -83,7 +83,8 @@ sub jailify {
     push @jailcmd, "--child-ld-preload", $ld_preload if $ld_preload;
 
     if ($pivot_root) {
-        return R('ERR_INVALID_PARAMETER', msg => "Specified pivot_root ($pivot_root) is not a directory") if !-d $pivot_root;
+        return R('ERR_INVALID_PARAMETER', msg => "Specified pivot_root ($pivot_root) is not a directory")
+          if !-d $pivot_root;
         push @jailcmd, "-P", $pivot_root;
     }
 
@@ -93,7 +94,8 @@ sub jailify {
     }
 
     if (defined $bind_mounts) {
-        return R('ERR_INVALID_PARAMETER', msg => "Specified bind_mounts is not an arrayref") if (ref $bind_mounts ne 'ARRAY');
+        return R('ERR_INVALID_PARAMETER', msg => "Specified bind_mounts is not an arrayref")
+          if (ref $bind_mounts ne 'ARRAY');
         push @jailcmd, "-b", $_ for (@$bind_mounts);
     }
 

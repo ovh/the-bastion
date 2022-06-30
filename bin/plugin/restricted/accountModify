@@ -85,7 +85,8 @@ foreach my $key (qw{ mfa-password-required mfa-totp-required }) {
     next unless $modify{$key};
     if (not grep { $modify{$key} eq $_ } qw{ yes no bypass }) {
         help();
-        osh_exit 'ERR_INVALID_PARAMETER', "Expected '--$key yes' or '--$key no' or '--$key bypass' instead of '--$key $modify{$key}'";
+        osh_exit 'ERR_INVALID_PARAMETER',
+          "Expected '--$key yes' or '--$key no' or '--$key bypass' instead of '--$key $modify{$key}'";
     }
 }
 foreach my $key (qw{ always-active pam-auth-bypass idle-ignore osh-only pubkey-auth-optional }) {
@@ -95,17 +96,24 @@ foreach my $key (qw{ always-active pam-auth-bypass idle-ignore osh-only pubkey-a
         osh_exit 'ERR_INVALID_PARAMETER', "Expected '--$key yes' or '--$key no' instead of '--$key $modify{$key}'";
     }
 }
-if ($modify{'egress-strict-host-key-checking'} && !grep { $modify{'egress-strict-host-key-checking'} eq $_ } qw{ yes accept-new no ask default bypass }) {
+if ($modify{'egress-strict-host-key-checking'} && !grep { $modify{'egress-strict-host-key-checking'} eq $_ }
+    qw{ yes accept-new no ask default bypass })
+{
     help();
-    osh_exit 'ERR_INVALID_PARAMETER', "Expected option 'yes', 'accept-new', 'no', 'ask', 'default' or 'bypass' to --egress-strict-host-key-checking";
+    osh_exit 'ERR_INVALID_PARAMETER',
+      "Expected option 'yes', 'accept-new', 'no', 'ask', 'default' or 'bypass' to --egress-strict-host-key-checking";
 }
-if ($modify{'personal-egress-mfa-required'} && !grep { $modify{'personal-egress-mfa-required'} eq $_ } qw{ password totp any none }) {
+if ($modify{'personal-egress-mfa-required'} && !grep { $modify{'personal-egress-mfa-required'} eq $_ }
+    qw{ password totp any none })
+{
     help();
-    osh_exit 'ERR_INVALID_PARAMETER', "Expected option 'password', 'totp', 'any', 'none' to --personal-egress-mfa-required";
+    osh_exit 'ERR_INVALID_PARAMETER',
+      "Expected option 'password', 'totp', 'any', 'none' to --personal-egress-mfa-required";
 }
 if ($modify{'max-inactive-days'} && $modify{'max-inactive-days'} !~ /^(?:\d+|-1)$/) {
     help();
-    osh_exit "ERR_INVALID_PARAMETER", "Expected -1, 0, or a strictly positive number of days as parameter to --max-inactive-days";
+    osh_exit "ERR_INVALID_PARAMETER",
+      "Expected -1, 0, or a strictly positive number of days as parameter to --max-inactive-days";
 }
 
 my @command = qw{ sudo -n -u root -- /usr/bin/env perl -T };

@@ -19,7 +19,8 @@ sub syslog {
 
     if (not $_syslog_inited) {
         $_syslog_inited = 1;
-        Sys::Syslog::openlog(OVH::Bastion::config('syslogDescription')->value(), 'nofatal', OVH::Bastion::config('syslogFacility')->value());
+        Sys::Syslog::openlog(OVH::Bastion::config('syslogDescription')->value(),
+            'nofatal', OVH::Bastion::config('syslogFacility')->value());
     }
 
     # if message is tainted, forcefully untaint it
@@ -303,8 +304,9 @@ sub _sql_log_insert_file {
         my @execute;
         if ($sqltype eq 'local') {
             @execute = (
-                $uniqid,      $timestamp, $timestampusec, $account, $cmdtype, $allowed, $hostfrom, $ipfrom,  $portfrom, $bastionip,
-                $bastionport, $hostto,    $ipto,          $portto,  $user,    $plugin,  $params,   $comment, $ttyrecfile
+                $uniqid, $timestamp, $timestampusec, $account,     $cmdtype, $allowed, $hostfrom,
+                $ipfrom, $portfrom,  $bastionip,     $bastionport, $hostto,  $ipto,    $portto,
+                $user,   $plugin,    $params,        $comment,     $ttyrecfile
             );
             $prepare =
                 "INSERT INTO connections"
@@ -314,7 +316,10 @@ sub _sql_log_insert_file {
         }
         elsif ($sqltype eq 'global') {
             @execute = ($uniqid, $timestamp, $account, $cmdtype, $allowed, $ipfrom, $ipto, $portto, $user, $plugin);
-            $prepare = "INSERT INTO connections_summary (uniqid,timestamp,account,cmdtype,allowed,ipfrom,ipto,portto,user,plugin)" . 'VALUES (' . ('?,' x (@execute - 1)) . '?)';
+            $prepare =
+              "INSERT INTO connections_summary (uniqid,timestamp,account,cmdtype,allowed,ipfrom,ipto,portto,user,plugin)"
+              . 'VALUES ('
+              . ('?,' x (@execute - 1)) . '?)';
         }
 
         # prepare insertion on db
@@ -338,7 +343,8 @@ sub _sql_log_insert_file {
     # if this is set, we probably reached max retry in previous loop without succeeding
     if ($DBI::err) {
 
-        warn_syslog("Failed after multiple retries [$sqltype] err $DBI::err while doing [$doing]: $DBI::errstr ($file)");
+        warn_syslog(
+            "Failed after multiple retries [$sqltype] err $DBI::err while doing [$doing]: $DBI::errstr ($file)");
         return R('ERR_SQL_EXECUTE', msg => "SQL error [$sqltype] err $DBI::err while doing [$doing]: $DBI::errstr");
     }
 
@@ -357,12 +363,15 @@ sub log_access_insert {
     # if not, or if its invalid, still try to log what we can (hence don't return here)
     my ($remoteaccount, $sysaccount);
     if (defined $account) {
-        if ($fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account, accountType => "normal")) {
+        if ($fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account, accountType => "normal"))
+        {
 
             # normal accounts
             ;
         }
-        elsif ($fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account, accountType => "realm")) {
+        elsif ($fnret =
+            OVH::Bastion::is_bastion_account_valid_and_existing(account => $account, accountType => "realm"))
+        {
 
             # $account can also be a realm_xyz account, in case osh.pl is erroring early and couldn't resolve the
             # proper realm-qualified account name (realm/user)
@@ -409,7 +418,13 @@ sub log_access_insert {
     my $accountsql = 'no';
     if (OVH::Bastion::config('enableAccountSqlLog')->value()) {
         if ($loghome && -d "/home/$loghome") {
-            my $sqlfile = sprintf("/home/%s/%s-log-%04d%02d.sqlite", $loghome, $remoteaccount || $loghome, $localtime[5] + 1900, $localtime[4] + 1);
+            my $sqlfile = sprintf(
+                "/home/%s/%s-log-%04d%02d.sqlite",
+                $loghome,
+                $remoteaccount || $loghome,
+                $localtime[5] + 1900,
+                $localtime[4] + 1
+            );
             $fnret = _sql_log_insert_file(
                 %params,
                 sqltype => "local",
@@ -431,7 +446,11 @@ sub log_access_insert {
     # then global db
     my $globalsql = 'no';
     if (OVH::Bastion::config('enableGlobalSqlLog')->value()) {
-        $fnret     = _sql_log_insert_file(%params, sqltype => "global", file => sprintf("/home/logkeeper/global-log-%04d%02d.sqlite", $localtime[5] + 1900, $localtime[4] + 1));
+        $fnret = _sql_log_insert_file(
+            %params,
+            sqltype => "global",
+            file    => sprintf("/home/logkeeper/global-log-%04d%02d.sqlite", $localtime[5] + 1900, $localtime[4] + 1)
+        );
         $globalsql = $fnret ? 'ok' : 'error ' . $fnret->msg;
     }
 
@@ -556,7 +575,8 @@ sub _sql_log_update_file {
 
     # if this is set, we probably reached max retry in previous loop without succeeding
     if ($DBI::err) {
-        warn_syslog("Failed after multiple retries [updating] err $DBI::err while doing [$doing]: $DBI::errstr ($file)");
+        warn_syslog(
+            "Failed after multiple retries [updating] err $DBI::err while doing [$doing]: $DBI::errstr ($file)");
         return R('ERR_SQL_EXECUTE', msg => "SQL error [updating] err $DBI::err while doing [$doing]: $DBI::errstr");
     }
 
@@ -619,7 +639,8 @@ EOS
         # if this is set, we probably reached max retry in previous loop without succeeding
         if ($DBI::err) {
 
-            warn_syslog("Failed after multiple retries [plugins] err $DBI::err while doing [$doing]: $DBI::errstr ($file)");
+            warn_syslog(
+                "Failed after multiple retries [plugins] err $DBI::err while doing [$doing]: $DBI::errstr ($file)");
             return R('ERR_SQL_EXECUTE', msg => "SQL error [plugins] err $DBI::err while doing [$doing]: $DBI::errstr");
         }
     }
@@ -635,7 +656,17 @@ sub _write_log {
     my @date      = ($localtime[5] + 1900, $localtime[4] + 1);
 
     if (OVH::Bastion::config('enableAccountAccessLog')->value() && $params{'sysaccount'}) {
-        if (open(my $log_acc, ">>", sprintf("/home/%s/%s-log-%04d%02d.log", $params{'sysaccount'}, $params{'remoteaccount'} || $params{'sysaccount'}, @date))) {
+        if (
+            open(
+                my $log_acc,
+                ">>",
+                sprintf(
+                    "/home/%s/%s-log-%04d%02d.log",
+                    $params{'sysaccount'}, $params{'remoteaccount'} || $params{'sysaccount'}, @date
+                )
+            )
+          )
+        {
             print $log_acc localtime() . " " . $params{'msg'} . "\n";
             close($log_acc);
         }
@@ -694,7 +725,8 @@ sub log_access_update {
         eval { $cache = decode_json(delete $ENV{'LOG_CACHE_' . $params{'uniq_id'}}); };
         if ($cache) {
             @fields   = @{$cache->{'fields'}};
-            $duration = ($params{'timestampend'} + $params{'timestampendusec'} / 1_000_000) - ($cache->{'timestamp'} + $cache->{'timestampusec'} / 1_000_000);
+            $duration = ($params{'timestampend'} + $params{'timestampendusec'} / 1_000_000) -
+              ($cache->{'timestamp'} + $cache->{'timestampusec'} / 1_000_000);
         }
     }
     if (!@fields) {
@@ -720,7 +752,8 @@ sub log_access_update {
         $signal = delete $params{'signal'};
     }
 
-    push @fields, ['sysret', $status], ['signal', $signal], ['comment_close', join(" ", @comments)], ['duration', sprintf("%.3f", $duration)];
+    push @fields, ['sysret', $status], ['signal', $signal], ['comment_close', join(" ", @comments)],
+      ['duration', sprintf("%.3f", $duration)];
 
     # 1/3) update the account sql db if enabled. note that the global sql db is NOT updated, as
     # it contains less details that the account databases and doesn't have any field that requires
@@ -776,9 +809,14 @@ sub log_access_get {
 
     # check in account sql file
     if (OVH::Bastion::config('enableAccountSqlLog')->value()) {
-        $params{'file'}    = sprintf("/home/%s/%s-log-%04d%02d.sqlite", $params{'account'}, $params{'account'}, $localtime[5] + 1900, $localtime[4] + 1);
+        $params{'file'} = sprintf(
+            "/home/%s/%s-log-%04d%02d.sqlite",
+            $params{'account'}, $params{'account'},
+            $localtime[5] + 1900,
+            $localtime[4] + 1
+        );
         $params{'sqltype'} = 'local';
-        $fnret             = _sql_log_fetch_from_file(%params);
+        $fnret = _sql_log_fetch_from_file(%params);
         return $fnret;
     }
 
@@ -923,7 +961,8 @@ sub _sql_log_fetch_from_file {
     # if this is set, we probably reached max retry in previous loop without succeeding
     if ($DBI::err) {
 
-        warn_syslog("Failed after multiple retries [$sqltype] err $DBI::err while doing [$doing]: $DBI::errstr ($file)");
+        warn_syslog(
+            "Failed after multiple retries [$sqltype] err $DBI::err while doing [$doing]: $DBI::errstr ($file)");
         return R('ERR_SQL_EXECUTE', msg => "SQL error [$sqltype] err $DBI::err while doing [$doing]: $DBI::errstr");
     }
 

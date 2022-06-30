@@ -121,7 +121,8 @@ sub config_load_and_lint {
 
     if (-d -x OVH::Bastion::main_configuration_directory() . "/osh-encrypt-rsync.conf.d") {
         if (opendir(my $dh, OVH::Bastion::main_configuration_directory() . "/osh-encrypt-rsync.conf.d")) {
-            my @subfiles = map { OVH::Bastion::main_configuration_directory() . "/osh-encrypt-rsync.conf.d/" . $_ } grep { /\.conf$/ } readdir($dh);
+            my @subfiles = map { OVH::Bastion::main_configuration_directory() . "/osh-encrypt-rsync.conf.d/" . $_ }
+              grep { /\.conf$/ } readdir($dh);
             closedir($dh);
             push @configfilelist, sort @subfiles;
         }
@@ -285,7 +286,8 @@ sub config_test {
         return 1;
     }
     if (!-s $outfile) {
-        _err "Couldn't sign with the specified key $config{'signing_key'} (output file is empty), check your configuration";
+        _err
+          "Couldn't sign with the specified key $config{'signing_key'} (output file is empty), check your configuration";
         return 1;
     }
 
@@ -311,7 +313,8 @@ sub config_test {
             return 1;
         }
         if (not -s $outfile) {
-            _err "Couldn't encrypt for the specified recipient <$recipient> (output file is empty), check your configuration";
+            _err
+              "Couldn't encrypt for the specified recipient <$recipient> (output file is empty), check your configuration";
             return 1;
         }
     }
@@ -522,7 +525,11 @@ sub potentially_work_on_this_file {
     }
 
     # ok, this file is eligible, go
-    my $error = encrypt_multi(source_file => $file, destination_directory => $config{'encrypt_and_move_to_directory'}, remove_source_on_success => not $noDelete);
+    my $error = encrypt_multi(
+        source_file              => $file,
+        destination_directory    => $config{'encrypt_and_move_to_directory'},
+        remove_source_on_success => not $noDelete
+    );
     if ($error) {
         _err "Got an error for $file, skipping!";
     }
@@ -675,7 +682,8 @@ sub main {
         my $sysret;
 
         if (!-d $config{'encrypt_and_move_to_directory'} && $dryRun) {
-            _log "DRYRUN: source directory doesn't exist, substituting with another one (namely the config directory which we know exists), just to try the rsync in dry-run mode";
+            _log
+              "DRYRUN: source directory doesn't exist, substituting with another one (namely the config directory which we know exists), just to try the rsync in dry-run mode";
             $config{'encrypt_and_move_to_directory'} = '/etc/cron.d/';
         }
 
@@ -713,15 +721,24 @@ sub main {
                     return 1;
                 }
 
-                _log "Building a list of rsynced files to potentially delete (older than " . $config{'rsync_delay_before_remove_days'} . " days)";
-                my $cmdstr = "find . -xdev -type f -name '*.gpg' -mtime +" . ($config{'rsync_delay_before_remove_days'} - 1) . " -print0 | rsync -" . ($verbose ? 'v' : '') . "a ";
+                _log "Building a list of rsynced files to potentially delete (older than "
+                  . $config{'rsync_delay_before_remove_days'}
+                  . " days)";
+                my $cmdstr =
+                    "find . -xdev -type f -name '*.gpg' -mtime +"
+                  . ($config{'rsync_delay_before_remove_days'} - 1)
+                  . " -print0 | rsync -"
+                  . ($verbose ? 'v' : '') . "a ";
                 if ($config{'rsync_rsh'}) {
                     $cmdstr .= "--rsh '" . $config{'rsync_rsh'} . "' ";
                 }
                 if ($dryRun) {
                     $cmdstr .= "--dry-run ";
                 }
-                $cmdstr .= "--remove-source-files --files-from=- --from0 " . $config{'encrypt_and_move_to_directory'} . '/' . " " . $config{'rsync_destination'} . '/';
+                $cmdstr .=
+                    "--remove-source-files --files-from=- --from0 "
+                  . $config{'encrypt_and_move_to_directory'} . '/' . " "
+                  . $config{'rsync_destination'} . '/';
                 _log "Launching the following command: $cmdstr";
                 $sysret = system($cmdstr);
                 if ($sysret != 0) {
@@ -733,14 +750,22 @@ sub main {
                 _log "Removing now empty directories...";
 
                 # errors would be printed for non empty dirs, we don't care
-                system("find " . $config{'encrypt_and_move_to_directory'} . " -type d ! -wholename " . $config{'encrypt_and_move_to_directory'} . " -delete 2>/dev/null");
+                system( "find "
+                      . $config{'encrypt_and_move_to_directory'}
+                      . " -type d ! -wholename "
+                      . $config{'encrypt_and_move_to_directory'}
+                      . " -delete 2>/dev/null");
 
                 chdir $prevdir;
             }
         }
     }
 
-    _log "Done, got " . (OVH::SimpleLog::nb_errors()) . " error(s) and " . (OVH::SimpleLog::nb_warnings()) . " warning(s).";
+    _log "Done, got "
+      . (OVH::SimpleLog::nb_errors())
+      . " error(s) and "
+      . (OVH::SimpleLog::nb_warnings())
+      . " warning(s).";
     return 0;
 }
 

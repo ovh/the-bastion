@@ -132,12 +132,16 @@ my %_autoload_files = (
     allowkeeper => [
         qw{ is_user_in_group is_group_existing is_valid_uid get_next_available_uid is_bastion_account_valid_and_existing is_account_valid is_account_existing access_modify is_valid_group is_valid_group_and_existing add_user_to_group get_group_list get_account_list get_realm_list is_admin is_super_owner is_auditor is_group_aclkeeper is_group_gatekeeper is_group_owner is_group_guest is_group_member get_remote_accounts_from_realm is_valid_ttl build_re_from_wildcards }
     ],
-    configuration => [qw{ load_configuration_file main_configuration_directory load_configuration config account_config plugin_config group_config json_load }],
-    execute       => [qw{ sysret2human execute execute_simple result_from_helper helper_decapsulate helper }],
-    interactive   => [qw{ interactive }],
-    jail          => [qw{ jailify }],
-    log           => [qw{ syslog syslog_close syslogFormatted warn_syslog info_syslog log_access_insert log_access_update log_access_get }],
-    mock          => [
+    configuration => [
+        qw{ load_configuration_file main_configuration_directory load_configuration config account_config plugin_config group_config json_load }
+    ],
+    execute     => [qw{ sysret2human execute execute_simple result_from_helper helper_decapsulate helper }],
+    interactive => [qw{ interactive }],
+    jail        => [qw{ jailify }],
+    log         => [
+        qw{ syslog syslog_close syslogFormatted warn_syslog info_syslog log_access_insert log_access_update log_access_get }
+    ],
+    mock => [
         qw{ enable_mocking is_mocking set_mock_data mock_get_account_entry mock_get_account_accesses mock_get_account_personal_accesses mock_get_account_legacy_accesses mock_get_group_accesses mock_get_account_guest_accesses }
     ],
     os => [
@@ -294,7 +298,14 @@ sub is_account_active {
     }
 
     # If account has the flag in public config, then is active
-    if (OVH::Bastion::account_config(account => $sysaccount, key => OVH::Bastion::OPT_ACCOUNT_ALWAYS_ACTIVE, public => 1)) {
+    if (
+        OVH::Bastion::account_config(
+            account => $sysaccount,
+            key     => OVH::Bastion::OPT_ACCOUNT_ALWAYS_ACTIVE,
+            public  => 1
+        )
+      )
+    {
         return R('OK');
     }
 
@@ -325,7 +336,8 @@ sub is_account_active {
             warn_syslog("External account validation program returned status 2 (empty stderr)");
         }
         else {
-            warn_syslog("External account validation program returned status 2: " . $_) for @{$fnret->value->{'stderr'} || []};
+            warn_syslog("External account validation program returned status 2: " . $_)
+              for @{$fnret->value->{'stderr'} || []};
         }
     }
     if ($fnret->value->{'status'} == 4) {
@@ -333,7 +345,8 @@ sub is_account_active {
             osh_warn("External account validation program returned status 2 (empty stderr)");
         }
         else {
-            osh_warn("External account validation program returned status 2: " . $_) for @{$fnret->value->{'stderr'} || []};
+            osh_warn("External account validation program returned status 2: " . $_)
+              for @{$fnret->value->{'stderr'} || []};
         }
     }
     if ($fnret->value->{'status'} >= 2 && $fnret->value->{'status'} <= 4) {
@@ -355,7 +368,8 @@ sub json_output {    ## no critic (ArgUnpacking)
     if ($ENV{'PLUGIN_JSON'} eq 'PRETTY' and not $force_default) {
         $JsonObject->pretty(1);
     }
-    my $encoded_json = $JsonObject->encode({error_code => $R->err, error_message => $R->msg, command => $command, value => $R->value});
+    my $encoded_json =
+      $JsonObject->encode({error_code => $R->err, error_message => $R->msg, command => $command, value => $R->value});
 
     # rename forbidden strings
     $encoded_json =~ s/JSON_(START|OUTPUT|END)/JSON__$1/g;
@@ -382,13 +396,23 @@ sub osh_header {
     my $output      = '';
     my $fanciness   = OVH::Bastion::config('fanciness')->value;
     if (OVH::Bastion::can_use_utf8() && grep { $fanciness eq $_ } qw{ basic full }) {
-        my $line = "\N{U+256D}\N{U+2500}\N{U+2500}" . $hostname . "\N{U+2500}" x (80 - length($hostname) - length($versionline) - 6) . $versionline . "\N{U+2500}" x 3 . "\n";
+        my $line =
+            "\N{U+256D}\N{U+2500}\N{U+2500}"
+          . $hostname
+          . "\N{U+2500}" x (80 - length($hostname) - length($versionline) - 6)
+          . $versionline
+          . "\N{U+2500}" x 3 . "\n";
         $output .= colored($line,                                   'bold blue');
         $output .= colored("\N{U+2502} \N{U+25B6} $text\n",         'blue');
         $output .= colored("\N{U+251C}" . "\N{U+2500}" x 79 . "\n", 'blue');
     }
     else {
-        my $line = '-' x 3 . $hostname . '-' x (80 - length($hostname) - length($versionline) - 6) . $versionline . '-' x 3 . "\n";
+        my $line =
+            '-' x 3
+          . $hostname
+          . '-' x (80 - length($hostname) - length($versionline) - 6)
+          . $versionline
+          . '-' x 3 . "\n";
         $output .= colored($line,           'bold blue');
         $output .= colored("=> $text\n",    'blue');
         $output .= colored('-' x 80 . "\n", 'blue');
@@ -407,7 +431,8 @@ sub osh_footer {
     my $output;
     my $fanciness = OVH::Bastion::config('fanciness')->value;
     if (OVH::Bastion::can_use_utf8() && grep { $fanciness eq $_ } qw{ basic full }) {
-        $output = colored("\N{U+2570}" . "\N{U+2500}" x (79 - length($text) - 6) . "</$text>" . "\N{U+2500}" x 3 . "\n", 'bold blue');
+        $output = colored("\N{U+2570}" . "\N{U+2500}" x (79 - length($text) - 6) . "</$text>" . "\N{U+2500}" x 3 . "\n",
+            'bold blue');
     }
     else {
         $output = colored('-' x (80 - length($text) - 6) . "</$text>---" . "\n", 'bold blue');
@@ -477,16 +502,18 @@ sub osh_debug {
 }
 
 sub osh_info {
-    return _osh_log(text => shift, type => 'info');
+    my @lines = @_;
+    return _osh_log(text => join('', @lines), type => 'info');
 }
 
 sub osh_warn {
-    return _osh_log(text => shift, type => 'warn');
+    my @lines = @_;
+    return _osh_log(text => join('', @lines), type => 'warn');
 }
 
 sub osh_crit {
-    my $text = shift;
-    return _osh_log(text => "\n$text", type => 'crit');
+    my @lines = @_;
+    return _osh_log(text => "\n" . join('', @lines), type => 'crit');
 }
 
 sub _osh_log {
@@ -497,16 +524,19 @@ sub _osh_log {
         print $output $params{'text'} . "\n";
     }
     else {
-        my $prefix           = OVH::Bastion::can_use_utf8() && OVH::Bastion::config('fanciness')->value eq 'full' ? "\N{U+2502}" : '~';
+        my $prefix =
+          OVH::Bastion::can_use_utf8() && OVH::Bastion::config('fanciness')->value eq 'full' ? "\N{U+2502}" : '~';
         my $prefixIfNotEmpty = '';
         my $color;
         if ($params{'type'} eq 'crit') {
-            $prefixIfNotEmpty = (OVH::Bastion::can_use_utf8() && OVH::Bastion::config('fanciness')->value eq 'full' ? "\N{U+26D4}" : "[!]");
-            $color            = 'red bold';
+            $prefixIfNotEmpty = (OVH::Bastion::can_use_utf8()
+                  && OVH::Bastion::config('fanciness')->value eq 'full' ? "\N{U+26D4}" : "[!]");
+            $color = 'red bold';
         }
         elsif ($params{'type'} eq 'warn') {
-            $prefixIfNotEmpty = (OVH::Bastion::can_use_utf8() && OVH::Bastion::config('fanciness')->value eq 'full' ? "\N{U+2757}" : "[#]");
-            $color            = 'yellow';
+            $prefixIfNotEmpty = (OVH::Bastion::can_use_utf8()
+                  && OVH::Bastion::config('fanciness')->value eq 'full' ? "\N{U+2757}" : "[#]");
+            $color = 'yellow';
         }
         else {
             $color = 'blue';
@@ -536,12 +566,30 @@ sub is_valid_ip {
     if ($fast and $ip !~ m{:}) {
 
         # fast asked and it's not an IPv6, regex ftw
-        if ($ip =~ m{^(?<shortip>(?<x1>[0-9]{1,3})\.(?<x2>[0-9]{1,3})\.(?<x3>[0-9]{1,3})\.(?<x4>[0-9]{1,3}))((?<slash>/)(?<prefix>\d+))?$}) {   ## no critic (ProhibitUnusedCapture)
+        ## no critic (ProhibitUnusedCapture)
+        if (
+            $ip =~ m{^(?<shortip>
+                (?<x1>[0-9]{1,3})
+                \.
+                (?<x2>[0-9]{1,3})
+                \.
+                (?<x3>[0-9]{1,3})
+                \.
+                (?<x4>[0-9]{1,3})
+               )
+               (
+                (?<slash>/)
+                (?<prefix>\d+)
+               )?
+            $}x
+          )
+        {
             if (defined $+{'prefix'} and not $allowPrefixes) {
                 return R('KO_INVALID_IP', msg => "Invalid IP address ($ip), as prefixes are not allowed");
             }
             foreach my $key (qw{ x1 x2 x3 x4 }) {
-                return R('KO_INVALID_IP', msg => "Invalid IP address ($ip)") if (not defined $+{$key} or $+{$key} > 255);
+                return R('KO_INVALID_IP', msg => "Invalid IP address ($ip)")
+                  if (not defined $+{$key} or $+{$key} > 255);
             }
             if (defined $+{'prefix'} and $+{'prefix'} > 32) {
                 return R('KO_INVALID_IP', msg => "Invalid IP address ($ip)");
@@ -579,7 +627,16 @@ sub is_valid_ip {
         return R('KO_INVALID_IP', msg => "Invalid IP address ($ip), as prefixes are not allowed");
     }
 
-    return R('OK', value => {ip => $shortip, prefix => $IpObject->prefix, prefixlen => $IpObject->prefixlen, version => $IpObject->version, type => $type});
+    return R(
+        'OK',
+        value => {
+            ip        => $shortip,
+            prefix    => $IpObject->prefix,
+            prefixlen => $IpObject->prefixlen,
+            version   => $IpObject->version,
+            type      => $type
+        }
+    );
 }
 
 sub is_valid_port {
@@ -726,15 +783,19 @@ sub can_account_execute_plugin {
     if ($fnret->value and not OVH::Bastion::is_plugin_readonly_proof(plugin => $plugin)) {
         return R('ERR_READ_ONLY',
             msg => "You can't use this command on this bastion instance, as this is a write/modify command,\n"
-              . "and this bastion instance is read-only (slave). Please do this on the master instance of my cluster instead!");
+              . "and this bastion instance is read-only (slave). Please do this on the master instance of my cluster instead!"
+        );
     }
 
     # realm accounts are very restricted
     if ($account =~ m{^realm_}) {
         return R('ERR_SECURITY_VIOLATION', msg => "Realm support accounts can't execute any plugin by themselves");
     }
-    if ($account =~ m{/} && !grep { $plugin eq $_ } qw{ alive help info mtr nc ping selfForgetHostKey selfListAccesses selfListEgressKeys }) {
-        return R('ERR_REALM_USER', msg => "Realm accounts can't execute this plugin, use --osh help to get the allowed plugin list");
+    if ($account =~ m{/} && !grep { $plugin eq $_ }
+        qw{ alive help info mtr nc ping selfForgetHostKey selfListAccesses selfListEgressKeys })
+    {
+        return R('ERR_REALM_USER',
+            msg => "Realm accounts can't execute this plugin, use --osh help to get the allowed plugin list");
     }
 
     # open plugins, always start to look there
@@ -743,7 +804,10 @@ sub can_account_execute_plugin {
     }
 
     # aclkeeper/gatekeepers/owners plugins
-    if (-f ($path_plugin . '/group-aclkeeper/' . $plugin) or -f ($path_plugin . '/group-gatekeeper/' . $plugin) or -f ($path_plugin . '/group-owner/' . $plugin)) {
+    if (   -f ($path_plugin . '/group-aclkeeper/' . $plugin)
+        or -f ($path_plugin . '/group-gatekeeper/' . $plugin)
+        or -f ($path_plugin . '/group-owner/' . $plugin))
+    {
 
         # need to parse group to see if maybe member of group-gatekeeper or group-owner (or super owner)
         my %canDo = (gatekeeper => 0, aclkeeper => 0, owner => 0);
@@ -776,13 +840,19 @@ sub can_account_execute_plugin {
         }
 
         # unreachable code:
-        return R('KO_PERMISSION_DENIED', value => {type => 'group-unknown', plugin => $plugin}, msg => "Permission denied");
+        return R(
+            'KO_PERMISSION_DENIED',
+            value => {type => 'group-unknown', plugin => $plugin},
+            msg   => "Permission denied"
+        );
     }
 
     # restricted plugins (osh-* system groups based)
     if (-f ($path_plugin . '/restricted/' . $plugin)) {
         if (OVH::Bastion::is_user_in_group(user => $account, group => "osh-$plugin")) {
-            return R('OK', value => {fullpath => $path_plugin . '/restricted/' . $plugin, type => 'restricted', plugin => $plugin});
+            return R('OK',
+                value => {fullpath => $path_plugin . '/restricted/' . $plugin, type => 'restricted', plugin => $plugin}
+            );
         }
         else {
             return R(
@@ -796,7 +866,8 @@ sub can_account_execute_plugin {
     # admin plugins
     if (-f ($path_plugin . '/admin/' . $plugin)) {
         if (OVH::Bastion::is_admin(account => $account)) {
-            return R('OK', value => {fullpath => $path_plugin . '/admin/' . $plugin, type => 'admin', plugin => $plugin});
+            return R('OK',
+                value => {fullpath => $path_plugin . '/admin/' . $plugin, type => 'admin', plugin => $plugin});
         }
         else {
             return R(
@@ -875,7 +946,7 @@ sub get_user_from_env {
 
 sub get_home_from_env {
     my ($sanitized) = (getpwuid($>))[7] =~ m{^([a-zA-Z0-9_/.-]+)$};
-    $sanitized =~ s/\.+/./g;    # disallow 2 or more consecutive dots, i.e. "john.doe" is ok, "john/../../../etc/passwd" is not
+    $sanitized =~ s/\.+/./g; # disallow 2 or more consecutive dots, i.e. "john.doe" is ok, "john/../../../etc/passwd" is not
     return R('OK', value => $sanitized);
 }
 
@@ -914,7 +985,8 @@ sub get_passfile {
         my $passFile = "/home/passkeeper/$nameHint";
         return R('OK', value => $passFile) if (-f -r $passFile);
     }
-    return R('KO_PASSFILE_NOT_FOUND', msg => "Unable to find (or read) a password file in context '$context' and name '$nameHint'");
+    return R('KO_PASSFILE_NOT_FOUND',
+        msg => "Unable to find (or read) a password file in context '$context' and name '$nameHint'");
 }
 
 sub build_ttyrec_cmdline {
@@ -940,7 +1012,8 @@ sub build_ttyrec_cmdline {
     if ($ttyrecFilenameFormat =~ /&(bastionname|uniqid|ip|port|user|account)/) {
 
         # if we still have a placeholder here, then we were missing parameters
-        return R('ERR_MISSING_PARAMETER', msg => "Missing bastionname, uniqid, ip, port, user or account in ttyrec cmdline building");
+        return R('ERR_MISSING_PARAMETER',
+            msg => "Missing bastionname, uniqid, ip, port, user or account in ttyrec cmdline building");
     }
 
     # ensure there are no '/'
@@ -978,16 +1051,20 @@ sub build_ttyrec_cmdline {
     push @ttyrec, '-T', 'always' if $params{'tty'};
     push @ttyrec, '-T', 'never'  if $params{'notty'};
 
-    my $fnret = OVH::Bastion::account_config(account => $params{'account'}, key => OVH::Bastion::OPT_ACCOUNT_IDLE_IGNORE, public => 1);
+    my $fnret = OVH::Bastion::account_config(
+        account => $params{'account'},
+        key     => OVH::Bastion::OPT_ACCOUNT_IDLE_IGNORE,
+        public  => 1
+    );
     if ($fnret && $fnret->value =~ /yes/) {
         osh_debug("Account is immune to idle, not adding ttyrec commandline parameters");
     }
     else {
-        push @ttyrec, '-k',                 $idleKillTimeout                                     if $idleKillTimeout;
-        push @ttyrec, '-t',                 $idleLockTimeout                                     if $idleLockTimeout;
-        push @ttyrec, '-s',                 "To unlock, use '--osh unlock' from another console" if $idleLockTimeout;
-        push @ttyrec, '--warn-before-lock', $warnBeforeLockSeconds                               if $warnBeforeLockSeconds;
-        push @ttyrec, '--warn-before-kill', $warnBeforeKillSeconds                               if $warnBeforeKillSeconds;
+        push @ttyrec, '-k', $idleKillTimeout                                     if $idleKillTimeout;
+        push @ttyrec, '-t', $idleLockTimeout                                     if $idleLockTimeout;
+        push @ttyrec, '-s', "To unlock, use '--osh unlock' from another console" if $idleLockTimeout;
+        push @ttyrec, '--warn-before-lock', $warnBeforeLockSeconds if $warnBeforeLockSeconds;
+        push @ttyrec, '--warn-before-kill', $warnBeforeKillSeconds if $warnBeforeKillSeconds;
     }
 
     my $ttyrecAdditionalParameters = OVH::Bastion::config('ttyrecAdditionalParameters')->value;
@@ -1011,7 +1088,8 @@ sub do_pamtester {
     # up having passwords typed by the user displayed on screen. In that case, refuse to do it,
     # and return an error to our caller.
     if ($ENV{'OSH_BATCH'}) {
-        return R('KO_MFA_TERM_NOT_RAW', msg => "MFA is required for this action, but we're running under batch mode, please use --proactive-mfa");
+        return R('KO_MFA_TERM_NOT_RAW',
+            msg => "MFA is required for this action, but we're running under batch mode, please use --proactive-mfa");
     }
 
     # use system() instead of OVH::Bastion::execute() because we need it to grab the term
@@ -1019,17 +1097,20 @@ sub do_pamtester {
     while (1) {
         my $pamsysret;
         if (OVH::Bastion::is_freebsd()) {
-            $pamsysret = system('sudo', '-n', '-u', 'root', '--', '/usr/bin/env', 'pamtester', 'sshd', $sysself, 'authenticate');
+            $pamsysret =
+              system('sudo', '-n', '-u', 'root', '--', '/usr/bin/env', 'pamtester', 'sshd', $sysself, 'authenticate');
         }
         else {
             $pamsysret = system('pamtester', 'sshd', $sysself, 'authenticate');
         }
         if ($pamsysret < 0) {
-            return R('KO_MFA_FAILED', msg => "MFA is required for this action, but this bastion is missing the `pamtester' tool, aborting");
+            return R('KO_MFA_FAILED',
+                msg => "MFA is required for this action, but this bastion is missing the `pamtester' tool, aborting");
         }
         elsif ($pamsysret != 0) {
             if (--$pamtries <= 0) {
-                return R('KO_MFA_FAILED', msg => "Sorry, but Multi-Factor Authentication failed, couldn't complete the requested action");
+                return R('KO_MFA_FAILED',
+                    msg => "Sorry, but Multi-Factor Authentication failed, couldn't complete the requested action");
             }
             next;
         }

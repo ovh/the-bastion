@@ -84,11 +84,11 @@ sub log_and_exit {
 
     # log in sql and/or logfile and/or syslog
     my $processing_delay = ($starttime ? int(Time::HiRes::tv_interval($starttime) * 1_000_000) : undef);
-    $params->{'account'}     = $account;                                        # might be undef if we're called before the account is extracted from the payload
-    $params->{'user'}        = $user;                                           # ditto
-    $params->{'hostto'}      = $hostto;                                         # ditto
-    $params->{'portto'}      = $portto;                                         # ditto
-    $params->{'loghome'}     = 'proxyhttp';
+    $params->{'account'} = $account;   # might be undef if we're called before the account is extracted from the payload
+    $params->{'user'}    = $user;      # ditto
+    $params->{'hostto'}  = $hostto;    # ditto
+    $params->{'portto'}  = $portto;    # ditto
+    $params->{'loghome'} = 'proxyhttp';
     $params->{'cmdtype'}     = 'proxyhttp_daemon';
     $params->{'ipfrom'}      = $self->{'request_info'}{'peeraddr'};
     $params->{'portfrom'}    = $self->{'request_info'}{'peerport'};
@@ -196,7 +196,13 @@ sub _exec_worker_and_get_result {
     my $fnret;
 
     $fnret = OVH::Bastion::execute_simple(cmd => \@cmd);
-    $fnret or return $self->log_and_exit(500, "Internal Error (couldn't exec worker)", "Couldn't exec worker (" . $fnret->msg . ")", {comment => "worker_exec_failed"});
+    $fnret
+      or return $self->log_and_exit(
+        500,
+        "Internal Error (couldn't exec worker)",
+        "Couldn't exec worker (" . $fnret->msg . ")",
+        {comment => "worker_exec_failed"}
+      );
 
     if ($fnret->value->{'sysret'} != 0) {
         return $self->log_and_exit(
@@ -208,7 +214,12 @@ sub _exec_worker_and_get_result {
     }
 
     if (!$fnret->value->{'output'}) {
-        return $self->log_and_exit(500, "Internal Error (worker returned no data)", "Worker returned no data", {comment => "worker_no_data"});
+        return $self->log_and_exit(
+            500,
+            "Internal Error (worker returned no data)",
+            "Worker returned no data",
+            {comment => "worker_no_data"}
+        );
     }
 
     my $json_decoded;
@@ -226,7 +237,13 @@ sub _exec_worker_and_get_result {
     }
 
     $fnret = OVH::Bastion::helper_decapsulate($json_decoded);
-    $fnret or return $self->log_and_exit(500, "Internal Error (worker returned an error)", "Worker returned an error (" . $fnret->msg . ")", {comment => "worker_error"});
+    $fnret
+      or return $self->log_and_exit(
+        500,
+        "Internal Error (worker returned an error)",
+        "Worker returned an error (" . $fnret->msg . ")",
+        {comment => "worker_error"}
+      );
 
     return $fnret;
 }
@@ -255,25 +272,43 @@ sub process_http_request {
 
     # only GET or POST are allowed
     if (not grep { uc($self->{'request_info'}{'request_method'}) eq $_ } qw{ GET POST }) {
-        return $self->log_and_exit(400, "Bad Request (method forbidden)", "Only GET and POST methods are allowed", {comment => 'method_forbidden'});
+        return $self->log_and_exit(
+            400,
+            "Bad Request (method forbidden)",
+            "Only GET and POST methods are allowed",
+            {comment => 'method_forbidden'}
+        );
     }
 
     # if we don't have the request_headers, we really have a big problem
     if (ref $self->{'request_info'} ne 'HASH' or ref $self->{'request_info'}{'request_headers'} ne 'ARRAY') {
-        return $self->log_and_exit(500, "Internal Server Error (headers not found)", "The headers of the request can't be found", {comment => "headers_not_found"});
+        return $self->log_and_exit(
+            500,
+            "Internal Server Error (headers not found)",
+            "The headers of the request can't be found",
+            {comment => "headers_not_found"}
+        );
     }
 
     # convert headers into a hash
     my $req_headers = _flatten_headers($self->{'request_info'}{'request_headers'});
     if (ref $req_headers ne 'HASH') {
-        return $self->log_and_exit(500, "Internal Server Error (headers are not a hash)", "Request headers couldn't be parsed properly", {comment => "headers_cannot_be_parsed"});
+        return $self->log_and_exit(
+            500,
+            "Internal Server Error (headers are not a hash)",
+            "Request headers couldn't be parsed properly",
+            {comment => "headers_cannot_be_parsed"}
+        );
     }
 
     # check if it's not just a self-health test
     if ($ENV{'REQUEST_URI'} eq '/bastion-health-check') {
 
         # launch the worker in monitoring mode, to be sure we test all the sudo part
-        my @cmd = ("sudo", "-n", "-u", "proxyhttp", "--", "/usr/bin/env", "perl", "-T", "/opt/bastion/bin/proxy/osh-http-proxy-worker");
+        my @cmd = (
+            "sudo", "-n", "-u", "proxyhttp", "--", "/usr/bin/env", "perl", "-T",
+            "/opt/bastion/bin/proxy/osh-http-proxy-worker"
+        );
         push @cmd, "--monitoring", "--uniqid", $ENV{'UNIQID'};
 
         $fnret = $self->_exec_worker_and_get_result(@cmd);
@@ -297,19 +332,32 @@ sub process_http_request {
 
     # this header is mandatory, and must be a Basic scheme auth
     if (not $req_headers->{'authorization'}) {
-        return $self->log_and_exit(401, "Authorization required (no auth provided)", "No authentication provided, and authentication is mandatory",
-            {comment => "no_auth_provided"});
+        return $self->log_and_exit(
+            401,
+            "Authorization required (no auth provided)",
+            "No authentication provided, and authentication is mandatory",
+            {comment => "no_auth_provided"}
+        );
     }
     my $basic_auth_header_value;
     if (not $req_headers->{'authorization'} =~ m{^Basic (\S+)$}i) {
-        return $self->log_and_exit(401, "Authorization required (basic auth scheme needed)", "Basic authorization scheme required", {comment => "bad_auth_scheme"});
+        return $self->log_and_exit(
+            401,
+            "Authorization required (basic auth scheme needed)",
+            "Basic authorization scheme required",
+            {comment => "bad_auth_scheme"}
+        );
     }
     else {
         $basic_auth_header_value = $1;
     }
     if ($req_headers->{'authorization'} ne $ENV{'HTTP_AUTHORIZATION'}) {
-        return $self->log_and_exit(500, "Internal Server Error (consistency)", "Internal consistency error: authorization header doesn't match envvar",
-            {comment => 'consistency_error'});
+        return $self->log_and_exit(
+            500,
+            "Internal Server Error (consistency)",
+            "Internal consistency error: authorization header doesn't match envvar",
+            {comment => 'consistency_error'}
+        );
     }
     delete $ENV{'HTTP_AUTHORIZATION'};
 
@@ -321,7 +369,12 @@ sub process_http_request {
 
     # the decoded header should be of the form LOGIN:PASSWORD
     if (not $decoded or $decoded !~ /^(.+):([^:]+)$/) {
-        return $self->log_and_exit(401, "Authorization required (malformed basic auth)", "Malformed Basic authorization '$decoded'", {comment => "malformed_basic_auth"});
+        return $self->log_and_exit(
+            401,
+            "Authorization required (malformed basic auth)",
+            "Malformed Basic authorization '$decoded'",
+            {comment => "malformed_basic_auth"}
+        );
     }
 
     # in our case, the LOGIN should in fact be of the form bastion_account@remote_login_expression@remote_host_to_connect_to,
@@ -336,8 +389,8 @@ sub process_http_request {
             {comment => "bad_login_format"}
         );
     }
-    my ($account, $user_expression, $remotemachine, $remoteport) = ($1, $2, $3, $5);    ## no critic (ProhibitCaptureWithoutTest)
-    undef $loginpart;                                                                   # no longer needed
+    my ($account, $user_expression, $remotemachine, $remoteport) = ($1, $2, $3, $5); ## no critic (ProhibitCaptureWithoutTest)
+    undef $loginpart;                                                                # no longer needed
     $remoteport               = 443 if not defined $remoteport;
     $self->{'_log'}{'hostto'} = $remotemachine;
     $self->{'_log'}{'portto'} = $remoteport;
@@ -366,32 +419,53 @@ sub process_http_request {
     undef $user_expression;    # no longer needed
 
     if (not OVH::Bastion::is_account_valid(account => $account)) {
-        return $self->log_and_exit(400, "Bad Request (bad account)", "Account name is invalid", {comment => "invalid_account"});
+        return $self->log_and_exit(
+            400,
+            "Bad Request (bad account)",
+            "Account name is invalid",
+            {comment => "invalid_account"}
+        );
     }
     my $escaped_account = $account;
     $escaped_account =~ s/%/%%/g;
-    $self->{'server'}{'access_log_format'} = qq#%h $escaped_account %u %t "%r" %>s %b "$remotemachine" "$ENV{'UNIQID'}" "%{User-Agent}i" %D -#;
+    $self->{'server'}{'access_log_format'} =
+      qq#%h $escaped_account %u %t "%r" %>s %b "$remotemachine" "$ENV{'UNIQID'}" "%{User-Agent}i" %D -#;
     if (not OVH::Bastion::is_valid_port(port => $remoteport)) {
-        return $self->log_and_exit(400, "Bad Request (bad port number)", "Port number is out of range", {comment => "invalid_port_number"});
+        return $self->log_and_exit(
+            400,
+            "Bad Request (bad port number)",
+            "Port number is out of range",
+            {comment => "invalid_port_number"}
+        );
     }
 
     $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
     if (not $fnret) {
 
         # don't be too specific on the error message to avoid account name guessing
-        return $self->log_and_exit(403, "Access Denied", "Incorrect username ($account) or password (#REDACTED#, length=" . length($pass) . ")",
-            {comment => "invalid_credentials"});
+        return $self->log_and_exit(
+            403,
+            "Access Denied",
+            "Incorrect username ($account) or password (#REDACTED#, length=" . length($pass) . ")",
+            {comment => "invalid_credentials"}
+        );
     }
     $account = $fnret->value->{'account'};    # untaint
     $self->{'_log'}{'account'} = $account;
 
     if ($user !~ /^[a-zA-Z0-9._-]+/) {
-        return $self->log_and_exit(400, "Bad Request (bad user name)", "User name '$user' has forbidden characters", {comment => "bad_user_name"});
+        return $self->log_and_exit(
+            400,
+            "Bad Request (bad user name)",
+            "User name '$user' has forbidden characters",
+            {comment => "bad_user_name"}
+        );
     }
     $self->{'_log'}{'user'} = $user;
     my $escaped_user = $user;
     $escaped_user =~ s/%/%%/g;
-    $self->{'server'}{'access_log_format'} = qq#%h $escaped_account $escaped_user %t "%r" %>s %b "$remotemachine" "$ENV{'UNIQID'}" "%{User-Agent}i" %D -#;
+    $self->{'server'}{'access_log_format'} =
+      qq#%h $escaped_account $escaped_user %t "%r" %>s %b "$remotemachine" "$ENV{'UNIQID'}" "%{User-Agent}i" %D -#;
 
     # config value by default
     my $timeout = $self->{'proxy_config'}{'timeout'};
@@ -402,7 +476,12 @@ sub process_http_request {
             $timeout = $req_headers->{'x-bastion-timeout'};
         }
         else {
-            return $self->log_and_exit(400, "Bad Request (invalid timeout value)", "Expected an integer timeout value expressed in seconds", {comment => "bad_timeout_value"});
+            return $self->log_and_exit(
+                400,
+                "Bad Request (invalid timeout value)",
+                "Expected an integer timeout value expressed in seconds",
+                {comment => "bad_timeout_value"}
+            );
         }
     }
 
@@ -413,7 +492,12 @@ sub process_http_request {
             $allow_downgrade = $req_headers->{'x-bastion-allow-downgrade'} + 0;
         }
         else {
-            return $self->log_and_exit(400, "Bad Request (invalid allow-downgrade value)", "Expected value '0', '1' or no header", {comment => "bad_allow_downgrade_value"});
+            return $self->log_and_exit(
+                400,
+                "Bad Request (invalid allow-downgrade value)",
+                "Expected value '0', '1' or no header",
+                {comment => "bad_allow_downgrade_value"}
+            );
         }
     }
 
@@ -424,13 +508,20 @@ sub process_http_request {
             $enforce_secure = $req_headers->{'x-bastion-enforce-secure'} + 0;
         }
         else {
-            return $self->log_and_exit(400, "Bad Request (invalid enforce-secure value)", "Expected value '0', '1' or no header", {comment => "bad_enforce_secure_value"});
+            return $self->log_and_exit(
+                400,
+                "Bad Request (invalid enforce-secure value)",
+                "Expected value '0', '1' or no header",
+                {comment => "bad_enforce_secure_value"}
+            );
         }
     }
 
     # here, we know the account is right, so we sudo to this account to proceed
-    my @cmd = ("sudo", "-n", "-u", $account, "--", "/usr/bin/env", "perl", "-T", "/opt/bastion/bin/proxy/osh-http-proxy-worker");
-    push @cmd, "--account", $account, "--context", $context, "--user", $user, "--host", $remotemachine, "--uniqid", $ENV{'UNIQID'};
+    my @cmd = ("sudo", "-n", "-u", $account, "--", "/usr/bin/env", "perl", "-T",
+        "/opt/bastion/bin/proxy/osh-http-proxy-worker");
+    push @cmd, "--account", $account, "--context", $context, "--user", $user, "--host", $remotemachine, "--uniqid",
+      $ENV{'UNIQID'};
     push @cmd, "--method", $self->{'request_info'}{'request_method'}, "--path", $self->{'request_info'}{'request_path'};
     push @cmd, "--port", $remoteport;
     push @cmd, "--group",   $group   if $group;
@@ -438,7 +529,8 @@ sub process_http_request {
     push @cmd, "--allow-downgrade"      if $allow_downgrade;
     push @cmd, "--insecure"             if ($self->{'proxy_config'}{'insecure'} && !$enforce_secure);
     push @cmd, "--log-request-response" if ($self->{'proxy_config'}{'log_request_response'});
-    push @cmd, "--log-request-response-max-size", $self->{'proxy_config'}{'log_request_response_max_size'} if ($self->{'proxy_config'}{'log_request_response'});
+    push @cmd, "--log-request-response-max-size", $self->{'proxy_config'}{'log_request_response_max_size'}
+      if ($self->{'proxy_config'}{'log_request_response'});
 
     # X-Test-* is only used for functional tests, and has to be passed to the remote
     foreach my $pattern (qw{ accept content-type content-length content-encoding x-test-[a-z-]+ }) {
@@ -479,11 +571,17 @@ sub process_http_request {
     my $bastion2devicedelay              = $flattened_bastion2client_headers->{'x-bastion-egress-timing'};
     $self->{'_log'}{'post_content'} = $content;
     $self->{'server'}{'access_log_format'} =
-      qq#%h $escaped_account $escaped_user %t "%r" %>s %b "$remotemachine" "$ENV{'UNIQID'}" "%{User-Agent}i" %D # . ($bastion2devicedelay || '-');
+      qq#%h $escaped_account $escaped_user %t "%r" %>s %b "$remotemachine" "$ENV{'UNIQID'}" "%{User-Agent}i" %D #
+      . ($bastion2devicedelay || '-');
 
     $self->{'_log'}{'bastion2device_delay'} = $bastion2devicedelay;
     $self->{'_log'}{'allowed'}              = $fnret->value->{'allowed'};
-    $self->log_and_exit($fnret->value->{'code'}, $fnret->value->{'msg'}, $fnret->value->{'body'}, {comment => "worker_returned"});
+    $self->log_and_exit(
+        $fnret->value->{'code'},
+        $fnret->value->{'msg'},
+        $fnret->value->{'body'},
+        {comment => "worker_returned"}
+    );
 
     return 1;
 }

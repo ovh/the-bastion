@@ -95,7 +95,8 @@ if ($sysret != 0) {
 
 my @cmd = ('ssh', '-l', $account, '-i', $keyfile, '-p', $port);
 if ($kbdinteractive) {
-    push @cmd, ('-o', 'KbdInteractiveAuthentication=yes', '-o', 'PreferredAuthentications=publickey,keyboard-interactive');
+    push @cmd,
+      ('-o', 'KbdInteractiveAuthentication=yes', '-o', 'PreferredAuthentications=publickey,keyboard-interactive');
 }
 push @cmd, ($host, '--', '-q', '--osh', 'info');
 _dbg("Executing: " . join(" ", @cmd));

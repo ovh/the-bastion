@@ -64,7 +64,8 @@ sub makeTimestamp {
     if ($data =~ m'^(\d{4})[/-](\d\d)[/-](\d\d)(@(\d\d):(\d\d):(\d\d))?$') {
         return POSIX::mktime($7, $6, $5, $3, $2 - 1, $1 - 1900);
     }
-    osh_exit R('ERR_INVALID_PARAMETER', msg => "--$name: expected a date of the format YYYY-MM-DD or YYY-MM-DD\@HH:MM:SS or UNIXTIMESTAMP");
+    osh_exit R('ERR_INVALID_PARAMETER',
+        msg => "--$name: expected a date of the format YYYY-MM-DD or YYY-MM-DD\@HH:MM:SS or UNIXTIMESTAMP");
 }
 
 my ($afterTimestamp, $beforeTimestamp);
@@ -110,7 +111,8 @@ else {
     foreach my $id (sort { $list->{$a}->{'id'} <=> $list->{$b}->{'id'} } keys %{$list}) {
         my $r = $list->{$id};
         my $diff =
-          ($r->{timestampend} + $r->{timestampendusec} / 1_000_000) - ($r->{timestamp} + $r->{timestampusec} / 1_000_000);
+          ($r->{timestampend} + $r->{timestampendusec} / 1_000_000) -
+          ($r->{timestamp} + $r->{timestampusec} / 1_000_000);
 
         my $delay = '-.-';
         if ($r->{timestampend}) {
@@ -143,27 +145,30 @@ else {
         $delay = sprintf('%13s', $delay);
 
         my $to =
-             $r->{user}
-          || $r->{ipto}
-          || $r->{portto}
-          || $r->{hostto} ? sprintf(' to %s@%s:%s(%s)', $r->{'user'}, $r->{'ipto'}, $r->{'portto'}, $r->{'hostto'}) : '';
+          $r->{user} || $r->{ipto} || $r->{portto} || $r->{hostto}
+          ? sprintf(' to %s@%s:%s(%s)', $r->{'user'}, $r->{'ipto'}, $r->{'portto'}, $r->{'hostto'})
+          : '';
         $r->{params}      = undef         if ($r->{cmdtype} ne 'osh');
         $r->{returnvalue} = $r->{comment} if $r->{returnvalue} < 0;
 
         if ($detailed) {
             printf "%s [%s - %s (%s)] type %s from %s:%s(%s) via %s@%s:%s%s returned %s%s\n",
               $r->{uniqid}, POSIX::strftime("%Y/%m/%d@%H:%M:%S", localtime($r->{timestamp})),
-              $r->{timestampend} ? POSIX::strftime("%Y/%m/%d@%H:%M:%S", localtime($r->{timestampend})) : '????/??/??@??:??:??',
+              $r->{timestampend}
+              ? POSIX::strftime("%Y/%m/%d@%H:%M:%S", localtime($r->{timestampend}))
+              : '????/??/??@??:??:??',
               $delay,
               $r->{'cmdtype'} . ($r->{'plugin'} ? '-' . $r->{'plugin'} : '') . ($r->{allowed} ? '' : '/DENIED'),
-              $r->{'ipfrom'}, $r->{'portfrom'}, $r->{'hostfrom'}, $r->{'account'}, $r->{'bastionip'}, $r->{'bastionport'},
+              $r->{'ipfrom'}, $r->{'portfrom'}, $r->{'hostfrom'}, $r->{'account'}, $r->{'bastionip'},
+              $r->{'bastionport'},
               $to, defined $r->{returnvalue} ? $r->{returnvalue} : 'null',
               $r->{params} ? " params $r->{params}" : '';
         }
         else {
             printf "%s [%s] %s%s%s\n",
               $r->{uniqid}, POSIX::strftime("%Y/%m/%d@%H:%M:%S", localtime($r->{timestamp})),
-              $r->{'cmdtype'} . ($r->{'plugin'} ? '-' . $r->{'plugin'} : '') . ($r->{allowed} ? '' : '/DENIED'), $r->{params} ? ' ' . $r->{params} : '',
+              $r->{'cmdtype'} . ($r->{'plugin'} ? '-' . $r->{'plugin'} : '') . ($r->{allowed} ? '' : '/DENIED'),
+              $r->{params} ? ' ' . $r->{params} : '',
               $to;
         }
         push @result,

@@ -111,19 +111,24 @@ if ($self =~ /^realm_([a-zA-Z0-9_.-]+)/) {
         # we won't log to the proper place if sql logs or access logs are enabled per account.
         my $potentialSelf = sprintf("%s/%s", $1, $ENV{'LC_BASTION'});
         $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $potentialSelf, realmOnly => 1);
-        $fnret or main_exit(OVH::Bastion::EXIT_ACCOUNT_INVALID, "account_invalid", "The realm-scoped account '$self' is invalid (" . $fnret->msg . ")");
+        $fnret
+          or main_exit(OVH::Bastion::EXIT_ACCOUNT_INVALID,
+            "account_invalid", "The realm-scoped account '$self' is invalid (" . $fnret->msg . ")");
 
         # $potentialSelf is valid, we can use it
         $self = $potentialSelf;
     }
     else {
-        main_exit(OVH::Bastion::EXIT_ACCOUNT_INVALID, "account_invalid", "Attempted to use a realm account but not from another bastion");
+        main_exit(OVH::Bastion::EXIT_ACCOUNT_INVALID,
+            "account_invalid", "Attempted to use a realm account but not from another bastion");
     }
 }
 else {
     # non-realm case
     $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $self);
-    $fnret or main_exit(OVH::Bastion::EXIT_ACCOUNT_INVALID, "account_invalid", "The account is invalid (" . $fnret->msg . ")");
+    $fnret
+      or
+      main_exit(OVH::Bastion::EXIT_ACCOUNT_INVALID, "account_invalid", "The account is invalid (" . $fnret->msg . ")");
 }
 {
     my %values = %{$fnret->value};
@@ -134,10 +139,10 @@ else {
 # First Check : is USER valid ?
 #
 my $activenessDenyOnFailure = OVH::Bastion::config("accountExternalValidationDenyOnFailure")->value;
-my $msg_to_print_delayed;    # if set, will be osh_warn()'ed if we're connecting through ssh (i.e. not scp, it breaks it)
+my $msg_to_print_delayed;   # if set, will be osh_warn()'ed if we're connecting through ssh (i.e. not scp, it breaks it)
 $fnret = OVH::Bastion::is_account_active(account => $self);
 if ($fnret) {
-    ;                        # OK
+    ;                       # OK
 }
 elsif ($fnret->is_ko || ($activenessDenyOnFailure && $fnret->is_err)) {
     main_exit OVH::Bastion::EXIT_ACCOUNT_INACTIVE, "account_inactive", "Your account is inactive, $self, sorry";
@@ -173,14 +178,16 @@ if (-e '/home/allowkeeper/maintenance') {
 $fnret = OVH::Bastion::account_config(account => $self, key => "account_ttl");
 if ($fnret) {
     if ($fnret->value !~ /^\d+$/) {
-        main_exit(OVH::Bastion::EXIT_TTL_EXPIRED, "ttl_expired", "Your TTL has an invalid value, access denied. Check with an administrator.");
+        main_exit(OVH::Bastion::EXIT_TTL_EXPIRED,
+            "ttl_expired", "Your TTL has an invalid value, access denied. Check with an administrator.");
     }
     my $ttl = $fnret->value;
 
     $fnret = OVH::Bastion::account_config(account => $self, key => "creation_timestamp");
     if ($fnret->value !~ /^\d+$/) {
-        main_exit(OVH::Bastion::EXIT_TTL_EXPIRED,
-            "ttl_expired", "Your account creation date has an invalid value, and you have a TTL set, access denied. Check with an administrator.");
+        main_exit(OVH::Bastion::EXIT_TTL_EXPIRED, "ttl_expired",
+            "Your account creation date has an invalid value, and you have a TTL set, access denied. Check with an administrator."
+        );
     }
     my $created = $fnret->value;
 
@@ -209,7 +216,11 @@ my $lastlogmsg = sprintf("Welcome to $bastionName, $self, this is your first con
 if ($fnret && $fnret->value && $fnret->value->{'seconds'}) {
     my $lastloginfo = $fnret->value->{'info'} ? " from " . $fnret->value->{'info'} : "";
     $fnret      = OVH::Bastion::duration2human(seconds => $fnret->value->{'seconds'}, tense => "past");
-    $lastlogmsg = sprintf("Welcome to $bastionName, $self, your last login was %s ago (%s)%s", $fnret->value->{'duration'}, $fnret->value->{'date'}, $lastloginfo);
+    $lastlogmsg = sprintf(
+        "Welcome to $bastionName, $self, your last login was %s ago (%s)%s",
+        $fnret->value->{'duration'},
+        $fnret->value->{'date'}, $lastloginfo
+    );
 }
 
 # ok not expired, so we update lastlog
@@ -338,34 +349,34 @@ else {
 my $remainingOptions;
 ($result, $remainingOptions) = GetOptionsFromString(
     $beforeOptions,
-    "port|p=i"                  => \my $optPort,
-    "verbose+"                  => \my $verbose,
-    "tty|t"                     => \my $tty,
-    "no-tty|T"                  => \my $notty,
-    "user|u=s"                  => \my $user,
-    "osh=s"                     => \my $osh_command,
-    "telnet|e"                  => \my $telnet,
-    "password=s"                => \my $passwordFile,
-    "self-password|P"           => \my $selfPassword,
-    "host|h=s"                  => \my $host,
-    "help"                      => \my $help,
-    "long-help"                 => \my $longHelp,
-    "quiet|q"                   => \my $quiet,
-    "timeout=i"                 => \my $timeout,
-    "bind=s"                    => \my $bind,
-    "debug"                     => \my $debug,
-    "json"                      => \my $json,
-    "json-greppable"            => \my $json_greppable,
-    "json-pretty"               => \my $json_pretty,
-    "always-escape"             => \my $_dummy1,                 # not used as corresponding option has already been ninja-used above
-    "never-escape"              => \my $_dummy2,                 # not used as corresponding option has already been ninja-used above
-    "interactive|i"             => \my $interactive,
-    "netconf"                   => \my $netconf,
-    "wait"                      => \my $wait,
-    "ssh-as=s"                  => \my $sshAs,
-    "use-key=s"                 => \my $useKey,
-    "kbd-interactive"           => \my $userKbdInteractive,
-    "proactive-mfa"             => \my $proactiveMfa,
+    "port|p=i"        => \my $optPort,
+    "verbose+"        => \my $verbose,
+    "tty|t"           => \my $tty,
+    "no-tty|T"        => \my $notty,
+    "user|u=s"        => \my $user,
+    "osh=s"           => \my $osh_command,
+    "telnet|e"        => \my $telnet,
+    "password=s"      => \my $passwordFile,
+    "self-password|P" => \my $selfPassword,
+    "host|h=s"        => \my $host,
+    "help"            => \my $help,
+    "long-help"       => \my $longHelp,
+    "quiet|q"         => \my $quiet,
+    "timeout=i"       => \my $timeout,
+    "bind=s"          => \my $bind,
+    "debug"           => \my $debug,
+    "json"            => \my $json,
+    "json-greppable"  => \my $json_greppable,
+    "json-pretty"     => \my $json_pretty,
+    "always-escape"   => \my $_dummy1,              # not used as corresponding option has already been ninja-used above
+    "never-escape"    => \my $_dummy2,              # not used as corresponding option has already been ninja-used above
+    "interactive|i"   => \my $interactive,
+    "netconf"         => \my $netconf,
+    "wait"            => \my $wait,
+    "ssh-as=s"        => \my $sshAs,
+    "use-key=s"       => \my $useKey,
+    "kbd-interactive" => \my $userKbdInteractive,
+    "proactive-mfa"   => \my $proactiveMfa,
     "fallback-password-delay=i" => \my $fallbackPasswordDelay,
 );
 if (not defined $realOptions) {
@@ -383,7 +394,13 @@ if (not defined $realOptions) {
 
 if (!$quiet && $realm && !$ENV{'OSH_IN_INTERACTIVE_SESSION'}) {
     my $welcome =
-      "You are now connected to " . colored($bastionName, "yellow") . ". Welcome, " . colored($remoteself, "yellow") . ", citizen of the " . colored($realm, "yellow") . " realm!";
+        "You are now connected to "
+      . colored($bastionName, "yellow")
+      . ". Welcome, "
+      . colored($remoteself, "yellow")
+      . ", citizen of the "
+      . colored($realm, "yellow")
+      . " realm!";
     print colored("-" x (length($welcome) - 3 * 9) . "\n", "bold yellow");
     print $welcome. "\n";
     print colored("-" x (length($welcome) - 3 * 9) . "\n", "bold yellow");
@@ -395,10 +412,12 @@ if (defined $afterOptions and @$remainingOptions > 1) {
 
     # user specified -- but there are more than 1 unrecognized param (the 1 should be the user@host)
     # so we warn that we didn't understood
-    osh_warn "WARN : I couldn't parse some of your options before the '--' delimiter, things are probably about to go very wrong\n";
+    osh_warn
+      "WARN : I couldn't parse some of your options before the '--' delimiter, things are probably about to go very wrong\n";
 }
 if (not defined $afterOptions and @$remainingOptions > 1 and not $osh_command) {
-    osh_warn "WARN : You did not use the '--' delimiter to pass your remote command, maybe something crazy will happen !\n";
+    osh_warn
+      "WARN : You did not use the '--' delimiter to pass your remote command, maybe something crazy will happen !\n";
 }
 
 if ($afterOptions) {
@@ -459,10 +478,12 @@ if ($proactiveMfa) {
 
 if ($interactive and not $ENV{'OSH_IN_INTERACTIVE_SESSION'}) {
     if (not $config->{'interactiveModeAllowed'}) {
-        main_exit OVH::Bastion::EXIT_INTERACTIVE_DISABLED, "interactive_disabled", "Interactive mode has been disabled on this bastion";
+        main_exit OVH::Bastion::EXIT_INTERACTIVE_DISABLED, "interactive_disabled",
+          "Interactive mode has been disabled on this bastion";
     }
     if ($osh_command) {
-        main_exit OVH::Bastion::EXIT_CONFLICTING_OPTIONS, "conflicting_options", "Incompatible options specified: --interactive and --osh";
+        main_exit OVH::Bastion::EXIT_CONFLICTING_OPTIONS, "conflicting_options",
+          "Incompatible options specified: --interactive and --osh";
     }
     if (@toExecute) {
 
@@ -643,7 +664,8 @@ elsif ($selfPassword) {
     $userPasswordContext = 'self';
 }
 
-osh_debug("Will use password file $userPasswordClue with user $user under context $userPasswordContext") if $userPasswordClue;
+osh_debug("Will use password file $userPasswordClue with user $user under context $userPasswordContext")
+  if $userPasswordClue;
 
 if ($optPort) {
     $port = $optPort;
@@ -656,22 +678,30 @@ else {
 }
 
 if ($telnet && !$config->{'telnetAllowed'}) {
-    main_exit OVH::Bastion::EXIT_ACCESS_DENIED, 'telnet_denied', "Sorry, the telnet protocol has been disabled by policy";
+    main_exit OVH::Bastion::EXIT_ACCESS_DENIED, 'telnet_denied',
+      "Sorry, the telnet protocol has been disabled by policy";
 }
 
 if ($userKbdInteractive && !$config->{'keyboardInteractiveAllowed'}) {
-    main_exit OVH::Bastion::EXIT_CONFLICTING_OPTIONS, 'kbd_interactive_denied', "Sorry, the keyboard-interactive egress authentication scheme has been disabled by policy";
+    main_exit OVH::Bastion::EXIT_CONFLICTING_OPTIONS, 'kbd_interactive_denied',
+      "Sorry, the keyboard-interactive egress authentication scheme has been disabled by policy";
 }
-$ENV{'OSH_KBD_INTERACTIVE'} = 1 if $userKbdInteractive;    # useful for plugins that need to call ssh by themselves (for example to test a connection, i.e. groupAddServer)
+$ENV{'OSH_KBD_INTERACTIVE'} = 1 if $userKbdInteractive; # useful for plugins that need to call ssh by themselves (for example to test a connection, i.e. groupAddServer)
 
 # MFA enforcing for ingress connection, either on global bastion config, or on specific account config
-my $mfaPolicy               = OVH::Bastion::config('accountMFAPolicy')->value;
-my $isMfaPasswordConfigured = OVH::Bastion::is_user_in_group(account => $sysself, group => OVH::Bastion::MFA_PASSWORD_CONFIGURED_GROUP);
-my $isMfaTOTPConfigured     = OVH::Bastion::is_user_in_group(account => $sysself, group => OVH::Bastion::MFA_TOTP_CONFIGURED_GROUP);
-my $isMfaPasswordRequired   = OVH::Bastion::is_user_in_group(account => $sysself, group => OVH::Bastion::MFA_PASSWORD_REQUIRED_GROUP);
-my $hasMfaPasswordBypass    = OVH::Bastion::is_user_in_group(account => $sysself, group => OVH::Bastion::MFA_PASSWORD_BYPASS_GROUP);
-my $isMfaTOTPRequired       = OVH::Bastion::is_user_in_group(account => $sysself, group => OVH::Bastion::MFA_TOTP_REQUIRED_GROUP);
-my $hasMfaTOTPBypass        = OVH::Bastion::is_user_in_group(account => $sysself, group => OVH::Bastion::MFA_TOTP_BYPASS_GROUP);
+my $mfaPolicy = OVH::Bastion::config('accountMFAPolicy')->value;
+my $isMfaPasswordConfigured =
+  OVH::Bastion::is_user_in_group(account => $sysself, group => OVH::Bastion::MFA_PASSWORD_CONFIGURED_GROUP);
+my $isMfaTOTPConfigured =
+  OVH::Bastion::is_user_in_group(account => $sysself, group => OVH::Bastion::MFA_TOTP_CONFIGURED_GROUP);
+my $isMfaPasswordRequired =
+  OVH::Bastion::is_user_in_group(account => $sysself, group => OVH::Bastion::MFA_PASSWORD_REQUIRED_GROUP);
+my $hasMfaPasswordBypass =
+  OVH::Bastion::is_user_in_group(account => $sysself, group => OVH::Bastion::MFA_PASSWORD_BYPASS_GROUP);
+my $isMfaTOTPRequired =
+  OVH::Bastion::is_user_in_group(account => $sysself, group => OVH::Bastion::MFA_TOTP_REQUIRED_GROUP);
+my $hasMfaTOTPBypass =
+  OVH::Bastion::is_user_in_group(account => $sysself, group => OVH::Bastion::MFA_TOTP_BYPASS_GROUP);
 
 # MFA information from a potential ingress realm:
 my $remoteMfaValidated = 0;
@@ -703,7 +733,8 @@ if ($realm && $ENV{'LC_BASTION_DETAILS'}) {
             if ($pivEffectivePolicyEnabled && !$remoteHasPIV) {
                 my $otherSideName = $decoded_details->[0]{'via'}{'name'} || $decoded_details->[0]{'via'}{'host'};
                 main_exit(OVH::Bastion::EXIT_PIV_REQUIRED, 'piv_required',
-                    "Sorry $self, but the $bastionName bastion policy requires that you use a PIV key to connect, please set a PIV key up on your local bastion ($otherSideName).");
+                    "Sorry $self, but the $bastionName bastion policy requires that you use a PIV key to connect, please set a PIV key up on your local bastion ($otherSideName)."
+                );
             }
         }
     }
@@ -712,22 +743,24 @@ if ($realm && $ENV{'LC_BASTION_DETAILS'}) {
 if ($mfaPolicy ne 'disabled' && !grep { $osh_command eq $_ } qw{ selfMFASetupPassword selfMFASetupTOTP help info }) {
 
     if (($mfaPolicy eq 'password-required' && !$hasMfaPasswordBypass) || $isMfaPasswordRequired) {
-        main_exit(OVH::Bastion::EXIT_MFA_PASSWORD_SETUP_REQUIRED,
-            'mfa_password_setup_required',
-            "Sorry, but you need to setup the Multi-Factor Authentication before using this bastion, please use the `--osh selfMFASetupPassword' option to do so")
-          if (!$isMfaPasswordConfigured && !$remoteMfaPassword);
+        main_exit(OVH::Bastion::EXIT_MFA_PASSWORD_SETUP_REQUIRED, 'mfa_password_setup_required',
+            "Sorry, but you need to setup the Multi-Factor Authentication before using this bastion, please use the `--osh selfMFASetupPassword' option to do so"
+        ) if (!$isMfaPasswordConfigured && !$remoteMfaPassword);
     }
 
     if (($mfaPolicy eq 'totp-required' && !$hasMfaTOTPBypass) || $isMfaTOTPRequired) {
-        main_exit(OVH::Bastion::EXIT_MFA_TOTP_SETUP_REQUIRED,
-            'mfa_totp_setup_required',
-            "Sorry, but you need to setup the Multi-Factor Authentication before using this bastion, please use the `--osh selfMFASetupTOTP' option to do so")
-          if !($isMfaTOTPConfigured && !$remoteMfaTOTP);
+        main_exit(OVH::Bastion::EXIT_MFA_TOTP_SETUP_REQUIRED, 'mfa_totp_setup_required',
+            "Sorry, but you need to setup the Multi-Factor Authentication before using this bastion, please use the `--osh selfMFASetupTOTP' option to do so"
+        ) if !($isMfaTOTPConfigured && !$remoteMfaTOTP);
     }
 
-    if ($mfaPolicy eq 'any-required' && (!$isMfaPasswordConfigured && !$hasMfaPasswordBypass) && (!$isMfaTOTPConfigured && !$hasMfaTOTPBypass) && !$remoteMfaValidated) {
+    if (   $mfaPolicy eq 'any-required'
+        && (!$isMfaPasswordConfigured && !$hasMfaPasswordBypass)
+        && (!$isMfaTOTPConfigured     && !$hasMfaTOTPBypass)
+        && !$remoteMfaValidated)
+    {
         main_exit(OVH::Bastion::EXIT_MFA_ANY_SETUP_REQUIRED, 'mfa_any_setup_required',
-"Sorry, but you need to setup the Multi-Factor Authentication before using this bastion, please use either the `--osh selfMFASetupPassword' or the `--osh selfMFASetupTOTP' option, at your discretion, to do so"
+            "Sorry, but you need to setup the Multi-Factor Authentication before using this bastion, please use either the `--osh selfMFASetupPassword' or the `--osh selfMFASetupTOTP' option, at your discretion, to do so"
         );
     }
 }
@@ -777,7 +810,8 @@ if ($sshAs) {
         uniqid      => $log_uniq_id
     );
     if (!$fnret) {
-        main_exit OVH::Bastion::EXIT_RESTRICTED_COMMAND, "sshas_denied", "Sorry, this feature is reserved to bastion administrators. Your attempt has been logged.";
+        main_exit OVH::Bastion::EXIT_RESTRICTED_COMMAND, "sshas_denied",
+          "Sorry, this feature is reserved to bastion administrators. Your attempt has been logged.";
     }
     if ($osh_command) {
         main_exit OVH::Bastion::EXIT_CONFLICTING_OPTIONS, "conflicting_options",
@@ -807,12 +841,20 @@ if ($sshAs) {
     OVH::Bastion::syslogFormatted(
         criticity => 'info',
         type      => 'security',
-        fields    => [['type', 'admin-ssh-as'], ['account' => $self], ['sudo-as', $sshAs], ['plugin', 'ssh'], ['params', join(" ", @forwardOptions)]]
+        fields    => [
+            ['type', 'admin-ssh-as'],
+            ['account' => $self],
+            ['sudo-as', $sshAs],
+            ['plugin',  'ssh'],
+            ['params', join(" ", @forwardOptions)]
+        ]
     );
 
     osh_warn("ADMIN SUDO: $self, you'll now impersonate $sshAs, this has been logged.");
 
-    exec(@cmd) or main_exit(OVH::Bastion::EXIT_EXEC_FAILED, "ssh_as_failed", "Couldn't start a session under the account $sshAs ($!)");
+    exec(@cmd)
+      or main_exit(OVH::Bastion::EXIT_EXEC_FAILED,
+        "ssh_as_failed", "Couldn't start a session under the account $sshAs ($!)");
 }
 
 # This will be filled with details we might want to pass on to the remote machine as a json-encoded envvar
@@ -885,10 +927,13 @@ if ($osh_command) {
     else {
         warn_syslog("Failed to insert access log: " . $logret->msg);
         if ($ip eq '127.0.0.1') {
-            osh_warn("Would deny access on out of space condition but you're root\@127.0.0.1, I hope you're here to fix me!");
+            osh_warn(
+                "Would deny access on out of space condition but you're root\@127.0.0.1, I hope you're here to fix me!"
+            );
         }
         else {
-            main_exit OVH::Bastion::EXIT_OUT_OF_SPACE, 'out_of_space', "Bastion is out of space, admin intervention is needed! (" . $logret->msg . ")";
+            main_exit OVH::Bastion::EXIT_OUT_OF_SPACE, 'out_of_space',
+              "Bastion is out of space, admin intervention is needed! (" . $logret->msg . ")";
         }
     }
 
@@ -900,10 +945,12 @@ if ($osh_command) {
 
         # plugin is enabled by default if not explicitly disabled
         if ($isDisabled and $isDisabled->value()) {
-            main_exit OVH::Bastion::EXIT_RESTRICTED_COMMAND, "plugin_disabled", "Sorry, this plugin has been disabled by policy.";
+            main_exit OVH::Bastion::EXIT_RESTRICTED_COMMAND, "plugin_disabled",
+              "Sorry, this plugin has been disabled by policy.";
         }
         if ($isDisabled->is_err && $isDisabled->err ne 'KO_NO_SUCH_FILE') {
-            warn_syslog("Failed to tell whether the '$osh_command' plugin is enabled or not (" . $isDisabled->msg . ")");
+            warn_syslog(
+                "Failed to tell whether the '$osh_command' plugin is enabled or not (" . $isDisabled->msg . ")");
             main_exit OVH::Bastion::EXIT_RESTRICTED_COMMAND, "plugin_disabled",
               "Sorry, a configuration error prevents us to check whether this plugin is enabled, warn your sysadmin!";
         }
@@ -912,9 +959,11 @@ if ($osh_command) {
         # TODO: autodetect if the MFA check is done outside of the code by sshd+PAM, to avoid re-asking for it here
         my $MFArequiredForPlugin = OVH::Bastion::plugin_config(plugin => $osh_command, key => "mfa_required")->value;
         $MFArequiredForPlugin ||= 'none';    # no config means none
-                                             # some plugins need an explicit MFA check before being called (mainly plugins manipulating authentication factors)
-                                             # if the user wants to reset one of its MFA tokens, force require MFA
-        if ((grep { $osh_command eq $_ } qw{ selfMFAResetPassword selfMFAResetTOTP }) && ($MFArequiredForPlugin eq 'none')) {
+          # some plugins need an explicit MFA check before being called (mainly plugins manipulating authentication factors)
+          # if the user wants to reset one of its MFA tokens, force require MFA
+        if (   (grep { $osh_command eq $_ } qw{ selfMFAResetPassword selfMFAResetTOTP })
+            && ($MFArequiredForPlugin eq 'none'))
+        {
 
             # enforce MFA in those cases, even if it's not configured
             $MFArequiredForPlugin = 'any';
@@ -922,12 +971,18 @@ if ($osh_command) {
 
         # if the user wants to setup TOTP, if it happens to be already set (or any other factor), require it too
         # note: this is not needed for selfMFASetupPassword, because `passwd` does the job of asking the previous password
-        elsif ($osh_command eq 'selfMFASetupTOTP' && ($isMfaTOTPConfigured || $isMfaPasswordConfigured) && ($MFArequiredForPlugin eq 'none')) {
+        elsif ($osh_command eq 'selfMFASetupTOTP'
+            && ($isMfaTOTPConfigured || $isMfaPasswordConfigured)
+            && ($MFArequiredForPlugin eq 'none'))
+        {
             $MFArequiredForPlugin = 'any';
         }
 
         if (!grep { $MFArequiredForPlugin eq $_ } qw{ password totp any none }) {
-            main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_plugin_configuration_failed', "MFA configuration is incorrect for this plugin, report to your sysadmin!");
+            main_exit(OVH::Bastion::EXIT_MFA_FAILED,
+                'mfa_plugin_configuration_failed',
+                "MFA configuration is incorrect for this plugin, report to your sysadmin!"
+            );
         }
         my $skipMFA = 0;
         if ($MFArequiredForPlugin eq 'password' && !$isMfaPasswordConfigured) {
@@ -935,9 +990,9 @@ if ($osh_command) {
                 $skipMFA = 1;
             }
             else {
-                main_exit(OVH::Bastion::EXIT_MFA_PASSWORD_SETUP_REQUIRED,
-                    'mfa_password_setup_required',
-                    "Sorry, but you need to setup the Multi-Factor Authentication before using this command,\n" . "please use the `--osh selfMFASetupPassword' option to do so");
+                main_exit(OVH::Bastion::EXIT_MFA_PASSWORD_SETUP_REQUIRED, 'mfa_password_setup_required',
+                        "Sorry, but you need to setup the Multi-Factor Authentication before using this command,\n"
+                      . "please use the `--osh selfMFASetupPassword' option to do so");
             }
         }
         elsif ($MFArequiredForPlugin eq 'totp' && !$isMfaTOTPConfigured) {
@@ -945,9 +1000,9 @@ if ($osh_command) {
                 $skipMFA = 1;
             }
             else {
-                main_exit(OVH::Bastion::EXIT_MFA_TOTP_SETUP_REQUIRED,
-                    'mfa_totp_setup_required',
-                    "Sorry, but you need to setup the Multi-Factor Authentication before using this command,\n" . "please use the `--osh selfMFASetupTOTP' option to do so");
+                main_exit(OVH::Bastion::EXIT_MFA_TOTP_SETUP_REQUIRED, 'mfa_totp_setup_required',
+                        "Sorry, but you need to setup the Multi-Factor Authentication before using this command,\n"
+                      . "please use the `--osh selfMFASetupTOTP' option to do so");
             }
         }
         elsif ($MFArequiredForPlugin eq 'any' && !$isMfaTOTPConfigured && !$isMfaPasswordConfigured) {
@@ -957,7 +1012,8 @@ if ($osh_command) {
             else {
                 main_exit(OVH::Bastion::EXIT_MFA_ANY_SETUP_REQUIRED, 'mfa_any_setup_required',
                         "Sorry, but you need to setup the Multi-Factor Authentication before using this command,\n"
-                      . "please use either the `--osh selfMFASetupPassword' or the `--osh selfMFASetupTOTP' option, at your discretion, to do so");
+                      . "please use either the `--osh selfMFASetupPassword' or the `--osh selfMFASetupTOTP' option, at your discretion, to do so"
+                );
             }
         }
 
@@ -1062,7 +1118,14 @@ if ($fnret and $fnret->value() =~ /yes/) {
     $fnret = R('KO_ACCESS_DENIED', msg => "You don't have the right to connect anywhere");
 }
 else {
-    $fnret = OVH::Bastion::is_access_granted(account => $self, user => $user, ipfrom => $ipfrom, ip => $ip, port => $port, wantKeys => 1);
+    $fnret = OVH::Bastion::is_access_granted(
+        account  => $self,
+        user     => $user,
+        ipfrom   => $ipfrom,
+        ip       => $ip,
+        port     => $port,
+        wantKeys => 1
+    );
 }
 
 # so in the end, can we access the requested user@host machine ?
@@ -1132,7 +1195,12 @@ my $forcePasswordId = -1;
 if ($userPasswordClue) {
 
     # locate main password file
-    my $fnretpass = OVH::Bastion::get_passfile(hint => $userPasswordClue, context => $userPasswordContext, self => ($remoteself || $sysself), tryLegacy => 1);
+    my $fnretpass = OVH::Bastion::get_passfile(
+        hint      => $userPasswordClue,
+        context   => $userPasswordContext,
+        self      => ($remoteself || $sysself),
+        tryLegacy => 1
+    );
     if (!$fnretpass) {
         main_exit OVH::Bastion::EXIT_PASSFILE_NOT_FOUND, "passfile-not-found", $fnretpass->msg;
     }
@@ -1144,8 +1212,12 @@ if ($userPasswordClue) {
         # only keep the grant matching the password clue and context AND with a forced password
         if (
             $grant->{'forcePassword'}
-            && (   ($userPasswordContext eq 'self' && $grant->{'type'} eq 'personal')
-                || ($userPasswordContext eq 'group' && $grant->{'type'} =~ /^group-(member|guest)$/ && $grant->{'group'} eq $userPasswordClue))
+            && (
+                ($userPasswordContext eq 'self' && $grant->{'type'} eq 'personal')
+                || (   $userPasswordContext eq 'group'
+                    && $grant->{'type'} =~ /^group-(member|guest)$/
+                    && $grant->{'group'} eq $userPasswordClue)
+            )
           )
         {
 
@@ -1175,7 +1247,8 @@ if ($userPasswordClue) {
 
             # if the password was not found, abort
             if ($forcePasswordId == -1) {
-                main_exit(OVH::Bastion::EXIT_PASSFILE_NOT_FOUND, "forced-password-not-found", "The forced password could not be found");
+                main_exit(OVH::Bastion::EXIT_PASSFILE_NOT_FOUND,
+                    "forced-password-not-found", "The forced password could not be found");
             }
         }
     }
@@ -1222,7 +1295,8 @@ else {
         push @preferredAuths, 'publickey';
 
         # also set kbdinteractive if allowed in bastion config (needed for e.g. TOTP)
-        push @preferredAuths, 'keyboard-interactive' if ($config->{'keyboardInteractiveAllowed'} && $userKbdInteractive);
+        push @preferredAuths, 'keyboard-interactive'
+          if ($config->{'keyboardInteractiveAllowed'} && $userKbdInteractive);
 
         # also set password if allowed in bastion config (to allow users to enter a remote password interactively)
         push @preferredAuths, 'password' if $config->{'passwordAllowed'};
@@ -1256,7 +1330,11 @@ else {
                         $forced .= colored(' (MFA REQUIRED: ' . uc($access->{'mfaRequired'}) . ')', 'bold red');
                         $JITMFARequired = $access->{'mfaRequired'};
                     }
-                    printf("  - %s with %s-%s key %s %s%s\n", $type, $keyinfo->{'family'}, $keyinfo->{'size'}, $keyinfo->{'fingerprint'}, $generated, $forced) unless $quiet;
+                    printf(
+                        "  - %s with %s-%s key %s %s%s\n",
+                        $type, $keyinfo->{'family'}, $keyinfo->{'size'}, $keyinfo->{'fingerprint'},
+                        $generated, $forced
+                    ) unless $quiet;
                     push @keysToTry, $keyinfo->{'fullpath'} if not(grep { $_ eq $keyinfo->{'fullpath'} } @keysToTry);
                 }
             }
@@ -1288,16 +1366,21 @@ else {
     push @command, '-o', "ConnectTimeout=$timeout" if $timeout;
 
     if (not $quiet) {
-        $fnret = OVH::Bastion::account_config(account => $self, key => OVH::Bastion::OPT_ACCOUNT_IDLE_IGNORE, public => 1);
+        $fnret =
+          OVH::Bastion::account_config(account => $self, key => OVH::Bastion::OPT_ACCOUNT_IDLE_IGNORE, public => 1);
         if ($fnret && $fnret->value =~ /yes/) {
             osh_debug("Account is immune to idle");
         }
         else {
             if ($config->{'idleLockTimeout'}) {
-                print("  /!\\ Your session will be locked after " . $config->{'idleLockTimeout'} . " seconds of inactivity, use `--osh unlock' to unlock it\n");
+                print(  "  /!\\ Your session will be locked after "
+                      . $config->{'idleLockTimeout'}
+                      . " seconds of inactivity, use `--osh unlock' to unlock it\n");
             }
             if ($config->{'idleKillTimeout'}) {
-                print("  /!\\ Your session will be killed after " . $config->{'idleKillTimeout'} . " seconds of inactivity.\n");
+                print(  "  /!\\ Your session will be killed after "
+                      . $config->{'idleKillTimeout'}
+                      . " seconds of inactivity.\n");
             }
             print "\n" if ($config->{'idleLockTimeout'} || $config->{'idleKillTimeout'});
         }
@@ -1398,10 +1481,12 @@ my $logret = OVH::Bastion::log_access_insert(
 if (!$logret) {
     osh_warn($logret);
     if ($ip eq '127.0.0.1') {
-        osh_warn("Would deny access on out of space condition but you're root\@127.0.0.1, I hope you're here to fix me!");
+        osh_warn(
+            "Would deny access on out of space condition but you're root\@127.0.0.1, I hope you're here to fix me!");
     }
     else {
-        main_exit OVH::Bastion::EXIT_OUT_OF_SPACE, 'out_of_space', "Bastion is out of space, admin intervention is needed! (" . $logret->msg . ")";
+        main_exit OVH::Bastion::EXIT_OUT_OF_SPACE, 'out_of_space',
+          "Bastion is out of space, admin intervention is needed! (" . $logret->msg . ")";
     }
     $logret->{'value'} = {};
 }
@@ -1424,9 +1509,9 @@ if ($JITMFARequired) {
             $realmMFA = 1;
         }
         else {
-            main_exit(OVH::Bastion::EXIT_MFA_TOTP_SETUP_REQUIRED,
-                'mfa_totp_setup_required',
-                "Sorry, but you need to setup the Multi-Factor Authentication before connecting to this host,\nplease use the `--osh selfMFASetupTOTP' option to do so");
+            main_exit(OVH::Bastion::EXIT_MFA_TOTP_SETUP_REQUIRED, 'mfa_totp_setup_required',
+                "Sorry, but you need to setup the Multi-Factor Authentication before connecting to this host,\nplease use the `--osh selfMFASetupTOTP' option to do so"
+            );
         }
     }
     elsif ($JITMFARequired eq 'password' && !$isMfaPasswordConfigured) {
@@ -1437,9 +1522,9 @@ if ($JITMFARequired) {
             $realmMFA = 1;
         }
         else {
-            main_exit(OVH::Bastion::EXIT_MFA_PASSWORD_SETUP_REQUIRED,
-                'mfa_password_setup_required',
-                "Sorry, but you need to setup the Multi-Factor Authentication before connecting to this host,\nplease use the `--osh selfMFASetupPassword' option to do so");
+            main_exit(OVH::Bastion::EXIT_MFA_PASSWORD_SETUP_REQUIRED, 'mfa_password_setup_required',
+                "Sorry, but you need to setup the Multi-Factor Authentication before connecting to this host,\nplease use the `--osh selfMFASetupPassword' option to do so"
+            );
         }
     }
     elsif ($JITMFARequired eq 'any' && !$isMfaTOTPConfigured && !$isMfaPasswordConfigured) {
@@ -1453,7 +1538,7 @@ if ($JITMFARequired) {
         }
         else {
             main_exit(OVH::Bastion::EXIT_MFA_ANY_SETUP_REQUIRED, 'mfa_any_setup_required',
-"Sorry, but you need to setup the Multi-Factor Authentication before connecting to this host,\nplease use either the `--osh selfMFASetupPassword' or the `--osh selfMFASetupTOTP' option, at your discretion, to do so"
+                "Sorry, but you need to setup the Multi-Factor Authentication before connecting to this host,\nplease use either the `--osh selfMFASetupPassword' or the `--osh selfMFASetupTOTP' option, at your discretion, to do so"
             );
         }
     }

@@ -27,12 +27,14 @@ my $fnret;
 my @command;
 
 if (OVH::Bastion::config('accountMFAPolicy')->value eq 'disabled') {
-    osh_exit('ERR_DISABLED_BY_POLICY', "Sorry, Multi-Factor Authentication has been disabled by policy on this bastion");
+    osh_exit('ERR_DISABLED_BY_POLICY',
+        "Sorry, Multi-Factor Authentication has been disabled by policy on this bastion");
 }
 
 if ($ENV{'OSH_IN_INTERACTIVE_SESSION'}) {
     osh_exit('ERR_PRECONDITIONS_FAILED',
-        "For security reasons, this plugin can't be used in interactive mode.\nTo ensure you're the owner of the account, please call it the regular way (i.e. --osh $scriptName)");
+        "For security reasons, this plugin can't be used in interactive mode.\nTo ensure you're the owner of the account, please call it the regular way (i.e. --osh $scriptName)"
+    );
 }
 
 # do the TOTP enrollment
@@ -42,7 +44,12 @@ my $TOTPProvider = OVH::Bastion::config("TOTPProvider")->value;
 if ($TOTPProvider eq 'none') {
 
     # unconfigured: as we don't know which provider we have, just error out
-    osh_exit(R('ERR_CONFIGURATION_ERROR', msg => "No TOTP provider has been enabled, please check with your sysadmin if this is unexpected"));
+    osh_exit(
+        R(
+            'ERR_CONFIGURATION_ERROR',
+            msg => "No TOTP provider has been enabled, please check with your sysadmin if this is unexpected"
+        )
+    );
 }
 elsif ($TOTPProvider eq 'google-authenticator') {
 
@@ -58,12 +65,25 @@ elsif ($TOTPProvider eq 'google-authenticator') {
     }
 
     @command = (
-        'script', '-q', '-c', "google-authenticator -f -t -Q UTF8 -r 3 -R 15 -w 2 -D " . join(" ", @additional_params) . " -l $self -s $HOME/" . OVH::Bastion::TOTP_GAUTH_FILENAME,
+        'script',
+        '-q',
+        '-c',
+        "google-authenticator -f -t -Q UTF8 -r 3 -R 15 -w 2 -D "
+          . join(" ", @additional_params)
+          . " -l $self -s $HOME/"
+          . OVH::Bastion::TOTP_GAUTH_FILENAME,
         '/dev/null'
     );
     {
         local $ENV{'SHELL'} = '/bin/sh';
-        $fnret = OVH::Bastion::execute(cmd => \@command, noisy_stderr => 1, noisy_stdout => 1, expects_stdin => 1, is_binary => 1, must_succeed => 1);
+        $fnret = OVH::Bastion::execute(
+            cmd           => \@command,
+            noisy_stderr  => 1,
+            noisy_stdout  => 1,
+            expects_stdin => 1,
+            is_binary     => 1,
+            must_succeed  => 1
+        );
     }
 
     if (!$fnret) {
@@ -78,7 +98,12 @@ elsif ($TOTPProvider eq 'duo') {
 }
 else {
     # unknown provider, this shouldn't happen
-    osh_exit(R('ERR_CONFIGURATION_ERROR', msg => "An unknown TOTP provider has been provided, please check with your sysadmin."));
+    osh_exit(
+        R(
+            'ERR_CONFIGURATION_ERROR',
+            msg => "An unknown TOTP provider has been provided, please check with your sysadmin."
+        )
+    );
 }
 
 # it worked, add the account to the proper system group

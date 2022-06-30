@@ -28,7 +28,10 @@ sub verify_piv {
     my $attestationCertificate = $params{'attestationCertificate'};
 
     my $fnret;
-    $fnret = OVH::Bastion::execute(must_succeed => 1, cmd => ['yubico-piv-checker', $key, $attestationCertificate, $keyCertificate]);
+    $fnret = OVH::Bastion::execute(
+        must_succeed => 1,
+        cmd          => ['yubico-piv-checker', $key, $attestationCertificate, $keyCertificate]
+    );
     if (!$fnret || $fnret->value->{'sysret'} != 0) {
         return R('KO_INVALID_PIV', "This SSH key failed PIV verification");
     }
@@ -37,7 +40,7 @@ sub verify_piv {
         require JSON;
         $keyPivInfo = JSON::decode_json($fnret->value->{'stdout'}->[0]);
     };
-    return R('OK', value => $keyPivInfo);    # keyPivInfo can be undef if JSON decode failed, but the key is still a valid one
+    return R('OK', value => $keyPivInfo); # keyPivInfo can be undef if JSON decode failed, but the key is still a valid one
 }
 
 sub get_authorized_keys_from_file {
@@ -110,7 +113,11 @@ sub get_authorized_keys_from_file {
             $key->{'pivKeyCertificate'}         = $pivKeyCertificate if $pivKeyCertificate;
             $key->{'info'}                      = $info if $info;
             if ($pivAttestationCertificate && $pivKeyCertificate) {
-                $fnret = OVH::Bastion::verify_piv(key => $key->{'line'}, attestationCertificate => $pivAttestationCertificate, keyCertificate => $pivKeyCertificate);
+                $fnret = OVH::Bastion::verify_piv(
+                    key                    => $key->{'line'},
+                    attestationCertificate => $pivAttestationCertificate,
+                    keyCertificate         => $pivKeyCertificate
+                );
                 $key->{'isPiv'}   = ($fnret ? 1 : 0);
                 $key->{'pivInfo'} = $fnret->value if $fnret;
                 osh_debug("[$i] verify_piv says: " . $key->{'isPiv'});
@@ -228,7 +235,10 @@ sub put_authorized_keys_to_file {
                 print $fh $fnret->value;
             }
             else {
-                warn_syslog("Failed to format key for authorized_keys write to '$file' for '$account', ignoring this one (" . $fnret->msg . ")");
+                warn_syslog(
+                        "Failed to format key for authorized_keys write to '$file' for '$account', ignoring this one ("
+                      . $fnret->msg
+                      . ")");
             }
         }
         close($fh);
@@ -247,7 +257,8 @@ sub put_authorized_keys_to_file {
     }
     if (!rename $newFile, $file) {
         warn_syslog("Couldn't replace authorized keys file '$file' with new version '$newFile' ($!)");
-        return R('ERR_RENAME_FAILED', msg => "Couldn't replace authorized keys file, account left in a locked-out state!");
+        return R('ERR_RENAME_FAILED',
+            msg => "Couldn't replace authorized keys file, account left in a locked-out state!");
     }
     return R('OK');
 }
@@ -290,7 +301,10 @@ sub get_ssh_pub_key_info {
     }
 
     my ($prefix, $typecode, $base64, $comment);
-    if ($pubKey =~ m{^\s*((\S+)\s+)?(ssh-dss|ssh-rsa|ecdsa-sha\d+-nistp\d+|ssh-ed\d+)\s+([a-zA-Z0-9/=+]+)(\s+(.{1,128})?)?$} && length($pubKey) <= 3000) {
+    if ($pubKey =~
+        m{^\s*((\S+)\s+)?(ssh-dss|ssh-rsa|ecdsa-sha\d+-nistp\d+|ssh-ed\d+)\s+([a-zA-Z0-9/=+]+)(\s+(.{1,128})?)?$}
+        && length($pubKey) <= 3000)
+    {
         ($prefix, $typecode, $base64, $comment) = ($2, $3, $4, $6);
     }
     else {
@@ -330,7 +344,8 @@ sub get_ssh_pub_key_info {
         if ($fnret->is_err || !$fnret->value || ($fnret->value->{'sysret'} != 0 && $fnret->value->{'sysret'} != 1)) {
 
             # sysret == 1 means ssh-keygen didn't recognize this key, handled below.
-            return R('ERR_SSH_KEYGEN_FAILED', msg => "Couldn't read the fingerprint of $filename (" . $fnret->msg . ")");
+            return R('ERR_SSH_KEYGEN_FAILED',
+                msg => "Couldn't read the fingerprint of $filename (" . $fnret->msg . ")");
         }
         my $sshkeygen;
         if ($fnret->err eq 'OK') {
@@ -443,7 +458,8 @@ EOS
     else {
         if (not grep { $fnret->value->{'family'} eq $_ } qw{ RSA ECDSA ED25519 }) {
             $fnret->{'err'} = 'ERR_UNKNOWN_TYPE';
-            $fnret->{'msg'} = "Unknown family type (" . $fnret->value->{'family'} . "), please report to your sysadmin.";
+            $fnret->{'msg'} =
+              "Unknown family type (" . $fnret->value->{'family'} . "), please report to your sysadmin.";
         }
         elsif (not $fnret->value->{'base64'}) {
             $fnret->{'err'} = 'ERR_NOT_DECODED';
@@ -560,7 +576,8 @@ sub generate_ssh_key {
     push @command, '-C', "$name\@$bastionName:" . time();
 
     $fnret = OVH::Bastion::execute(cmd => \@command, noisy_stderr => 1);
-    $fnret->err eq 'OK' or return R('ERR_SSH_KEYGEN_FAILED', msg => "Error while generating group key (" . $fnret->msg . ")");
+    $fnret->err eq 'OK'
+      or return R('ERR_SSH_KEYGEN_FAILED', msg => "Error while generating group key (" . $fnret->msg . ")");
 
     my %files = (
         $sshKeyName          => ($group_readable ? oct(440) : oct(400)),
@@ -591,7 +608,8 @@ sub get_bastion_ips {
     my @ips;
     if (not $egressKeysFrom or @$egressKeysFrom == 0) {
         $fnret = OVH::Bastion::execute(cmd => ['hostname', '--all-ip-addresses']);
-        $fnret or return R('ERR_HOSTNAME_FAILED', msg => "Couldn't determine bastion IP addresses, please fix the config");
+        $fnret
+          or return R('ERR_HOSTNAME_FAILED', msg => "Couldn't determine bastion IP addresses, please fix the config");
         @ips = split(/\s+/, join(' ', @{$fnret->value->{'stdout'} || []}));
     }
     else {
@@ -612,7 +630,8 @@ sub get_supported_ssh_algorithms_list {
         return R('ERR_MISSING_PARAMETER', msg => 'Missing required argument way in get_supported_ssh_algorithms_list');
     }
     if ($way ne 'ingress' && $way ne 'egress') {
-        return R('ERR_INVALID_PARAMETER', msg => 'Expected way argument of ingress or egress in get_supported_ssh_algorithms_list');
+        return R('ERR_INVALID_PARAMETER',
+            msg => 'Expected way argument of ingress or egress in get_supported_ssh_algorithms_list');
     }
     $way = ucfirst($way);
 
@@ -666,7 +685,8 @@ sub is_allowed_algo_and_size {
     my @supportedList = @{$fnret->value};
 
     if (not grep { $algo eq $_ } @supportedList) {
-        return R('KO_NOT_SUPPORTED', msg => "The algorithm '$algo' is not supported (or disabled) for $way on this bastion");
+        return R('KO_NOT_SUPPORTED',
+            msg => "The algorithm '$algo' is not supported (or disabled) for $way on this bastion");
     }
 
     if ($algo eq 'rsa') {
@@ -675,7 +695,10 @@ sub is_allowed_algo_and_size {
         $fnret = OVH::Bastion::config("minimum${way}RsaKeySize");
         $fnret or return $fnret;
         if ($size < $fnret->value) {
-            return R('KO_KEY_SIZE_TOO_SMALL', msg => "For the selected algorithm, minimum configured key size for $way by policy is " . $fnret->value . " bits");
+            return R('KO_KEY_SIZE_TOO_SMALL',
+                    msg => "For the selected algorithm, minimum configured key size for $way by policy is "
+                  . $fnret->value
+                  . " bits");
         }
     }
     elsif ($algo eq 'ecdsa') {
@@ -709,7 +732,9 @@ sub is_valid_fingerprint {
         return R('OK', value => {type => 'sha256', fingerprint => $1});
     }
     return R('ERR_INVALID_PARAMETER',
-        msg => "Specified fingerprint is invalid, expected a key fingerprint of the form 12:34:56:78:9a:bc:de:f0:12:34:56:78:9a:bc:de:f0 or SHA256:base64fingerprint");
+        msg =>
+          "Specified fingerprint is invalid, expected a key fingerprint of the form 12:34:56:78:9a:bc:de:f0:12:34:56:78:9a:bc:de:f0 or SHA256:base64fingerprint"
+    );
 }
 
 sub print_public_key {
@@ -729,7 +754,9 @@ sub print_public_key {
 
     my $line = $key->{'line'};
     if ($key->{'base64'}) {
-        $line = sprintf("%s%s %s %s", $key->{'prefix'} ? $key->{'prefix'} . ' ' : '', $key->{'typecode'}, $key->{'base64'}, $key->{'comment'});
+        $line = sprintf("%s%s %s %s",
+            $key->{'prefix'} ? $key->{'prefix'} . ' ' : '',
+            $key->{'typecode'}, $key->{'base64'}, $key->{'comment'});
     }
 
     if ($key->{'info'}) {
@@ -794,7 +821,9 @@ sub account_ssh_config_get {
         # If we do, bail out: the file has been modified manually by someone
         if ($sshconfig_data =~ /^\s*(Host|Match)\s/mi) {
             return R('ERR_FILE_LOCALLY_MODIFIED',
-                msg => "The ssh configuration of this account has been modified manually. As we can't guarantee modifying it won't cause adverse effects, modification aborted.");
+                msg =>
+                  "The ssh configuration of this account has been modified manually. As we can't guarantee modifying it won't cause adverse effects, modification aborted."
+            );
         }
 
         # remove empty lines & comments
@@ -885,7 +914,11 @@ sub ssh_ingress_keys_piv_apply {
     $account = $fnret->value->{'account'};
     my $dir = $fnret->value->{'dir'};
 
-    $fnret = OVH::Bastion::get_authorized_keys_from_file(account => $account, file => $dir . '/' . OVH::Bastion::AK_FILE(), includePivDisabled => 1);
+    $fnret = OVH::Bastion::get_authorized_keys_from_file(
+        account            => $account,
+        file               => $dir . '/' . OVH::Bastion::AK_FILE(),
+        includePivDisabled => 1
+    );
     $fnret or return $fnret;
 
     my $keys = $fnret->value();
@@ -909,7 +942,11 @@ sub ssh_ingress_keys_piv_apply {
                 # remove any commented PIV marker for the verify_piv()
                 my $keyline = $key->{'line'};
                 $keyline =~ s/^# NOTPIV //;
-                $fnret = OVH::Bastion::verify_piv(key => $keyline, attestationCertificate => $key->{'pivAttestationCertificate'}, keyCertificate => $key->{'pivKeyCertificate'});
+                $fnret = OVH::Bastion::verify_piv(
+                    key                    => $keyline,
+                    attestationCertificate => $key->{'pivAttestationCertificate'},
+                    keyCertificate         => $key->{'pivKeyCertificate'}
+                );
                 if (!$fnret) {
 
                     # PIV verify failed, disable this key
@@ -930,13 +967,23 @@ sub ssh_ingress_keys_piv_apply {
         return R('ERR_INVALID_PARAMETER', msg => "Argument 'action' must be either 'enable' or 'disable'");
     }
 
-    $fnret = OVH::Bastion::put_authorized_keys_to_file(account => $account, file => $dir . '/' . OVH::Bastion::AK_FILE(), data => $keys);
+    $fnret = OVH::Bastion::put_authorized_keys_to_file(
+        account => $account,
+        file    => $dir . '/' . OVH::Bastion::AK_FILE(),
+        data    => $keys
+    );
     $fnret or return $fnret;
 
     OVH::Bastion::syslogFormatted(
         severity => 'info',
         type     => 'account',
-        fields   => [[action => 'modify'], [account => $account], [item => 'piv_ingress_keys_apply'], [new => $action], [comment => $message]]
+        fields   => [
+            [action  => 'modify'],
+            [account => $account],
+            [item    => 'piv_ingress_keys_apply'],
+            [new     => $action],
+            [comment => $message]
+        ]
     );
 
     return R('OK');
@@ -956,7 +1003,11 @@ sub is_effective_piv_account_policy_enabled {
     $fnret or return $fnret;
 
     my $accountPolicy;
-    $fnret = OVH::Bastion::account_config(account => $account, public => 1, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_POLICY());
+    $fnret = OVH::Bastion::account_config(
+        account => $account,
+        public  => 1,
+        key     => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_POLICY()
+    );
     if (!$fnret) {
 
         # if file is not found, it means the account PIV policy is the default one.
@@ -974,7 +1025,11 @@ sub is_effective_piv_account_policy_enabled {
     return R('KO_DISABLED') if $accountPolicy eq 'never';
 
     # if account is currently in a non-expired grace period, then the global policy doesn't matter either
-    $fnret = OVH::Bastion::account_config(account => $account, public => 1, key => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_GRACE());
+    $fnret = OVH::Bastion::account_config(
+        account => $account,
+        public  => 1,
+        key     => OVH::Bastion::OPT_ACCOUNT_INGRESS_PIV_GRACE()
+    );
     my $expiry = $fnret->value || 0;
     my $human  = OVH::Bastion::duration2human(seconds => ($expiry - time()))->value;
     return R('KO_DISABLED', msg => "$account is still in grace period for " . $human->{'human'}) if (time() < $expiry);

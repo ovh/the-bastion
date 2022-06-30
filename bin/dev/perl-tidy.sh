@@ -28,10 +28,15 @@ else
 fi
 
 params="$params \
+    --ignore-side-comment-lengths \
+    --nooutdent-long-comments \
+    --nooutdent-long-quotes \
+    --nospace-for-semicolon \
+    --noblanks-before-comments \
     --paren-tightness=2 \
     --square-bracket-tightness=2 \
     --brace-tightness=2 \
-    --maximum-line-length=180 \
+    --maximum-line-length=120 \
 "
 
 if [ -z "${2:-}" ]; then

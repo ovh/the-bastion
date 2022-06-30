@@ -125,7 +125,14 @@ my $userToCheck = $1 eq 't' ? '!scpupload' : '!scpdownload';    ## no critic (Ca
 
 my %keys;
 osh_debug("Checking access 1/2 of $self to $machine...");
-$fnret = OVH::Bastion::is_access_granted(account => $self, user => $user, ipfrom => $ENV{'OSH_IP_FROM'}, ip => $ip, port => $port, wantKeys => 1);
+$fnret = OVH::Bastion::is_access_granted(
+    account  => $self,
+    user     => $user,
+    ipfrom   => $ENV{'OSH_IP_FROM'},
+    ip       => $ip,
+    port     => $port,
+    wantKeys => 1
+);
 if (not $fnret) {
     my $msg = "Sorry, but you don't seem to have access to $machine";
     print STDERR ">>>" . $msg . "\n";
@@ -142,7 +149,15 @@ foreach my $access (@{$fnret->value || []}) {
 }
 
 osh_debug("Checking access 2/2 of $self to $userToCheck of $machine...");
-$fnret = OVH::Bastion::is_access_granted(account => $self, user => $userToCheck, ipfrom => $ENV{'OSH_IP_FROM'}, ip => $ip, port => $port, exactUserMatch => 1, wantKeys => 1);
+$fnret = OVH::Bastion::is_access_granted(
+    account        => $self,
+    user           => $userToCheck,
+    ipfrom         => $ENV{'OSH_IP_FROM'},
+    ip             => $ip,
+    port           => $port,
+    exactUserMatch => 1,
+    wantKeys       => 1
+);
 if (not $fnret) {
     my $msg = "Sorry, but even if you have ssh access to $machine, you still need to be granted specifically for scp";
     print STDERR ">>>" . $msg . "\n";
@@ -179,7 +194,7 @@ foreach my $keyfile (keys %keys) {
 
 if (not $atleastonekey) {
     osh_exit('KO_ACCESS_DENIED',
-"Sorry, you seem to have access through ssh and through scp but by different and distinct means (distinct keys). The intersection between your rights for ssh and for scp needs to be at least one."
+        "Sorry, you seem to have access through ssh and through scp but by different and distinct means (distinct keys). The intersection between your rights for ssh and for scp needs to be at least one."
     );
 }
 
@@ -196,7 +211,9 @@ if (defined $additionalParams)
 push @cmd, '-t', "\Q$remoteFile\E";
 =cut
 
-print STDERR ">>> Hello $self, transferring your file through the bastion " . ($userToCheck eq '!scpupload' ? 'to' : 'from') . " $machine...\n";
+print STDERR ">>> Hello $self, transferring your file through the bastion "
+  . ($userToCheck eq '!scpupload' ? 'to' : 'from')
+  . " $machine...\n";
 
 #print STDERR join('^', @cmd)."\n";
 $fnret = OVH::Bastion::execute(cmd => \@cmd, expects_stdin => 1, is_binary => 1);
@@ -204,7 +221,11 @@ if ($fnret->err ne 'OK') {
     print STDERR ">>> Error launching transfer: " . $fnret->msg . "\n";
     exit OVH::Bastion::EXIT_PLUGIN_ERROR;
 }
-print STDERR ">>> Done, " . $fnret->value->{'bytesnb'}{'stdin'} . " bytes uploaded, " . $fnret->value->{'bytesnb'}{'stdout'} . " bytes downloaded.\n";
+print STDERR ">>> Done, "
+  . $fnret->value->{'bytesnb'}{'stdin'}
+  . " bytes uploaded, "
+  . $fnret->value->{'bytesnb'}{'stdout'}
+  . " bytes downloaded.\n";
 if ($fnret->value->{'sysret'} != 0) {
     print STDERR ">>> On bastion side, scp exited with return code " . $fnret->value->{'sysret'} . ".\n";
 }

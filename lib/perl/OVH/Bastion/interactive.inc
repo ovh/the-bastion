@@ -44,9 +44,9 @@ sub interactive {
     my $self           = $params{'self'};
     my $fnret;
 
-    my $bastionName                           = OVH::Bastion::config('bastionName')->value();
-    my $interactiveModeTimeout                = OVH::Bastion::config('interactiveModeTimeout')->value() || 0;
-    my $slaveOrMaster                         = (OVH::Bastion::config('readOnlySlaveMode')->value() ? 'slave' : 'master');
+    my $bastionName            = OVH::Bastion::config('bastionName')->value();
+    my $interactiveModeTimeout = OVH::Bastion::config('interactiveModeTimeout')->value() || 0;
+    my $slaveOrMaster          = (OVH::Bastion::config('readOnlySlaveMode')->value() ? 'slave' : 'master');
     my $interactiveModeProactiveMFAexpiration = OVH::Bastion::config("interactiveModeProactiveMFAexpiration")->value;
     my $proactiveMFAenabledTime               = 0;
 
@@ -74,7 +74,10 @@ EOM
         push @cmdlist, $plugin;
 
         # also load autocompletion rules for this plugin
-        $fnret = OVH::Bastion::load_configuration_file(secure => 1, file => $pluginList->{$plugin}->{'dir'} . '/' . $plugin . '.json');
+        $fnret = OVH::Bastion::load_configuration_file(
+            secure => 1,
+            file   => $pluginList->{$plugin}->{'dir'} . '/' . $plugin . '.json'
+        );
         if ($fnret) {
             my $jsonData = $fnret->value;
             if (ref $jsonData eq 'HASH' && ref $jsonData->{'interactive'} eq 'ARRAY') {
@@ -195,7 +198,10 @@ EOM
 
             # else, we just print stuff ourselves
             if ($item->{'pr'}) {
-                print "\n" . join("\n", @{$item->{'pr'}}) . "\n" . _get_prompt_non_readline($self, $bastionName, $slaveOrMaster) . $line;
+                print "\n"
+                  . join("\n", @{$item->{'pr'}}) . "\n"
+                  . _get_prompt_non_readline($self, $bastionName, $slaveOrMaster)
+                  . $line;
                 return ();
             }
         }
@@ -223,8 +229,13 @@ EOM
         $line =~ s/^\s+|\s+$//g;
 
         # disable proactive MFA if it has expired. Even if the user just typed "enter" with no command.
-        if ($proactiveMFAenabledTime > 0 && $interactiveModeProactiveMFAexpiration && (time() - $proactiveMFAenabledTime) >= $interactiveModeProactiveMFAexpiration) {
-            print "MFA proactive mode has been disabled after " . OVH::Bastion::duration2human(seconds => $interactiveModeProactiveMFAexpiration)->value->{'duration'} . "\n";
+        if (   $proactiveMFAenabledTime > 0
+            && $interactiveModeProactiveMFAexpiration
+            && (time() - $proactiveMFAenabledTime) >= $interactiveModeProactiveMFAexpiration)
+        {
+            print "MFA proactive mode has been disabled after "
+              . OVH::Bastion::duration2human(seconds => $interactiveModeProactiveMFAexpiration)->value->{'duration'}
+              . "\n";
             $proactiveMFAenabledTime = 0;
             delete $ENV{'OSH_PROACTIVE_MFA'};
         }
@@ -247,14 +258,17 @@ EOM
                     $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $self);
                     if (!$fnret) {
                         warn_syslog("Couldn't get account details in interactive mode (" . $fnret->msg . ")");
-                        main_exit(OVH::Bastion::EXIT_ACCOUNT_INVALID(), "account_invalid", "Error while getting account details");
+                        main_exit(OVH::Bastion::EXIT_ACCOUNT_INVALID(),
+                            "account_invalid", "Error while getting account details");
                     }
                     my $sysself = $fnret->value->{'sysaccount'};
                     $fnret = OVH::Bastion::do_pamtester(self => $self, sysself => $sysself);
                     if ($fnret) {
                         print "Proactive MFA enabled, any command requiring MFA from now on will not ask you again.\n";
                         if ($interactiveModeProactiveMFAexpiration > 0) {
-                            print "This mode will expire in " . OVH::Bastion::duration2human(seconds => $interactiveModeProactiveMFAexpiration)->value->{'human'} . "\n";
+                            print "This mode will expire in "
+                              . OVH::Bastion::duration2human(seconds => $interactiveModeProactiveMFAexpiration)
+                              ->value->{'human'} . "\n";
                         }
                         print "To exit this mode manually, type 'nomfa'.\n";
                         $proactiveMFAenabledTime = time();
@@ -295,7 +309,8 @@ EOM
                           . "- mfa                     Request an immediate MFA validation to elevate the current session,\n"
                           . "                             to avoid getting a prompt for each JIT MFA-required command.\n"
                           . "- nomfa                   Go back non-MFA elevated session.\n"
-                          . "- exit                    Quit the interactive mode, 'quit' and ^D can be used instead.\n");
+                          . "- exit                    Quit the interactive mode, 'quit' and ^D can be used instead.\n"
+                    );
                 }
             }
         }

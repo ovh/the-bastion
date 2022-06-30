@@ -149,7 +149,8 @@ sub act {
                     return R('ERR_INTERNAL', msg => "Couldn't rename '$base.$n' to '$base.$next' ($!)");
                 }
                 if (-e "$base.$n.metadata" && !rename "$base.$n.metadata", "$base.$next.metadata") {
-                    return R('ERR_INTERNAL', msg => "Couldn't rename '$base.$n.metadata' to '$base.$next.metadata' ($!)");
+                    return R('ERR_INTERNAL',
+                        msg => "Couldn't rename '$base.$n.metadata' to '$base.$next.metadata' ($!)");
                 }
             }
         }

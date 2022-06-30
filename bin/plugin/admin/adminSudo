@@ -63,7 +63,13 @@ push @cmd, $stringified;
 OVH::Bastion::syslogFormatted(
     criticity => 'info',
     type      => 'security',
-    fields    => [['type', 'admin-sudo'], ['account', $self], ['sudo-as', $sudoAs], ['plugin', ($sudoCmd ? $sudoCmd : 'ssh')], ['params', $stringified]]
+    fields    => [
+        ['type',    'admin-sudo'],
+        ['account', $self],
+        ['sudo-as', $sudoAs],
+        ['plugin', ($sudoCmd ? $sudoCmd : 'ssh')],
+        ['params', $stringified]
+    ]
 );
 
 osh_warn("ADMIN SUDO: $self, you'll now impersonate $sudoAs, this has been logged.");

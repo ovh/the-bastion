@@ -19,13 +19,13 @@ my $bad;
 sub _prefix { return uc(unpack('H*', pack('S', (caller(1))[2])) . unpack('H*', pack('S', (caller(2))[2]))) . ": "; }
 
 sub info { print $_[0] . "\n"; return 1; }    ## no critic (RequireArgUnpacking)
-sub _wrn  { $bad++; print colored(_prefix() . $_[0], "blue") . "\n";     return 1; }    ## no critic (RequireArgUnpacking,ProhibitUnusedPrivateSubroutine)
-sub _err  { $bad++; print colored(_prefix() . $_[0], "red") . "\n";      return 1; }    ## no critic (RequireArgUnpacking)
-sub _crit { $bad++; print colored(_prefix() . $_[0], "bold red") . "\n"; return 1; }    ## no critic (RequireArgUnpacking)
+sub _wrn { $bad++; print colored(_prefix() . $_[0], "blue") . "\n"; return 1; } ## no critic (RequireArgUnpacking,ProhibitUnusedPrivateSubroutine)
+sub _err  { $bad++; print colored(_prefix() . $_[0], "red") . "\n";      return 1; }  ## no critic (RequireArgUnpacking)
+sub _crit { $bad++; print colored(_prefix() . $_[0], "bold red") . "\n"; return 1; }  ## no critic (RequireArgUnpacking)
 
 # Linux and BSD don't always have the same account names for UID/GID 0
-my ($UID0) = (qx{getent passwd 0})[0] =~ /^([^:]+)/;                                    ## no critic (ProhibitBacktickOperators)
-my ($GID0) = (qx{getent group 0})[0] =~ /^([^:]+)/;                                     ## no critic (ProhibitBacktickOperators)
+my ($UID0) = (qx{getent passwd 0})[0] =~ /^([^:]+)/;    ## no critic (ProhibitBacktickOperators)
+my ($GID0) = (qx{getent group 0})[0] =~ /^([^:]+)/;     ## no critic (ProhibitBacktickOperators)
 my $islinux = (($^O =~ /linux/i)         ? 1 : 0);
 my $hasacls = (($^O =~ /linux|freebsd/i) ? 1 : 0);
 
@@ -55,7 +55,11 @@ while (<$fh_group>) {
     my $name = $1;
     my $id   = $2;
 
-    if (exists $keygroupsbyname{$name} or exists $gkgroupsbyname{$name} or exists $owgroupsbyname{$name} or exists $aclkgroupsbyname{$name}) {
+    if (   exists $keygroupsbyname{$name}
+        or exists $gkgroupsbyname{$name}
+        or exists $owgroupsbyname{$name}
+        or exists $aclkgroupsbyname{$name})
+    {
         _err "group $name already seen!";
     }
     if ($name =~ /-gatekeeper$/) {
@@ -71,7 +75,11 @@ while (<$fh_group>) {
         $keygroupsbyname{$name} = {name => $name, id => $id};
     }
 
-    if (exists $keygroupsbyid{$id} or exists $gkgroupsbyid{$id} or exists $owgroupsbyid{$id} or exists $aclkgroupsbyname{$id}) {
+    if (   exists $keygroupsbyid{$id}
+        or exists $gkgroupsbyid{$id}
+        or exists $owgroupsbyid{$id}
+        or exists $aclkgroupsbyname{$id})
+    {
         _crit "group $name 's ID already seen!";
     }
     if ($name =~ /-gatekeeper$/) {
@@ -181,26 +189,45 @@ while (my $homedir = glob '/home/*') {
     if (not getgrnam($usertty)) {
         $usertty = substr($user, 0, 5) . '-tty';
     }
-    check_file_rights("$homedir",
-        ["# file: $homedir", "# owner: $user", "# group: $user", "user::rwx", "group::r-x", "group:$usertty:--x", "group:osh-auditor:--x", "mask::r-x", "other::---",],
-        "drwxr-x--x", $user, $user);
+    check_file_rights(
+        "$homedir",
+        [
+            "# file: $homedir", "# owner: $user",     "# group: $user",        "user::rwx",
+            "group::r-x",       "group:$usertty:--x", "group:osh-auditor:--x", "mask::r-x",
+            "other::---",
+        ],
+        "drwxr-x--x",
+        $user, $user
+    );
     check_file_rights(
         "$homedir/ttyrec",
         [
-            "# file: $homedir/ttyrec", "# owner: $user", "# group: $user",    "user::rwx",          "group::---",                 "group:$usertty:r-x",
-            "mask::r-x",               "other::---",     "default:user::rwx", "default:group::---", "default:group:$usertty:r-x", "default:mask::r-x",
+            "# file: $homedir/ttyrec", "# owner: $user",     "# group: $user",             "user::rwx",
+            "group::---",              "group:$usertty:r-x", "mask::r-x",                  "other::---",
+            "default:user::rwx",       "default:group::---", "default:group:$usertty:r-x", "default:mask::r-x",
             "default:other::---",
         ],
         "drwxrwxr-x",
         $user, $user
     );
-    check_file_rights("$homedir/.ssh",
-        ["# file: $homedir/.ssh", "# owner: $user", "# group: $user", "user::rwx", "group::r-x", "group:osh-auditor:--x", "mask::r-x", "other::---",],
-        "drwxr-x---", $user, $user);
+    check_file_rights(
+        "$homedir/.ssh",
+        [
+            "# file: $homedir/.ssh", "# owner: $user",        "# group: $user", "user::rwx",
+            "group::r-x",            "group:osh-auditor:--x", "mask::r-x",      "other::---",
+        ],
+        "drwxr-x---",
+        $user, $user
+    );
     if (-e "$homedir/osh.log")    # doesn't exist? nevermind
     {
-        check_file_rights("$homedir/osh.log", ["# file: $homedir/osh.log", "# owner: $user", "# group: $user", "user::rw-", "group::r--", "other::---",],
-            "-rw-r-----", $user, $user);
+        check_file_rights(
+            "$homedir/osh.log",
+            ["# file: $homedir/osh.log", "# owner: $user", "# group: $user", "user::rw-", "group::r--", "other::---",],
+            "-rw-r-----",
+            $user,
+            $user
+        );
     }
 
     # now check all keys in ~/.ssh
@@ -257,7 +284,7 @@ sub check_file_rights {
     }
 
     if (!$hasacls) {
-        my ($modes, $owner, $group) = (qx{ls -ld $file})[0] =~ m{(\S+)\s+\d+\s+(\S+)\s+(\S+)};    ## no critic (ProhibitBacktickOperators)
+        my ($modes, $owner, $group) = (qx{ls -ld $file})[0] =~ m{(\S+)\s+\d+\s+(\S+)\s+(\S+)}; ## no critic (ProhibitBacktickOperators)
         if ($modes ne $expectedmodes) { $ok = 0; _err "on $file got $modes wanted $expectedmodes"; }
         if ($owner ne $expectedowner) { $ok = 0; _err "on $file got $owner wanted $expectedowner"; }
         if ($group ne $expectedgroup) { $ok = 0; _err "on $file got $group wanted $expectedgroup"; }
@@ -265,7 +292,7 @@ sub check_file_rights {
     }
 
     my $param = ($islinux ? '-p' : '');
-    my @out   = qx{getfacl $param $file 2>/dev/null};                                             ## no critic (ProhibitBacktickOperators)
+    my @out   = qx{getfacl $param $file 2>/dev/null};    ## no critic (ProhibitBacktickOperators)
     chomp @out;
     my $lineno = -1;
     $expectedOutput = [sort @$expectedOutput];
@@ -298,9 +325,12 @@ foreach my $file (@keyhomesfound) {
             check_file_rights(
                 "/home/$file",
                 [
-                    "# file: /home/$file",       "# owner: $file",               "# group: $file",        "user::rwx",
-                    "group::r-x",                "group:osh-whoHasAccessTo:--x", "group:osh-auditor:--x", "group:osh-superowner:--x",
-                    "group:$file-aclkeeper:--x", "group:$file-gatekeeper:--x",   "group:$file-owner:--x", "mask::r-x",
+                    "# file: /home/$file",       "# owner: $file",
+                    "# group: $file",            "user::rwx",
+                    "group::r-x",                "group:osh-whoHasAccessTo:--x",
+                    "group:osh-auditor:--x",     "group:osh-superowner:--x",
+                    "group:$file-aclkeeper:--x", "group:$file-gatekeeper:--x",
+                    "group:$file-owner:--x",     "mask::r-x",
                     "other::---",
                 ],
                 "drwxr-x--x",
@@ -333,8 +363,17 @@ foreach my $file (@keyhomesfound) {
     if (-e "/home/$file/allowed.ip") {
 
         #not -s "/home/$file/allowed.ip" and _wrn "group $file has no servers";
-        check_file_rights("/home/$file/allowed.ip", ["# file: /home/$file/allowed.ip", "# owner: $file", "# group: $file-aclkeeper", "user::rw-", "group::rw-", "other::r--",],
-            "-rw-rw-r--", $file, "$file-aclkeeper");
+        check_file_rights(
+            "/home/$file/allowed.ip",
+            [
+                "# file: /home/$file/allowed.ip", "# owner: $file",
+                "# group: $file-aclkeeper",       "user::rw-",
+                "group::rw-",                     "other::r--",
+            ],
+            "-rw-rw-r--",
+            $file,
+            "$file-aclkeeper"
+        );
     }
     else {
         _err "/home/$file/allowed.ip doesn't exist";
@@ -342,8 +381,17 @@ foreach my $file (@keyhomesfound) {
 
     # check rights of /home/keykeeper/keytruc/
     if (-e "/home/keykeeper/$file") {
-        check_file_rights("/home/keykeeper/$file", ["# file: /home/keykeeper/$file", "# owner: keykeeper", "# group: $file", "user::rwx", "group::r-x", "other::r-x",],
-            "drwxr-xr-x", "keykeeper", $file);
+        check_file_rights(
+            "/home/keykeeper/$file",
+            [
+                "# file: /home/keykeeper/$file", "# owner: keykeeper",
+                "# group: $file",                "user::rwx",
+                "group::r-x",                    "other::r-x",
+            ],
+            "drwxr-xr-x",
+            "keykeeper",
+            $file
+        );
     }
     else {
         _err "/home/keykeeper/$file doesn't exist";
@@ -355,9 +403,15 @@ foreach my $file (@keyhomesfound) {
         next unless $keyfile =~ /^id_/;    # spurious files will be reported below
         my $ret = check_file_rights(
             "/home/keykeeper/$file/$keyfile",
-            ["# file: /home/keykeeper/$file/$keyfile", "# owner: keykeeper", "# group: $file", "user::r--", "group::r--", $keyfile =~ /\.pub$/ ? "other::r--" : "other::---",],
+            [
+                "# file: /home/keykeeper/$file/$keyfile",
+                "# owner: keykeeper",
+                "# group: $file",
+                "user::r--", "group::r--", $keyfile =~ /\.pub$/ ? "other::r--" : "other::---",
+            ],
             $keyfile =~ /\.pub$/ ? "-r--r--r--" : "-r--r-----",
-            "keykeeper", $file
+            "keykeeper",
+            $file
         );
         if ($keyfile !~ /\.pub$/) {
             if (not $ret) {
@@ -379,14 +433,28 @@ foreach my $file (@keyhomesfound) {
 }
 
 # check some special dirs
-check_file_rights("/home/allowkeeper", ["# file: /home/allowkeeper", "# owner: allowkeeper", "# group: allowkeeper", "user::rwx", "group::r-x", "other::r-x",],
-    "drwxr-xr-x", "allowkeeper", "allowkeeper");
-check_file_rights("/home/keykeeper", ["# file: /home/keykeeper", "# owner: keykeeper", "# group: keykeeper", "user::rwx", "group::r-x", "other::r-x",],
+check_file_rights(
+    "/home/allowkeeper",
+    [
+        "# file: /home/allowkeeper", "# owner: allowkeeper", "# group: allowkeeper", "user::rwx",
+        "group::r-x",                "other::r-x",
+    ],
+    "drwxr-xr-x",
+    "allowkeeper",
+    "allowkeeper"
+);
+check_file_rights("/home/keykeeper",
+    ["# file: /home/keykeeper", "# owner: keykeeper", "# group: keykeeper", "user::rwx", "group::r-x", "other::r-x",],
     "drwxr-xr-x", "keykeeper", "keykeeper");
-check_file_rights("/home/logkeeper", ["# file: /home/logkeeper", "# owner: $UID0", "# group: bastion-users", "user::rwx", "group::-wx", "other::---",],
+check_file_rights("/home/logkeeper",
+    ["# file: /home/logkeeper", "# owner: $UID0", "# group: bastion-users", "user::rwx", "group::-wx", "other::---",],
     "drwx-wx---", $UID0, "bastion-users");
-check_file_rights("/home/passkeeper", ["# file: /home/passkeeper", "# owner: $UID0", "# group: $GID0", "user::rwx", "group::r-x", "other::r-x",], "drwxr-xr-x", $UID0, $GID0);
-check_file_rights("/home/oldkeeper",  ["# file: /home/oldkeeper",  "# owner: $UID0", "# group: $GID0", "user::rwx", "group::---", "other::---",], "drwx------", $UID0, $GID0)
+check_file_rights("/home/passkeeper",
+    ["# file: /home/passkeeper", "# owner: $UID0", "# group: $GID0", "user::rwx", "group::r-x", "other::r-x",],
+    "drwxr-xr-x", $UID0, $GID0);
+check_file_rights("/home/oldkeeper",
+    ["# file: /home/oldkeeper", "# owner: $UID0", "# group: $GID0", "user::rwx", "group::---", "other::---",],
+    "drwx------", $UID0, $GID0)
   if -e "/home/oldkeeper";
 
 # now get all bastion users
@@ -443,18 +511,38 @@ foreach my $user (keys %users) {
 
 # check if user has /home/allowkeeper/testuser4/allowed.private
 foreach my $account (keys %users) {
-    check_file_rights("/home/allowkeeper/$account",
-        ["# file: /home/allowkeeper/$account", "# owner: allowkeeper", "# group: allowkeeper", "user::rwx", "group::r-x", "other::r-x",],
-        "drwxr-xr-x", "allowkeeper", "allowkeeper");
+    check_file_rights(
+        "/home/allowkeeper/$account",
+        [
+            "# file: /home/allowkeeper/$account", "# owner: allowkeeper",
+            "# group: allowkeeper",               "user::rwx",
+            "group::r-x",                         "other::r-x",
+        ],
+        "drwxr-xr-x",
+        "allowkeeper",
+        "allowkeeper"
+    );
     check_file_rights(
         "/home/allowkeeper/$account/allowed.ip",
-        ["# file: /home/allowkeeper/$account/allowed.ip", "# owner: allowkeeper", "# group: allowkeeper", "user::rw-", "group::r--", "other::r--",],
-        "-rw-r--r--", "allowkeeper", "allowkeeper"
+        [
+            "# file: /home/allowkeeper/$account/allowed.ip", "# owner: allowkeeper",
+            "# group: allowkeeper",                          "user::rw-",
+            "group::r--",                                    "other::r--",
+        ],
+        "-rw-r--r--",
+        "allowkeeper",
+        "allowkeeper"
     );
     check_file_rights(
         "/home/allowkeeper/$account/allowed.private",
-        ["# file: /home/allowkeeper/$account/allowed.private", "# owner: allowkeeper", "# group: allowkeeper", "user::rw-", "group::r--", "other::r--",],
-        "-rw-r--r--", "allowkeeper", "allowkeeper"
+        [
+            "# file: /home/allowkeeper/$account/allowed.private", "# owner: allowkeeper",
+            "# group: allowkeeper",                               "user::rw-",
+            "group::r--",                                         "other::r--",
+        ],
+        "-rw-r--r--",
+        "allowkeeper",
+        "allowkeeper"
     );
     if (!-e "/home/allowkeeper/$account/allowed.private" && $ENV{'FIX_MISSING_PRIVATE_FILES'}) {
         if (open(my $fh_priv, '>', "/home/allowkeeper/$account/allowed.private")) {

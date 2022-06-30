@@ -78,7 +78,8 @@ foreach my $program (@programs) {
 
 if (!$found) {
     if (OVH::Bastion::is_linux()) {
-        warn_syslog("Couldn't unlock account $account, as neither faillock, pam_tally2 or pam_tally seem to be installed");
+        warn_syslog(
+            "Couldn't unlock account $account, as neither faillock, pam_tally2 or pam_tally seem to be installed");
         HEXIT('ERR_HELPER_MISSING', msg => "Found no unlock helper on this system. Please contact your sysadmin!");
     }
     else {

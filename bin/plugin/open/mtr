@@ -25,7 +25,12 @@ EOF
 
 # be nice and try to guessify a host as first param
 # if user said --osh mtr mymachine.example.org
-if (not $host and not $ip and ref $remainingOptions eq 'ARRAY' and @$remainingOptions == 1 and $remainingOptions->[0] =~ /^([a-zA-Z0-9][a-zA-Z0-9.-]+)$/) {
+if (    not $host
+    and not $ip
+    and ref $remainingOptions eq 'ARRAY'
+    and @$remainingOptions == 1
+    and $remainingOptions->[0] =~ /^([a-zA-Z0-9][a-zA-Z0-9.-]+)$/)
+{
     $host = $remainingOptions->[0];
 }
 
