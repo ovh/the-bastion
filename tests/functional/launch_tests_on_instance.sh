@@ -619,8 +619,11 @@ for f in $(find "$basedir/tests/unit/" -mindepth 1 -maxdepth 1 -type f -name "*.
 do
     fbasename=$(basename "$f")
     echo "-> $fbasename"
-    if ! $r0 perl "$opt_remote_basedir/tests/unit/$fbasename"; then
-        printf "%b%b%b\\n" "$WHITE_ON_RED" "Unit tests failed :(" "$NOC"
+    set +e
+    $r0 perl "$opt_remote_basedir/tests/unit/$fbasename"; ret=$?
+    set -e
+    if [ $ret != 0 ]; then
+        printf "%b%b%b\\n" "$WHITE_ON_RED" "Unit tests failed (ret=$ret) :(" "$NOC"
         exit 1
     fi
 done

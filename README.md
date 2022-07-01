@@ -75,7 +75,7 @@ Linux distros below are tested with each release, but as this is a security prod
 - Debian 11 (Bullseye), Debian 10 (Buster), 9 (Stretch)
 - CentOS 7.x
 - RockyLinux 8.x
-- Ubuntu LTS 20.04, 18.04, 16.04
+- Ubuntu LTS 22.04, 20.04, 18.04, 16.04
 - OpenSUSE Leap 15.3\*
 
 \*: Note that these versions have no out-of-the-box MFA support, as they lack packaged versions of `pamtester`, `pam-google-authenticator`, or both. Of course, you may compile those yourself.
