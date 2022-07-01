@@ -1,3 +1,27 @@
+## v3.09.00-rc1 - 2022/07/04
+- feat: ``osh-encrypt-rsync.pl``: handle sqlite and user logs along with ttyrec files
+- feat: add ``osh-cleanup-guest-key-access.pl`` script
+- feat: add NRPE probes in ``contrib/``
+- remove: ``compress-old-logs.sh`` script, as ``osh-encrypt-rsync.pl`` does the job now
+- chg: CentOS 8 no longer supported (EOL)
+- chg: Ubuntu 22.04 LTS now supported
+- enh: standardize snake_case for all system scripts json config files
+- enh: cron scripts: factorize common code and standardize logging & config
+- enh: ``osh-lingering-sessions-reaper.pl``: make it configurable
+- enh: ``osh-piv-grace-reaper.pl``: run only on master, standardize config reading
+- enh: add more info in syslog warnings for ``accountDelete``
+- fix: ``ping``: force a deadline, and restore default sighandlers
+- fix: ``accountInfo``: missing creation date on non-json output
+- fix: ``osh-remove-empty-folders.pl``: fix folders counting (logging only)
+- fix: ``osh-encrypt-rsync.pl``: delete +a source files properly
+- fix: ``osh-encrypt-rsync.pl``: ensure $verbose is always set & make it configurable
+- fix: ``install``: ensure that the healthcheck user can always connect from 127.0.0.1
+- fix: ``install``: avoid cases of sigpipe on `tr`
+- fix: don't emit a membership log when nothing changed
+- fix: ``{group,account}Delete``: move() would sometimes fail, replace by mv
+- fix: workaround for undocumented caching in ``getpw``/``getgr`` funcs
+- doc: better menu organization and more complete config files reference
+
 ## v3.08.01 - 2022/01/19
 - feat: add osh-remove-empty-folders.sh script
 - enh: better errror detection and logging in accountDelete & groupDelete
