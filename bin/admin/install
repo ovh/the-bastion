@@ -249,8 +249,10 @@ if [ "${opt[modify-ssh-config]}" = 1 ] || [ "${opt[modify-sshd-config]}" = 1 ] ;
                 filesuffix=debian8
             elif [ "$DISTRO_VERSION_MAJOR" -le 18 ]; then
                 filesuffix=debian10
-            else
+            elif [ "$DISTRO_VERSION_MAJOR" -le 20 ]; then
                 filesuffix=debian11
+            else
+                filesuffix=debian12
             fi
         elif echo "$DISTRO_LIKE" | grep -q -w suse; then
             filesuffix=opensuse15
@@ -1187,7 +1189,9 @@ if [ "${opt[modify-pam-sshd]}" = 1 ]; then
         echo "$DISTRO_LIKE" | grep -q -w debian  && pamsuffix=debian
         echo "$DISTRO_LIKE" | grep -q -w rhel    && pamsuffix=rhel
         [ "$OS_FAMILY" = FreeBSD ] && pamsuffix=freebsd
-        if [ -n "$pamsuffix" ] && [ -e "$basedir/etc/pam.d/sshd.$pamsuffix$DISTRO_VERSION" ]; then
+        if [ "$LINUX_DISTRO" = ubuntu ] && [ "$DISTRO_VERSION_MAJOR" -ge 22 ]; then
+            pamsuffix="ubuntu2204"
+        elif [ -n "$pamsuffix" ] && [ -e "$basedir/etc/pam.d/sshd.$pamsuffix$DISTRO_VERSION" ]; then
             pamsuffix="$pamsuffix$DISTRO_VERSION"
         fi
         if [ -n "$pamsuffix" ] && [ -e "$PAM_SSHD" ] && [ -e "$basedir/etc/pam.d/sshd.$pamsuffix" ]; then

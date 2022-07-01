@@ -35,7 +35,7 @@ you are *warmly* advised to run it on the latest up-to-date stable version of yo
 - Debian 11 (Bullseye), Debian 10 (Buster), 9 (Stretch)
 - CentOS 7.x
 - RockyLinux 8.x
-- Ubuntu LTS 20.04, 18.04, 16.04
+- Ubuntu LTS 22.04, 20.04, 18.04, 16.04
 - OpenSUSE Leap 15.3\*
 
 \*: Note that these versions have no out-of-the-box MFA support, as they lack packaged versions of ``pamtester``,
