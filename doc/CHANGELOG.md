@@ -1,3 +1,9 @@
+## v3.09.00-rc2 - 2022/07/05
+- enh: MFA: specify account name in message
+- enh: move some code from get_hashes_list() to a new get_password_file()
+- enh: print_public_key: better formatter
+- doc: osh-encrypt-rsync.conf: add verbose
+
 ## v3.09.00-rc1 - 2022/07/04
 - feat: ``osh-encrypt-rsync.pl``: handle sqlite and user logs along with ttyrec files
 - feat: add ``osh-cleanup-guest-key-access.pl`` script
