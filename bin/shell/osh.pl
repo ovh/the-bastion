@@ -468,7 +468,7 @@ if ($bind) {
 # if proactive MFA has been requested, do it here, before the code diverts to either
 # handling interactive session, plugins/osh commands, or a connection request
 if ($proactiveMfa) {
-    print "As proactive MFA has been requested, entering MFA phase.\n";
+    print "As proactive MFA has been requested, entering MFA phase for $self.\n";
     $fnret = OVH::Bastion::do_pamtester(self => $self, sysself => $sysself);
     $fnret or main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', $fnret->msg);
 
@@ -1019,7 +1019,7 @@ if ($osh_command) {
 
         # and start the MFA phase if needed
         if ($MFArequiredForPlugin ne 'none' && !$skipMFA) {
-            print "As this is required to run this plugin, entering MFA phase.\n";
+            print "As this is required to run this plugin, entering MFA phase for $self.\n";
             if ($ENV{'OSH_PROACTIVE_MFA'}) {
                 print "... you already validated MFA proactively.\n";
             }
@@ -1555,10 +1555,10 @@ if ($JITMFARequired) {
     my $skipMFA  = 0;
     my $realmMFA = 0;
     if ($proactiveMfa) {
-        print "As proactive MFA has been requested, entering MFA phase.\n";
+        print "As proactive MFA has been requested, entering MFA phase for $self.\n";
     }
     else {
-        print "As this is required for this host, entering MFA phase.\n";
+        print "As this is required for this host, entering MFA phase for $self.\n";
     }
     if ($JITMFARequired eq 'totp' && !$isMfaTOTPConfigured) {
         if ($hasMfaTOTPBypass) {
@@ -1569,8 +1569,8 @@ if ($JITMFARequired) {
         }
         else {
             main_exit(OVH::Bastion::EXIT_MFA_TOTP_SETUP_REQUIRED, 'mfa_totp_setup_required',
-                "Sorry, but you need to setup the Multi-Factor Authentication before connecting to this host,\nplease use the `--osh selfMFASetupTOTP' option to do so"
-            );
+                "Sorry $self, but you need to setup the Multi-Factor Authentication before connecting to this host,\n"
+                  . "please use the `--osh selfMFASetupTOTP' option to do so");
         }
     }
     elsif ($JITMFARequired eq 'password' && !$isMfaPasswordConfigured) {
@@ -1582,8 +1582,8 @@ if ($JITMFARequired) {
         }
         else {
             main_exit(OVH::Bastion::EXIT_MFA_PASSWORD_SETUP_REQUIRED, 'mfa_password_setup_required',
-                "Sorry, but you need to setup the Multi-Factor Authentication before connecting to this host,\nplease use the `--osh selfMFASetupPassword' option to do so"
-            );
+                "Sorry $self, but you need to setup the Multi-Factor Authentication before connecting to this host,\n"
+                  . "please use the `--osh selfMFASetupPassword' option to do so");
         }
     }
     elsif ($JITMFARequired eq 'any' && !$isMfaTOTPConfigured && !$isMfaPasswordConfigured) {
@@ -1597,8 +1597,9 @@ if ($JITMFARequired) {
         }
         else {
             main_exit(OVH::Bastion::EXIT_MFA_ANY_SETUP_REQUIRED, 'mfa_any_setup_required',
-                "Sorry, but you need to setup the Multi-Factor Authentication before connecting to this host,\nplease use either the `--osh selfMFASetupPassword' or the `--osh selfMFASetupTOTP' option, at your discretion, to do so"
-            );
+                "Sorry $self, but you need to setup the Multi-Factor Authentication before connecting to this host,\n"
+                  . "please use either the `--osh selfMFASetupPassword' or the `--osh selfMFASetupTOTP' option, "
+                  . "at your discretion, to do so");
         }
     }
 
