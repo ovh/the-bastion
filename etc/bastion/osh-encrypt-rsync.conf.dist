@@ -45,6 +45,14 @@
 # DEFAULT: "local6"
 "syslog_facility": "local6",
 #
+# verbose (int >= 0)
+#    DESC: The verbosity level of the logs produced by the script
+#          0: normal (default)
+#          1: log more information about what is happening
+#          2: log debug-level information
+# DEFAULT: 0
+"verbose": 0,
+#
 # > Encryption and signing
 # >> These options configure how the script uses GPG to encrypt and sign the ttyrec files
 #
