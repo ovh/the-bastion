@@ -77,6 +77,34 @@ sub get_hashes_from_password {
     return R('OK', value => \%ret);
 }
 
+sub get_password_file {
+    my %params  = @_;
+    my $context = $params{'context'};
+    my $group   = $params{'group'};
+    my $account = $params{'account'};
+
+    my $fnret;
+
+    if ($context eq 'group') {
+        $fnret = OVH::Bastion::is_valid_group_and_existing(group => $group, groupType => "key");
+        $fnret or return $fnret;
+
+        $group = $fnret->value->{'group'};
+        my $shortGroup = $fnret->value->{'shortGroup'};
+        return R('OK', value => "/home/$group/pass/$shortGroup");
+    }
+    elsif ($context eq 'account') {
+        $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
+        $fnret or return $fnret;
+
+        $account = $fnret->value->{'account'};
+        return R('OK', value => "/home/$account/pass/$account");
+    }
+    else {
+        return R('ERR_INVALID_PARAMETER', msg => "Expected a context of 'group' or 'account'");
+    }
+}
+
 sub get_hashes_list {
     my %params  = @_;
     my $context = $params{'context'};
@@ -84,30 +112,11 @@ sub get_hashes_list {
     my $account = $params{'account'};
 
     my $fnret;
-    my $shortGroup;
-    my $homepass;
-    my $passfile;
 
-    if ($context eq 'group') {
-        $fnret = OVH::Bastion::is_valid_group_and_existing(group => $group, groupType => "key");
-        $fnret or return $fnret;
-        $group      = $fnret->value->{'group'};
-        $shortGroup = $fnret->value->{'shortGroup'};
+    $fnret = OVH::Bastion::get_password_file(context => $context, group => $group, account => $account);
+    $fnret or return $fnret;
 
-        $homepass = "/home/$group/pass";
-        $passfile = "$homepass/$shortGroup";
-    }
-    elsif ($context eq 'account') {
-        $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
-        $fnret or return $fnret;
-        $account = $fnret->value->{'account'};
-
-        $homepass = "/home/$account/pass";
-        $passfile = "$homepass/$account";
-    }
-    else {
-        return R('ERR_INVALID_PARAMETER', msg => "Expected a context of 'group' or 'account'");
-    }
+    my $passfile = $fnret->value;
 
     my @ret;
     foreach my $inc ('', 1 .. 99) {
