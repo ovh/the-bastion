@@ -760,24 +760,47 @@ sub print_public_key {
     }
 
     if ($key->{'info'}) {
-        osh_info(Term::ANSIColor::colored("info: " . $key->{'info'}, 'cyan'));
+        my $info = $key->{'info'};
+
+        # parse data from 'info' and print it nicely
+        my ($name) = $info =~ m{NAME="([^"]+)};
+        osh_info(Term::ANSIColor::colored("name: " . $name, 'cyan'));
+
+        my ($by)      = $info =~ m{ADDED_BY=(\S+)};
+        my ($when)    = $info =~ m{DATETIME=(\S+)};
+        my ($version) = $info =~ m{VERSION=(\S+)};
+        my ($session) = $info =~ m{UNIQID=(\S+)};
+        osh_info(
+            Term::ANSIColor::colored(
+                sprintf(
+                    "info: added by %s at %s in session %s running v%s",
+                    $by      || '(?)',
+                    $when    || '(?)',
+                    $session || '(?)',
+                    $version || '(?)'
+                ),
+                'cyan'
+            )
+        );
     }
+
     if ($key->{'isPiv'}) {
         osh_info(
             Term::ANSIColor::colored(
                 "PIV: "
                   . "TouchPolicy="
                   . $key->{'pivInfo'}{'Yubikey'}{'TouchPolicy'}
-                  . ", PinPolicy="
+                  . " PinPolicy="
                   . $key->{'pivInfo'}{'Yubikey'}{'PinPolicy'}
-                  . ", SerialNo="
+                  . " SerialNo="
                   . $key->{'pivInfo'}{'Yubikey'}{'SerialNumber'}
-                  . ", Firmware="
+                  . " Firmware="
                   . $key->{'pivInfo'}{'Yubikey'}{'FirmwareVersion'},
                 'magenta'
             )
         );
     }
+
     osh_info(
         sprintf(
             "%s%s (%s-%d) [%s]%s",
