@@ -26,6 +26,7 @@ These options configure the way the script logs its actions
 
 - `logfile`_
 - `syslog_facility`_
+- `verbose`_
 
 Encryption and signing options
 ------------------------------
@@ -77,6 +78,18 @@ The syslog facility to use for logging the script output.
 If set to the empty string, we'll not log through syslog at all.
 If this configuration option is missing from your config file altogether,
 the default value will be used (local6), which means that we'll log to syslog.
+
+verbose
+*******
+
+:Type: ``int >= 0``
+
+:Default: ``0``
+
+The verbosity level of the logs produced by the script
+0: normal (default)
+1: log more information about what is happening
+2: log debug-level information
 
 Encryption and signing
 ----------------------
