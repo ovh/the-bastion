@@ -10,7 +10,7 @@ use OVH::Bastion::Plugin qw( :DEFAULT help );
 
 my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv     => \@ARGV,
-    header   => "clush",
+    header   => "batch",
     options  => {},
     helptext => <<'EOF',
 Run a batch of osh commands fed through STDIN
