@@ -106,10 +106,10 @@ foreach my $shortGroup (sort keys %$groups) {
 
         # the "members" of the system group key$shortGroup might be either members or guests,
         # so we first rule out members
-        next if OVH::Bastion::is_group_member(account => $account, group => $shortGroup);
+        next if OVH::Bastion::is_group_member(account => $account, group => $shortGroup, cache => 1);
 
         # it seems to be a guest, double-check that
-        next if !OVH::Bastion::is_group_guest(account => $account, group => $shortGroup);
+        next if !OVH::Bastion::is_group_guest(account => $account, group => $shortGroup, cache => 1);
 
         _log "<$shortGroup/$account> found a guest, checking remaining accesses..." if $verbose;
 
@@ -138,7 +138,7 @@ foreach my $shortGroup (sort keys %$groups) {
             _log "<$shortGroup/$account> The account is a guest of group but has no remaining access, cleaning up...";
 
             # get $group from $shortGroup
-            $fnret = OVH::Bastion::is_valid_group_and_existing(group => $shortGroup, groupType => 'key');
+            $fnret = OVH::Bastion::is_valid_group_and_existing(group => $shortGroup, groupType => 'key', cache => 1);
             if (!$fnret) {
                 _warn "<$shortGroup/$account> Group seems invalid ($fnret), skipping";
                 next;
