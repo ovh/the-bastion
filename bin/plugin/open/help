@@ -9,6 +9,9 @@ use OVH::Result;
 use OVH::Bastion;
 use OVH::Bastion::Plugin qw( :DEFAULT help );
 
+# globally allow sys_getpw* and sys_getgr* cache use
+$ENV{'PW_GR_CACHE'} = 1;
+
 my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv     => \@ARGV,
     header   => "OSH help",
@@ -128,7 +131,7 @@ while ($i < scalar @knownPlugins) {
         my $curLen;
         my $curIndex;
         foreach my $cmd (@plugins) {
-            $fnret = OVH::Bastion::can_account_execute_plugin(account => $self, plugin => $cmd);
+            $fnret = OVH::Bastion::can_account_execute_plugin(account => $self, plugin => $cmd, cache => 1);
             next unless $fnret;
             if (($curLen + length($fnret->value->{'plugin'})) > 80) {
                 $curIndex++;

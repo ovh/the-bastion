@@ -68,7 +68,7 @@ EOM
 
     my @cmdlist = qw{ exit ssh mfa enable nomfa end };
     foreach my $plugin (sort keys %$pluginList) {
-        $fnret = OVH::Bastion::can_account_execute_plugin(plugin => $plugin, account => $self);
+        $fnret = OVH::Bastion::can_account_execute_plugin(plugin => $plugin, account => $self, cache => 1);
         next if !$fnret;
 
         push @cmdlist, $plugin;
@@ -138,6 +138,10 @@ EOM
             return @validcmds;
         }
 
+        my $accountList          = OVH::Bastion::get_account_list(cache => 1)->value;
+        my $groupList            = OVH::Bastion::get_group_list(cache => 1, groupType => 'key')->value;
+        my $realmList            = OVH::Bastion::get_realm_list(cache => 1)->value;
+        my $pluginListRestricted = OVH::Bastion::get_plugin_list(restrictedOnly => 1)->value;
         foreach my $i (0 .. $#rules) {
             my $re   = $rules[$i++];
             my $item = $rules[$i++];
@@ -156,40 +160,25 @@ EOM
                 # but before, check there's no magic inside, i.e. replace ACCOUNT by @account_list and GROUP by @group_list
                 my @autocomplete;
                 foreach (@{$item->{'ac'}}) {
-                    if ($_ eq '<ACCOUNT>') {
-                        $fnret = OVH::Bastion::get_account_list(cache => 1);
-                        if ($fnret) {
-                            push @autocomplete, sort keys %{$fnret->value()};
-                            next;
-                        }
+                    if ($_ eq '<ACCOUNT>' && $accountList) {
+                        push @autocomplete, sort keys %$accountList;
+                        next;
                     }
-                    elsif ($_ eq '<GROUP>') {
-                        $fnret = OVH::Bastion::get_group_list(cache => 1, groupType => 'key');
-                        if ($fnret) {
-                            push @autocomplete, sort keys %{$fnret->value()};
-                            next;
-                        }
+                    elsif ($_ eq '<GROUP>' && $groupList) {
+                        push @autocomplete, sort keys %$groupList;
+                        next;
                     }
-                    elsif ($_ eq '<REALM>') {
-                        $fnret = OVH::Bastion::get_realm_list();
-                        if ($fnret) {
-                            push @autocomplete, sort keys %{$fnret->value()};
-                            next;
-                        }
+                    elsif ($_ eq '<REALM>' && $realmList) {
+                        push @autocomplete, sort keys %$realmList;
+                        next;
                     }
-                    elsif ($_ eq '<RESTRICTED_COMMAND>') {
-                        $fnret = OVH::Bastion::get_plugin_list(restrictedOnly => 1);
-                        if ($fnret) {
-                            push @autocomplete, 'auditor', sort keys %{$fnret->value()};
-                            next;
-                        }
+                    elsif ($_ eq '<RESTRICTED_COMMAND>' && $pluginListRestricted) {
+                        push @autocomplete, 'auditor', sort keys %$pluginListRestricted;
+                        next;
                     }
-                    elsif ($_ eq '<COMMAND>') {
-                        $fnret = OVH::Bastion::get_plugin_list();
-                        if ($fnret) {
-                            push @autocomplete, sort keys %{$fnret->value()};
-                            next;
-                        }
+                    elsif ($_ eq '<COMMAND>' && $pluginList) {
+                        push @autocomplete, sort keys %$pluginList;
+                        next;
                     }
                     push @autocomplete, $_;
                 }

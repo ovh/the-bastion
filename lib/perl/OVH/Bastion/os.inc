@@ -616,81 +616,203 @@ sub is_in_path {
 # as setpwent/endpwent can have side effects to any getpwent used between
 # them, possibly in other parts of the program, encapsulate everything here
 # to avoid side effects
-sub sys_getent_pw {
+my %_pw_cache;
+my $_pw_all_cached = 0;
+
+sub sys_getpw_all {
     my %params = @_;
-    my $cache  = $params{'cache'};
-    state $cached_response;
+    my $cache  = $params{'cache'} || $ENV{'PW_GR_CACHE'};
 
-    if ($cache && $cached_response) {
-        return $cached_response;
+    if (!$cache || !$_pw_all_cached) {
+        # end/set: for some reason, if we don't end() before set(), there seem
+        # to be a cache somewhere, and we get entries that have been
+        # deleted (milli)seconds before. This behaviour is undocumented, as set()
+        # is supposed to reset the pointer, and a no mention of a cache is done
+        # anywhere. Luckily, Prepending the set() with an end() seems to
+        # reliably fix the issue on all tested OSes.
+        %_pw_cache = ();
+        endpwent();
+        setpwent();
+        while (my @line = getpwent()) {
+            $_pw_cache{$line[0]} = {
+                name    => $line[0],
+                passwd  => $line[1],
+                uid     => $line[2],
+                gid     => $line[3],
+                quota   => $line[4],
+                comment => $line[5],
+                gcos    => $line[6],
+                dir     => $line[7],
+                shell   => $line[8],
+                expire  => $line[9],
+            };
+        }
+        endpwent();
+        $_pw_all_cached = 1;
     }
 
-    my @all;
+    return R('OK', value => \%_pw_cache);
+}
 
-    # end/set: for some reason, if we don't end() before set(), there seem
-    # to be a cache somewhere, and we get entries that have been
-    # deleted (milli)seconds before. This behaviour is undocumented, as set()
-    # is supposed to reset the pointer, and a no mention of a cache is done
-    # anywhere. Luckily, Prepending the set() with an end() seems to
-    # reliably fix the issue on all tested OSes.
-    endpwent();
-    setpwent();
-    while (my @line = getpwent()) {
-        push @all,
-          {
-            name    => $line[0],
-            passwd  => $line[1],
-            uid     => $line[2],
-            gid     => $line[3],
-            quota   => $line[4],
-            comment => $line[5],
-            gcos    => $line[6],
-            dir     => $line[7],
-            shell   => $line[8],
-            expire  => $line[9],
-          };
+sub sys_getpw_all_cached {
+    return R($_pw_all_cached ? 'OK' : 'KO');
+}
+
+# get a system account entry from name (getent passwd / getpwnam)
+sub sys_getpw_name {
+    my %params = @_;
+    my $cache  = $params{'cache'} || $ENV{'PW_GR_CACHE'};
+    my $name   = $params{'name'};
+
+    if (!$name) {
+        return R('ERR_MISSING_PARAMETER', msg => "Missing 'name' parameter");
     }
-    endpwent();
 
-    $cached_response = R('OK', value => \@all);
-    return $cached_response;
+    if ($cache) {
+        # if cache is allowed and our $name entry exists in cache, return it
+        if (exists $_pw_cache{$name}) {
+            if (defined $_pw_cache{$name}) {
+                return R('OK', value => $_pw_cache{$name});
+            }
+            else {
+                # we cached its non-existence
+                return R('KO_NOT_FOUND', msg => "Account '$name' doesn't exist");
+            }
+        }
+        # if cache is allowed, cache has been filled but our name entry is not
+        # there, it means the account doesn't exist
+        elsif ($_pw_all_cached) {
+            return R('KO_NOT_FOUND', msg => "Account '$name' doesn't exist");
+        }
+        # if cache is allowed, cache has not been filled and our entry doesn't
+        # exist in cache, either we never cached anything, or we partly
+        # cached some accounts due to previous calls to sys_getpw_name()
+        # without a single call to sys_getpw_all(), in which case we need
+        # to fetch the data from the system using getpwnam()
+    }
+
+    # if cache is not allowed, fetch data from system with getpwnam() and
+    # cache it. As we're just caching data for this account, don't set
+    # $_pw_all_cached so that other funcs know that the cache is partial
+    my @fields = getpwnam($name);
+    if (@fields) {
+        $_pw_cache{$fields[0]} = {
+            name    => $fields[0],
+            passwd  => $fields[1],
+            uid     => $fields[2],
+            gid     => $fields[3],
+            quota   => $fields[4],
+            comment => $fields[5],
+            gcos    => $fields[6],
+            dir     => $fields[7],
+            shell   => $fields[8],
+            expire  => $fields[9],
+        };
+        return R('OK', value => $_pw_cache{$fields[0]});
+    }
+    else {
+        # cache the non-existence of this account
+        $_pw_cache{$name} = undef;
+        return R('KO_NOT_FOUND', msg => "Account '$name' doesn't exist");
+    }
+
+    # unreachable
+    return R('ERR_INTERNAL');
 }
 
 # as setgrent/endgrent can have side effects to any getgrent used between
 # them, possibly in other parts of the program, encapsulate everything here
 # to avoid side effects
-sub sys_getent_gr {
+my %_gr_cache;
+my $_gr_all_cached = 0;
+
+sub sys_getgr_all {
     my %params = @_;
-    my $cache  = $params{'cache'};
-    state $cached_response;
+    my $cache  = $params{'cache'} || $ENV{'PW_GR_CACHE'};
 
-    if ($cache && $cached_response) {
-        return $cached_response;
+    if (!$cache || !$_gr_all_cached) {
+        # end/set: for some reason, if we don't end() before set(), there seem
+        # to be a cache somewhere, and we get entries that have been
+        # deleted (milli)seconds before. This behaviour is undocumented, as set()
+        # is supposed to reset the pointer, and a no mention of a cache is done
+        # anywhere. Luckily, pPrepending the set() with an end() seems to
+        # reliably fix the issue on all tested OSes.
+        %_gr_cache = ();
+        endgrent();
+        setgrent();
+        while (my @line = getgrent()) {
+            $_gr_cache{$line[0]} = {
+                name    => $line[0],
+                passwd  => $line[1],
+                gid     => $line[2],
+                members => [split(/ /, $line[3])],
+            };
+        }
+        endgrent();
+        $_gr_all_cached = 1;
     }
 
-    my @all;
+    return R('OK', value => \%_gr_cache);
+}
 
-    # end/set: for some reason, if we don't end() before set(), there seem
-    # to be a cache somewhere, and we get entries that have been
-    # deleted (milli)seconds before. This behaviour is undocumented, as set()
-    # is supposed to reset the pointer, and a no mention of a cache is done
-    # anywhere. Luckily, pPrepending the set() with an end() seems to
-    # reliably fix the issue on all tested OSes.
-    endgrent();
-    setgrent();
-    while (my @line = getgrent()) {
-        push @all,
-          {
-            name    => $line[0],
-            passwd  => $line[1],
-            gid     => $line[2],
-            members => [split(/ /, $line[3])],
-          };
+sub sys_getgr_all_cached {
+    return R($_gr_all_cached ? 'OK' : 'KO');
+}
+
+# get a system group entry from name (getent group / getgrnam)
+sub sys_getgr_name {
+    my %params = @_;
+    my $name   = $params{'name'};
+    my $cache  = $params{'cache'} || $ENV{'PW_GR_CACHE'};
+
+    if (!$name) {
+        return R('ERR_MISSING_PARAMETER', msg => "Missing 'name' parameter");
     }
-    endgrent();
 
-    $cached_response = R('OK', value => \@all);
-    return $cached_response;
+    if ($cache) {
+        # if cache is allowed and our $name entry exists in cache, return it
+        if (exists $_gr_cache{$name}) {
+            if (defined $_gr_cache{$name}) {
+                return R('OK', value => $_gr_cache{$name});
+            }
+            else {
+                # we cached its non-existence
+                return R('KO_NOT_FOUND', msg => "Group '$name' doesn't exist");
+            }
+        }
+        # if cache is allowed, cache has been filled but our name entry is not
+        # there, it means the group doesn't exist
+        elsif ($_gr_all_cached) {
+            return R('KO_NOT_FOUND', msg => "Group '$name' doesn't exist");
+        }
+        # if cache is allowed, cache has not been filled and our entry doesn't
+        # exist in cache, either we never cached anything, or we partly
+        # cached some groups due to previous calls to sys_getgr_name()
+        # without a single call to sys_getgr_all(), in which case we need
+        # to fetch the data from the system using getgrnam()
+    }
+
+    # if cache is not allowed, fetch data from system with getgrnam() and
+    # cache it. As we're just caching data for this group, don't set
+    # $_gr_all_cached so that other funcs know that the cache is partial
+    my @fields = getgrnam($name);
+    if (@fields) {
+        $_gr_cache{$fields[0]} = {
+            name    => $fields[0],
+            passwd  => $fields[1],
+            gid     => $fields[2],
+            members => [split(/ /, $fields[3])],
+        };
+        return R('OK', value => $_gr_cache{$fields[0]});
+    }
+    else {
+        # cache the non-existence of this group
+        $_gr_cache{$name} = undef;
+        return R('KO_NOT_FOUND', msg => "Group '$name' doesn't exist");
+    }
+
+    # unreachable
+    return R('ERR_INTERNAL');
 }
 
 1;

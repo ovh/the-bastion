@@ -148,7 +148,7 @@ my %_autoload_files = (
         qw{ enable_mocking is_mocking set_mock_data mock_get_account_entry mock_get_account_accesses mock_get_account_personal_accesses mock_get_account_legacy_accesses mock_get_group_accesses mock_get_account_guest_accesses }
     ],
     os => [
-        qw{ sysinfo is_linux is_debian is_redhat is_bsd is_freebsd is_openbsd is_netbsd has_acls sys_useradd sys_groupadd sys_userdel sys_groupdel sys_addmembertogroup sys_delmemberfromgroup sys_changepassword sys_neutralizepassword sys_setpasswordpolicy sys_getpasswordinfo sys_getsudoersfolder sys_setfacl is_in_path sys_getent_pw sys_getent_gr }
+        qw{ sysinfo is_linux is_debian is_redhat is_bsd is_freebsd is_openbsd is_netbsd has_acls sys_useradd sys_groupadd sys_userdel sys_groupdel sys_addmembertogroup sys_delmemberfromgroup sys_changepassword sys_neutralizepassword sys_setpasswordpolicy sys_getpasswordinfo sys_getsudoersfolder sys_setfacl is_in_path sys_getpw_all sys_getpw_all_cached sys_getpw_name sys_getgr_all sys_getgr_all_cached sys_getgr_name }
     ],
     password => [qw{ get_hashes_from_password get_password_file get_hashes_list is_valid_hash }],
     ssh      => [
@@ -765,6 +765,7 @@ sub can_account_execute_plugin {
     my %params  = @_;
     my $account = $params{'account'} || OVH::Bastion::get_user_from_env()->value;
     my $plugin  = $params{'plugin'};
+    my $cache = $params{'cache'};    # allow cache use in get_user_groups(), is_user_in_group() etc.
     my $fnret;
 
     if (not $plugin or not $account) {
@@ -815,14 +816,14 @@ sub can_account_execute_plugin {
         # need to parse group to see if maybe member of group-gatekeeper or group-owner (or super owner)
         my %canDo = (gatekeeper => 0, aclkeeper => 0, owner => 0);
 
-        $fnret = OVH::Bastion::get_user_groups(extra => 1, account => $account);
+        $fnret = OVH::Bastion::get_user_groups(extra => 1, account => $account, cache => $cache);
         my @userGroups = $fnret ? @{$fnret->value} : ();
 
         foreach my $type (qw{ aclkeeper gatekeeper owner }) {
             if (-f "$path_plugin/group-$type/$plugin") {
 
                 # we can always execute these commands if we are a super owner
-                my $canDo = OVH::Bastion::is_super_owner(account => $account) ? 1 : 0;
+                my $canDo = OVH::Bastion::is_super_owner(account => $account, cache => $cache) ? 1 : 0;
 
                 # or if we are $type on at least one group
                 $canDo += grep { /^key.*-\Q$type\E$/ } @userGroups;
@@ -852,7 +853,7 @@ sub can_account_execute_plugin {
 
     # restricted plugins (osh-* system groups based)
     if (-f ($path_plugin . '/restricted/' . $plugin)) {
-        if (OVH::Bastion::is_user_in_group(user => $account, group => "osh-$plugin")) {
+        if (OVH::Bastion::is_user_in_group(user => $account, group => "osh-$plugin", cache => $cache)) {
             return R('OK',
                 value => {fullpath => $path_plugin . '/restricted/' . $plugin, type => 'restricted', plugin => $plugin}
             );
@@ -868,7 +869,7 @@ sub can_account_execute_plugin {
 
     # admin plugins
     if (-f ($path_plugin . '/admin/' . $plugin)) {
-        if (OVH::Bastion::is_admin(account => $account)) {
+        if (OVH::Bastion::is_admin(account => $account, cache => $cache)) {
             return R('OK',
                 value => {fullpath => $path_plugin . '/admin/' . $plugin, type => 'admin', plugin => $plugin});
         }

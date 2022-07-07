@@ -322,7 +322,7 @@ if [ "${opt[modify-motd]}" = 1 ] ; then
 fi
 
 if [ "${opt[regen-hostkeys]}" = 1 ] ; then
-    action_doing "Change sshd host keys (this can cake a while)"
+    action_doing "Change sshd host keys (this can take a while)"
     rm -f $SSH_DIR/ssh_host_{dsa,rsa,ecdsa,ed25519}_key{,.pub}
     ssh-keygen -q -t rsa   -b 4096 -N '' -f $SSH_DIR/ssh_host_rsa_key >/dev/null
     ssh-keygen -q -t ecdsa -b  521 -N '' -f $SSH_DIR/ssh_host_ecdsa_key >/dev/null || true

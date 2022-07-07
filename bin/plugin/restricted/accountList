@@ -9,6 +9,9 @@ use OVH::Result;
 use OVH::Bastion;
 use OVH::Bastion::Plugin qw( :DEFAULT help );
 
+# globally allow sys_getpw* and sys_getgr* cache use
+$ENV{'PW_GR_CACHE'} = 1;
+
 my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,
     header  => "list bastion accounts",
@@ -139,24 +142,42 @@ foreach my $account (sort keys %$accounts) {
 
         $states{'can_connect'} = ($states{'is_active'} && !$states{'is_expired'}) ? 1 : 0;
 
-        $states{'mfa_password_required'} =
-          OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_PASSWORD_REQUIRED_GROUP) ? 1 : 0;
+        $states{'mfa_password_required'} = OVH::Bastion::is_user_in_group(
+            user  => $account,
+            group => OVH::Bastion::MFA_PASSWORD_REQUIRED_GROUP,
+        ) ? 1 : 0;
         $states{'mfa_password_configured'} =
-          OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_PASSWORD_CONFIGURED_GROUP)
+          OVH::Bastion::is_user_in_group(
+            user  => $account,
+            group => OVH::Bastion::MFA_PASSWORD_CONFIGURED_GROUP,
+          )
           ? 1
           : 0;
-        $states{'mfa_password_bypass'} =
-          OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_PASSWORD_BYPASS_GROUP) ? 1 : 0;
+        $states{'mfa_password_bypass'} = OVH::Bastion::is_user_in_group(
+            user  => $account,
+            group => OVH::Bastion::MFA_PASSWORD_BYPASS_GROUP,
+        ) ? 1 : 0;
         $states{'mfa_totp_required'} =
-          OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_TOTP_REQUIRED_GROUP) ? 1 : 0;
-        $states{'mfa_totp_configured'} =
-          OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_TOTP_CONFIGURED_GROUP) ? 1 : 0;
+          OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_TOTP_REQUIRED_GROUP)
+          ? 1
+          : 0;
+        $states{'mfa_totp_configured'} = OVH::Bastion::is_user_in_group(
+            user  => $account,
+            group => OVH::Bastion::MFA_TOTP_CONFIGURED_GROUP,
+        ) ? 1 : 0;
         $states{'mfa_totp_bypass'} =
-          OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_TOTP_BYPASS_GROUP) ? 1 : 0;
+          OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::MFA_TOTP_BYPASS_GROUP)
+          ? 1
+          : 0;
         $states{'pam_auth_bypass'} =
-          OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::PAM_AUTH_BYPASS_GROUP) ? 1 : 0;
+          OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::PAM_AUTH_BYPASS_GROUP)
+          ? 1
+          : 0;
         $states{'pubkey_auth_optional'} =
-          OVH::Bastion::is_user_in_group(user => $account, group => OVH::Bastion::OSH_PUBKEY_AUTH_OPTIONAL_GROUP)
+          OVH::Bastion::is_user_in_group(
+            user  => $account,
+            group => OVH::Bastion::OSH_PUBKEY_AUTH_OPTIONAL_GROUP,
+          )
           ? 1
           : 0;
 

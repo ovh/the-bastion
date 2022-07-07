@@ -12,6 +12,9 @@ use OVH::Result;
 use OVH::Bastion;
 use OVH::Bastion::Plugin qw( :DEFAULT help );
 
+# globally allow sys_getpw* and sys_getgr* cache use
+$ENV{'PW_GR_CACHE'} = 1;
+
 OVH::Bastion::Plugin::begin(
     argv     => \@ARGV,
     header   => "account information",
@@ -68,18 +71,18 @@ $ret{'allowed_commands'} = \@granted;
 my $result_hash = {};
 
 if ($listGroups) {
-    $fnret = OVH::Bastion::get_group_list(cache => 1);
+    $fnret = OVH::Bastion::get_group_list();
     $fnret or osh_exit $fnret;
 
     osh_info "\nThis account is part of the following groups:";
 
     foreach my $name (sort keys %{$fnret->value}) {
         my @flags;
-        push @flags, 'owner' if OVH::Bastion::is_group_owner(group => $name, account => $account, cache => 1);
-        push @flags, 'gatekeeper' if OVH::Bastion::is_group_gatekeeper(group => $name, account => $account, cache => 1);
-        push @flags, 'aclkeeper' if OVH::Bastion::is_group_aclkeeper(group => $name, account => $account, cache => 1);
-        push @flags, 'member' if OVH::Bastion::is_group_member(group => $name, account => $account, cache => 1);
-        push @flags, 'guest' if OVH::Bastion::is_group_guest(group => $name, account => $account, cache => 1);
+        push @flags, 'owner' if OVH::Bastion::is_group_owner(group => $name, account => $account);
+        push @flags, 'gatekeeper' if OVH::Bastion::is_group_gatekeeper(group => $name, account => $account);
+        push @flags, 'aclkeeper' if OVH::Bastion::is_group_aclkeeper(group => $name, account => $account);
+        push @flags, 'member' if OVH::Bastion::is_group_member(group => $name, account => $account);
+        push @flags, 'guest' if OVH::Bastion::is_group_guest(group => $name, account => $account);
         if (@flags) {
             my $line = sprintf "%18s", $name;
             $line .= sprintf " %14s", colored(grep({ $_ eq 'owner' } @flags)      ? 'Owner'      : '-', 'red');
@@ -100,10 +103,11 @@ if ($listGroups) {
 $ret{'groups'} = $result_hash;
 
 my $canConnect = 1;
-$ret{'always_active'} =
-  OVH::Bastion::account_config(account => $account, key => OVH::Bastion::OPT_ACCOUNT_ALWAYS_ACTIVE, public => 1)
-  ? 1
-  : 0;
+$ret{'always_active'} = OVH::Bastion::account_config(
+    account => $account,
+    key     => OVH::Bastion::OPT_ACCOUNT_ALWAYS_ACTIVE,
+    public  => 1
+) ? 1 : 0;
 if ($ret{'always_active'}) {
     $ret{'is_active'} = 1;
     osh_info "This account is " . colored('always', 'green') . " active";
