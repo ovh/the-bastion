@@ -10,6 +10,9 @@ use OVH::Result;
 use OVH::Bastion;
 use OVH::Bastion::Plugin qw( :DEFAULT help );
 
+# globally allow sys_getpw* and sys_getgr* cache use
+$ENV{'PW_GR_CACHE'} = 1;
+
 my ($name);
 OVH::Bastion::Plugin::begin(
     argv     => \@ARGV,
@@ -135,9 +138,9 @@ osh_info
 $ret{'hostname'}     = Sys::Hostname::hostname();
 $ret{'bastion_name'} = $config->{'bastionName'};
 
-$fnret = OVH::Bastion::get_account_list(cache => 1);
+$fnret = OVH::Bastion::get_account_list();
 my $nbaccounts = $fnret ? keys %{$fnret->value} : '?';
-$fnret = OVH::Bastion::get_group_list(cache => 1);
+$fnret = OVH::Bastion::get_group_list();
 my $nbgroups = $fnret ? keys %{$fnret->value} : '?';
 osh_info "I have "
   . colored($nbaccounts, 'green')

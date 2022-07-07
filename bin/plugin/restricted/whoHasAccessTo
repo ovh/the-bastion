@@ -9,6 +9,9 @@ use OVH::Result;
 use OVH::Bastion;
 use OVH::Bastion::Plugin qw( :DEFAULT help );
 
+# globally allow sys_getpw* and sys_getgr* cache use
+$ENV{'PW_GR_CACHE'} = 1;
+
 my (@ignoreGroups, $ignorePersonal, $showWildcards);
 my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,

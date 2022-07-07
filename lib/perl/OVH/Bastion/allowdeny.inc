@@ -358,19 +358,29 @@ sub get_user_groups {
     my %params = @_;
     my $user   = $params{'user'} || $params{'account'};
     my $extra  = $params{'extra'};                        # Do we want to include gatekeeper/aclkeeper/owner groups ?
-    my $cache  = $params{'cache'};                        # allow cache use (multicall)
+    my $cache  = $params{'cache'};                        # allow cache use of sys_getgr_all(), and also our own
+                                                          # cache if we've already been called with same params before
+    state %cached_response;
 
     if (not $user) {
         return R('ERR_MISSING_PARAMETER', msg => "Missing parameter 'account'");
     }
 
-    # try to use sys_getent_gr()'s cache if available and allowed by caller.
+    my $cachekey = sprintf("user=%s,extra=%d", $user, $extra ? 1 : 0);
+    if ($cache && defined $cached_response{$cachekey}) {
+        return $cached_response{$cachekey};
+    }
+
     # we loop through all the system groups to find the ones having user
-    # as a meember
+    # as a member
+    my $fnret = OVH::Bastion::sys_getgr_all(cache => $cache);
+    $fnret or return $fnret;
+
     my @groups;
-    foreach my $gr (@{OVH::Bastion::sys_getent_gr(cache => $cache)->value}) {
-        if (grep { $user eq $_ } @{$gr->{'members'} || []}) {
-            push @groups, $gr->{'name'};
+    foreach my $name (keys %{$fnret->value}) {
+        my $entry = $fnret->value->{$name};
+        if (grep { $user eq $_ } @{$entry->{'members'} || []}) {
+            push @groups, $name;
         }
     }
 
@@ -385,11 +395,12 @@ sub get_user_groups {
     }
 
     if (scalar(@availableGroups)) {
-        return R('OK', value => \@availableGroups);
+        $cached_response{$cachekey} = R('OK', value => \@availableGroups);
     }
     else {
-        return R('ERR_NO_GROUP', msg => 'Unable to find any group');
+        $cached_response{$cachekey} = R('ERR_NO_GROUP', msg => 'Unable to find any group');
     }
+    return $cached_response{$cachekey};
 }
 
 sub _get_pub_keys_from_directory {
