@@ -1,10 +1,39 @@
 #! /usr/bin/env bash
 # vim: set filetype=sh ts=4 sw=4 sts=4 et:
-set -e
 
 basedir=$(readlink -f "$(dirname "$0")"/../..)
 # shellcheck source=lib/shell/functions.inc
 . "$basedir"/lib/shell/functions.inc
+
+# instead of setting +e, count the errors we might have and report at the end,
+# as it's better to go on instead of abrutly halting in the middle of the install
+# for a potentially minor hiccup
+trap_err_nb=0
+trap_err_lines=''
+script_end_reached=0
+
+trap '(( ++trap_err_nb )); trap_err_lines="$trap_err_lines $LINENO"' ERR
+
+trap_exit() {
+    if [ "$script_end_reached" = 0 ]; then
+        action_doing "Installation or upgrade interrupted!"
+        action_error "... as a result, the software might not be in a usable state!"
+        action_error "... Please run this script again to complete installation or upgrade!"
+    else
+        action_doing "Installation or upgrade done, ensuring no error occurred"
+        if [ "$trap_err_nb" != 0 ]; then
+            action_error "Some errors have occurred above, please review and advise!"
+            for line in $trap_err_lines; do
+                action_detail "... error on script source line $line"
+            done
+            exit 1
+        else
+            action_done
+        fi
+    fi
+}
+
+trap 'trap_exit' EXIT
 
 declare -A opt
 
@@ -1262,4 +1291,5 @@ if [ "${opt[check-ttyrec]}" = 1 ] ; then
     fi
 fi
 
-echo All done.
+# used in trap_exit
+script_end_reached=1
