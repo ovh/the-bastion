@@ -1,3 +1,8 @@
+## v3.09.00-rc3 - 2022/07/12
+- enh: install: better error detection
+- fix: cleanup-guest-key-access: use cache for performance
+- fix: performance issues introduced by effab4a
+
 ## v3.09.00-rc2 - 2022/07/05
 - enh: MFA: specify account name in message
 - enh: move some code from get_hashes_list() to a new get_password_file()
