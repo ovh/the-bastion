@@ -15,7 +15,16 @@ testsuite_accountinfo()
     # create another target account we'll use for accountInfo
     success a0_create_a2 $a0 --osh accountCreate --always-active --account $account2 --uid $uid2 --public-key "\"$(cat $account2key1file.pub)\"" --comment "\"'this is a comment'\""
     json .error_code OK .command accountCreate .value null
+
+    # create a third account with a ttl
+    success a0_create_a3 $a0 --osh accountCreate --always-active --account $account3 --uid $uid3 --public-key "\"$(cat $account3key1file.pub)\"" --ttl 15s
+    json .error_code OK .command accountCreate .value null
+
     revoke accountCreate
+
+    # check that account3 can connect during their TTL
+    success a3_ttl_connect $a3 --osh info
+    json .error_code OK
 
     # grant account0 as admin
     success set_a0_as_admin $r0 "\". $opt_remote_basedir/lib/shell/functions.inc; add_user_to_group_compat $account0 osh-admin\""
@@ -27,6 +36,10 @@ testsuite_accountinfo()
     # grant accountInfo to a0 and a1
     success a0_grant_a0_accountinfo $a0 --osh accountGrantCommand --command accountInfo --account $account0
     success a0_grant_a1_accountinfo $a0 --osh accountGrantCommand --command accountInfo --account $account1
+
+    # check that account3 info has the ttl in it
+    success a1_info_a3_ttl $a1 --osh accountInfo --account $account3
+    json .error_code OK .value.is_ttl_expired 0
 
     # a0 should see basic info about a2
     success a0_accountinfo_a2_basic $a0 --osh accountInfo --account $account2
@@ -41,7 +54,7 @@ testsuite_accountinfo()
     json .value.ingress_piv_enforced 0 .value.always_active 1 .value.creation_information.by "$account0"
     json .value.creation_information.comment "this is a comment"
     json .value.already_seen_before 0 .value.last_activity null
-    json .value.max_inactive_days null
+    json .value.max_inactive_days null .value.is_ttl_expired 0 .value.ttl_timestamp null
     if [ "$OS_FAMILY" = Linux ]; then
         json .value.password.date_changed $(date +%Y-%m-%d)
     fi
@@ -105,10 +118,19 @@ testsuite_accountinfo()
 
     revoke accountModify
 
+    # check that account3 can no longer connect due to their TTL
+    run a3_ttl_connect_no $a3 --osh info
+    retvalshouldbe 121
+    contain 'TTL has expired'
+
+    success a1_info_a3_ttl_no $a1 --osh accountInfo --account $account3
+    json .error_code OK .value.is_ttl_expired 1
+
     # delete account1 & account2
     grant accountDelete
     success a0_delete_a1 $a0 --osh accountDelete --account $account1 --no-confirm
     success a0_delete_a2 $a0 --osh accountDelete --account $account2 --no-confirm
+    success a0_delete_a3 $a0 --osh accountDelete --account $account3 --no-confirm
     success a0_delete_a4 $a0 --osh accountDelete --account $account4 --no-confirm
     revoke accountDelete
 }

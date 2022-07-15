@@ -278,6 +278,47 @@ sub is_account_nonexpired {
     return R('ERR_INTERNAL_ERROR');
 }
 
+sub is_account_ttl_nonexpired {
+    my %params     = @_;
+    my $account    = $params{'account'};
+    my $sysaccount = $params{'sysaccount'};
+    my $fnret;
+
+    if (!$sysaccount || !$account) {
+        return R('ERR_MISSING_PARAMETER', msg => "Missing a 'sysaccount' or 'account' parameter");
+    }
+
+    $fnret = OVH::Bastion::account_config(account => $sysaccount, key => "account_ttl");
+    if ($fnret) {
+        my $ttl = $fnret->value;
+        if ($ttl !~ /^[0-9]+$/) {
+            warn_syslog("Invalid TTL value '$ttl' for account '$sysaccount'");
+            return R('ERR_INVALID_TTL', msg => "Invalid TTL configuration, please check with an administrator");
+        }
+
+        $fnret = OVH::Bastion::account_config(account => $sysaccount, key => "creation_timestamp");
+        my $created = $fnret->value;
+        if ($created !~ /^[0-9]+$/) {
+            warn_syslog("Invalid account creation time '$created' for account '$sysaccount'");
+            return R('ERR_INVALID_TTL', msg => "Invalid TTL configuration, please check with an administrator");
+        }
+
+        my $expiryTime = $created + $ttl;
+        if ($expiryTime < time()) {
+            $fnret = OVH::Bastion::duration2human(seconds => time() - $expiryTime);
+            return R(
+                'KO_TTL_EXPIRED',
+                msg   => "Account TTL has expired since " . $fnret->value->{'human'},
+                value => {expiry_time => $expiryTime, details => $fnret->value}
+            );
+        }
+
+        $fnret = OVH::Bastion::duration2human(seconds => $expiryTime - time());
+        return R('OK_TTL_VALID', value => {expiry_time => $expiryTime, details => $fnret->value});
+    }
+    return R('OK_NO_TTL');
+}
+
 # Check whether a user is still active, if this feature has been enabled in the config
 sub is_account_active {
     my %params  = @_;

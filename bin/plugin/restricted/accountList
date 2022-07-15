@@ -105,6 +105,16 @@ foreach my $account (sort keys %$accounts) {
     }
 
     if ($audit) {
+        $fnret = OVH::Bastion::is_account_ttl_nonexpired(sysaccount => $account, account => $account);
+        $states{'is_ttl_expired'} = undef;
+        if ($fnret->is_ok) {
+            $states{'is_ttl_expired'} = 0;
+        }
+        elsif ($fnret->is_ko) {
+            $states{'is_ttl_expired'}      = 1;
+            $states{'ttl_expired_details'} = $fnret->value->{'details'};
+        }
+
         $fnret = OVH::Bastion::is_account_nonexpired(sysaccount => $account);
         $states{'is_expired'} = undef;
         if ($fnret->is_ok) {
@@ -140,7 +150,10 @@ foreach my $account (sort keys %$accounts) {
             }
         }
 
-        $states{'can_connect'} = ($states{'is_active'} && !$states{'is_expired'}) ? 1 : 0;
+        $states{'can_connect'} = 1;
+        $states{'can_connect'} = 0 if (!defined $states{'is_active'} || $states{'is_active'} == 0);
+        $states{'can_connect'} = 0 if (!defined $states{'is_expired'} || $states{'is_expired'} == 0);
+        $states{'can_connect'} = 0 if (!defined $states{'is_ttl_expired'} || $states{'is_ttl_expired'} == 0);
 
         $states{'mfa_password_required'} = OVH::Bastion::is_user_in_group(
             user  => $account,
@@ -202,11 +215,12 @@ foreach my $account (sort keys %$accounts) {
         push @mfaTOTP, 'bypass'   if $states{'mfa_totp_bypass'};
 
         osh_info sprintf(
-            "%-18s %6d active:%-12s expired:%-12s can_connect:%-12s already_seen:%-12s mfa_password:%-25s mfa_totp:%-25s pam_bypass:%-12s pubkey_auth_optional:%-12s pass_status:%-15s pass_changed:%-10s pass_min_days:%-3d pass_max_days:%-3d pass_warn_days:%-3d  %s\n",
+            "%-18s %6d active:%-12s expired:%-12s ttl_expired:%-12s can_connect:%-12s already_seen:%-12s mfa_password:%-25s mfa_totp:%-25s pam_bypass:%-12s pubkey_auth_optional:%-12s pass_status:%-15s pass_changed:%-10s pass_min_days:%-3d pass_max_days:%-3d pass_warn_days:%-3d  %s\n",
             $account,
             $accounts->{$account}{'uid'},
             tristate2str($states{'is_active'}),
-            tristate2str($states{'is_expired'}, 1),
+            tristate2str($states{'is_expired'},     1),
+            tristate2str($states{'is_ttl_expired'}, 1),
             tristate2str($states{'can_connect'}),
             tristate2str($states{'already_seen_before'}),
             @mfaPassword ? colored(join(',', @mfaPassword), 'green') : colored('-', 'blue'),
