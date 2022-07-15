@@ -22,6 +22,10 @@ Ping a remote host from the bastion
 
    Number of pings to send (default: infinite)
 
+.. option:: -s SIZE    
+
+   Specify the packet size to send
+
 .. option:: -t TTL     
 
    TTL to set in the ICMP packet (default: OS dependent)
