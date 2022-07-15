@@ -330,7 +330,6 @@ if [ "${opt[regen-hostkeys]}" = 1 ] ; then
     action_done
 
     action_doing "Restart sshd"
-    set +e
     ret=-1
     if [ -e /etc/rc.d/sshd ] ; then
         /etc/rc.d/sshd restart; ret=$?
@@ -342,7 +341,6 @@ if [ "${opt[regen-hostkeys]}" = 1 ] ; then
     else
         action_error "You might want to check if the sshd config is valid!"
     fi
-    set -e
 fi
 
 if [ "$nothing" = 0 ]; then
@@ -875,9 +873,7 @@ if [ "$nothing" = 0 ]; then
         fi
         action_detail "$account"
         _before_change=$(id "$account")
-        set +e
         "$basedir/bin/admin/grant-all-restricted-commands-to.sh" "$account" >/dev/null; ret=$?
-        set -e
         _after_change=$(id "$account")
         if [ "$ret" -ne 0 ]; then
             action_detail "... failed!"
