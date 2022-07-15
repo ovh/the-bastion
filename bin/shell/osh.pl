@@ -175,25 +175,9 @@ if (-e '/home/allowkeeper/maintenance') {
 # Does the user have a TTL, and if yes, has it expired?
 #
 
-$fnret = OVH::Bastion::account_config(account => $self, key => "account_ttl");
-if ($fnret) {
-    if ($fnret->value !~ /^\d+$/) {
-        main_exit(OVH::Bastion::EXIT_TTL_EXPIRED,
-            "ttl_expired", "Your TTL has an invalid value, access denied. Check with an administrator.");
-    }
-    my $ttl = $fnret->value;
-
-    $fnret = OVH::Bastion::account_config(account => $self, key => "creation_timestamp");
-    if ($fnret->value !~ /^\d+$/) {
-        main_exit(OVH::Bastion::EXIT_TTL_EXPIRED, "ttl_expired",
-            "Your account creation date has an invalid value, and you have a TTL set, access denied. Check with an administrator."
-        );
-    }
-    my $created = $fnret->value;
-
-    if ($created + $ttl < time()) {
-        main_exit(OVH::Bastion::EXIT_TTL_EXPIRED, "ttl_expired", "Sorry $self, your account has expired.");
-    }
+$fnret = OVH::Bastion::is_account_ttl_nonexpired(account => $self, sysaccount => $sysself);
+if (!$fnret) {
+    main_exit(OVH::Bastion::EXIT_TTL_EXPIRED, "ttl_expired", "Sorry $self, acccess denied (" . $fnret->msg . ")");
 }
 
 #

@@ -127,13 +127,40 @@ else {
 
 if (OVH::Bastion::is_auditor(account => $self)) {
 
+    $fnret = OVH::Bastion::is_account_ttl_nonexpired(sysaccount => $sysaccount, account => $account);
+    if ($fnret->is_ok && $fnret->err eq 'OK_NO_TTL') {
+        osh_info "This account has " . colored('no TTL set', 'green');
+        $ret{'is_ttl_expired'} = 0;
+    }
+    elsif ($fnret->is_ok && $fnret->err eq 'OK_TTL_VALID') {
+        osh_info "This account "
+          . colored('TTL is still valid', 'green')
+          . " (for "
+          . $fnret->value->{'details'}{'human'} . ")";
+        $ret{'is_ttl_expired'} = 0;
+    }
+    elsif ($fnret->is_ko) {
+        osh_info "This account "
+          . colored('TTL is EXPIRED', 'red')
+          . " (since "
+          . $fnret->value->{'details'}{'human'} . ")";
+        $canConnect = 0;
+        $ret{'is_ttl_expired'} = 1;
+    }
+    else {
+        osh_warn "Error getting account TTL expiration info (" . $fnret->msg . ")";
+    }
+    $ret{'ttl_timestamp'} = ($fnret && $fnret->value) ? $fnret->value->{'expiry_time'} : undef;
+
     $fnret = OVH::Bastion::is_account_nonexpired(sysaccount => $sysaccount, remoteaccount => $remoteaccount);
     if ($fnret->is_ok) {
-        osh_info "This account is " . colored('not expired', 'green');
+        osh_info "This account has seen recent-enough activity to " . colored('not be activity-expired', 'green');
         $ret{'is_expired'} = 0;
     }
     elsif ($fnret->is_ko) {
-        osh_info "This account is " . colored('EXPIRED', 'red');
+        osh_info "This account is "
+          . colored('EXPIRED', 'red')
+          . " activity-wise (it hasn't been seen for a long time)";
         $canConnect = 0;
         $ret{'is_expired'} = 1;
     }
