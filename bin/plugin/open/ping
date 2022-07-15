@@ -24,6 +24,7 @@ Usage: --osh SCRIPT_NAME [--host HOST] [-c COUNT] [-s PKTSZ] [-t TTL] [-w TIMEOU
 
   --host HOST  Remote host to ping
   -c COUNT     Number of pings to send (default: infinite)
+  -s SIZE      Specify the packet size to send
   -t TTL       TTL to set in the ICMP packet (default: OS dependent)
   -w TIMEOUT   Exit unconditionally after this amount of seconds (default & max: 86400)
 EOF
