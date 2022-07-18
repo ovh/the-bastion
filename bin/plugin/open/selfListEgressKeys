@@ -12,7 +12,7 @@ use OVH::Bastion::Plugin qw( :DEFAULT help );
 
 my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv     => \@ARGV,
-    header   => "your account's public ingress keys",
+    header   => "your account's public egress keys",
     options  => {},
     helptext => <<'EOF',
 List the public egress keys of your account
