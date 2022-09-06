@@ -36,7 +36,7 @@ you can just use :doc:`/plugins/open/selfAddIngressKey` to add the key to your b
 As a quick guidance, on a Yubikey you can usually generate a key in the proper slot this way,
 after you've setup a management key:
 
-.. code:: shell
+.. code-block:: shell
    :emphasize-lines: 1
 
    yubico-piv-tool --key=YOUR_MGMT_KEY --action generate --pin-policy always --touch-policy never --slot 9a -o -
@@ -52,7 +52,7 @@ as usual, but also the attestation certificate and the key certificate.
 Step by step details on how to get those are out of the scope of this document,
 but again as a quick guidance, on a Yubikey you can usually get those this way:
 
-.. code:: shell
+.. code-block:: shell
    :emphasize-lines: 1,2,3
 
    yubico-piv-tool --action=read-certificate --slot=9a --key-format=SSH
@@ -61,7 +61,7 @@ but again as a quick guidance, on a Yubikey you can usually get those this way:
 
 When you'll have added your key, you'll see a few more details than usual:
 
-.. code:: shell
+.. code-block:: console
    :emphasize-lines: 1
 
    bssh --osh selfAddIngressKey --piv
@@ -158,7 +158,7 @@ If you enable the PIV policy globally or on several accounts, you'll soon find o
 or lose their PIV-enabled hardware tokens, effectively locking them out of the bastion.
 There is a *temporary grace period* feature you can use to handle such cases nicely:
 
-.. code:: shell
+.. code-block:: console
    :emphasize-lines: 1
 
    bssh --osh accountPIV --account lechuck --policy grace --ttl 48h
