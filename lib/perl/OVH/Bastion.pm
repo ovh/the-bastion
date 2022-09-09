@@ -406,6 +406,7 @@ sub json_output {    ## no critic (ArgUnpacking)
     my $force_default = $params{'force_default'};
     my $no_delimiters = $params{'no_delimiters'};
     my $command       = $params{'command'} || $ENV{'PLUGIN_NAME'};
+    my $filehandle    = $params{'filehandle'} || *STDOUT;
 
     my $JsonObject = JSON->new->utf8;
     $JsonObject = $JsonObject->convert_blessed(1);
@@ -419,14 +420,14 @@ sub json_output {    ## no critic (ArgUnpacking)
     $encoded_json =~ s/JSON_(START|OUTPUT|END)/JSON__$1/g;
 
     if ($no_delimiters) {
-        print $encoded_json;
+        print {$filehandle} $encoded_json;
     }
     elsif ($ENV{'PLUGIN_JSON'} eq 'GREP' and not $force_default) {
         $encoded_json =~ tr/\r\n/ /;
-        print "\nJSON_OUTPUT=$encoded_json\n";
+        print {$filehandle} "\nJSON_OUTPUT=$encoded_json\n";
     }
     else {
-        print "\nJSON_START\n$encoded_json\nJSON_END\n";
+        print {$filehandle} "\nJSON_START\n$encoded_json\nJSON_END\n";
     }
     return;
 }
