@@ -58,24 +58,11 @@ sub execute {
     my $system           = $params{'system'};           # if set to 1, will use system() instead of open3(), needed for some plugins
 
     $noisy_stderr = $noisy_stdout = 1 if ($ENV{'PLUGIN_DEBUG'} or $is_binary);
-
-    my $readsize = $is_binary ? 16384 : 1;              # XXX needs to be enhanced to be > 1 even for non-binary
     my $fnret;
-
-=cut only to debug slow calls
-    if (not $is_binary)
-    {
-        require Carp;
-        open(SLOW, '>>', '/dev/shm/slowexecute');
-        print SLOW Carp::longmess(join('^',@$cmd))."\n\n";
-        close(SLOW);
-    }
-=cut
 
     require Scalar::Util;
     foreach (@$cmd) {
         if (Scalar::Util::tainted($_) && /(.+)/) {
-
             # to be able to warn under -T; untaint it. we're going to crash right after anyway.
             require Carp;
             warn(Carp::longmess("would exec <" . join('^', @$cmd) . "> but param '$1' is tainted!"));
@@ -109,13 +96,15 @@ sub execute {
     osh_debug("waiting for child PID $pid to complete...");
 
     my %output = ();
-    my %lineBuffer;
-    my $currentActive           = undef;
-    my $currently_in_json_block = 0;
+    my $stderr_output;
+    my $stdout_output;
+    my $stdout_buffer;
+    my $current_fh;
+    my $currently_in_json_block;
     my %bytesnb;
 
     # maximum number of code_info() to call, to avoid flooding the logs
-    my $infoLimit = 5;
+    my $info_limit = 5;
 
     # always monitor our child stdout and stderr
     my $select = IO::Select->new($child_stdout, $child_stderr);
@@ -140,6 +129,36 @@ sub execute {
         $select->add(\*STDIN);
     }
 
+    # our own version of syswrite to handle auto-retry if interrupted by a signal
+    my $syswrite_ensure = sub {
+        my ($_nbread, $_FH, $_name, $_noisy_ref, $_buffer, $_info_limit) = @_;
+        return if (!$_nbread || !$_buffer);
+
+        my $offset = 0;
+        while ($offset < $_nbread) {
+            my $written = syswrite $_FH, $_buffer, 65535, $offset;
+            if (not defined $written) {
+                # is the fd still open? (maybe we got a SIGPIPE or a SIGHUP)
+                # don't use tell() here, we use syseek() for unbuffered i/o,
+                # note that if we're at the position "0", it's still true (see doc).
+                my $previousError = $!;
+                if (!sysseek($_FH, 0, SEEK_CUR)) {
+                    info_syslog("execute(): error while syswriting($previousError/$!) on $_name, "
+                          . "the filehandle is closed, will no longer attempt to write to it")
+                      if $$_info_limit-- > 0;
+                    $$_noisy_ref = 0 if $_noisy_ref;
+                }
+                else {
+                    # oww, abort writing for this cycle. as this might be user-induced, use info instead of warn
+                    info_syslog("execute(): error while syswriting($previousError) on $_name, " . "aborting this cycle")
+                      if $$_info_limit-- > 0;
+                }
+                last;
+            }
+            $offset += $written;
+        }
+    };
+
     # then, while we still have fh to monitor
     while ($select->count() > 1 || ($select->count() == 1 && !$select->exists(\*STDIN))) {
 
@@ -150,29 +169,27 @@ sub execute {
         if (@ready) {
 
             # guarantee we're still reading this fh while it has something to say
-            $currentActive = $ready[0];
-            my $subSelect = IO::Select->new($currentActive);
+            $current_fh = $ready[0];
+            my $sub_select = IO::Select->new($current_fh);
 
             # can_read(0) because we don't need a timeout: we KNOW there's something to read on this fh
-            while ($subSelect->can_read(0)) {
+            while ($sub_select->can_read(0)) {
                 my $buffer;
-                my $nbread = sysread $currentActive, $buffer, $readsize;
+                my $nbread = sysread $current_fh, $buffer, 65535;
 
-                # if size 0, it means it's an EOF, if undef, it's an error
-                if (not $nbread) {
+                # undef mears error, we'll log to syslog and close. as this might be user-induced, use info instead of warn
+                if (not defined $nbread) {
+                    # awwww, not cool at all
+                    info_syslog("execute(): error while sysreading($!), closing fh!");
+                }
 
-                    # error, we'll log to syslog and close. as this might be user-induced, use info instead of warn
-                    if (not defined $nbread) {
-
-                        # awwww, not cool at all
-                        info_syslog("execute(): error while sysreading($!), closing fh!");
-                    }
-
+                # if size 0, it means it's an EOF
+                elsif ($nbread == 0) {
                     # we got an EOF on this fh, remove it from the monitor list
-                    $select->remove($currentActive);
+                    $select->remove($current_fh);
 
                     # if this is an EOF on our own STDIN, we need to close our child's STDIN
-                    if ($currentActive->fileno == STDIN->fileno) {
+                    if ($current_fh->fileno == STDIN->fileno) {
                         close(STDIN);           # we got eof on it, so close it
                         close($child_stdin);    # and close our child stdin
                     }
@@ -183,118 +200,61 @@ sub execute {
                 }
 
                 # we got data, is this our child's stderr ?
-                if ($currentActive->fileno == $child_stderr->fileno) {
+                elsif ($current_fh->fileno == $child_stderr->fileno) {
                     $bytesnb{'stderr'} += $nbread;
+                    $stderr_output .= $buffer if !$is_binary;
 
                     # syswrite on our own STDERR what we received
                     if ($noisy_stderr) {
-                        my $offset = 0;
-                        while ($offset < $nbread) {
-                            my $written = syswrite STDERR, $buffer, $readsize, $offset;
-                            if (not defined $written) {
-
-                                # is the fd still open? (maybe we got a SIGPIPE or a SIGHUP)
-                                # don't use tell() here, we use syseek() for unbuffered i/o,
-                                # note that if we're at the position "0", it's still true (see doc).
-                                my $previousError = $!;
-                                if (!sysseek(STDERR, 0, SEEK_CUR)) {
-                                    info_syslog(
-                                        "execute(): error while syswriting($previousError/$!) on stderr, the filehandle is closed, will no longer attempt to write to it"
-                                    ) if $infoLimit-- > 0;
-                                    $noisy_stderr = 0;
-                                }
-                                else {
-                                    # oww, abort writing for this cycle. as this might be user-induced, use info instead of warn
-                                    info_syslog(
-                                        "execute(): error while syswriting($previousError) on stderr, aborting this cycle"
-                                    ) if $infoLimit-- > 0;
-                                }
-                                last;
-                            }
-                            $offset += $written;
-                        }
-                    }
-
-                    # mimic line-based reading (for debug, and also data will be returned to caller)
-                    if (not $is_binary) {
-
-                        # if this is a newline, push it to our output array
-                        if ($buffer eq $/) {
-                            osh_debug("stderr($pid): " . $lineBuffer{'stderr'}) unless $noisy_stderr; # avoid double print
-                            push @{$output{'stderr'}}, $lineBuffer{'stderr'};
-                            $lineBuffer{'stderr'} = '';
-                        }
-
-                        # or push it to our temp line buffer
-                        else {
-                            $lineBuffer{'stderr'} .= $buffer;
-                        }
+                        $syswrite_ensure->($nbread, *STDERR, 'stderr', \$noisy_stderr, $buffer, \$info_limit);
                     }
                 }
 
                 # we got data, is this our child's stdout ?
-                elsif ($currentActive->fileno == $child_stdout->fileno) {
+                elsif ($current_fh->fileno == $child_stdout->fileno) {
                     $bytesnb{'stdout'} += $nbread;
+                    $stdout_output .= $buffer if !$is_binary;
 
-                    # syswrite on our own STDOUT what we received
-                    if ($noisy_stdout and not $is_helper) {
-
-                        # the "if is_helper" case is handled below per-line
-                        my $offset = 0;
-                        while ($offset < $nbread) {
-                            my $written = syswrite STDOUT, $buffer, $readsize, $offset;
-                            if (not defined $written) {
-
-                                # is the fd still open? (maybe we got a SIGPIPE or a SIGHUP)
-                                # don't use tell() here, we use syseek() for unbuffered i/o,
-                                # note that if we're at the position "0", it's still true (see doc).
-                                my $previousError = $!;
-                                if (!sysseek(STDOUT, 0, SEEK_CUR)) {
-                                    info_syslog(
-                                        "execute(): error while syswriting($previousError/$!) on stdout, the filehandle is closed, will no longer attempt to write to it"
-                                    ) if $infoLimit-- > 0;
-                                    $noisy_stdout = 0;
-                                }
-                                else {
-                                    # oww, abort writing for this cycle. as this might be user-induced, use info instead of warn.
-                                    info_syslog(
-                                        "execute(): error while syswriting($previousError) on stdout, aborting this cycle"
-                                    ) if $infoLimit-- > 0;
-                                }
-                                last;
-                            }
-                            $offset += $written;
-                        }
-                    }
-
-                    # mimic line-based reading (for debug, and also data will be returned to caller)
-                    if (not $is_binary) {
-                        if ($buffer eq $/) {
-                            osh_debug("stdout($pid): " . $lineBuffer{'stdout'}) unless $noisy_stdout; # avoid double print
-                            push @{$output{'stdout'}}, $lineBuffer{'stdout'};
-                            if ($noisy_stdout and $is_helper) {
-
-                                # in that case, we didn't noisy print each char, we wait for $/
-                                # then print it IF this is not the result_from_helper (json)
-                                if ($lineBuffer{'stdout'} eq 'JSON_START') {
-                                    $currently_in_json_block = 1;
-                                }
-                                if (not $currently_in_json_block) {
-                                    print $lineBuffer{'stdout'} . $/;
-                                }
-                                if ($currently_in_json_block and $lineBuffer{'stdout'} eq 'JSON_END') {
-                                    $currently_in_json_block = 0;
-                                }
-                            }
-                            $lineBuffer{'stdout'} = '';
+                    # syswrite on our own STDOUT what we received, if asked to do so
+                    # is $is_helper, then we need to filter out the HELPER_RESULT before printing,
+                    # so handle that further below
+                    if ($noisy_stdout) {
+                        if (!$is_helper) {
+                            $syswrite_ensure->($nbread, *STDOUT, 'stdout', \$noisy_stdout, $buffer, \$info_limit);
                         }
                         else {
-                            $lineBuffer{'stdout'} .= $buffer;
+                            # if this is a helper, hide the HELPER_RESULT from noisy_stdout
+                            foreach my $char (split //, $buffer) {
+                                if ($char eq $/) {
+                                    # in that case, we didn't noisy print each char, we wait for $/
+                                    # then print it IF this is not the result_from_helper (json)
+                                    if ($stdout_buffer eq 'JSON_START') {
+                                        $currently_in_json_block = 1;
+                                    }
+                                    if (not $currently_in_json_block) {
+                                        $stdout_buffer .= $/;
+                                        $syswrite_ensure->(
+                                            length($stdout_buffer), *STDOUT, 'stdout', \$noisy_stdout, $stdout_buffer,
+                                            \$info_limit
+                                        );
+                                    }
+                                    if ($currently_in_json_block and $stdout_buffer eq 'JSON_END') {
+                                        $currently_in_json_block = 0;
+                                    }
+                                    $stdout_buffer = '';
+                                }
+                                else {
+                                    $stdout_buffer .= $char;
+                                }
+                            }
+                            # if we still have data in our local buffer, flush it
+                            $syswrite_ensure->(
+                                length($stdout_buffer), *STDOUT, 'stdout', \$noisy_stdout, $stdout_buffer, \$info_limit
+                            ) if $stdout_buffer;
                         }
                     }
 
                     if ($max_stdout_bytes && $bytesnb{'stdout'} >= $max_stdout_bytes) {
-
                         # caller got enough data, close all our child channels
                         $select->remove($child_stdout);
                         $select->remove($child_stderr);
@@ -307,28 +267,21 @@ sub execute {
                             $select->remove(\*STDIN);
                             close(STDIN);
                         }
-
-                        # don't forget to push any pending data to our output buffer
-                        push @{$output{'stdout'}}, $lineBuffer{'stdout'};
                     }
                 }
 
                 # we got data, is this our stdin ?
-                elsif ($currentActive->fileno == STDIN->fileno) {
+                elsif ($current_fh->fileno == STDIN->fileno) {
                     $bytesnb{'stdin'} += $nbread;
 
                     # we just write the data to our child's own stdin
-                    syswrite $child_stdin, $buffer;
+                    $syswrite_ensure->($nbread, $child_stdin, 'child_stdin', undef, $buffer, \$info_limit);
                 }
 
                 # wow, we got data from an unknown fh ... it's not possible
                 else {
-                    # ... but just in case:
-                    require Data::Dumper;
-                    osh_warn("unknown fh: " . Data::Dumper::Dumper($currentActive) . " with char <$buffer>");
-                    osh_warn(Data::Dumper::Dumper($child_stdout));
-                    osh_warn(Data::Dumper::Dumper($child_stderr));
-                    osh_warn(Data::Dumper::Dumper(\*STDIN));
+                    warn_syslog("Got data from an unknown fh ($current_fh) with $nbread bytes of data");
+                    last;
                 }
             }
 
@@ -350,8 +303,8 @@ sub execute {
         value => {
             sysret     => $child_exit_status >> 8,
             sysret_raw => $child_exit_status,
-            stdout     => $output{stdout},
-            stderr     => $output{stderr},
+            stdout     => [split($/, $stdout_output)],
+            stderr     => [split($/, $stderr_output)],
             bytesnb    => \%bytesnb,
             status     => $fnret->value->{'status'},
             coredump   => $fnret->value->{'coredump'},
@@ -372,13 +325,11 @@ sub execute_simple {
     my %params = @_;
     my $cmd    = $params{'cmd'};    # command to execute, must be an array ref (with possible parameters)
     my $must_succeed = $params{'must_succeed'}; # if the executed command returns a non-zero exit value, turn OK_NON_ZERO_EXIT to ERR_NON_ZERO_EXIT
-
     my $fnret;
 
     require Scalar::Util;
     foreach (@$cmd) {
         if (Scalar::Util::tainted($_) && /(.+)/) {
-
             # to be able to warn under -T; untaint it. we're going to crash right after anyway.
             require Carp;
             warn(Carp::longmess("would exec <" . join('^', @$cmd) . "> but param '$1' is tainted!"));
@@ -400,9 +351,8 @@ sub execute_simple {
     my $output;
     while (1) {
         my $buffer;
-        my $nbread = read $child_out, $buffer, 16384;
+        my $nbread = read $child_out, $buffer, 65535;
         if (not defined $nbread) {
-
             # oww, abort reading
             warn("execute_simple(): error while reading from command ($!), aborting");
             last;
@@ -445,7 +395,6 @@ sub result_from_helper {
         chomp;
         if ($state == 1) {
             if ($line eq 'JSON_START') {
-
                 # will now capture data
                 @json  = ();
                 $state = 2;
@@ -453,7 +402,6 @@ sub result_from_helper {
         }
         elsif ($state == 2) {
             if ($line eq 'JSON_END') {
-
                 # done capturing data, might still see a new JSON_START however
                 $state = 1;
             }
@@ -463,10 +411,12 @@ sub result_from_helper {
             }
         }
     }
+
     if (not @json) {
         return R('ERR_HELPER_RETURN_EMPTY',
             msg => "The helper didn't return any data, maybe it crashed, please report to your sysadmin!");
     }
+
     my $json_decoded;
     eval { $json_decoded = decode_json(join("\n", @json)); };
     if ($@) {
