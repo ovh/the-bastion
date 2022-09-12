@@ -1,3 +1,12 @@
+## v3.09.00 - 2022/09/12
+- enh: tests: faster perl-check script
+- fix: accountInfo wasn't showing TTL account expiration #329
+- fix: remove spurious set +e/-e after commit bdea34c
+- fix: accountUnlock: add missing check_spurious_args and no_auto_abbrev
+- fix: doc: use code-blocks:: instead of code::
+- doc: add a missing parameter in ping's help
+- chore: selfListEgressKeys: fix typo
+
 ## v3.09.00-rc3 - 2022/07/12
 - enh: install: better error detection
 - fix: cleanup-guest-key-access: use cache for performance
