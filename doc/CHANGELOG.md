@@ -1,4 +1,4 @@
-## v3.09.00 - 2022/09/12
+## v3.09.00 - 2022/09/21
 - enh: tests: faster perl-check script
 - fix: accountInfo wasn't showing TTL account expiration #329
 - fix: remove spurious set +e/-e after commit bdea34c
