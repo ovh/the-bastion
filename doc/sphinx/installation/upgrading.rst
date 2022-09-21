@@ -27,7 +27,7 @@ See the ``--help`` for a more fine-grained upgrade path if needed.
 Version-specific upgrade instructions
 =====================================
 
-v3.09.00 - 2022/07/xx
+v3.09.00 - 2022/09/21
 *********************
 
 This version has changes around the satellite system scripts that should be reviewed:
