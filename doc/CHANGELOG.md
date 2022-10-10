@@ -1,3 +1,7 @@
+## v3.09.01 - 2022/10/10
+- fix: ``batch``: don't attempt to read if stdin is closed
+- enh: make ``execute()`` way WAY faster
+
 ## v3.09.00 - 2022/09/21
 - enh: tests: faster perl-check script
 - fix: accountInfo wasn't showing TTL account expiration #329
