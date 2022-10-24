@@ -174,6 +174,7 @@ EOS
     )
     account1key1fp=$(get_json | $jq '.value.keys[0].fingerprint')
 
+    ignorecodewarn "possible deadlock"
     script  flood   $a1 -osh selfAddIngressKey '<' /dev/urandom
     retvalshouldbe 0
 
