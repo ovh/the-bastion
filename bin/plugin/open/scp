@@ -103,11 +103,8 @@ if (not $host) {
 }
 
 if (not $ip) {
-    # use STDERR because stdout is eaten by scp itself
-    print STDERR "\nscp: Sorry, couldn't resolve the host you specified ('$host'), aborting.\n";
-
     # note that the calling-side scp will not passthrough this exit code, but most probably "1" instead.
-    exit(OVH::Bastion::EXIT_HOST_NOT_FOUND);
+    osh_exit 'ERR_HOST_NOT_FOUND', "Sorry, couldn't resolve the host you specified ('$host'), aborting.";
 }
 
 my $machine = $ip;
@@ -138,9 +135,7 @@ $fnret = OVH::Bastion::is_access_granted(
     details => 1
 );
 if (not $fnret) {
-    my $msg = "Sorry, but you don't seem to have access to $machine";
-    print STDERR ">>>" . $msg . "\n";
-    osh_exit 'ERR_ACCESS_DENIED', $msg;
+    osh_exit 'ERR_ACCESS_DENIED', "Sorry, but you don't seem to have access to $machine";
 }
 
 # get the keys we would try
@@ -163,9 +158,8 @@ $fnret = OVH::Bastion::is_access_granted(
     details        => 1
 );
 if (not $fnret) {
-    my $msg = "Sorry, but even if you have ssh access to $machine, you still need to be granted specifically for scp";
-    print STDERR ">>>" . $msg . "\n";
-    osh_exit 'ERR_ACCESS_DENIED', $msg;
+    osh_exit 'ERR_ACCESS_DENIED',
+      "Sorry, but even if you have ssh access to $machine, you still need to be granted specifically for scp";
 }
 
 # get the keys we would try too
