@@ -12,6 +12,12 @@ use OVH::Result;
 use OVH::Bastion;
 use OVH::Bastion::Plugin qw( :DEFAULT );
 
+# stdout is used by scp, so ensure we output everything through stderr
+local $ENV{'FORCE_STDERR'} = 1;
+
+# don't output fancy stuff, this can get digested by scp and we get garbage output
+local $ENV{'PLUGIN_QUIET'} = 1;
+
 my ($scpCmd);
 my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,
@@ -97,7 +103,6 @@ if (not $host) {
 }
 
 if (not $ip) {
-
     # use STDERR because stdout is eaten by scp itself
     print STDERR "\nscp: Sorry, couldn't resolve the host you specified ('$host'), aborting.\n";
 
@@ -117,9 +122,8 @@ my $decoded = $scpCmd;
 $decoded =~ s/(?<!#)#(?!#)/ /g;
 $decoded =~ s/##/#/g;
 if ($decoded !~ /^(?:scp )(?:.*)-([tf]) (?:.+)$/) {
-
     # security
-    die "not scp ($decoded)";
+    osh_exit 'ERR_SECURITY_VIOLATION', "scp command format unrecognized";
 }
 my $userToCheck = $1 eq 't' ? '!scpupload' : '!scpdownload';    ## no critic (CaptureWithoutTest) ## false positive
 
@@ -194,22 +198,16 @@ foreach my $keyfile (keys %keys) {
 
 if (not $atleastonekey) {
     osh_exit('KO_ACCESS_DENIED',
-        "Sorry, you seem to have access through ssh and through scp but by different and distinct means (distinct keys). The intersection between your rights for ssh and for scp needs to be at least one."
-    );
+        "Sorry, you seem to have access through ssh and through scp but by different and distinct means (distinct keys)."
+          . " The intersection between your rights for ssh and for scp needs to be at least one.");
+}
+
+# basic mitigation for CVE-2020-15778
+if ($decoded =~ m{[\`\$\;><\|\&]}) {
+    osh_exit('ERR_SECURITY_VIOLATION', "Invalid characters detected, bailing out");
 }
 
 push @cmd, "--", $ip, $decoded;
-
-=cut attempt to be more secure than even standard scp, but don't bother ...
-my ($additionalParams,$remoteFile) = ($2,$3);
-
-push @cmd, 'scp';
-if (defined $additionalParams)
-{
-    push @cmd, split(/ /, $additionalParams);
-}
-push @cmd, '-t', "\Q$remoteFile\E";
-=cut
 
 print STDERR ">>> Hello $self, transferring your file through the bastion "
   . ($userToCheck eq '!scpupload' ? 'to' : 'from')
@@ -218,8 +216,7 @@ print STDERR ">>> Hello $self, transferring your file through the bastion "
 #print STDERR join('^', @cmd)."\n";
 $fnret = OVH::Bastion::execute(cmd => \@cmd, expects_stdin => 1, is_binary => 1);
 if ($fnret->err ne 'OK') {
-    print STDERR ">>> Error launching transfer: " . $fnret->msg . "\n";
-    exit OVH::Bastion::EXIT_PLUGIN_ERROR;
+    osh_exit 'ERR_TRANSFER_FAILED', "Error launching transfer: $fnret";
 }
 print STDERR ">>> Done, "
   . $fnret->value->{'bytesnb'}{'stdin'}
@@ -229,5 +226,7 @@ print STDERR ">>> Done, "
 if ($fnret->value->{'sysret'} != 0) {
     print STDERR ">>> On bastion side, scp exited with return code " . $fnret->value->{'sysret'} . ".\n";
 }
+
+# don't use osh_exit() to avoid getting a footer
 exit OVH::Bastion::EXIT_OK;
 
