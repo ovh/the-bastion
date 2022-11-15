@@ -1,3 +1,7 @@
+## v3.09.02 - 2022/11/15
+- fix: execute: rare race condition introduced in v3.09.01
+- fix: basic mitigation for scp's CVE-2020-15778 (upstream doesn't consider it a bug)
+
 ## v3.09.01 - 2022/10/10
 - fix: ``batch``: don't attempt to read if stdin is closed
 - enh: make ``execute()`` way WAY faster
