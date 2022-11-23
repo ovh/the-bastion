@@ -153,7 +153,7 @@ if [ "$type" = group ]; then
     if [ -z "$name" ]; then
         if [ "$action" = create ]; then
             action_doing "Regenerating all groups sudoers files from templates"
-            for group in $(getent group | cut -d: -f1 | grep -- '-gatekeeper$' | sed -e 's/-gatekeeper$//'); do
+            for group in $(getent group | cut -d: -f1 | grep -- '-gatekeeper$' | sed -e 's/-gatekeeper$//' | sort); do
                 manage_group_sudoers create "$group" || nbfailed=$((nbfailed + 1))
             done
         elif [ "$action" = delete ]; then
@@ -179,7 +179,7 @@ elif [ "$type" = account ]; then
     if [ -z "$name" ]; then
         if [ "$action" = create ]; then
             action_doing "Regenerating all accounts sudoers files from templates"
-            for account in $(getent passwd | grep ":$basedir/bin/shell/osh.pl$" | cut -d: -f1); do
+            for account in $(getent passwd | grep ":$basedir/bin/shell/osh.pl$" | cut -d: -f1 | sort); do
                 manage_account_sudoers create "$account"|| nbfailed=$((nbfailed + 1))
             done
         elif [ "$action" = delete ]; then
