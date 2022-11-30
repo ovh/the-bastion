@@ -197,7 +197,7 @@ if ($header) {
     elsif ($header =~ /ssh: connect to host \S+ port \d+: /) {
         push @comments, 'connection_error';
     }
-    elsif ($header =~ /disabled to avoid man-in-the-middle/) {
+    elsif ($header =~ /authentication is disabled to avoid man-in-the-middle attacks/) {
         push @comments, 'passauth_disabled';
 
         # be nice and explain to the user cf ticket BASTION-10
@@ -212,7 +212,7 @@ if ($header) {
     }
 
     # if strict host key checking is enabled, be nice and explain how to remove this error
-    if ($header =~ /strict checking/) {
+    if ($header =~ /you have requested strict checking/) {
         my $bastionName = OVH::Bastion::config('bastionName')->value;
         OVH::Bastion::osh_crit("BASTION SAYS: Connection has been blocked because of the hostkey mismatch on $ip.");
         OVH::Bastion::osh_crit(
