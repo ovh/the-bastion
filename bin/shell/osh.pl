@@ -145,7 +145,7 @@ if ($fnret) {
     ;                       # OK
 }
 elsif ($fnret->is_ko || ($activenessDenyOnFailure && $fnret->is_err)) {
-    main_exit OVH::Bastion::EXIT_ACCOUNT_INACTIVE, "account_inactive", "Your account is inactive, $self, sorry";
+    main_exit OVH::Bastion::EXIT_ACCOUNT_INACTIVE, "account_inactive", "Sorry $self, your account is inactive.";
 }
 else {
     $msg_to_print_delayed = $fnret->msg;
@@ -663,12 +663,12 @@ else {
 
 if ($telnet && !$config->{'telnetAllowed'}) {
     main_exit OVH::Bastion::EXIT_ACCESS_DENIED, 'telnet_denied',
-      "Sorry, the telnet protocol has been disabled by policy";
+      "Sorry $self, the telnet protocol has been disabled by policy";
 }
 
 if ($userKbdInteractive && !$config->{'keyboardInteractiveAllowed'}) {
     main_exit OVH::Bastion::EXIT_CONFLICTING_OPTIONS, 'kbd_interactive_denied',
-      "Sorry, the keyboard-interactive egress authentication scheme has been disabled by policy";
+      "Sorry $self, the keyboard-interactive egress authentication scheme has been disabled by policy";
 }
 $ENV{'OSH_KBD_INTERACTIVE'} = 1 if $userKbdInteractive; # useful for plugins that need to call ssh by themselves (for example to test a connection, i.e. groupAddServer)
 
@@ -728,13 +728,13 @@ if ($mfaPolicy ne 'disabled' && !grep { $osh_command eq $_ } qw{ selfMFASetupPas
 
     if (($mfaPolicy eq 'password-required' && !$hasMfaPasswordBypass) || $isMfaPasswordRequired) {
         main_exit(OVH::Bastion::EXIT_MFA_PASSWORD_SETUP_REQUIRED, 'mfa_password_setup_required',
-            "Sorry, but you need to setup the Multi-Factor Authentication before using this bastion, please use the `--osh selfMFASetupPassword' option to do so"
+            "Sorry $self, but you need to setup the Multi-Factor Authentication before using this bastion, please use the `--osh selfMFASetupPassword' option to do so"
         ) if (!$isMfaPasswordConfigured && !$remoteMfaPassword);
     }
 
     if (($mfaPolicy eq 'totp-required' && !$hasMfaTOTPBypass) || $isMfaTOTPRequired) {
         main_exit(OVH::Bastion::EXIT_MFA_TOTP_SETUP_REQUIRED, 'mfa_totp_setup_required',
-            "Sorry, but you need to setup the Multi-Factor Authentication before using this bastion, please use the `--osh selfMFASetupTOTP' option to do so"
+            "Sorry $self, but you need to setup the Multi-Factor Authentication before using this bastion, please use the `--osh selfMFASetupTOTP' option to do so"
         ) if !($isMfaTOTPConfigured && !$remoteMfaTOTP);
     }
 
@@ -744,7 +744,7 @@ if ($mfaPolicy ne 'disabled' && !grep { $osh_command eq $_ } qw{ selfMFASetupPas
         && !$remoteMfaValidated)
     {
         main_exit(OVH::Bastion::EXIT_MFA_ANY_SETUP_REQUIRED, 'mfa_any_setup_required',
-            "Sorry, but you need to setup the Multi-Factor Authentication before using this bastion, please use either the `--osh selfMFASetupPassword' or the `--osh selfMFASetupTOTP' option, at your discretion, to do so"
+            "Sorry $self, but you need to setup the Multi-Factor Authentication before using this bastion, please use either the `--osh selfMFASetupPassword' or the `--osh selfMFASetupTOTP' option, at your discretion, to do so"
         );
     }
 }
@@ -795,14 +795,16 @@ if ($sshAs) {
     );
     if (!$fnret) {
         main_exit OVH::Bastion::EXIT_RESTRICTED_COMMAND, "sshas_denied",
-          "Sorry, this feature is reserved to bastion administrators. Your attempt has been logged.";
+          "Sorry $self, this feature is reserved to bastion administrators. Your attempt has been logged.";
     }
     if ($osh_command) {
         main_exit OVH::Bastion::EXIT_CONFLICTING_OPTIONS, "conflicting_options",
           "Can't use --ssh-as and --osh together. If you want to run a plugin as another user, use --osh adminSudo";
     }
     $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $sshAs);
-    $fnret or main_exit OVH::Bastion::EXIT_ACCESS_DENIED, 'invalid_account', "Sorry, the specified account is invalid";
+    $fnret
+      or main_exit OVH::Bastion::EXIT_ACCESS_DENIED, 'invalid_account',
+      "Sorry $self, the specified account ($sshAs) is invalid";
 
     my @cmd = qw( sudo -n -u );
     push @cmd, $sshAs;
@@ -930,13 +932,13 @@ if ($osh_command) {
         # plugin is enabled by default if not explicitly disabled
         if ($isDisabled and $isDisabled->value()) {
             main_exit OVH::Bastion::EXIT_RESTRICTED_COMMAND, "plugin_disabled",
-              "Sorry, this plugin has been disabled by policy.";
+              "Sorry $self, this plugin has been disabled by policy.";
         }
         if ($isDisabled->is_err && $isDisabled->err ne 'KO_NO_SUCH_FILE') {
             warn_syslog(
                 "Failed to tell whether the '$osh_command' plugin is enabled or not (" . $isDisabled->msg . ")");
             main_exit OVH::Bastion::EXIT_RESTRICTED_COMMAND, "plugin_disabled",
-              "Sorry, a configuration error prevents us to check whether this plugin is enabled, warn your sysadmin!";
+              "Sorry $self, a configuration error prevents us to check whether this plugin is enabled, warn your sysadmin!";
         }
 
         # check if we need JIT MFA to call this plugin, this can be configured per-plugin
@@ -975,7 +977,7 @@ if ($osh_command) {
             }
             else {
                 main_exit(OVH::Bastion::EXIT_MFA_PASSWORD_SETUP_REQUIRED, 'mfa_password_setup_required',
-                        "Sorry, but you need to setup the Multi-Factor Authentication before using this command,\n"
+                    "Sorry $self, but you need to setup the Multi-Factor Authentication before using this command,\n"
                       . "please use the `--osh selfMFASetupPassword' option to do so");
             }
         }
@@ -985,7 +987,7 @@ if ($osh_command) {
             }
             else {
                 main_exit(OVH::Bastion::EXIT_MFA_TOTP_SETUP_REQUIRED, 'mfa_totp_setup_required',
-                        "Sorry, but you need to setup the Multi-Factor Authentication before using this command,\n"
+                    "Sorry $self, but you need to setup the Multi-Factor Authentication before using this command,\n"
                       . "please use the `--osh selfMFASetupTOTP' option to do so");
             }
         }
@@ -995,7 +997,7 @@ if ($osh_command) {
             }
             else {
                 main_exit(OVH::Bastion::EXIT_MFA_ANY_SETUP_REQUIRED, 'mfa_any_setup_required',
-                        "Sorry, but you need to setup the Multi-Factor Authentication before using this command,\n"
+                    "Sorry $self, but you need to setup the Multi-Factor Authentication before using this command,\n"
                       . "please use either the `--osh selfMFASetupPassword' or the `--osh selfMFASetupTOTP' option, at your discretion, to do so"
                 );
             }
