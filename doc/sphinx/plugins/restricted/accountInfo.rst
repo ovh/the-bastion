@@ -18,7 +18,7 @@ Display some information about an account
 
    The account name to work on
 
-.. option:: --list-groups    
+.. option:: --list-groups
 
    Show which groups the account has a role on
 

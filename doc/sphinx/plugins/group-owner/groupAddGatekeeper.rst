@@ -14,7 +14,7 @@ Add the group gatekeeper role to an account
 .. program:: groupAddGatekeeper
 
 
-.. option:: --group GROUP    
+.. option:: --group GROUP
 
    which group to set ACCOUNT as a gatekeeper of
 

@@ -14,7 +14,7 @@ Declare and create a new trusted realm
 .. program:: realmCreate
 
 
-.. option:: --realm   REALM 
+.. option:: --realm   REALM
 
    Realm name to create
 

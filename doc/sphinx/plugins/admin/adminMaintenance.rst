@@ -14,11 +14,11 @@ Manage the bastion maintenance mode
 .. program:: adminMaintenance
 
 
-.. option:: --lock           
+.. option:: --lock
 
    Set maintenance mode: new logins will be disallowed
 
-.. option:: --unlock         
+.. option:: --unlock
 
    Unset maintenance mode: new logins are allowed and the bastion functions normally
 

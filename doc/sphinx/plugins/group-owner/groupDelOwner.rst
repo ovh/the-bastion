@@ -14,7 +14,7 @@ Remove the group owner role from an account
 .. program:: groupDelOwner
 
 
-.. option:: --group GROUP    
+.. option:: --group GROUP
 
    which group to set ACCOUNT as an owner of
 

@@ -14,7 +14,7 @@ Transmit your group ownership to somebody else
 .. program:: groupTransmitOwnership
 
 
-.. option:: --group GROUP    
+.. option:: --group GROUP
 
    which group to set ACCOUNT as an owner of
 

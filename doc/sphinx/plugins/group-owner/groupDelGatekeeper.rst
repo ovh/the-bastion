@@ -14,7 +14,7 @@ Remove the group gatekeeper role from an account
 .. program:: groupDelGatekeeper
 
 
-.. option:: --group GROUP    
+.. option:: --group GROUP
 
    which group to remove ACCOUNT as a gatekeeper of
 

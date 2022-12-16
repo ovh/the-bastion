@@ -14,7 +14,7 @@ List the guest accesses to servers of a group specifically granted to an account
 .. program:: groupListGuestAccesses
 
 
-.. option:: --group GROUP    
+.. option:: --group GROUP
 
    Look for accesses to servers of this GROUP
 
@@ -22,7 +22,7 @@ List the guest accesses to servers of a group specifically granted to an account
 
    Which account to check
 
-.. option:: --reverse-dns    
+.. option:: --reverse-dns
 
    Attempt to resolve the reverse hostnames (SLOW!)
 

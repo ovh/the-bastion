@@ -14,11 +14,11 @@ Modify the configuration of a group
 .. program:: groupModify
 
 
-.. option:: --group             GROUP                  
+.. option:: --group             GROUP
 
    Name of the group to modify
 
-.. option:: --mfa-required      password|totp|any|none 
+.. option:: --mfa-required      password|totp|any|none
 
    Enforce UNIX password requirement, or TOTP requirement, or any MFA requirement, when connecting to a server of the group
 
@@ -26,7 +26,7 @@ Modify the configuration of a group
                                                  this group. If set to -1, remove this group override and use the global setting instead.
   --idle-kill-timeout DURATION|0|-1            Overrides the global setting (`idleKillTimeout`), to the specified duration. If set to 0, disables `idleKillTimeout` for
                                                  this group. If set to -1, remove this group override and use the global setting instead.
-.. option:: --guest-ttl-limit   DURATION               
+.. option:: --guest-ttl-limit   DURATION
 
    This group will enforce TTL setting, on guest access creation, to be set, and not to a higher value than DURATION,
 

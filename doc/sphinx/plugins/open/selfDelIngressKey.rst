@@ -14,7 +14,7 @@ Remove an ingress public key from your account
 .. program:: selfDelIngressKey
 
 
-.. option:: -l, --id-to-delete ID         
+.. option:: -l, --id-to-delete ID
 
    Directly specify key id to delete (CAUTION!), you can get id with selfListIngressKeys
 

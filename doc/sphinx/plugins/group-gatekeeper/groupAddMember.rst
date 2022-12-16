@@ -14,7 +14,7 @@ Add an account to the member list
 .. program:: groupAddMember
 
 
-.. option:: --group GROUP    
+.. option:: --group GROUP
 
    which group to set ACCOUNT as a member of
 
