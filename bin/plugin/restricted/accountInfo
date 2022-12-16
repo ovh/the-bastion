@@ -127,6 +127,8 @@ else {
 
 if (OVH::Bastion::is_auditor(account => $self)) {
 
+    # TTL check
+
     $fnret = OVH::Bastion::is_account_ttl_nonexpired(sysaccount => $sysaccount, account => $account);
     if ($fnret->is_ok && $fnret->err eq 'OK_NO_TTL') {
         osh_info "This account has " . colored('no TTL set', 'green');
@@ -151,6 +153,27 @@ if (OVH::Bastion::is_auditor(account => $self)) {
         osh_warn "Error getting account TTL expiration info (" . $fnret->msg . ")";
     }
     $ret{'ttl_timestamp'} = ($fnret && $fnret->value) ? $fnret->value->{'expiry_time'} : undef;
+
+    # freeze check
+
+    $fnret = OVH::Bastion::is_account_nonfrozen(account => $account);
+    $ret{'is_frozen'} = undef;
+    if ($fnret->is_ok) {
+        osh_info "This account is " . colored('not frozen', 'green');
+        $ret{'is_frozen'} = 0;
+    }
+    elsif ($fnret->is_ko) {
+        my $freezeReason = $fnret->value->{'reason'} || 'no reason given';
+        osh_info "This account has been "
+          . colored('FROZEN', 'red') . " by "
+          . $fnret->value->{'by'}
+          . " ($freezeReason)";
+        $ret{'is_frozen'}   = 1;
+        $ret{'freeze_info'} = $fnret->value;
+        $canConnect         = 0;
+    }
+
+    # expi check
 
     $fnret = OVH::Bastion::is_account_nonexpired(sysaccount => $sysaccount, remoteaccount => $remoteaccount);
     if ($fnret->is_ok) {

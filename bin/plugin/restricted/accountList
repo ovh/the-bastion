@@ -2,6 +2,7 @@
 # vim: set filetype=perl ts=4 sw=4 sts=4 et:
 use common::sense;
 use Term::ANSIColor;
+use JSON;
 
 use File::Basename;
 use lib dirname(__FILE__) . '/../../../lib/perl';
@@ -30,16 +31,16 @@ List the bastion accounts
 
 Usage: --osh SCRIPT_NAME [OPTIONS]
 
-  --account ACCOUNT  Only list the specified account. This is an easy way to check whether the account exists
-  --inactive-only    Only list inactive accounts
-  --audit            Show more verbose information (SLOW!), you need to be a bastion auditor
-  --no-password-info Don't gather password info in audit mode (makes --audit way faster)
-  --no-output        Don't print human-readable output (faster, use with --json)
-  --include PATTERN  Only show accounts whose name match the given PATTERN (see below)
-                        This option can be used multiple times to refine results
-  --exclude PATTERN  Omit accounts whose name match the given PATTERN (see below)
-                        This option can be used multiple times.
-                        Note that --exclude takes precedence over --include
+  --account ACCOUNT   Only list the specified account. This is an easy way to check whether the account exists
+  --inactive-only     Only list inactive accounts
+  --audit             Show more verbose information (SLOW!), you need to be a bastion auditor
+  --no-password-info  Don't gather password info in audit mode (makes --audit way faster)
+  --no-output         Don't print human-readable output (faster, use with --json)
+  --include PATTERN   Only show accounts whose name match the given PATTERN (see below)
+                         This option can be used multiple times to refine results
+  --exclude PATTERN   Omit accounts whose name match the given PATTERN (see below)
+                         This option can be used multiple times.
+                         Note that --exclude takes precedence over --include
 
 **Note:** PATTERN supports the ``*`` and ``?`` wildcards.
 If PATTERN is a simple string without wildcards, then names containing this string will be considered.
@@ -108,6 +109,16 @@ foreach my $account (sort keys %$accounts) {
     }
 
     if ($audit) {
+        $fnret = OVH::Bastion::is_account_nonfrozen(account => $account);
+        $states{'is_frozen'} = undef;
+        if ($fnret->is_ok) {
+            $states{'is_frozen'} = 0;
+        }
+        elsif ($fnret->is_ko) {
+            $states{'is_frozen'}   = 1;
+            $states{'freeze_info'} = $fnret->value;
+        }
+
         $fnret = OVH::Bastion::is_account_ttl_nonexpired(sysaccount => $account, account => $account);
         $states{'is_ttl_expired'} = undef;
         if ($fnret->is_ok) {
@@ -155,6 +166,7 @@ foreach my $account (sort keys %$accounts) {
 
         $states{'can_connect'} = 1;
         $states{'can_connect'} = 0 if (!defined $states{'is_active'} || $states{'is_active'} == 0);
+        $states{'can_connect'} = 0 if (!defined $states{'is_frozen'} || $states{'is_frozen'} == 0);
         $states{'can_connect'} = 0 if (!defined $states{'is_expired'} || $states{'is_expired'} == 0);
         $states{'can_connect'} = 0 if (!defined $states{'is_ttl_expired'} || $states{'is_ttl_expired'} == 0);
 
@@ -232,7 +244,7 @@ foreach my $account (sort keys %$accounts) {
         push @mfaTOTP, 'bypass'   if $states{'mfa_totp_bypass'};
 
         osh_info sprintf(
-            "%-18s %6d active:%-12s expired:%-12s ttl_expired:%-12s"
+            "%-18s %6d active:%-12s expired:%-12s frozen:%-12s ttl_expired:%-12s"
               . "can_connect:%-12s already_seen:%-12s mfa_password:%-25s "
               . "mfa_totp:%-25s pam_bypass:%-12s pubkey_auth_optional:%-12s "
               . "pass_status:%-15s pass_changed:%-10s pass_min_days:%-3d "
@@ -241,6 +253,7 @@ foreach my $account (sort keys %$accounts) {
             $accounts->{$account}{'uid'},
             tristate2str($states{'is_active'}),
             tristate2str($states{'is_expired'},     1),
+            tristate2str($states{'is_frozen'},      1),
             tristate2str($states{'is_ttl_expired'}, 1),
             tristate2str($states{'can_connect'}),
             tristate2str($states{'already_seen_before'}),

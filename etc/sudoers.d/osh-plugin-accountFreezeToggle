@@ -1,0 +1,2 @@
+%osh-accountFreeze ALL=(allowkeeper) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountFreezeToggle --action freeze --account *
+%osh-accountUnfreeze ALL=(allowkeeper) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountFreezeToggle --action unfreeze --account *

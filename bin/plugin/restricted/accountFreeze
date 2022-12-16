@@ -1,0 +1,43 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+OVH::Bastion::Plugin::begin(
+    argv     => \@ARGV,
+    header   => "freeze an account",
+    options  => {"account=s" => \my $account, "reason=s" => \my $reason},
+    helptext => <<'EOF',
+Freeze an account, to prevent it from connecting
+
+Usage: --osh SCRIPT_NAME --account ACCOUNT [--reason "'SOME REASON'"]
+
+  --account ACCOUNT          Account to freeze
+  --reason  "'SOME REASON'"  Optional reason for the account to be frozen (will be displayed to the user),
+                               if you are in a shell (and not in interactive mode), quote it twice as shown.
+EOF
+);
+
+my $fnret;
+
+if (not $account) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing 'account' parameter";
+}
+
+# Here we parse account name
+$fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
+$fnret or osh_exit $fnret;
+$account = $fnret->value->{'account'};
+
+my @command = qw{ sudo -n -u allowkeeper -- /usr/bin/env perl -T };
+push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountFreezeToggle', '--action', 'freeze';
+push @command, ('--account', $account);
+push @command, ('--reason',  $reason) if $reason;
+
+osh_exit(OVH::Bastion::helper(cmd => \@command));
