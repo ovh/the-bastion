@@ -1,0 +1,137 @@
+#! /usr/bin/perl -T
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+# NEEDGROUP osh-accountFreeze
+# NEEDGROUP osh-accountUnfreeze
+# SUDOERS %osh-accountFreeze ALL=(allowkeeper) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountFreezeToggle --action freeze --account *
+# SUDOERS %osh-accountUnfreeze ALL=(allowkeeper) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountFreezeToggle --action unfreeze --account *
+# FILEMODE 0750
+# FILEOWN 0 allowkeeper
+
+#>HEADER
+use common::sense;
+use Getopt::Long qw(:config no_auto_abbrev no_ignore_case);
+use JSON;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../lib/perl';
+use OVH::Bastion;
+use OVH::Bastion::Helper;
+
+# Fetch command options
+my $fnret;
+my ($result, @optwarns);
+my ($account, $action, $reason);
+eval {
+    local $SIG{__WARN__} = sub { push @optwarns, shift };
+    $result = GetOptions(
+        "account=s" => sub { $account //= $_[1] },
+        "action=s"  => sub { $action  //= $_[1] },
+        "reason=s"  => sub { $reason  //= $_[1] },
+    );
+};
+if ($@) { die $@ }
+
+if (!$result) {
+    local $" = ", ";
+    HEXIT('ERR_BAD_OPTIONS', msg => "Error parsing options: @optwarns");
+}
+
+OVH::Bastion::Helper::check_spurious_args();
+
+if (!$account || !$action) {
+    HEXIT('ERR_MISSING_PARAMETER', msg => "Missing argument 'account' or 'action'");
+}
+
+#<HEADER
+
+#>RIGHTSCHECK
+if ($self eq 'root') {
+    osh_debug "Real root, skipping checks of permissions";
+}
+else {
+    # need to perform another security check
+    if ($action eq 'freeze') {
+        $fnret = OVH::Bastion::is_user_in_group(user => $self, group => "osh-accountFreeze");
+        if (!$fnret) {
+            HEXIT('ERR_SECURITY_VIOLATION', msg => "You're not allowed to run this, dear $self");
+        }
+    }
+    elsif ($action eq 'unfreeze') {
+        $fnret = OVH::Bastion::is_user_in_group(user => $self, group => "osh-accountUnfreeze");
+        if (!$fnret) {
+            HEXIT('ERR_SECURITY_VIOLATION', msg => "You're not allowed to run this, dear $self");
+        }
+    }
+    else {
+        HEXIT('ERR_INVALID_PARAMETER', msg => "Unknown action '$action'");
+    }
+}
+
+#<RIGHTSCHECK
+
+#>PARAMS:ACCOUNT
+osh_debug("Checking account");
+$fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
+$fnret or HEXIT($fnret);
+$account = $fnret->value->{'account'};    # untainted
+
+if (OVH::Bastion::is_admin(account => $account, sudo => 1) && !OVH::Bastion::is_admin(account => $self, sudo => 1)) {
+    HEXIT('ERR_SECURITY_VIOLATION', msg => "You can't modify the account of an admin without being admin yourself");
+}
+#<PARAMS:ACCOUNT
+
+$fnret = OVH::Bastion::is_account_nonfrozen(account => $account);
+$fnret->is_err and HEXIT($fnret);         # couldn't read file or other error
+
+if ($action eq 'freeze') {
+    if ($fnret) {
+        $fnret = OVH::Bastion::account_config(
+            key     => "frozen",
+            account => $account,
+            public  => 1,
+            value   => JSON->new->utf8(0)->encode(
+                {
+                    by        => $self,
+                    timestamp => time(),
+                    reason    => $reason,
+                    session   => $ENV{'UNIQID'},
+                }
+            )
+        );
+        $fnret or HEXIT($fnret);
+        OVH::Bastion::syslogFormatted(
+            severity => 'info',
+            type     => 'account',
+            fields   => [['action', 'freeze'], ['account', $account]]
+        );
+        HEXIT(
+            'OK',
+            msg   => "Account $account is now frozen, it won't be able to connect.",
+            value => {account => $account, reason => $reason},
+        );
+    }
+    else {
+        HEXIT('OK_NO_CHANGE', msg => "Account $account was already frozen, no change was needed or made");
+    }
+}
+elsif ($action eq 'unfreeze') {
+    if (!$fnret) {
+        $fnret = OVH::Bastion::account_config(key => "frozen", account => $account, public => 1, delete => 1);
+        $fnret or HEXIT($fnret);
+        OVH::Bastion::syslogFormatted(
+            severity => 'info',
+            type     => 'account',
+            fields   => [['action', 'unfreeze'], ['account', $account]]
+        );
+        HEXIT(
+            'OK',
+            msg   => "Account $account is no longer frozen, it can connect again.",
+            value => {account => $account},
+        );
+    }
+    else {
+        HEXIT('OK_NO_CHANGE', msg => "Account $account was not frozen, no change was needed or made");
+    }
+}
+
+HEXIT('ERR_INTERNAL', msg => "Impossible case reached, aborting");

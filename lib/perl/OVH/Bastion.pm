@@ -94,6 +94,7 @@ use constant {
     EXIT_INVALID_REMOTE_HOST         => 128,
     EXIT_PIV_REQUIRED                => 129,
     EXIT_GET_HASH_FAILED             => 130,
+    EXIT_ACCOUNT_FROZEN              => 131,
 };
 
 use constant {
@@ -174,6 +175,28 @@ sub AUTOLOAD {    ## no critic (AutoLoading)
     }
 
     die "AUTOLOAD FAILED: $AUTOLOAD";
+}
+
+# checks whether an account is frozen, a success value means that it's not
+sub is_account_nonfrozen {
+    my %params  = @_;
+    my $account = $params{'account'};
+
+    if (not $account) {
+        return R('ERR_MISSING_PARAMETER', msg => "Missing 'account' argument");
+    }
+
+    my $fnret = OVH::Bastion::account_config(account => $account, key => "frozen", public => 1);
+    if ($fnret && $fnret->value) {
+        my $data = eval { decode_json($fnret->value); };
+        if ($@) {
+            # can't decode json data, warn silently, but we'll still consider the account as frozen
+            warn_syslog("Couldn't decode JSON data of $account regarding its frozen state ($@), continuing anyway");
+            $data = {};
+        }
+        return R('KO_FROZEN_ACCOUNT', msg => "Account is frozen", value => $data);
+    }
+    return R('OK', msg => "Account is not frozen");
 }
 
 # checks whether an account is expired (inactivity) if that's configured on this bastion

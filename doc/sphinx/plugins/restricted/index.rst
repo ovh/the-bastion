@@ -8,6 +8,7 @@ restricted plugins
    accountCreate
    accountDelPersonalAccess
    accountDelete
+   accountFreeze
    accountGeneratePassword
    accountGrantCommand
    accountInfo
@@ -22,6 +23,7 @@ restricted plugins
    accountPIV
    accountRevokeCommand
    accountUnexpire
+   accountUnfreeze
    accountUnlock
    groupCreate
    groupDelete

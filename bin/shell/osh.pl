@@ -152,6 +152,20 @@ else {
 }
 
 #
+# is this account frozen?
+#
+
+$fnret = OVH::Bastion::is_account_nonfrozen(account => $self);
+if (!$fnret) {
+    my $msg          = "Sorry $self, your account is frozen.";
+    my $freezeReason = $fnret->value->{'reason'};
+    if ($freezeReason) {
+        $msg = "Sorry $self, your account is frozen ($freezeReason).";
+    }
+    main_exit OVH::Bastion::EXIT_ACCOUNT_FROZEN, "account_frozen", $msg;
+}
+
+#
 # Now : are we in maintenance mode ?
 #
 if (-e '/home/allowkeeper/maintenance') {

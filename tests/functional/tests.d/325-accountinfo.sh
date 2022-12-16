@@ -135,6 +135,36 @@ testsuite_accountinfo()
     success a1_info_a3_ttl_no $a1 --osh accountInfo --account $account3
     json .error_code OK .value.is_ttl_expired 1
 
+    # lock account2
+    grant accountFreeze
+
+    success a0_freeze_a2 $a0 --osh accountFreeze --account $account2 --reason "\"'cest la vie'\""
+    json .command accountFreeze .error_code OK .value.account $account2 .value.reason "cest la vie"
+
+    success a0_freeze_a2_dupe $a0 --osh accountFreeze --account $account2
+    json .command accountFreeze .error_code OK_NO_CHANGE
+
+    # ensure account2 can no longer connect
+    run a2_cannot_connect_frozen $a2 --osh info
+    contain "is frozen"
+    retvalshouldbe 131
+
+    # unlock account2
+    revoke accountFreeze
+    grant accountUnfreeze
+
+    success a0_unfreeze_a2 $a0 --osh accountUnfreeze --account $account2
+    json .command accountUnfreeze .error_code OK .value.account $account2
+
+    success a0_unfreeze_a2_dupe $a0 --osh accountUnfreeze --account $account2
+    json .command accountUnfreeze .error_code OK_NO_CHANGE
+
+    # ensure account2 can connect again
+    success a2_can_connect_again $a2 --osh info
+    nocontain "is frozen"
+
+    revoke accountUnfreeze
+
     # delete account1 & account2
     grant accountDelete
     success a0_delete_a1 $a0 --osh accountDelete --account $account1 --no-confirm
