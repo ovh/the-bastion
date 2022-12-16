@@ -18,7 +18,7 @@ Remove a bastion group egress key
 
    Name of the group to delete the egress key from
 
-.. option:: --id ID      
+.. option:: --id ID
 
    Specify the key ID to delete, you can get it with groupInfo
 

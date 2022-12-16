@@ -14,7 +14,7 @@ Add the group owner role to an account
 .. program:: groupAddOwner
 
 
-.. option:: --group GROUP    
+.. option:: --group GROUP
 
    which group to set ACCOUNT as an owner of
 

@@ -14,7 +14,7 @@ Add an IP or IP block to a group's servers list
 .. program:: groupAddServer
 
 
-.. option:: --group GROUP          
+.. option:: --group GROUP
 
    Specify which group this machine should be added to (it should have the public group key of course)
 
@@ -23,31 +23,31 @@ Add an IP or IP block to a group's servers list
    Host(s) to add access to, either a HOST which will be resolved to an IP immediately, or an IP,
 
                              or a whole network using the NET/CIDR notation
-.. option:: --user USER            
+.. option:: --user USER
 
    Specify which remote user should be allowed (root, run, etc...)
 
-.. option:: --user-any             
+.. option:: --user-any
 
    Allow any remote user (the remote user should still have the public group key in all cases)
 
-.. option:: --port PORT            
+.. option:: --port PORT
 
    Only allow access to this port (e.g. 22)
 
-.. option:: --port-any             
+.. option:: --port-any
 
    Allow access to any port
 
-.. option:: --scpup                
+.. option:: --scpup
 
    Allow SCP upload, you--bastion-->server (omit --user in this case)
 
-.. option:: --scpdown              
+.. option:: --scpdown
 
    Allow SCP download, you<--bastion--server (omit --user in this case)
 
-.. option:: --force                
+.. option:: --force
 
    Don't try the ssh connection, just add the host to the group blindly
 
@@ -55,15 +55,15 @@ Add an IP or IP block to a group's servers list
 
    Only use the key with the specified fingerprint to connect to the server (cf groupInfo)
 
-.. option:: --force-password HASH  
+.. option:: --force-password HASH
 
    Only use the password with the specified hash to connect to the server (cf groupListPasswords)
 
-.. option:: --ttl SECONDS|DURATION 
+.. option:: --ttl SECONDS|DURATION
 
    Specify a number of seconds (or a duration string, such as "1d7h8m") after which the access will automatically expire
 
-.. option:: --comment '"ANY TEXT'" 
+.. option:: --comment '"ANY TEXT'"
 
    Add a comment alongside this server
 

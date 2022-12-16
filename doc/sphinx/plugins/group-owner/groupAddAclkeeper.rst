@@ -14,7 +14,7 @@ Add the group aclkeeper role to an account
 .. program:: groupAddAclkeeper
 
 
-.. option:: --group GROUP    
+.. option:: --group GROUP
 
    which group to set ACCOUNT as an aclkeeper of
 

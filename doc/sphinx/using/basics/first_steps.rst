@@ -141,7 +141,7 @@ then use ``<TAB>`` again to show you the required arguments. The complete comman
 
 You'll notice that it didn't work. This is because first, you need to add your *personal egress key* to the
 remote machine's *authorized_keys* file. If this seems strange, here is
-:doc:`how it works <../presentation/principles>`.
+:doc:`how it works </presentation/principles>`.
 To get your *personal egress key*, you can use this command:
 
 .. code-block:: shell
@@ -267,4 +267,4 @@ Let's see what we did exactly during this session:
    ~ Starting from the next line, the Total Recall begins. Press CTRL+C to jolt awake.
 
 Now that you've connected to your first server, using a personal access,
-you may want to learn more about the :doc:`<access_management>`, or directly dive into the **PLUGINS** on the left menu.
+you may want to learn more about the :doc:`access_management`, or directly dive into the **PLUGINS** on the left menu.

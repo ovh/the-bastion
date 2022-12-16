@@ -14,7 +14,7 @@ Remove an account from the members list
 .. program:: groupDelMember
 
 
-.. option:: --group GROUP    
+.. option:: --group GROUP
 
    which group to remove ACCOUNT as a member of
 

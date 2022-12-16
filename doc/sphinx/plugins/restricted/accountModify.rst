@@ -14,29 +14,29 @@ Modify an account configuration
 .. program:: accountModify
 
 
-.. option:: --account ACCOUNT                        
+.. option:: --account ACCOUNT
 
    Bastion account to work on
 
-.. option:: --pam-auth-bypass yes|no                 
+.. option:: --pam-auth-bypass yes|no
 
    Enable or disable PAM auth bypass for this account in addition to pubkey auth (default is 'no'),
 
                                                in that case sshd will not rely at all on PAM auth and /etc/pam.d/sshd configuration. This
                                                does not change the behaviour of the code, just the PAM auth handled by SSH itself
-.. option:: --mfa-password-required yes|no|bypass    
+.. option:: --mfa-password-required yes|no|bypass
 
    Enable or disable UNIX password requirement for this account in addition to pubkey auth (default is 'no'),
 
                                                this overrides the global bastion configuration 'accountMFAPolicy'. If 'bypass' is specified,
                                                no password will ever be asked, even for groups or plugins explicitly requiring it
-.. option:: --mfa-totp-required yes|no|bypass        
+.. option:: --mfa-totp-required yes|no|bypass
 
    Enable or disable TOTP requirement for this account in addition to pubkey auth (default is 'no'),
 
                                                this overrides the global bastion configuration 'accountMFAPolicy'. If 'bypass' is specified,
                                                no OTP will ever be asked, even for groups or plugins explicitly requiring it
-.. option:: --egress-strict-host-key-checking POLICY 
+.. option:: --egress-strict-host-key-checking POLICY
 
    Modify the egress SSH behavior of this account regarding ``StrictHostKeyChecking`` (see `man ssh_config`),
 
@@ -46,30 +46,30 @@ Modify an account configuration
                                                This effectively suppress the host key checking entirely. Please don't enable this blindly.
                                                'default' will remove this account's ``StrictHostKeyChecking`` setting override.
                                                All the other policies carry the same meaning that what is documented in `man ssh_config`.
-.. option:: --personal-egress-mfa-required POLICY    
+.. option:: --personal-egress-mfa-required POLICY
 
    Enforce UNIX password requirement, or TOTP requirement, or any MFA requirement, when connecting to a server
 
                                                using the personal keys of the account, POLICY can be 'password', 'totp', 'any' or 'none'
-.. option:: --always-active yes|no                   
+.. option:: --always-active yes|no
 
    Set or unset the account as always active (i.e. disable the check of the 'active' status on this account)
 
-.. option:: --idle-ignore yes|no                     
+.. option:: --idle-ignore yes|no
 
    If enabled, this account is immune to the idleLockTimeout and idleKillTimeout bastion-wide policy
 
-.. option:: --max-inactive-days DAYS                 
+.. option:: --max-inactive-days DAYS
 
    Set account expiration policy, overriding the global bastion configuration 'accountMaxInactiveDays'.
 
                                                Setting this option to zero disables account expiration. Setting this option to -1 removes this account
                                                expiration policy, i.e. the global bastion setting will apply.
-.. option:: --osh-only yes|no                        
+.. option:: --osh-only yes|no
 
    If enabled, this account can only use ``--osh`` commands, and can't connect anywhere through the bastion
 
-.. option:: --pubkey-auth-optional yes|no            
+.. option:: --pubkey-auth-optional yes|no
 
    Make the public key optional on ingress for the account (default is 'no').
 

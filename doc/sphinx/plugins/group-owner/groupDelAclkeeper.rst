@@ -14,7 +14,7 @@ Remove the group aclkeeper role from an account
 .. program:: groupDelAclkeeper
 
 
-.. option:: --group GROUP    
+.. option:: --group GROUP
 
    which group to remove ACCOUNT as an aclkeeper of
 

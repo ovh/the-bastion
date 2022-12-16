@@ -14,11 +14,11 @@ Modify the PIV policy for the ingress keys of an account
 .. program:: accountPIV
 
 
-.. option:: --account ACCOUNT     
+.. option:: --account ACCOUNT
 
    Bastion account to work on
 
-.. option:: --policy  POLICY      
+.. option:: --policy  POLICY
 
    Changes the PIV policy of account. See below for a description of available policies.
 

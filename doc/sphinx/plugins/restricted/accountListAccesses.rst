@@ -18,12 +18,12 @@ View the expanded access list of a given bastion account
 
    The account to work on
 
-.. option:: --hide-groups    
+.. option:: --hide-groups
 
    Don't show the machines the accouns has access to through group rights.
 
                        In other words, list only the account's personal accesses.
-.. option:: --reverse-dns    
+.. option:: --reverse-dns
 
    Attempt to resolve the reverse hostnames (SLOW!)
 

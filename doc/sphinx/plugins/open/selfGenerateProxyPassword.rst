@@ -18,7 +18,7 @@ Generate a new ingress password to use the bastion HTTPS proxy
 
    Size of the password to generate
 
-.. option:: --do-it    
+.. option:: --do-it
 
    Required for the password to actually be generated, BEWARE: please read the note below
 

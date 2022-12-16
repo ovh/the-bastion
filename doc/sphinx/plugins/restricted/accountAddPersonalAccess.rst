@@ -14,35 +14,35 @@ Add a personal server access to an account
 .. program:: accountAddPersonalAccess
 
 
-.. option:: --account              
+.. option:: --account
 
    Bastion account to add the access to
 
-.. option:: --host IP|HOST|IP/MASK 
+.. option:: --host IP|HOST|IP/MASK
 
    Server to add access to
 
-.. option:: --user USER            
+.. option:: --user USER
 
    Remote login to use, if you want to allow any login, use --user-any
 
-.. option:: --user-any             
+.. option:: --user-any
 
    Allow access with any remote login
 
-.. option:: --port PORT            
+.. option:: --port PORT
 
    Remote SSH port to use, if you want to allow any port, use --port-any
 
-.. option:: --port-any             
+.. option:: --port-any
 
    Allow access to all remote ports
 
-.. option:: --scpup                
+.. option:: --scpup
 
    Allow SCP upload, you--bastion-->server (omit --user in this case)
 
-.. option:: --scpdown              
+.. option:: --scpdown
 
    Allow SCP download, you<--bastion--server (omit --user in this case)
 
@@ -50,15 +50,15 @@ Add a personal server access to an account
 
    Only use the key with the specified fingerprint to connect to the server (cf selfListEgressKeys)
 
-.. option:: --force-password HASH  
+.. option:: --force-password HASH
 
    Only use the password with the specified hash to connect to the server (cf accountListPasswords)
 
-.. option:: --ttl SECONDS|DURATION 
+.. option:: --ttl SECONDS|DURATION
 
    Specify a number of seconds (or a duration string, such as "1d7h8m") after which the access will automatically expire
 
-.. option:: --comment "'ANY TEXT'" 
+.. option:: --comment "'ANY TEXT'"
 
    Add a comment alongside this server. Quote it twice as shown if you're under a shell.
 

@@ -14,24 +14,24 @@ Create a new bastion account
 .. program:: accountCreate
 
 
-.. option:: --account NAME          
+.. option:: --account NAME
 
    Account name to create, NAME must contain only valid UNIX account name characters
 
-.. option:: --uid UID               
+.. option:: --uid UID
 
    Account system UID, also see --uid-auto
 
-.. option:: --uid-auto              
+.. option:: --uid-auto
 
    Auto-select an UID from the allowed range (the upper available one will be used)
 
-.. option:: --always-active         
+.. option:: --always-active
 
    This account's activation won't be challenged on connection, even if the bastion is globally
 
                               configured to check for account activation
-.. option:: --osh-only              
+.. option:: --osh-only
 
    This account will only be able to use ``--osh`` commands, and can't connect anywhere through the bastion
 
@@ -40,24 +40,24 @@ Create a new bastion account
    Set account expiration policy, overriding the global bastion configuration 'accountMaxInactiveDays',
 
                               setting this option to zero disables account expiration.
-.. option:: --immutable-key         
+.. option:: --immutable-key
 
    Deny any subsequent modification of the account key (selfAddKey and selfDelKey are denied)
 
-.. option:: --comment '"STRING"'    
+.. option:: --comment '"STRING"'
 
    An optional comment when creating the account. Quote it twice as shown if you're under a shell.
 
-.. option:: --public-key '"KEY"'    
+.. option:: --public-key '"KEY"'
 
    Account public SSH key to deposit on the bastion, if not present,
 
                               you'll be prompted interactively for it. Quote it twice as shown if your're under a shell.
-.. option:: --no-key                
+.. option:: --no-key
 
    Don't prompt for an SSH key, no ingress public key will be installed
 
-.. option:: --ttl SECONDS|DURATION  
+.. option:: --ttl SECONDS|DURATION
 
    Time after which the account will be deactivated (amount of seconds, or duration string such as "4d12h15m")
 

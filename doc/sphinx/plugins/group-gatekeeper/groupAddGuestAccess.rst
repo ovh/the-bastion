@@ -14,39 +14,39 @@ Add a specific group server access to an account
 .. program:: groupAddGuestAccess
 
 
-.. option:: --group GROUP         
+.. option:: --group GROUP
 
    group to add guest access to
 
-.. option:: --account ACCOUNT     
+.. option:: --account ACCOUNT
 
    name of the other bastion account to add access to, they'll be given access to the GROUP key
 
-.. option:: --host HOST|IP        
+.. option:: --host HOST|IP
 
    add access to this HOST (which must belong to the GROUP)
 
-.. option:: --user USER           
+.. option:: --user USER
 
    allow connecting to HOST only with remote login USER
 
-.. option:: --user-any            
+.. option:: --user-any
 
    allow connecting to HOST with any remote login
 
-.. option:: --port PORT           
+.. option:: --port PORT
 
    allow connecting to HOST only to remote port PORT
 
-.. option:: --port-any            
+.. option:: --port-any
 
    allow connecting to HOST with any remote port
 
-.. option:: --scpup               
+.. option:: --scpup
 
    allow SCP upload, you--bastion-->server (omit --user in this case)
 
-.. option:: --scpdown             
+.. option:: --scpdown
 
    allow SCP download, you<--bastion--server (omit --user in this case)
 

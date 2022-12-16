@@ -14,11 +14,11 @@ List the servers (IPs and IP blocks) pertaining to a group
 .. program:: groupListServers
 
 
-.. option:: --group GROUP    
+.. option:: --group GROUP
 
    List the servers of this group
 
-.. option:: --reverse-dns    
+.. option:: --reverse-dns
 
    Attempt to resolve the reverse hostnames (SLOW!)
 

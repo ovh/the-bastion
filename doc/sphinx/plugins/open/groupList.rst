@@ -14,7 +14,7 @@ List the groups available on this bastion
 .. program:: groupList
 
 
-.. option:: --all             
+.. option:: --all
 
    List all groups, even those to which you don't have access
 

@@ -22,7 +22,7 @@ Check whether a remote TCP port is open
 
    TCP port to attempt to connect to
 
-.. option:: -w SECONDS 
+.. option:: -w SECONDS
 
    Timeout in seconds (default: 3)
 

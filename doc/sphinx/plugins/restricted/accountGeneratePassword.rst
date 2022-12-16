@@ -18,11 +18,11 @@ Generate a new egress password for an account
 
    Specify which account you want to generate a password for
 
-.. option:: --size    SIZE   
+.. option:: --size    SIZE
 
    Specify the number of characters of the password to generate
 
-.. option:: --do-it          
+.. option:: --do-it
 
    Required for the password to actually be generated, BEWARE: please read the note below
 

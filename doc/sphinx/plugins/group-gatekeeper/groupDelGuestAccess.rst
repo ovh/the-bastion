@@ -14,36 +14,36 @@ Remove a specific group server access from an account
 .. program:: groupDelGuestAccess
 
 
-.. option:: --group GROUP   
+.. option:: --group GROUP
 
    group to remove guest access from
 
   --account ACCOUNT name of the other bastion account to remove access from
-.. option:: --host HOST|IP  
+.. option:: --host HOST|IP
 
    remove access from this HOST (which must belong to the GROUP)
 
-.. option:: --user USER     
+.. option:: --user USER
 
    allow connecting to HOST only with remote login USER
 
-.. option:: --user-any      
+.. option:: --user-any
 
    allow connecting to HOST with any remote login
 
-.. option:: --port PORT     
+.. option:: --port PORT
 
    allow connecting to HOST only to remote port PORT
 
-.. option:: --port-any      
+.. option:: --port-any
 
    allow connecting to HOST with any remote port
 
-.. option:: --scpup         
+.. option:: --scpup
 
    allow SCP upload, you--bastion-->server (omit --user in this case)
 
-.. option:: --scpdown       
+.. option:: --scpdown
 
    allow SCP download, you<--bastion--server (omit --user in this case)
 

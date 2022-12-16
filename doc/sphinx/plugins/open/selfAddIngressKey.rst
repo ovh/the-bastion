@@ -22,7 +22,7 @@ Add a new ingress public key to your account
                       can also pass it through STDIN directly. If the policy of this bastion allows it, you may prefix the key
                       with a 'from="IP1,IP2,..."' snippet, a la authorized_keys. However the policy might force a configured
                       'from' prefix that will override yours, or be used if you don't specify it yourself.
-.. option:: --piv           
+.. option:: --piv
 
    Add a public SSH key from a PIV-compatible hardware token, along with its attestation certificate and key
 

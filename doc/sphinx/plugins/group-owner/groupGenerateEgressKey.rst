@@ -19,12 +19,12 @@ Create a new public + private key pair for a group
    Group name to generate a new egress key for.
 
 
-.. option:: --algo ALGO  
+.. option:: --algo ALGO
 
    Specifies the algo of the key, either rsa, ecdsa or ed25519.
 
 
-.. option:: --size SIZE  
+.. option:: --size SIZE
 
    Specifies the size of the key to be generated.
 
@@ -32,7 +32,7 @@ Create a new public + private key pair for a group
                    For ECDSA, choose either 256, 384 or 521.
                    For ED25519, size is always 256.
 
-.. option:: --encrypted  
+.. option:: --encrypted
 
    If specified, a passphrase will be prompted for the new key
 

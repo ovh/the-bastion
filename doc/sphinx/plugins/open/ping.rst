@@ -18,19 +18,19 @@ Ping a remote host from the bastion
 
    Remote host to ping
 
-.. option:: -c COUNT   
+.. option:: -c COUNT
 
    Number of pings to send (default: infinite)
 
-.. option:: -s SIZE    
+.. option:: -s SIZE
 
    Specify the packet size to send
 
-.. option:: -t TTL     
+.. option:: -t TTL
 
    TTL to set in the ICMP packet (default: OS dependent)
 
-.. option:: -w TIMEOUT 
+.. option:: -w TIMEOUT
 
    Exit unconditionally after this amount of seconds (default & max: 86400)
 

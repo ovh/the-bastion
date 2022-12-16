@@ -14,12 +14,12 @@ Show the list of servers you have access to
 .. program:: selfListAccesses
 
 
-.. option:: --hide-groups    
+.. option:: --hide-groups
 
    Don't show the machines you have access to through group rights.
 
                        In other words, list only your personal accesses.
-.. option:: --reverse-dns    
+.. option:: --reverse-dns
 
    Attempt to resolve the reverse hostnames (SLOW!)
 
