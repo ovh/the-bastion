@@ -16,12 +16,14 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,
     header  => "list bastion accounts",
     options => {
-        "inactive-only" => \my $inactiveOnly,
-        "realm-only"    => \my $realmOnly,
-        "account=s"     => \my $account,
-        "audit"         => \my $audit,
-        'exclude=s'     => \my @excludes,
-        'include=s'     => \my @includes,
+        "inactive-only"    => \my $inactiveOnly,
+        "realm-only"       => \my $realmOnly,
+        "account=s"        => \my $account,
+        "audit"            => \my $audit,
+        "no-password-info" => \my $noPasswordInfo,
+        "no-output"        => \my $noOutput,
+        'exclude=s'        => \my @excludes,
+        'include=s'        => \my @includes,
     },
     helptext => <<'EOF',
 List the bastion accounts
@@ -31,6 +33,8 @@ Usage: --osh SCRIPT_NAME [OPTIONS]
   --account ACCOUNT  Only list the specified account. This is an easy way to check whether the account exists
   --inactive-only    Only list inactive accounts
   --audit            Show more verbose information (SLOW!), you need to be a bastion auditor
+  --no-password-info Don't gather password info in audit mode (makes --audit way faster)
+  --no-output        Don't print human-readable output (faster, use with --json)
   --include PATTERN  Only show accounts whose name match the given PATTERN (see below)
                         This option can be used multiple times to refine results
   --exclude PATTERN  Omit accounts whose name match the given PATTERN (see below)
@@ -72,8 +76,7 @@ if ($audit && !OVH::Bastion::is_auditor(account => $self)) {
 }
 
 my $fnretPassword;
-if ($audit) {
-
+if ($audit && !$noPasswordInfo) {
     # get UNIX password info for all accounts
     my @command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
     push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountGetPasswordInfo', '--all';
@@ -200,9 +203,23 @@ foreach my $account (sort keys %$accounts) {
         }
     }
 
+    $fnret = OVH::Bastion::account_config(account => $account, key => "creation_info");
+    if ($fnret && $fnret->value) {
+        eval {
+            my $data = decode_json($fnret->value);
+            $states{'created_by'} = $data->{'by'};
+        };
+        if ($@) {
+            osh_warn("Error decoding creation_info of account '$account' ($@)");
+        }
+    }
+
     $result_hash->{$account}         = \%states;
     $result_hash->{$account}{'name'} = $account;
     $result_hash->{$account}{'uid'}  = $accounts->{$account}{'uid'};
+
+    # don't print human-readable version (usually used with --json)
+    next if $noOutput;
 
     if ($audit) {
         my @mfaPassword;
@@ -215,7 +232,11 @@ foreach my $account (sort keys %$accounts) {
         push @mfaTOTP, 'bypass'   if $states{'mfa_totp_bypass'};
 
         osh_info sprintf(
-            "%-18s %6d active:%-12s expired:%-12s ttl_expired:%-12s can_connect:%-12s already_seen:%-12s mfa_password:%-25s mfa_totp:%-25s pam_bypass:%-12s pubkey_auth_optional:%-12s pass_status:%-15s pass_changed:%-10s pass_min_days:%-3d pass_max_days:%-3d pass_warn_days:%-3d  %s\n",
+            "%-18s %6d active:%-12s expired:%-12s ttl_expired:%-12s"
+              . "can_connect:%-12s already_seen:%-12s mfa_password:%-25s "
+              . "mfa_totp:%-25s pam_bypass:%-12s pubkey_auth_optional:%-12s "
+              . "pass_status:%-15s pass_changed:%-10s pass_min_days:%-3d "
+              . "pass_max_days:%-3d pass_warn_days:%-3d created_by:%-12s " . " %s\n",
             $account,
             $accounts->{$account}{'uid'},
             tristate2str($states{'is_active'}),
@@ -238,12 +259,17 @@ foreach my $account (sort keys %$accounts) {
             $states{'password_min_days'},
             $states{'password_max_days'},
             $states{'password_warn_days'},
+            $states{'created_by'},
             $states{'last_activity'},
         );
     }
     else {
         osh_info sprintf("%-18s %6d\n", $account, $accounts->{$account}{'uid'});
     }
+}
+
+if ($noOutput) {
+    osh_info "No-output requested, if you see only this message, you might have omitted --json";
 }
 
 osh_ok $result_hash;
