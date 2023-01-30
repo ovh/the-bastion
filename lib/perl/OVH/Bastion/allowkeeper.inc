@@ -191,7 +191,7 @@ sub is_account_valid {
     elsif ($account =~ m/^[-.]/) {
         return R('KO_FORBIDDEN_PREFIX', msg => "$whatis name must not start with a '-' nor a '.'");
     }
-    elsif ($account =~ m/-tty$/i) {
+    elsif ($account =~ m/-(?:tty|aclkeeper|gatekeeper|owner)$/i) {
         return R('KO_FORBIDDEN_SUFFIX', msg => "$whatis name contains an unauthorized suffix");
     }
     elsif ($account =~ m/^key/i && $accountType ne 'group') {

@@ -161,6 +161,11 @@ ok(OVH::Bastion::is_account_valid(account => "azerty")->is_ok, "is_account_valid
 
 is(OVH::Bastion::is_account_valid(account => "in valid")->err, "KO_FORBIDDEN_CHARS", "is_account_valid('in valid')");
 
+for my $suffix (qw{ tty aclkeeper gatekeeper owner }) {
+    is(OVH::Bastion::is_account_valid(account => "account-$suffix")->err,
+        "KO_FORBIDDEN_SUFFIX", "is_account_valid('account-$suffix')");
+}
+
 is(OVH::Bastion::is_account_valid(account => "root")->err, "KO_FORBIDDEN_NAME", "is_account_valid('root')");
 
 ok(OVH::Bastion::is_bastion_account_valid_and_existing(account => "me")->is_ok,
