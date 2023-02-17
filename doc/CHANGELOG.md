@@ -1,3 +1,11 @@
+## v3.10.00 - 2023/02/17
+- feat: add accountFreeze/accountUnfreeze commands
+- enh: accountInfo: add --no-password-info and --no-output options
+- enh: more precise matching of ssh client error messages
+- enh: osh.pl: add the account name on each error message
+- fix: invalid suffixed account creation (#357)
+- chore: generate-sudoers.sh: sort alphabetically
+
 ## v3.09.02 - 2022/11/15
 - fix: execute: rare race condition introduced in v3.09.01
 - fix: basic mitigation for scp's CVE-2020-15778 (upstream doesn't consider it a bug)
