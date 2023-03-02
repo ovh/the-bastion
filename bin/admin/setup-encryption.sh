@@ -15,12 +15,17 @@ else
     action_done
 fi
 
-action_doing "Checking whether the install script has run"
+action_doing "Installing luks-config.sh template if needed"
 if ! [ -f "/etc/bastion/luks-config.sh" ]; then
-    action_error "The '/etc/bastion/luks-config.sh' file doesn't exist, did you run the '$basedir/bin/admin/install' script before?"
-    exit 1
+    mkdir -p /etc/bastion
+    if ! cp "$basedir/etc/bastion/luks-config.sh.dist" "/etc/bastion/luks-config.sh"; then
+        action_error "Error copying $basedir/etc/bastion/luks-config.sh.dist to /etc/bastion/luks-config.sh, aborting"
+        exit 1
+    else
+        action_done "installed"
+    fi
 else
-    action_done
+    action_done "already installed"
 fi
 
 action_doing "Checking whether /home is a separate partition"
