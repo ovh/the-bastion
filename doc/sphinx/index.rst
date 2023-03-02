@@ -57,6 +57,7 @@ The unavoidable and iconic FAQ is also available under the **PRESENTATION** sect
    installation/upgrading
    installation/docker
    installation/tests
+   installation/restoring_from_backup
 
 .. toctree::
    :maxdepth: 2
