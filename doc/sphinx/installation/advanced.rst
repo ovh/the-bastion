@@ -160,6 +160,9 @@ Or even go further by starting the script in dry-run mode:
 
     /opt/bastion/bin/cron/osh-encrypt-rsync.pl --dry-run
 
+
+.. _installadv_backup:
+
 Configuring keys, accounts & groups remote backup
 =================================================
 
@@ -196,6 +199,8 @@ This can be configured in ``/etc/bastion/bastion.conf`` with the parameter ``ena
 There is a default ``syslog-ng`` configuration provided, if you happen to use it.
 The file can be found as ``etc/syslog-ng/conf.d/20-bastion.conf.dist`` in the repository.
 Please read the comments in the file to know how to integrate it properly in your system.
+
+.. _installadv_ha:
 
 Clustering (High Availability)
 ==============================
