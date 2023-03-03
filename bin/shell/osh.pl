@@ -139,10 +139,10 @@ else {
 # First Check : is USER valid ?
 #
 my $activenessDenyOnFailure = OVH::Bastion::config("accountExternalValidationDenyOnFailure")->value;
-my $msg_to_print_delayed;   # if set, will be osh_warn()'ed if we're connecting through ssh (i.e. not scp, it breaks it)
+my $msg_to_print_delayed; # if set, will be osh_warn()'ed if we're connecting through ssh (i.e. not scp/sftp, it breaks it)
 $fnret = OVH::Bastion::is_account_active(account => $self);
 if ($fnret) {
-    ;                       # OK
+    ;                     # OK
 }
 elsif ($fnret->is_ko || ($activenessDenyOnFailure && $fnret->is_err)) {
     main_exit OVH::Bastion::EXIT_ACCOUNT_INACTIVE, "account_inactive", "Sorry $self, your account is inactive.";

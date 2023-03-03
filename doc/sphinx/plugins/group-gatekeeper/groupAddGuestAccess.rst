@@ -50,6 +50,10 @@ Add a specific group server access to an account
 
    allow SCP download, you<--bastion--server (omit --user in this case)
 
+.. option:: --sftp
+
+   allow usage of the SFTP subsystem, you<--bastion-->server (omit --user in this case)
+
 .. option:: --ttl SECONDS|DURATION
 
    specify a number of seconds after which the access will automatically expire

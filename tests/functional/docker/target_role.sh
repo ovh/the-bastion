@@ -33,8 +33,32 @@ grep -Evi '^(port|authorizedkeysfile) ' /etc/ssh/sshd_config > "$tmpf" || true
 cat "$tmpf" > /etc/ssh/sshd_config
 rm -f "$tmpf"
 echo "StrictHostKeyChecking no" >> /etc/ssh/ssh_config
-echo "Port 22"                  >> /etc/ssh/sshd_config
-echo "Port 226"                 >> /etc/ssh/sshd_config
+cat >>/etc/ssh/sshd_config <<EOF
+    Port 22
+    Port 226
+EOF
+
+sftpserver=''
+for dir in /usr/lib /usr/lib/ssh /usr/lib/openssh /usr/libexec; do
+    if [ -e "$dir/sftp-server" ]; then
+        sftpserver="$dir/sftp-server"
+        break
+    fi
+done
+
+# last chance
+if [ -z "$sftpserver" ]; then
+    echo "sftp-server is not in well-known locations, trying to find it..."
+    sftpserver=$(find / -name sftp-server 2>/dev/null | head -1)
+fi
+
+if [ -z "$sftpserver" ]; then
+    echo "ERROR while looking for sftp-server binary, bailing out..." >&2
+    exit 1
+fi
+
+echo "sftp-server binary located at $sftpserver"
+echo "Subsystem sftp $sftpserver" >> /etc/ssh/sshd_config
 
 # put the root pubkey on the root account
 mkdir -p "$UID0HOME/.ssh"

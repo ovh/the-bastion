@@ -42,6 +42,10 @@ Add a personal server access on your account
 
    Allow SCP download, you<--bastion--server (omit --user in this case)
 
+.. option:: --sftp
+
+   Allow usage of the SFTP subsystem, you<--bastion-->server (omit --user in this case)
+
 .. option:: --force
 
    Add the access without checking that the public SSH key is properly installed remotely

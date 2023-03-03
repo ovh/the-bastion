@@ -159,18 +159,23 @@ testsuite_selfaccesses()
     nocontain "Permission denied"
     contain "$randomstr"
 
-    # scp
-    success forscp $a0 --osh selfAddPersonalAccess --host 127.0.0.2 --scpup --port 22
+    # scp & sftp
 
-    success scp $a0 --osh scp
-    if [ "$COUNTONLY" != 1 ]; then
-        tmpb64=$(get_json | $jq '.value.script')
-        base64 -d <<< "$tmpb64" | gunzip -c > /tmp/scphelpertmp
-        perl -pe "s/ssh $account0\\@\\S+/ssh -p $remote_port $account0\\@$remote_ip/" /tmp/scphelpertmp > /tmp/scphelper
-        chmod +x /tmp/scphelper
-        cat /tmp/scphelper
-        unset tmpb64
-    fi
+    ## get both helpers first
+    for proto in scp sftp; do
+        success $proto $a0 --osh $proto
+        if [ "$COUNTONLY" != 1 ]; then
+            tmpb64=$(get_json | $jq '.value.script')
+            base64 -d <<< "$tmpb64" | gunzip -c > /tmp/${proto}helpertmp
+            perl -pe "s/ssh $account0\\@\\S+/ssh -p $remote_port $account0\\@$remote_ip/" /tmp/${proto}helpertmp > /tmp/${proto}helper
+            chmod +x /tmp/${proto}helper
+            unset tmpb64
+        fi
+    done
+
+    # scp
+
+    success forscp $a0 --osh selfAddPersonalAccess --host 127.0.0.2 --scpup --port 22
 
     run scp_downloadfailnoright scp -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file $shellaccount@127.0.0.2:uptest /tmp/downloaded
     retvalshouldbe 1
@@ -200,7 +205,21 @@ testsuite_selfaccesses()
     success forscpremove1 $a0 --osh selfDelPersonalAccess --host 127.0.0.2 --scpup   --port 22
     success forscpremove2 $a0 --osh selfDelPersonalAccess --host 127.0.0.2 --scpdown --port 22
 
-    # /scp
+    # sftp
+
+    run sftp_no_access sftp -F $mytmpdir/ssh_config -S /tmp/sftphelper -i $account0key1file $shellaccount@127.0.0.2
+    retvalshouldbe 255
+    contain "Sorry, but even"
+
+    success forsftp $a0 --osh selfAddPersonalAccess --host 127.0.0.2 --sftp --port 22
+
+    success sftp_access sftp -F $mytmpdir/ssh_config -b - -S /tmp/sftphelper -i $account0key1file $shellaccount@127.0.0.2 "<<< exit"
+    contain "sftp> exit"
+    contain ">>> Done,"
+
+    success forsftpremove $a0 --osh selfDelPersonalAccess --host 127.0.0.2 --sftp --port 22
+
+    # /scp & sftp
 
     # (forced commands)
 
@@ -398,10 +417,18 @@ testsuite_selfaccesses()
 
     plgfail nousernoportnoforce $a0 -osh selfAddPersonalAccess -h 127.0.0.4
     nocontain "already"
+    json .command selfAddPersonalAccess .error_code ERR_MISSING_PARAMETER .value null
+
+    plgfail nousernoport $a0 -osh selfAddPersonalAccess -h 127.0.0.4 --force
+    nocontain "already"
+    json .command selfAddPersonalAccess .error_code ERR_MISSING_PARAMETER .value null
+
+    plgfail userportnoforce $a0 -osh selfAddPersonalAccess -h 127.0.0.4 --user-any --port 22
+    nocontain "already"
     contain REGEX "Couldn't connect to $account0@127.0.0.4 \\(ssh returned error (255|124)\\)"
     json .command selfAddPersonalAccess .error_code ERR_CONNECTION_FAILED .value      null
 
-    success nousernoport $a0 -osh selfAddPersonalAccess -h 127.0.0.4 --force
+    success userportandforce $a0 -osh selfAddPersonalAccess -h 127.0.0.4 --force --user-any --port-any
     nocontain "already"
     contain "Forcing add as asked"
     json .command selfAddPersonalAccess .error_code OK .value.ip 127.0.0.4 .value.port null .value.user null
@@ -435,11 +462,11 @@ testsuite_selfaccesses()
     contain "allowed ... log on"
     nocontain "$randomstr"
 
-    success nousernoport $a0 -osh selfDelPersonalAccess -h 127.0.0.4
+    success nousernoport $a0 -osh selfDelPersonalAccess -h 127.0.0.4 --user-any --port-any
     contain "Access to 127.0.0.4 "
     json .command selfDelPersonalAccess .error_code OK .value.ip 127.0.0.4 .value.port null .value.user null
 
-    success nousernoport_dupe $a0 -osh selfDelPersonalAccess -h 127.0.0.4
+    success nousernoport_dupe $a0 -osh selfDelPersonalAccess -h 127.0.0.4 --user-any --port-any
     nocontain "no longer has a personal access"
     json .command selfDelPersonalAccess .error_code OK_NO_CHANGE .value      null
 

@@ -8,6 +8,7 @@ use OVH::Result;
 use OVH::Bastion;
 use OVH::Bastion::Plugin qw( :DEFAULT help );
 use OVH::Bastion::Plugin::groupSetRole;
+use OVH::Bastion::Plugin::ACL;
 
 my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,
@@ -19,6 +20,7 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
         "port-any"  => \my $portAny,
         "scpup"     => \my $scpUp,
         "scpdown"   => \my $scpDown,
+        "sftp"      => \my $sftp,
     },
     helptext => <<'EOF',
 Remove a specific group server access from an account
@@ -34,6 +36,7 @@ Usage: --osh SCRIPT_NAME --group GROUP --account ACCOUNT [OPTIONS]
   --port-any        allow connecting to HOST with any remote port
   --scpup           allow SCP upload, you--bastion-->server (omit --user in this case)
   --scpdown         allow SCP download, you<--bastion--server (omit --user in this case)
+  --sftp            allow usage of the SFTP subsystem, you<--bastion-->server (omit --user in this case)
 
 This command removes, from an existing bastion account, access to a given server, using the
 egress keys of the group. The list of such servers is given by ``groupListGuestAccesses``
@@ -48,30 +51,34 @@ This command is the opposite of ``groupAddGuestAccess``.
 EOF
 );
 
+my $fnret;
+
 if (not $ip and $host) {
     osh_exit 'ERR_INVALID_HOST',
       "Specified host ($host) didn't resolve correctly, fix your DNS or specify the IP instead";
 }
-if ($scpUp and $scpDown) {
-    help();
-    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS',
-      "You specified both --scpup and --scpdown, if you want to grant both, please do it in two separate commands";
-}
-if (($scpUp or $scpDown) and ($user or $userAny)) {
-    help();
-    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS',
-      "To grant SCP access, first ensure SSH access is granted to the machine (with the --user you need, or --user-any), then grant with --scpup and/or --scpdown, omitting --user/--user-any";
-}
 
-my $realUser = $user;
-$realUser = '!scpupload'   if $scpUp;
-$realUser = '!scpdownload' if $scpDown;
-my $fnret = OVH::Bastion::Plugin::groupSetRole::act(
+$fnret = OVH::Bastion::Plugin::ACL::check(
+    user    => $user,
+    userAny => $userAny,
+    port    => $port,
+    portAny => $portAny,
+    scpUp   => $scpUp,
+    scpDown => $scpDown,
+    sftp    => $sftp
+);
+if (!$fnret) {
+    help();
+    osh_exit($fnret);
+}
+$user = $fnret->value->{'user'};
+
+$fnret = OVH::Bastion::Plugin::groupSetRole::act(
     account        => $account,
     group          => $group,
     action         => 'del',
     type           => 'guest',
-    user           => $realUser,
+    user           => $user,
     userAny        => $userAny,
     port           => $port,
     portAny        => $portAny,

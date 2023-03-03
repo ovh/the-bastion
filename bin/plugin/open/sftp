@@ -18,11 +18,10 @@ local $ENV{'FORCE_STDERR'} = 1;
 # don't output fancy stuff, this can get digested by scp and we get garbage output
 local $ENV{'PLUGIN_QUIET'} = 1;
 
-my ($scpCmd);
 my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,
     header  => undef,
-    options => {'scp-cmd=s' => \$scpCmd},
+    options => {},
     help    => \&help,
 );
 
@@ -30,7 +29,7 @@ sub help {
     delete $ENV{'FORCE_STDERR'};
     delete $ENV{'PLUGIN_QUIET'};
 
-    osh_header("scp");
+    osh_header("sftp");
     my $bastionCommand = OVH::Bastion::config('bastionCommand')->value;
     my $bastionName    = OVH::Bastion::config('bastionName')->value;
     $bastionCommand =~ s/USER|ACCOUNT/$self/g;
@@ -38,30 +37,72 @@ sub help {
     my $hostname = Sys::Hostname::hostname();
     $bastionCommand =~ s/HOSTNAME/$hostname/g;
 
-    # for scp, if the bastionCommand contains -t, we need to get rid of it
+    # for sftp, if the bastionCommand contains -t, we need to get rid of it
     $bastionCommand =~ s/ -t( |$)/$1/;
 
     # same thing for --
     $bastionCommand =~ s/ --/ /;
     my $script = <<'EOF';
-#! /bin/sh
-[ "$BASTION_SCP_DEBUG" ] && echo "scpwrapper: args: $*" >&2
+#! /usr/bin/env bash
+shopt -s nocasematch
+
+[ "$BASTION_SFTP_DEBUG" ] && echo "sftpwrapper: args: $*" >&2
 while ! [ "$1" = "--" ] ; do
+    # user
     if [ "$1" = "-l" ] ; then
         remoteuser="--user $2"
         shift 2
+    elif [[ $1 =~ ^-oUser[=\ ]([^\ ]+)$ ]] ; then
+        remoteuser="--user ${BASH_REMATCH[1]}"
+        shift
+    elif [ "$1" = "-o" ] && [[ $2 =~ ^user=([0-9]+)$ ]] ; then
+        remoteuser="--user ${BASH_REMATCH[1]}"
+        shift 2
+
+    # port
     elif [ "$1" = "-p" ] ; then
         remoteport="--port $2"
         shift 2
+    elif [[ $1 =~ ^-oPort[=\ ]([0-9]+)$ ]] ; then
+        remoteport="--port ${BASH_REMATCH[1]}"
+        shift
+    elif [ "$1" = "-o" ] && [[ $2 =~ ^port=([0-9]+)$ ]] ; then
+        remoteport="--port ${BASH_REMATCH[1]}"
+        shift 2
+
+    # other '-oFoo Bar'
+    elif [[ $1 =~ ^-o([^\ ]+)\ (.+)$ ]] ; then
+        sshcmdline="$sshcmdline -o${BASH_REMATCH[1]}=${BASH_REMATCH[2]}"
+        shift
+
+    # don't forward -s
+    elif [ "$1" = "-s" ]; then
+        shift
+
+    # other stuff passed directly to ssh
     else
         sshcmdline="$sshcmdline $1"
         shift
     fi
 done
+
+# after '--', remaining args are always host then 'sftp'
 host="$2"
-scpcmd=`echo "$3" | sed -e 's/#/##/g;s/ /#/g'`
-[ "$BASTION_SCP_DEBUG" ] && echo "scpwrapper: exec #BASTIONCMD# -T $sshcmdline $BASTION_SCP_EXTRA_ARGS -- $remoteuser $remoteport --host $host --osh scp --scp-cmd \"$scpcmd\"" >&2
-exec #BASTIONCMD# -T $sshcmdline $BASTION_SCP_EXTRA_ARGS -- $remoteuser $remoteport --host $host --osh scp --scp-cmd "$scpcmd"
+subsystem="$3"
+if [ "$subsystem" != sftp ]; then
+    echo "Unknown subsystem requested '$subsystem', expected 'sftp'" >&2
+    exit 1
+fi
+
+# if host is in the form remoteuser@remotehost, split it
+if [[ $host =~ @ ]]; then
+    remoteuser="--user ${host%@*}"
+    host=${host#*@}
+fi
+
+# and go
+[ "$BASTION_SFTP_DEBUG" ] && echo "sftpwrapper: exec #BASTIONCMD# -T $sshcmdline $BASTION_SFTP_EXTRA_ARGS -- $remoteuser $remoteport --host $host --osh sftp" >&2
+exec #BASTIONCMD# -T $sshcmdline $BASTION_SFTP_EXTRA_ARGS -- $remoteuser $remoteport --host $host --osh sftp
 EOF
 
     $script =~ s{#BASTIONCMD#}{$bastionCommand}g;
@@ -74,32 +115,30 @@ Description:
     Transfers files to/from a host through the bastion
 
 Usage:
-    To use scp through the bastion, you need a helper script to use with
-your scp client. It'll be specific to your account, don't share it with
-others! To download your customized script, copy/paste this command:
+    To use sftp through the bastion, you need a helper script to use with
+your sftp client. It'll be specific to your account, don't share it with others!
+To download your customized script, copy/paste this command:
 EOF
-    print "\necho \"$base64\"|base64 -d|gunzip -c > ~/scp_$bastionName && chmod +x ~/scp_$bastionName\n\n";
+
+    print "\necho \"$base64\"|base64 -d|\\\ngunzip -c > ~/sftp_$bastionName && chmod +x ~/sftp_$bastionName\n\n";
 
     osh_info <<"EOF";
-To use scp through this bastion, add `-S ~/scp_$bastionName` to your regular scp command.
-For example, to upload a file:
-\$ scp -S ~/scp_$bastionName localfile login\@server:/dest/folder/
-
-Or to recursively download a folder contents:
-\$ scp -S ~/scp_$bastionName -r login\@server:/src/folder/ /tmp/
+To use sftp through this bastion, add `-S ~/sftp_$bastionName` to your regular sftp command.
+For example:
+\$ sftp -S ~/sftp_$bastionName login\@server
 
 The following environment variables modify the behavior of the script:
-- `BASTION_SCP_DEBUG`: if set to 1, debug info is printed on the console
-- `BASTION_SCP_EXTRA_ARGS`: if set, the contents of this variable is added
+- `BASTION_SFTP_DEBUG`: if set to 1, debug info is printed on the console
+- `BASTION_SFTP_EXTRA_ARGS`: if set, the contents of this variable is added
     to the resulting ssh command called by the script
 
 For example:
-\$ BASTION_SCP_DEBUG=1 BASTION_SCP_EXTRA_ARGS="-v" scp -S ~/scp_$bastionName file1 login\@srv:/tmp
+\$ BASTION_SFTP_DEBUG=1 BASTION_SFTP_EXTRA_ARGS="-v" sftp -S ~/sftp_$bastionName login\@server
 
-Please note that you need to be granted for uploading or downloading files
-with scp to/from the remote host, in addition to having the right to SSH to it.
-For a group, the right should be added with --scpup/--scpdown of the groupAddServer command.
-For a personal access, the right should be added with --scpup/--scpdown of the selfAddPersonalAccess command.
+Please note that you need to be granted to be allowed to use sftp to the remote host,
+in addition to having the right to SSH to it.
+For a group, the right should be added with --sftp of the groupAddServer command.
+For a personal access, the right should be added with --sftp of the selfAddPersonalAccess command.
 EOF
     osh_ok({script => $base64, "content-encoding" => 'base64-gzip'});
     return 0;
@@ -116,26 +155,15 @@ if (not $host) {
 }
 
 if (not $ip) {
-    # note that the calling-side scp will not passthrough this exit code, but most probably "1" instead.
+    # note that the calling-side sftp will not passthrough this exit code, but most probably "1" instead.
     osh_exit 'ERR_HOST_NOT_FOUND', "Sorry, couldn't resolve the host you specified ('$host'), aborting.";
 }
 
 my $machine = $ip;
 $machine = "$user\@$ip" if $user;
-$port ||= 22;       # scp uses 22 if not specified, so we need to test access to that port and not any port (aka undef)
+$port ||= 22;       # sftp uses 22 if not specified, so we need to test access to that port and not any port (aka undef)
 $user ||= $self;    # same for user
 $machine .= ":$port";
-
-# decode the passed scp command
-
-my $decoded = $scpCmd;
-$decoded =~ s/(?<!#)#(?!#)/ /g;
-$decoded =~ s/##/#/g;
-if ($decoded !~ /^(?:scp )(?:.*)-([tf]) (?:.+)$/) {
-    # security
-    osh_exit 'ERR_SECURITY_VIOLATION', "scp command format unrecognized";
-}
-my $userToCheck = $1 eq 't' ? '!scpupload' : '!scpdownload';    ## no critic (CaptureWithoutTest) ## false positive
 
 my %keys;
 osh_debug("Checking access 1/2 of $self to $machine...");
@@ -147,6 +175,7 @@ $fnret = OVH::Bastion::is_access_granted(
     port    => $port,
     details => 1
 );
+
 if (not $fnret) {
     osh_exit 'ERR_ACCESS_DENIED', "Sorry, but you don't seem to have access to $machine";
 }
@@ -160,6 +189,7 @@ foreach my $access (@{$fnret->value || []}) {
     }
 }
 
+my $userToCheck = '!sftp';
 osh_debug("Checking access 2/2 of $self to $userToCheck of $machine...");
 $fnret = OVH::Bastion::is_access_granted(
     account        => $self,
@@ -172,7 +202,7 @@ $fnret = OVH::Bastion::is_access_granted(
 );
 if (not $fnret) {
     osh_exit 'ERR_ACCESS_DENIED',
-      "Sorry, but even if you have ssh access to $machine, you still need to be granted specifically for scp";
+      "Sorry, but even if you have ssh access to $machine, you still need to be granted specifically for sftp";
 }
 
 # get the keys we would try too
@@ -189,13 +219,14 @@ foreach my $access (@{$fnret->value || []}) {
 my @cmd = qw{ ssh -x -oForwardAgent=no -oPermitLocalCommand=no -oClearAllForwardings=yes };
 push @cmd, ('-p', $port) if $port;
 push @cmd, ('-l', $user) if $user;
+push @cmd, '-s';
 
 my $atleastonekey = 0;
 foreach my $keyfile (keys %keys) {
 
     # only use the key if it has been seen in both allow_deny() calls, this is to avoid
     # a security bypass where a user would have group access to a server, but not to the
-    # !scpupload special user, and we would add himself this access through selfAddPrivateAccess.
+    # !sftp special user, and we would add himself this access through selfAddPrivateAccess.
     # in that case both allow_deny would return OK, but with different keys.
     # we'll only use the keys that matched BOTH calls.
     next unless $keys{$keyfile} == 2;
@@ -205,22 +236,14 @@ foreach my $keyfile (keys %keys) {
 
 if (not $atleastonekey) {
     osh_exit('KO_ACCESS_DENIED',
-        "Sorry, you seem to have access through ssh and through scp but by different and distinct means (distinct keys)."
-          . " The intersection between your rights for ssh and for scp needs to be at least one.");
+        "Sorry, you seem to have access through ssh and through sftp but by different and distinct means (distinct keys)."
+          . " The intersection between your rights for ssh and for sftp needs to be at least one.");
 }
 
-# basic mitigation for CVE-2020-15778
-if ($decoded =~ m{[\`\$\;><\|\&]}) {
-    osh_exit('ERR_SECURITY_VIOLATION', "Invalid characters detected, bailing out");
-}
+push @cmd, "--", $ip, 'sftp';
 
-push @cmd, "--", $ip, $decoded;
+print STDERR ">>> Hello $self, starting up sftp subsystem to $machine...\n";
 
-print STDERR ">>> Hello $self, transferring your file through the bastion "
-  . ($userToCheck eq '!scpupload' ? 'to' : 'from')
-  . " $machine...\n";
-
-#print STDERR join('^', @cmd)."\n";
 $fnret = OVH::Bastion::execute(cmd => \@cmd, expects_stdin => 1, is_binary => 1);
 if ($fnret->err ne 'OK') {
     osh_exit 'ERR_TRANSFER_FAILED', "Error launching transfer: $fnret";
@@ -231,7 +254,7 @@ print STDERR ">>> Done, "
   . $fnret->value->{'bytesnb'}{'stdout'}
   . " bytes downloaded.\n";
 if ($fnret->value->{'sysret'} != 0) {
-    print STDERR ">>> On bastion side, scp exited with return code " . $fnret->value->{'sysret'} . ".\n";
+    print STDERR ">>> On bastion side, sftp exited with return code " . $fnret->value->{'sysret'} . ".\n";
 }
 
 # don't use osh_exit() to avoid getting a footer

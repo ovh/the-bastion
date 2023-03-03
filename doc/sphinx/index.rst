@@ -65,7 +65,7 @@ The unavoidable and iconic FAQ is also available under the **PRESENTATION** sect
 
    using/basics/index
    using/piv
-   using/scp
+   using/sftp_scp
    using/http_proxy
 
 .. toctree::

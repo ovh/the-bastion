@@ -47,6 +47,10 @@ Remove a specific group server access from an account
 
    allow SCP download, you<--bastion--server (omit --user in this case)
 
+.. option:: --sftp
+
+   allow usage of the SFTP subsystem, you<--bastion-->server (omit --user in this case)
+
 
 This command removes, from an existing bastion account, access to a given server, using the
 egress keys of the group. The list of such servers is given by ``groupListGuestAccesses``

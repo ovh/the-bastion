@@ -8,6 +8,7 @@ use OVH::Result;
 use OVH::Bastion;
 use OVH::Bastion::Plugin qw( :DEFAULT help );
 use OVH::Bastion::Plugin::groupSetRole;
+use OVH::Bastion::Plugin::ACL;
 
 my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,
@@ -19,6 +20,7 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
         "port-any"  => \my $portAny,
         "scpup"     => \my $scpUp,
         "scpdown"   => \my $scpDown,
+        "sftp"      => \my $sftp,
         "ttl=s"     => \my $ttl,
         "comment=s" => \my $comment,
     },
@@ -36,6 +38,7 @@ Usage: --osh SCRIPT_NAME --group GROUP --account ACCOUNT [OPTIONS]
   --port-any              allow connecting to HOST with any remote port
   --scpup                 allow SCP upload, you--bastion-->server (omit --user in this case)
   --scpdown               allow SCP download, you<--bastion--server (omit --user in this case)
+  --sftp                  allow usage of the SFTP subsystem, you<--bastion-->server (omit --user in this case)
   --ttl SECONDS|DURATION  specify a number of seconds after which the access will automatically expire
   --comment '"ANY TEXT"'  add a comment alongside this access.
                             If omitted, we'll use the closest preexisting group access' comment as seen in groupListServers
@@ -54,35 +57,40 @@ This command is the opposite of ``groupDelGuestAccess``.
 EOF
 );
 
+my $fnret;
+
 if (not $ip and $host) {
     osh_exit 'ERR_INVALID_HOST',
       "Specified host ($host) didn't resolve correctly, fix your DNS or specify the IP instead";
 }
-if ($scpUp and $scpDown) {
+
+$fnret = OVH::Bastion::Plugin::ACL::check(
+    user    => $user,
+    userAny => $userAny,
+    port    => $port,
+    portAny => $portAny,
+    scpUp   => $scpUp,
+    scpDown => $scpDown,
+    sftp    => $sftp
+);
+if (!$fnret) {
     help();
-    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS',
-      "You specified both --scpup and --scpdown, if you want to grant both, please do it in two separate commands";
+    osh_exit($fnret);
 }
-if (($scpUp or $scpDown) and ($user or $userAny)) {
-    help();
-    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS',
-      "To grant SCP access, first ensure SSH access is granted to the machine (with the --user you need, or --user-any), then grant with --scpup and/or --scpdown, omitting --user/--user-any";
-}
+$user = $fnret->value->{'user'};
+
 if (defined $ttl) {
-    my $fnret = OVH::Bastion::is_valid_ttl(ttl => $ttl);
+    $fnret = OVH::Bastion::is_valid_ttl(ttl => $ttl);
     $fnret or osh_exit $fnret;
     $ttl = $fnret->value->{'seconds'};
 }
 
-my $realUser = $user;
-$realUser = '!scpupload'   if $scpUp;
-$realUser = '!scpdownload' if $scpDown;
-my $fnret = OVH::Bastion::Plugin::groupSetRole::act(
+$fnret = OVH::Bastion::Plugin::groupSetRole::act(
     account        => $account,
     group          => $group,
     action         => 'add',
     type           => 'guest',
-    user           => $realUser,
+    user           => $user,
     userAny        => $userAny,
     port           => $port,
     portAny        => $portAny,

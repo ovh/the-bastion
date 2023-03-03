@@ -47,6 +47,10 @@ Add an IP or IP block to a group's servers list
 
    Allow SCP download, you<--bastion--server (omit --user in this case)
 
+.. option:: --sftp
+
+   Allow usage of the SFTP subsystem, you<--bastion-->server (omit --user in this case)
+
 .. option:: --force
 
    Don't try the ssh connection, just add the host to the group blindly
