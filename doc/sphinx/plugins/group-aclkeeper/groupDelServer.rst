@@ -2,8 +2,8 @@
 groupDelServer
 ===============
 
-Remove an IP or IP block from a group's serrver list
-====================================================
+Remove an IP or IP block from a group's server list
+===================================================
 
 
 .. admonition:: usage
@@ -45,4 +45,8 @@ Remove an IP or IP block from a group's serrver list
 .. option:: --scpdown
 
    Remove SCP download right, you<--bastion--server (omit --user in this case)
+
+.. option:: --sftp
+
+   Remove usage of the SFTP subsystem, you<--bastion-->server (omit --user in this case)
 

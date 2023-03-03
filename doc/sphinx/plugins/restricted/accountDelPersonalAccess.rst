@@ -46,3 +46,7 @@ Remove a personal server access from an account
 
    Remove SCP download right, you<--bastion--server (omit --user in this case)
 
+.. option:: --sftp
+
+   Remove usage of the SFTP subsystem, you<--bastion-->server (omit --user in this case)
+

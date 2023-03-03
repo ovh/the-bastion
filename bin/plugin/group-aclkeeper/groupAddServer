@@ -7,6 +7,7 @@ use lib dirname(__FILE__) . '/../../../lib/perl';
 use OVH::Result;
 use OVH::Bastion;
 use OVH::Bastion::Plugin qw( :DEFAULT help );
+use OVH::Bastion::Plugin::ACL;
 
 my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,
@@ -17,6 +18,7 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
         "port-any"         => \my $portAny,
         "scpup"            => \my $scpUp,
         "scpdown"          => \my $scpDown,
+        "sftp"             => \my $sftp,
         "force"            => \my $force,           # for slashes, and/or for servers that are down (no connection test)
         "force-key"        => \my $forceKey,
         "force-password=s" => \my $forcePassword,
@@ -37,6 +39,7 @@ Usage: --osh SCRIPT_NAME --group GROUP [OPTIONS]
   --port-any               Allow access to any port
   --scpup                  Allow SCP upload, you--bastion-->server (omit --user in this case)
   --scpdown                Allow SCP download, you<--bastion--server (omit --user in this case)
+  --sftp                   Allow usage of the SFTP subsystem, you<--bastion-->server (omit --user in this case)
   --force                  Don't try the ssh connection, just add the host to the group blindly
   --force-key FINGERPRINT  Only use the key with the specified fingerprint to connect to the server (cf groupInfo)
   --force-password HASH    Only use the password with the specified hash to connect to the server (cf groupListPasswords)
@@ -58,41 +61,20 @@ if (not $group or not $ip) {
       "Missing mandatory parameter 'host' or 'group' (or host didn't resolve correctly)";
 }
 
-if ($user and $userAny) {
+$fnret = OVH::Bastion::Plugin::ACL::check(
+    user    => $user,
+    userAny => $userAny,
+    port    => $port,
+    portAny => $portAny,
+    scpUp   => $scpUp,
+    scpDown => $scpDown,
+    sftp    => $sftp
+);
+if (!$fnret) {
     help();
-    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS',
-      "A user was specified, but --user-any used, these are incompatible, please think about what you're doing";
+    osh_exit($fnret);
 }
-
-if ($scpUp and $scpDown) {
-    help();
-    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS',
-      "You specified both --scpup and --scpdown, if you want to grant both, please do it in two separate commands";
-}
-
-if (($scpUp or $scpDown) and ($user or $userAny)) {
-    help();
-    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS',
-      "To grant SCP access, first ensure SSH access is granted to the machine (with the --user you need, or --user-any), then grant with --scpup and/or --scpdown, omitting --user/--user-any";
-}
-$user = '!scpupload'   if $scpUp;
-$user = '!scpdownload' if $scpDown;
-
-if (not $user and not $userAny) {
-    help();
-    osh_exit 'ERR_MISSING_PARAMETER', "No user specified, if you want to add this server with any user, add --user-any";
-}
-
-if ($portAny and $port) {
-    help();
-    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS',
-      "A port was specified, but --port-any used, these are incompatible, please think about what you're doing";
-}
-
-if (not $port and not $portAny) {
-    help();
-    osh_exit 'ERR_MISSING_PARAMETER', "No port specified, if you want to add this server with any port, add --port-any";
-}
+$user = $fnret->value->{'user'};
 
 $fnret = OVH::Bastion::is_valid_group_and_existing(group => $group, groupType => "key");
 $fnret or osh_exit($fnret);

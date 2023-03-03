@@ -34,4 +34,5 @@ open plugins
    selfMFASetupPassword
    selfMFASetupTOTP
    selfPlaySession
+   sftp
    unlock

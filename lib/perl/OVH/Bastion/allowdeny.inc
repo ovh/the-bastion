@@ -970,7 +970,7 @@ sub ssh_test_access_way {
         );
     }
 
-    if ($user eq '!scpupload' || $user eq '!scpdownload') {
+    if (grep { $user eq $_ } qw{ !scpupload !scpdownload !sftp }) {
         return R('OK_MAGIC_USER', msg => "Didn't really test the connection, as the specified user is special");
     }
 

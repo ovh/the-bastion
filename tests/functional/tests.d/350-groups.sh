@@ -675,16 +675,16 @@ EOS
 
     grant accountAddPersonalAccess
 
-    run a0_add_personal_access_to_a3_works_slash_1 $a0 --osh accountAddPersonalAccess --account $account3 --host 77.66.55.0/24
+    run a0_add_personal_access_to_a3_works_slash_1 $a0 --osh accountAddPersonalAccess --account $account3 --host 77.66.55.0/24 --user-any --port-any
     json .command accountAddPersonalAccess .error_code OK .value.ip 77.66.55.0/24 .value.port null .value.user null
 
-    run a0_add_personal_access_to_a3_fail_badslash $a0 --osh accountAddPersonalAccess --account $account3 --host 77.66.55.0/23
+    run a0_add_personal_access_to_a3_fail_badslash $a0 --osh accountAddPersonalAccess --account $account3 --host 77.66.55.0/23 --user-any --port-any
     json .command null .error_code KO_INVALID_IP .value null
 
-    run a0_add_personal_access_to_a3_works_slash_2 $a0 --osh accountAddPersonalAccess --account $account3 --host 1.2.3.4/32
+    run a0_add_personal_access_to_a3_works_slash_2 $a0 --osh accountAddPersonalAccess --account $account3 --host 1.2.3.4/32 --user-any --port-any
     json .command accountAddPersonalAccess .error_code OK .value.ip 1.2.3.4 .value.port null .value.user null
 
-    success a0_add_personal_access_to_a3_works $a0 --osh accountAddPersonalAccess --account $account3 --host 77.66.55.4
+    success a0_add_personal_access_to_a3_works $a0 --osh accountAddPersonalAccess --account $account3 --host 77.66.55.4 --user-any --port-any
 
     (( todo_inc=1 ))
     for todo_port in --port-any "--port 33"
