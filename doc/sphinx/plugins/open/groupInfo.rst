@@ -9,7 +9,7 @@ Print some basic information about a group
 .. admonition:: usage
    :class: cmdusage
 
-   --osh groupInfo --group GROUP
+   --osh groupInfo <--group GROUP|--all> [--without-keys]
 
 .. program:: groupInfo
 
@@ -17,6 +17,15 @@ Print some basic information about a group
 .. option:: --group GROUP
 
    specify the group to display the infos of
+
+
+.. option:: --all
+
+   dump info for all groups (auditors only), use with --json
+
+.. option:: --without-keys
+
+   don't display egress keys list (useful for --all)
 
 Output example
 ==============
