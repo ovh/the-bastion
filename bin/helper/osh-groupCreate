@@ -45,7 +45,7 @@ if (!$group || !$owner) {
     HEXIT('ERR_MISSING_PARAMETER', msg => "Missing argument 'group' or 'owner'");
 }
 if ($no_key && ($algo || $size || $encrypted)) {
-    EXIT('ERR_INVALID_PARAMETER', msg => "Can't specify 'no-key' along with 'algo', 'size' or 'encrypted'");
+    HEXIT('ERR_INVALID_PARAMETER', msg => "Can't specify 'no-key' along with 'algo', 'size' or 'encrypted'");
 }
 if (!$no_key && (!$algo || !$size)) {
     HEXIT('ERR_MISSING_PARAMETER', msg => "Missing argument 'algo' or 'size'");
