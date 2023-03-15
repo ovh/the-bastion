@@ -45,10 +45,10 @@ testsuite_accountinfo()
 
     # a0 should see basic info about a2
     success a0_accountinfo_a2_basic $a0 --osh accountInfo --account $account2
-    json_document '{"error_message":"OK","command":"accountInfo","error_code":"OK","value":{"always_active":1,"is_active":1,"allowed_commands":[],"groups":{}}}'
+    json_document '{"error_message":"OK","command":"accountInfo","error_code":"OK","value":{"account":"'"$account2"'","always_active":1,"is_active":1,"allowed_commands":[],"groups":{}}}'
 
     # a1 should see detailed info about a2
-    success a1_accountinfo_a2_detailed $a1 --osh accountInfo --account $account2
+    success a1_accountinfo_a2_detailed $a1 --osh accountInfo --account $account2 --with-mfa-password-info
     json .error_code OK .command accountInfo .value.always_active 1 .value.is_active 1 .value.allowed_commands "[]"
     json .value.ingress_piv_policy null .value.personal_egress_mfa_required none .value.pam_auth_bypass 0
     json .value.password.min_days 0 .value.password.user "$account2" .value.password.password locked
@@ -114,9 +114,28 @@ testsuite_accountinfo()
     revoke accountCreate
 
     grant auditor
+
     success a0_accountinfo_a4_max_inactive_days $a0 --osh accountInfo --account $account4
     json .value.max_inactive_days 42
+
+    # take the opportunity to test --all
+    success a0_accountinfo_all $a0 --osh accountInfo --all
+    json $(cat <<EOS
+    .command accountInfo
+    .error_code OK
+    .value|length  6
+    .value["$account4"].creation_information.by $account0
+    .value["$account4"].personal_egress_mfa_required none
+    .value["healthcheck"].allowed_commands|length 0
+    .value["$account0"].max_inactive_days null
+EOS
+)
+
     revoke auditor
+
+    # --all should no longer work
+    plgfail a0_accountinfo_all_no_auditor $a0 --osh accountInfo --all
+    json .command accountInfo .error_code ERR_ACCESS_DENIED .value null
 
     revoke accountModify
 

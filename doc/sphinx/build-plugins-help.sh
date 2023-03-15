@@ -44,7 +44,7 @@ do
         else
             perl "$pluginfile" '' '' '' '' | perl -e 'undef $/; $_=<>; s/\n+$/\n/; print $_' | perl -ne '
                 if (m{^Usage: (.+)}) { print ".. admonition:: usage\n   :class: cmdusage\n\n   $1\n\n.. program:: '"$name"'\n\n"; }
-                elsif (m{^  (-[- ,a-z|/A-Z"'"'"']+)  (.+)}) { ($c,$t)=($1,$2); $c=~s/ +$//; print ".. option:: $c\n\n   $t\n\n"; }
+                elsif (m{^  (-[- ,a-z|/A-Z"'"'"'\[\]]+)  (.+)}) { ($c,$t)=($1,$2); $c=~s/ +$//; print ".. option:: $c\n\n   $t\n\n"; }
                 elsif ($l++ == 0) { chomp; print "$_\n"."="x(length($_))."\n\n"; }
                 else { print "$_"; }
             '

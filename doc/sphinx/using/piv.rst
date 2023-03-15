@@ -148,7 +148,7 @@ The main takeaways are:
 Global policy
 =============
 
-If you want to apply a policy bastion-wide, please refer to the :ref:`ingressRequiresPIV` option.
+If you want to apply a policy bastion-wide, please refer to the :ref:`ingressRequirePIV` option.
 This policy can still be overridden per-account if needed, see above.
 
 Temporary grace period
