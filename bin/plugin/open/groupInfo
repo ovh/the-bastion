@@ -13,90 +13,131 @@ use OVH::Bastion::Plugin qw( :DEFAULT help );
 # globally allow sys_getpw* and sys_getgr* cache use
 $ENV{'PW_GR_CACHE'} = 1;
 
-my ($group);
+my $withKeys = 1;
+
+sub toggle_all {
+    my $v = shift;
+    $withKeys = $v;
+    return;
+}
+
 my $remainingOptions = OVH::Bastion::Plugin::begin(
-    argv     => \@ARGV,
-    header   => "group info",
-    options  => {'group=s' => \$group},
+
+    argv    => \@ARGV,
+    header  => "group info",
+    options => {
+        'group=s'            => \my $group,
+        'all'                => \my $all,
+        'with-keys'          => sub { $withKeys = 1 },
+        'without-keys'       => sub { $withKeys = 0 },
+        'with-everything'    => sub { toggle_all(1) },
+        'without-everything' => sub { toggle_all(0) },
+    },
     helptext => <<'EOF',
 Print some basic information about a group
 
-Usage: --osh SCRIPT_NAME --group GROUP
+Usage: --osh SCRIPT_NAME <--group GROUP|--all> [OPTIONS]
 
-  --group GROUP  specify the group to display the infos of
+  --group GROUP           Specify the group to display the info of
+  --all                   Dump info for all groups (auditors only), use with ``--json``
+
+  --with[out]-everything  Include or exclude all below options, including future ones
+  --with[out]-keys        Whether to include the group keys list (slow-ish, default: yes)
 EOF
 );
 
-#
-# code
-#
 my $fnret;
 
-#
-# params check
-#
-if (!$group) {
+if (!$group && !$all) {
     help();
-    osh_exit 'ERR_MISSING_PARAMETER', "Missing 'group' parameter";
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing '--group' or '--all' parameter";
 }
 
-$fnret = OVH::Bastion::is_valid_group_and_existing(group => $group, groupType => "key");
-$fnret or osh_exit($fnret);
-
-# get returned untainted value
-$group = $fnret->value->{'group'};
-my $shortGroup = $fnret->value->{'shortGroup'};
-
-my %roles;
-foreach my $role (qw{ member aclkeeper gatekeeper owner }) {
-    $fnret = OVH::Bastion::is_group_existing(group => $group . ($role eq 'member' ? '' : "-$role"));
-    if (!$fnret) {
-        osh_exit($fnret) if $role eq 'member';    # critical
-        $roles{$role} = [];
-    }
-    else {
-        $roles{$role} = [grep { $_ ne 'allowkeeper' } @{$fnret->value->{'members'} || []}];
-    }
+my $isAuditor = OVH::Bastion::is_auditor(account => $self);
+if (!$isAuditor && $all) {
+    osh_exit 'ERR_ACCESS_DENIED', "Only bastion auditors can use --all";
 }
 
-my $result_hash = {group => $shortGroup};
-$result_hash->{'owners'}      = $roles{'owner'};
-$result_hash->{'aclkeepers'}  = $roles{'aclkeeper'};
-$result_hash->{'gatekeepers'} = $roles{'gatekeeper'};
+my @groupsToCheck;
+if ($all) {
+    $fnret = OVH::Bastion::get_group_list();
+    $fnret or osh_exit($fnret);
+    @groupsToCheck = sort keys %{$fnret->value};
+    osh_info("Gathering data, this may take a few seconds...");
+}
+else {
+    @groupsToCheck = ($group);
+}
 
-osh_info "Group "
-  . $shortGroup
-  . "'s Owners are: "
-  . colored(@{$roles{'owner'}} ? join(" ", sort @{$roles{'owner'}}) : '-', "red");
-osh_info "Group "
-  . $shortGroup
-  . "'s GateKeepers (managing the members/guests list) are: "
-  . colored(@{$roles{'gatekeeper'}} ? join(" ", sort @{$roles{'gatekeeper'}}) : '-', "red");
-if (   OVH::Bastion::is_group_owner(group => $shortGroup, account => $self, superowner => 1)
-    || OVH::Bastion::is_group_gatekeeper(group => $shortGroup, account => $self)
-    || OVH::Bastion::is_group_aclkeeper(group => $shortGroup, account => $self)
-    || OVH::Bastion::is_group_member(group => $shortGroup, account => $self)
-    || OVH::Bastion::is_auditor(account => $self))
-{
+# check all groups and get the untainted data
+my @groups;
+foreach my $groupName (@groupsToCheck) {
+    $fnret = OVH::Bastion::is_valid_group_and_existing(group => $groupName, groupType => "key");
+    $fnret or osh_exit($fnret);
 
-    osh_info "Group "
-      . $shortGroup
-      . "'s ACLKeepers (managing the group servers list) are: "
-      . colored(@{$roles{'aclkeeper'}} ? join(" ", sort @{$roles{'aclkeeper'}}) : '-', "red");
+    # get returned untainted value
+    push @groups, {group => $fnret->value->{'group'}, shortGroup => $fnret->value->{'shortGroup'}};
+}
 
-    # now, who is member / guest ?
-    my (@members, @guests);
-    foreach my $account (@{$roles{'member'}}) {
-        osh_debug("what is $account?");
-        if ($account =~ /^realm_(.+)/) {
-            my $pRealm = $1;
-            $fnret = OVH::Bastion::get_remote_accounts_from_realm(realm => $pRealm);
-            if (!$fnret || !@{$fnret->value}) {
+# gather this only once
+$fnret = OVH::Bastion::get_bastion_ips();
+my $from;
+if ($fnret) {
+    my @ips = @{$fnret->value};
+    $from = 'from="' . join(',', @ips) . '"';
+}
 
-                # we couldn't get the list, or the list is empty: at least show that the realm shared account is there
-                push @members, $user;
-            }
-            else {
+# big hash containing all the data we want to return
+my %return;
+
+foreach my $groupData (@groups) {
+    $group = $groupData->{'group'};
+    my $shortGroup = $groupData->{'shortGroup'};
+
+    # get the member list of each system group mapped to one of the roles of the group
+    my %roles;
+    foreach my $role (qw{ member aclkeeper gatekeeper owner }) {
+        $fnret = OVH::Bastion::is_group_existing(group => $group . ($role eq 'member' ? '' : "-$role"));
+        if (!$fnret) {
+            osh_exit($fnret) if $role eq 'member';    # if this happens, we really have a problem here
+            $roles{$role} = [];
+        }
+        else {
+            $roles{$role} = [grep { $_ ne 'allowkeeper' } @{$fnret->value->{'members'} || []}];
+        }
+    }
+
+    # data that anybody can view:
+    my %ret = (
+        group       => $shortGroup,
+        owners      => $roles{'owner'},
+        gatekeepers => $roles{'gatekeeper'}
+    );
+
+    if (   $isAuditor
+        || OVH::Bastion::is_group_owner(group => $shortGroup, account => $self, superowner => 1)
+        || OVH::Bastion::is_group_gatekeeper(group => $shortGroup, account => $self)
+        || OVH::Bastion::is_group_aclkeeper(group => $shortGroup, account => $self)
+        || OVH::Bastion::is_group_member(group => $shortGroup, account => $self))
+    {
+        # members, aclkeepers, gatekeepers, owners and auditors can get the aclkeepers list
+        $ret{'aclkeepers'} = $roles{'aclkeeper'};
+
+        # being a member of the system group corresponding to the bastion group
+        # can mean either member or guest, so check this here, taking into account the
+        # case of the realm accounts
+        my (@members, @guests);
+        foreach my $account (@{$roles{'member'}}) {
+            # realm accounts
+            if ($account =~ /^realm_(.+)/) {
+                my $pRealm = $1;
+                $fnret = OVH::Bastion::get_remote_accounts_from_realm(realm => $pRealm);
+                if (!$fnret || !@{$fnret->value}) {
+                    # we couldn't get the list, or the list is empty: at least show that the realm shared account is there
+                    push @members, $user;
+                    next;
+                }
+                # show remote realm accounts names, either as guests or members
                 foreach my $pRemoteaccount (@{$fnret->value}) {
                     if (OVH::Bastion::is_group_guest(group => $shortGroup, account => "$pRealm/$pRemoteaccount")) {
                         push @guests, "$pRealm/$pRemoteaccount";
@@ -106,141 +147,192 @@ if (   OVH::Bastion::is_group_owner(group => $shortGroup, account => $self, supe
                     }
                 }
             }
-        }
-        else {
-
-            if (OVH::Bastion::is_group_guest(account => $account, group => $shortGroup)) {
-                push @guests, $account;
-            }
+            # normal case (non-realm accounts)
             else {
-                push @members, $account;
+                if (OVH::Bastion::is_group_guest(account => $account, group => $shortGroup)) {
+                    push @guests, $account;
+                }
+                else {
+                    push @members, $account;
+                }
+            }
+        }
+
+        # for each guest, get the number of accesses they have on the group,
+        # so we can show it nicely
+        my %guest_nb_accesses;
+        my @filtered_guests;
+        foreach my $guest (sort @guests) {
+            $fnret = OVH::Bastion::get_acl_way(way => 'groupguest', group => $shortGroup, account => $guest);
+
+            # for realms, don't show remote accounts with zero accesses, this could be confusing
+            next if ($guest =~ m{/} && $fnret && @{$fnret->value} == 0);
+
+            $guest_nb_accesses{$guest} = $fnret ? scalar(@{$fnret->value}) : undef;
+            push @filtered_guests, $guest;
+        }
+
+        # deprecated in v2.18.00+
+        $ret{'full_members'}    = \@members;
+        $ret{'partial_members'} = \@filtered_guests;
+        # /deprecated
+
+        $ret{'members'}         = \@members;
+        $ret{'guests'}          = \@filtered_guests;
+        $ret{'guests_accesses'} = \%guest_nb_accesses;
+
+        # add a hint about possibly inactive members
+        my @inactive;
+        foreach my $account (@members) {
+            if (OVH::Bastion::is_account_active(account => $account)->is_ko) {
+                push @inactive, $account;
+            }
+        }
+        $ret{'inactive'} = \@inactive;
+
+        # policies
+        $fnret = OVH::Bastion::group_config(group => $group, key => 'mfa_required');
+        if ($fnret && $fnret->value ne 'none') {
+            $ret{'mfa_required'} = $fnret->value;
+        }
+
+        $fnret = OVH::Bastion::group_config(group => $group, key => 'guest_ttl_limit');
+        if ($fnret && defined $fnret->value && $fnret->value =~ /^\d+$/) {
+            $ret{'guest_ttl_limit'} = $fnret->value;
+        }
+
+        $fnret = OVH::Bastion::group_config(group => $group, %{OVH::Bastion::OPT_GROUP_IDLE_KILL_TIMEOUT()});
+        if ($fnret && defined $fnret->value && $fnret->value =~ /^-?\d+$/) {
+            $ret{'idle_kill_timeout'} = $fnret->value;
+        }
+
+        $fnret = OVH::Bastion::group_config(group => $group, => %{OVH::Bastion::OPT_GROUP_IDLE_LOCK_TIMEOUT()});
+        if ($fnret && defined $fnret->value && $fnret->value =~ /^-?\d+$/) {
+            $ret{'idle_lock_timeout'} = $fnret->value;
+        }
+    }
+
+    # group egress keys if we've been asked those
+    if ($withKeys) {
+        $fnret = OVH::Bastion::get_group_keys(group => $group);
+        if ($fnret and $from) {
+            foreach my $keyfile (@{$fnret->value->{'sortedKeys'}}) {
+                my $key = $fnret->value->{'keys'}{$keyfile};
+                $key->{'prefix'} = $from;
+                $ret{'keys'}{$key->{'fingerprint'}} = $key;
             }
         }
     }
-    osh_info "Group "
-      . $shortGroup
-      . "'s Members (with access to ALL the group servers) are: "
-      . colored(@members ? join(" ", sort @members) : '-', "red");
 
-    my %guest_details;
+    $return{$shortGroup} = \%ret;
+
+    # print all this in a human-readable format, except if we've been asked
+    # to dump the data for all groups, in which case the caller will only use
+    # our JSON output
+    print_group_info(%ret) if !$all;
+}
+
+sub print_group_info {
+    my %ret       = @_;
+    my $groupName = $ret{'shortGroup'};
+
+    osh_info("Group ${groupName}'s Owners are: "
+          . colored(@{$ret{'owners'}} ? join(" ", sort @{$ret{'owners'}}) : '-', 'red'))
+      if $ret{'owners'};
+
+    osh_info("Group ${groupName}'s GateKeepers (managing the members/guests list) are: "
+          . colored(@{$ret{'gatekeeper'}} ? join(" ", sort @{$ret{'gatekeepers'}}) : '-', 'red'))
+      if $ret{'gatekeepers'};
+
+    osh_info("Group ${groupName}'s ACLKeepers (managing the group servers list) are: "
+          . colored(@{$ret{'aclkeepers'}} ? join(" ", sort @{$ret{'aclkeepers'}}) : '-', 'red'))
+      if $ret{'aclkeepers'};
+
+    osh_info("Group ${groupName}'s Members (with access to ALL the group servers) are: "
+          . colored(@{$ret{'members'}} ? join(" ", sort @{$ret{'members'}}) : '-', 'red'))
+      if $ret{'members'};
+
+    # show guest info, along with the number of accesses each guest has
     my @guest_text;
-    my @filtered_guests;
-    foreach my $guest (sort @guests) {
-        $fnret = OVH::Bastion::get_acl_way(way => 'groupguest', group => $shortGroup, account => $guest);
-
-        # for realms, don't show remote accounts with zero accesses, this could be confusing
-        next if ($guest =~ m{/} && $fnret && @{$fnret->value} == 0);
-        $guest_details{$guest} = $fnret ? scalar(@{$fnret->value}) : '?';
-        push @guest_text,      $guest . "[" . $guest_details{$guest} . "]";
-        push @filtered_guests, $guest;
+    foreach my $guest (@{$ret{'guests'}}) {
+        my $nb = $ret{'guest_accesse'}{$guest};
+        push @guest_text, sprintf("%s[%s]", $guest, $nb // '?');
     }
-    osh_info "Group "
-      . $shortGroup
-      . "'s Guests (with access to SOME of the group servers) are: "
-      . colored(@filtered_guests ? join(" ", @guest_text) : '-', "red");
+    osh_info("Group ${groupName}'s Guests (with access to SOME of the group servers) are: "
+          . colored(@{$ret{'guests'}} ? join(" ", sort @guest_text) : '-', 'red'))
+      if $ret{'guests'};
 
-    # deprecated in v2.18.00+
-    $result_hash->{'full_members'}    = \@members;
-    $result_hash->{'partial_members'} = \@filtered_guests;
+    # current user doesn't have enough rights to get this info, tell them that
+    if (!$ret{'members'}) {
+        osh_info "You should ask them if you think you need access for your work tasks.";
+    }
 
-    # /deprecated
+    if (@{$ret{'inactive'}}) {
+        osh_info("For your information, the following accounts are inactive: "
+              . colored(join(" ", @{$ret{'inactive'}}), "blue"));
+    }
 
-    $result_hash->{'members'}         = \@members;
-    $result_hash->{'guests'}          = \@filtered_guests;
-    $result_hash->{'guests_accesses'} = \%guest_details;
+    if ($ret{'mfa_required'}) {
+        my %mfa2text = (
+            "any"      => "",
+            "totp"     => " (TOTP)",
+            "password" => " (password)",
+        );
+        osh_warn("MFA Required: when connecting to servers of this group, users will be asked for an "
+              . "additional authentication factor"
+              . $mfa2text{$ret{'mfa_required'}});
+    }
 
-    my @inactive;
-    foreach my $account (@members) {
-        if (OVH::Bastion::is_account_active(account => $account)->is_ko) {
-            push @inactive, $account;
+    if ($ret{'guest_ttl_limit'}) {
+        osh_warn("Guest TTL enforced: guest accesses must have a TTL with a maximum duration of "
+              . OVH::Bastion::duration2human(seconds => $ret{'guest_ttl_limit'})->value->{'duration'});
+    }
+
+    if ($ret{'idle_kill_timeout'}) {
+        my $action = "NOT be cut";
+        if ($ret{'idle_kill_timeout'} > 0) {
+            $action =
+              "be cut after " . OVH::Bastion::duration2human(seconds => $ret{'idle_kill_timeout'})->value->{'duration'};
         }
-    }
-    if (@inactive) {
-        osh_info "For your information, the following accounts are inactive: " . colored(join(" ", @inactive), "blue");
-        $result_hash->{'inactive'} = \@inactive;
+        osh_warn "Specific idle kill timeout: idle sessions on servers of this group will $action";
     }
 
-    # policies
-    $fnret = OVH::Bastion::group_config(group => $group, key => 'mfa_required');
-    if ($fnret && $fnret->value eq 'password') {
-        osh_warn
-          "MFA Required: when connecting to servers of this group, users will be asked for an additional authentication factor (password)";
-    }
-    elsif ($fnret && $fnret->value eq 'totp') {
-        osh_warn
-          "MFA Required: when connecting to servers of this group, users will be asked for an additional authentication factor (TOTP)";
-    }
-    elsif ($fnret && $fnret->value eq 'any') {
-        osh_warn
-          "MFA Required: When connecting to servers of this group, users will be asked for an additional authentication factor";
-    }
-    if ($fnret && $fnret->value ne 'none') {
-        $result_hash->{'mfa_required'} = $fnret->value;
+    if ($ret{'idle_lock_timeout'}) {
+        my $action = "NOT be locked";
+        if ($ret{'idle_lock_timeout'} > 0) {
+            $action = "be locked after "
+              . OVH::Bastion::duration2human(seconds => $ret{'idle_lock_timeout'})->value->{'duration'};
+        }
+        osh_warn "Specific idle kill timeout: idle sessions on servers of this group will $action";
     }
 
-    $fnret = OVH::Bastion::group_config(group => $group, key => 'guest_ttl_limit');
-    if ($fnret && defined $fnret->value && $fnret->value =~ /^\d+$/) {
-        osh_warn "Guest TTL enforced: guest accesses must have a TTL with a maximum duration of "
-          . OVH::Bastion::duration2human(seconds => $fnret->value)->value->{'duration'};
-        $result_hash->{'guest_ttl_limit'} = $fnret->value;
-    }
-
-    $fnret = OVH::Bastion::group_config(group => $group, %{OVH::Bastion::OPT_GROUP_IDLE_KILL_TIMEOUT()});
-    if ($fnret && defined $fnret->value && $fnret->value =~ /^-?\d+$/) {
-        if ($fnret->value == 0) {
-            osh_warn "Specific idle kill timeout: idle sessions on servers of this group will NOT be cut";
+    if ($withKeys) {
+        osh_info ' ';
+        if (!%{$ret{'keys'}}) {
+            osh_info "This group has no SSH egress key, the owner may use groupGenerateEgressKey to generate one.";
+        }
+        elsif (keys %{$ret{'keys'}} == 1) {
+            osh_info "The public key of this group is:";
         }
         else {
-            osh_warn "Specific idle kill timeout: idle sessions on servers of this group will be cut after "
-              . OVH::Bastion::duration2human(seconds => $fnret->value)->value->{'duration'};
+            osh_info "The public key of this group are:";
         }
-        $result_hash->{'idle_kill_timeout'} = $fnret->value;
+        osh_info ' ';
+        my @sorted = sort { $ret{'keys'}{$a}{'mtime'} <=> $ret{'keys'}{$b}{'mtime'} } keys %{$ret{'keys'}};
+        foreach my $fingerprint (@sorted) {
+            OVH::Bastion::print_public_key(key => $ret{'keys'}{$fingerprint});
+        }
     }
 
-    $fnret = OVH::Bastion::group_config(group => $group, => %{OVH::Bastion::OPT_GROUP_IDLE_LOCK_TIMEOUT()});
-    if ($fnret && defined $fnret->value && $fnret->value =~ /^-?\d+$/) {
-        if ($fnret->value == 0) {
-            osh_warn "Specific idle lock timeout: idle sessions on servers of this group will NOT be locked";
-        }
-        else {
-            osh_warn "Specific idle lock timeout: idle sessions on servers of this group will be locked after "
-              . OVH::Bastion::duration2human(seconds => $fnret->value)->value->{'duration'};
-        }
-        $result_hash->{'idle_lock_timeout'} = $fnret->value;
-    }
+    return;
+}
+
+if (!$all) {
+    # only one group, don't return a hash of hash to keep backward compat
+    my @keys = keys %return;
+    osh_ok $return{$keys[0]};
 }
 else {
-    osh_info "You should ask him/her/them if you think you need access for your work tasks.";
+    osh_info "If you're only seeing this line, you might want to use --json";
+    osh_ok \%return;
 }
-
-# get pubkeys with the proper from='' and show them
-
-$fnret = OVH::Bastion::get_bastion_ips();
-my $from;
-if ($fnret) {
-    my @ips = @{$fnret->value};
-    $from = 'from="' . join(',', @ips) . '"';
-}
-
-$fnret = OVH::Bastion::get_group_keys(group => $group);
-if ($fnret and $from) {
-    osh_info ' ';
-    if ($fnret->value && !@{$fnret->value->{'sortedKeys'}}) {
-        osh_info "This group has no SSH egress key, the owner may use groupGenerateEgressKey to generate one.";
-    }
-    elsif (@{$fnret->value->{'sortedKeys'}} == 1) {
-        osh_info "The public key of this group is:";
-    }
-    else {
-        osh_info "The public keys of this group are:";
-    }
-    osh_info ' ';
-    foreach my $keyfile (@{$fnret->value->{'sortedKeys'}}) {
-        my $key = $fnret->value->{'keys'}{$keyfile};
-        $key->{'prefix'} = $from;
-        OVH::Bastion::print_public_key(key => $key);
-        $result_hash->{'keys'}{$key->{'fingerprint'}} = $key;
-    }
-}
-
-osh_ok $result_hash;

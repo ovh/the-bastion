@@ -500,6 +500,32 @@ EOS
 
     # new state: g1[a1(ow,gk,acl,member) a2(acl)] g3[a0,a2,a3(ow,gk,acl,member)]
 
+    # --all requires auditor rights
+    plgfail a0_groupInfo_all_not_auditor $a0 --osh groupInfo --all
+    json .command groupInfo .error_code ERR_ACCESS_DENIED .value null
+
+    grant auditor
+
+    success a0_groupInfo_all $a0 --osh groupInfo --all
+    json $(cat <<EOS
+    .command groupInfo
+    .error_code OK
+    .value|length 2
+    .value["$group1"].aclkeepers[0]  $account1
+    .value["$group1"].aclkeepers[1]  $account2
+    .value["$group1"].gatekeepers[0] $account1
+    .value["$group1"].members[0]     $account1
+    .value["$group1"].owners[0]      $account1
+    .value["$group1"].guests|length    0
+    .value["$group1"].keys|.[]|.family RSA
+    .value["$group3"].owners[0]      $account0
+    .value["$group3"].owners[1]      $account3
+    .value["$group3"].owners[2]      $account2
+EOS
+)
+
+    revoke auditor
+
     # then check that owner/gatekeeper commands still don't work
 
     plgfail       a2_fail_add_a3_as_g1_owner      $a2 --osh groupAddOwner        --group $group1 --account $account3
