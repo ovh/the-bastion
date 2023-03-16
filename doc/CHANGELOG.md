@@ -1,10 +1,19 @@
+## v3.11.00 - 2023/03/23
+- feat: add ``sftp`` support
+- feat: add the possibility to auditors of listing all groups with ``groupInfo`` and all accounts with ``accountInfo``,
+    using ``--all``, along with filtering additional data with ``--with-*`` and ``without-*`` new options
+- enh: ``setup-encryption.sh``: don't require install to be called before us
+- fix: race condition when two parallel account creations used the ``uid-auto`` option
+- doc: add restore from backup howto
+- doc: add PuTTY connection setup howto
+
 ## v3.10.00 - 2023/02/17
-- feat: add accountFreeze/accountUnfreeze commands
-- enh: accountInfo: add --no-password-info and --no-output options
-- enh: more precise matching of ssh client error messages
-- enh: osh.pl: add the account name on each error message
+- feat: add ``accountFreeze``/``accountUnfreeze`` commands
+- enh: ``accountList``: add ``--no-password-info`` and ``--no-output`` options
+- enh: more precise matching of ``ssh`` client error messages
+- enh: ``osh.pl``: add the account name on each error message
 - fix: invalid suffixed account creation (#357)
-- chore: generate-sudoers.sh: sort alphabetically
+- chore: ``generate-sudoers.sh``: sort alphabetically
 
 ## v3.09.02 - 2022/11/15
 - fix: execute: rare race condition introduced in v3.09.01
