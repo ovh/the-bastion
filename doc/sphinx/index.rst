@@ -67,6 +67,7 @@ The unavoidable and iconic FAQ is also available under the **PRESENTATION** sect
    using/piv
    using/sftp_scp
    using/http_proxy
+   using/specific_ssh_clients_tutorials/index
 
 .. toctree::
    :maxdepth: 2
