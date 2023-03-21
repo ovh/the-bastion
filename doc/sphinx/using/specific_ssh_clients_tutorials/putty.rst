@@ -27,7 +27,7 @@ creating your account there, so you can copy/paste it when The Bastion asks you 
 .. image:: putty3.png
    :alt: Creating an account on The Bastion
 
-Now, you can close ``PuTTYgen`` (as you've saved the private and public key in their respective
+Now, you can close ``PuTTYgen`` (as you've saved the private and public keys in their respective
 files, you'll be able to use them later), and open ``PuTTY`` itself:
 
 .. image:: putty4.png
