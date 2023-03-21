@@ -66,6 +66,15 @@ if (not grep { $type eq $_ } qw{ normal realm }) {
 
 #<PARAMS:TYPE
 
+# take a lock here, do it before checking for account existence,
+# because another parallel creation of the same account might be
+# occuring, in which case we'd still hit a race condition
+$fnret = OVH::Bastion::Helper::get_lock_fh();
+$fnret or HEXIT($fnret);
+my $lock_fh = $fnret->value;
+$fnret = OVH::Bastion::Helper::acquire_lock($lock_fh);
+$fnret or HEXIT($fnret);
+
 #>PARAMS:ACCOUNT
 osh_debug("Checking account");
 $fnret = OVH::Bastion::is_account_valid(account => $account);

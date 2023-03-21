@@ -3,6 +3,9 @@ package OVH::Bastion::Helper;
 # vim: set filetype=perl ts=4 sw=4 sts=4 et:
 use common::sense;
 
+use Fcntl qw{ :flock :mode };
+use Time::HiRes qw{ usleep };
+
 use File::Basename;
 use lib dirname(__FILE__) . '/../../../../lib/perl';
 use OVH::Bastion;
@@ -69,6 +72,66 @@ if (not defined $self) {
     else {
         HEXIT('ERR_SUDO_NEEDED', msg => 'This command must be run under sudo');
     }
+}
+
+sub get_lock_fh {
+    my $fh;
+    my $lockdir  = "/tmp/bastion.lock";
+    my $lockfile = "$lockdir/lock";
+
+    # to avoid symlink attacks, we first create a subdir only accessible by root
+    unlink $lockdir;    # will silently fail if doesn't exist or is not a file
+    mkdir $lockdir;     # will silently fail if we lost the race
+    chown 0, 0, $lockdir;
+    chmod 0700, $lockdir;
+
+    # now, check if we do have a directory, or if we lost the race
+    if (!-d $lockdir) {
+        warn_syslog("Couldn't create $lockdir: are we being raced against?");
+        return R('ERR_CANNOT_LOCK', msg => "Couldn't create lock file, please retry");
+    }
+    # here, $lockdir is guaranteed to be a directory, check its perms
+    my @perms = stat($lockdir);
+    if ($perms[4] != 0 || $perms[5] != 0 || S_IMODE($perms[2]) != oct(700)) {
+        warn_syslog("The $lockdir directory has invalid perms: are we being raced against? mode="
+              . sprintf("%04o", S_IMODE($perms[2])));
+        return R('ERR_CANNOT_LOCK', msg => "Couldn't create lock file, please retry");
+    }
+
+    # here, $lockdir is guaranteed to be owned only by us. but rogue files
+    # might have appeared in it after the mkdir and before the chown/chmod,
+    # so check for the lockfile existence. if it does exist, it must be a normal
+    # file and not a symlink or any other file type. Note that we don't have
+    # a TOCTTOU problem here because no rogue user can no longer create files
+    # in $lockdir, as we checked just above.
+    if (-l $lockfile || -e !-f $lockfile) {
+        warn_syslog("The $lockfile file exists but is not a file, unlinking it and bailing out");
+        unlink($lockfile);
+        # don't give too much info to the caller
+        return R('ERR_CANNOT_LOCK', msg => "Couldn't create lock file, please retry");
+    }
+
+    if (!open($fh, '>>', $lockfile)) {
+        return R('ERR_CANNOT_LOCK', msg => "Couldn't create lock file, please retry");
+    }
+    return R('OK', value => $fh);
+}
+
+sub acquire_lock {
+    my $fh = shift;
+    return R('ERR_INVALID_PARAMETER', msg => "Invalid filehandle") if !$fh;
+
+    # try to lock for at most 60 seconds
+    my $limit = time() + 60;
+    my $locked;
+    my $first = 1;
+    while (!($locked = flock($fh, LOCK_EX | LOCK_NB)) && time() < $limit) {
+        usleep(rand(200_000) + 100_000);    # sleep for 100-300ms
+        OVH::Bastion::osh_info("Acquiring lock, this may take a few seconds...") if $first;
+        $first = 0;
+    }
+    return R('OK') if $locked;
+    return R('KO_LOCK_FAILED', msg => "Couldn't acquire lock in a reasonable amount of time, please retry later");
 }
 
 1;

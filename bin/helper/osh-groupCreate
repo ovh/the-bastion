@@ -94,6 +94,15 @@ $fnret or HEXIT($fnret);
 $group = $fnret->value->{'group'};
 my $shortGroup = $fnret->value->{'shortGroup'};
 
+# take a lock here, do it before checking for group existence,
+# because another parallel creation of the same group might be
+# occuring, in which case we'd still hit a race condition
+$fnret = OVH::Bastion::Helper::get_lock_fh();
+$fnret or HEXIT($fnret);
+my $lock_fh = $fnret->value;
+$fnret = OVH::Bastion::Helper::acquire_lock($lock_fh);
+$fnret or HEXIT($fnret);
+
 foreach my $test ($group, "$group-gatekeeper", "$group-owner") {
     $fnret = OVH::Bastion::is_group_existing(group => $test);
     $fnret->is_err and HEXIT($fnret);
