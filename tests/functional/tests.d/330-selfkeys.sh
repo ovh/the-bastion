@@ -503,18 +503,6 @@ EOS
             .value.key.prefix ""
     fi
 
-    if [ "${capabilities[blacklist]}" = 1 ] ; then
-    script  rsa1024fucked $a1 -osh selfAddIngressKey "<<< \"ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAIEA90Td1GTx+tYMbsti93lyiyKYelBgaXRrnweoYJXjUFNU93jZ+RmBR8yp5J6mx7jz9ECaMS7Dn49fNQi5uG75+m+DTUgq3bfNv8cygoVC4g3NhzA3e+uA22D+iI53j3Gm9YxaJVOypGXGkOoWnmXZy7FQ4aSBFvgqa81xfnoa+4M= compromised@rsa1024\""
-    retvalshouldbe 100
-    contain "IT IS VULNERABLE"
-    json .command selfAddIngressKey .error_code KO_VULNERABLE_KEY
-
-    script  rsa2048fucked $a1 -osh selfAddIngressKey "<<< \"ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAxP84hsnxNGSGczfSZTYwb7YCu7yFEyYq5r5qS0dKc6EVQkqdYCn5FrFj8d0+Qn9vglQyCMk+Aa9VLlmKV8/e43FqIq7oh4RDe3YhKKvQ28gLGB/nh2oBLDCB/AYMOjjkCsGU344mrcKQDZlPQsk7lJsied1YphOzHFD7MZVdWd0oUpKFdZSuGbpLRWR+bq29fx7JSiT2tw3G3+EQSW9bdqvzKgwQOAg94FFUTjiK/nVDXAowKMP3+R3cV/CxccA9q5glGw6Xh+K54oZRQ9frzEGmxOlDhMhthQCSRrAvwQQn9kBmcX8qiugHJGS91R5lWv+HU2ndyCQ6xTxRtYvMOw== compromised@rsa2048\""
-    retvalshouldbe 100
-    contain "IT IS VULNERABLE"
-    json .command selfAddIngressKey .error_code KO_VULNERABLE_KEY
-    fi
-
     run user1key2beforeadd $a1k2 -osh info
     retvalshouldbe 255
     contain "Permission denied"

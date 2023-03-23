@@ -365,26 +365,6 @@ sub get_ssh_pub_key_info {
             $return{'size'}        = $size + 0;
             $return{'fingerprint'} = $fingerprint;
             $return{'family'}      = $family;
-            my @blacklistfiles = qw{ DSA-1024 DSA-2048 RSA-1024 RSA-2048 RSA-4096 };
-            if (grep { "$family-$size" eq $_ } @blacklistfiles) {
-
-                # check for vulnkeys
-                my $blfile = '/usr/share/ssh/blacklist.' . $family . '-' . $size;
-                if (-r $blfile && open(my $fh_blacklist, '<', $blfile)) {
-                    my $shortfp = $fingerprint;
-                    $shortfp =~ s/://g;
-                    $shortfp =~ s/^.{12}//;
-
-                    #print "looking for shortfingerprint=$shortfp...\n";
-                    local $_ = undef;
-                    while (<$fh_blacklist>) {
-                        /^\Q$shortfp\E$/ or next;
-                        close($fh_blacklist);
-                        return R('KO_VULNERABLE_KEY', value => \%return);
-                    }
-                    close($fh_blacklist);
-                }
-            }
 
             # check allowed algos and key size
             my $allowedSshAlgorithms = OVH::Bastion::config("allowed${way}SshAlgorithms");
