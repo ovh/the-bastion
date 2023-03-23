@@ -1,4 +1,4 @@
-FROM debian:buster
+FROM debian:bullseye
 LABEL maintainer="stephane.lesimple+bastion@ovhcloud.com"
 
 # first, copy everything we need

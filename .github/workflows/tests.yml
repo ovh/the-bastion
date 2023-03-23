@@ -6,13 +6,13 @@ on:
 
 jobs:
     tests_short:
-        name: Short (deb10 only, no cc)
+        name: Short (deb11 only, no cc)
         runs-on: ubuntu-latest
         if: contains(github.event.pull_request.labels.*.name, 'tests:short')
         steps:
         - uses: actions/checkout@v2
-        - name: run tests inside a debian10 docker
-          run: tests/functional/docker/docker_build_and_run_tests.sh debian10 --skip-consistency-check --no-pause-on-fail
+        - name: run tests inside a debian11 docker
+          run: tests/functional/docker/docker_build_and_run_tests.sh debian11 --skip-consistency-check --no-pause-on-fail
           env:
             DOCKER_TTY: false
 
