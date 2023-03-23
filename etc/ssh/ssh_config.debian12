@@ -9,9 +9,6 @@
 # === FEATURES ===
 
 # disable non-needed sshd features
-# mitigates CVE-0216-0778
-UseRoaming no
-# other unwanted features
 Tunnel no
 ForwardAgent no
 ForwardX11 no
