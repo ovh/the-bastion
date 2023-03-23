@@ -15,7 +15,7 @@ opt_skip_consistency_check=0
 opt_no_pause_on_fail=0
 opt_log_prefix=
 opt_module=
-declare -A capabilities=( [ed25519]=1 [blacklist]=0 [mfa]=1 [mfa-password]=0 [pamtester]=1 [piv]=1 )
+declare -A capabilities=( [ed25519]=1 [mfa]=1 [mfa-password]=0 [pamtester]=1 [piv]=1 )
 
 # set the helptext now to get the proper default values
 help_text=$(cat <<EOF
@@ -31,7 +31,6 @@ Remote OS directory locations:
 
 Specifying features support of the underlying OS of the tested bastion:
     --has-ed25519=[0|1]        Ed25519 keys are supported (default: ${capabilities[ed25519]})
-    --has-blacklist=[0|1]      Detection of bad SSH keys generated during the Debian OpenSSL debacle of 2006 is supported (default: ${capabilities[blacklist]})
     --has-mfa=[0|1]            PAM is usable to check passwords and TOTP (default: ${capabilities[mfa]})
     --has-mfa-password=[0|1]   PAM is usable to check passwords (default: ${capabilities[mfa-password]})
     --has-pamtester=[0|1]      The \`pamtester\` binary is available, and PAM is usable (default: ${capabilities[pamtester]})
