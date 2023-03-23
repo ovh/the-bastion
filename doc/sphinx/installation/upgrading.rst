@@ -30,7 +30,55 @@ Version-specific upgrade instructions
 v3.11.00 - 2023/03/23
 *********************
 
-No specific upgrade instructions.
+The upgrade path from the preceding version is straightforward, however there is a change
+that you might want to be aware of before hitting the upgrade button:
+
+The previously implicitly assumed ``--port-any`` and ``--user-any`` options
+to the ``(self|account)(Add|Del)PersonalAccess`` commands, when either ``--user`` or ``--port`` were omitted,
+now require to be stated explicitly, to be consistent with the behaviour of ``group(Add|Del)Server``,
+which always required it. Note that using this mechanism always emitted a deprecation warning,
+since the first publicly released version, encouraging the explicit use of ``--user-any`` and/or ``--port-any``
+when this was desired. Now, omitting these options will simply return an error,
+as this has always been the case with ``group(Add|Del)Server``.
+
+Example of previous behaviour::
+
+   $ bssh --osh selfAddPersonalAccess --host 127.0.0.5 --force
+   ╭──ac777d06bec9───────────────────────────────────────────the-bastion-3.10.00───
+   │ ▶ adding personal access to a server on your account
+   ├───────────────────────────────────────────────────────────────────────────────
+   │ ❗ You didn't specify --user or --user-any, defaulting to --user-any, this will no longer be implicit in future versions
+   │ ❗ You didn't specify --port or --port-any, defaulting to --port-any, this will no longer be implicit in future versions
+   │ Forcing add as asked, we didn't test the SSH connection, maybe it won't work!
+   │ Access to 127.0.0.5 was added to account jdoe
+   ╰────────────────────────────────────────────────────</selfAddPersonalAccess>───
+
+Example of new behaviour::
+
+   $ bssh --osh selfAddPersonalAccess --host 127.0.0.5 --force
+   ╭──ac777d06bec9───────────────────────────────────────────the-bastion-3.11.00───
+   │ ▶ adding personal access to a server on your account
+   ├───────────────────────────────────────────────────────────────────────────────
+   │ Add a personal server access on your account
+   │
+   │ Usage: --osh selfAddPersonalAccess --host HOST [OPTIONS]
+   │
+   │   --host IP|HOST|IP/MASK   Server to add access to
+   │   --user USER              Remote login to use, if you want to allow any login, use --user-any
+   │   --user-any               Allow access with any remote login
+   │   --port PORT              Remote SSH port to use, if you want to allow any port, use --port-any
+   │   --port-any               Allow access to all remote ports
+   │   --scpup                  Allow SCP upload, you--bastion-->server (omit --user in this case)
+   │   --scpdown                Allow SCP download, you<--bastion--server (omit --user in this case)
+   │   --sftp                   Allow usage of the SFTP subsystem, you<--bastion-->server (omit --user in this case)
+   │   --force                  Add the access without checking that the public SSH key is properly installed remotely
+   │   --force-key FINGERPRINT  Only use the key with the specified fingerprint to connect to the server (cf selfListEgressKeys)
+   │   --force-password HASH    Only use the password with the specified hash to connect to the server (cf selfListPasswords)
+   │   --ttl SECONDS|DURATION   Specify a number of seconds (or a duration string, such as "1d7h8m") after which the access will automatically expire
+   │   --comment "'ANY TEXT'"   Add a comment alongside this server. Quote it twice as shown if you're under a shell.
+   │
+   │ ⛔ No user specified, if you want to add this server with any user, use --user-any
+   ╰────────────────────────────────────────────────────</selfAddPersonalAccess>───
 
 v3.10.00 - 2023/02/17
 *********************
