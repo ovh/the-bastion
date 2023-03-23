@@ -53,6 +53,8 @@ testsuite_selfaccesses_force_password()
         success sshd_config_patch $r0 "\"sed -i 's/^ChallengeResponseAuthentication no/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config\""
         success sshd_config_patch $r0 "\"echo -e 'Match User ${account4}\n  KbdInteractiveAuthentication yes\n  AuthenticationMethods keyboard-interactive' >> /etc/ssh/sshd_config\""
         success sshd_reload $r0 "\"pkill -SIGHUP -f '^(/usr/sbin/sshd\\\$|sshd.+listener)'\""
+        # during tests, under some OSes it takes some time for sshd to accept new connections again after the SIGHUP
+        [ "$COUNTONLY" != 1 ] && sleep 1
     fi
 
 

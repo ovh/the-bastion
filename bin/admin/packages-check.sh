@@ -35,22 +35,15 @@ if echo "$DISTRO_LIKE" | grep -q -w debian; then
                 libjson-xs-perl inotify-tools lsof curl libterm-readline-gnu-perl \
                 libwww-perl libdigest-sha-perl libnet-ssleay-perl \
                 libnet-server-perl cryptsetup mosh expect openssh-server locales \
-                coreutils netcat bash libcgi-pm-perl iputils-ping tar"
+                coreutils netcat-traditional bash libcgi-pm-perl iputils-ping tar \
+                liblinux-prctl-perl libpam-google-authenticator pamtester"
     # workaround for debian/armhf: curl fails to validate some SSL certificates,
     # whereas wget succeeds; this is needed for e.g. install-ttyrec.sh
     if [ "$(uname -m)" = armv7l ]; then
         wanted_list="$wanted_list wget"
     fi
+    # optional packages
     [ "$opt_dev" = 1 ] && wanted_list="$wanted_list libperl-critic-perl libtest-deep-perl perltidy shellcheck openssl wget"
-
-    if { [ "$LINUX_DISTRO" = debian ] && [ "$DISTRO_VERSION_MAJOR" -lt 9 ]; } ||
-       { [ "$LINUX_DISTRO" = ubuntu ] && [ "$DISTRO_VERSION_MAJOR" -le 16 ]; }; then
-        wanted_list="$wanted_list openssh-blacklist openssh-blacklist-extra"
-    fi
-    if { [ "$LINUX_DISTRO" = debian ] && [ "$DISTRO_VERSION_MAJOR" -ge 8 ]; } ||
-       { [ "$LINUX_DISTRO" = ubuntu ] && [ "$DISTRO_VERSION_MAJOR" -ge 14 ]; }; then
-        wanted_list="$wanted_list liblinux-prctl-perl libpam-google-authenticator pamtester"
-    fi
     [ "$opt_syslogng" = 1 ] && wanted_list="$wanted_list syslog-ng syslog-ng-core"
 
     if [ "$opt_install" = 1 ]; then
@@ -110,7 +103,7 @@ elif echo "$DISTRO_LIKE" | grep -q -w rhel; then
 elif echo "$DISTRO_LIKE" | grep -q -w suse; then
     wanted_list="perl-common-sense perl-JSON perl-Net-Netmask perl-Net-IP \
             perl-Net-DNS perl-DBD-SQLite perl-Term-ReadKey perl-DateTime \
-            fortune sudo fping perl perl-base \
+            fortune sudo fping perl perl-base gzip \
             xz sqlite3 binutils acl gpg2 rsync \
             perl-JSON-XS inotify-tools lsof curl perl-TermReadLine-Gnu \
             perl-libwww-perl perl-Digest perl-IO-Socket-SSL \
