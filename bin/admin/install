@@ -272,10 +272,8 @@ if [ "${opt[modify-ssh-config]}" = 1 ] || [ "${opt[modify-sshd-config]}" = 1 ] ;
         filesuffix=$short_suffix_name
     elif [ "$OS_FAMILY" = Linux ]; then
         if [ "$LINUX_DISTRO" = ubuntu ]; then
-            if [ "$DISTRO_VERSION_MAJOR" -le 14 ]; then
-                filesuffix=debian7
-            elif [ "$DISTRO_VERSION_MAJOR" -le 16 ]; then
-                filesuffix=debian8
+              if [ "$DISTRO_VERSION_MAJOR" -le 16 ]; then
+                filesuffix=debian9
             elif [ "$DISTRO_VERSION_MAJOR" -le 18 ]; then
                 filesuffix=debian10
             elif [ "$DISTRO_VERSION_MAJOR" -le 20 ]; then
