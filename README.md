@@ -72,9 +72,9 @@ Also don't forget to customize your `bastion.conf` file, which can be found in `
 
 Linux distros below are tested with each release, but as this is a security product, you are **warmly** advised to run it on the latest up-to-date stable version of your favorite OS:
 
-- Debian 11 (Bullseye), Debian 10 (Buster), 9 (Stretch)
+- Debian 11 (Bullseye), 10 (Buster), 9 (Stretch)
 - CentOS 7.x
-- RockyLinux 8.x
+- RockyLinux 8.x, 9.x
 - Ubuntu LTS 22.04, 20.04, 18.04, 16.04
 - OpenSUSE Leap 15.4\*
 

@@ -267,6 +267,7 @@ if [ "${opt[modify-ssh-config]}" = 1 ] || [ "${opt[modify-sshd-config]}" = 1 ] ;
     action_doing "Find which ssh/sshd config templates to install on $OS_FAMILY $LINUX_DISTRO $DISTRO_VERSION"
     short_suffix_name=$(echo "$LINUX_DISTRO$DISTRO_VERSION_MAJOR" | sed -re "s/[^a-z0-9]//")
     [ "$short_suffix_name" = "rocky8" ] && short_suffix_name=centos8
+    [ "$short_suffix_name" = "rocky9" ] && short_suffix_name=centos9
     filesuffix=default
     if [ -e "$basedir/etc/ssh/sshd_config.$short_suffix_name" ] && [ -e "$basedir/etc/ssh/ssh_config.$short_suffix_name" ]; then
         filesuffix=$short_suffix_name

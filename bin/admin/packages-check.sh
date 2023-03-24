@@ -56,15 +56,15 @@ if echo "$DISTRO_LIKE" | grep -q -w debian; then
     installed=$(dpkg -l | awk '/^ii/ {print $2}' | cut -d: -f1)
     install_cmd="apt-get install"
 elif echo "$DISTRO_LIKE" | grep -q -w rhel; then
-    wanted_list="perl-JSON perl-Net-Netmask perl-Net-IP \
-            perl-Net-DNS perl-DBD-SQLite perl-TermReadKey \
+    wanted_list="perl perl-JSON perl-Net-Netmask perl-Net-IP \
+            perl-Net-DNS perl-DBD-SQLite perl-TermReadKey procps-ng \
             sudo fping xz sqlite binutils acl gnupg2 rsync perl-DateTime \
             perl-JSON-XS inotify-tools lsof curl perl-Term-ReadLine-Gnu \
             perl-libwww-perl perl-Digest perl-Net-Server cryptsetup mosh \
             expect openssh-server netcat bash perl-CGI perl-Test-Simple passwd \
             cracklib-dicts perl-Time-Piece perl-Time-HiRes diffutils \
             perl-Sys-Syslog pamtester google-authenticator qrencode-libs \
-            perl-LWP-Protocol-https perl-Test-Deep findutils tar"
+            perl-LWP-Protocol-https perl-Test-Deep findutils tar iputils"
     if [ "$DISTRO_VERSION_MAJOR" = 7 ]; then
         wanted_list="$wanted_list fortune-mod coreutils util-linux"
     else
@@ -74,7 +74,7 @@ elif echo "$DISTRO_LIKE" | grep -q -w rhel; then
 
 
     if [ "$opt_install" = 1 ]; then
-            if [ "$DISTRO_VERSION_MAJOR" = 8 ]; then
+            if [ "$DISTRO_VERSION_MAJOR" -ge 8 ]; then
                 # in December 2020, they added "-Linux" to their repo name, so trying both combinations
                 # also try with "Rocky-" for RockyLinux
                 for repo in PowerTools Extras
@@ -93,8 +93,17 @@ elif echo "$DISTRO_LIKE" | grep -q -w rhel; then
             fi
             $dnf_or_yum makecache
             $dnf_or_yum install -y epel-release
+            if [ -x /usr/bin/crb ]; then
+                action_detail "Enabling CRB..."
+                /usr/bin/crb enable
+            fi
+            if [ "$DISTRO_VERSION_MAJOR" -ge 9 ]; then
+                extraopts='--allowerasing'
+            else
+                extraopts=''
+            fi
             # shellcheck disable=SC2086
-            $dnf_or_yum install -y $wanted_list
+            $dnf_or_yum install -y $extraopts $wanted_list
             exit 0
     fi
 
