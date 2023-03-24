@@ -359,6 +359,8 @@ run()
 
     # now run consistency check on the target, unless configured otherwise
     if [ "$opt_skip_consistency_check" != 1 ]; then
+        # sleep 1s if sshd has been reloaded
+        [ "$case" = "sshd_reload" ] && sleep 1
         flock "$outdir/$basename.retval" $screen "$outdir/$basename.cc" -D -m -fn -ln $r0 '
                 /opt/bastion/bin/admin/check-consistency.pl ; echo _RETVAL_CC=$?= ;
                 grep -Fw -e warn -e die -e code-warning /var/log/bastion/bastion.log | grep -Fv "'"${code_warn_exclude:-__none__}"'" | sed "s/^/_SYSLOG=/" ;
