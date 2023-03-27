@@ -241,7 +241,7 @@ sub print_group_info {
       if $ret{'owners'};
 
     osh_info("Group ${groupName}'s GateKeepers (managing the members/guests list) are: "
-          . colored(@{$ret{'gatekeeper'}} ? join(" ", sort @{$ret{'gatekeepers'}}) : '-', 'red'))
+          . colored(@{$ret{'gatekeepers'}} ? join(" ", sort @{$ret{'gatekeepers'}}) : '-', 'red'))
       if $ret{'gatekeepers'};
 
     osh_info("Group ${groupName}'s ACLKeepers (managing the group servers list) are: "
@@ -255,7 +255,7 @@ sub print_group_info {
     # show guest info, along with the number of accesses each guest has
     my @guest_text;
     foreach my $guest (@{$ret{'guests'}}) {
-        my $nb = $ret{'guest_accesse'}{$guest};
+        my $nb = $ret{'guests_accesses'}{$guest};
         push @guest_text, sprintf("%s[%s]", $guest, $nb // '?');
     }
     osh_info("Group ${groupName}'s Guests (with access to SOME of the group servers) are: "
