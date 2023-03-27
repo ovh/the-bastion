@@ -1,3 +1,6 @@
+## v3.11.01 - 2023/03/27
+- fix: ``groupInfo``: empty gatekeepers list and guest accesses list amount in human output (introduced in v3.11.00)
+
 ## v3.11.00 - 2023/03/23
 - feat: add ``sftp`` support
 - feat: add the possibility to auditors of listing all groups with ``groupInfo`` and all accounts with ``accountInfo``,
