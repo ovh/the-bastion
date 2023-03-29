@@ -234,7 +234,7 @@ foreach my $groupData (@groups) {
 
 sub print_group_info {
     my %ret       = @_;
-    my $groupName = $ret{'shortGroup'};
+    my $groupName = $ret{'group'};
 
     osh_info("Group ${groupName}'s Owners are: "
           . colored(@{$ret{'owners'}} ? join(" ", sort @{$ret{'owners'}}) : '-', 'red'))
