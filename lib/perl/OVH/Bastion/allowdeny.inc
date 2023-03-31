@@ -882,8 +882,6 @@ sub is_access_granted {
                 warn_syslog("Unknown access type '" . $access->{'type'} . "' found, ignoring");
             }
             if ($data{'keys'}) {
-
-                # TODO implement $access->{forceKey} check to include only the proper key
                 $access->{'keys'}            = $data{'keys'}->value->{'keys'};
                 $access->{'sortedKeys'}      = $data{'keys'}->value->{'sortedKeys'};
                 $access->{'mfaRequired'}     = $data{'mfa'}->value if $data{'mfa'};

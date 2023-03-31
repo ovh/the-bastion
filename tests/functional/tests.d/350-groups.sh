@@ -111,6 +111,7 @@ testsuite_groups()
     .value.public_key.family RSA
 EOS
     )
+    key0fp=$(get_json | $jq .value.fingerprint)
     # new state: g1[a1(ow,gk,acl,member)]
 
     # create g3 with a3 as owner to test key generation of a group a3 is not an owner of, without getting the early no-owner deny
@@ -134,8 +135,30 @@ EOS
     key1id=$(get_json | $jq .value.id)
     key1fp=$(get_json | $jq .value.fingerprint)
 
-    success a0_list_group_keys_g1 $a0 --osh groupInfo --group $group1
+    success a1_list_group_keys_g1 $a1 --osh groupInfo --group $group1
     json .command groupInfo .error_code OK ".value.keys.\"$key1fp\".typecode" ssh-ed25519
+
+    # now that we have several keys, take the opportunity to test force-key
+
+    plgfail a1_add_access_force_key_and_pwd_g1 $a1 --osh groupAddServer --host 127.1.2.3 --user-any --port-any --force --force-password '$1$2$3456' --force-key "$key1fp" --group $group1
+    .error_code ERR_CONFLICTING_PARAMETERS
+
+    success a1_add_access_force_key_g1 $a1 --osh groupAddServer --host 127.1.2.3 --user-any --port-any --force --force-key "$key1fp" --group $group1
+
+    success a1_list_servers_check_force_key_g1 $a1 --osh groupListServers --group $group1
+    json '.value|.[]|select(.ip=="127.1.2.3")|.forceKey' "$key1fp"
+
+    # try to use the force key
+
+    run a1_connect_g1_with_forcekey $a1 forcedkey@127.1.2.3 -- false
+    contain 'Connecting...'
+    contain 'FORCED IN ACL'
+    contain "$key1fp"
+    nocontain "$key0fp"
+
+    success a1_remove_forcekey_acl_g1 $a1 --osh groupDelServer --host 127.1.2.3 --user-any --port-any --group $group1
+
+    # /force-key
 
     run a0_del_key_g1 $a0 --osh groupDelEgressKey --group $group1 --id $key1id
     retvalshouldbe 106

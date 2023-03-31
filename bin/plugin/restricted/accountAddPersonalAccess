@@ -97,6 +97,10 @@ if ($forcePassword) {
     $forcePassword = $fnret->value->{'hash'};
 }
 
+if ($forceKey && $forcePassword) {
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "Can't use --force-key and --force-password at the same time";
+}
+
 osh_info "Can't verify whether $account\'s personal key has been installed to the remote server, "
   . "as you don't have access to their private keys, adding the access blindly";
 

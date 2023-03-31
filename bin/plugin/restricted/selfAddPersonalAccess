@@ -85,6 +85,10 @@ if ($forcePassword) {
     $forcePassword = $fnret->value->{'hash'};
 }
 
+if ($forceKey && $forcePassword) {
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "Can't use --force-key and --force-password at the same time";
+}
+
 if (not $force) {
     $fnret = OVH::Bastion::ssh_test_access_way(
         account       => $self,
