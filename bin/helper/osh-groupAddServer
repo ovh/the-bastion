@@ -19,7 +19,7 @@ use OVH::Bastion::Helper;
 # Fetch command options
 my $fnret;
 my ($result, @optwarns);
-my ($group, $user, $ip, $port, $action, $force, $forcePassword, $ttl, $comment);
+my ($group, $user, $ip, $port, $action, $force, $forcePassword, $forceKey, $ttl, $comment);
 eval {
     local $SIG{__WARN__} = sub { push @optwarns, shift };
     $result = GetOptions(
@@ -30,6 +30,7 @@ eval {
         "action=s" => sub { $action //= $_[1] },
         "force"    => sub { $force  //= $_[1] },
         "force-password=s" => sub { $forcePassword //= $_[1] },
+        "force-key=s"      => sub { $forceKey      //= $_[1] },
         "ttl=i"            => sub { $ttl           //= $_[1] },
         "comment=s"        => sub { $comment       //= $_[1] },
 
@@ -91,6 +92,7 @@ $fnret = OVH::Bastion::access_modify(
     user          => $user,
     port          => $port,
     forcePassword => $forcePassword,
+    forceKey      => $forceKey,
     ttl           => $ttl,
     comment       => $comment,
 );
@@ -105,6 +107,7 @@ if ($fnret->err eq 'OK') {
             user          => $user,
             port          => $port,
             forcePassword => $forcePassword,
+            forceKey      => $forceKey,
             ttl           => $ttl,
             comment       => $comment
         },

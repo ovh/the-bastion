@@ -20,7 +20,7 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
         "scpdown"          => \my $scpDown,
         "sftp"             => \my $sftp,
         "force"            => \my $force,           # for slashes, and/or for servers that are down (no connection test)
-        "force-key"        => \my $forceKey,
+        "force-key=s"      => \my $forceKey,
         "force-password=s" => \my $forcePassword,
         "ttl=s"            => \my $ttl,
         "comment=s"        => \my $comment,
@@ -87,6 +87,10 @@ if (defined $ttl) {
     $fnret = OVH::Bastion::is_valid_ttl(ttl => $ttl);
     $fnret or osh_exit $fnret;
     $ttl = $fnret->value->{'seconds'};
+}
+
+if ($forceKey && $forcePassword) {
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "Can't use --force-key and --force-password at the same time";
 }
 
 if ($forceKey) {

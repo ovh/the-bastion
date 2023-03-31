@@ -1367,16 +1367,18 @@ else {
         my @keysToTry;
         print " will try the following accesses you have: \n" unless $quiet;
         foreach my $access (@accessList) {
+            # each access has a type and possibly several keys
+            my $type = $access->{'type'} . " of " . $access->{'group'};
+            if ($access->{'type'} =~ /^group/) {
+                $type = colored($access->{'type'}, $access->{'type'} eq 'group-member' ? 'green' : 'yellow');
+                $type .= " of " . colored($access->{'group'}, 'blue bold');
+            }
+            elsif ($access->{'type'} =~ /^personal/) {
+                $type = colored($access->{'type'}, 'red') . ' access';
+            }
+
             foreach my $key (@{$access->{'sortedKeys'} || []}) {
-                my $keyinfo = $access->{'keys'}{$key};
-                my $type    = $access->{'type'} . " of " . $access->{'group'};
-                if ($access->{'type'} =~ /^group/) {
-                    $type = colored($access->{'type'}, $access->{'type'} eq 'group-member' ? 'green' : 'yellow');
-                    $type .= " of " . colored($access->{'group'}, 'blue bold');
-                }
-                elsif ($access->{'type'} =~ /^personal/) {
-                    $type = colored($access->{'type'}, 'red') . ' access';
-                }
+                my $keyinfo   = $access->{'keys'}{$key};
                 my $generated = strftime("[%Y/%m/%d]", localtime($keyinfo->{'mtime'}));
 
                 if ((not $useKey) || ($useKey eq $keyinfo->{'fingerprint'})) {
@@ -1398,6 +1400,11 @@ else {
                     ) unless $quiet;
                     push @keysToTry, $keyinfo->{'fullpath'} if not(grep { $_ eq $keyinfo->{'fullpath'} } @keysToTry);
                 }
+            }
+            if ($access->{'forceKey'} && @{$access->{'sortedKeys'} || []} == 0) {
+                printf("  - %s but found no key matching the forced fingerprint in corresponding ACL %s\n",
+                    $type, colored('(SKIPPED)', 'bold red'))
+                  unless $quiet;
             }
         }
         if ($useKey and not @keysToTry) {
