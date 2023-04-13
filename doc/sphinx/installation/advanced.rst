@@ -5,8 +5,15 @@ Advanced Installation
 This section goes further in explaining how to setup your bastion.
 You should have completed the :doc:`basic installation<basic>` first.
 
+.. _installadv_gpg:
+
 Encryption & signature GPG keys
 ===============================
+
+.. note::
+
+   This section is a prequisite to both the :ref:`installadv_encryptrsync` and the
+   :ref:`installadv_backup` steps further down this documentation
 
 There are 2 pairs of GPG keys being used by the bastion:
 
@@ -136,11 +143,14 @@ Also export the private admins GPG key to a secure vault (if you want the same k
 
     gpg --export-secret-keys --armor "$myname <$email>"
 
+.. _installadv_encryptrsync:
+
 Rotation, encryption & backup of ttyrec files
 =============================================
 
-You should already have all the needed GPG keys at the proper places,
-by following "Setup the encryption & signature GPG keys" section above.
+.. note::
+
+   The above section :ref:`installadv_gpg` is a prerequisite to this one
 
 The configuration file is located in ``/etc/bastion/osh-encrypt-rsync.conf``.
 You can ignore the ``signing_key``, ``signing_key_passphrase`` and ``recipients`` options,
@@ -166,9 +176,13 @@ Or even go further by starting the script in dry-run mode:
 Configuring keys, accounts & groups remote backup
 =================================================
 
+.. note::
+
+   The above section :ref:`installadv_gpg` is a prerequisite to this one, otherwise your backups will NOT
+   be automatically encrypted, which is something you probably want to avoid.
+
 Everything that is needed to restore a bastion from backup (keys, accounts, groups, etc.) is backed up daily
-in ``/root/backups`` by default. If you followed the "Setup the encryption & signature GPG keys" section above,
-these backups will be encrypted automatically.
+in ``/root/backups`` by default.
 
 If you want to push these backups to a remote location, which is warmly advised,
 you have to specify the remote location to ``scp`` the backup archives to.
@@ -207,118 +221,244 @@ Clustering (High Availability)
 
 The bastions can work in a cluster, with N instances. In that case, there is one *master* instance,
 where any modification command can be used (creating accounts, deleting groups, granting accesses),
-and N-1 *slave* instances, where only *readonly* actions are permitted.
+and N-1 *slave* instances, where only *readonly* actions are permitted. Any of these instances may be
+promoted, should the need arise.
+
 Note that any instance can be used to connect to infrastructures, so in effect all instances can always be used
 at the same time. You may set up a DNS round-robin hostname, with all the instances IPs declared,
 so that clients automatically choose a random instance, without having to rely on another external component
 such as a load-balancer. Note that if you do this, you'll need all the instances to share the same SSH host keys.
 
-Setting up a slave bastion
-**************************
+Before setting up the slave instance, you should have the two bastions up and running
+(follow the normal installation documentation). Then, to set up the synchronization between the
+instances, proceed as explained below.
 
-Before, setting up the slave bastion, you should have the two bastions up and running
-(follow the normal installation documentation).
+Allowing the master to connect to the slave
+*******************************************
 
-On the slave
-------------
-
-The sync of the  ``passwd`` and ``group`` files can have adverse effects on a newly installed machine where
-the packages where not installed in the same order than on the master, hence having different UIDs for the same users.
-The following commands are known to fix all the problems that could arise in that case, on an classic Debian machine,
-that has ``puppet``, ``postfix``, ``ossec`` and ``bind`` installed
-(disregard any *file or directory not found* message):
+On the slave, set the ``readOnlySlaveMode`` option in the ``/etc/bastion/bastion.conf`` file to ``true``:
 
 .. code-block:: shell
+   :caption: run this on the SLAVE:
+   :emphasize-lines: 1
 
-  chown -R puppet:puppet /var/lib/puppet /var/log/puppet /run/puppet
-  chgrp puppet /etc/puppet
-  chown -R postfix /var/spool/postfix /var/lib/postfix
-  chown root:root /var/spool/postfix
-  chown -R root:root /var/spool/postfix/{pid,etc,lib,dev,usr}
-  chgrp -R postdrop /var/spool/postfix/{public,maildrop}
-  chown root:postdrop /usr/sbin/postdrop /usr/sbin/postqueue
-  chmod g+s /usr/sbin/postdrop /usr/sbin/postqueue
-  chown -R ossec /var/ossec/logs /var/ossec/queue /var/ossec/stats /var/ossec/var
-  chgrp -R ossec /var/ossec
-  chown ossecr /var/ossec/queue/agent-info /var/ossec/queue/rids
-  chown root /var/ossec/queue/ /var/ossec/queue/alerts/execq /var/ossec/var /var/ossec/var/run
-  chgrp bind /var/cache/bind /var/lib/bind /etc/bind /etc/bind/named.conf.default-zones /run/named
-  chown -R bind:bind /etc/bind/rndc.key /run/named
-  chgrp allowkeeper /var/log/bastion
+   vim /etc/bastion/bastion.conf
 
-Then, on the slave, set the ``readOnlySlaveMode`` option in the ``/etc/bastion/bastion.conf`` file to ``1``:
-
-.. code-block:: shell
-
-    vim /etc/bastion/bastion.conf
-
-This will instruct the bastion to deny any modification plugin,
-so that changes can only be done through the master instance.
+This will instruct this bastion instance to deny any modification plugin,
+so that changes can only be done through the master.
 
 Then, append the master bastion synchronization public SSH keyfile,
-found in ``~root/.ssh/id_master2slave.pub`` on the master instance,
-to ``~bastionsync/.ssh/authorized_keys`` on the slave,
+found in :file:`~root/.ssh/id_master2slave.pub` on the master instance,
+to :file:`~bastionsync/.ssh/authorized_keys` on the slave,
 with the following prefix: ``from="IP.OF.THE.MASTER",restrict``
 
 Hence the file should look like this:
 
-    ``from="198.51.100.42",restrict ssh-ed25519 AAA[...]``
+.. code-block:: shell
+   :caption: run this on the SLAVE:
+   :emphasize-lines: 1
 
-Note that if you're using an old OpenSSH before version 7.2, the prefix should be instead:
-``from="IP.OF.THE.MASTER",no-port-forwarding,no-agent-forwarding,no-X11-forwarding,no-pty,no-user-rc``.
+   cat ~bastionsync/.ssh/authorized_keys
+   from="198.51.100.42",restrict ssh-ed25519 AAA[...]
 
-On the master
--------------
+Pushing the accounts and groups files to the slave
+**************************************************
 
-- Check that the key setup works correctly by launching the following command under the ``root`` account:
+Check that the key setup has been done correctly by launching the following command under the ``root`` account:
 
 .. code-block:: shell
+   :caption: run this on the MASTER:
+   :emphasize-lines: 1
 
-    rsync -vaA --numeric-ids --dry-run --delete --filter "merge /etc/bastion/osh-sync-watcher.rsyncfilter"
-    --rsh "ssh -i /root/.ssh/id_master2slave" / bastionsync@IP.OF.THE.SLAVE:/
+   rsync -v --rsh "ssh -i /root/.ssh/id_master2slave" /etc/passwd /etc/group bastionsync@IP.OF.THE.SLAVE:/root/
+   group
+   passwd
 
-- Check that it's not trying to rsync too much stuff (if you have weird things in your ``/home``,
-  you might want to edit ``/etc/bastion/osh-sync-watcher.rsyncfilter`` to exclude that stuff)
+   sent 105,512 bytes  received 8,046 bytes  75,705.33 bytes/sec
+   total size is 1,071,566  speedup is 9.44
 
-- Once you're happy with the output, retry without the ``--dry-run``
+If this works correctly, you'll have two new files in the :file:`/root` directory of the slave instance.
+We'll need those for the next step, which is verifying that the UIDs/GIDs of the slave instance are matching
+the master instance's ones. Indeed, the sync of the  ``/etc/passwd`` and ``/etc/group`` files can have adverse effects
+on a newly installed machine where the packages were not installed in the same order than on the master, hence having
+possibly mismatching UIDs/GIDs for the same users/groups.
 
-- When it's done, run it immediately again to ensure it still work,
-  because ``/etc/passwd`` and ``/etc/group`` will have been overwritten on the slave
+The next step ensures these are matching between the master and the slave before actually enabling the synchronization.
 
-- Then, edit the configuration on the master:
+.. _installadv_ha_uidgidsync:
+
+Ensuring the UIDs/GIDs are in sync
+**********************************
+
+Now that we have the master's :file:`/etc/passwd` and :file:`/etc/group` files in the slave's :file:`/root` folder,
+we can use a helper script to check for the UIDs/GIDs matches between the master and the slave.
+This script's job is to check whether there is any discrepancy, and if this is the case, generate another script,
+tailored to your case, to fix them:
 
 .. code-block:: shell
+   :caption: run this on the SLAVE:
+   :emphasize-lines: 1
 
-    vim /etc/bastion/osh-sync-watcher.sh
+   /opt/bastion/bin/admin/check_uid_gid_collisions.pl --master-passwd /root/passwd --master-group /root/group --output /root/syncids.sh
+   WARN: local orphan group: local group 50 (with name 'staff') is only present locally, if you want to keep it, create it on the master first or it'll be erased
 
-- Then, configure the script to start on boot and start it manually:
+   There is at least one warning, see above.
+   If you want to handle them, you may still abort now.
+   Type 'YES' to proceed regardless.
+
+In the example above, the script warns us that some accounts or groups are only existing on the slave instance,
+and not at all on the master. In this case, it's up to you to know what you want to do. If you choose to ignore it,
+these accounts and groups will be erased on the first synchronization, as the master will push its own accounts and
+groups to the slave instance. Such a discrepancy shouldn't happen as long as you're using the same OS and distro
+on both sides. It may happen if you have installed more packages on the slave instance than on the master, as some
+packages also create system groups or accounts. A possible fix is to install the same packages on the master, and/or
+simply adding the account(s) and/or group(s) on the master, so that they're synchronized everywhere.
+
+If you type 'YES' or simply don't have any warnings, you should see something like this:
 
 .. code-block:: shell
+   :caption: (output continued)
 
-    systemctl enable osh-sync-watcher
-    systemctl start osh-sync-watcher
+   Name collision on UID: master UID 38 exists on local but with a different name (master=gnats local=list)
+   -> okay, offsetting local UID 38 to 50000038
+   Differing name attached to same UID: master UID 38 doesn't exist on local, but its corresponding name 'gnats' does, with local UID 41
+   Name collision on UID: master UID 39 exists on local but with a different name (master=list local=irc)
+   -> okay, offsetting local UID 39 to 50000039
+   [...]
+   You may now review the generated script (/root/syncids.sh) and launch it when you're ready.
+   Note that you'll have to reboot once the script has completed.
 
-- You can check the logs (if you configured ``syslog`` instead, which is encouraged,
-  then the logfile depends on your syslog daemon configuration)
+The generated script is found at the location you've specified, which is :file:`/root/syncids.sh` if you used
+the command-line we suggested above. Reviewing this script is important, as this is the one that will be making
+UIDs/GIDs modification to your slave instance, as to sync them to the master's ones, including propagating these
+changes on your filesystem, using ``chmod`` and ``chgrp`` commands.
+
+Once you're ready (note that you'll have to reboot the slave right after), you may run the generated script:
 
 .. code-block:: shell
+   :caption: run this on the SLAVE:
+   :emphasize-lines: 1
 
-    tail -F /var/log/bastion/osh-sync-watcher.log
+   bash /root/syncids.sh
 
-Misc
-====
+   We'll change the UIDs/GIDs of files, when needed, in the following mountpoints: / /home /run /run/lock /run/snapd/ns /run/user/1001 /run/user/1001/doc /run/user/1001/gvfs
+   If you'd like to change this list, please edit this script and change the 'fslist' variable in the header.
+   Otherwise, if this sounds reasonable (e.g. there is no remotely mounted filesystem that you don't want us to touch), say 'YES' below:
 
-Create SSHFP records
-********************
+Please review the listed mountpoints (obviously, they'll be different than the ones above). As stated you may
+edit the script to adjust them if needed. If any UID/GID needs to be changed to be in sync with the master,
+the script will ensure the changes are propagated to the specified filesystems. You might want to exclude
+network-mounted filesystems and such, if any. The script does its best to do this for you, but you should ensure
+that it has got it right.
 
-If you want to use ``SSHFP`` (for a bastion, you should), generate the records and publish them in the DNS:
+Then, the script may list the daemons and running processes that it'll need to kill before doing the changes,
+as Linux forbids changing UIDs/GIDs when they're used by a process. This is why a reboot is needed at the end.
+
+.. code-block:: shell
+   :caption: (output continued)
+
+   The following processes/daemons will need to be killed before swapping the UIDs/GIDs:
+   USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+   kernoops    2484  0.0  0.0  11264   440 ?        Ss   Apr11   0:04 /usr/sbin/kerneloops
+   whoopsie    2467  0.0  0.0 253440 11860 ?        Ssl  Apr11   0:00 /usr/bin/whoopsie -f
+   colord      2227  0.0  0.0 249220 13180 ?        Ssl  Apr11   0:00 /usr/libexec/colord
+   geoclue     2091  0.0  0.1 905392 20268 ?        Ssl  Apr11   1:09 /usr/libexec/geoclue
+   rtkit       1789  0.0  0.0 153156  2644 ?        SNsl Apr11   0:00 /usr/libexec/rtkit-daemon
+   syslog      1445  0.0  0.0 224548  4572 ?        Ssl  Apr11   0:02 /usr/sbin/rsyslogd -n -iNONE
+   systemd+    1305  0.0  0.0  91016  4088 ?        Ssl  Apr11   0:00 /lib/systemd/systemd-timesyncd
+
+   If you want to stop them manually, you may abort now (CTRL+C) and do so.
+   Press ENTER to continue.
+
+As stated, ensure that it's alright that these daemons are killed. You may want to terminate them manually
+if needed, otherwise the script will simply send a ``SIGTERM`` to these processes.
+
+.. code-block:: shell
+   :caption: (output continued)
+
+   [...]
+   Restoring SUID/SGID flags where needed...
+   [...]
+   UID/GID swapping done, please reboot now.
+
+As instructed, you may now reboot.
+
+.. note::
+
+   If you're currently restoring from a backup, you may stop here and resume
+   the :doc:`/installation/restoring_from_backup` procedure.
+
+Enabling the synchronization
+****************************
+
+Now that the master and the slave UIDs/GIDs are matching, we may enable the synchronization daemon:
+
+.. code-block:: shell
+   :caption: run this on the MASTER:
+   :emphasize-lines: 1
+
+   vim /etc/bastion/osh-sync-watcher.sh
+
+You may review the configuration, but the two main items to review are:
+
+- ``enabled``, which should be set to ``1``
+- ``remotehostlist``, which should contain the hosts/IPs list of the slave instances, separated by spaces
+
+If the synchronization daemon was not already enabled and started (i.e. this is the first slave instance
+you're setting up for this master), then you should configure it to start it on boot, and you may also
+start it manually right now:
+
+.. code-block:: shell
+   :caption: run this on the MASTER:
+   :emphasize-lines: 1-2
+
+   systemctl enable osh-sync-watcher
+   systemctl start osh-sync-watcher
+
+Otherwise, if the daemon is already enabled and active, you can just restart it so it picks up the new configuration:
+
+.. code-block:: shell
+   :caption: run this on the MASTER:
+   :emphasize-lines: 1
+
+   systemctl restart osh-sync-watcher
+
+Now, you can check the logs (if you configured ``syslog`` instead, which is encouraged,
+then the logfile depends on your syslog daemon configuration. If you're using our bundled ``syslog-ng``
+configuration, the output is logged in :file:`/var/log/bastion/bastion-scripts.log`)
+
+.. code-block:: shell
+   :caption: run this on the MASTER:
+   :emphasize-lines: 1
+
+   tail -F /var/log/bastion/osh-sync-watcher.log
+   Apr 12 18:11:25 bastion1.example.org osh-sync-watcher.sh[3346532]: Starting sync!
+   Apr 12 18:11:25 bastion1.example.org osh-sync-watcher.sh[3346532]: 192.0.2.42: [Server 1/1 - Step 1/3] syncing needed data...
+   Apr 12 18:11:27 bastion1.example.org osh-sync-watcher.sh[3346532]: 192.0.2.42: [Server 1/1 - Step 1/3] sync ended with return value 0
+   Apr 12 18:11:27 bastion1.example.org osh-sync-watcher.sh[3346532]: 192.0.2.42: [Server 1/1 - Step 2/3] syncing lastlog files from master to slave, only if master version is newer...
+   Apr 12 18:11:28 bastion1.example.org osh-sync-watcher.sh[3346532]: 192.0.2.42: [Server 1/1 - Step 2/3] sync ended with return value 0
+   Apr 12 18:11:28 bastion1.example.org osh-sync-watcher.sh[3346532]: 192.0.2.42: [Server 1/1 - Step 3/3] syncing lastlog files from slave to master, only if slave version is newer...
+   Apr 12 18:11:30 bastion1.example.org osh-sync-watcher.sh[3346532]: 192.0.2.42: [Server 1/1 - Step 3/3] sync ended with return value 0
+   Apr 12 18:11:39 bastion1.example.org osh-sync-watcher.sh[3346532]: All secondaries have been synchronized successfully
+   Apr 12 18:11:39 bastion1.example.org osh-sync-watcher.sh[3346532]: Watching for changes (timeout: 120)...
+
+Your new slave instance is now ready!
+
+Creating SSHFP DNS records
+==========================
+
+If you want to use ``SSHFP`` to help authenticating your bastion public keys by publishing their checksum
+in your DNS, here is now to generate the correct records:
 
 .. code-block:: shell
 
     awk 'tolower($1)~/^hostkey$/ {system("ssh-keygen -r bastion.name -f "$2)}' /etc/ssh/sshd_config
 
-Harden the SSH configuration
-****************************
+You shall then publish them in your DNS. It is also a good idea to secure your DNS zone with DNSSEC,
+but this is out of the scope of this manual.
+
+Hardening the SSH configuration
+===============================
 
 Using our SSH templates is a good start in any case. If you want to go further, there are a lot of online resources
 to help you harden your SSH configuration, and audit a running SSHd server.
@@ -331,7 +471,7 @@ Note that for The Bastion, both sides can be independently hardened:
 the ingress part is handled in ``sshd_config``, and the egress part is handled in ``ssh_config``.
 
 2FA root authentication
-***********************
+=======================
 
 The bastion supports TOTP (Time-based One Time Password), to further secure high profile accesses.
 This section covers the configuration of 2FA root authentication on the bastion itself.
@@ -352,14 +492,14 @@ by exporting the ``base64`` version of it:
 
     gzip -c /root/qrcode | base64 -w150
 
-Copy this in your password manager (for example). You can then delete the ``/root/qrcode`` file.
+Copy this in your password manager (for example). You can then delete the :file:`/root/qrcode` file.
 
 You have then two configuration adjustments to do.
 
-- First, ensure you have installed the provided ``/etc/pam.d/sshd`` file, or at least the corresponding line
+- First, ensure you have installed the provided :file:`/etc/pam.d/sshd` file, or at least the corresponding line
   to enable the TOTP pam plugin in your configuration.
 
-- Second, ensure that your ``/etc/ssh/sshd_config`` file calls PAM for root authentication.
+- Second, ensure that your :file:`/etc/ssh/sshd_config` file calls PAM for root authentication.
   In the provided templates, there is a commented snippet to do it. The uncommented snippet looks like this:
 
 .. code-block:: shell
@@ -369,7 +509,7 @@ You have then two configuration adjustments to do.
         AuthenticationMethods publickey,keyboard-interactive:pam
 
 Note that first, the usual publickey method will be used, then control will be passed to PAM.
-This is where the ``/etc/pam.d/sshd`` configuration will apply.
+This is where the :file:`/etc/pam.d/sshd` configuration will apply.
 
 Now, you should be asked for the TOTP the next time you try to login through ssh as root.
 In case something goes wrong with the new configuration, be sure to keep your already opened existing
@@ -385,6 +525,6 @@ to your machine with TOTP, including a snippet similar to this one:
     auth    requisite                   pam_deny.so
     # End of TOTP Config
 
-inside your ``/etc/pam.d/login`` file.
+inside your :file:`/etc/pam.d/login` file.
 
 Of course, when using TOTP, this is paramount to ensure your server is properly synchronized through NTP.
