@@ -26,6 +26,11 @@ First, you obviously must have a backup at hand, which should be the case if you
 If the backup is encrypted with GPG (it should be), you must have access to the corresponding GPG private key and
 its passphrase.
 
+You must ensure that the new server you're setting up has the same OS release than the one the backup file
+comes from, as we'll overwrite the new server's accounts and groups files with the backed up versions.
+This could cause adverse effects if the distro or release differ, although the restore script won't stop
+you from doing so (it'll even help you adjust the discrepancies if needed, but again, this is strongly discouraged).
+
 Steps
 =====
 
@@ -35,9 +40,7 @@ Installation
 On the new server you want to deploy the backup to, you must first follow the standard :doc:`/installation/basic`
 procedure, up to and including the *Check that the code works on your machine* step.
 
-You must ensure that the new server you're setting up has the same OS release than the one the backup file
-comes from, as we'll overwrite the new server's :file:`/etc/passwd` and :file:`/etc/group`` files with the backed up versions.
-This could cause adverse effects if the distro or release differ.
+Once done, you may proceed to the next steps below.
 
 GPG key and backup archive import
 ---------------------------------
@@ -68,8 +71,8 @@ You can use ``scp``, ``sftp`` or any other method to get this file onto the serv
 :file:`/root` as location for the rest of this documentation, as this is guaranteed to only be readable by root,
 hence not compromising the keys and credentials.
 
-Decrypt and restore
--------------------
+Decrypt and extract accounts and groups
+---------------------------------------
 
 Now, you can decrypt the backup archive:
 
@@ -87,11 +90,39 @@ Then, check whether the archive seems okay:
 .. code-block:: shell
    :emphasize-lines: 1
 
-   tar tvzf /root/backup-decrypted.tar.gz | less -SR
+   tar tvzf /root/backup-decrypted.tar.gz
 
 You should see a long list of files, most under the :file:`/home` hierarchy.
 
-When you're ready, proceed with the restore:
+We now need to extract the backed up :file:`/etc/passwd` and :file:`/etc/group` files, to ensure the new
+instance we're setting up has its UIDs/GIDs synced with the system we're restoring:
+
+.. code-block:: shell
+   :emphasize-lines: 1
+
+   tar xvzf /root/backup-decrypted.tar.gz -C /root --strip-components=1 etc/passwd etc/group
+   etc/group
+   etc/passwd
+
+We now have the two original accounts and groups lists in :file:`/root`, and we can proceed to check
+whether the UIDs and GIDs are in sync.
+
+Ensuring the UIDs/GIDs are in sync
+----------------------------------
+
+This procedure is the same than when setting up a slave instance bastion,
+please follow the corresponding :ref:`step there<installadv_ha_uidgidsync>` and come
+back to this documentation when it's done.
+
+.. note::
+
+   The referenced step above asks you to reboot at the end, please ensure you've done it before
+   continuing with the rest of the procedure below.
+
+Restoring
+---------
+
+Now that we know the UIDs/GIDs are synced, we can proceed with the full restore:
 
 .. code-block:: shell
    :emphasize-lines: 1
@@ -103,31 +134,16 @@ When you're ready, proceed with the restore:
    If you're getting errors such as 'Warning: Cannot acl_from_text: Invalid argument', please ensure that your
    filesystem supports ACLs and is mounted with ACL support, otherwise ``tar`` can't restore ACLs from the backup.
 
-Orphan files check
+Back to production
 ------------------
 
-At this point, the :file:`/etc/passwd` and :file:`/etc/group` files have been overwritten by the backup versions,
-so you might want to ensure that your server is not left with orphan files,
-which may happen if your new server and old server setups were a bit different (i.e. different packages installed).
+As the configuration of the SSH daemon has also been restored, you might want to restart it so that it
+picks up the new configuration:
 
 .. code-block:: shell
    :emphasize-lines: 1
 
-   find / -type d -regextype egrep -regex '/(sys|dev|proc|run|tmp|var/tmp)' -prune -o -nouser -ls -o -nogroup -ls
-
-If files are reported by ``find``, it's because they have either no user or no group. You might want to manually fix
-that using ``chown`` and ``chgrp``.
-
-.. note::
-
-   This step will be unnecessary in a future version of the restore procedure
-
-Back to production
-------------------
-
-As the configuration of the SSH daemon has also been restored, and due to the fact that you might still have daemons
-running under their old UID/GID after the :file:`/etc/passwd` and :file:`/etc/group` replacements,
-it is usually a good idea to reboot the server at this point.
+   service ssh restart
 
 Once this is done, all the accounts that were present in the backup should be working. After ensuring this is the case,
 you may put the server put back in production.

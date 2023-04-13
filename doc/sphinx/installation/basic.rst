@@ -235,6 +235,11 @@ This script will verify that all required modules are installed:
 
     /opt/bastion/bin/dev/perl-check.sh
 
+.. note::
+
+   If you're installing this instance to restore a backup, you may stop here and resume the
+   standard :doc:`/installation/restoring_from_backup` procedure.
+
 .. _install-basic_first-account:
 
 9. Manually create our first bastion account
@@ -262,5 +267,11 @@ All the other accounts should be created by a bastion admin (or more precisely,
 by somebody granted to the *accountCreate* command), using the bastion own commands.
 But more about this in the section *Using the bastion*.
 
-Now that your bastion is installed, you can either check the :doc:`advanced installation<advanced>` documentation,
-or head over to the **USAGE** section on the left menu.
+You may head over to the **USAGE** section on the left menu, but please read the warning below first.
+
+.. warning::
+   Note that even if your bastion should now be functional, proper setup for a production-level environment
+   is not done yet: for example, you don't have any backup system in place! Please ensure you follow the
+   :doc:`advanced installation<advanced>` documentation and carely consider each step (by either completing it
+   or deciding that it's not mandatory for your use case), before considering your installation complete.
+
