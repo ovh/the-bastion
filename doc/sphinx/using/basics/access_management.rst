@@ -7,7 +7,7 @@ to understand those two ways because they're complementary.
 
 .. note::
    This section is largely inspired from the `blog post about the subject
-   <https://www.ovh.com/blog/the-ovhcloud-ssh-bastion-part-2-delegation-dizziness/>`_
+   <https://blog.ovhcloud.com/the-ovhcloud-ssh-bastion-part-2-delegation-dizziness/>`_
 
 The main idea is that delegation is at the core of the system: everybody has their own set of responsibilities,
 and potential actions, without having to ask the bastion admin.

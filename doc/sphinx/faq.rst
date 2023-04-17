@@ -42,7 +42,7 @@ It can be a highly successful if done very carefully, with a lot of security and
 certificates delivery workflows. Managing a CA correctly is no joke and can bite you quite hard if done improperly.
 This also happens to be a somewhat recent addition to OpenSSH, and if you have a lot of heterogeneous
 systems to handle, this might be a no-go.
-You can read more about this topic here: https://www.ovh.com/blog/the-ovhcloud-bastion-part-1/
+You can read more about this topic here: https://blog.ovhcloud.com/the-ovhcloud-bastion-part-1/
 
 What does `osh` mean in ``--osh``?
 ==================================
