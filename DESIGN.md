@@ -21,7 +21,7 @@ system user, and same goes for the group private keys. This way, even if the
 code is tricked to allow access when it shouldn't have (flawed logic or bug),
 then the OS will still deny reading the key file.
 
-This concept has been explained in the [Blog Post #3 - Security at the Core](https://www.ovh.com/blog/the-bastion-part-3-security-at-the-core/).
+This concept has been explained in the [Blog Post #3 - Security at the Core](https://blog.ovhcloud.com/the-bastion-part-3-security-at-the-core/).
 
 ## Zero trust between portions of code running at different permission levels
 
@@ -37,4 +37,4 @@ run under perl tainted mode.
 Helpers communicate back their result using JSON, which is then read from
 the plugin (the unprivileged portion of code), and parsed.
 
-This concept has been explained in the [Blog Post #3 - Security at the Core](https://www.ovh.com/blog/the-bastion-part-3-security-at-the-core/).
+This concept has been explained in the [Blog Post #3 - Security at the Core](https://blog.ovhcloud.com/the-bastion-part-3-security-at-the-core/).
