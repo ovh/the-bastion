@@ -1,3 +1,17 @@
+## v3.11.02 - 2023/04/18
+- feat: add uid/gid collisions checking script & document it for HA cluster setup and backup restore (#378)
+- fix: ``groupAddServer``: ``--force-key`` wasn't working properly (#259)
+- fix: ``groupInfo``: reintroduce group name in human-readable output (mistakenly removed in v3.11.00)
+- fix: tests: race condition after sshd reload that could sometimes make testcases fail
+- chg: add Debian 12 to tests (not released yet, so not officially supported for now)
+- chg: add RockyLinux 9 support
+- chg: bump OpenSUSE Leap tests from 15.3 to 15.4
+- chg: push sandbox and tester images from Debian 10 to Debian 11
+- remove: get rid of decade-old Debian ``openssh-blacklist`` logic
+- remove: get rid of deprecated ``UseRoaming`` option from ``ssh_config``
+- chore: update DockerHub workflow to push sandbox image on release
+- doc: update broken blog links
+
 ## v3.11.01 - 2023/03/27
 - fix: ``groupInfo``: empty gatekeepers list and guest accesses list amount in human output (introduced in v3.11.00)
 
