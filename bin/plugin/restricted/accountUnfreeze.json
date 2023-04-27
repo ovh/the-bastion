@@ -1,0 +1,8 @@
+{
+    "interactive": [
+        "accountUnfreeze"                 , {"ac" : ["--account"]},
+        "accountUnfreeze --account"       , {"ac" : ["<ACCOUNT>"]},
+        "accountUnfreeze --account \\S+"  , {"pr" : ["<enter>"]}
+    ],
+    "master_only": 1
+}

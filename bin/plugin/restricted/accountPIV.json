@@ -8,5 +8,6 @@
         "accountPIV --account \\S+ --policy grace"                          , {"ac": ["--ttl"]},
         "accountPIV --account \\S+ --policy grace --ttl"                    , {"pr": ["<duration>"]},
         "accountPIV --account \\S+ --policy grace --ttl (.*)"               , {"pr": ["<enter>"]}
-    ]
+    ],
+    "master_only": 1
 }
