@@ -1,0 +1,10 @@
+{
+    "interactive": [
+        "accountFreeze"                 , {"ac" : ["--account"]},
+        "accountFreeze --account"       , {"ac" : ["<ACCOUNT>"]},
+        "accountFreeze --account \\S+"  , {"ac" : ["--reason","<enter>"]},
+        "accountFreeze --account \\S+ --reason"  , {"pr" : ["\"reason between quotes\""]},
+        "accountFreeze --account \\S+ --reason .+"  , {"pr" : ["<enter>"]}
+    ],
+    "master_only": 1
+}

@@ -43,13 +43,14 @@ my @knownPlugins = (
         'other commands'               => [qw{ selfModify }],
     ],
     'MANAGE OTHER ACCOUNTS' => [
-        'manage bastion accounts' =>
-          [qw{ accountList accountCreate accountCreateOvh accountDelete accountUnexpire accountModify accountPIV }],
+        'manage bastion accounts' => [
+            qw{ accountList accountInfo accountCreate accountDelete accountUnexpire accountUnlock accountFreeze accountUnfreeze accountModify accountPIV }
+        ],
         'manage accounts ingress credentials (them->bastion)' =>
           [qw{ accountListIngressKeys accountResetIngressKeys accountMFAResetPassword accountMFAResetTOTP }],
         'manage accounts egress credentials (bastion->server)' =>
           [qw{ accountListEgressKeys accountGeneratePassword accountListPasswords }],
-        'manage access to restricted commands' => [qw{ accountGrantCommand accountRevokeCommand accountInfo }],
+        'manage access to restricted commands' => [qw{ accountGrantCommand accountRevokeCommand }],
         'manage another account accesses to servers' =>
           [qw{ accountListAccesses accountAddPersonalAccess accountDelPersonalAccess whoHasAccessTo }],
         'review past sessions' => [qw{ accountListSessions globalListSessions }],
@@ -58,7 +59,7 @@ my @knownPlugins = (
         'information and lifecycle' => [qw{ groupInfo groupListServers groupList groupCreate groupDelete }],
         'group owner commands'      => [
             qw{ groupAddGatekeeper groupDelGatekeeper groupAddAclkeeper groupDelAclkeeper
-              groupAddOwner groupDelOwner groupTransmitOwnership groupGenerateEgressKey groupDelEgressKey groupModify }
+              groupAddOwner groupDelOwner groupTransmitOwnership groupGenerateEgressKey groupDelEgressKey groupModify groupDestroy }
         ],
         'egress passwords commands'             => [qw{ groupListPasswords groupGeneratePassword groupDelPassword }],
         'gatekeeper commands to manage members' => [qw{ groupAddMember groupDelMember }],
@@ -71,7 +72,7 @@ my @knownPlugins = (
     ],
     'MISC COMMANDS' => [
         'basic commands'   => [qw{ help info }],
-        'utility commands' => [qw{ nc ping mtr alive clush scp batch }],
+        'utility commands' => [qw{ nc ping mtr alive clush scp sftp batch }],
         'realm commands'   => [qw{ realmList realmInfo realmCreate realmDelete }],
         'audit commands'   => [qw{ rootListIngressKeys }],
         'other specific commands',
@@ -165,8 +166,8 @@ if ($docURL && $docURL->value) {
 }
 
 if (OVH::Bastion::config('readOnlySlaveMode')->value) {
-    osh_warn "\nNOTICE: This bastion is part of a cluster, and this instance is a read-only one (slave), "
-      . "so only read-only compliant commands are available. If you need to use write/modify commands, "
+    osh_warn "\nNOTICE: This bastion is part of a cluster, and this instance is a read-only one (slave),\n"
+      . "so only read-only compliant commands are available.\nIf you need to use write/modify commands, "
       . "please do it on the master of the cluster instead.";
 }
 
