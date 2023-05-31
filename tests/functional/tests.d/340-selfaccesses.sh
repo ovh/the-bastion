@@ -121,6 +121,40 @@ testsuite_selfaccesses()
     contain "already"
     json .command   selfAddPersonalAccess .error_code   OK_NO_CHANGE .value null
 
+    # test selfAddPersonalAccess config items
+    success selfAddPersonalAccess_setconfig1 $r0 "echo '\{\\\"self_remote_user_only\\\":true\,\\\"widest_v4_prefix\\\":30\}' \> $opt_remote_etc_bastion/plugin.selfAddPersonalAccess.conf \; chmod o+r $opt_remote_etc_bastion/plugin.selfAddPersonalAccess.conf"
+
+    plgfail selfAddPersonalAccess_self_remote_user_only $a0 --osh selfAddPersonalAccess --host 127.0.0.9 --user notme --port-any
+    json .error_code ERR_INVALID_PARAMETER
+    contain "you may retry"
+
+    plgfail selfAddPersonalAccess_too_wide $a0 --osh selfAddPersonalAccess --host 127.0.0.0/8 --user $account0 --port-any
+    json .error_code ERR_INVALID_PARAMETER
+    contain "IPv4 is /30 by this"
+
+    success selfAddPersonalAccess_constraints_ok $a0 --osh selfAddPersonalAccess --host 127.0.0.9 --user $account0 --port-any --ttl 1 --force
+
+    success selfAddPersonalAccess_delconfig $r0 "rm -f $opt_remote_etc_bastion/plugin.selfAddPersonalAccess.conf"
+
+    # same with accountAddPersonalAccess
+    grant accountAddPersonalAccess
+    success accountAddPersonalAccess_setconfig1 $r0 "echo '\{\\\"self_remote_user_only\\\":true\,\\\"widest_v4_prefix\\\":30\}' \> $opt_remote_etc_bastion/plugin.accountAddPersonalAccess.conf \; chmod o+r $opt_remote_etc_bastion/plugin.accountAddPersonalAccess.conf"
+
+    plgfail accountAddPersonalAccess_self_remote_user_only $a0 --osh accountAddPersonalAccess --host 127.0.0.9 --user notme --port-any --account $account1
+    json .error_code ERR_INVALID_PARAMETER
+    contain "you may retry"
+
+    plgfail accountAddPersonalAccess_too_wide $a0 --osh accountAddPersonalAccess --host 127.0.0.0/8 --user $account1 --port-any --account $account1
+    json .error_code ERR_INVALID_PARAMETER
+    contain "IPv4 is /30 by this"
+
+    success accountAddPersonalAccess_constaints_ok $a0 --osh accountAddPersonalAccess --host 127.0.0.9 --user $account1 --port-any --ttl 1 --account $account1
+
+    success accountAddPersonalAccess_delconfig $r0 "rm -f $opt_remote_etc_bastion/plugin.accountAddPersonalAccess.conf"
+
+    revoke accountAddPersonalAccess
+    # /test (self|account)AddPersonalAccess config items
+
     success withttl $a0 -osh selfAddPersonalAccess -h 127.0.0.4 -u $shellaccount -p 22 --force --ttl 0d0h0m3s
     json .command   selfAddPersonalAccess .error_code   OK .value.ip 127.0.0.4 .value.user $shellaccount .value.port 22 .value.ttl 3
 

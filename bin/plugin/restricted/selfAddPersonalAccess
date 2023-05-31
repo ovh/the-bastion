@@ -90,6 +90,39 @@ if ($forceKey && $forcePassword) {
     osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "Can't use --force-key and --force-password at the same time";
 }
 
+# check plugin config
+if ($pluginConfig && $pluginConfig->{'self_remote_user_only'}) {
+    if (!$user || $user ne $self) {
+        osh_exit('ERR_INVALID_PARAMETER',
+            msg => "This bastion policy forces the remote user of personal accesses to match\n"
+              . "the account name: you may retry with --user $self");
+    }
+}
+
+# if no comment is specified, but we're adding the server by hostname,
+# use it to craft a comment
+if (!$comment && $host ne $ip) {
+    $comment = "hostname=$host";
+}
+
+# use dryrun to validate all parameters
+$fnret = OVH::Bastion::access_modify(
+    dryrun         => 1,
+    sudo           => 0,
+    way            => 'personal',
+    account        => $self,
+    action         => 'add',
+    user           => $user,
+    ip             => $ip,
+    port           => $port,
+    ttl            => $ttl,
+    forceKey       => $forceKey,
+    forcePassword  => $forcePassword,
+    comment        => $comment,
+    widestV4Prefix => ($pluginConfig ? $pluginConfig->{'widest_v4_prefix'} : undef),
+);
+$fnret or osh_exit($fnret);
+
 if (not $force) {
     $fnret = OVH::Bastion::ssh_test_access_way(
         account       => $self,
@@ -100,7 +133,6 @@ if (not $force) {
         forcePassword => $forcePassword
     );
     if ($fnret->is_ok and $fnret->err ne 'OK') {
-
         # we have something to say, say it
         osh_info $fnret->msg;
     }
@@ -111,12 +143,6 @@ if (not $force) {
 }
 else {
     osh_info "Forcing add as asked, we didn't test the SSH connection, maybe it won't work!";
-}
-
-# if no comment is specified, but we're adding the server by hostname,
-# use it to craft a comment
-if (!$comment && $host ne $ip) {
-    $comment = "hostname=$host";
 }
 
 my @command = qw{ sudo -n -u allowkeeper -- /usr/bin/env perl -T };
