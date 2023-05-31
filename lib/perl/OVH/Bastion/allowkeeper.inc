@@ -315,6 +315,15 @@ sub access_modify {
     my $forceKey      = $params{'forceKey'};
     my $forcePassword = $params{'forcePassword'};
 
+    my $dryrun = $params{'dryrun'};      # don't do anything, just check params and prereqs
+    my $sudo   = $params{'sudo'};        # passed as-is to subs we use
+
+    # deny accesses wider than these prefixes
+    my %widestVxPrefix = (
+        4 => $params{'widestV4Prefix'},
+        6 => $params{'widestV6Prefix'},
+    );
+
     my $fnret;
 
     foreach my $mandatoryParam (qw/action ip way/) {
@@ -322,6 +331,9 @@ sub access_modify {
             return R('ERR_MISSING_PARAMETER', msg => "Missing parameter '$mandatoryParam'");
         }
     }
+
+    # if undef, default to sudo==1
+    $sudo //= 1;
 
     # due to how plugins work, sometimes user and port are just '', make them undef in those cases
     undef $user if (defined $user && $user eq '');
@@ -354,6 +366,20 @@ sub access_modify {
     $fnret = OVH::Bastion::is_valid_ip(ip => $ip, allowPrefixes => 1);
     return $fnret unless $fnret;
     $ip = $fnret->value->{'ip'};
+
+    if ($fnret->value->{'type'} eq 'prefix') {
+        my $ipVersion = $fnret->value->{'version'};
+        if (defined $widestVxPrefix{$ipVersion} && $fnret->value->{'prefixlen'} < $widestVxPrefix{$ipVersion}) {
+            return R(
+                'ERR_INVALID_PARAMETER',
+                msg => sprintf(
+                    "Specified prefix (/%d) is too wide, maximum allowed for IPv%d is /%d by this bastion policy",
+                    $fnret->value->{'prefixlen'},
+                    $ipVersion, $widestVxPrefix{$ipVersion}
+                ),
+            );
+        }
+    }
 
     # check port
     if (defined $port) {
@@ -418,7 +444,13 @@ sub access_modify {
     # ... 2. or $> is $grouptomodify  and $ENV{'SUDO_USER'} is the requesting account
 
     my ($running_as) = (getpwuid($>))[0] =~ /([0-9a-zA-Z_.-]+)/;
-    my ($requester)  = $ENV{'SUDO_USER'} =~ /([0-9a-zA-Z_.-]+)/;
+    my $requester;
+    if ($sudo) {
+        ($requester) = $ENV{'SUDO_USER'} =~ /([0-9a-zA-Z_.-]+)/;
+    }
+    else {
+        $requester = $running_as;
+    }
 
     # requester can never be a realm_* account, because it's shared and should not be able to add access to anything
     return R('ERR_SECURITY_VIOLATION', msg => "Requester can't be a realm user") if $requester =~ /^realm_/;
@@ -432,7 +464,7 @@ sub access_modify {
               OVH::Bastion::is_user_in_group(
                 user  => $requester,
                 group => 'osh-self' . ucfirst($action) . 'PersonalAccess',
-                sudo  => 1
+                sudo  => $sudo,
               );
         }
 
@@ -441,31 +473,39 @@ sub access_modify {
           OVH::Bastion::is_user_in_group(
             user  => $requester,
             group => 'osh-account' . ucfirst($action) . 'PersonalAccess',
-            sudo  => 1
+            sudo  => $sudo
           );
     }
     elsif ($way eq 'group') {
         $expected_running_as = $group;
         push @one_should_succeed,
-          OVH::Bastion::is_group_aclkeeper(account => $requester, group => $shortGroup, superowner => 1, sudo => 1);
+          OVH::Bastion::is_group_aclkeeper(account => $requester, group => $shortGroup, superowner => 1, sudo => $sudo);
     }
     elsif ($way eq 'groupguest') {
         push @one_should_succeed,
-          OVH::Bastion::is_group_gatekeeper(account => $requester, group => $shortGroup, superowner => 1, sudo => 1);
+          OVH::Bastion::is_group_gatekeeper(
+            account    => $requester,
+            group      => $shortGroup,
+            superowner => 1,
+            sudo       => $sudo
+          );
     }
 
-    if ($running_as ne $expected_running_as) {
+    if ($running_as ne $expected_running_as && !$dryrun) {
         warn_syslog("Security violation: current running user ($running_as) unexpected (wanted $expected_running_as)");
         return R('ERR_SECURITY_VIOLATION', msg => "Current running user unexpected");
     }
 
-    if (grep({ $_ } @one_should_succeed) == 0 && $requester ne 'root') {
+    if (grep({ $_ } @one_should_succeed) == 0 && $requester ne 'root' && !$dryrun) {
         warn_syslog(
                 "Security violation: requesting user '$requester' doesn't have the right to do that (way=$way, group="
               . ($shortGroup ? '<u>' : $shortGroup)
               . ")");
         return R('ERR_SECURITY_VIOLATION', msg => "You're not allowed to do that");
     }
+
+    # end of dryrun
+    return R('OK', msg => "Would have added the access but we've been called with dryrun") if $dryrun;
 
     # now, check if the access we're being asked to change is already in place or not
     osh_debug(

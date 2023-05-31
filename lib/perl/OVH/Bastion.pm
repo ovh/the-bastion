@@ -632,7 +632,6 @@ sub is_valid_ip {
     my $fast          = $params{'fast'};             # fast mode: avoid instantiating Net::IP... except if ipv6
 
     if ($fast and $ip !~ m{:}) {
-
         # fast asked and it's not an IPv6, regex ftw
         ## no critic (ProhibitUnusedCapture)
         if (
@@ -663,11 +662,13 @@ sub is_valid_ip {
                 return R('KO_INVALID_IP', msg => "Invalid IP address ($ip)");
             }
             if (defined $+{'slash'} and not defined $+{'prefix'}) {
-
                 # got a / in $ip but it's not followed by \d+
                 return R('KO_INVALID_IP', msg => "Invalid IP address ($ip)");
             }
-            return R('OK', value => {ip => $ip}) if (defined $+{'prefix'} && $+{'prefix'} != 32);
+
+            if (defined $+{'prefix'} && $+{'prefix'} != 32) {
+                return R('OK', value => {ip => $ip, prefix => $+{'prefix'}});
+            }
             return R('OK', value => {ip => $+{'shortip'}});
         }
         return R('KO_INVALID_IP', msg => "Invalid IP address ($ip)");
