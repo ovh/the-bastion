@@ -55,9 +55,31 @@ do
             fi
             if [ -e "doc/sphinx-plugins-override/$name.rst" ]; then
                 echo "... adding doc/sphinx-plugins-override/$name.rst" >&2
-                #printf "\n.. highlight:: shell\n\n"
                 cat "doc/sphinx-plugins-override/$name.rst"
             fi
+        fi
+        if grep -Eq '^=pod CONFIGURATION' "$pluginfile"; then
+            cat <<EOF
+
+Plugin configuration
+====================
+
+Options
+-------
+EOF
+            pod2text "$pluginfile" | perl -ne '
+                $step //= 0;
+                if    ($step == 0 && m{^items$})    { $step = 1; }
+                elsif ($step == 1 && m{^    (.+)$}) { print "    $1\n"; }
+                elsif ($step == 1 && m{^  (.+)$})   { print "\n.. option:: $1\n\n"; }
+                elsif ($step == 1 && m{^example$})  {
+                    $step = 2;
+                    print "\nExample\n-------\n\n";
+                    print "Configuration, in JSON format, must be in :file:`/etc/bastion/plugin.'"$(basename "$pluginfile")"'.conf`:\n\n";
+                    print ".. code-block:: json\n   :emphasize-lines: 1\n\n";
+                }
+                elsif ($step == 2 && m{^  (.+)$})   { print " $1\n"; }
+            '
         fi
     } > "$docfile"
 done

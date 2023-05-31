@@ -69,3 +69,35 @@ Add a personal server access to an account
 
 The access will work only if one of the account's personal egress public key has been copied to the remote server.
 To get the list of an account's personal egress public keys, see ``accountListEgressKeyss`` and ``selfListEgressKeys``.
+
+Plugin configuration
+====================
+
+Options
+-------
+
+.. option:: widest_v4_prefix (optional, integer, between 0 and 32)
+
+    When specified, this limits the size of prefixes that can be added to an
+    ACL, e.g. 24 would not allow prefixes wider than /24 (such as /20 or
+    /16).
+    Note that this doesn't prevent users from adding thousands of ACLs to
+    cover a wide range of networks, but this helps ensuring ACLs such as
+    0.0.0.0/0 can't be added in a single command.
+
+.. option:: self_remote_user_only (optional, boolean)
+
+    When true, this only allows to add ACLs with the remote user being the
+    same than the account name, i.e. adding an access to a bastion account
+    named "johndoe" can only be done specifying this very account name as
+    the remote user name, with ``accountAddPersonalAccess --user johndoe``.
+
+Example
+-------
+
+Configuration, in JSON format, must be in :file:`/etc/bastion/plugin.accountAddPersonalAccess.conf`:
+
+.. code-block:: json
+   :emphasize-lines: 1
+
+   { "widest_v4_prefix": 24, "self_remote_user_only": true }
