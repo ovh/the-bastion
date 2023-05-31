@@ -66,3 +66,34 @@ Add a personal server access on your account
 
    Add a comment alongside this server. Quote it twice as shown if you're under a shell.
 
+
+Plugin configuration
+====================
+
+Options
+-------
+
+.. option:: widest_v4_prefix (optional, integer, between 0 and 32)
+
+    When specified, this limits the size of prefixes that can be added to an
+    ACL, e.g. 24 would not allow prefixes wider than /24 (such as /20 or
+    /16).
+    Note that this doesn't prevent users from adding thousands of ACLs to
+    cover a wide range of networks, but this helps ensuring ACLs such as
+    0.0.0.0/0 can't be added in a single command.
+
+.. option:: self_remote_user_only (optional, boolean)
+
+    When true, this only allows to add ACLs with the remote user being the
+    same than the account name, i.e. a bastion account named "johndoe" would
+    only be able to use ``selfAddPersonalAccess --user johndoe``.
+
+Example
+-------
+
+Configuration, in JSON format, must be in :file:`/etc/bastion/plugin.selfAddPersonalAccess.conf`:
+
+.. code-block:: json
+   :emphasize-lines: 1
+
+   { "widest_v4_prefix": 24, "self_remote_user_only": true }
