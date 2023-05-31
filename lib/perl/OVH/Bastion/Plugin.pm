@@ -15,8 +15,10 @@ $SIG{'PIPE'} = 'IGNORE';    # continue even if osh_info gets a SIGPIPE because t
 $| = 1;
 
 use Exporter 'import';
-our ($user, $ip, $host, $port, $scriptName, $self, $sysself, $realm, $remoteself, $HOME, $savedArgs); ## no critic (ProhibitPackageVars)
-our @EXPORT = qw( $user $ip $host $port $scriptName $self $sysself $realm $remoteself $HOME $savedArgs ); ## no critic (ProhibitAutomaticExportation)
+## no critic (ProhibitPackageVars)
+our ($user, $ip, $host, $port, $scriptName, $self, $sysself, $realm, $remoteself, $HOME, $savedArgs, $pluginConfig);
+## no critic (ProhibitAutomaticExportation)
+our @EXPORT = qw( $user $ip $host $port $scriptName $self $sysself $realm $remoteself $HOME $savedArgs $pluginConfig );
 our @EXPORT_OK = qw( help );
 
 my $_helptext;
@@ -25,10 +27,11 @@ sub help { osh_info $_helptext; return 1; }
 sub begin {
     my %params = @_;
 
-    my $options  = $params{'options'};
-    my $header   = $params{'header'};
-    my $argv     = $params{'argv'};
-    my $helpfunc = $params{'help'};
+    my $options    = $params{'options'};
+    my $header     = $params{'header'};
+    my $argv       = $params{'argv'};
+    my $loadConfig = $params{'loadConfig'};
+    my $helpfunc   = $params{'help'};
     $_helptext = $params{'helptext'};
 
     my $fnret;
@@ -145,6 +148,16 @@ sub begin {
     if ($sysself ne $ENV{'USER'}) {
         osh_exit 'ERR_INVALID_USER',
           "Error with your USER (\"$sysself\" vs \"$ENV{'USER'}\"), please report to your sysadmin.";
+    }
+
+    if ($loadConfig) {
+        # try to load config, and abort if we get an error
+        $fnret = OVH::Bastion::plugin_config(plugin => $scriptName);
+        if (!$fnret) {
+            warn_syslog("Invalid configuration for plugin $scriptName: $fnret");
+            osh_exit 'ERR_INVALID_CONFIGURATION', "Error in plugin configuration, aborting";
+        }
+        $pluginConfig = $fnret->value;
     }
 
     # only unparsed options are remaining there

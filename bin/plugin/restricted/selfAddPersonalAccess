@@ -10,9 +10,10 @@ use OVH::Bastion::Plugin qw( :DEFAULT help );
 use OVH::Bastion::Plugin::ACL;
 
 my $remainingOptions = OVH::Bastion::Plugin::begin(
-    argv    => \@ARGV,
-    header  => "adding personal access to a server on your account",
-    options => {
+    loadConfig => 1,
+    argv       => \@ARGV,
+    header     => "adding personal access to a server on your account",
+    options    => {
         "user-any"         => \my $userAny,
         "port-any"         => \my $portAny,
         "scpup"            => \my $scpUp,

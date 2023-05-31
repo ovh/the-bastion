@@ -788,7 +788,6 @@ sub plugin_config {
                 secure => 1
             );
             if ($fnret->err eq 'KO_CANNOT_OPEN_FILE') {
-
                 # chmod error, don't fail silently
                 warn_syslog("Can't read configuration file '"
                       . OVH::Bastion::main_configuration_directory()
@@ -796,12 +795,32 @@ sub plugin_config {
                 return R('ERR_CONFIGURATION_ERROR',
                     msg => "Configuration file has improper rights, ask your sysadmin!");
             }
-            if ($fnret && ref $fnret->value eq 'HASH') {
-
+            elsif ($fnret->err eq 'KO_NO_SUCH_FILE') {
+                # no configuration, just continue
+            }
+            elsif (!($fnret && ref $fnret->value eq 'HASH')) {
+                # other error, report it and fail
+                warn_syslog("Error loading plugin $plugin configuration ($fnret)");
+                return R('ERR_CONFIGURATION_ERROR', msg => "Plugin configuration is invalid, aborting");
+            }
+            else {
                 # avoid overriding keys
                 foreach my $key (keys %{$fnret->value}) {
                     $config{$key} = $fnret->value->{$key} if not exists $config{$key};
                 }
+            }
+
+            # do we have a config validator for this plugin?
+            ## no critic(Modules::RequireBarewordIncludes)
+            eval { require "OVH::Bastion::Plugin::$plugin"; };
+            if (!$@) {
+                my $validator = "OVH::Bastion::Plugin::${plugin}::validate_config";
+                $fnret = $validator->(config => \%config);
+                if (!$fnret || !$fnret->value) {
+                    warn_syslog("Invalid configuration for plugin $plugin: $fnret");
+                    return R('ERR_INVALID_CONFIGURATION', msg => "Plugin configuration is invalid");
+                }
+                %config = %{$fnret->value};
             }
         }
         else {
