@@ -102,6 +102,39 @@ if ($forceKey && $forcePassword) {
     osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "Can't use --force-key and --force-password at the same time";
 }
 
+# check plugin config
+if ($pluginConfig && $pluginConfig->{'self_remote_user_only'}) {
+    if (!$user || $user ne $account) {
+        osh_exit('ERR_INVALID_PARAMETER',
+            msg => "This bastion policy forces the remote user of personal accesses to match\n"
+              . "the account name: you may retry with --user $account");
+    }
+}
+
+# if no comment is specified, but we're adding the server by hostname,
+# use it to craft a comment
+if (!$comment && $host ne $ip) {
+    $comment = "hostname=$host";
+}
+
+# use dryrun to validate all parameters
+$fnret = OVH::Bastion::access_modify(
+    dryrun         => 1,
+    sudo           => 0,
+    way            => 'personal',
+    account        => $account,
+    action         => 'add',
+    user           => $user,
+    ip             => $ip,
+    port           => $port,
+    ttl            => $ttl,
+    forceKey       => $forceKey,
+    forcePassword  => $forcePassword,
+    comment        => $comment,
+    widestV4Prefix => ($pluginConfig ? $pluginConfig->{'widest_v4_prefix'} : undef),
+);
+$fnret or osh_exit($fnret);
+
 osh_info "Can't verify whether $account\'s personal key has been installed to the remote server, "
   . "as you don't have access to their private keys, adding the access blindly";
 

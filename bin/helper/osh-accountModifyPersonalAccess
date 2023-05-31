@@ -85,18 +85,38 @@ my $machine = $ip;
 $port and $machine .= ":$port";
 $user and $machine = $user . '@' . $machine;
 
+my $plugin = ($target eq 'self' ? 'self' : 'account') . 'AddPersonalAccess';
+
+# check plugin config for (self|account)AddPersonalAccess
+my $widestV4Prefix;
+if ($action eq 'add') {
+    $fnret = OVH::Bastion::plugin_config(plugin => $plugin);
+    $fnret or HEXIT($fnret);
+
+    if ($fnret->value && $fnret->value->{'self_remote_user_only'}) {
+        if (!$user || $user ne $account) {
+            HEXIT('ERR_INVALID_PARAMETER',
+                msg => "This bastion policy forces the remote user of personal accesses to match\n"
+                  . "the account name: you may retry with --user $account");
+        }
+    }
+
+    $widestV4Prefix = $fnret->value->{'widest_v4_prefix'};
+}
+
 # access_modify validates all its parameters, don't do it ourselves here for clarity
 $fnret = OVH::Bastion::access_modify(
-    way           => 'personal',
-    account       => $account,
-    action        => $action,
-    user          => $user,
-    ip            => $ip,
-    port          => $port,
-    ttl           => $ttl,
-    forceKey      => $forceKey,
-    forcePassword => $forcePassword,
-    comment       => $comment,
+    way            => 'personal',
+    account        => $account,
+    action         => $action,
+    user           => $user,
+    ip             => $ip,
+    port           => $port,
+    ttl            => $ttl,
+    forceKey       => $forceKey,
+    forcePassword  => $forcePassword,
+    comment        => $comment,
+    widestV4Prefix => $widestV4Prefix,
 );
 if ($fnret->err eq 'OK') {
     my $ttlmsg = $ttl ? ' (expires in ' . OVH::Bastion::duration2human(seconds => $ttl)->value->{'human'} . ')' : '';
