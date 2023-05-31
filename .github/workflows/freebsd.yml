@@ -6,13 +6,13 @@ on:
 
 jobs:
   freebsd:
-    runs-on: macos-10.15
+    runs-on: macos-12
     name: FreeBSD
     if: ${{ contains(github.event.pull_request.labels.*.name, 'tests:full') || contains(github.event.pull_request.labels.*.name, 'tests:long') || contains(github.event.pull_request.labels.*.name, 'tests:freebsd') }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Functional tests under FreeBSD
-      uses: vmactions/freebsd-vm@main
+      uses: vmactions/freebsd-vm@v0
       with:
         usesh: true
         sync: sshfs
