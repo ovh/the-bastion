@@ -146,7 +146,7 @@ foreach my $account (sort keys %$accounts) {
 
         $states{'last_activity'}           = undef;
         $states{'last_activity_timestamp'} = undef;
-        my $seconds = $fnret->value->{'seconds'};
+        my $seconds = ($fnret->value ? $fnret->value->{'seconds'} : undef);
         if (defined $seconds) {
             $fnret = OVH::Bastion::duration2human(seconds => $seconds, tense => "past");
             if ($fnret) {
