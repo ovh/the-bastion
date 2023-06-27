@@ -1,3 +1,15 @@
+## v3.12.00 - 2023/06/27
+- feat: add 2 configurable knobs to ``(self|account)AddPersonalAccess``
+- feat: add dryrun in ``access_modify()`` and widest prefix precondition check
+- feat: plugins: add loadConfig parameter & config validator support
+- chg: remove Debian 9 tests and dockerfile
+- fix: ``accountList``: crash in some cases
+- fix: add missing autocompletions, readonly flags and help category for some plugins
+- fix: update undocumented ``rename-group.sh`` script
+- chore: doc: adding plugin configuration autogeneration
+- chore: fix GitHub actions under FreeBSD
+- chore: shell/functions: remove now unused global var
+
 ## v3.11.02 - 2023/04/18
 - feat: add uid/gid collisions checking script & document it for HA cluster setup and backup restore (#378)
 - fix: ``groupAddServer``: ``--force-key`` wasn't working properly (#259)
