@@ -30,7 +30,11 @@ Version-specific upgrade instructions
 v3.12.00 - 2023/06/27
 *********************
 
-No specific upgrade instructions.
+Support for Debian 9 has been dropped. This doesn't mean that the code will suddenly stop working under this version,
+but that tests no longer include this OS. Please consider upgrading to a more recent OS, as ensuring the underlying
+OS is up to date and still supported is paramount to the security of The Bastion (or any other software).
+
+Support of Debian "Bookworm" 12 is now official, as this is now Debian stable.
 
 v3.11.02 - 2023/04/18
 *********************

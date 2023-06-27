@@ -2,7 +2,7 @@
 - feat: add 2 configurable knobs to ``(self|account)AddPersonalAccess``
 - feat: add dryrun in ``access_modify()`` and widest prefix precondition check
 - feat: plugins: add loadConfig parameter & config validator support
-- chg: remove Debian 9 tests and dockerfile
+- chg: drop support for Debian 9, add support for Debian 12
 - fix: ``accountList``: crash in some cases
 - fix: add missing autocompletions, readonly flags and help category for some plugins
 - fix: update undocumented ``rename-group.sh`` script
