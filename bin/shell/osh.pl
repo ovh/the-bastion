@@ -1644,7 +1644,7 @@ push @details_json, @previous_bastion_details if @previous_bastion_details;
 # then convert to json:
 $ENV{'LC_BASTION_DETAILS'} = encode_json(\@details_json);
 
-# here is a nice hack to drastically improve the memory footprint of an
+# here is a nice hack to drastically improve the memory footprint of a
 # heavily used bastion. we exec() another script that is way lighter, see
 # comments in the connect.pl file for more information.
 

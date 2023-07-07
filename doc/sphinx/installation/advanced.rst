@@ -158,7 +158,7 @@ as these have been auto-filled when you generated the GPG keys, by dropping conf
 in the ``/etc/bastion/osh-encrypt-rsync.conf.d`` directory.
 Any file there takes precedence over the global configuration file.
 
-Once you are done with you configuration, you might want to test it by running:
+Once you are done with your configuration, you might want to test it by running:
 
 .. code-block:: shell
 
