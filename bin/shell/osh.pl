@@ -1751,7 +1751,7 @@ Usage (osh cmd): $bastionName --osh [OSH_COMMAND] [OSH_OPTIONS]
     $bastionName srv1.example.org -- "perl -e 'use Data::Dumper; print Dumper(\\\@ARGV)' one 'two is 2' three"
 
 [OPTIONS (ssh)]
-    --verbose,  -v               Enable verbose ssh
+    --verbose                    Enable verbose ssh
     --tty,      -t               Force tty allocation
     --no-tty,   -T               Prevent tty allocation
     --use-key      FP            Explicitly specify the fingerprint of the egress key you want to use
