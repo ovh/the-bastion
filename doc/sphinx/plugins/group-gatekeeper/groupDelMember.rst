@@ -23,7 +23,7 @@ Remove an account from the members list
    which account to remove as a member of GROUP
 
 
-The specified account will no longerr be able to access all present and future servers
+The specified account will no longer be able to access all present and future servers
 pertaining to this group.
 Note that if this account also had specific guest accesses to this group, they may
 still apply, see ``groupListGuestAccesses``
