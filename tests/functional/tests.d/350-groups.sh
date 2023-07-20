@@ -111,6 +111,7 @@ testsuite_groups()
     .value.public_key.family RSA
 EOS
     )
+    local key0fp
     key0fp=$(get_json | $jq .value.fingerprint)
     # new state: g1[a1(ow,gk,acl,member)]
 
@@ -141,7 +142,7 @@ EOS
     # now that we have several keys, take the opportunity to test force-key
 
     plgfail a1_add_access_force_key_and_pwd_g1 $a1 --osh groupAddServer --host 127.1.2.3 --user-any --port-any --force --force-password '$1$2$3456' --force-key "$key1fp" --group $group1
-    .error_code ERR_CONFLICTING_PARAMETERS
+    json .error_code ERR_INCOMPATIBLE_PARAMETERS
 
     success a1_add_access_force_key_g1 $a1 --osh groupAddServer --host 127.1.2.3 --user-any --port-any --force --force-key "$key1fp" --group $group1
 
@@ -735,6 +736,7 @@ EOS
 
     success a0_add_personal_access_to_a3_works $a0 --osh accountAddPersonalAccess --account $account3 --host 77.66.55.4 --user-any --port-any
 
+    local todo_inc todo_port todo_ip todo_user
     (( todo_inc=1 ))
     for todo_port in --port-any "--port 33"
     do
@@ -1256,3 +1258,4 @@ EOS
 }
 
 testsuite_groups
+unset -f testsuite_groups

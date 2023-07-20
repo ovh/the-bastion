@@ -19,7 +19,9 @@ testsuite_accountinfo()
     # create a third account with a ttl
     local ttl_account_created_at
     ttl_account_created_at=$(date +%s)
-    success a0_create_a3 $a0 --osh accountCreate --always-active --account $account3 --uid $uid3 --public-key "\"$(cat $account3key1file.pub)\"" --ttl 30s
+    local ttl_account_seconds
+    ttl_account_seconds=55
+    success a0_create_a3 $a0 --osh accountCreate --always-active --account $account3 --uid $uid3 --public-key "\"$(cat $account3key1file.pub)\"" --ttl ${ttl_account_seconds}s
     json .error_code OK .command accountCreate .value null
 
     revoke accountCreate
@@ -141,7 +143,7 @@ EOS
 
     # sleep to ensure TTL has expired. add 2 seconds to be extra-sure and avoid int-rounding errors
     local sleep_for
-    sleep_for=$(( 30 - ( $(date +%s) - ttl_account_created_at ) + 2 ))
+    sleep_for=$(( ttl_account_seconds - ( $(date +%s) - ttl_account_created_at ) + 2 ))
     if [ "$COUNTONLY" != 1 ] && [ $sleep_for -gt 0 ]; then
         sleep $sleep_for
     fi

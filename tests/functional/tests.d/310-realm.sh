@@ -73,6 +73,7 @@ testsuite_realm()
             retvalshouldbe 106
             json .error_message "Realm accounts can't execute this plugin, use --osh help to get the allowed plugin list" .error_code KO_RESTRICTED_COMMAND
     done
+    unset plugin
 
     grant accountAddPersonalAccess
 
@@ -119,6 +120,7 @@ testsuite_realm()
             fi
         done
     done
+    unset role acc
     plgfail add_support_account_as_member $a0 --osh groupAddMember --group $group1 --account realm_$realm_shared_account
 
     # add account1 as member

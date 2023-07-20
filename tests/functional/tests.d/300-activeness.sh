@@ -56,3 +56,4 @@ testsuite_activeness()
 }
 
 testsuite_activeness
+unset -f testsuite_activeness

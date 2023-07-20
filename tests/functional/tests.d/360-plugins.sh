@@ -96,3 +96,4 @@ EOS
 }
 
 testsuite_plugins
+unset -f testsuite_plugins

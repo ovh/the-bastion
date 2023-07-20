@@ -31,9 +31,11 @@ testsuite_mfa()
     run a4_setup_pass_step1of2 $a4f --osh selfMFASetupPassword --yes
     retvalshouldbe 124
     contain 'enter this:'
+    local a4_password_tmp
     a4_password_tmp=$(get_stdout | grep -Eo 'enter this: [a-zA-Z0-9_-]+' | sed -e 's/enter this: //')
 
     # setup our password, step2
+    local a4_password
     a4_password=']BkL>3x#T)g~~B#rLv^!T2&N'
     script a4_setup_pass_step2of2 "echo 'set timeout 30; \
         spawn $a4 --osh selfMFASetupPassword --yes; \
@@ -351,6 +353,7 @@ testsuite_mfa()
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
         contain REGEX 'Password:|Password for'
 
+        local a4_totp_code_1
         a4_totp_code_1=$(get_stdout | grep -A1 'Your emergency scratch codes are:' | tail -n1 | tr -d '[:space:]')
         #a4_totp_code_2=$(get_stdout | grep -A2 'Your emergency scratch codes are:' | tail -n1 | tr -d '[:space:]')
         #a4_totp_code_3=$(get_stdout | grep -A3 'Your emergency scratch codes are:' | tail -n1 | tr -d '[:space:]')
@@ -554,3 +557,4 @@ testsuite_mfa()
 }
 
 testsuite_mfa
+unset -f testsuite_mfa
