@@ -1088,8 +1088,8 @@ sub build_ttyrec_cmdline_part1of2 {
     $ttyrecFilenameFormat =~ s/&bastionname/$bastionName/g;
     $ttyrecFilenameFormat =~ s/&uniqid/$params{'uniqid'}/g if $params{'uniqid'};
     $ttyrecFilenameFormat =~ s/&ip/$params{'ip'}/g if $params{'ip'};
-    $ttyrecFilenameFormat =~ s/&port/$params{'port'}/g if $params{'port'};
-    $ttyrecFilenameFormat =~ s/&user/$params{'user'}/g if $params{'user'};
+    $ttyrecFilenameFormat =~ s/&port/$params{'port'}/g if defined $params{'port'};
+    $ttyrecFilenameFormat =~ s/&user/$params{'user'}/g if defined $params{'user'};
     $ttyrecFilenameFormat =~ s/&account/$params{'account'}/g if $params{'account'};
 
     if ($ttyrecFilenameFormat =~ /&(bastionname|uniqid|ip|port|user|account)/) {

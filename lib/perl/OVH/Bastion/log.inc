@@ -514,9 +514,6 @@ sub _sql_log_update_file {
     my $timestampend     = $params{'timestampend'};
     my $timestampendusec = $params{'timestampendusec'};
 
-    my $plugin_stdout = $params{'plugin_stdout'};
-    my $plugin_stderr = $params{'plugin_stderr'};
-
     if (not $file or not defined $id) {
         return R('ERR_MISSING_PARAMETER', msg => "Missing required parameter file or id");
     }
@@ -578,71 +575,6 @@ sub _sql_log_update_file {
         warn_syslog(
             "Failed after multiple retries [updating] err $DBI::err while doing [$doing]: $DBI::errstr ($file)");
         return R('ERR_SQL_EXECUTE', msg => "SQL error [updating] err $DBI::err while doing [$doing]: $DBI::errstr");
-    }
-
-    # if we have plugin stdout or stderr, log it too
-    if (defined $plugin_stdout or defined $plugin_stderr) {
-
-        # retry block
-        foreach my $retry (0 .. 19) {
-
-            # if we're retrying, sleep a bit before, to ease concurrency
-            sleep($retry / 50 + rand() / 10) if $retry;
-
-            # on each retry, clean those vars (undef $dbh disconnects if connected)
-            undef $dbh;
-            undef $sth;
-            undef $result;
-            undef $doing;
-
-            # connect to db
-            $dbh = DBI->connect("dbi:SQLite:dbname=$file", "", "", {PrintError => 0, RaiseError => 0});
-            if (!$dbh) {
-                $doing = "opening database";
-                next;    # retry
-            }
-
-            $sth = $dbh->prepare(
-                <<'EOS'
-                CREATE TABLE IF NOT EXISTS plugincalls(
-                   id        INTEGER PRIMARY KEY,
-                   connection_id INTEGER UNIQUE,
-                   stdout    TEXT,
-                   stderr    TEXT)
-EOS
-            );
-            if (!$sth) {
-                $doing = "creating plugins table (prepare)";
-                next;    # retry
-            }
-            $result = $sth->execute();
-            if (!$result) {
-                $doing = "creating plugins table (execute)";
-                next;    # retry
-            }
-
-            $sth = $dbh->prepare("INSERT INTO plugincalls (connection_id, stdout, stderr) VALUES (?,?,?)");
-            if (!$sth) {
-                $doing = "inserting plugincall data (prepare)";
-                next;    # retry
-            }
-            $result = $sth->execute($id, join("\n", @{$plugin_stdout || []}), join("\n", @{$plugin_stderr || []}));
-            if (!$result) {
-                $doing = "inserting plugincall data (execute)";
-                next;    # retry
-            }
-
-            # if we're here, it worked, stop retrying
-            last;
-        }
-
-        # if this is set, we probably reached max retry in previous loop without succeeding
-        if ($DBI::err) {
-
-            warn_syslog(
-                "Failed after multiple retries [plugins] err $DBI::err while doing [$doing]: $DBI::errstr ($file)");
-            return R('ERR_SQL_EXECUTE', msg => "SQL error [plugins] err $DBI::err while doing [$doing]: $DBI::errstr");
-        }
     }
 
     return R('OK');

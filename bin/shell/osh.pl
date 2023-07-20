@@ -525,13 +525,11 @@ if ($interactive and not $ENV{'OSH_IN_INTERACTIVE_SESSION'}) {
 
     if (defined $log_insert_id and defined $log_db_name) {
         $logret = OVH::Bastion::log_access_update(
-            account       => $self,
-            insert_id     => $log_insert_id,
-            db_name       => $log_db_name,
-            uniq_id       => $log_uniq_id,
-            returnvalue   => undef,
-            plugin_stdout => undef,
-            plugin_stderr => undef
+            account     => $self,
+            insert_id   => $log_insert_id,
+            db_name     => $log_db_name,
+            uniq_id     => $log_uniq_id,
+            returnvalue => undef,
         );
         $logret or osh_warn($logret->msg);
     }
@@ -1053,6 +1051,25 @@ if ($osh_command) {
             $is_binary = 1 if $fnret->value eq 'binary';
         }
         $ENV{'OSH_IP_FROM'} = $ipfrom;    # used in some plugins for is_access_granted()
+
+        # build ttyrec command that'll prefix the real command
+        $fnret = OVH::Bastion::build_ttyrec_cmdline(
+            ip            => $osh_command,
+            port          => 0,
+            user          => 0,
+            account       => $self,
+            uniqid        => $log_uniq_id,
+            home          => $home,
+            realm         => $realm,
+            remoteaccount => $remoteself,
+            debug         => $osh_debug,
+            tty           => $tty,
+            notty         => $notty
+        );
+        main_exit(OVH::Bastion::EXIT_TTYREC_CMDLINE_FAILED, "ttyrec_failed", $fnret->msg) if !$fnret;
+
+        @cmd = (@{$fnret->value->{'cmd'}}, '--', @cmd);
+
         $fnret = OVH::Bastion::execute(
             cmd           => \@cmd,
             noisy_stdout  => 1,
@@ -1065,13 +1082,11 @@ if ($osh_command) {
 
         if (defined $log_insert_id and defined $log_db_name) {
             $logret = OVH::Bastion::log_access_update(
-                account       => $self,
-                insert_id     => $log_insert_id,
-                db_name       => $log_db_name,
-                uniq_id       => $log_uniq_id,
-                returnvalue   => $fnret->value ? $fnret->value->{'sysret_raw'} : undef,
-                plugin_stdout => $fnret->value ? $fnret->value->{'stdout'} : undef,
-                plugin_stderr => $fnret->value ? $fnret->value->{'stderr'} : undef
+                account     => $self,
+                insert_id   => $log_insert_id,
+                db_name     => $log_db_name,
+                uniq_id     => $log_uniq_id,
+                returnvalue => $fnret->value ? $fnret->value->{'sysret_raw'} : undef,
             );
             $logret or osh_warn($logret->msg);
         }
