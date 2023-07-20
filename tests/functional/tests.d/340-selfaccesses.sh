@@ -30,6 +30,8 @@ testsuite_selfaccesses()
     revoke accountDelete
     grant accountCreate
 
+    unset i
+
     # create account1
     success accountCreate $a0 --osh accountCreate --always-active --account $account1 --uid $uid1 --public-key "\"$(cat $account1key1file.pub)\""
     json .error_code OK .command accountCreate .value null
@@ -171,6 +173,7 @@ testsuite_selfaccesses()
     # forcekey
 
     success for_force_key $a0 --osh selfListEgressKeys
+    local account0key1fp
     account0key1fp=$(get_json | $jq '.value|keys[0]')
 
     success forcekey $a0 --osh selfAddPersonalAccess -h 127.7.7.7 -u $shellaccount -p 22 --force --force-key "$account0key1fp"
@@ -206,6 +209,7 @@ testsuite_selfaccesses()
             unset tmpb64
         fi
     done
+    unset proto
 
     # scp
 
@@ -575,3 +579,4 @@ testsuite_selfaccesses()
 }
 
 testsuite_selfaccesses
+unset -f testsuite_selfaccesses

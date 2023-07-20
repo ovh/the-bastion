@@ -63,3 +63,4 @@ testsuite_base()
 }
 
 testsuite_base
+unset -f testsuite_base

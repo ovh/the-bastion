@@ -67,6 +67,7 @@ testsuite_selfaccesses_force_password()
         json .error_code OK .command accountCreate
         revoke accountCreate
 
+        local target gen_pass_plugin list_pass_plugin add_access_plugin del_access_plugin password_switch password_base_path
         if [ $mode = "personal" ]
         then
             # in personal mode, we manipulate account1's own personal accesses to connect to account4
@@ -147,6 +148,7 @@ testsuite_selfaccesses_force_password()
         # fetch checksums for a1|g1's second and third egress passwords
         success ${mode}_listpass $a0 --osh $list_pass_plugin $target
         json .error_code OK .command $list_pass_plugin
+        local password2_sha256 password3_sha256
         password2_sha256=$(get_json | jq -r '.value[1].hashes.sha256crypt')
         password3_sha256=$(get_json | jq -r '.value[2].hashes.sha256crypt')
 
@@ -240,3 +242,4 @@ testsuite_selfaccesses_force_password()
 }
 
 testsuite_selfaccesses_force_password
+unset -f testsuite_selfaccesses_force_password

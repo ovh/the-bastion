@@ -151,7 +151,9 @@ fi
     randomstr=randomstr_pUuGXu3tfhi5WII4_randomstr
 
     mytmpdir=$(mktemp -d -t bastiontest.XXXXXX)
-    trap 'echo CLEANING UP ; rm -rf "$mytmpdir" ; exit 255' EXIT
+    tmp_a=$(mktemp -t bastiontest.XXXXXX)
+    tmp_b=$(mktemp -t bastiontest.XXXXXX)
+    trap 'echo CLEANING UP ; rm -rf "$mytmpdir" ; rm -f "$tmp_a" "$tmp_b" ; exit 255' EXIT
     account0key1file="$mytmpdir/account0key1file"
     account1key1file="$mytmpdir/account1key1file"
     account1key2file="$mytmpdir/account1key2file"
@@ -553,7 +555,7 @@ configchg()
     success configchange $r0 perl -pe "$*" -i "$opt_remote_etc_bastion/bastion.conf"
 }
 
-onfigsetquoted()
+configsetquoted()
 {
     success configset $r0 perl -pe 's=^\\\\x22'"$1"'\\\\x22.+=\\\\x22'"$1"'\\\\x22:\\\\x22'"$2"'\\\\x22,=' -i "$opt_remote_etc_bastion/bastion.conf"
 }
@@ -567,6 +569,11 @@ configset()
 sshclientconfigchg()
 {
     success sshclientconfigchange $r0 perl -pe "$*" -i /etc/ssh/ssh_config
+}
+
+dump_vars_and_funcs()
+{
+    set | grep -v -E '^(testno|section|code_warn_exclude|LINES|COLUMNS|PIPESTATUS|_|BASH_LINENO|basename|case|json|name|tmpscript|grepit)='
 }
 
 runtests()
@@ -603,12 +610,16 @@ runtests()
         echo "### RUNNING MODULE $modulename"
 
         # as this is a loop, we do the check in a reversed way, see any included module for more info:
+        dump_vars_and_funcs > "$tmp_a"
         # shellcheck disable=SC1090
         source "$module" || true
+        dump_vars_and_funcs > "$tmp_b"
 
         # put the backed up configuration back after each module, just in case the module modified it
         modulename=main
         success configrestore $r0 "dd if=$opt_remote_etc_bastion/bastion.conf.bak.$now of=$opt_remote_etc_bastion/bastion.conf"
+        # verify that the env hasn't been modified
+        success check_env_after_module diff -u "$tmp_a" "$tmp_b"
     done
 }
 
