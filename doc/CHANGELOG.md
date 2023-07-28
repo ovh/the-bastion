@@ -1,3 +1,10 @@
+## v3.13.00 - 2023/07/28
+- enh: use ttyrec instead of sqlite to record plugin output
+- fix: selfMFASetupPassword: restore default sighandlers to avoid being zombified
+- chore: tests: ensure test modules don't pollute the caller's env
+- chore: remove incorrect `-v` ssh option in help text
+- chore: doc: fix a few typos
+
 ## v3.12.00 - 2023/06/27
 - feat: add 2 configurable knobs to ``(self|account)AddPersonalAccess``
 - feat: add dryrun in ``access_modify()`` and widest prefix precondition check
