@@ -54,6 +54,11 @@ if (not $command) {
     osh_exit 'ERR_MISSING_PARAMETER', "Missing mandatory parameter 'command'";
 }
 
+# restore default handlers (exit) for HUP and PIPE, we don't want to have this
+# plugin looping endlessly in the void when there's no longer a terminal attached
+$SIG{'PIPE'} = 'DEFAULT';
+$SIG{'HUP'}  = 'DEFAULT';
+
 #
 # and test external command call
 #
