@@ -76,6 +76,7 @@ The unavoidable and iconic FAQ is also available under the **PRESENTATION** sect
 
    administration/configuration/index
    administration/logs
+   administration/mfa
 
 .. _plugins:
 

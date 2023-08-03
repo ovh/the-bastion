@@ -22,7 +22,7 @@ This API is implemented for all :ref:`plugins <plugins>`, and can be enabled by 
    Within this page, the ``bssh`` bastion alias we usually use through the documentation is replaced by
    explicit ``ssh`` commands, to emphasize the fact that as we're doing M2M calls,
    there would be no terminal involved, hence we shouldn't use the ``-t`` SSH option to connect to the bastion
-   (which is implicitly the case in the ``bssh`` alias).
+   (as is the case with the ``bssh`` alias).
 
 Adding either ``--json``, ``--json-pretty`` or ``--json-greppable`` to your ``--osh`` commands enable
 the JSON API output. Here is an example of each one below.

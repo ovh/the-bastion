@@ -49,7 +49,7 @@ Gather info about all groups, including all extra data (and possibly future opti
 Output example
 ==============
 
-::
+.. code-block: none
 
   | Group mygroup's Owners are: user1
   | Group mygroup's GateKeepers (managing the members/guests list) are: user2
