@@ -261,6 +261,6 @@ Good practices
 
 If you're intending interaction with The Bastion API, it's a good idea to have accounts dedicated to this, to have
 a clear distinction between human SSH usage and automated API calls. Additionally, if your automation will only
-use such accounts to call plugins (``--osh commands``), you might want to create such accounts with the ``--osh-only``
+use such accounts to call plugins (``--osh`` commands), you might want to create such accounts with the ``--osh-only``
 parameter to ``accountCreate``, this guarantees that such accounts will never be able to use The Bastion to connect
 to other infrastructures (e.g. using SSH) even if granted to.
