@@ -246,7 +246,7 @@ error_message
 
 The associated value is a string, intended for human reading. It gives more details about the returned ``error_code``,
 but is not intended to be parsed by your code, as it may change without notice from version to version. If there is no
-specificc ``error_message`` for a given case, the value will be the same than the one for ``error_code``, hence this
+specific ``error_message`` for a given case, the value will be the same than the one for ``error_code``, hence this
 field is guaranteed to always exist and never be ``null``.
 
 value
