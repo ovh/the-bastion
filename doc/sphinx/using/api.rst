@@ -162,8 +162,10 @@ As the anchors are the same, the parsing can be done with the same logic as abov
 Using --json-greppable
 ----------------------
 
-This option guarantees that the JSON output is only on one line, and does so by removing any new-line character within
-the payload if needed. The JSON output line is preceeded by a ``JSON_OUTPUT=`` anchor:
+This is a variant of the ``--json`` option, but instead of relying on ``JSON_START`` and ``JSON_END`` anchors,
+which works for both ``--json`` and ``--json-pretty`` modes, here the JSON output is packed on one line,
+starting with the ``JSON_OUTPUT=`` anchor.
+You may use the option that is the easier for you to parse in your script or calling program.
 
 .. code-block:: shell
    :emphasize-lines: 1

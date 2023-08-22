@@ -285,13 +285,13 @@ As you see, the MFA phase will be fired up for this plugin, but not for the ``in
    │ You are johndoe
    [...]
 
-On a per-remote host basis
-**************************
+On a per-group basis
+********************
 
 First ensure you've followed the :ref:`jit_mfa_sshd_config`.
 
-If you want to ensure that MFA is required to connect to a given set of remote hosts, you should add them to a bastion
-group, then tag this group to require MFA. To do this, use the ``groupModify`` command:
+If you want to ensure that MFA is required to connect to a remote host through a bastion group,
+you should tag this group to require MFA. To do this, use the ``groupModify`` command:
 
 .. code-block:: none
    :emphasize-lines: 1,9,18
@@ -330,9 +330,9 @@ As you see, after setting the flag on the group, attempting to access an asset t
 
 .. note::
 
-   If an asset is present in several groups, and only one of those groups has the ``--mfa-required`` parameter enabled,
-   it'll take precedence over the others and require MFA, regardless of which group egress key will actually work to
-   connect to said asset.
+   If an account has access to an asset via several groups, MFA will be required if at least one group requires it.
+   Hence, a good way to ensure that all connections to an asset will require MFA would be to list the
+   SSH keys on the remote server, match those to groups on the bastion, and ensure they all have ``--mfa-required`` enabled.
 
 On a per-account basis
 **********************
