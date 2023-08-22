@@ -67,6 +67,7 @@ The unavoidable and iconic FAQ is also available under the **PRESENTATION** sect
    using/piv
    using/sftp_scp
    using/http_proxy
+   using/api
    using/specific_ssh_clients_tutorials/index
 
 .. toctree::
@@ -75,6 +76,9 @@ The unavoidable and iconic FAQ is also available under the **PRESENTATION** sect
 
    administration/configuration/index
    administration/logs
+   administration/mfa
+
+.. _plugins:
 
 .. toctree::
    :maxdepth: 2
