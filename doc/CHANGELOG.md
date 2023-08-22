@@ -1,3 +1,8 @@
+## v3.13.01 - 2023/08/22
+- enh: setup-gpg.sh: create additional backup signing config with --generate
+- fix: clush: restore default handlers for SIGHUP/PIPE
+- doc: add JSON API and MFA documentations
+
 ## v3.13.00 - 2023/07/28
 - enh: use ttyrec instead of sqlite to record plugin output
 - fix: selfMFASetupPassword: restore default sighandlers to avoid being zombified
