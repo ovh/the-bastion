@@ -135,11 +135,15 @@ it'll fallback to installing precompiled static binaries.
 Of course you can package it yourself and make it available to your own internal repositories instead of installing it this way.
 
 If you plan to use the PIV functionalities of The Bastion,
-you'll also need to install the ``yubico-piv-checker`` `helper tool <https://github.com/ovh/yubico-piv-checker>`_:
+you'll also need to install the ``yubico-piv-checker`` `helper tool <https://github.com/ovh/yubico-piv-checker>`_.
+
+You may also want to install ``the-bastion-mkhash-helper`` `tool <https://github.com/ovh/the-bastion-mkhash-helper>`_
+if you want to be able to generate so-called type 8 and type 9 password hashes.
 
 .. code-block:: shell
 
    /opt/bastion/bin/admin/install-yubico-piv-checker.sh -a
+   /opt/bastion/bin/admin/install-mkhash-helper.sh -a
 
 .. _install-basic_encrypt-home:
 

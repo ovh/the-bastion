@@ -26,6 +26,7 @@ jobs:
           /opt/bastion/bin/admin/packages-check.sh -i
           /opt/bastion/bin/admin/install-ttyrec.sh -s
           /opt/bastion/bin/admin/install-yubico-piv-checker.sh -s
+          /opt/bastion/bin/admin/install-mkhash-helper.sh -s
           /opt/bastion/bin/admin/install --new-install
           ssh-keygen -t ed25519 -f id_user
           ssh-keygen -t ed25519 -f id_root

@@ -1,7 +1,7 @@
 # vim: set filetype=sh ts=4 sw=4 sts=4 et:
 # shellcheck shell=bash
 
-# common parts of install-ttyrec.sh and install-yubico-piv-checker.sh
+# common parts of install-{ttyrec,yubico-piv-checker,the-bastion-mkhash-helper}.sh
 
 # shellcheck source=lib/shell/functions.inc disable=SC2128
 . "$(dirname "$BASH_SOURCE")"/functions.inc
