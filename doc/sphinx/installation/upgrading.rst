@@ -27,6 +27,34 @@ See the ``--help`` for a more fine-grained upgrade path if needed.
 Version-specific upgrade instructions
 =====================================
 
+v3.xx.xx - xxxx/xx/xx
+*********************
+
+A new helper is required to support the so-called "type 8" and "type 9" password hash types, used on some
+network devices. This helper is optional, and these hashes types will simply not be generated if the helper is
+missing. The plugins concerned by this change are ``selfGeneratePassword``, ``selfListPasswords``,
+``accountGeneratePassword``, ``accountListPasswords``, ``groupGeneratePassword``, ``groupListPasswords``.
+
+New installations will get this helper installed automatically. When upgrading, if you'd like to install
+this helper, you'll need to install it by running the following command as ``root``:
+
+.. code-block:: shell
+
+   /opt/bastion/bin/admin/install-mkhash-helper.sh -a
+
+This will detect your OS and either install a ``.deb`` file, an ``.rpm`` file, or a static binary.
+
+If you want to ensure that the helper has installed correctly, you can call it manually for testing purposes:
+
+.. code-block:: shell
+   :emphasize-lines: 1
+
+   echo test | the-bastion-mkhash-helper
+   {"Type8":"$8$EpvF1cVVzoEQFE$L3ZBWzfH9MTPo4WLX29Jd8LTM5sKlfEjtRZ//XMys2U","Type9":"$9$yRlXzt0T7WBs3E$YdKk8WMvLvAVcbglx.bMZoRlwBa6l5EhwLhBh1o0u4g","PasswordLen":4}
+
+If you're not generating passwords for use with network devices using type 8 or type 9 hash types, installation of this
+helper is not required.
+
 v3.13.01 - 2023/08/22
 *********************
 

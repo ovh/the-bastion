@@ -15,6 +15,8 @@ RUN \
     /opt/bastion/bin/admin/install-ttyrec.sh -d && \
     # download and install the yubico-piv-checker deb package (-d) \
     /opt/bastion/bin/admin/install-yubico-piv-checker.sh -d && \
+    # download and install the the-bastion-mkhash-helper deb package (-d) \
+    /opt/bastion/bin/admin/install-mkhash-helper.sh -d && \
     # cleanup packages cache to save space \
     rm -rf /var/cache/apt && \
     # handle locales \

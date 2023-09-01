@@ -2,7 +2,7 @@
 # vim: set filetype=sh ts=4 sw=4 sts=4 et:
 set -e
 
-PROGRAM_NAME=yubico-piv-checker
+PROGRAM_NAME=the-bastion-mkhash-helper
 RELEASE_API_URL="https://api.github.com/repos/ovh/$PROGRAM_NAME/releases"
 
 basedir=$(readlink -f "$(dirname "$0")"/../..)
@@ -10,8 +10,7 @@ basedir=$(readlink -f "$(dirname "$0")"/../..)
 . "$basedir"/lib/shell/install.inc
 
 set_download_url_package() {
-    type="$1"
-    case "$type" in
+    case "$1" in
         rpm) set_download_url "/${PROGRAM_NAME}-.+\\.$archre\\.rpm$";;
         deb) set_download_url "/${PROGRAM_NAME}_.+_$archre\\.deb$";;
         *) exit 1;;

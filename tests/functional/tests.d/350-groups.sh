@@ -317,6 +317,8 @@ EOS
     md5a=$(get_json | $jq '.value.hashes.md5crypt')
     sha256a=$(get_json | $jq '.value.hashes.sha256crypt')
     sha512a=$(get_json | $jq '.value.hashes.sha512crypt')
+    type8a=$(get_json | $jq '.value.hashes.type8')
+    type9a=$(get_json | $jq '.value.hashes.type9')
 
     success works $a0 --osh groupListPasswords --group $group3
     json $(cat <<EOS
@@ -326,6 +328,8 @@ EOS
     .value[0].hashes.md5crypt     $md5a
     .value[0].hashes.sha256crypt  $sha256a
     .value[0].hashes.sha512crypt  $sha512a
+    .value[0].hashes.type8        $type8a
+    .value[0].hashes.type9        $type9a
     .value[1]                     null
 EOS
     )
@@ -335,6 +339,8 @@ EOS
     md5b=$(get_json | $jq '.value.hashes.md5crypt')
     sha256b=$(get_json | $jq '.value.hashes.sha256crypt')
     sha512b=$(get_json | $jq '.value.hashes.sha512crypt')
+    type8b=$(get_json | $jq '.value.hashes.type8')
+    type9b=$(get_json | $jq '.value.hashes.type9')
 
     success works $a0 --osh groupListPasswords --group $group3
     json $(cat <<EOS
@@ -344,14 +350,18 @@ EOS
     .value[0].hashes.md5crypt     $md5b
     .value[0].hashes.sha256crypt  $sha256b
     .value[0].hashes.sha512crypt  $sha512b
+    .value[0].hashes.type8        $type8b
+    .value[0].hashes.type9        $type9b
     .value[1].hashes.md5crypt     $md5a
     .value[1].hashes.sha256crypt  $sha256a
     .value[1].hashes.sha512crypt  $sha512a
+    .value[1].hashes.type8        $type8a
+    .value[1].hashes.type9        $type9a
     .value[2]                     null
 EOS
     )
-    unset md5a sha256a sha512a
-    unset md5b sha256b sha512b
+    unset md5a sha256a sha512a type8a type9a
+    unset md5b sha256b sha512b type8b type9b
 
     # ... for accounts
 
@@ -362,6 +372,8 @@ EOS
     md5a=$(get_json | $jq '.value.hashes.md5crypt')
     sha256a=$(get_json | $jq '.value.hashes.sha256crypt')
     sha512a=$(get_json | $jq '.value.hashes.sha512crypt')
+    type8a=$(get_json | $jq '.value.hashes.type8')
+    type9a=$(get_json | $jq '.value.hashes.type9')
 
     revoke accountGeneratePassword
     grant accountListPasswords
@@ -374,6 +386,8 @@ EOS
     .value[0].hashes.md5crypt     $md5a
     .value[0].hashes.sha256crypt  $sha256a
     .value[0].hashes.sha512crypt  $sha512a
+    .value[0].hashes.type8        $type8a
+    .value[0].hashes.type9        $type9a
     .value[1]                     null
 EOS
     )
@@ -385,6 +399,8 @@ EOS
     md5b=$(get_json | $jq '.value.hashes.md5crypt')
     sha256b=$(get_json | $jq '.value.hashes.sha256crypt')
     sha512b=$(get_json | $jq '.value.hashes.sha512crypt')
+    type8b=$(get_json | $jq '.value.hashes.type8')
+    type9b=$(get_json | $jq '.value.hashes.type9')
 
     success works $a1 --osh selfListPasswords
     json $(cat <<EOS
@@ -394,15 +410,19 @@ EOS
     .value[0].hashes.md5crypt     $md5b
     .value[0].hashes.sha256crypt  $sha256b
     .value[0].hashes.sha512crypt  $sha512b
+    .value[0].hashes.type8        $type8b
+    .value[0].hashes.type9        $type9b
     .value[1].metadata.created_by $account0
     .value[1].hashes.md5crypt     $md5a
     .value[1].hashes.sha256crypt  $sha256a
     .value[1].hashes.sha512crypt  $sha512a
+    .value[1].hashes.type8        $type8a
+    .value[1].hashes.type9        $type9a
     .value[2]                     null
 EOS
     )
-    unset md5a sha256a sha512a
-    unset md5b sha256b sha512b
+    unset md5a sha256a sha512a type8a type9a
+    unset md5b sha256b sha512b type8b type9b
 
 
     # END egress passwords

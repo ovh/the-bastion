@@ -28,7 +28,7 @@ sub _get_key_from_password {
 }
 
 # generate a fixed salt given (a password AND a nonce AND a salt len)
-sub _get_salt_for_password {
+sub _get_salt {
     my %params   = @_;
     my $password = $params{'password'};
     my $nonce    = $params{'nonce'} || $password;
@@ -64,15 +64,37 @@ sub get_hashes_from_password {
 
     my %ret;
     $ret{'md5crypt'} =
-      crypt($password, '$1$' . _get_salt_for_password(password => $password, nonce => '$1', len => 4)->value . '$');
+      crypt($password, '$1$' . _get_salt(password => $password, nonce => '$1', len => 4)->value . '$');
     $ret{'sha256crypt'} =
-      crypt($password, '$5$' . _get_salt_for_password(password => $password, nonce => '$5', len => 8)->value . '$');
+      crypt($password, '$5$' . _get_salt(password => $password, nonce => '$5', len => 8)->value . '$');
     $ret{'sha512crypt'} =
-      crypt($password, '$6$' . _get_salt_for_password(password => $password, nonce => '$6', len => 8)->value . '$');
+      crypt($password, '$6$' . _get_salt(password => $password, nonce => '$6', len => 8)->value . '$');
 
     # some OSes have a broken crypt() that doesn't generate invalid hashes, undef those
     $ret{'sha256crypt'} = undef if $ret{'sha256crypt'} !~ m{^\$5\$};
     $ret{'sha512crypt'} = undef if $ret{'sha512crypt'} !~ m{^\$6\$};
+
+    # get fixed (and untainted) salts for type8 and type9
+    my ($type8salt) = _get_salt(password => $password, nonce => '$8', len => 14)->value =~ m{^([a-zA-Z0-9./]+)$};
+    my ($type9salt) = _get_salt(password => $password, nonce => '$9', len => 14)->value =~ m{^([a-zA-Z0-9./]+)$};
+
+    # if we have the-bastion-mkhash-helper, use it
+    my $fnret = OVH::Bastion::execute(
+        cmd          => ['the-bastion-mkhash-helper', '--salt-type8', $type8salt, '--salt-type9', $type9salt],
+        stdin_str    => $password,
+        must_succeed => 1
+    );
+    if ($fnret && $fnret->value && $fnret->value->{'stdout'}) {
+        require JSON;
+        my $hashes = eval { JSON::decode_json(join("\n", @{$fnret->value->{'stdout'}})); };
+        if ($@) {
+            warn_syslog("Couldn't parse the-bastion-mkhash-helper output: $@");
+        }
+        elsif ($hashes) {
+            $ret{'type8'} = $hashes->{'Type8'} if $hashes->{'Type8'};
+            $ret{'type9'} = $hashes->{'Type9'} if $hashes->{'Type9'};
+        }
+    }
 
     return R('OK', value => \%ret);
 }
