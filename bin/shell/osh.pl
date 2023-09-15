@@ -1054,17 +1054,25 @@ if ($osh_command) {
 
         # build ttyrec command that'll prefix the real command
         $fnret = OVH::Bastion::build_ttyrec_cmdline(
-            ip            => $osh_command,
-            port          => 0,
-            user          => 0,
-            account       => $self,
-            uniqid        => $log_uniq_id,
-            home          => $home,
-            realm         => $realm,
-            remoteaccount => $remoteself,
-            debug         => $osh_debug,
-            tty           => $tty,
-            notty         => $notty
+            ip             => $osh_command,
+            port           => 0,
+            user           => 0,
+            account        => $self,
+            uniqid         => $log_uniq_id,
+            home           => $home,
+            realm          => $realm,
+            remoteaccount  => $remoteself,
+            debug          => $osh_debug,
+            tty            => $tty,
+            notty          => $notty,
+            stealth_stdout => OVH::Bastion::plugin_config(
+                plugin => $osh_command,
+                key    => "stealth_stdout"
+            )->value ? 1 : 0,
+            stealth_stderr => OVH::Bastion::plugin_config(
+                plugin => $osh_command,
+                key    => "stealth_stderr"
+            )->value ? 1 : 0,
         );
         main_exit(OVH::Bastion::EXIT_TTYREC_CMDLINE_FAILED, "ttyrec_failed", $fnret->msg) if !$fnret;
 
