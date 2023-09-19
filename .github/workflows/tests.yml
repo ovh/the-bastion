@@ -10,7 +10,9 @@ jobs:
         runs-on: ubuntu-latest
         if: contains(github.event.pull_request.labels.*.name, 'tests:short')
         steps:
-        - uses: actions/checkout@v2
+        - uses: actions/checkout@v4
+          with:
+            persist-credentials: false
         - name: run tests inside a debian11 docker
           run: tests/functional/docker/docker_build_and_run_tests.sh debian11 --skip-consistency-check --no-pause-on-fail
           env:
@@ -24,7 +26,9 @@ jobs:
         runs-on: ubuntu-latest
         if: contains(github.event.pull_request.labels.*.name, 'tests:long')
         steps:
-        - uses: actions/checkout@v2
+        - uses: actions/checkout@v4
+          with:
+            persist-credentials: false
         - name: run tests inside a ${{ matrix.platform }} docker
           run: tests/functional/docker/docker_build_and_run_tests.sh ${{ matrix.platform }} --skip-consistency-check --no-pause-on-fail
           env:
@@ -38,7 +42,9 @@ jobs:
         runs-on: ubuntu-latest
         if: contains(github.event.pull_request.labels.*.name, 'tests:full')
         steps:
-        - uses: actions/checkout@v2
+        - uses: actions/checkout@v4
+          with:
+            persist-credentials: false
         - name: run tests inside a ${{ matrix.platform }} docker
           run: tests/functional/docker/docker_build_and_run_tests.sh ${{ matrix.platform }} --no-pause-on-fail
           env:
