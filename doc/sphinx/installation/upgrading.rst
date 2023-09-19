@@ -27,7 +27,7 @@ See the ``--help`` for a more fine-grained upgrade path if needed.
 Version-specific upgrade instructions
 =====================================
 
-v3.xx.xx - xxxx/xx/xx
+v3.14.00 - 2023/09/19
 *********************
 
 A new helper is required to support the so-called "type 8" and "type 9" password hash types, used on some
