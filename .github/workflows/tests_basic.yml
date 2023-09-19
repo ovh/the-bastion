@@ -7,7 +7,9 @@ jobs:
         name: perlcritic, perltidy, shellcheck, doc
         runs-on: ubuntu-20.04
         steps:
-        - uses: actions/checkout@v2
+        - uses: actions/checkout@v4
+          with:
+            persist-credentials: false
         - name: install prerequisites
           run: sudo ./bin/admin/packages-check.sh -i -d
           env:
