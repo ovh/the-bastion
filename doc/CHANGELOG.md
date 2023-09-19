@@ -1,3 +1,7 @@
+## v3.14.00 - 2023/09/19
+- feat: add type8 and type9 password hashes
+- feat: add stealth_stderr/stdout ttyrec support, enable it for scp & sftp
+
 ## v3.13.01 - 2023/08/22
 - enh: setup-gpg.sh: create additional backup signing config with --generate
 - fix: clush: restore default handlers for SIGHUP/PIPE
