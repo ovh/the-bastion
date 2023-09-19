@@ -1,4 +1,4 @@
-FROM debian:bullseye
+FROM debian:bookworm
 LABEL maintainer="stephane.lesimple+bastion@ovhcloud.com"
 
 # first, copy everything we need
