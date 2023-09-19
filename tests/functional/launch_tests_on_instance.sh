@@ -573,7 +573,7 @@ sshclientconfigchg()
 
 dump_vars_and_funcs()
 {
-    set | grep -v -E '^(testno|section|code_warn_exclude|LINES|COLUMNS|PIPESTATUS|_|BASH_LINENO|basename|case|json|name|tmpscript|grepit)='
+    set | grep -v -E '^(testno|section|code_warn_exclude|COPROC_PID|LINES|COLUMNS|PIPESTATUS|_|BASH_LINENO|basename|case|json|name|tmpscript|grepit|got|isbad|nbfailedgrep)='
 }
 
 runtests()

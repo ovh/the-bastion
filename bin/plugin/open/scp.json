@@ -1,3 +1,4 @@
 {
-    "execution_mode": "binary"
+    "execution_mode": "binary",
+    "stealth_stdout": true
 }
