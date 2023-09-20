@@ -213,30 +213,43 @@ testsuite_selfaccesses()
 
     # scp
 
+    ## detect recent scp
+    local scp_options=""
+    run scp_checkversion $r0 "scp 2>&1 | grep -q O && echo NEWVERSION || echo OLDVERSION"
+    if get_stdout | grep -q NEWVERSION; then
+        echo "scp: will use new version params"
+        scp_options="-O"
+    elif get_stdout | grep -q OLDVERSION; then
+        echo "scp: will use old version params"
+        scp_options=""
+    else
+        contain "unknown scp version"
+    fi
+
     success forscp $a0 --osh selfAddPersonalAccess --host 127.0.0.2 --scpup --port 22
 
-    run scp_downloadfailnoright scp -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file $shellaccount@127.0.0.2:uptest /tmp/downloaded
+    run scp_downloadfailnoright scp $scp_options -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file $shellaccount@127.0.0.2:uptest /tmp/downloaded
     retvalshouldbe 1
     contain "Sorry, but even"
 
     success forscp $a0 --osh selfAddPersonalAccess --host 127.0.0.2 --scpdown --port 22
 
-    run scp_downloadfailnofile scp -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file $shellaccount@127.0.0.2:uptest /tmp/downloaded
+    run scp_downloadfailnofile scp $scp_options -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file $shellaccount@127.0.0.2:uptest /tmp/downloaded
     retvalshouldbe 1
     contain "through the bastion from"
     contain "Error launching transfer"
     contain "No such file or directory"
     nocontain "Permission denied"
 
-    run scp_invalidhostname scp -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file $shellaccount@_invalid._invalid:uptest /tmp/downloaded
+    run scp_invalidhostname scp $scp_options -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file $shellaccount@_invalid._invalid:uptest /tmp/downloaded
     retvalshouldbe 1
     contain "Sorry, couldn't resolve the host you specified"
 
-    success scp_upload scp -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file /etc/passwd $shellaccount@127.0.0.2:uptest
+    success scp_upload scp $scp_options -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file /etc/passwd $shellaccount@127.0.0.2:uptest
     contain "through the bastion to"
     contain "Done,"
 
-    success scp_download scp -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file $shellaccount@127.0.0.2:uptest /tmp/downloaded
+    success scp_download scp $scp_options -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file $shellaccount@127.0.0.2:uptest /tmp/downloaded
     contain "through the bastion from"
     contain "Done,"
 
