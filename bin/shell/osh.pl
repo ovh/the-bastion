@@ -346,7 +346,7 @@ else {
 
 my $remainingOptions;
 ($result, $remainingOptions) = GetOptionsFromString(
-    $beforeOptions,
+    $beforeOptions // "",
     "port|p=i"        => \my $optPort,
     "verbose+"        => \my $verbose,
     "tty|t"           => \my $tty,
