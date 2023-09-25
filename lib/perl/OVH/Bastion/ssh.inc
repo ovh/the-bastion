@@ -302,7 +302,7 @@ sub get_ssh_pub_key_info {
 
     my ($prefix, $typecode, $base64, $comment);
     if ($pubKey =~
-        m{^\s*((\S+)\s+)?(ssh-dss|ssh-rsa|ecdsa-sha\d+-nistp\d+|ssh-ed\d+|sk-ssh-ed25519\@openssh.com|sk-ecdsa-sha2-nistp256\@openssh.com)\s+([a-zA-Z0-9/=+]+)(\s+(.{1,128})?)?$}
+        m{^\s*((\S+)\s+)?(ssh-dss|ssh-rsa|ecdsa-sha\d+-nistp\d+|ssh-ed\d+|sk-ssh-ed25519\@openssh\.com|sk-ecdsa-sha2-nistp256\@openssh\.com)\s+([a-zA-Z0-9/=+]+)(\s+(.{1,128})?)?$}
         && length($pubKey) <= 3000)
     {
         ($prefix, $typecode, $base64, $comment) = ($2, $3, $4, $6);
