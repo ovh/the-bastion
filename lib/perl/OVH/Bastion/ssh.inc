@@ -1057,7 +1057,6 @@ sub print_accepted_key_algorithms {
     $fnret = OVH::Bastion::get_supported_ssh_algorithms_list(way => $way);
     $fnret or osh_exit $fnret;
     my @algoList = @{$fnret->value};
-    my $algos    = join(' ', @algoList);
 
     if (grep { 'ed25519-sk' eq $_ } @algoList) {
         osh_info "FIDO2 Ed25519: strongness[######] speed[#####], use `ssh-keygen -t ed25519-sk' to generate one";
