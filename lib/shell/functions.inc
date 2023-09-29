@@ -464,3 +464,12 @@ script_init() {
         exit_success "Script is disabled"
     fi
 }
+
+# .join is practical to avoid messy stuff with bash variables
+join_by(){
+    local delim="${1-}"
+    local first="${2-}"
+    if shift 2; then
+        printf "%s" "${first}" "${@/#/$delim}"
+    fi
+}
