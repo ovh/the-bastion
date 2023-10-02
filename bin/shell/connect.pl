@@ -147,22 +147,41 @@ if ($sshClientHasOptionE) {
 # now guessify if the ssh worked or not
 my @comments;
 my $header;
-if (open(my $fh_ttyrec, '<', $saveFile)) {
-    read $fh_ttyrec, $header, 2000;    # 2K if there's the host key changed warning
-    close($fh_ttyrec);
+
+if (-e $saveFile) {
+    if (-z _) {
+        push @comments, 'ttyrec_empty';
+    }
+    else {
+        if (open(my $fh_ttyrec, '<', $saveFile)) {
+            read $fh_ttyrec, $header, 2000;    # 2K if there's the host key changed warning
+            close($fh_ttyrec);
+        }
+    }
 }
-elsif (-r "$saveFile.zst") {
-    my $fnret =
-      OVH::Bastion::execute(cmd => ['zstd', '-d', '-c', "$saveFile.zst"], max_stdout_bytes => 2000, must_succeed => 1);
-    $header = join("\n", @{$fnret->value->{'stdout'} || []}) if $fnret;
+elsif (-e "$saveFile.zst") {
+    if (-z _) {
+        push @comments, 'ttyrec_empty';
+    }
+    else {
+        my $fnret = OVH::Bastion::execute(
+            cmd              => ['zstd', '-d', '-c', "$saveFile.zst"],
+            max_stdout_bytes => 2000,
+            must_succeed     => 1
+        );
+        $header = join("\n", @{$fnret->value->{'stdout'} || []}) if $fnret;
+    }
+}
+else {
+    push @comments, 'ttyrec_none';
 }
 
 if ($header) {
     if ($header =~ /Permission denied \(publickey/) {
         push @comments, 'permission_denied';
         OVH::Bastion::osh_crit(
-            "BASTION SAYS: The remote server ($ip) refused all the keys we tried (see the list just above), there are FOUR things to verify:"
-        );
+                "BASTION SAYS: The remote server ($ip) refused all the keys we tried (see the list just above), "
+              . "there are FOUR things to verify:");
         OVH::Bastion::osh_warn(
             "1) Check the remote account's authorized_keys on $ip, did you add the proper key there? (personal key or group key)\n2) Did you tell the bastion you added a key to the remote server, so it knows it has to use it? See the actually used keys just above. If you didn't, do it with selfAddPersonalAccess or groupAddServer.\n3) Check the from=\"\" part of the remote account's authorized_keys' keyline. Are all the bastion IPs present? Master and slave(s)? See groupInfo or selfListEgressKeys to get the proper keyline to copy/paste.\n4) Did you check the 3 above points carefully? Really? Because if you did, you wouldn't be reading this 4th bullet point, as your problem would already be fixed ;)"
         );
@@ -220,7 +239,8 @@ if ($header) {
         );
     }
 }
-else {
+elsif (!@comments) {
+    # if $header is empty and we didn't push ttyrec_none or ttyrec_empty to @comments, it's weird
     push @comments, 'ttyrec_error';
 }
 
