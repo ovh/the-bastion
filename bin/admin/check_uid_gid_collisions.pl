@@ -34,7 +34,7 @@ if (!$masterGroupFile || !$masterPasswdFile || !$outputFile) {
     die "Usage: $0 --master-passwd PATH --master-group PATH --output FILE [--local-passwd PATH --local-group PATH]\n";
 }
 
-if (-e $outputFile && !-c $outputFile) {
+if (-e $outputFile && !-c _) {
     die "Output file '$outputFile' already exists!\n";
 }
 
