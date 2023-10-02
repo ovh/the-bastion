@@ -34,7 +34,7 @@ if (!$masterGroupFile || !$masterPasswdFile || !$outputFile) {
     die "Usage: $0 --master-passwd PATH --master-group PATH --output FILE [--local-passwd PATH --local-group PATH]\n";
 }
 
-if (-e $outputFile) {
+if (-e $outputFile && !-c $outputFile) {
     die "Output file '$outputFile' already exists!\n";
 }
 
@@ -161,7 +161,9 @@ if [ -n "$proclist" ]; then
     for pid in $proclist; do
     pscmd="$pscmd -p $pid"
     done
+    echo
     echo "The following processes/daemons will need to be killed before swapping the UIDs/GIDs:"
+    echo
     $pscmd
     echo
     echo "If you want to stop them manually, you may abort now (CTRL+C) and do so."
@@ -174,12 +176,17 @@ sgidfiles=$(mktemp)
 trap "rm -f $suidfiles $sgidfiles" EXIT
 find $fslist -xdev -ignore_readdir_race -perm /4000 -type f -print0 > "$suidfiles"
 find $fslist -xdev -ignore_readdir_race -perm /2000 -type f -print0 > "$sgidfiles"
+echo "Starting work"
+echo
 EOF2
 
+echo
 echo "Restoring SUID/SGID flags where needed..."
 xargs -r0 chmod -v u+s -- < "$suidfiles"
 xargs -r0 chmod -v g+s -- < "$sgidfiles"
+echo
 echo 'UID/GID swapping done, please reboot now.'
+echo
 EOF3
 
     close($fh);
