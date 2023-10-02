@@ -304,15 +304,11 @@ sub handle_list {
     }
 
     if ($pass == 0) {
-        # loop through the unseen IDs we have locally, and report: they would be erased
+        # loop through the unseen IDs we have locally, and set their corresponding name as 'seen' (delete from unseen)
         foreach my $local_id (sort keys %unseen_ids) {
             next if $local_id >= $offset;
             my $local_name = $local->{'name_by_id'}{$local_id};
             delete $unseen_names{$local_name};
-            printf("WARN: local orphan $typename: local $typename %d (with name '%s') is only present locally, "
-                  . "if you want to keep it, create it on the master first or it'll be erased\n",
-                $local_id, $local_name);
-            $orphans++;
         }
 
         # loop through the unseen names we have locally, and report: they would be erased
