@@ -183,27 +183,29 @@ if ($header) {
                 "BASTION SAYS: The remote server ($ip) refused all the keys we tried (see the list just above), "
               . "there are FOUR things to verify:");
         OVH::Bastion::osh_warn(
-            "1) Check the remote account's authorized_keys on $ip, did you add the proper key there? (personal key or group key)\n2) Did you tell the bastion you added a key to the remote server, so it knows it has to use it? See the actually used keys just above. If you didn't, do it with selfAddPersonalAccess or groupAddServer.\n3) Check the from=\"\" part of the remote account's authorized_keys' keyline. Are all the bastion IPs present? Master and slave(s)? See groupInfo or selfListEgressKeys to get the proper keyline to copy/paste.\n4) Did you check the 3 above points carefully? Really? Because if you did, you wouldn't be reading this 4th bullet point, as your problem would already be fixed ;)"
+            <<"EOS"
+1) Check the remote account's authorized_keys on $ip, did you add the proper key there? (personal key or group key)
+2) Did you tell the bastion you added a key to the remote server, so it knows it has to use it? See the actually used keys just above.  If you didn't, do it with selfAddPersonalAccess or groupAddServer.
+3) Check the from="" part of the remote account's authorized_keys' keyline.  Are all the bastion IPs present? Master and slave(s)? See groupInfo or selfListEgressKeys to get the proper keyline to copy/paste.
+4) Did you check the 3 above points carefully? Really? Because if you did, you wouldn't be reading this 4th bullet point, as your problem would already be fixed ;)
+EOS
         );
     }
     if ($header =~ /Permission denied \(keyboard-interactive/) {
         push @comments, 'permission_denied';
         if (!OVH::Bastion::config('keyboardInteractiveAllowed')->value) {
-            OVH::Bastion::osh_crit(
-                "BASTION SAYS: The remote server ($ip) wanted to use keyboard-interactive authentication, but it's not enabled on this bastion!"
-            );
+            OVH::Bastion::osh_crit("BASTION SAYS: The remote server ($ip) wanted to use keyboard-interactive "
+                  . "authentication, but it's not enabled on this bastion!");
         }
     }
     if ($header =~ /Too many authentication failures/) {
         push @comments, 'too_many_auth_fail';
-        OVH::Bastion::osh_crit(
-            "BASTION SAYS: The remote server ($ip) disconnected us before we got a chance to try all the keys we wanted to (see the list just above)."
-        );
-        OVH::Bastion::osh_warn(
-            "This usually happens if there are too many keys to try, for example if you have numerous personal keys of if $ip is in many groups you have access to."
-        );
-        OVH::Bastion::osh_warn(
-            "Either reduce the number of keys to try, or modify $ip\'s sshd \"MaxAuthTries\" configuration option.");
+        OVH::Bastion::osh_crit("BASTION SAYS: The remote server ($ip) disconnected us before we got "
+              . "a chance to try all the keys we wanted to (see the list just above).");
+        OVH::Bastion::osh_warn("This usually happens if there are too many keys to try, for example if you have "
+              . "numerous personal keys of if $ip is in many groups you have access to.");
+        OVH::Bastion::osh_warn("Either reduce the number of keys to try, or modify $ip\'s "
+              . "sshd \"MaxAuthTries\" configuration option.");
     }
     push @comments, 'hostkey_changed' if $header =~ /IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY/;
     push @comments, 'hostkey_saved'   if $header =~ /Warning: Permanently added /;
@@ -223,10 +225,9 @@ if ($header) {
         if ($userPasswordClue) {
             my $bastionName = OVH::Bastion::config('bastionName')->value;
             OVH::Bastion::osh_crit(
-                "BASTION SAYS: Password authentication is blocked because of the hostkey mismatch on $ip.");
-            OVH::Bastion::osh_crit(
-                "If you are aware of this change, remove the hostkey cache with `$bastionName --osh selfForgetHostKey --host $ip --port $port'"
-            );
+                "BASTION SAYS: Password authentication is blocked " . "because of the hostkey mismatch on $ip.");
+            OVH::Bastion::osh_crit("If you are aware of this change, remove the hostkey cache "
+                  . "with `$bastionName --osh selfForgetHostKey --host $ip --port $port'");
         }
     }
 
