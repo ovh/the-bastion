@@ -1,41 +1,180 @@
+Writing tests
 =============
-Running Tests
-=============
 
-Using Docker
-============
+.. contents::
 
-Functional tests use ``Docker`` to spawn an environment matching a bastion install.
+When modifying code, adding features or fixing bugs, you're expected to write one or more tests to ensure that
+the feature your adding works correctly, or that the bug you've fixed doesn't come back.
 
-One of the docker instances will be used as client, which will connect to the other instance
-which is used as the bastion server.
+Integration tests modules live in the :file:`tests/functional/tests.d` folder.
+You may either add a new file to test your feature, or modify an existing file.
 
-The client instance sends commands to the server instance and tests the return values against expected output.
+These modules are shell scripts, and are sourced by the main integration test engine. Having a look at one of
+these modules will help you understand how they work, the :file:`tests/functional/tests.d/320-base.sh` is a good
+example you might want to look at.
 
-To test the current code, put it on a machine with docker installed, and use the following script,
-which will run docker build and launch the tests:
+Example
+-------
 
-    ``tests/functional/docker/docker_build_and_run_tests.sh <TARGET>``
+Here is a simple test taken from :file:`320-base.sh`:
 
-Where target is one of the supported OSes. Currently only Linux targets are supported.
-You'll get a list of the supported targets by calling the command without argument.
+.. code-block:: none
+   :caption: a simple test
 
-Without Docker
-==============
+   success   help2     $a0 --osh help
+   contain "OSH help"
+   json .error_code OK .command help .value null
 
-You can however still test the code against a BSD (or any other OS) without using Docker,
-by spawning a server under the target OS, and installing the bastion on it.
+A complete reference of such commands can be found below, but let's explain this example in a few words:
 
-Then, from another machine, run:
+The command ``success`` implies that we're running a new test command, and that we expect it to work (we might
+also want to test invalid commands and ensure they fail as they should).
+The tester docker will connect to the target docker (that is running the bastion code) as a bastion user, and
+run the ``--osh help`` command there. This is expected to exit with a code indicating success (0),
+otherwise this test fails.
 
-    ``test/functional/launch_tests_on_instance.sh <IP> <port> <remote_user_name> <ssh_key_path> [outdir]``
+The output of the command, once run on the bastion, should contain the text ``OSH help``, or the test will fail.
 
-Where ``IP`` and ``port`` are the information needed to connect to the remote server to test,
-``remote_user_name`` is the name of the account created on the remote bastion to use for the tests,
-and ``ssh_key_path`` is the private SSH key path used to connect to the account.
-The ``outdir`` parameter is optional, if you want to keep the raw output of each test.
+In the JSON output (see :doc:`/using/api`) of this command, we expect to find the ``error_code`` field set to ``OK``,
+the ``command`` field set to ``help``, and the ``value`` field set to ``null``, or the test will fail.
 
-This script is also the script used by the Docker client instance,
-so you're sure to get the proper results even without using Docker.
+Running just this test will yield the following output:
 
-Please do **NOT** run any of those tests on a production bastion!
+.. code-block:: none
+   :caption: a simple test output
+
+   00m04 [--] *** [0010/0021] 320-base::help2 (timeout --foreground 30 ssh -F /tmp/bastiontest.pgoA5h/ssh_config -i /tmp/bastiontest.pgoA5h/account0key1file user.5000@bastion_debian10_target -p 22 -- --json-greppable --osh help)
+   00m05 [--] [ OK ] RETURN VALUE (0)
+   00m05 [--] [ OK ] MUST CONTAIN (OSH help)
+   00m05 [--] [ OK ] JSON VALUE (.error_code => OK) [  ]
+   00m05 [--] [ OK ] JSON VALUE (.command => help) [  ]
+   00m05 [--] [ OK ] JSON VALUE (.value => null) [  ]
+
+As you can see, this simple test actually checked 5 things: the return value, whether the output text contained
+a given string, and 3 fields of the JSON output.
+
+Reference
+---------
+
+These are functions that are defined by the integration test engine and should be used in the test modules.
+
+Launch a test
+*************
+
+run
++++
+
+.. admonition:: syntax
+   :class: cmdusage
+
+   - run <name> <command>
+
+This function runs a new test named ``<name>``, which will execute ``<command>`` on the tester docker.
+Usually ``<command>`` will connect to the target docker (running the bastion code) using one of the test accounts,
+and run a command there.
+
+A few accounts are preconfigured:
+
+- The main account ("account 0"): this one is guaranteed to always exist at all times, and is a bastion admin.
+  There are a few variables that can be referenced to use this account:
+
+  - ``$a0`` is the ssh command-line to connect to the remote bastion as this account
+  - ``$account0`` is the account name, to be used in parameters of ``--osh`` commands where needed
+
+- A few secondary accounts that are created, deleted, modified during the tests:
+
+  - ``$a1``, ``$a2`` and ``$a3`` are the ssh command-lines to connect to the remote bastion as these accounts
+  - ``$account1``, ``$account2`` and ``$account3`` are the accounts names
+
+- Another special non-bastion-account command exists:
+
+  - ``$r0`` is the required command-line to directly connect to the remote docker on which the bastion code is running,
+    as root, with a bash shell. Only use this to modify the remote bastion files, such as config files, between tests
+
+A few examples follow:
+
+.. code-block:: none
+   :caption: running a few test commands
+
+   run test1 $a0 --osh info
+   run test2 $a0 --osh accountInfo --account $account1
+   run test3 $a1 --osh accountDelete --account $account2
+
+Note that the ``run`` function just runs the given command, but doesn't check whether it exited normally, you'll
+need other functions to verify this, see below.
+
+success
++++++++
+
+.. admonition:: syntax
+   :class: cmdusage
+
+   - success <name> <command>
+
+This function is exactly the same as the ``run`` command above, except that it expects the given ``<command>`` to
+return a valid error code (zero). Most of the time, you should be using this instead of ``run``, except if you're
+expecting the command to fail, in which case you should use ``run`` + ``retvalshouldbe``, see below.
+
+plgfail
++++++++
+
+.. admonition:: syntax
+   :class: cmdusage
+
+   - plgfail <name> <command>
+
+This function is exactly the same as the ``run`` command above, except that it expects the given ``<command>`` to
+return an error code of 100, which is the standard exit value when an osh command fails.
+
+This function is equivalent to using ``run`` followed by ``retvalshouldbe 100`` (see below).
+
+Verify a test validity
+**********************
+
+retvalshouldbe
+++++++++++++++
+
+.. admonition:: syntax
+   :class: cmdusage
+
+   - retvalshouldbe <value>
+
+Verify that the return value of a test launched right before with the ``run`` function is ``<value>``.
+You should use this if you expect the previous test to return a non-zero value.
+
+Note that the ``success`` function is equivalent to using ``run`` followed by ``retvalshouldbe 0``.
+
+contain
++++++++
+
+.. admonition:: syntax
+   :class: cmdusage
+
+   - contain <text>
+   - contain REGEX <regex>
+
+This function verifies that the output of the test contains a given ``<text>``. If you need to use a regex
+to match the output, you can use the ``contain REGEX`` construction, followed by the regex.
+
+nocontain
++++++++++
+
+.. admonition:: syntax
+   :class: cmdusage
+
+   - nocontain <text>
+   - nocontain REGEX <regex>
+
+This function does the exact opposite of the ``contain`` function just above, and ensure that a given text
+or regex is NOT present in the output.
+
+json
+++++
+
+.. admonition:: syntax
+   :class: cmdusage
+
+   - json <field1> <value1> [<field2> <value2> ...]
+
+This function checks the JSON API output of the test, and validates that it contains the correct value for each
+specified field. The ``<fieldX>`` entries must be valid `jq` filters.
