@@ -124,7 +124,7 @@ We can use the interactive mode to get the auto-completion features:
 You can enter the first few characters of the command, then use ``<TAB>`` to help you complete it,
 then use ``<TAB>`` again to show you the required arguments. The complete command would be as follows:
 
-.. code-block:: shell
+.. code-block:: none
    :emphasize-lines: 1
 
    bssh(master)> selfAddPersonalAccess --host 198.51.100.42 --port 22 --user root
@@ -242,7 +242,7 @@ The first column is the unique identifier of the connection (or osh command).
 Let's see what we did exactly during this session:
 
 
-.. code-block:: shell
+.. code-block:: none
    :emphasize-lines: 1
 
    bssh(master)> selfPlaySession --id f4cca44a848e

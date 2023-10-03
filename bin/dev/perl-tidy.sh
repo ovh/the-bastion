@@ -42,7 +42,7 @@ params="$params \
 if [ -z "${2:-}" ]; then
     # run on all perl files
     # shellcheck disable=SC2086
-    find . -type f ! -name "*.tdy" ! -name "*.ERR" ! -name "$(basename "$0")" -print0 | \
+    find . -type f ! -name "*.tdy" ! -name "*.ERR" ! -name ".tidybak" ! -name "$(basename "$0")" -print0 | \
         xargs -r0 grep -l 'set filetype=perl' -- | \
         xargs -r perltidy $params
 else

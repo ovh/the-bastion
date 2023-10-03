@@ -56,7 +56,6 @@ The unavoidable and iconic FAQ is also available under the **PRESENTATION** sect
    installation/advanced
    installation/upgrading
    installation/docker
-   installation/tests
    installation/restoring_from_backup
 
 .. toctree::
@@ -77,6 +76,12 @@ The unavoidable and iconic FAQ is also available under the **PRESENTATION** sect
    administration/configuration/index
    administration/logs
    administration/mfa
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Development
+
+   development/setup
 
 .. _plugins:
 

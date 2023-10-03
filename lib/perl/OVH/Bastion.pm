@@ -57,7 +57,7 @@ use OVH::Result;
 
 use parent qw( Exporter );
 our @EXPORT =                                                       ## no critic (AutomaticExportation)
-  qw( osh_header osh_footer osh_exit osh_debug osh_info osh_warn osh_crit osh_ok warn_syslog info_syslog );
+  qw( osh_header osh_footer osh_exit osh_debug osh_info osh_warn osh_crit osh_ok warn_syslog info_syslog ); # pragma:hookignore
 
 our $AUTOLOAD;
 
@@ -515,7 +515,7 @@ sub osh_footer {
 # Or with 1 value, that will be taken as the R->err: osh_exit('OK')
 # Or with 2 values, that will be taken as err, msg: osh_exit('ERR_UNKNOWN', 'Unexpected error')
 # With more values, they'll be used as constructor for an R object
-sub osh_exit {    ## no critic (ArgUnpacking)
+sub osh_exit {    ## no critic (ArgUnpacking) # pragma:hookignore
     my $R;
     if (@_ == 1) {
         $R = ref $_[0] eq 'OVH::Result' ? $_[0] : R($_[0]);

@@ -47,7 +47,7 @@ else
 fi
 
 if [ -z "${2:-}" ]; then
-    for i in $(find . -type f ! -name "*.swp" ! -name "*.orig" ! -name "*.rej" -print0 | xargs -r0 grep -l 'set filetype=sh')
+    for i in $(find . -type f ! -name "*.swp" ! -name "*.orig" ! -name "*.rej" -print0 | xargs -r0 grep -l 'set filetype=sh' | sort)
     do
         run_shellcheck "$i"; ret=$?
         if [ $ret != 0 ]; then
