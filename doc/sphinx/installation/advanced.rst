@@ -295,7 +295,7 @@ we can use a helper script to check for the UIDs/GIDs matches between the master
 This script's job is to check whether there is any discrepancy, and if this is the case, generate another script,
 tailored to your case, to fix them:
 
-.. code-block:: shell
+.. code-block:: none
    :caption: run this on the SLAVE:
    :emphasize-lines: 1
 
@@ -316,7 +316,7 @@ simply adding the account(s) and/or group(s) on the master, so that they're sync
 
 If you type 'YES' or simply don't have any warnings, you should see something like this:
 
-.. code-block:: shell
+.. code-block:: none
    :caption: (output continued)
 
    Name collision on UID: master UID 38 exists on local but with a different name (master=gnats local=list)
@@ -335,7 +335,7 @@ changes on your filesystem, using ``chmod`` and ``chgrp`` commands.
 
 Once you're ready (note that you'll have to reboot the slave right after), you may run the generated script:
 
-.. code-block:: shell
+.. code-block:: none
    :caption: run this on the SLAVE:
    :emphasize-lines: 1
 

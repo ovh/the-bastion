@@ -1,0 +1,145 @@
+#!/bin/bash
+#
+# You may use this pre-commit file if you want to develop for The Bastion,
+# more information available on the online documentation https://ovh.github.io/the-bastion
+#
+
+if git rev-parse --verify HEAD >/dev/null 2>&1
+then
+    against=HEAD
+else
+    # Initial commit: diff against an empty tree object
+    against=4b825dc642cb6eb9a060e54bf8d69288fbee4904
+fi
+
+# Redirect output to stderr.
+exec 1>&2
+
+# Cross platform projects tend to avoid non-ASCII filenames; prevent
+# them from being added to the repository. We exploit the fact that the
+# printable range starts at the space character and ends with tilde.
+# Note that the use of brackets around a tr range is ok here, (it's
+# even required, for portability to Solaris 10's /usr/bin/tr), since
+# the square bracket bytes happen to fall in the designated range.
+if [ $(git diff --cached --name-only --diff-filter=A -z $against | LC_ALL=C tr -d '[ -~]\0' | wc -c) != 0 ]; then
+    echo "Error: Attempted to add a non-ASCII file name."
+    exit 1
+fi
+
+# If there are whitespace errors, print the offending file names
+git diff-index --check --cached $against --
+
+isbad=0
+
+# If we find IPs in the doc, it must only be documentation range IPs
+if git diff-index --cached -p $against | grep -E '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | grep -vE \
+        -e '192\.0\.2\.' \
+        -e '198\.51\.100\.' \
+        -e '203\.0\.113\.' \
+        -e '127\.' \
+        -e '0\.0\.0\.0' \
+        -e '172\.1[67]\.' | grep .; then
+    echo
+    echo "\\-> Error: found IPs that are not part of the doc range RFC"
+    isbad=1
+fi
+
+# Common mistype
+if git diff-index --cached -p $against | grep -5 --color 'syslog_(warn|info)'; then
+    echo
+    echo "\\-> Error: you meant (warn|info)_syslog. Aborting commit."
+    isbad=1
+fi
+
+# These files are modified during the doc generation, but should never be committed as is
+if ! grep -qF "version = '__VERSION__'" doc/sphinx/conf.py; then
+    echo "__VERSION__ was replaced in conf.py! git reset HEAD doc/sphinx/conf.py && git checkout -f doc/sphinx/conf.py"
+    isbad=1
+elif ! grep -qF "release = '__VERSION__'" doc/sphinx/conf.py; then
+    echo "__VERSION__ was replaced in conf.py! git reset HEAD doc/sphinx/conf.py && git checkout -f doc/sphinx/conf.py"
+    isbad=1
+elif ! grep -qF "v__VERSION__.tar.gz" doc/sphinx/installation/basic.rst; then
+    echo "__VERSION__.tar.gz was replaced in doc/sphinx/installation/basic.rst! git reset HEAD doc/sphinx/installation/basic.rst && git checkout -f doc/sphinx/installation/basic.rst"
+    isbad=1
+fi
+
+# Don't use HEXIT anywhere else that in helpers
+if [ -n "$(git -C bin/plugin grep HEXIT)" ] || [ -n "$(git -C lib/perl grep HEXIT | grep -v Helper.pm:)" ]; then
+    git -C bin/plugin grep -w HEXIT
+    git -C lib/perl grep -w HEXIT | grep -v Helper.pm:
+    echo
+    echo "\\-> ERROR: we shouldn't have HEXIT above."
+    isbad=1
+fi
+
+# Don't use osh_exit anywhere else that in plugins
+filter='grep -v -e :# -e pragma:hookignore -e Plugin.pm:'
+if [ -n "$(git -C bin/helper grep -w osh_exit)" ] || [ -n "$(git -C lib/perl grep -w osh_exit | $filter)" ]; then
+    git -C bin/helper grep -w osh_exit
+    git -C lib/perl grep -w osh_exit | $filter | grep --color -w osh_exit
+    echo
+    echo "\\-> ERROR: we shouldn't have osh_exit above."
+    isbad=1
+fi
+
+# Do we have a new FIXME/XXX/TODO ?
+if git diff-index --cached -p $against | grep -- ^+ | grep -5 --color -F -e FIXME -e XXX -e TODO; then
+    echo
+    echo "\\-> WARN: we got at least a new FIXME/XXX/TODO, use -n to commit nevertheless."
+    isbad=1
+fi
+
+# Now execute shellcheck in every changed .sh file
+for f in $(git diff --cached --name-only --diff-filter=ACM $against); do
+    if echo "$f" | grep -q -e "lib/shell" -e "bin/" -e "docker/devenv" && head -1 "$f" | grep -Eq '/env (ba)?sh|/bin/(ba)?sh'; then
+        if ! ./docker/devenv/run-tool.sh shellcheck "$f"; then
+            echo
+            echo "ERROR: shell-check failed on $f"
+            isbad=1
+        fi
+    fi
+
+    if echo "$f" | grep -q -e "lib/perl" -e "bin/" && head -20 "$f" | grep -Eq '/env perl|/bin/perl|package OVH::|use common::|use strict|use warnings'; then
+        if ! ./docker/devenv/run-tool.sh checktidy "$f"; then
+            echo
+            echo "ERROR: perl tidy failed on $f"
+            isbad=1
+        fi
+    fi
+done
+
+# check versions and docs
+ver=$(grep -F 'our $VERSION =' lib/perl/OVH/Bastion.pm | cut -d"'" -f2)
+if ! grep -Eq "^## v$ver - 202./[01][0-9]/.." doc/CHANGELOG.md; then
+    echo
+    echo "ERROR: detected version '$ver', but no matching entry in doc/CHANGELOG.md"
+    isbad=1
+else
+    reldate=$(grep -E "^## v$ver - 202./[01][0-9]/.." doc/CHANGELOG.md | awk '{print $4}')
+fi
+if ! grep -Eq "^v$ver - 202./../.." doc/sphinx/installation/upgrading.rst; then
+    echo
+    echo "ERROR: detected version '$ver', but no matching entry in doc/sphinx/installation/upgrading.rst"
+    isbad=1
+fi
+if [ -n "$reldate" ] && ! grep -Eq "^v$ver - $reldate" doc/sphinx/installation/upgrading.rst; then
+    echo
+    echo "ERROR: version '$ver' was not released at $reldate as said in doc/CHANGELOG.md (not seen in upgrading.rst)"
+    isbad=1
+fi
+
+# Is this file up to date?
+if ! cmp "$0" contrib/git/pre-commit >/dev/null; then
+    echo
+    echo "NOTICE: Your pre-commit file is different from contrib/git/pre-commit, maybe you need to update it? (non-fatal)"
+    echo
+fi
+
+# If there's a pre-commit.local in the same directory as ours, execute it first,
+# it can set isbad=1 to make us exit
+if [ -e "$(dirname "$0")"/pre-commit.local ]; then
+    source "$(dirname "$0")"/pre-commit.local
+fi
+
+[ $isbad != 0 ] && printf "%b" "\n!!! COMMIT ABORTED !!!\nIf you want to commit nevertheless, use -n.\n"
+exit $isbad

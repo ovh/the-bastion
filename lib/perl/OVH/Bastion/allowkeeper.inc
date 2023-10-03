@@ -57,7 +57,7 @@ sub is_group_existing {
         );
     }
 
-    # build a user-compatible error message if asked to, as it can make its way through osh_exit()
+    # build a user-compatible error message if asked to, as it can make its way through osh_exit() # pragma:hookignore
     if ($user_friendly_error) {
         $group =~ s/^key//;
         return R('KO_GROUP_NOT_FOUND',
