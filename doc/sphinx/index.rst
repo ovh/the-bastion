@@ -35,7 +35,9 @@ The third section focuses on the **USAGE** of the bastion, from the perspective 
 
 The fourth section is about the proper **ADMINISTRATION** of the bastion itself. If you're about to be the person in charge of managing the bastion for your company, you want to read that one carefully!
 
-The fifth section is the complete reference of all the **PLUGINS** that are the commands used to interact with the bastion accounts, groups, accesses, credentials, and more.
+The fifth section is about **DEVELOPMENT** and how to write code for the bastion. If you'd like to contribute, this is the section to read!
+
+The sixth section is the complete reference of all the **PLUGINS** that are the commands used to interact with the bastion accounts, groups, accesses, credentials, and more.
 
 The unavoidable and iconic FAQ is also available under the **PRESENTATION** section.
 
@@ -82,6 +84,7 @@ The unavoidable and iconic FAQ is also available under the **PRESENTATION** sect
    :caption: Development
 
    development/setup
+   development/tests
 
 .. _plugins:
 

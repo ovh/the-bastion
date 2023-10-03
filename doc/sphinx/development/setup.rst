@@ -15,7 +15,7 @@ access the files, and potentially modify them (such as for ``perltidy``).
 
 The supported tools are as follows:
 
-.. code-block:: shell
+.. code-block:: none
    :emphasize-lines: 1
 
    Usage: ./docker/devenv/run-tool.sh COMMAND [OPTIONS]
@@ -47,21 +47,21 @@ is automatically checked by ``perlcritic``, ``perltidy`` and ``shellcheck`` each
 
 If you previously cloned the repository with such a command:
 
-.. code-block:: shell
+.. code-block:: none
    :emphasize-lines: 1
 
    git clone https://github.com/ovh/the-bastion
 
 Then you can copy the provided :file:`pre-commit` script into your local :file:`.git` folder:
 
-.. code-block:: shell
+.. code-block:: none
    :emphasize-lines: 1
 
    cp contrib/git/pre-commit .git/hooks/pre-commit
 
 To verify that it works checkout a new test branch and add two dummy files like this:
 
-.. code-block:: shell
+.. code-block:: none
    :emphasize-lines: 1-5
 
    git checkout -B mybranch
@@ -97,8 +97,8 @@ To verify that it works checkout a new test branch and add two dummy files like 
 
 As you see, the checks are running before the commit is validated and abort it should any check fail.
 
-Integration tests run
-*********************
+Running integration tests
+*************************
 
 Using Docker
 ------------
@@ -110,7 +110,7 @@ and tests the return values against expected output.
 
 To test the current code, use the following script, which will run ``docker build`` and launch the tests:
 
-.. code-block:: shell
+.. code-block:: none
    :emphasize-lines: 1
 
    tests/functional/docker/docker_build_and_run_tests.sh <TARGET>
@@ -120,7 +120,7 @@ You'll get a list of the supported targets by calling the command without argume
 
 For example, if you want to test it under Debian (which is a good default OS if you don't have any preference):
 
-.. code-block:: shell
+.. code-block:: none
    :emphasize-lines: 1
 
    tests/functional/docker/docker_build_and_run_tests.sh debian12
@@ -128,7 +128,7 @@ For example, if you want to test it under Debian (which is a good default OS if 
 The full tests usually take 25 to 50 minutes to run, depending on your hardware specs.
 If you want to launch only a subset of the integration tests, you may specify it:
 
-.. code-block:: shell
+.. code-block:: none
    :emphasize-lines: 1
 
    tests/functional/docker/docker_build_and_run_tests.sh debian12 --module=320-base.sh
