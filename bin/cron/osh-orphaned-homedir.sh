@@ -30,17 +30,17 @@ exit($c->value->{readOnlySlaveMode} ? 0 : 100);
 set -e
 
 case $ret in
-    0)   _log "Checking orphaned home directories...";;
-    100) _log "We're a master instance, don't do anything"; exit_success;;
+    0)   _log "Checking orphaned home directories..."; role=slave;;
+    100) _log "We're a master instance, just check for orphaned lastlog files"; role=master;;
     101) exit_fail "Couldn't load the main bastion configurationg, aborting";;
     102) exit_fail "Invalid main bastion configuration, aborting";;
     *)   exit_fail "Unknown return code ($ret), aborting";;
 esac
 
+mkdir -p "/home/oldkeeper/orphaned"
+
 while IFS= read -r -d '' dir
 do
-    mkdir -p "/home/oldkeeper/orphaned"
-
     # just in case, check ourselves again that the folder's UID/GID don't resolve
     set +e
     uid=$(get_file_uid_compat "$dir")
@@ -49,9 +49,25 @@ do
     group=$(getent group "$gid")
     set -e
     if [ -n "$user" ] || [ -n "$group" ]; then
-
         # wow, `find' lied to us?!
         exit_fail "Would have archived $dir, but it seems the user ($uid=$user) or the group ($gid=$group) actually still exists (!), aborting the script"
+    fi
+
+    if [ "$role" = "master" ]; then
+        # on masters, due to race conditions between scripts and hosts, we might have deleted the account, then
+        # got one of our slaves to synchronize back the lastlog of the account onto us, before the slave
+        # gets synced itself to have the account removed locally.
+        #
+        # when this happens, we end up with a home directory with only one file in it: lastlog. check for this.
+        # also cap to 10 because we mainly need to know whether there is more than the 'lastlog' file or not.
+        files=$(find "$dir" -mindepth 1 | head -n 10)
+        if [ "$files" = "$dir/lastlog" ]; then
+            _log "Found orphaned lastlog file in $dir/lastlog, removing it"
+            rm -f -- "$dir/lastlog"
+            rmdir -- "$dir"
+        fi
+        # this is the only case we need to handle on a master
+        continue
     fi
 
     archive="/home/oldkeeper/orphaned/$(basename "$dir").at-$(date +%s).by-orphaned-homedir-script.tar.gz"
