@@ -1141,8 +1141,6 @@ sub build_ttyrec_cmdline_part1of2 {
     push @ttyrec, '-v' if $params{'debug'};
     push @ttyrec, '-T', 'always' if $params{'tty'};
     push @ttyrec, '-T', 'never'  if $params{'notty'};
-    push @ttyrec, '--stealth-stdout' if $params{'stealth_stdout'};
-    push @ttyrec, '--stealth-stderr' if $params{'stealth_stderr'};
 
     my $fnret = OVH::Bastion::account_config(
         account => $params{'account'},
@@ -1193,6 +1191,9 @@ sub build_ttyrec_cmdline_part2of2 {
             push @cmd, '--warn-before-kill', $warnBeforeKillSeconds if $warnBeforeKillSeconds;
         }
     }
+
+    push @cmd, '--stealth-stdout' if $params{'stealth_stdout'};
+    push @cmd, '--stealth-stderr' if $params{'stealth_stderr'};
 
     my $ttyrecAdditionalParameters = OVH::Bastion::config('ttyrecAdditionalParameters')->value;
     push @cmd, @$ttyrecAdditionalParameters if @$ttyrecAdditionalParameters;

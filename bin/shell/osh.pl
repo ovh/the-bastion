@@ -470,6 +470,10 @@ if ($generateMfaToken && $mfaToken) {
       "Can't specify both --generate-mfa-token and --mfa-token";
 }
 
+if ($tty && $notty) {
+    main_exit OVH::Bastion::EXIT_CONFLICTING_OPTIONS, "tty_notty", "Options -t and -T are mutually exclusive";
+}
+
 # if proactive MFA has been requested, do it here, before the code diverts to either
 # handling interactive session, plugins/osh commands, or a connection request
 if ($proactiveMfa) {
@@ -1338,11 +1342,18 @@ else {
         osh_debug("idle_timeout: finally using " . $idleTimeout{$timeout} . " for $timeout");
     }
 
+    # if $command matches this option, set stealth_stdout for ttyrec
+    my $stealth_stdout = 0;
+    if (my $ttyrecStealthStdoutPattern = OVH::Bastion::config("ttyrecStealthStdoutPattern")->value) {
+        $stealth_stdout = $command =~ $ttyrecStealthStdoutPattern;
+    }
+
     # adjust the ttyrec cmdline with these parameters
     $ttyrec_fnret = OVH::Bastion::build_ttyrec_cmdline_part2of2(
         input           => $ttyrec_fnret->value,
         idleLockTimeout => $idleTimeout{'lock'},
-        idleKillTimeout => $idleTimeout{'kill'}
+        idleKillTimeout => $idleTimeout{'kill'},
+        stealth_stdout  => $stealth_stdout,
     );
     main_exit(OVH::Bastion::EXIT_TTYREC_CMDLINE_FAILED, "ttyrec_failed", $ttyrec_fnret->msg) if !$ttyrec_fnret;
     @ttyrec = @{$ttyrec_fnret->value->{'cmd'}};

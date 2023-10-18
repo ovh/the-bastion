@@ -216,6 +216,13 @@
 # DEFAULT: []
 "ttyrecAdditionalParameters": [],
 #
+# ttyrecStealthStdoutPattern (regex)
+#
+#  DESC: When this is set to a non-falsy value, this is expected to be a string that will be converted to a regex which will be matched against a potential remote command specified when connecting through SSH to a remote server. If the regex matches, then we'll instruct ttyrec to NOT record stdout for this session.
+# EXAMPLE: "^rsync --server .+"
+# DEFAULT: ""
+"ttyrecStealthStdoutPattern": "",
+#
 ##########################
 # > Other ingress policies
 # >> Policies applying to the ingress connections

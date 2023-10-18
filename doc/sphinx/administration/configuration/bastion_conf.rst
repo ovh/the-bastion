@@ -65,6 +65,7 @@ Options to customize how logs should be produced.
 - `enableAccountSqlLog`_
 - `ttyrecFilenameFormat`_
 - `ttyrecAdditionalParameters`_
+- `ttyrecStealthStdoutPattern`_
 
 Other ingress policies options
 ------------------------------
@@ -514,6 +515,19 @@ ttyrecAdditionalParameters
 :Example: ``["-s", "This is a message with spaces", "--zstd"]``
 
 Additional parameters you want to pass to ``ttyrec`` invocation. Useful, for example, to enable on-the-fly compression, disable cheatcodes, or set/unset any other ``ttyrec`` option. This is an ARRAY, not a string.
+
+.. _ttyrecStealthStdoutPattern:
+
+ttyrecStealthStdoutPattern
+**************************
+
+:Type: ``regex``
+
+:Default: ``""``
+
+:Example: ``"^rsync --server .+"``
+
+When this is set to a non-falsy value, this is expected to be a string that will be converted to a regex which will be matched against a potential remote command specified when connecting through SSH to a remote server. If the regex matches, then we'll instruct ttyrec to NOT record stdout for this session.
 
 Other ingress policies
 ----------------------
