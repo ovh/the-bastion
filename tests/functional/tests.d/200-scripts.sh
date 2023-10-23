@@ -31,6 +31,35 @@ testsuite_scripts()
     contain "Paste the admins"
     contain "50-gpg-admins-key.conf updated:"
     contain "50-gpg.conf updated:"
+    contain "Parsed and added 1 keys"
+    contain "GPGKEYS='1B72FD2C2215EA44'"
+    contain '[ "1B72FD2C2215EA44" ]'
+    nocontain "WARN:"
+    nocontain "ERROR:"
+    nocontain "Unexpected termination"
+
+    script setup_keys_import_2 $r0 "\"echo '$admins_gpg_key_pub_2' | /opt/bastion/bin/admin/setup-gpg.sh --import --overwrite\""
+    retvalshouldbe 0
+    contain "Paste the admins"
+    contain "50-gpg-admins-key.conf already exists, but overwriting"
+    contain "50-gpg.conf already exists, but overwriting"
+    contain "Parsed and added 1 keys"
+    contain "GPGKEYS='25305EA2FCA333C4'"
+    contain '[ "25305EA2FCA333C4" ]'
+    nocontain "WARN:"
+    nocontain "ERROR:"
+    nocontain "Unexpected termination"
+
+    success setup_keys_clear $r0 "\"rm -f $opt_remote_etc_bastion/osh-encrypt-rsync.conf.d/50-gpg-admins-key.conf $opt_remote_etc_bastion/osh-backup-acl-keys.conf.d/50-gpg.conf\""
+
+    script setup_keys_import_3 $r0 "\"echo '$admins_gpg_key_pub_double' | /opt/bastion/bin/admin/setup-gpg.sh --import\""
+    retvalshouldbe 0
+    contain "Paste the admins"
+    contain "50-gpg-admins-key.conf updated:"
+    contain "50-gpg.conf updated:"
+    contain "Parsed and added 2 keys"
+    contain "GPGKEYS='CF27BEC1C8266FFE EC6CEA6719EF3700'"
+    contain '[ "CF27BEC1C8266FFE", "EC6CEA6719EF3700" ]'
     nocontain "WARN:"
     nocontain "ERROR:"
     nocontain "Unexpected termination"
