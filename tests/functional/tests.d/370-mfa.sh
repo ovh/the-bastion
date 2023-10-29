@@ -37,7 +37,7 @@ testsuite_mfa()
     # setup our password, step2
     local a4_password
     a4_password=']BkL>3x#T)g~~B#rLv^!T2&N'
-    script a4_setup_pass_step2of2 "echo 'set timeout 30; \
+    script a4_setup_pass_step2of2 "echo 'set timeout $default_timeout; \
         spawn $a4 --osh selfMFASetupPassword --yes; \
         expect \":\" { sleep 0.2; send \"$a4_password_tmp\\n\"; }; \
         expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
@@ -75,7 +75,7 @@ testsuite_mfa()
         success batch_set_mfa $r0 "echo '{\\\"mfa_required\\\":\\\"any\\\"}' \> $opt_remote_etc_bastion/plugin.info.conf \; chmod o+r $opt_remote_etc_bastion/plugin.info.conf"
 
         if [ "${capabilities[mfa]}" = 1 ] || [ "${capabilities[mfa-password]}" = 1 ]; then
-            script batch_try_mfa "echo 'set timeout 30; \
+            script batch_try_mfa "echo 'set timeout $default_timeout; \
                 spawn $a4 --osh batch; \
                 expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
                 expect \"waiting for input\" { sleep 0.2; send \"info\\n\"; }; \
@@ -90,7 +90,7 @@ testsuite_mfa()
             nocontain "Your alias to connect"
             json .command batch .error_code OK '.value[0].command' info '.value[0].result.error_code' KO_MFA_FAILED
         else
-            script batch_try_mfa "echo 'set timeout 30; \
+            script batch_try_mfa "echo 'set timeout $default_timeout; \
                 spawn $a4 --osh batch; \
                 expect \"waiting for input\" { sleep 0.2; send \"info\\n\"; }; \
                 expect \"failed\" { sleep 0.2; send \"quit\\n\"; }; \
@@ -118,7 +118,7 @@ testsuite_mfa()
         revoke groupCreate
 
         # setup group to force JIT egress MFA
-        script a4_modify_g3_egress_mfa "echo 'set timeout 30; \
+        script a4_modify_g3_egress_mfa "echo 'set timeout $default_timeout; \
             spawn $a4 --osh groupModify --group $group3 --mfa-required any; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
@@ -130,7 +130,7 @@ testsuite_mfa()
         json .command groupModify .error_code OK
 
         # check that the MFA is set for the group
-        script a4_verify_g3_egress_mfa "echo 'set timeout 30; \
+        script a4_verify_g3_egress_mfa "echo 'set timeout $default_timeout; \
             spawn $a4 --osh groupInfo --group $group3; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
@@ -143,7 +143,7 @@ testsuite_mfa()
         json .value.mfa_required any
 
         # add 127.7.7.7 to this group
-        script a4_add_g3_server "echo 'set timeout 30; \
+        script a4_add_g3_server "echo 'set timeout $default_timeout; \
             spawn $a4 --osh groupAddServer --group $group3 --host 127.7.7.7 --user-any --port-any --force; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
@@ -174,7 +174,7 @@ testsuite_mfa()
         nocontain 'Permission denied'
 
         # connect to 127.7.7.7 with MFA JIT, good password
-        script a4_connect_g3_server_goodpass "echo 'set timeout 30; \
+        script a4_connect_g3_server_goodpass "echo 'set timeout $default_timeout; \
             spawn $a4 root@127.7.7.7; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect \"is required (password)\" { sleep 0.1; }; \
@@ -192,7 +192,7 @@ testsuite_mfa()
         script set_help_mfa $r0 "'"'echo \{\"mfa_required\":\ \"password\"\} > '"$opt_remote_etc_bastion"'/plugin.help.conf; chmod 644 '"$opt_remote_etc_bastion"'/plugin.help.conf'"'"
         retvalshouldbe 0
 
-        script a4_mfa_help_jitmfa "echo 'set timeout 30; \
+        script a4_mfa_help_jitmfa "echo 'set timeout $default_timeout; \
             spawn $a4 --osh help; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect \"is required (password)\" { sleep 0.1; }; \
@@ -206,7 +206,7 @@ testsuite_mfa()
         contain REGEX 'Password:|Password for'
         nocontain 'proactive MFA'
 
-        script a4_proactive_mfa_help "echo 'set timeout 30; \
+        script a4_proactive_mfa_help "echo 'set timeout $default_timeout; \
             spawn $a4 --osh help --proactive-mfa; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect \"is required (password)\" { sleep 0.1; }; \
@@ -234,7 +234,7 @@ testsuite_mfa()
         json .command accountModify .error_code OK
 
         # add to JIT MFA group
-        script a0_add_a3_as_member "echo 'set timeout 30; \
+        script a0_add_a3_as_member "echo 'set timeout $default_timeout; \
             spawn $a4 --osh groupAddMember --group $group3 --account $account3; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
@@ -274,7 +274,7 @@ testsuite_mfa()
     # change our password
     a4_password_new="rkw=*Ffyqs23"
     if [ "${capabilities[mfa]}" = 1 ] || [ "${capabilities[mfa-password]}" = 1 ]; then
-        script a4_change_pass "echo 'set timeout 30; \
+        script a4_change_pass "echo 'set timeout $default_timeout; \
             spawn $a4 --osh selfMFASetupPassword --yes; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
@@ -287,7 +287,7 @@ testsuite_mfa()
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
         contain REGEX 'Password:|Password for'
     else
-        script a4_change_pass "echo 'set timeout 30; \
+        script a4_change_pass "echo 'set timeout $default_timeout; \
             spawn $a4 --osh selfMFASetupPassword --yes; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect \":\" { sleep 0.2; send \"$a4_password_new\\n\"; }; \
@@ -306,7 +306,7 @@ testsuite_mfa()
     unset a4_password_new
 
     if [ "${capabilities[mfa]}" = 1 ] || [ "${capabilities[mfa-password]}" = 1 ]; then
-        script a4_connect_with_pass "echo 'set timeout 30; \
+        script a4_connect_with_pass "echo 'set timeout $default_timeout; \
             spawn $a4 --osh groupList; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
@@ -328,7 +328,7 @@ testsuite_mfa()
 
     # now try to connect with account4
     if [ "${capabilities[mfa]}" = 1 ] || [ "${capabilities[mfa-password]}" = 1 ]; then
-        script a4_connect_with_totpreq "echo 'set timeout 30; \
+        script a4_connect_with_totpreq "echo 'set timeout $default_timeout; \
             spawn $a4 --osh groupList; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
@@ -342,7 +342,7 @@ testsuite_mfa()
 
     if [ "${capabilities[mfa]}" = 1 ]; then
         # setup totp
-        script a4_setup_totp "echo 'set timeout 30; \
+        script a4_setup_totp "echo 'set timeout $default_timeout; \
             spawn $a4 --osh selfMFASetupTOTP --no-confirm; \
             expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; }; \
@@ -360,7 +360,7 @@ testsuite_mfa()
         #a4_totp_code_4=$(get_stdout | grep -A4 'Your emergency scratch codes are:' | tail -n1 | tr -d '[:space:]')
 
         # login and fail without totp (timeout)
-        script a4_connect_after_totp_fail "echo 'set timeout 30; \
+        script a4_connect_after_totp_fail "echo 'set timeout $default_timeout; \
             spawn $a4 --osh groupList; \
             expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
@@ -376,7 +376,7 @@ testsuite_mfa()
         nocontain 'JSON_OUTPUT'
 
         # success with password + totp
-        script a4_connect_after_totp_ok "echo 'set timeout 30; \
+        script a4_connect_after_totp_ok "echo 'set timeout $default_timeout; \
             spawn $a4 --osh groupList; \
             expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect \"code:\" { sleep 0.2; send \"$a4_totp_code_1\\n\"; }; \
@@ -391,7 +391,7 @@ testsuite_mfa()
         json .command groupList .error_code OK_EMPTY
 
         # totp scratch codes don't work twice
-        script a4_connect_after_totp_dupe "echo 'set timeout 30; \
+        script a4_connect_after_totp_dupe "echo 'set timeout $default_timeout; \
             spawn $a4 --osh groupList; \
             expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect \"code:\" { sleep 0.2; send \"$a4_totp_code_1\\n\"; }; \
@@ -437,7 +437,7 @@ testsuite_mfa()
         revoke accountMFAResetTOTP
 
         # pubkey-auth-optional disabled: success with pubkey and password
-        script a4_no_pubkeyauthoptional_login_pubkey_pam "echo 'set timeout 30; \
+        script a4_no_pubkeyauthoptional_login_pubkey_pam "echo 'set timeout $default_timeout; \
             spawn $a4 --osh groupList; \
             expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
@@ -473,7 +473,7 @@ testsuite_mfa()
         json .error_code OK .command accountModify .value.pubkey_auth_optional.error_code OK_NO_CHANGE
 
         # pubkey-auth-optional enabled: success with pubkey and password
-        script a4_pubkeyauthoptional_login_pubkey_pam "echo 'set timeout 30; \
+        script a4_pubkeyauthoptional_login_pubkey_pam "echo 'set timeout $default_timeout; \
             spawn $a4 --osh groupList; \
             expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
@@ -485,7 +485,7 @@ testsuite_mfa()
         json .command groupList .error_code OK_EMPTY
 
         # pubkey-auth-optional enabled: success with password only
-        script a4_pubkeyauthoptional_login_nopubkey_pam "echo 'set timeout 30; \
+        script a4_pubkeyauthoptional_login_nopubkey_pam "echo 'set timeout $default_timeout; \
             spawn $a4np --osh groupList; \
             expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect eof; \
@@ -517,7 +517,7 @@ testsuite_mfa()
 
     # FIXME
     #   # reset totp
-    #    script mfa a4_reset_totp "echo 'set timeout 30; \
+    #    script mfa a4_reset_totp "echo 'set timeout $default_timeout; \
     #        spawn $a4 --osh selfMFAResetTOTP; \
     #        expect \"word:\" { send_user \"premier password\\n\"; send \"$a4_password\\n\"; }; \
     #        expect \"code:\" { send_user \"premier code\\n\"; send \"$a4_totp_code_2\\n\"; }; \
@@ -530,7 +530,7 @@ testsuite_mfa()
     #    json .error_code OK .command selfMFAResetTOTP
     #
     #    # reset password
-    #    script mfa a4_reset_password "echo 'set timeout 30; \
+    #    script mfa a4_reset_password "echo 'set timeout $default_timeout; \
     #        spawn $a4 --osh selfMFAResetPassword; \
     #        expect \"word:\" { send \"$a4_password\\n\"; }; \
     #        expect eof; \

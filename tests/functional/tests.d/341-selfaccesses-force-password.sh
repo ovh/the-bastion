@@ -25,7 +25,7 @@ testsuite_selfaccesses_force_password()
     retvalshouldbe 124
     contain 'enter this:'
     a4_password_tmp=$(get_stdout | grep -Eo 'enter this: [a-zA-Z0-9_-]+' | sed -e 's/enter this: //')
-    script a4_setup_pass_2of2 "echo 'set timeout 30; \
+    script a4_setup_pass_2of2 "echo 'set timeout $default_timeout; \
         spawn $a4 --osh selfMFASetupPassword --yes; \
         expect \":\" { sleep 0.2; send \"$a4_password_tmp\\n\"; }; \
         expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \

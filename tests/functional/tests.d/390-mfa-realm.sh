@@ -76,7 +76,7 @@ testsuite_mfa_realm()
 
     # setup our password, step2
     local a4_password='Hfv$!OKiG:(xl>Th8Kv!alz4436BFt~'
-    script a4_setup_pass_step2of2 "echo 'set timeout 30; \
+    script a4_setup_pass_step2of2 "echo 'set timeout $default_timeout; \
         spawn $a4 --osh selfMFASetupPassword --yes; \
         expect \":\" { sleep 0.2; send \"$a4_password_tmp\\n\"; }; \
         expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
@@ -109,7 +109,7 @@ testsuite_mfa_realm()
     json .command groupModify .error_code OK
 
     # try to connect, this one will finally work
-    script a4_connect_success_realm_with_remote_mfa "echo 'set timeout 30; \
+    script a4_connect_success_realm_with_remote_mfa "echo 'set timeout $default_timeout; \
         spawn $a4 realm_$realm_shared_account@127.0.0.1 --kbd-interactive -- $js nevermind@127.0.0.5; \
         expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; }; \
         expect eof; \

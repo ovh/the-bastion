@@ -13,8 +13,10 @@ opt_remote_etc_bastion=/etc/bastion
 opt_remote_basedir=$basedir
 opt_skip_consistency_check=0
 opt_no_pause_on_fail=0
+opt_slowness_factor=1
 opt_log_prefix=
 opt_module=
+opt_post_run=
 declare -A capabilities=( [ed25519]=1 [mfa]=1 [mfa-password]=0 [pamtester]=1 [piv]=1 )
 
 # set the helptext now to get the proper default values
@@ -24,6 +26,8 @@ Test Options:
     --no-pause-on-fail         Don't pause when a test fails
     --log-prefix=X             Prefix all logs by this name
     --module=X                 Only test this module (specify a filename found in \`functional/tests.d/\`), can be specified multiple times
+    --slowness-factor=X        If your test environment is slow, set this to 2, 3 or more to use higher timeouts (default: 1)
+    --post-run=X               Commands to run after we're done testing
 
 Remote OS directory locations:
     --remote-etc-bastion=X     Override the default remote bastion configuration directory (default: $opt_remote_etc_bastion)
@@ -67,8 +71,16 @@ do
         --no-pause-on-fail)
             opt_no_pause_on_fail=1
             ;;
+        --slowness-factor=*)
+            if [[ $optval =~ ^[1-9]$ ]]; then
+                opt_slowness_factor=$optval
+            fi
+            ;;
         --log-prefix=*)
             opt_log_prefix="$optval"
+            ;;
+        --post-run=*)
+            opt_post_run="$optval"
             ;;
         --module=*)
             if [ ! -e "$basedir/tests/functional/tests.d/$optval" ]; then
@@ -173,8 +185,9 @@ fi
 
     jq="jq --raw-output --compact-output --sort-keys"
     js="--json-greppable"
-    t="timeout --foreground 30"
-    tf="timeout --foreground 15"
+    default_timeout=$((30 * opt_slowness_factor))
+    t="timeout --foreground $default_timeout"
+    tf="timeout --foreground $((default_timeout / 2))"
     a0="  $t ssh -F $mytmpdir/ssh_config -i $account0key1file $account0@$remote_ip -p $remote_port -- $js "
     a1="  $t ssh -F $mytmpdir/ssh_config -i $account1key1file $account1@$remote_ip -p $remote_port -- $js "
     a1k2="$t ssh -F $mytmpdir/ssh_config -i $account1key2file $account1@$remote_ip -p $remote_port -- $js "
@@ -714,6 +727,7 @@ testno=0
 runtests
 echo
 
+set -x
 if [ $((nbfailedret + nbfailedgrep + nbfailedcon + nbfailedgeneric)) -eq 0 ] ; then
     printf "%b%b%b\\n" "$BLACK_ON_GREEN" "All tests succeeded :)" "$NOC"
 else
@@ -738,4 +752,7 @@ update_totalerrors
 
 rm -rf "$mytmpdir"
 trap EXIT
+if [ -n "$opt_post_run" ]; then
+    bash -c "$opt_post_run"
+fi
 exit $totalerrors

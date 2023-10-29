@@ -6,31 +6,63 @@ on:
 
 jobs:
   freebsd:
-    runs-on: macos-12
+    runs-on: ubuntu-latest
     name: FreeBSD
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'tests:full') || contains(github.event.pull_request.labels.*.name, 'tests:long') || contains(github.event.pull_request.labels.*.name, 'tests:freebsd') }}
+    timeout-minutes: 180
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'tests:freebsd') }}
     steps:
     - uses: actions/checkout@v4
       with:
         persist-credentials: false
     - name: Functional tests under FreeBSD
-      uses: vmactions/freebsd-vm@v0
+      uses: cross-platform-actions/action@master
       with:
-        usesh: true
-        sync: sshfs
+        operating_system: freebsd
+        version: '13.2'
+        shell: bash
+        sync_files: runner-to-vm
         run: |
-          set -ex
+          # source this to get the $SSH_DIR var properly filled
+          source lib/shell/functions.inc
+          # a few debug commands
+          set -x
           freebsd-version
-          mount -o acls /
-          pkg install -y bash rsync ca_root_nss jq fping screen flock curl
-          mkdir -p /opt/bastion
-          rsync -a . /opt/bastion/
-          /opt/bastion/bin/admin/packages-check.sh -i
-          /opt/bastion/bin/admin/install-ttyrec.sh -s
-          /opt/bastion/bin/admin/install-yubico-piv-checker.sh -s
-          /opt/bastion/bin/admin/install-mkhash-helper.sh -s
-          /opt/bastion/bin/admin/install --new-install
-          ssh-keygen -t ed25519 -f id_user
-          ssh-keygen -t ed25519 -f id_root
-          WANT_HTTP_PROXY=0 NO_SLEEP=1 user_pubkey=$(cat id_user.pub) root_pubkey=$(cat id_root.pub) TARGET_USER=user5000 /opt/bastion/tests/functional/docker/target_role.sh
-          /opt/bastion/tests/functional/launch_tests_on_instance.sh --has-mfa=0 --has-mfa-password=1 --has-pamtester=1 --skip-consistency-check --remote-etc-bastion=/usr/local/etc/bastion 127.0.0.1 22 0 user5000 id_user id_root
+          id
+          # to do proper tests, we need the fs to have ACLs enabled
+          sudo mount -o acls /
+          # install required packages
+          sudo pkg update
+          sudo pkg install -y bash rsync ca_root_nss jq fping screen flock curl
+          # create required folder
+          sudo mkdir -p /opt/bastion
+          # copy bastion code to the proper location
+          sudo rsync -a . /opt/bastion/
+          # save default ssh config, so we can restore it when we're done,
+          # or the github action will fail because the post-run actions it'll
+          # try to do over ssh won't complete due to our modified ssh config
+          sudo tar czf /opt/bastion/ssh_config.tar.gz $SSH_DIR/
+          # setup bastion
+          sudo /opt/bastion/bin/admin/packages-check.sh -i
+          sudo /opt/bastion/bin/admin/install-ttyrec.sh -s
+          sudo /opt/bastion/bin/admin/install-yubico-piv-checker.sh -s
+          sudo /opt/bastion/bin/admin/install-mkhash-helper.sh -s
+          sudo /opt/bastion/bin/admin/install --new-install
+          # by default, this is 0700, but we'll run those as non-root
+          sudo chmod 0755 /opt/bastion/tests
+          # generate two sets of keys
+          ssh-keygen -t ed25519 -f id_user -N ''
+          ssh-keygen -t ed25519 -f id_root -N ''
+          # setup the local bastion for tests
+          sudo env WANT_HTTP_PROXY=0 NO_SLEEP=1 user_pubkey="$(cat id_user.pub)" root_pubkey="$(cat id_root.pub)" TARGET_USER=user5000 /opt/bastion/tests/functional/docker/target_role.sh
+          # run the tests, then in post-run, restore saved ssh config and restart sshd
+          /opt/bastion/tests/functional/launch_tests_on_instance.sh \
+            --has-mfa=0 \
+            --has-mfa-password=1 \
+            --has-pamtester=1 \
+            --skip-consistency-check \
+            --remote-etc-bastion=/usr/local/etc/bastion \
+            --slowness-factor=2 \
+            --post-run="sudo tar xzf /opt/bastion/ssh_config.tar.gz -C / ; sudo /etc/rc.d/sshd restart" \
+            127.0.0.1 22 0 user5000 id_user id_root
+          # for some reason, any other command below is skipped, so don't try to add anything,
+          # augment --post-run in the script above instead, if needed.
