@@ -58,8 +58,8 @@ testsuite_scripts()
     contain "50-gpg-admins-key.conf updated:"
     contain "50-gpg.conf updated:"
     contain "Parsed and added 2 keys"
-    contain "GPGKEYS='CF27BEC1C8266FFE EC6CEA6719EF3700'"
-    contain '[ "CF27BEC1C8266FFE", "EC6CEA6719EF3700" ]'
+    contain REGEX "GPGKEYS='(CF27BEC1C8266FFE EC6CEA6719EF3700|EC6CEA6719EF3700 CF27BEC1C8266FFE)'"
+    contain REGEX '("CF27BEC1C8266FFE", "EC6CEA6719EF3700"|"EC6CEA6719EF3700", "CF27BEC1C8266FFE")'
     nocontain "WARN:"
     nocontain "ERROR:"
     nocontain "Unexpected termination"

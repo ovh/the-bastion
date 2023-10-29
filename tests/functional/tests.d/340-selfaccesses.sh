@@ -198,14 +198,17 @@ testsuite_selfaccesses()
 
     # scp & sftp
 
+    # patch bastionCommand in config
+    configchg 's=^\\\\x22bastionCommand\\\\x22.+=\\\\x22bastionCommand\\\\x22:\\\\x22ssh\\\\x20USER\\\\x40'"$remote_ip"'\\\\x20-p\\\\x20'"$remote_port"'\\\\x20-t\\\\x20--\\\\x22,='
+
     ## get both helpers first
     for proto in scp sftp; do
         success $proto $a0 --osh $proto
         if [ "$COUNTONLY" != 1 ]; then
             tmpb64=$(get_json | $jq '.value.script')
-            base64 -d <<< "$tmpb64" | gunzip -c > /tmp/${proto}helpertmp
-            perl -pe "s/ssh $account0\\@\\S+/ssh -p $remote_port $account0\\@$remote_ip/" /tmp/${proto}helpertmp > /tmp/${proto}helper
-            chmod +x /tmp/${proto}helper
+            base64 -d <<< "$tmpb64" | gunzip -c > "/tmp/${proto}helper"
+            perl -i -pe 'print "BASTION_SCP_DEBUG=1\nBASTION_SFTP_DEBUG=1\n" if ++$line==2' "/tmp/${proto}helper"
+            chmod +x "/tmp/${proto}helper"
             unset tmpb64
         fi
     done
@@ -243,7 +246,7 @@ testsuite_selfaccesses()
 
     run scp_invalidhostname scp $scp_options -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file $shellaccount@_invalid._invalid:uptest /tmp/downloaded
     retvalshouldbe 1
-    contain "Sorry, couldn't resolve the host you specified"
+    contain REGEX "Sorry, couldn't resolve the host you specified|I was unable to resolve host"
 
     success scp_upload scp $scp_options -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file /etc/passwd $shellaccount@127.0.0.2:uptest
     contain "through the bastion to"
