@@ -3,5 +3,7 @@
         "selfMFASetupTOTP" , {"pr" : ["<enter>"]}
     ],
     "master_only": true,
+    "mfa_required": "any-if-configured",
+    "mfa_setup_not_required": true,
     "terminal_mode": "noecho"
 }

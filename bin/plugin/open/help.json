@@ -1,5 +1,6 @@
 {
     "interactive": [
         "help" , {"pr" : ["<enter>"]}
-    ]
+    ],
+    "mfa_setup_not_required": true
 }

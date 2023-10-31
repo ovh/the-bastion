@@ -740,7 +740,9 @@ if ($realm && $ENV{'LC_BASTION_DETAILS'}) {
     }
 }
 
-if ($mfaPolicy ne 'disabled' && !grep { $osh_command eq $_ } qw{ selfMFASetupPassword selfMFASetupTOTP help info }) {
+if ($mfaPolicy ne 'disabled'
+    && !OVH::Bastion::plugin_config(plugin => $osh_command, key => "mfa_setup_not_required")->value)
+{
 
     if (($mfaPolicy eq 'password-required' && !$hasMfaPasswordBypass) || $isMfaPasswordRequired) {
         main_exit(OVH::Bastion::EXIT_MFA_PASSWORD_SETUP_REQUIRED, 'mfa_password_setup_required',
@@ -961,23 +963,13 @@ if ($osh_command) {
         # TODO: autodetect if the MFA check is done outside of the code by sshd+PAM, to avoid re-asking for it here
         my $MFArequiredForPlugin = OVH::Bastion::plugin_config(plugin => $osh_command, key => "mfa_required")->value;
         $MFArequiredForPlugin ||= 'none';    # no config means none
-          # some plugins need an explicit MFA check before being called (mainly plugins manipulating authentication factors)
-          # if the user wants to reset one of its MFA tokens, force require MFA
-        if (   (grep { $osh_command eq $_ } qw{ selfMFAResetPassword selfMFAResetTOTP })
-            && ($MFArequiredForPlugin eq 'none'))
-        {
 
-            # enforce MFA in those cases, even if it's not configured
-            $MFArequiredForPlugin = 'any';
-        }
-
-        # if the user wants to setup TOTP, if it happens to be already set (or any other factor), require it too
-        # note: this is not needed for selfMFASetupPassword, because `passwd` does the job of asking the previous password
-        elsif ($osh_command eq 'selfMFASetupTOTP'
-            && ($isMfaTOTPConfigured || $isMfaPasswordConfigured)
-            && ($MFArequiredForPlugin eq 'none'))
-        {
-            $MFArequiredForPlugin = 'any';
+        # These kind of plugins will require MFA if we have at least one already configured, none otherwise.
+        # This is mainly used by selfMFASetupTOTP, to ensure that the current TOTP is asked before allowing the user
+        # to setup a new one. Note that this is not used by selfMFASetupPassword, as `passwd` already asks for
+        # the current password before allowing to change it
+        if ($MFArequiredForPlugin eq 'any-if-configured') {
+            $MFArequiredForPlugin = (($isMfaTOTPConfigured || $isMfaPasswordConfigured) ? 'any' : 'none');
         }
 
         if (!grep { $MFArequiredForPlugin eq $_ } qw{ password totp any none }) {
