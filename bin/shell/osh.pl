@@ -1382,62 +1382,19 @@ else {
 
         push @command, '/usr/bin/ssh', $ip, '-l', $user, '-p', $port;
 
-        my @keysToTry;
-        print " will try the following accesses you have: \n" unless $quiet;
-        foreach my $access (@accessList) {
-            # each access has a type and possibly several keys
-            my $type = $access->{'type'} . " of " . $access->{'group'};
-            if ($access->{'type'} =~ /^group/) {
-                $type = colored($access->{'type'}, $access->{'type'} eq 'group-member' ? 'green' : 'yellow');
-                $type .= " of " . colored($access->{'group'}, 'blue bold');
-            }
-            elsif ($access->{'type'} =~ /^personal/) {
-                $type = colored($access->{'type'}, 'red') . ' access';
-            }
-
-            foreach my $key (@{$access->{'sortedKeys'} || []}) {
-                my $keyinfo   = $access->{'keys'}{$key};
-                my $generated = strftime("[%Y/%m/%d]", localtime($keyinfo->{'mtime'}));
-
-                if ((not $useKey) || ($useKey eq $keyinfo->{'fingerprint'})) {
-                    my $forced = ' ';
-                    if ($useKey) {
-                        $forced = colored(' (KEY FORCED ON CMDLINE)', 'bold red');
-                    }
-                    elsif ($access->{'forceKey'}) {
-                        $forced = colored(' (KEY FORCED IN ACL)', 'bold red');
-                    }
-                    if ($access->{'mfaRequired'} && $access->{'mfaRequired'} ne 'none') {
-                        $forced .= colored(' (MFA REQUIRED: ' . uc($access->{'mfaRequired'}) . ')', 'bold red');
-                        $JITMFARequired = $access->{'mfaRequired'};
-                    }
-                    printf(
-                        "  - %s with %s-%s key %s %s%s\n",
-                        $type, $keyinfo->{'family'}, $keyinfo->{'size'}, $keyinfo->{'fingerprint'},
-                        $generated, $forced
-                    ) unless $quiet;
-                    push @keysToTry, $keyinfo->{'fullpath'} if not(grep { $_ eq $keyinfo->{'fullpath'} } @keysToTry);
-                }
-            }
-            if ($access->{'forceKey'} && @{$access->{'sortedKeys'} || []} == 0) {
-                printf("  - %s but found no key matching the forced fingerprint in corresponding ACL %s\n",
-                    $type, colored('(SKIPPED)', 'bold red'))
-                  unless $quiet;
-            }
+        $fnret = get_details_from_access_array(
+            accessList => \@accessList,
+            quiet      => $quiet,
+            useKey     => $useKey
+        );
+        if ($fnret) {
+            # add the -i key1 -i key2 etc. returned by get_details_from_access_array()
+            push @command, @{$fnret->value->{'sshKeysArgs'}};
+            # updathe the JIT MFA flag
+            $JITMFARequired = $fnret->value->{'mfaRequired'};
         }
-        if ($useKey and not @keysToTry) {
-            print "  >>> No key matched the fingerprint you gave me ($useKey), connection will fail!\n";
-        }
-        print "\n" unless $quiet;
-
-        foreach (@keysToTry) {
-            if (-r) {
-                osh_debug("Got a group key $_");
-                push @command, '-i', $_;
-            }
-            else {
-                osh_warn("Weird, key file $_ is not accessible");
-            }
+        else {
+            main_exit(OVH::Bastion::EXIT_ACCESS_DENIED, "access_denied", $fnret->msg);
         }
     }
 
@@ -1701,6 +1658,77 @@ sub exit_sig {
         );
     }
     exit OVH::Bastion::EXIT_OK;
+}
+
+sub get_details_from_access_array {
+    my %params     = @_;
+    my $quiet      = $params{'quiet'};
+    my $accessList = $params{'accessList'};
+    my $useKey     = $params{'useKey'};
+
+    my @keysToTry;
+    my $mfaRequired;
+
+    print " will try the following accesses you have: \n" unless $quiet;
+    foreach my $access (@$accessList) {
+        # each access has a type and possibly several keys
+        my $type = $access->{'type'} . " of " . $access->{'group'};
+        if ($access->{'type'} =~ /^group/) {
+            $type = colored($access->{'type'}, $access->{'type'} eq 'group-member' ? 'green' : 'yellow');
+            $type .= " of " . colored($access->{'group'}, 'blue bold');
+        }
+        elsif ($access->{'type'} =~ /^personal/) {
+            $type = colored($access->{'type'}, 'red') . ' access';
+        }
+
+        foreach my $key (@{$access->{'sortedKeys'} || []}) {
+            my $keyinfo   = $access->{'keys'}{$key};
+            my $generated = strftime("[%Y/%m/%d]", localtime($keyinfo->{'mtime'}));
+
+            if ((not $useKey) || ($useKey eq $keyinfo->{'fingerprint'})) {
+                my $forced = ' ';
+                if ($useKey) {
+                    $forced = colored(' (KEY FORCED ON CMDLINE)', 'bold red');
+                }
+                elsif ($access->{'forceKey'}) {
+                    $forced = colored(' (KEY FORCED IN ACL)', 'bold red');
+                }
+                if ($access->{'mfaRequired'} && $access->{'mfaRequired'} ne 'none') {
+                    $forced .= colored(' (MFA REQUIRED: ' . uc($access->{'mfaRequired'}) . ')', 'bold red');
+                    $mfaRequired = $access->{'mfaRequired'};
+                }
+                printf(
+                    "  - %s with %s-%s key %s %s%s\n",
+                    $type, $keyinfo->{'family'}, $keyinfo->{'size'}, $keyinfo->{'fingerprint'},
+                    $generated, $forced
+                ) unless $quiet;
+                push @keysToTry, $keyinfo->{'fullpath'} if not(grep { $_ eq $keyinfo->{'fullpath'} } @keysToTry);
+            }
+        }
+        if ($access->{'forceKey'} && @{$access->{'sortedKeys'} || []} == 0) {
+            printf("  - %s but found no key matching the forced fingerprint in corresponding ACL %s\n",
+                $type, colored('(SKIPPED)', 'bold red'))
+              unless $quiet;
+        }
+    }
+    if ($useKey and not @keysToTry) {
+        print "  >>> No key matched the fingerprint you gave me ($useKey), connection will fail!\n";
+    }
+    print "\n" unless $quiet;
+
+    my @sshKeysArgs;
+    foreach (@keysToTry) {
+        if (-r) {
+            osh_debug("Got a group key $_");
+            push @sshKeysArgs, '-i', $_;
+        }
+        else {
+            osh_warn("Weird, key file $_ is not accessible");
+            warn_syslog("Would have added key file '$_' but it's not accessible by current user");
+        }
+    }
+
+    return R('OK', value => {sshKeysArgs => \@sshKeysArgs, mfaRequired => $mfaRequired});
 }
 
 #
