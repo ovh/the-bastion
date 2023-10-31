@@ -978,59 +978,19 @@ if ($osh_command) {
                 "MFA configuration is incorrect for this plugin, report to your sysadmin!"
             );
         }
-        my $skipMFA = 0;
-        if ($MFArequiredForPlugin eq 'password' && !$isMfaPasswordConfigured) {
-            if ($hasMfaPasswordBypass) {
-                $skipMFA = 1;
-            }
-            else {
-                main_exit(OVH::Bastion::EXIT_MFA_PASSWORD_SETUP_REQUIRED, 'mfa_password_setup_required',
-                    "Sorry $self, but you need to setup the Multi-Factor Authentication before using this command,\n"
-                      . "please use the `--osh selfMFASetupPassword' option to do so");
-            }
-        }
-        elsif ($MFArequiredForPlugin eq 'totp' && !$isMfaTOTPConfigured) {
-            if ($hasMfaTOTPBypass) {
-                $skipMFA = 1;
-            }
-            else {
-                main_exit(OVH::Bastion::EXIT_MFA_TOTP_SETUP_REQUIRED, 'mfa_totp_setup_required',
-                    "Sorry $self, but you need to setup the Multi-Factor Authentication before using this command,\n"
-                      . "please use the `--osh selfMFASetupTOTP' option to do so");
-            }
-        }
-        elsif ($MFArequiredForPlugin eq 'any' && !$isMfaTOTPConfigured && !$isMfaPasswordConfigured) {
-            if ($hasMfaPasswordBypass && $hasMfaTOTPBypass) {
-                $skipMFA = 1;
-            }
-            else {
-                main_exit(OVH::Bastion::EXIT_MFA_ANY_SETUP_REQUIRED, 'mfa_any_setup_required',
-                    "Sorry $self, but you need to setup the Multi-Factor Authentication before using this command,\n"
-                      . "please use either the `--osh selfMFASetupPassword' or the `--osh selfMFASetupTOTP' option, at your discretion, to do so"
-                );
-            }
-        }
 
-        # and start the MFA phase if needed
-        if ($MFArequiredForPlugin ne 'none' && !$skipMFA) {
-            print "As this is required to run this plugin, entering MFA phase for $self.\n";
-            if ($ENV{'OSH_PROACTIVE_MFA'}) {
-                print "... you already validated MFA proactively.\n";
-            }
-            else {
-                $fnret = OVH::Bastion::do_pamtester(self => $self, sysself => $sysself);
-                $fnret or main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', $fnret->msg);
-            }
-
-            # so that the remote server, which can be a bastion in case we're chaining, can enforce its own policy:
-            $bastion_details{'mfa'} = {
-                validated => \1,
-                reason    => 'mfa_required_for_plugin',
-                type      => {
-                    password => $isMfaPasswordConfigured ? \1 : \0,
-                    totp     => $isMfaTOTPConfigured     ? \1 : \0,
-                }
-            };
+        # run MFA for this plugin if needed
+        $fnret = do_jit_mfa(
+            actionType   => 'plugin',
+            mfaType      => $MFArequiredForPlugin,
+            ingressRealm => \%ingressRealm,
+        );
+        if (!$fnret) {
+            # shouldn't happen because do_jit_mfa() exits by itself on error, but we never know...
+            main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', "Couldn't complete MFA");
+        }
+        elsif ($fnret->value && ref $fnret->value eq 'HASH' && $fnret->value->{'mfaInfo'}) {
+            $bastion_details{'mfa'} = $fnret->value->{'mfaInfo'};
         }
 
         OVH::Bastion::set_terminal_mode_for_plugin(plugin => $osh_command, action => 'set');
@@ -1534,79 +1494,17 @@ if (!$logret) {
 
 # if we have JIT MFA, do it now
 if ($JITMFARequired) {
-    my $skipMFA  = 0;
-    my $realmMFA = 0;
-    if ($proactiveMfa) {
-        print "As proactive MFA has been requested, entering MFA phase for $self.\n";
+    $fnret = do_jit_mfa(
+        actionType   => 'host',
+        mfaType      => $JITMFARequired,
+        ingressRealm => \%ingressRealm,
+    );
+    if (!$fnret) {
+        # shouldn't happen because do_jit_mfa() exits by itself, but we never know...
+        main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', "Couldn't complete MFA");
     }
-    else {
-        print "As this is required for this host, entering MFA phase for $self.\n";
-    }
-    if ($JITMFARequired eq 'totp' && !$isMfaTOTPConfigured) {
-        if ($hasMfaTOTPBypass) {
-            $skipMFA = 1;
-        }
-        elsif ($remoteMfaTOTP && $remoteMfaValidated) {
-            $realmMFA = 1;
-        }
-        else {
-            main_exit(OVH::Bastion::EXIT_MFA_TOTP_SETUP_REQUIRED, 'mfa_totp_setup_required',
-                "Sorry $self, but you need to setup the Multi-Factor Authentication before connecting to this host,\n"
-                  . "please use the `--osh selfMFASetupTOTP' option to do so");
-        }
-    }
-    elsif ($JITMFARequired eq 'password' && !$isMfaPasswordConfigured) {
-        if ($hasMfaPasswordBypass) {
-            $skipMFA = 1;
-        }
-        elsif ($remoteMfaPassword && $remoteMfaValidated) {
-            $realmMFA = 1;
-        }
-        else {
-            main_exit(OVH::Bastion::EXIT_MFA_PASSWORD_SETUP_REQUIRED, 'mfa_password_setup_required',
-                "Sorry $self, but you need to setup the Multi-Factor Authentication before connecting to this host,\n"
-                  . "please use the `--osh selfMFASetupPassword' option to do so");
-        }
-    }
-    elsif ($JITMFARequired eq 'any' && !$isMfaTOTPConfigured && !$isMfaPasswordConfigured) {
-        if ($hasMfaPasswordBypass || $hasMfaTOTPBypass) {
-
-            # FIXME: should actually be $hasMFABypassAll (not yet implemented)
-            $skipMFA = 1;
-        }
-        elsif ($remoteMfaValidated) {
-            $realmMFA = 1;
-        }
-        else {
-            main_exit(OVH::Bastion::EXIT_MFA_ANY_SETUP_REQUIRED, 'mfa_any_setup_required',
-                "Sorry $self, but you need to setup the Multi-Factor Authentication before connecting to this host,\n"
-                  . "please use either the `--osh selfMFASetupPassword' or the `--osh selfMFASetupTOTP' option, "
-                  . "at your discretion, to do so");
-        }
-    }
-
-    if ($skipMFA) {
-        print "... skipping as your account is exempt from MFA.\n";
-    }
-    elsif ($realmMFA) {
-        print "... you already validated MFA on the bastion you're coming from.\n";
-    }
-    elsif ($ENV{'OSH_PROACTIVE_MFA'}) {
-        print "... you already validated MFA proactively.\n";
-    }
-    else {
-        $fnret = OVH::Bastion::do_pamtester(self => $self, sysself => $sysself);
-        $fnret or main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', $fnret->msg);
-
-        # so that the remote server, which can be a bastion in case we're chaining, can enforce its own policy
-        $bastion_details{'mfa'} = {
-            validated => \1,
-            reason    => ($proactiveMfa ? 'proactive_mfa' : 'mfa_required_for_host'),
-            type      => {
-                password => $isMfaPasswordConfigured ? \1 : \0,
-                totp     => $isMfaTOTPConfigured     ? \1 : \0,
-            }
-        };
+    elsif ($fnret->value && ref $fnret->value eq 'HASH' && $fnret->value->{'mfaInfo'}) {
+        $bastion_details{'mfa'} = $fnret->value->{'mfaInfo'};
     }
 }
 
@@ -1729,6 +1627,101 @@ sub get_details_from_access_array {
     }
 
     return R('OK', value => {sshKeysArgs => \@sshKeysArgs, mfaRequired => $mfaRequired});
+}
+
+sub do_jit_mfa {
+    my %params       = @_;
+    my $ingressRealm = $params{'ingressRealm'};
+    my $mfaType      = $params{'mfaType'};        # password|totp|any
+    my $actionType   = $params{'actionType'};     # host|plugin
+
+    if (!$ingressRealm || !$mfaType || !$actionType) {
+        return R('ERR_MISSING_PARAMETER', msg => "Missing mandatory parameters to do_jit_mfa");
+    }
+
+    if (!grep { $mfaType eq $_ } qw{ totp password any none }) {
+        return R('ERR_INVALID_PARAMETER', msg => "Invalid parameter 'mfaType' for do_jit_mfa");
+    }
+
+    return R('OK_NO_MFA_REQUIRED') if $mfaType eq 'none';
+
+    my $skipMFA  = 0;
+    my $realmMFA = 0;
+    my $localfnret;
+
+    print "As this is required for this $actionType, entering MFA phase for $self.\n";
+
+    if ($mfaType eq 'totp' && !$isMfaTOTPConfigured) {
+        if ($hasMfaTOTPBypass) {
+            $skipMFA = 1;
+        }
+        elsif ($ingressRealm->{'mfa'}{'totp'} && $ingressRealm->{'mfa'}{'validated'}) {
+            $realmMFA = 1;
+        }
+        else {
+            main_exit(OVH::Bastion::EXIT_MFA_TOTP_SETUP_REQUIRED, 'mfa_totp_setup_required',
+                    "Sorry $self, "
+                  . "but you need to setup the Multi-Factor Authentication for this $actionType,\n"
+                  . "please use the `--osh selfMFASetupTOTP' option to do so");
+        }
+    }
+    elsif ($mfaType eq 'password' && !$isMfaPasswordConfigured) {
+        if ($hasMfaPasswordBypass) {
+            $skipMFA = 1;
+        }
+        elsif ($ingressRealm->{'mfa'}{'password'} && $ingressRealm->{'mfa'}{'validated'}) {
+            $realmMFA = 1;
+        }
+        else {
+            main_exit(OVH::Bastion::EXIT_MFA_PASSWORD_SETUP_REQUIRED, 'mfa_password_setup_required',
+                    "Sorry $self, "
+                  . "but you need to setup the Multi-Factor Authentication for this $actionType,\n"
+                  . "please use the `--osh selfMFASetupPassword' option to do so");
+        }
+    }
+    elsif ($mfaType eq 'any' && !$isMfaTOTPConfigured && !$isMfaPasswordConfigured) {
+        if ($hasMfaPasswordBypass || $hasMfaTOTPBypass) {
+            $skipMFA = 1;
+        }
+        elsif ($ingressRealm->{'mfa'}{'validated'}) {
+            $realmMFA = 1;
+        }
+        else {
+            main_exit(OVH::Bastion::EXIT_MFA_ANY_SETUP_REQUIRED, 'mfa_any_setup_required',
+                    "Sorry $self, "
+                  . "but you need to setup the Multi-Factor Authentication for this $actionType,\n"
+                  . "please use either the `--osh selfMFASetupPassword' or the `--osh selfMFASetupTOTP' option, "
+                  . "at your discretion, to do so");
+        }
+    }
+
+    if ($skipMFA) {
+        print "... skipping as your account is exempt from MFA.\n";
+    }
+    elsif ($realmMFA) {
+        print "... you already validated MFA on the bastion you're coming from.\n";
+    }
+    elsif ($ENV{'OSH_PROACTIVE_MFA'}) {
+        print "... you already validated MFA proactively.\n";
+    }
+    else {
+        $localfnret = OVH::Bastion::do_pamtester(self => $self, sysself => $sysself);
+        main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', $localfnret->msg) if !$localfnret;
+
+        # craft this so that the remote server, which can be a bastion in case we're chaining,
+        # can enforce its own policy. This should be serialized in LC_BASTION_DETAILS on egress side
+        my %mfaInfo = (
+            validated => \1,
+            reason    => "mfa_required_for_$actionType",
+            type      => {
+                password => $isMfaPasswordConfigured ? \1 : \0,
+                totp     => $isMfaTOTPConfigured     ? \1 : \0,
+            }
+        );
+
+        return R('OK_VALIDATED', value => {mfaInfo => \%mfaInfo});
+    }
+    return R('OK');
 }
 
 #
