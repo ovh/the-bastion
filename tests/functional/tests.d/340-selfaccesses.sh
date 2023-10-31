@@ -198,9 +198,6 @@ testsuite_selfaccesses()
 
     # scp & sftp
 
-    # patch bastionCommand in config
-    configchg 's=^\\\\x22bastionCommand\\\\x22.+=\\\\x22bastionCommand\\\\x22:\\\\x22ssh\\\\x20USER\\\\x40'"$remote_ip"'\\\\x20-p\\\\x20'"$remote_port"'\\\\x20-t\\\\x20--\\\\x22,='
-
     ## get both helpers first
     for proto in scp sftp; do
         success $proto $a0 --osh $proto

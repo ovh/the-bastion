@@ -189,6 +189,7 @@ fi
     t="timeout --foreground $default_timeout"
     tf="timeout --foreground $((default_timeout / 2))"
     a0="  $t ssh -F $mytmpdir/ssh_config -i $account0key1file $account0@$remote_ip -p $remote_port -- $js "
+    a0f="$tf ssh -F $mytmpdir/ssh_config -i $account0key1file $account0@$remote_ip -p $remote_port -- $js "
     a1="  $t ssh -F $mytmpdir/ssh_config -i $account1key1file $account1@$remote_ip -p $remote_port -- $js "
     a1k2="$t ssh -F $mytmpdir/ssh_config -i $account1key2file $account1@$remote_ip -p $remote_port -- $js "
     a2="  $t ssh -F $mytmpdir/ssh_config -i $account2key1file $account2@$remote_ip -p $remote_port -- $js "
@@ -659,6 +660,12 @@ runtests()
     ignorecodewarn 'Configuration error' # previous unit tests can provoke this
     success syslog_cleanup $r0 "\": > /var/log/bastion/bastion.log\""
 
+    # patch the remote bastionCommand to the proper value
+    configchg 's=^\\\\x22bastionCommand\\\\x22.+=\\\\x22bastionCommand\\\\x22:\\\\x22ssh\\\\x20USER\\\\x40'"$remote_ip"'\\\\x20-p\\\\x20'"$remote_port"'\\\\x20-t\\\\x20--\\\\x22,='
+
+    # account1 skips PAM MFA
+    success account1_nopam $r0 "usermod -a -G bastion-nopam $account0"
+
     # backup the original default configuration on target side
     now=$(date +%s)
     success backupconfig $r0 "dd if=$opt_remote_etc_bastion/bastion.conf of=$opt_remote_etc_bastion/bastion.conf.bak.$now"
@@ -696,6 +703,12 @@ runtests()
         # verify that the env hasn't been modified
         success check_env_after_module diff -u "$tmp_a" "$tmp_b"
     done
+
+    # if the check_env_after_module of the last module fails, we wouldn't get the verbose error,
+    # craft a test that always work and will notice that the previous one failed, which'll display
+    # the verbose error information
+    modulename=main
+    success done true
 }
 
 COUNTONLY=0
@@ -727,7 +740,6 @@ testno=0
 runtests
 echo
 
-set -x
 if [ $((nbfailedret + nbfailedgrep + nbfailedcon + nbfailedgeneric)) -eq 0 ] ; then
     printf "%b%b%b\\n" "$BLACK_ON_GREEN" "All tests succeeded :)" "$NOC"
 else
