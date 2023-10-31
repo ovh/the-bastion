@@ -699,11 +699,15 @@ my $isMfaTOTPRequired =
 my $hasMfaTOTPBypass =
   OVH::Bastion::is_user_in_group(account => $sysself, group => OVH::Bastion::MFA_TOTP_BYPASS_GROUP);
 
-# MFA information from a potential ingress realm:
-my $remoteMfaValidated = 0;
-my $remoteMfaPassword  = 0;
-my $remoteMfaTOTP      = 0;
-my $remoteHasPIV       = 0;
+# auth information from a potential ingress realm:
+my %ingressRealm = (
+    mfa => {
+        validated => 0,
+        password  => 0,
+        totp      => 0,
+    },
+    hasPiv => 0,
+);
 
 my $pivEffectivePolicyEnabled = OVH::Bastion::is_effective_piv_account_policy_enabled(account => $self);
 
@@ -716,17 +720,17 @@ if ($realm && $ENV{'LC_BASTION_DETAILS'}) {
         @previous_bastion_details = @$decoded_details;
 
         # if the remote bastion did validate MFA, trust it
-        $remoteMfaValidated = $decoded_details->[0]{'mfa'}{'validated'}        ? 1 : 0;
-        $remoteMfaPassword  = $decoded_details->[0]{'mfa'}{'type'}{'password'} ? 1 : 0;
-        $remoteMfaTOTP      = $decoded_details->[0]{'mfa'}{'type'}{'totp'}     ? 1 : 0;
+        $ingressRealm{'mfa'}{'validated'} = $decoded_details->[0]{'mfa'}{'validated'}        ? 1 : 0;
+        $ingressRealm{'mfa'}{'password'}  = $decoded_details->[0]{'mfa'}{'type'}{'password'} ? 1 : 0;
+        $ingressRealm{'mfa'}{'totp'}      = $decoded_details->[0]{'mfa'}{'type'}{'totp'}     ? 1 : 0;
 
         # also get the PIV status
         if (ref $decoded_details->[0]{'piv'} eq 'HASH') {
-            $remoteHasPIV = $decoded_details->[0]{'piv'}{'enforced'} ? 1 : 0;
+            $ingressRealm{'hasPiv'} = $decoded_details->[0]{'piv'}{'enforced'} ? 1 : 0;
 
             # if remote PIV is not enforced AND we enforce PIV locally (either by global policy or account-scoped policy),
             # we must refuse the connection.
-            if ($pivEffectivePolicyEnabled && !$remoteHasPIV) {
+            if ($pivEffectivePolicyEnabled && !$ingressRealm{'hasPiv'}) {
                 my $otherSideName = $decoded_details->[0]{'via'}{'name'} || $decoded_details->[0]{'via'}{'host'};
                 main_exit(OVH::Bastion::EXIT_PIV_REQUIRED, 'piv_required',
                     "Sorry $self, but the $bastionName bastion policy requires that you use a PIV key to connect, please set a PIV key up on your local bastion ($otherSideName)."
@@ -741,19 +745,19 @@ if ($mfaPolicy ne 'disabled' && !grep { $osh_command eq $_ } qw{ selfMFASetupPas
     if (($mfaPolicy eq 'password-required' && !$hasMfaPasswordBypass) || $isMfaPasswordRequired) {
         main_exit(OVH::Bastion::EXIT_MFA_PASSWORD_SETUP_REQUIRED, 'mfa_password_setup_required',
             "Sorry $self, but you need to setup the Multi-Factor Authentication before using this bastion, please use the `--osh selfMFASetupPassword' option to do so"
-        ) if (!$isMfaPasswordConfigured && !$remoteMfaPassword);
+        ) if (!$isMfaPasswordConfigured && !$ingressRealm{'mfa'}{'password'});
     }
 
     if (($mfaPolicy eq 'totp-required' && !$hasMfaTOTPBypass) || $isMfaTOTPRequired) {
         main_exit(OVH::Bastion::EXIT_MFA_TOTP_SETUP_REQUIRED, 'mfa_totp_setup_required',
             "Sorry $self, but you need to setup the Multi-Factor Authentication before using this bastion, please use the `--osh selfMFASetupTOTP' option to do so"
-        ) if !($isMfaTOTPConfigured && !$remoteMfaTOTP);
+        ) if !($isMfaTOTPConfigured && !$ingressRealm{'mfa'}{'totp'});
     }
 
     if (   $mfaPolicy eq 'any-required'
         && (!$isMfaPasswordConfigured && !$hasMfaPasswordBypass)
         && (!$isMfaTOTPConfigured     && !$hasMfaTOTPBypass)
-        && !$remoteMfaValidated)
+        && !$ingressRealm{'mfa'}{'validated'})
     {
         main_exit(OVH::Bastion::EXIT_MFA_ANY_SETUP_REQUIRED, 'mfa_any_setup_required',
             "Sorry $self, but you need to setup the Multi-Factor Authentication before using this bastion, please use either the `--osh selfMFASetupPassword' or the `--osh selfMFASetupTOTP' option, at your discretion, to do so"
@@ -1374,7 +1378,6 @@ else {
 
     # SSH EGRESS KEYS (and maybe password interactive as a fallback if passwordAllowed)
     else {
-
         # ssh by key
         push @preferredAuths, 'publickey';
 
