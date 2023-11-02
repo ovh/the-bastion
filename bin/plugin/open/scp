@@ -43,33 +43,185 @@ sub help {
 
     # same thing for --
     $bastionCommand =~ s/ --/ /;
-    my $script = <<'EOF';
-#! /bin/sh
-[ "$BASTION_SCP_DEBUG" ] && echo "scpwrapper: args: $*" >&2
-while ! [ "$1" = "--" ] ; do
-    if [ "$1" = "-l" ] ; then
-        remoteuser="--user $2"
+    my $script = <<'END_OF_SCRIPT';
+#! /usr/bin/env bash
+set -u
+# <custom-section>
+SELF="%SELF%"
+BASTION_CMD="%BASTION_CMD%"
+VERSION="%VERSION%"
+# </custom_section>
+
+: "${BASTION_SCP_DEBUG:=}"
+[ "$BASTION_SCP_DEBUG" = 1 ] && echo "scpwrapper: args: $*" >&2
+
+BASTION_SSH_EXTRA_ARGS=""
+BASTION_SCP_EXTRA_ARGS=""
+
+LOCAL_PATH=""
+
+REMOTE_HOST=""
+REMOTE_PORT=22
+REMOTE_USER="$SELF"
+REMOTE_PATH=""
+
+usage() {
+    cat >&2 <<EOF
+usage: $0 [-i identity_file] [-P port] [-o ssh_option] source target
+EOF
+    exit 1
+}
+
+while [ -n "${1:-}" ]; do
+    case "$1" in
+        "-i")
+            if [ -z "${2:-}" ]; then
+                echo "scpwrapper: missing argument after '-i'" >&2
+                exit 1
+            fi
+            BASTION_SSH_EXTRA_ARGS="$BASTION_SSH_EXTRA_ARGS -i $2"
+            BASTION_SCP_EXTRA_ARGS="$BASTION_SCP_EXTRA_ARGS -i $2"
+            shift 2;;
+        "-o")
+            if [ -z "${2:-}" ]; then
+                echo "scpwrapper: missing argument after '-o'" >&2
+                exit 1
+            fi
+            BASTION_SSH_EXTRA_ARGS="$BASTION_SSH_EXTRA_ARGS -o $2"
+            BASTION_SCP_EXTRA_ARGS="$BASTION_SCP_EXTRA_ARGS -o $2"
+            shift 2;;
+        "-P")
+            if [ -z "${2:-}" ]; then
+                echo "scpwrapper: missing argument after '-P'" >&2
+                exit 1
+            fi
+            REMOTE_PORT="$2"
+            shift 2;;
+        "-r")
+            BASTION_SCP_EXTRA_ARGS="$BASTION_SCP_EXTRA_ARGS -r"
+            shift;;
+        "-*")
+            echo "scpwrapper: unsupported option '$1'" >&2
+            exit 1;;
+        *)  break;;
+    esac
+done
+
+# here, we should have SRC in $1, and DST in $2
+[ $# -ne 2 ] && usage
+
+src="${1:-}"
+dst="${2:-}"
+way=""
+
+if [[ $src =~ : ]]; then
+    # it's a download
+    if [[ $src =~ ^(([^@:]*)@)?([^@:]+):(.*)?$ ]]; then
+        REMOTE_USER="${BASH_REMATCH[2]:-$SELF}"
+        REMOTE_HOST="${BASH_REMATCH[3]}"
+        REMOTE_PATH="${BASH_REMATCH[4]}"
+    else
+        echo "scpwrapper: couldn't parse source '$src'" >&2
+        exit 1
+    fi
+    LOCAL_PATH="$dst"
+    way=download
+    [ "$BASTION_SCP_DEBUG" = 1 ] && echo "scpwrapper: will download '$REMOTE_PATH' from $REMOTE_USER@$REMOTE_HOST:$REMOTE_PORT to '$LOCAL_PATH'" >&2
+elif [[ $dst =~ : ]]; then
+    # it's an upload
+    if [[ $dst =~ ^(([^@:]*)@)?([^@:]+):(.*)?$ ]]; then
+        REMOTE_USER="${BASH_REMATCH[2]:-$SELF}"
+        REMOTE_HOST="${BASH_REMATCH[3]}"
+        REMOTE_PATH="${BASH_REMATCH[4]}"
+    else
+        echo "scpwrapper: couldn't parse destination '$dst'" >&2
+        exit 1
+    fi
+    LOCAL_PATH="$src"
+    way=upload
+    [ "$BASTION_SCP_DEBUG" = 1 ] && echo "scpwrapper: will upload '$LOCAL_PATH' to $REMOTE_USER@$REMOTE_HOST:$REMOTE_PORT as '$REMOTE_PATH'" >&2
+else
+    echo "scpwrapper: no remote host found in your command '$src $dst'" >&2
+    exit 1
+fi
+
+t=$(mktemp)
+# shellcheck disable=SC2064
+trap "rm -f $t" EXIT
+
+# shellcheck disable=SC2086
+[ "$BASTION_SCP_DEBUG" = 1 ] && set -x
+$BASTION_CMD -t $BASTION_SSH_EXTRA_ARGS -- --osh scp --host "$REMOTE_HOST" --port "$REMOTE_PORT" --user "$REMOTE_USER" --generate-mfa-token | tee "$t"
+[ "$BASTION_SCP_DEBUG" = 1 ] && set +x
+token=$(grep -Eo '^MFA_TOKEN=[a-zA-Z0-9,]+' "$t" | tail -n 1 | cut -d= -f2)
+
+if [ -z "$token" ]; then
+    echo "scpwrapper: Couldn't get an MFA token, aborting." >&2
+    exit 1
+fi
+
+# detect whether we need '-O' for this scp or not
+t2=$(mktemp)
+if scp -O "$t2" "$t" >/dev/null 2>&1; then
+    BASTION_SCP_EXTRA_ARGS="$BASTION_SCP_EXTRA_ARGS -O"
+fi
+rm -f "$t2"
+
+# now craft the wrapper to be used by scp through -S
+cat >"$t" <<'EOF'
+#! /usr/bin/env bash
+
+REMOTE_USER=${USER:-}
+REMOTE_PORT=22
+sshcmdline=""
+
+[ "$BASTION_SCP_DEBUG" = 1 ] && echo "scphelper: args: $*" >&2
+while ! [ "${1:-}" = "--" ] ; do
+    # handle several ways of specifying remote user
+    if [ "${1:-}" = "-l" ] ; then
+        REMOTE_USER="${2:-}"
         shift 2
-    elif [ "$1" = "-p" ] ; then
-        remoteport="--port $2"
+    elif [ "${1:-}" = "-p" ] ; then
+        REMOTE_PORT="${2:-}"
         shift 2
-    elif [ "$1" = "-s" ]; then
+    elif [ "${1:-}" = "-s" ]; then
         # caller is a newer scp that tries to use the sftp subsystem
         # instead of plain old scp, warn because it won't work
-        echo "scpwrapper: WARNING: your scp version is recent, you need to add '-O' to your scp command-line, exiting." >&2
+        echo "scphelper: WARNING: your scp version is recent, you need to add '-O' to your scp command-line, exiting." >&2
         exit 1
     else
         sshcmdline="$sshcmdline $1"
         shift
     fi
 done
-host="$2"
-scpcmd=`echo "$3" | sed -e 's/#/##/g;s/ /#/g'`
-[ "$BASTION_SCP_DEBUG" ] && echo "scpwrapper: exec #BASTIONCMD# -T $sshcmdline $BASTION_SCP_EXTRA_ARGS -- $remoteuser $remoteport --host $host --osh scp --scp-cmd \"$scpcmd\"" >&2
-exec #BASTIONCMD# -T $sshcmdline $BASTION_SCP_EXTRA_ARGS -- $remoteuser $remoteport --host $host --osh scp --scp-cmd "$scpcmd"
-EOF
 
-    $script =~ s{#BASTIONCMD#}{$bastionCommand}g;
+[ "$BASTION_SCP_DEBUG" = 1 ] && echo "scphelper: remaining args: $*" >&2
+
+# sane default
+: "${REMOTE_USER:-$USER}"
+[ -z "$REMOTE_USER" ] && REMOTE_USER="$(whoami)"
+
+REMOTE_HOST="$2"
+scpcmd=$(echo "$3" | sed -e 's/#/##/g;s/ /#/g')
+
+# and go
+[ "$BASTION_SCP_DEBUG" = 1 ] && set -x
+EOF
+echo "exec $BASTION_CMD -T \$sshcmdline $BASTION_SSH_EXTRA_ARGS -- --user \"\$REMOTE_USER\" --port \"\$REMOTE_PORT\" --host \"\$REMOTE_HOST\" --osh scp --scp-cmd \"\$scpcmd\" --mfa-token $token" >> "$t"
+chmod +x "$t"
+
+# don't use exec below, because we need the trap to be executed on exit
+export BASTION_SCP_DEBUG
+[ "$BASTION_SCP_DEBUG" = 1 ] && set -x
+case "$way" in
+    upload)   scp $BASTION_SCP_EXTRA_ARGS -S "$t" -P "$REMOTE_PORT" "$LOCAL_PATH" "$REMOTE_USER"@"$REMOTE_HOST":"$REMOTE_PATH";;
+    download) scp $BASTION_SCP_EXTRA_ARGS -S "$t" -P "$REMOTE_PORT" "$REMOTE_USER"@"$REMOTE_HOST":"$REMOTE_PATH" "$LOCAL_PATH";;
+esac
+END_OF_SCRIPT
+
+    $script =~ s{%BASTION_CMD%}{$bastionCommand}g;
+    $script =~ s{%SELF%}{$self}g;
+    $script =~ s{%VERSION%}{$OVH::Bastion::VERSION}g;
     my $compressed = '';
     gzip \$script => \$compressed;
     my $base64 = encode_base64($compressed);
@@ -79,27 +231,29 @@ Description:
     Transfers files to/from a host through the bastion
 
 Usage:
-    To use scp through the bastion, you need a helper script to use with
-your scp client. It'll be specific to your account, don't share it with
-others! To download your customized script, copy/paste this command:
+    To use scp through the bastion, you need a wrapper script to use instead of
+calling your scp client directly. It'll be specific to your account and this bastion,
+don't share it with others! To download your customized script, copy/paste this command:
 EOF
-    print "\necho \"$base64\"|base64 -d|gunzip -c > ~/scp_$bastionName && chmod +x ~/scp_$bastionName\n\n";
+    print "\necho \"$base64\"|base64 -d|gunzip -c > ~/scp-via-$bastionName && chmod +x ~/scp-via-$bastionName\n\n";
 
     osh_info <<"EOF";
-To use scp through this bastion, add `-S ~/scp_$bastionName` to your regular scp command.
-For example, to upload a file:
-\$ scp -S ~/scp_$bastionName localfile login\@server:/dest/folder/
+To use scp through this bastion, use this script instead of your regular scp command.
+For example, to upload a file to a remote server with ssh listening on port 222 there:
+\$ ~/scp-via-$bastionName -i ~/.ssh/mysshkey -P 222 localfile login\@server:/dest/folder/
 
 Or to recursively download a folder contents:
-\$ scp -S ~/scp_$bastionName -r login\@server:/src/folder/ /tmp/
+\$ ~/scp-via-$bastionName -i ~/.ssh/mysshkey -r login\@server:/src/folder/ /tmp/
 
 The following environment variables modify the behavior of the script:
 - `BASTION_SCP_DEBUG`: if set to 1, debug info is printed on the console
 - `BASTION_SCP_EXTRA_ARGS`: if set, the contents of this variable is added
-    to the resulting ssh command called by the script
+    to the resulting scp command called by the script
+- `BASTION_SSH_EXTRA_ARGS`: if set, the contents of this variable is added
+    to the resulting ssh commands used in the script
 
 For example:
-\$ BASTION_SCP_DEBUG=1 BASTION_SCP_EXTRA_ARGS="-v" scp -S ~/scp_$bastionName file1 login\@srv:/tmp
+\$ BASTION_SCP_DEBUG=1 BASTION_SSH_EXTRA_ARGS="-v" ~/scp-via-$bastionName file1 login\@srv:/tmp
 
 Please note that you need to be granted for uploading or downloading files
 with scp to/from the remote host, in addition to having the right to SSH to it.
@@ -230,11 +384,12 @@ $fnret = OVH::Bastion::execute(cmd => \@cmd, expects_stdin => 1, is_binary => 1)
 if ($fnret->err ne 'OK') {
     osh_exit 'ERR_TRANSFER_FAILED', "Error launching transfer: $fnret";
 }
-print STDERR ">>> Done, "
-  . $fnret->value->{'bytesnb'}{'stdin'}
-  . " bytes uploaded, "
-  . $fnret->value->{'bytesnb'}{'stdout'}
-  . " bytes downloaded.\n";
+print STDERR sprintf(
+    ">>> Done, %d bytes uploaded, %d bytes downloaded\n",
+    $fnret->value->{'bytesnb'}{'stdin'} + 0,
+    $fnret->value->{'bytesnb'}{'stdout'} + 0
+);
+
 if ($fnret->value->{'sysret'} != 0) {
     print STDERR ">>> On bastion side, scp exited with return code " . $fnret->value->{'sysret'} . ".\n";
 }

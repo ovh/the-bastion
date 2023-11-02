@@ -987,9 +987,8 @@ if ($osh_command) {
 
         # run MFA for this plugin if needed
         $fnret = do_jit_mfa(
-            actionType   => 'plugin',
-            mfaType      => $MFArequiredForPlugin,
-            ingressRealm => \%ingressRealm,
+            actionType => 'plugin',
+            mfaType    => $MFArequiredForPlugin,
         );
         if (!$fnret) {
             # shouldn't happen because do_jit_mfa() exits by itself on error, but we never know...
@@ -1511,9 +1510,8 @@ if (!$logret) {
 # if we have JIT MFA, do it now
 if ($JITMFARequired) {
     $fnret = do_jit_mfa(
-        actionType   => 'host',
-        mfaType      => $JITMFARequired,
-        ingressRealm => \%ingressRealm,
+        actionType => 'host',
+        mfaType    => $JITMFARequired,
     );
     if (!$fnret) {
         # shouldn't happen because do_jit_mfa() exits by itself, but we never know...
@@ -1646,12 +1644,11 @@ sub get_details_from_access_array {
 }
 
 sub do_jit_mfa {
-    my %params       = @_;
-    my $ingressRealm = $params{'ingressRealm'};
-    my $mfaType      = $params{'mfaType'};        # password|totp|any
-    my $actionType   = $params{'actionType'};     # host|plugin
+    my %params     = @_;
+    my $mfaType    = $params{'mfaType'};       # password|totp|any|none
+    my $actionType = $params{'actionType'};    # host|plugin
 
-    if (!$ingressRealm || !$mfaType || !$actionType) {
+    if (!$mfaType || !$actionType) {
         return R('ERR_MISSING_PARAMETER', msg => "Missing mandatory parameters to do_jit_mfa");
     }
 
@@ -1671,7 +1668,7 @@ sub do_jit_mfa {
         if ($hasMfaTOTPBypass) {
             $skipMFA = 1;
         }
-        elsif ($ingressRealm->{'mfa'}{'totp'} && $ingressRealm->{'mfa'}{'validated'}) {
+        elsif ($ingressRealm{'mfa'}{'totp'} && $ingressRealm{'mfa'}{'validated'}) {
             $realmMFA = 1;
         }
         else {
@@ -1685,7 +1682,7 @@ sub do_jit_mfa {
         if ($hasMfaPasswordBypass) {
             $skipMFA = 1;
         }
-        elsif ($ingressRealm->{'mfa'}{'password'} && $ingressRealm->{'mfa'}{'validated'}) {
+        elsif ($ingressRealm{'mfa'}{'password'} && $ingressRealm{'mfa'}{'validated'}) {
             $realmMFA = 1;
         }
         else {
@@ -1699,7 +1696,7 @@ sub do_jit_mfa {
         if ($hasMfaPasswordBypass || $hasMfaTOTPBypass) {
             $skipMFA = 1;
         }
-        elsif ($ingressRealm->{'mfa'}{'validated'}) {
+        elsif ($ingressRealm{'mfa'}{'validated'}) {
             $realmMFA = 1;
         }
         else {
@@ -1742,7 +1739,8 @@ sub do_jit_mfa {
 
 sub do_plugin_jit_mfa {
     my %params       = @_;
-    my $pluginJitMfa = $params{'pluginJitMfa'};
+    my $pluginJitMfa = $params{'pluginJitMfa'};    ### XXX NOT USED
+
     my $localfnret;
 
     if (!$host) {
@@ -1790,21 +1788,21 @@ sub do_plugin_jit_mfa {
     my @accessListForPlugin = @{$localfnret->value || []};
 
     # and check whether we need JIT MFA
-    my $mfaRequired;
+    my $mfaType;
     $localfnret = get_details_from_access_array(
         accessList => \@accessListForPlugin,
         quiet      => ($quiet || $mfaToken),
         useKey     => $useKey
     );
     if ($localfnret && $localfnret->value->{'mfaRequired'}) {
-        $mfaRequired = $localfnret->value->{'mfaRequired'};
+        $mfaType = $localfnret->value->{'mfaRequired'};
     }
     elsif (!$localfnret) {
         main_exit(OVH::Bastion::EXIT_ACCESS_DENIED, "access_denied", $localfnret->msg);
     }
 
     # not required? we're done
-    if (!$mfaRequired) {
+    if (!$mfaType) {
         if ($generateMfaToken) {
             # return a dummy token so that our caller is happy, then exit
             print "MFA_TOKEN=notrequired\n";
@@ -1867,9 +1865,18 @@ sub do_plugin_jit_mfa {
     elsif ($generateMfaToken) {
         print "MFA token generation requested, entering MFA phase...\n";
 
-        $localfnret = OVH::Bastion::do_pamtester(self => $self, sysself => $sysself);
-        $localfnret or main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', $localfnret->msg);
-
+        # do MFA
+        $localfnret = do_jit_mfa(
+            actionType => 'plugin',
+            mfaType    => $mfaType,
+        );
+        if (!$localfnret) {
+            # shouldn't happen because do_jit_mfa() exits by itself on error, but we never know...
+            main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', "Couldn't complete MFA");
+        }
+        elsif ($localfnret->value && ref $localfnret->value eq 'HASH' && $localfnret->value->{'mfaInfo'}) {
+            $bastion_details{'mfa'} = $localfnret->value->{'mfaInfo'};
+        }
         # if we're still here, MFA has been validated, generate a token, save and return it
         require Digest::SHA;
         my $now             = time();

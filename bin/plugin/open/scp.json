@@ -1,4 +1,6 @@
 {
     "execution_mode": "binary",
-    "stealth_stdout": true
+    "stealth_stdout": true,
+    "jit_mfa": "token",
+    "jit_mfa_allow_no_host": true
 }

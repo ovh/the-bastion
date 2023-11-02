@@ -42,36 +42,137 @@ sub help {
 
     # same thing for --
     $bastionCommand =~ s/ --/ /;
-    my $script = <<'EOF';
+    my $script = <<'END_OF_SCRIPT';
+#! /usr/bin/env bash
+set -u
+shopt -s nocasematch
+# <custom-section>
+SELF="%SELF%"
+BASTION_CMD="%BASTION_CMD%"
+VERSION="%VERSION%"
+# </custom_section>
+
+: "${BASTION_SFTP_DEBUG:=}"
+[ "$BASTION_SFTP_DEBUG" = 1 ] && echo "sftpwrapper: args: $*" >&2
+
+BASTION_SSH_EXTRA_ARGS=""
+BASTION_SFTP_EXTRA_ARGS=""
+
+usage() {
+    cat >&2 <<EOF
+usage: $0 [-i identity_file] [-P port] [-o ssh_option] [-b batchfile] [-F ssh_config] [-l limit] [-afprv] destination
+EOF
+    exit 1
+}
+
+while [ -n "${1:-}" ]; do
+    case "$1" in
+        '-a'|'-f'|'-p'|'-r')
+            BASTION_SFTP_EXTRA_ARGS="$BASTION_SFTP_EXTRA_ARGS $1"
+            shift;;
+        '-v')
+            BASTION_SSH_EXTRA_ARGS="$BASTION_SSH_EXTRA_ARGS $1"
+            BASTION_SFTP_EXTRA_ARGS="$BASTION_SFTP_EXTRA_ARGS $1"
+            shift;;
+        '-i'|'-o'|'-F')
+            if [ -z "${2:-}" ]; then
+                echo "sftpwrapper: missing argument after '$1'" >&2
+                exit 1
+            fi
+            BASTION_SSH_EXTRA_ARGS="$BASTION_SSH_EXTRA_ARGS $1 $2"
+            BASTION_SFTP_EXTRA_ARGS="$BASTION_SFTP_EXTRA_ARGS $1 $2"
+            shift 2;;
+        '-b'|'-l')
+            if [ -z "${2:-}" ]; then
+                echo "sftpwrapper: missing argument after '$1'" >&2
+                exit 1
+            fi
+            BASTION_SFTP_EXTRA_ARGS="$BASTION_SFTP_EXTRA_ARGS $1 $2"
+            shift 2;;
+        "-P")
+            if [ -z "${2:-}" ]; then
+                echo "sftpwrapper: missing argument after '$1'" >&2
+                exit 1
+            fi
+            REMOTE_PORT="$2"
+            shift 2;;
+        "-*")
+            echo "sftpwrapper: unsupported option '$1'" >&2
+            exit 1;;
+        *)  break;;
+    esac
+done
+
+# here, we should have only destination in $1
+[ $# -ne 1 ] && usage
+
+dst="${1:-}"
+if [[ $dst =~ ^(sftp://)?(([^@:/]+)@)?([^@:/]+)(:([0-9]+))?(/(.+))?$ ]]; then
+    REMOTE_USER="${BASH_REMATCH[3]:-$SELF}"
+    REMOTE_HOST="${BASH_REMATCH[4]}"
+    REMOTE_PORT="${BASH_REMATCH[6]:-22}"
+    REMOTE_PATH="${BASH_REMATCH[7]}"
+    [ "$BASTION_SFTP_DEBUG" = 1 ] && echo "sftpwrapper: parsed user=$REMOTE_USER host=$REMOTE_HOST port=$REMOTE_PORT path=$REMOTE_PATH" >&2
+else
+    echo "sftpwrapper: couldn't parse destination '$dst'" >&2
+    exit 1
+fi
+
+if [ -z "${REMOTE_HOST:-}" ]; then
+    echo "sftpwrapper: no remote host found in your command '$dst'" >&2
+    exit 1
+fi
+
+t=$(mktemp)
+# shellcheck disable=SC2064
+trap "rm -f $t" EXIT
+
+# shellcheck disable=SC2086
+[ "$BASTION_SFTP_DEBUG" = 1 ] && set -x
+$BASTION_CMD -t $BASTION_SSH_EXTRA_ARGS -- --osh sftp --host "$REMOTE_HOST" --port "$REMOTE_PORT" --user "$REMOTE_USER" --generate-mfa-token | tee "$t"
+[ "$BASTION_SFTP_DEBUG" = 1 ] && set +x
+token=$(grep -Eo '^MFA_TOKEN=[a-zA-Z0-9,]+' "$t" | tail -n 1 | cut -d= -f2)
+
+if [ -z "$token" ]; then
+    echo "sftpwrapper: Couldn't get an MFA token, aborting." >&2
+    exit 1
+fi
+
+# now craft the wrapper to be used by sftp through -S
+cat >"$t" <<'EOF'
 #! /usr/bin/env bash
 shopt -s nocasematch
 
-[ "$BASTION_SFTP_DEBUG" ] && echo "sftpwrapper: args: $*" >&2
-while ! [ "$1" = "--" ] ; do
-    # user
-    if [ "$1" = "-l" ] ; then
-        remoteuser="--user $2"
+REMOTE_USER=${USER:-}
+REMOTE_PORT=22
+sshcmdline=""
+
+[ "$BASTION_SFTP_DEBUG" = 1 ] && echo "sftphelper: args: $*" >&2
+while ! [ "${1:-}" = "--" ] ; do
+    # handle several ways of specifying remote user
+    if [ "${1:-}" = "-l" ] ; then
+        REMOTE_USER="${2:-}"
         shift 2
-    elif [[ $1 =~ ^-oUser[=\ ]([^\ ]+)$ ]] ; then
-        remoteuser="--user ${BASH_REMATCH[1]}"
+    elif [[ ${1:-} =~ ^-oUser[=\ ]([^\ ]+)$ ]] ; then
+        REMOTE_USER="${BASH_REMATCH[1]}"
         shift
-    elif [ "$1" = "-o" ] && [[ $2 =~ ^user=([0-9]+)$ ]] ; then
-        remoteuser="--user ${BASH_REMATCH[1]}"
+    elif [ "${1:-}" = "-o" ] && [[ ${2:-} =~ ^user=([0-9]+)$ ]] ; then
+        REMOTE_USER="${BASH_REMATCH[1]}"
         shift 2
 
-    # port
-    elif [ "$1" = "-p" ] ; then
-        remoteport="--port $2"
+    # handle several ways of specifying remote port
+    elif [ "${1:-}" = "-p" ] ; then
+        REMOTE_PORT="${2:-22}"
         shift 2
-    elif [[ $1 =~ ^-oPort[=\ ]([0-9]+)$ ]] ; then
-        remoteport="--port ${BASH_REMATCH[1]}"
+    elif [[ ${1:-} =~ ^-oPort[=\ ]([0-9]+)$ ]] ; then
+        REMOTE_PORT="${BASH_REMATCH[1]}"
         shift
-    elif [ "$1" = "-o" ] && [[ $2 =~ ^port=([0-9]+)$ ]] ; then
-        remoteport="--port ${BASH_REMATCH[1]}"
+    elif [ "${1:-}" = "-o" ] && [[ $2 =~ ^port=([0-9]+)$ ]] ; then
+        REMOTE_PORT="${BASH_REMATCH[1]}"
         shift 2
 
     # other '-oFoo Bar'
-    elif [[ $1 =~ ^-o([^\ ]+)\ (.+)$ ]] ; then
+    elif [[ ${1:-} =~ ^-o([^\ ]+)\ (.+)$ ]] ; then
         sshcmdline="$sshcmdline -o${BASH_REMATCH[1]}=${BASH_REMATCH[2]}"
         shift
 
@@ -86,26 +187,41 @@ while ! [ "$1" = "--" ] ; do
     fi
 done
 
+[ "$BASTION_SFTP_DEBUG" = 1 ] && echo "sftphelper: remaining args: $*" >&2
+
+# sane default
+: "${REMOTE_USER:-$USER}"
+[ -z "$REMOTE_USER" ] && REMOTE_USER="$(whoami)"
+
 # after '--', remaining args are always host then 'sftp'
-host="$2"
+REMOTE_HOST="$2"
 subsystem="$3"
 if [ "$subsystem" != sftp ]; then
     echo "Unknown subsystem requested '$subsystem', expected 'sftp'" >&2
     exit 1
 fi
 
-# if host is in the form remoteuser@remotehost, split it
-if [[ $host =~ @ ]]; then
-    remoteuser="--user ${host%@*}"
-    host=${host#*@}
+# if host is in the form REMOTE_USER@REMOTE_HOST, split it
+if [[ $REMOTE_HOST =~ @ ]]; then
+    REMOTE_USER="${REMOTE_HOST%@*}"
+    REMOTE_HOST="${REMOTE_HOST#*@}"
 fi
 
 # and go
-[ "$BASTION_SFTP_DEBUG" ] && echo "sftpwrapper: exec #BASTIONCMD# -T $sshcmdline $BASTION_SFTP_EXTRA_ARGS -- $remoteuser $remoteport --host $host --osh sftp" >&2
-exec #BASTIONCMD# -T $sshcmdline $BASTION_SFTP_EXTRA_ARGS -- $remoteuser $remoteport --host $host --osh sftp
+[ "$BASTION_SFTP_DEBUG" = 1 ] && set -x
 EOF
+echo "exec $BASTION_CMD -T \$sshcmdline $BASTION_SSH_EXTRA_ARGS -- --user \"\$REMOTE_USER\" --port \"\$REMOTE_PORT\" --host \"\$REMOTE_HOST\" --osh sftp --mfa-token $token" >> "$t"
+chmod +x "$t"
 
-    $script =~ s{#BASTIONCMD#}{$bastionCommand}g;
+# don't use exec below, because we need the trap to be executed on exit
+export BASTION_SFTP_DEBUG
+[ "$BASTION_SFTP_DEBUG" = 1 ] && set -x
+sftp $BASTION_SFTP_EXTRA_ARGS -S "$t" sftp://"$REMOTE_USER"@"$REMOTE_HOST":"$REMOTE_PORT""$REMOTE_PATH"
+END_OF_SCRIPT
+
+    $script =~ s{%BASTION_CMD%}{$bastionCommand}g;
+    $script =~ s{%SELF%}{$self}g;
+    $script =~ s{%VERSION%}{$OVH::Bastion::VERSION}g;
     my $compressed = '';
     gzip \$script => \$compressed;
     my $base64 = encode_base64($compressed);
@@ -115,25 +231,27 @@ Description:
     Transfers files to/from a host through the bastion
 
 Usage:
-    To use sftp through the bastion, you need a helper script to use with
-your sftp client. It'll be specific to your account, don't share it with others!
-To download your customized script, copy/paste this command:
+    To use sftp through the bastion, you need a wrapper script to use instead of
+calling your sftp client directly. It'll be specific to your account and this bastion,
+don't share it with others! To download your customized script, copy/paste this command:
 EOF
-
-    print "\necho \"$base64\"|base64 -d|\\\ngunzip -c > ~/sftp_$bastionName && chmod +x ~/sftp_$bastionName\n\n";
+    print "\necho \"$base64\"|base64 -d|gunzip -c > ~/sftp-via-$bastionName \\\n"
+      . "&& chmod +x ~/sftp-via-$bastionName\n\n";
 
     osh_info <<"EOF";
-To use sftp through this bastion, add `-S ~/sftp_$bastionName` to your regular sftp command.
+To use sftp through this bastion, use this script instead of your regular sftp command.
 For example:
-\$ sftp -S ~/sftp_$bastionName login\@server
+\$ ~/sftp-via-$bastionName login\@server:port
 
 The following environment variables modify the behavior of the script:
 - `BASTION_SFTP_DEBUG`: if set to 1, debug info is printed on the console
 - `BASTION_SFTP_EXTRA_ARGS`: if set, the contents of this variable is added
-    to the resulting ssh command called by the script
+    to the resulting sftp command called by the script
+- `BASTION_SSH_EXTRA_ARGS`: if set, the contents of this variable is added
+    to the resulting ssh commands used in the script
 
 For example:
-\$ BASTION_SFTP_DEBUG=1 BASTION_SFTP_EXTRA_ARGS="-v" sftp -S ~/sftp_$bastionName login\@server
+\$ BASTION_SFTP_DEBUG=1 BASTION_SSH_EXTRA_ARGS="-v" ~/sftp-via-$bastionName login\@server
 
 Please note that you need to be granted to be allowed to use sftp to the remote host,
 in addition to having the right to SSH to it.
@@ -223,7 +341,6 @@ push @cmd, '-s';
 
 my $atleastonekey = 0;
 foreach my $keyfile (keys %keys) {
-
     # only use the key if it has been seen in both allow_deny() calls, this is to avoid
     # a security bypass where a user would have group access to a server, but not to the
     # !sftp special user, and we would add himself this access through selfAddPrivateAccess.
