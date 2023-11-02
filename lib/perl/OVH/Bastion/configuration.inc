@@ -21,13 +21,17 @@ sub load_configuration_file {
     if ($secure || $rootonly) {
         my @stat = lstat($file);
         if (@stat) {
-            if ($stat[4] != 0 or $stat[5] != 0) {
+            if ($stat[4] != 0) {
                 return R('ERR_SECURITY_VIOLATION',
                     msg => "Configuration file ($file) is not owned by root, report to your sysadmin.");
             }
             if (!S_ISREG($stat[2])) {
                 return R('ERR_SECURITY_VIOLATION',
                     msg => "Configuration file ($file) is not a regular file, report to your sysadmin.");
+            }
+            if (S_IMODE($stat[2]) & S_IWGRP) {
+                return R('ERR_SECURITY_VIOLATION',
+                    msg => "Configuration file ($file) is group-writable, report to your sysadmin.");
             }
             if (S_IMODE($stat[2]) & S_IWOTH) {
                 return R('ERR_SECURITY_VIOLATION',

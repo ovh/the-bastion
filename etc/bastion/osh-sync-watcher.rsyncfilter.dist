@@ -17,6 +17,8 @@
 + /etc/gshadow
 + /etc/sudoers.d/
 + /etc/sudoers.d/osh-*
++ /etc/bastion/
++ /etc/bastion/mfa-token.conf
 + /etc/ssh/
 + /etc/ssh/ssh_host_*_key
 + /etc/ssh/ssh_host_*_key.pub

@@ -708,7 +708,7 @@ runtests()
     # craft a test that always work and will notice that the previous one failed, which'll display
     # the verbose error information
     modulename=main
-    success done true
+    success "done" true
 }
 
 COUNTONLY=0

@@ -52,6 +52,7 @@ set_default_options()
     opt[regen-hostkeys]=0
     opt[logrotate]=1
     opt[overwrite-logrotate]=1
+    opt[generate-mfa-secret]=1
 
     # special case:
     # If $autodetect_startup_system is 1, we'll autodetect whether we will install the
@@ -132,7 +133,7 @@ while [ -n "$1" ]; do
             modify-pam-lastlog remove-weak-moduli regen-hostkeys overwrite-logrotate overwrite-cron \
             overwrite-syslog-ng logrotate cron syslog-ng migration-grant-aclkeeper-to-gatekeepers \
             init systemd-units profile modify-pam-sshd wait check-ttyrec install-fake-ttyrec \
-            install-selinux-module
+            install-selinux-module generate-mfa-secret
         do
             if [ "$1" = "--no-$allowedopt" ]; then
                 opt[$allowedopt]=0
@@ -214,6 +215,7 @@ Usage:
     --[no-]profile               apply our hardened configuration in system profile.d/ [N]
     --[no-]remove-weak-moduli    remove weak (<4096) moduli from the ssh server moduli file [N]
     --[no-]regen-hostkeys        generate new host keys (and trash the old ones) for ssh server [N]
+    --[no-]generate-mfa-secret   generate a new MFA token secret, will never overwrite a preexisting one [N, U]
 
     --[no-]logrotate             put our logrotate config files in system logrotate.d/ [N, U, M]
     --[no-]overwrite-logrotate   overwrite possibly existing files in system logrotate.d/ with our templates [N, U]
@@ -1262,6 +1264,20 @@ if [ "${opt[remove-weak-moduli]}" = 1 ]; then
             action_done
         fi
         rm -f "$tmpmod"
+    fi
+fi
+
+if [ "${opt[generate-mfa-secret]}" = 1 ]; then
+    action_doing "Generate the MFA HMAC secret if needed"
+    if [ -e "$BASTION_ETC_DIR/mfa-token.conf" ]; then
+        action_na
+    else
+        secret=$(tr -dc A-Za-z0-9 < /dev/urandom | head -c32)
+        touch "$BASTION_ETC_DIR/mfa-token.conf"
+        chown 0:bastion-users "$BASTION_ETC_DIR/mfa-token.conf"
+        chmod 640 "$BASTION_ETC_DIR/mfa-token.conf"
+        echo '{ "secret": "'"$secret"'" }' > "$BASTION_ETC_DIR/mfa-token.conf"
+        action_done
     fi
 fi
 

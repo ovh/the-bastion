@@ -376,6 +376,8 @@ my $remainingOptions;
     "kbd-interactive" => \my $userKbdInteractive,
     "proactive-mfa"   => \my $proactiveMfa,
     "fallback-password-delay=i" => \my $fallbackPasswordDelay,
+    "generate-mfa-token"        => \my $generateMfaToken,
+    "mfa-token=s"               => \my $mfaToken,
 );
 if (not defined $realOptions) {
     help();
@@ -461,6 +463,11 @@ if ($bind) {
             main_exit OVH::Bastion::EXIT_CONFLICTING_OPTIONS, "invalid_bind", "Invalid binding IP specified ($bind)";
         }
     }
+}
+
+if ($generateMfaToken && $mfaToken) {
+    main_exit OVH::Bastion::EXIT_CONFLICTING_OPTIONS, "conflicting_options",
+      "Can't specify both --generate-mfa-token and --mfa-token";
 }
 
 # if proactive MFA has been requested, do it here, before the code diverts to either
@@ -960,7 +967,6 @@ if ($osh_command) {
         }
 
         # check if we need JIT MFA to call this plugin, this can be configured per-plugin
-        # TODO: autodetect if the MFA check is done outside of the code by sshd+PAM, to avoid re-asking for it here
         my $MFArequiredForPlugin = OVH::Bastion::plugin_config(plugin => $osh_command, key => "mfa_required")->value;
         $MFArequiredForPlugin ||= 'none';    # no config means none
 
@@ -993,6 +999,16 @@ if ($osh_command) {
             $bastion_details{'mfa'} = $fnret->value->{'mfaInfo'};
         }
 
+        # now, check whether this plugin wants us to trigger a JIT MFA check depending on the
+        # specified user/host/ip, if this is configured in one of the matching bastion groups
+        # we are a part of (plugins such as sftp or scp will require us to do this, as they can't
+        # do it themselves, and as they're accessing a remote asset, JIT MFA should apply to them too)
+        my $pluginJitMfa = OVH::Bastion::plugin_config(plugin => $osh_command, key => "jit_mfa")->value;
+        if ($pluginJitMfa) {
+            $fnret = do_plugin_jit_mfa(pluginJitMfa => $pluginJitMfa);
+            # do_plugin_jit_mfa exits if needed, but just in case...
+            main_exit(OVH::Bastion::EXIT_MFA_FAILED, "jit_mfa_failed", $fnret->msg) if !$fnret;
+        }
         OVH::Bastion::set_terminal_mode_for_plugin(plugin => $osh_command, action => 'set');
 
         # get the execution mode required by the plugin
@@ -1722,6 +1738,154 @@ sub do_jit_mfa {
         return R('OK_VALIDATED', value => {mfaInfo => \%mfaInfo});
     }
     return R('OK');
+}
+
+sub do_plugin_jit_mfa {
+    my %params       = @_;
+    my $pluginJitMfa = $params{'pluginJitMfa'};
+    my $localfnret;
+
+    if (!$host) {
+        # if no host is specified, and the plugin has jit_mfa_allow_no_host, then
+        # allow the plugin to be called, for example to show its builtin help()
+        $localfnret = OVH::Bastion::plugin_config(plugin => $osh_command, key => 'jit_mfa_allow_no_host');
+        if ($localfnret && $localfnret->value) {
+            if ($generateMfaToken) {
+                # return a dummy token so that our caller is happy, then exit
+                print "MFA_TOKEN=notrequired\n";
+                main_exit(OVH::Bastion::EXIT_OK);
+            }
+            # tell our caller that the plugin can be executed without host
+            return R('OK_JIT_MFA_NOT_REQUIRED');
+        }
+        # otherwise, we need a host
+        main_exit(OVH::Bastion::EXIT_NO_HOST, 'no_host', "A host is required for this plugin but none was specified");
+    }
+
+    # if no user yet, fix it to remote user
+    # we need it to be able to get the proper answer for is_access_granted, and we need to
+    # call is_access_granted so that we know whether we need to trigger JIT MFA for this
+    # plugin, based on the groups we find
+    my $remoteuser = $user || $config->{'defaultLogin'} || $remoteself || $sysself;
+
+    $localfnret = OVH::Bastion::is_access_granted(
+        account => $self,
+        user    => $user,
+        ipfrom  => $ipfrom,
+        ip      => $ip,
+        port    => $port,
+        details => 1
+    );
+
+    if (!$localfnret) {
+        # not allowed, exit
+        my $message = $localfnret->msg;
+        if ($remoteuser eq $self) {
+            $message .= " (tried with remote user '$remoteuser')";
+        }
+        main_exit(OVH::Bastion::EXIT_ACCESS_DENIED, 'access_denied', $message);
+    }
+
+    # else, get the access list
+    my @accessListForPlugin = @{$localfnret->value || []};
+
+    # and check whether we need JIT MFA
+    my $mfaRequired;
+    $localfnret = get_details_from_access_array(
+        accessList => \@accessListForPlugin,
+        quiet      => ($quiet || $mfaToken),
+        useKey     => $useKey
+    );
+    if ($localfnret && $localfnret->value->{'mfaRequired'}) {
+        $mfaRequired = $localfnret->value->{'mfaRequired'};
+    }
+    elsif (!$localfnret) {
+        main_exit(OVH::Bastion::EXIT_ACCESS_DENIED, "access_denied", $localfnret->msg);
+    }
+
+    # not required? we're done
+    if (!$mfaRequired) {
+        if ($generateMfaToken) {
+            # return a dummy token so that our caller is happy, then exit
+            print "MFA_TOKEN=notrequired\n";
+            main_exit(OVH::Bastion::EXIT_OK);
+        }
+        # no mfa required and our caller didn't request a token generation, just carry on
+        return R('OK_JIT_MFA_NOT_REQUIRED');
+    }
+
+    $localfnret = OVH::Bastion::load_configuration_file(
+        file     => OVH::Bastion::main_configuration_directory() . '/mfa-token.conf',
+        rootonly => 1
+    );
+    if (!$localfnret || !$localfnret->value) {
+        main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed_no_secret',
+            "No MFA token HMAC secret has been configured, please report to your sysadmin");
+    }
+    my $tokenConfig = $localfnret->value;
+    if (ref $tokenConfig ne 'HASH' || !$tokenConfig->{'secret'} || length($tokenConfig->{'secret'}) < 32) {
+        main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed_invalid_secret',
+            "An invalid MFA token HMAC secret has been configured, please report to your sysadmin");
+    }
+    my $secret = $tokenConfig->{'secret'};
+
+    # so, if JIT MFA is required, we need to have either --generate-mfa-token, or --mfa-token
+    if ($mfaToken) {
+        # use stderr here because we might be called by scp or sftp and they don't expect anything on stdout
+        $ENV{'FORCE_STDERR'} = 1;
+
+        # recompute the theoretical token value we should have
+        my ($then) = $mfaToken =~ m{^v1,(\d+),[a-f0-9]{64}$};
+        if (!$then) {
+            main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed_invalid_format',
+                "Provided MFA token has invalid format");
+        }
+
+        # is the token expired?
+        if ($then + 15 < time()) {
+            main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed_expired_token', "Provided MFA token is expired");
+        }
+
+        # is the token in the future?
+        if ($then > time()) {
+            main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed_future_token',
+                "Provided MFA token has creation date in the future");
+        }
+
+        require Digest::SHA;
+        my $payload          = join(',', $then, $self, $host, $port, $remoteuser);
+        my $theoreticalToken = sprintf("v1,%s,%s", $then, Digest::SHA::hmac_sha256_hex($payload, $secret));
+
+        # are both tokens identical?
+        if ($mfaToken ne $theoreticalToken) {
+            main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed_invalid_token', "Provided MFA token is invalid");
+        }
+
+        print STDERR "... MFA token is valid, proceeding\n";
+        return R('OK_JIT_MFA_VALIDATED');
+    }
+    elsif ($generateMfaToken) {
+        print "MFA token generation requested, entering MFA phase...\n";
+
+        $localfnret = OVH::Bastion::do_pamtester(self => $self, sysself => $sysself);
+        $localfnret or main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', $localfnret->msg);
+
+        # if we're still here, MFA has been validated, generate a token, save and return it
+        require Digest::SHA;
+        my $now             = time();
+        my $payload         = join(',', $now, $self, $host, $port, $remoteuser);
+        my $generated_token = sprintf("v1,%s,%s", $now, Digest::SHA::hmac_sha256_hex($payload, $secret));
+
+        # return token to caller
+        print "MFA_TOKEN=$generated_token\n";
+        main_exit(OVH::Bastion::EXIT_OK, "mfa_token_generated", "MFA token has been generated");
+    }
+
+    # MFA required but none provided or requested: bail out
+    main_exit(OVH::Bastion::EXIT_MFA_FAILED, "jit_mfa_required_no_token",
+        "JIT MFA is required, but you didn't specify either --generate-mfa-token or --mfa-token");
+
+    return;    # make perlcritic happy
 }
 
 #
