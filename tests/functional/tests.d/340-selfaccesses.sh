@@ -198,15 +198,99 @@ testsuite_selfaccesses()
 
     # scp & sftp
 
+    # these are the old pre-3.14.15 helper versions, we want to check for descendant compatibility
+    cat >/tmp/scphelper <<'EOF'
+#! /bin/sh
+while ! [ "$1" = "--" ] ; do
+    if [ "$1" = "-l" ] ; then
+        remoteuser="--user $2"
+        shift 2
+    elif [ "$1" = "-p" ] ; then
+        remoteport="--port $2"
+        shift 2
+    elif [ "$1" = "-s" ]; then
+        # caller is a newer scp that tries to use the sftp subsystem
+        # instead of plain old scp, warn because it won't work
+        echo "scpwrapper: WARNING: your scp version is recent, you need to add '-O' to your scp command-line, exiting." >&2
+        exit 1
+    else
+        sshcmdline="$sshcmdline $1"
+        shift
+    fi
+done
+host="$2"
+scpcmd=`echo "$3" | sed -e 's/#/##/g;s/ /#/g'`
+EOF
+    echo "exec ssh -p $remote_port $account0@$remote_ip -T \$sshcmdline -- \$remoteuser \$remoteport --host \$host --osh scp --scp-cmd \"\$scpcmd\"" >> /tmp/scphelper
+    chmod +x /tmp/scphelper
+
+    cat >/tmp/sftphelper <<'EOF'
+#! /usr/bin/env bash
+shopt -s nocasematch
+
+while ! [ "$1" = "--" ] ; do
+    # user
+    if [ "$1" = "-l" ] ; then
+        remoteuser="--user $2"
+        shift 2
+    elif [[ $1 =~ ^-oUser[=\ ]([^\ ]+)$ ]] ; then
+        remoteuser="--user ${BASH_REMATCH[1]}"
+        shift
+    elif [ "$1" = "-o" ] && [[ $2 =~ ^user=([0-9]+)$ ]] ; then
+        remoteuser="--user ${BASH_REMATCH[1]}"
+        shift 2
+
+    # port
+    elif [ "$1" = "-p" ] ; then
+        remoteport="--port $2"
+        shift 2
+    elif [[ $1 =~ ^-oPort[=\ ]([0-9]+)$ ]] ; then
+        remoteport="--port ${BASH_REMATCH[1]}"
+        shift
+    elif [ "$1" = "-o" ] && [[ $2 =~ ^port=([0-9]+)$ ]] ; then
+        remoteport="--port ${BASH_REMATCH[1]}"
+        shift 2
+
+    # other '-oFoo Bar'
+    elif [[ $1 =~ ^-o([^\ ]+)\ (.+)$ ]] ; then
+        sshcmdline="$sshcmdline -o${BASH_REMATCH[1]}=${BASH_REMATCH[2]}"
+        shift
+
+    # don't forward -s
+    elif [ "$1" = "-s" ]; then
+        shift
+
+    # other stuff passed directly to ssh
+    else
+        sshcmdline="$sshcmdline $1"
+        shift
+    fi
+done
+
+# after '--', remaining args are always host then 'sftp'
+host="$2"
+subsystem="$3"
+if [ "$subsystem" != sftp ]; then
+    echo "Unknown subsystem requested '$subsystem', expected 'sftp'" >&2
+    exit 1
+fi
+
+# if host is in the form remoteuser@remotehost, split it
+if [[ $host =~ @ ]]; then
+    remoteuser="--user ${host%@*}"
+    host=${host#*@}
+fi
+EOF
+    echo "exec ssh -p $remote_port $account0@$remote_ip -T \$sshcmdline -- \$remoteuser \$remoteport --host \$host --osh sftp" >> /tmp/sftphelper
+    chmod +x /tmp/sftphelper
+
     ## get both helpers first
     for proto in scp sftp; do
         success $proto $a0 --osh $proto
         if [ "$COUNTONLY" != 1 ]; then
-            tmpb64=$(get_json | $jq '.value.script')
-            base64 -d <<< "$tmpb64" | gunzip -c > "/tmp/${proto}helper"
-            perl -i -pe 'print "BASTION_SCP_DEBUG=1\nBASTION_SFTP_DEBUG=1\n" if ++$line==2' "/tmp/${proto}helper"
-            chmod +x "/tmp/${proto}helper"
-            unset tmpb64
+            get_json | $jq '.value.script' | base64 -d | gunzip -c > /tmp/${proto}wrapper
+            perl -i -pe 'print "BASTION_SCP_DEBUG=1\nBASTION_SFTP_DEBUG=1\n" if ++$line==2' "/tmp/${proto}wrapper"
+            chmod +x /tmp/${proto}wrapper
         fi
     done
     unset proto
@@ -215,41 +299,64 @@ testsuite_selfaccesses()
 
     ## detect recent scp
     local scp_options=""
-    run scp_checkversion $r0 "scp 2>&1 | grep -q O && echo NEWVERSION || echo OLDVERSION"
-    if get_stdout | grep -q NEWVERSION; then
-        echo "scp: will use new version params"
-        scp_options="-O"
-    elif get_stdout | grep -q OLDVERSION; then
-        echo "scp: will use old version params"
-        scp_options=""
-    else
-        contain "unknown scp version"
+    if [ "$COUNTONLY" != 1 ]; then
+        if scp -O -S /bin/true a: b 2>/dev/null; then
+            echo "scp: will use new version params"
+            scp_options="-O"
+        else
+            echo "scp: will use old version params"
+        fi
     fi
 
     success forscp $a0 --osh selfAddPersonalAccess --host 127.0.0.2 --scpup --port 22
 
-    run scp_downloadfailnoright scp $scp_options -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file $shellaccount@127.0.0.2:uptest /tmp/downloaded
+    sleepafter 2
+    run scp_downloadfailnoright_old scp $scp_options -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file $shellaccount@127.0.0.2:uptest /tmp/downloaded
+    retvalshouldbe 1
+    contain "Sorry, but even"
+
+    run scp_downloadfailnoright_new env BASTION_SCP_DEBUG=1 /tmp/scpwrapper -i $account0key1file $shellaccount@127.0.0.2:uptest /tmp/downloaded
     retvalshouldbe 1
     contain "Sorry, but even"
 
     success forscp $a0 --osh selfAddPersonalAccess --host 127.0.0.2 --scpdown --port 22
 
-    run scp_downloadfailnofile scp $scp_options -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file $shellaccount@127.0.0.2:uptest /tmp/downloaded
+    sleepafter 2
+    run scp_downloadfailnofile_old scp $scp_options -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file $shellaccount@127.0.0.2:uptest /tmp/downloaded
     retvalshouldbe 1
     contain "through the bastion from"
     contain "Error launching transfer"
     contain "No such file or directory"
     nocontain "Permission denied"
 
-    run scp_invalidhostname scp $scp_options -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file $shellaccount@_invalid._invalid:uptest /tmp/downloaded
+    run scp_downloadfailnofile_new /tmp/scpwrapper -i $account0key1file $shellaccount@127.0.0.2:uptest /tmp/downloaded
+    retvalshouldbe 1
+    contain "through the bastion from"
+    contain "Error launching transfer"
+    contain "No such file or directory"
+    nocontain "Permission denied"
+
+    run scp_invalidhostname_old scp $scp_options -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file $shellaccount@_invalid._invalid:uptest /tmp/downloaded
     retvalshouldbe 1
     contain REGEX "Sorry, couldn't resolve the host you specified|I was unable to resolve host"
 
-    success scp_upload scp $scp_options -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file /etc/passwd $shellaccount@127.0.0.2:uptest
+    run scp_invalidhostname_new /tmp/scpwrapper -i $account0key1file $shellaccount@_invalid._invalid:uptest /tmp/downloaded
+    retvalshouldbe 1
+    contain REGEX "Sorry, couldn't resolve the host you specified|I was unable to resolve host"
+
+    success scp_upload_old scp $scp_options -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file /etc/passwd $shellaccount@127.0.0.2:uptest
     contain "through the bastion to"
     contain "Done,"
 
-    success scp_download scp $scp_options -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file $shellaccount@127.0.0.2:uptest /tmp/downloaded
+    success scp_upload_new /tmp/scpwrapper -i $account0key1file /etc/passwd $shellaccount@127.0.0.2:uptest
+    contain "through the bastion to"
+    contain "Done,"
+
+    success scp_download_old scp $scp_options -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file $shellaccount@127.0.0.2:uptest /tmp/downloaded
+    contain "through the bastion from"
+    contain "Done,"
+
+    success scp_download_new /tmp/scpwrapper -i $account0key1file $shellaccount@127.0.0.2:uptest /tmp/downloaded
     contain "through the bastion from"
     contain "Done,"
 
@@ -258,15 +365,34 @@ testsuite_selfaccesses()
 
     # sftp
 
-    run sftp_no_access sftp -F $mytmpdir/ssh_config -S /tmp/sftphelper -i $account0key1file $shellaccount@127.0.0.2
+    run sftp_no_access_old sftp -F $mytmpdir/ssh_config -S /tmp/sftphelper -i $account0key1file $shellaccount@127.0.0.2
+    retvalshouldbe 255
+    contain "Sorry, but even"
+
+    run sftp_no_access_new /tmp/sftpwrapper -i $account0key1file $shellaccount@127.0.0.2
     retvalshouldbe 255
     contain "Sorry, but even"
 
     success forsftp $a0 --osh selfAddPersonalAccess --host 127.0.0.2 --sftp --port 22
 
-    success sftp_access sftp -F $mytmpdir/ssh_config -b - -S /tmp/sftphelper -i $account0key1file $shellaccount@127.0.0.2 "<<< exit"
-    contain "sftp> exit"
-    contain ">>> Done,"
+    if [ "$COUNTONLY" != 1 ]; then
+        cat >"/tmp/sftpcommands" <<'EOF'
+ls
+exit
+EOF
+    fi
+
+    success sftp_access_old sftp -F $mytmpdir/ssh_config -b /tmp/sftpcommands -S /tmp/sftphelper -i $account0key1file $shellaccount@127.0.0.2
+    contain 'sftp> ls'
+    contain 'uptest'
+    contain 'sftp> exit'
+    contain '>>> Done,'
+
+    success sftp_access_new /tmp/sftpwrapper -b /tmp/sftpcommands -i $account0key1file $shellaccount@127.0.0.2
+    contain 'sftp> ls'
+    contain 'uptest'
+    contain 'sftp> exit'
+    contain '>>> Done,'
 
     success forsftpremove $a0 --osh selfDelPersonalAccess --host 127.0.0.2 --sftp --port 22
 

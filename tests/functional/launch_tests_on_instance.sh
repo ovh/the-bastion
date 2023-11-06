@@ -416,15 +416,15 @@ run()
 
     printf '%b %b*** [%04d/%04d] %b::%b %b(%b)%b\n' "$(prefix)" "$BOLD_CYAN" "$testno" "$testcount" "$name" "$case" "$NOC$DARKGRAY" "$*" "$NOC"
 
-    # special case for scp: we need to wait a bit before terminating the test
-    sleepafter=0
-    [[ $case =~ ^scp_ ]] && sleepafter=2
+    # if not set, set to zero, see sleepafter()
+    : "${sleepafter:=0}"
 
     # put an invalid value in this file, should be overwritten. we also use it as a lock file.
     echo -1 > $outdir/$basename.retval
     # run the test
     flock "$outdir/$basename.retval" $screen "$outdir/$basename.log" -D -m -fn -ln bash -c "$* ; echo \$? > $outdir/$basename.retval ; sleep $sleepafter"
     flock "$outdir/$basename.retval" true
+    unset sleepafter
 
     # look for generally bad strings in the output
     _bad='at /usr/share/perl|compilation error|compilation aborted|BEGIN failed|gonna crash|/opt/bastion/|sudo:|ontinuing anyway|MAKETESTFAIL'
@@ -507,6 +507,11 @@ plgfail()
 {
     run "$@"
     retvalshouldbe 100
+}
+
+sleepafter()
+{
+    sleepafter=$(($1 * opt_slowness_factor))
 }
 
 ignorecodewarn()
@@ -691,11 +696,17 @@ runtests()
         fi
         echo "### RUNNING MODULE $modulename"
 
-        # as this is a loop, we do the check in a reversed way, see any included module for more info:
         dump_vars_and_funcs > "$tmp_a"
+        module_ret=0
+        # as this is a loop, we do the shellcheck in a reversed way, see any included module for more info:
         # shellcheck disable=SC1090
-        source "$module" || true
+        if source "$module"; then
+            module_ret=0
+        else
+            module_ret=$?
+        fi
         dump_vars_and_funcs > "$tmp_b"
+        success module_postrun test "$module_ret" = 0
 
         # put the backed up configuration back after each module, just in case the module modified it
         modulename=main
