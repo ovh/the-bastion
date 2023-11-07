@@ -78,6 +78,7 @@ The unavoidable and iconic FAQ is also available under the **PRESENTATION** sect
    administration/configuration/index
    administration/logs
    administration/mfa
+   administration/security_advisories
 
 .. toctree::
    :maxdepth: 2

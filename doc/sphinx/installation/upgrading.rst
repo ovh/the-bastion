@@ -27,6 +27,46 @@ See the ``--help`` for a more fine-grained upgrade path if needed.
 Version-specific upgrade instructions
 =====================================
 
+v3.14.15 - 2023/11/xx
+*********************
+
+This release fixes the :doc:`/administration/security_advisories/cve_2023_45140` with severity 4.8 (CVSS V3).
+Please refer to its page for impact and mitigation details.
+
+The changes introduced to fix this vulnerability imply that if you're using the ``scp`` or ``sftp`` plugins,
+you'll need to update your wrappers using the new versions provided by this release. The old helpers will still
+work, but only for remote hosts that don't require MFA.
+
+To get the new wrappers for your account on a given bastion, just call ``--osh scp`` or ``--osh sftp`` without
+specifying any host, which will give you your script, and examples of use.
+As you'll notice, the new scripts are no longer helpers (that were to be used through ``scp -S`` and
+``sftp -S``), but wrappers, that will call  ``scp`` and ``sftp`` themselves.
+
+As outlined above, the old helpers will still work for the foreseeable future, but as they're not able to
+request MFA when this is configured for a remote host, they'll simply fail for such hosts on an updated
+version of the bastion.
+
+If you have some accounts that use automated accesses through the bastion and use ``scp`` or ``sftp`` on
+hosts that have JIT MFA configured through their group, you'll need to set these accounts as immune to JIT MFA,
+which can be done through :doc:`/plugins/restricted/accountModify`'s ``--mfa-password-required bypass``
+and/or ``accountModify --mfa-totp-required bypass``, as has always been the case for classic SSH access.
+
+An HMAC shared secret is automatically generated when this release is deployed, this secret must be shared
+by all the instances of the same cluster. Hence, you should start by deploying this release on the primary
+node, which will generate the secret automatically during the standard upgrading procedure, so that this
+node can push the shared-secret to the other nodes. The other nodes don't have to be upgraded beforehand,
+they'll just not use the secret until they're upgraded to this version, and JIT MFA for ``scp`` and ``sftp``
+will not work through them until this is the case. Once the primary node is upgraded, you should restart
+the synchronization daemon, so that it takes into consideration the new file (containing the shared secret)
+to push to the other nodes. This is usually done this way:
+
+.. code-block:: shell
+   :emphasize-lines: 1
+
+   systemctl restart osh-sync-watcher
+
+You can verify on the other nodes that the ``/etc/bastion/mfa-token.conf`` file is now present.
+
 v3.14.00 - 2023/09/19
 *********************
 
