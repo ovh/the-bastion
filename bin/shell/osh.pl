@@ -401,10 +401,10 @@ if (!$quiet && $realm && !$ENV{'OSH_IN_INTERACTIVE_SESSION'}) {
       . ", citizen of the "
       . colored($realm, "yellow")
       . " realm!";
-    print colored("-" x (length($welcome) - 3 * 9) . "\n", "bold yellow");
-    print $welcome. "\n";
-    print colored("-" x (length($welcome) - 3 * 9) . "\n", "bold yellow");
-    print "\n";
+    osh_print(colored("-" x (length($welcome) - 3 * 9), "bold yellow"));
+    osh_print($welcome);
+    osh_print(colored("-" x (length($welcome) - 3 * 9), "bold yellow"));
+    osh_print('');
 }
 osh_debug("remainingOptions <" . join('/', @$remainingOptions) . ">");
 
@@ -473,7 +473,7 @@ if ($generateMfaToken && $mfaToken) {
 # if proactive MFA has been requested, do it here, before the code diverts to either
 # handling interactive session, plugins/osh commands, or a connection request
 if ($proactiveMfa) {
-    print "As proactive MFA has been requested, entering MFA phase for $self.\n";
+    osh_print "As proactive MFA has been requested, entering MFA phase for $self.";
     $fnret = OVH::Bastion::do_pamtester(self => $self, sysself => $sysself);
     $fnret or main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', $fnret->msg);
 
@@ -951,6 +951,11 @@ if ($osh_command) {
     if ($fnret) {
         my @cmd = ($fnret->value->{'fullpath'}, $user, $ip, $host, $optPort, @$remainingOptions);
 
+        # does the plugin want us to only print messages on STDERR?
+        if (OVH::Bastion::plugin_config(plugin => $osh_command, key => "force_stderr")->value) {
+            $ENV{'FORCE_STDERR'} = 1;
+        }
+
         # is plugin explicitly disabled?
         my $isDisabled = OVH::Bastion::plugin_config(plugin => $osh_command, key => "disabled");
 
@@ -1087,7 +1092,7 @@ if ($osh_command) {
 if (!$quiet) {
     if ($config->{'displayLastLogin'}) {
         osh_info($lastlogmsg);
-        print "\n";
+        osh_print('');
     }
 
     osh_warn($msg_to_print_delayed) if defined $msg_to_print_delayed;    # set if we had an error to print previously
@@ -1103,7 +1108,7 @@ osh_debug("final request : " . "$user\@$ip -p $port -- $command'\n");
 my $displayLine = "$hostfrom:$portfrom => $self\@$bastionhost:$bastionport => $user\@$hostto:$port";
 
 if (!$quiet) {
-    print "$displayLine ...\n";
+    osh_print("$displayLine ...");
 }
 
 # before doing stuff, check if we have the right to connect somewhere (some users are locked only to osh commands)
@@ -1184,7 +1189,7 @@ main_exit(OVH::Bastion::EXIT_TTYREC_CMDLINE_FAILED, "ttyrec_failed", $ttyrec_fnr
 my @ttyrec   = @{$ttyrec_fnret->value->{'cmd'}};
 my $saveFile = $ttyrec_fnret->value->{'saveFile'};
 
-print " allowed ... log on($saveFile)\n\n" if !$quiet;
+osh_print(" allowed ... log on($saveFile)\n") if !$quiet;
 
 # now build the real command
 my @command;
@@ -1241,7 +1246,7 @@ if ($userPasswordClue) {
                 foreach my $hash (values(%{$fnret->value->[$id]->{'hashes'}})) {
                     if ($access->{'forcePassword'} eq $hash) {
                         $forcePasswordId = $id;
-                        print " forcing password with hash: " . $access->{'forcePassword'} . "\n\n" unless $quiet;
+                        osh_print(" forcing password with hash: " . $access->{'forcePassword'} . "\n") unless $quiet;
                     }
                 }
             }
@@ -1261,14 +1266,14 @@ if ($telnet) {
     # TELNET PASSWORD AUTOLOGIN
     if ($userPasswordClue) {
         osh_debug("going to use telnet with this password file : $passwordFile");
-        print " will use TELNET with password autologin\n\n" unless $quiet;
+        osh_print(" will use TELNET with password autologin\n") unless $quiet;
         push @command, $OVH::Bastion::BASEPATH . '/bin/shell/autologin', 'telnet', $user, $ip, $port,
           $passwordFile, $forcePasswordId, ($timeout ? $timeout : 45), ($fallbackPasswordDelay // 3);
     }
 
     # TELNET PASSWORD INTERACTIVE
     else {
-        print " will use TELNET with interactive password login\n\n" unless $quiet;
+        osh_print(" will use TELNET with interactive password login\n") unless $quiet;
         push @command, '/usr/bin/telnet', '-l', $user, $host, $port;
     }
 }
@@ -1338,7 +1343,7 @@ else {
         push @preferredAuths, 'password';
 
         osh_debug("going to use ssh with this password file : $passwordFile");
-        print " will use SSH with password autologin\n\n" unless $quiet;
+        osh_print(" will use SSH with password autologin\n") unless $quiet;
         push @command, $OVH::Bastion::BASEPATH . '/bin/shell/autologin', 'ssh', $user, $ip, $port,
           $passwordFile, $forcePasswordId, ($timeout ? $timeout : 45), ($fallbackPasswordDelay // 3);
     }
@@ -1391,14 +1396,15 @@ else {
         }
         else {
             if ($idleTimeout{'lock'}) {
-                print(  "  /!\\ Your session will be locked after "
+                osh_print("  /!\\ Your session will be locked after "
                       . $idleTimeout{'lock'}
-                      . " seconds of inactivity, use `--osh unlock' to unlock it\n");
+                      . " seconds of inactivity, use `--osh unlock' to unlock it");
             }
             if ($idleTimeout{'kill'}) {
-                print("  /!\\ Your session will be killed after " . $idleTimeout{'kill'} . " seconds of inactivity.\n");
+                osh_print(
+                    "  /!\\ Your session will be killed after " . $idleTimeout{'kill'} . " seconds of inactivity.");
             }
-            print "\n" if ($idleTimeout{'lock'} || $idleTimeout{'kill'});
+            osh_print('') if ($idleTimeout{'lock'} || $idleTimeout{'kill'});
         }
     }
 
@@ -1536,7 +1542,7 @@ $ENV{'LC_BASTION_DETAILS'} = encode_json(\@details_json);
 # comments in the connect.pl file for more information.
 
 if (!$quiet) {
-    print "Connecting...\n";
+    osh_print("Connecting...");
 }
 
 push @toExecute, $OVH::Bastion::BASEPATH . '/bin/shell/connect.pl';
@@ -1581,7 +1587,7 @@ sub get_details_from_access_array {
     my @keysToTry;
     my $mfaRequired;
 
-    print " will try the following accesses you have: \n" unless $quiet;
+    osh_print(" will try the following accesses you have:") unless $quiet;
     foreach my $access (@$accessList) {
         # each access has a type and possibly several keys
         my $type = $access->{'type'} . " of " . $access->{'group'};
@@ -1609,8 +1615,8 @@ sub get_details_from_access_array {
                     $forced .= colored(' (MFA REQUIRED: ' . uc($access->{'mfaRequired'}) . ')', 'bold red');
                     $mfaRequired = $access->{'mfaRequired'};
                 }
-                printf(
-                    "  - %s with %s-%s key %s %s%s\n",
+                osh_printf(
+                    "  - %s with %s-%s key %s %s%s",
                     $type, $keyinfo->{'family'}, $keyinfo->{'size'}, $keyinfo->{'fingerprint'},
                     $generated, $forced
                 ) unless $quiet;
@@ -1618,15 +1624,15 @@ sub get_details_from_access_array {
             }
         }
         if ($access->{'forceKey'} && @{$access->{'sortedKeys'} || []} == 0) {
-            printf("  - %s but found no key matching the forced fingerprint in corresponding ACL %s\n",
+            osh_printf("  - %s but found no key matching the forced fingerprint in corresponding ACL %s",
                 $type, colored('(SKIPPED)', 'bold red'))
               unless $quiet;
         }
     }
     if ($useKey and not @keysToTry) {
-        print "  >>> No key matched the fingerprint you gave me ($useKey), connection will fail!\n";
+        osh_print("  >>> No key matched the fingerprint you gave me ($useKey), connection will fail!");
     }
-    print "\n" unless $quiet;
+    osh_print('') unless $quiet;
 
     my @sshKeysArgs;
     foreach (@keysToTry) {
@@ -1662,7 +1668,7 @@ sub do_jit_mfa {
     my $realmMFA = 0;
     my $localfnret;
 
-    print "As this is required for this $actionType, entering MFA phase for $self.\n";
+    osh_print("As this is required for this $actionType, entering MFA phase for $self.");
 
     if ($mfaType eq 'totp' && !$isMfaTOTPConfigured) {
         if ($hasMfaTOTPBypass) {
@@ -1709,13 +1715,13 @@ sub do_jit_mfa {
     }
 
     if ($skipMFA) {
-        print "... skipping as your account is exempt from MFA.\n";
+        osh_print("... skipping as your account is exempt from MFA.");
     }
     elsif ($realmMFA) {
-        print "... you already validated MFA on the bastion you're coming from.\n";
+        osh_print("... you already validated MFA on the bastion you're coming from.");
     }
     elsif ($ENV{'OSH_PROACTIVE_MFA'}) {
-        print "... you already validated MFA proactively.\n";
+        osh_print("... you already validated MFA proactively.");
     }
     else {
         $localfnret = OVH::Bastion::do_pamtester(self => $self, sysself => $sysself);
@@ -1750,7 +1756,7 @@ sub do_plugin_jit_mfa {
         if ($localfnret && $localfnret->value) {
             if ($generateMfaToken) {
                 # return a dummy token so that our caller is happy, then exit
-                print "MFA_TOKEN=notrequired\n";
+                print("MFA_TOKEN=notrequired\n");
                 main_exit(OVH::Bastion::EXIT_OK);
             }
             # tell our caller that the plugin can be executed without host
@@ -1805,7 +1811,7 @@ sub do_plugin_jit_mfa {
     if (!$mfaType) {
         if ($generateMfaToken) {
             # return a dummy token so that our caller is happy, then exit
-            print "MFA_TOKEN=notrequired\n";
+            print("MFA_TOKEN=notrequired\n");
             main_exit(OVH::Bastion::EXIT_OK);
         }
         # no mfa required and our caller didn't request a token generation, just carry on
@@ -1829,9 +1835,6 @@ sub do_plugin_jit_mfa {
 
     # so, if JIT MFA is required, we need to have either --generate-mfa-token, or --mfa-token
     if ($mfaToken) {
-        # use stderr here because we might be called by scp or sftp and they don't expect anything on stdout
-        $ENV{'FORCE_STDERR'} = 1;
-
         # recompute the theoretical token value we should have
         my ($then) = $mfaToken =~ m{^v1,(\d+),[a-f0-9]{64}$};
         if (!$then) {
@@ -1859,11 +1862,11 @@ sub do_plugin_jit_mfa {
             main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed_invalid_token', "Provided MFA token is invalid");
         }
 
-        print STDERR "... MFA token is valid, proceeding\n";
+        osh_print("... MFA token is valid, proceeding");
         return R('OK_JIT_MFA_VALIDATED');
     }
     elsif ($generateMfaToken) {
-        print "MFA token generation requested, entering MFA phase...\n";
+        osh_print("MFA token generation requested, entering MFA phase...");
 
         # do MFA
         $localfnret = do_jit_mfa(
@@ -1884,7 +1887,7 @@ sub do_plugin_jit_mfa {
         my $generated_token = sprintf("v1,%s,%s", $now, Digest::SHA::hmac_sha256_hex($payload, $secret));
 
         # return token to caller
-        print "MFA_TOKEN=$generated_token\n";
+        print("MFA_TOKEN=$generated_token\n");
         main_exit(OVH::Bastion::EXIT_OK, "mfa_token_generated", "MFA token has been generated");
     }
 

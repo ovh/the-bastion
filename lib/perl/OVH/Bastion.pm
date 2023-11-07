@@ -56,8 +56,11 @@ use lib dirname(__FILE__) . '/../';
 use OVH::Result;
 
 use parent qw( Exporter );
-our @EXPORT =                                                       ## no critic (AutomaticExportation)
-  qw( osh_header osh_footer osh_exit osh_debug osh_info osh_warn osh_crit osh_ok warn_syslog info_syslog ); # pragma:hookignore
+## no critic (Modules::ProhibitAutomaticExportation)
+our @EXPORT = (
+    qw( osh_header osh_footer osh_exit osh_print osh_printf osh_debug ),    # pragma:hookignore
+    qw( osh_info osh_warn osh_crit osh_ok warn_syslog info_syslog     ),    # pragma:hookignore
+);
 
 our $AUTOLOAD;
 
@@ -556,6 +559,16 @@ sub osh_ok {    ## no critic (ArgUnpacking)
     }
     osh_footer();
     exit OVH::Bastion::EXIT_OK;
+}
+
+sub osh_print {
+    my $text = shift;
+    print {$ENV{'FORCE_STDERR'} ? *STDERR : *STDOUT} $text . "\n";
+    return;
+}
+
+sub osh_printf {
+    return osh_print(sprintf(shift, @_));
 }
 
 sub osh_debug {
