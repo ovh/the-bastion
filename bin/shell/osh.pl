@@ -863,6 +863,16 @@ my %bastion_details = (
     },
 );
 
+# For either an SSH connection or a plugin,
+# we first compute the correct idle-kill-timeout and idle-lock-timeout value,
+# as these can be overridden for group accesses, see the help of groupModify command
+# for details on the algorithm's logic.
+# it can also be overridden on a per-plugin basis
+my %idleTimeout = (
+    kill => OVH::Bastion::config("idleKillTimeout")->value,
+    lock => OVH::Bastion::config("idleLockTimeout")->value,
+);
+
 #
 #   First case. We have an OSH command
 #
@@ -1052,6 +1062,14 @@ if ($osh_command) {
         }
         $ENV{'OSH_IP_FROM'} = $ipfrom;    # used in some plugins for is_access_granted()
 
+        # check if we have a plugin override for idle lock/kill timeouts
+        foreach my $timeoutType (qw{ idle kill }) {
+            $fnret = OVH::Bastion::plugin_config(plugin => $osh_command, key => "idle_${timeoutType}_timeout");
+            if ($fnret && defined $fnret->value) {
+                $idleTimeout{${timeoutType}} = $fnret->value;
+            }
+        }
+
         # build ttyrec command that'll prefix the real command
         $fnret = OVH::Bastion::build_ttyrec_cmdline(
             ip             => $osh_command,
@@ -1073,6 +1091,8 @@ if ($osh_command) {
                 plugin => $osh_command,
                 key    => "stealth_stderr"
             )->value ? 1 : 0,
+            idleLockTimeout => $idleTimeout{'lock'},
+            idleKillTimeout => $idleTimeout{'kill'},
         );
         main_exit(OVH::Bastion::EXIT_TTYREC_CMDLINE_FAILED, "ttyrec_failed", $fnret->msg) if !$fnret;
 
@@ -1306,16 +1326,7 @@ if ($telnet) {
 else {
     my @preferredAuths;
 
-    # we first compute the correct idle-kill-timeout and idle-lock-timeout value,
-    # as these can be overriden for group accesses, see the help of groupModify command
-    # for details on the algorithm's logic, it is also commented below.
-    # First, we init the vars with the global setting.
-    my %idleTimeout = (
-        kill => OVH::Bastion::config("idleKillTimeout")->value,
-        lock => OVH::Bastion::config("idleLockTimeout")->value,
-    );
-
-    # Then, gather all the timeouts overrides that may be defined for the matching groups
+    # Now gather all the timeouts overrides that may be defined for the matching groups
     my %idleTimeoutsOverride = (kill => [], lock => []);
     foreach my $access (@accessList) {
         next if ($access->{'type'} !~ /^group/);

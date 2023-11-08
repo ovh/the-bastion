@@ -1064,11 +1064,11 @@ sub build_ttyrec_cmdline {
     my $fnret  = build_ttyrec_cmdline_part1of2(%params);
     $fnret or return $fnret;
 
-    # for this simple version, use global timeout values
+    # for this simple version, use global timeout values if not specified in %params
     return build_ttyrec_cmdline_part2of2(
         input           => $fnret->value,
-        idleLockTimeout => OVH::Bastion::config("idleLockTimeout")->value,
-        idleKillTimeout => OVH::Bastion::config("idleKillTimeout")->value
+        idleLockTimeout => ($params{'idleLockTimeout'} // OVH::Bastion::config("idleLockTimeout")->value),
+        idleKillTimeout => ($params{'idleKillTimeout'} // OVH::Bastion::config("idleKillTimeout")->value)
     );
 }
 
