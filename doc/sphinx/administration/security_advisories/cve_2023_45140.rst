@@ -76,4 +76,4 @@ Timeline
 - 2023-10-11: CVE ID requested
 - 2023-10-11: CVE ID assigned
 - 2023-11-07: fix pushed to a private fork for review
-- 2023-11-xx: v3.14.15 released with the fix
+- 2023-11-08: v3.14.15 released with the fix
