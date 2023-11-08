@@ -14,7 +14,6 @@ use JSON;
 my $PROBE_NAME = basename($0);
 my $debug;
 
-## no critic (Subroutines::RequireArgUnpacking)
 ## no critic (Subroutines::RequireFinalReturn)
 
 sub _out {

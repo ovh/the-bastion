@@ -18,14 +18,14 @@ my $bad;
 # generate a uniq prefix based on caller's lineno and caller's caller's lineno, useful to grep or grep -v
 sub _prefix { return uc(unpack('H*', pack('S', (caller(1))[2])) . unpack('H*', pack('S', (caller(2))[2]))) . ": "; }
 
-sub info { print $_[0] . "\n"; return 1; }    ## no critic (RequireArgUnpacking)
-sub _wrn { $bad++; print colored(_prefix() . $_[0], "blue") . "\n"; return 1; } ## no critic (RequireArgUnpacking,ProhibitUnusedPrivateSubroutine)
-sub _err  { $bad++; print colored(_prefix() . $_[0], "red") . "\n";      return 1; }  ## no critic (RequireArgUnpacking)
-sub _crit { $bad++; print colored(_prefix() . $_[0], "bold red") . "\n"; return 1; }  ## no critic (RequireArgUnpacking)
+sub info { print $_[0] . "\n"; return 1; }
+sub _wrn { $bad++; print colored(_prefix() . $_[0], "blue") . "\n"; return 1; } ## no critic (ProhibitUnusedPrivateSubroutine)
+sub _err  { $bad++; print colored(_prefix() . $_[0], "red") . "\n";      return 1; }
+sub _crit { $bad++; print colored(_prefix() . $_[0], "bold red") . "\n"; return 1; }
 
 # Linux and BSD don't always have the same account names for UID/GID 0
-my ($UID0) = (qx{getent passwd 0})[0] =~ /^([^:]+)/;    ## no critic (ProhibitBacktickOperators)
-my ($GID0) = (qx{getent group 0})[0] =~ /^([^:]+)/;     ## no critic (ProhibitBacktickOperators)
+my ($UID0) = (qx{getent passwd 0})[0] =~ /^([^:]+)/;                            ## no critic (ProhibitBacktickOperators)
+my ($GID0) = (qx{getent group 0})[0] =~ /^([^:]+)/;                             ## no critic (ProhibitBacktickOperators)
 my $islinux = (($^O =~ /linux/i)         ? 1 : 0);
 my $hasacls = (($^O =~ /linux|freebsd/i) ? 1 : 0);
 

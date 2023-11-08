@@ -43,7 +43,7 @@ sub new {                 ## no critic (ArgUnpacking)
     return $Object;
 }
 
-sub R { return OVH::Result->new(err => shift, @_); }    ## no critic (ArgUnpacking)
+sub R { return OVH::Result->new(err => shift, @_); }
 
 =cut uncomment for result tracing
 sub R {
@@ -58,7 +58,7 @@ sub R {
 
 sub err   { return shift->{'err'} }
 sub value { return shift->{'value'} }
-sub msg   { return $_[0]->{'msg'} ? $_[0]->{'msg'} : $_[0]->{'err'} }    ## no critic (ArgUnpacking)
+sub msg   { return $_[0]->{'msg'} ? $_[0]->{'msg'} : $_[0]->{'err'} }
 
 sub is_err { return shift->{'err'} =~ /^ERR/ }
 sub is_ok  { return shift->{'err'} =~ /^OK/ }

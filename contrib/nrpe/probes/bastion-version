@@ -11,7 +11,6 @@ use Getopt::Long;
 my $PROBE_NAME = basename($0);
 my $debug;
 
-## no critic (Subroutines::RequireArgUnpacking)
 ## no critic (Subroutines::RequireFinalReturn)
 ## no critic (InputOutput::ProhibitBacktickOperators)
 

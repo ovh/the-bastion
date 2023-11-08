@@ -15,7 +15,6 @@ $SIG{'CHLD'} = 'IGNORE';    # don't bother using waitpid on this short-lived pro
 my $PROBE_NAME = basename($0);
 my $debug;
 
-## no critic (Subroutines::RequireArgUnpacking)
 ## no critic (Subroutines::RequireFinalReturn)
 
 sub _out {
