@@ -56,9 +56,19 @@ by all the instances of the same cluster. Hence, you should start by deploying t
 node, which will generate the secret automatically during the standard upgrading procedure, so that this
 node can push the shared-secret to the other nodes. The other nodes don't have to be upgraded beforehand,
 they'll just not use the secret until they're upgraded to this version, and JIT MFA for ``scp`` and ``sftp``
-will not work through them until this is the case. Once the primary node is upgraded, you should restart
-the synchronization daemon, so that it takes into consideration the new file (containing the shared secret)
-to push to the other nodes. This is usually done this way:
+will not work through them until this is the case.
+
+Once the primary node is upgraded, you should ensure the new file containing the HMAC shared secret is part
+of the synchronization list. If you did not customize your synchronization list, you can apply the new one
+over the old one directly:
+
+.. code-block:: shell
+   :emphasize-lines: 1
+
+   cat /opt/bastion/etc/bastion/osh-sync-watcher.rsyncfilter.dist > /etc/bastion/osh-sync-watcher.rsyncfilter
+
+Then, you need to restart the synchronization daemon, so that it takes into consideration the new file
+(containing the shared secret) to push to the other nodes. This is usually done this way:
 
 .. code-block:: shell
    :emphasize-lines: 1
