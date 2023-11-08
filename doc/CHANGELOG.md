@@ -1,6 +1,16 @@
+## v3.14.15 - 2023/11/08
+- feat: support JIT MFA through plugins, including ``sftp`` and ``scp`` (fixes CVE-2023-45140)
+- feat: add configuration option for plugins to override the global lock/kill timeout
+- enh: ``setup-gpg.sh``: allow importing multiple public keys at once
+- enh: ``connect.pl``: report empty ttyrec as ``ttyrec_empty`` instead of ``ttyrec_error``
+- enh: orphaned homedirs: adjust behavior on master instances
+- fix: check\_collisions: don't report orphan uids on slave, just use their name
+- fix: ``scp``: adapt wrapper and tests to new ``scp`` versions requiring ``-O``
+- meta: dev: add devenv docker, pre-commit info, and documentation on how to use them, along with how to write integration tests
+
 ## v3.14.00 - 2023/09/19
 - feat: add type8 and type9 password hashes
-- feat: add stealth_stderr/stdout ttyrec support, enable it for scp & sftp
+- feat: add stealth\_stderr/stdout ttyrec support, enable it for scp & sftp
 
 ## v3.13.01 - 2023/08/22
 - enh: setup-gpg.sh: create additional backup signing config with --generate

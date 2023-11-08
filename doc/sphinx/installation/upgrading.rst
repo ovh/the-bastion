@@ -27,7 +27,7 @@ See the ``--help`` for a more fine-grained upgrade path if needed.
 Version-specific upgrade instructions
 =====================================
 
-v3.14.15 - 2023/11/xx
+v3.14.15 - 2023/11/08
 *********************
 
 This release fixes the :doc:`/administration/security_advisories/cve_2023_45140` with severity 4.8 (CVSS V3).
