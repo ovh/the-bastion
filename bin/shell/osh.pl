@@ -1671,17 +1671,20 @@ sub get_details_from_access_array {
     return R('OK', value => {sshKeysArgs => \@sshKeysArgs, mfaRequired => $mfaRequired});
 }
 
-sub do_jit_mfa {
+# can exit if prerequisites are not met (i.e. MFA required but not configured on account)
+# return a true OVH::Result if MFA is not needed/can be skipped
+# a false OVH::Result otherwise
+sub may_skip_mfa {
     my %params     = @_;
     my $mfaType    = $params{'mfaType'};       # password|totp|any|none
     my $actionType = $params{'actionType'};    # host|plugin
 
     if (!$mfaType || !$actionType) {
-        return R('ERR_MISSING_PARAMETER', msg => "Missing mandatory parameters to do_jit_mfa");
+        return R('ERR_MISSING_PARAMETER', msg => "Missing mandatory parameters to may_skip_mfa");
     }
 
     if (!grep { $mfaType eq $_ } qw{ totp password any none }) {
-        return R('ERR_INVALID_PARAMETER', msg => "Invalid parameter 'mfaType' for do_jit_mfa");
+        return R('ERR_INVALID_PARAMETER', msg => "Invalid parameter 'mfaType' for may_skip_mfa");
     }
 
     return R('OK_NO_MFA_REQUIRED') if $mfaType eq 'none';
@@ -1738,31 +1741,48 @@ sub do_jit_mfa {
 
     if ($skipMFA) {
         osh_print("... skipping as your account is exempt from MFA.");
+        return R('OK_ACCOUNT_HAS_MFA_BYPASS');
     }
     elsif ($realmMFA) {
         osh_print("... you already validated MFA on the bastion you're coming from.");
+        return R('OK_ACCOUNT_HAS_VALIDATED_MFA_REALM');
     }
     elsif ($ENV{'OSH_PROACTIVE_MFA'}) {
         osh_print("... you already validated MFA proactively.");
+        return R('OK_ACCOUNT_HAS_VALIDATED_MFA_PROACTIVELY');
     }
-    else {
-        $localfnret = OVH::Bastion::do_pamtester(self => $self, sysself => $sysself);
-        main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', $localfnret->msg) if !$localfnret;
 
-        # craft this so that the remote server, which can be a bastion in case we're chaining,
-        # can enforce its own policy. This should be serialized in LC_BASTION_DETAILS on egress side
-        my %mfaInfo = (
-            validated => \1,
-            reason    => "mfa_required_for_$actionType",
-            type      => {
-                password => $isMfaPasswordConfigured ? \1 : \0,
-                totp     => $isMfaTOTPConfigured     ? \1 : \0,
-            }
-        );
+    # no skip, mfa is required
+    return R('KO_MFA_REQUIRED');
+}
 
-        return R('OK_VALIDATED', value => {mfaInfo => \%mfaInfo});
+sub do_jit_mfa {
+    my %params     = @_;
+    my $mfaType    = $params{'mfaType'};       # password|totp|any|none
+    my $actionType = $params{'actionType'};    # host|plugin
+
+    my $localfnret = may_skip_mfa(mfaType => $mfaType, actionType => $actionType);
+    if ($localfnret->is_ok) {
+        # skip, localfnret includes the detailed reason
+        return $localfnret;
     }
-    return R('OK');
+
+    # otherwise, do mfa
+    $localfnret = OVH::Bastion::do_pamtester(self => $self, sysself => $sysself);
+    main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', $localfnret->msg) if !$localfnret;
+
+    # craft this so that the remote server, which can be a bastion in case we're chaining,
+    # can enforce its own policy. This should be serialized in LC_BASTION_DETAILS on egress side
+    my %mfaInfo = (
+        validated => \1,
+        reason    => "mfa_required_for_$actionType",
+        type      => {
+            password => $isMfaPasswordConfigured ? \1 : \0,
+            totp     => $isMfaTOTPConfigured     ? \1 : \0,
+        }
+    );
+
+    return R('OK_VALIDATED', value => {mfaInfo => \%mfaInfo});
 }
 
 sub do_plugin_jit_mfa {
@@ -1830,7 +1850,7 @@ sub do_plugin_jit_mfa {
     }
 
     # not required? we're done
-    if (!$mfaType) {
+    if (!$mfaType || may_skip_mfa(mfaType => $mfaType, actionType => 'plugin')) {
         if ($generateMfaToken) {
             # return a dummy token so that our caller is happy, then exit
             print("MFA_TOKEN=notrequired\n");
@@ -1888,8 +1908,6 @@ sub do_plugin_jit_mfa {
         return R('OK_JIT_MFA_VALIDATED');
     }
     elsif ($generateMfaToken) {
-        osh_print("MFA token generation requested, entering MFA phase...");
-
         # do MFA
         $localfnret = do_jit_mfa(
             actionType => 'plugin',
