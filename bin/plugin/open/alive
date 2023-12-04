@@ -51,19 +51,18 @@ if (not $host) {
 
 osh_info "Waiting for $host to be alive...";
 my $startedat = Time::HiRes::gettimeofday();
-my $isFping   = 1;
+my $firstLoop = 1;
 my @command   = qw{ fping -- };
 push @command, $host;
 while (1) {
     $fnret = OVH::Bastion::execute(cmd => \@command, noisy_stdout => 1, noisy_stderr => 1);
     if ($fnret->err eq 'ERR_EXEC_FAILED') {
-        if ($isFping) {
-
+        if ($firstLoop) {
             # maybe fping doesn't work, fallback to ping
             @command = qw{ ping -c 1 -w 1 -- };
             push @command, $host;
-            $isFping = 0;
-            next;
+            $firstLoop = 0;
+            next;    # restart the loop to exec ping
         }
         osh_exit $fnret;    # we tried both ping and fping :(
     }
@@ -72,9 +71,6 @@ while (1) {
         my $delay = int(Time::HiRes::gettimeofday() - $startedat);
         osh_info "Alive after waiting for $delay seconds, exiting!";
         osh_ok {waited_for => $delay + 0};
-    }
-    elsif (($isFping && $fnret->value->{'sysret'} >= 3) || ($fnret->value->{'sysret'} > 0)) {
-        osh_exit 'ERR_INTERNAL', "Fatal error returned by (f)ping, aborting";
     }
     sleep 1;
 }
