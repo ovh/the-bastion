@@ -93,6 +93,9 @@ EOS
 
     success alive_withoutHost $a0 --osh alive 127.0.0.1
     json .command alive .error_code OK .value.waited_for 0
+
+    run alive_unreachable $a0f --osh alive 192.0.2.0
+    retvalshouldbe 124
 }
 
 testsuite_plugins
