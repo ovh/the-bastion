@@ -1,0 +1,2 @@
+# Remove orphaned and/or old /tmp files that might have been left behind
+12 8 * * * root /opt/bastion/bin/cron/osh-cleanup-tmp-files.sh >/dev/null

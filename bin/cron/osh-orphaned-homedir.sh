@@ -107,4 +107,8 @@ do
     fi
 done < <(find /home/ -mindepth 1 -maxdepth 1 -type d -nouser -nogroup -mmin +3 -print0)
 
+# there are also temporary files that might not be cleaned when an account disappears,
+# so check for those here
+[ -d /run/faillock ] && find /run/faillock -xdev -nouser -type f -delete
+
 exit_success
