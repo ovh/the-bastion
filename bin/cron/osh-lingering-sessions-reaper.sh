@@ -14,6 +14,7 @@ script_init osh-lingering-sessions-reaper config_optional check_secure_lax
 
 _log "Terminating lingering sessions..."
 
+# 1. kill ttyrec processes running for more than MAX_AGE that don't have any tty
 tokill=''
 nb=0
 # shellcheck disable=SC2162
@@ -31,6 +32,7 @@ if [ -n "$tokill" ]; then
     _log "Terminated $nb orphan ttyrec sessions (pids$tokill)"
 fi
 
+# 2. kill *user* (non-root) sshd processes running for more than MAX_AGE that don't have any tty and no children
 tokill=''
 nb=0
 # shellcheck disable=SC2162
@@ -48,6 +50,27 @@ if [ -n "$tokill" ]; then
     # shellcheck disable=SC2086
     kill $tokill || true
     _log "Terminated $nb orphan sshd sessions (pids$tokill)"
+fi
+
+# 3. kill lingering bastion plugins running for more than MAX_AGE that don't have any tty and whose ppid is init (1)
+tokill=''
+nb=0
+pidlist=$(pgrep -f "perl $basedir/bin/plugin" | tr "\\n" "," | sed -e s/,$//)
+if [ -n "$pidlist" ]; then
+    # shellcheck disable=SC2162
+    while read etimes pid tty ppid
+    do
+        if [ "$tty" = "?" ] && [ "$ppid" = 1 ] && [ "$etimes" -gt "$MAX_AGE" ]; then
+            tokill="$tokill $pid"
+            (( ++nb ))
+        fi
+    done < <(ps --no-header -o etimes,pid,tty,ppid -p "$pidlist")
+    if [ -n "$tokill" ]; then
+        # add || true to avoid script termination due to TOCTTOU and set -e
+        # shellcheck disable=SC2086
+        kill $tokill || true
+        _log "Terminated $nb orphan plugins (pids$tokill)"
+    fi
 fi
 
 exit_success
