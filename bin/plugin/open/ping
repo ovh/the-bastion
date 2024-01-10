@@ -9,9 +9,11 @@ use OVH::Bastion;
 use OVH::Bastion::Plugin qw( :DEFAULT help );
 
 my $remainingOptions = OVH::Bastion::Plugin::begin(
-    argv    => \@ARGV,
-    header  => "ping",
-    options => {
+    argv   => \@ARGV,
+    header => "ping",
+    # we don't want to have this plugin looping endlessly in the void when there's no longer a terminal attached:
+    exitOnSignal => 1,
+    options      => {
         "c=i" => \my $count,
         "s=i" => \my $packetsize,
         "t=i" => \my $ttl,
@@ -50,11 +52,6 @@ if (not $host) {
     help();
     osh_exit 'ERR_MISSING_PARAMETER', "Missing required host parameter";
 }
-
-# restore default handlers (exit) for HUP and PIPE, we don't want to have this
-# plugin looping endlessly in the void when there's no longer a terminal attached
-$SIG{'PIPE'} = 'DEFAULT';
-$SIG{'HUP'}  = 'DEFAULT';
 
 my @command = qw{ ping };
 if ($count and $count > 0) {

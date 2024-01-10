@@ -9,9 +9,6 @@ use lib dirname(__FILE__) . '/../../../../lib/perl';
 use OVH::Bastion;
 use OVH::Result;
 
-$SIG{'HUP'} = 'IGNORE'; # continue even when attached terminal is closed (we're called with setsid on supported systems anyway)
-$SIG{'PIPE'} = 'IGNORE';    # continue even if osh_info gets a SIGPIPE because there's no longer a terminal
-
 $| = 1;
 
 use Exporter 'import';
@@ -27,11 +24,12 @@ sub help { osh_info $_helptext; return 1; }
 sub begin {
     my %params = @_;
 
-    my $options    = $params{'options'};
-    my $header     = $params{'header'};
-    my $argv       = $params{'argv'};
-    my $loadConfig = $params{'loadConfig'};
-    my $helpfunc   = $params{'help'};
+    my $options      = $params{'options'};
+    my $header       = $params{'header'};
+    my $argv         = $params{'argv'};
+    my $loadConfig   = $params{'loadConfig'};
+    my $exitOnSignal = $params{'exitOnSignal'};
+    my $helpfunc     = $params{'help'};
     $_helptext = $params{'helptext'};
 
     my $fnret;
@@ -39,6 +37,28 @@ sub begin {
     ($user, $ip, $host, $port, @pluginOptions) = @$argv;
 
     $helpfunc = \&help if (ref $helpfunc ne 'CODE');
+
+    # our parent (osh.pl) is responsible for ensuring the closing log is written,
+    # we don't have to handle it here, however if we get a signal, ensure that we propagate it to our
+    # potential children, through the process group, so that no dangling process is left behind.
+    # by default we want to continue what we were doing (hence the return), except if exitOnSignal is specified.
+    for my $sig (qw{ INT TERM HUP PIPE }) {
+        $SIG{$sig} = sub {
+            my $signal = shift;
+            # ignore any subsequent signal of the same type (including the one we're about to send to our own pgroup)
+            $SIG{$signal} = 'IGNORE';
+            # 0 == whole process group, which includes our children
+            kill $signal, 0;
+            if ($exitOnSignal) {
+                # exit as asked
+                exit(OVH::Bastion::EXIT_GOT_SIGNAL);
+            }
+            else {
+                # just return and continue
+                return;
+            }
+        }
+    }
 
     # validate user, ip, port when specified, undef them otherwise (instead of '')
 

@@ -21,7 +21,7 @@ my $fnret;
 # Signals
 #
 
-$SIG{$_} = \&exit_sig for qw{ INT TERM SEGV HUP PIPE };
+$SIG{$_} = \&exit_sig for qw{ INT TERM HUP PIPE };
 
 #
 # Do just what is needed before the first call to main_exit in the code flow
