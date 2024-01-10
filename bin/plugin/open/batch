@@ -2,8 +2,6 @@
 # vim: set filetype=perl ts=4 sw=4 sts=4 et:
 use common::sense;
 
-use Scalar::Util qw{ openhandle };
-
 use File::Basename;
 use lib dirname(__FILE__) . '/../../../lib/perl';
 use OVH::Result;
@@ -51,7 +49,8 @@ osh_info "--- waiting for input";
 
 my @ret;
 my $line;
-while ((openhandle(\*STDIN)) && ($line = <STDIN>)) {
+while ($line = <STDIN>) {
+    last if !defined $line;    # stdin has been closed
     chomp $line;
     last if (lc($line) eq 'exit' || lc($line) eq 'quit');
 
