@@ -373,7 +373,7 @@ sub is_account_active {
             account => $sysaccount,
             key     => OVH::Bastion::OPT_ACCOUNT_ALWAYS_ACTIVE,
             public  => 1
-        )
+        )->value
       )
     {
         return R('OK');
