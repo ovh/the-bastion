@@ -153,24 +153,39 @@ foreach my $accHash (@accounts) {
     }
     $ret{'groups'} = $groups_hash;
 
-    my $canConnect = 1;
-    $ret{'always_active'} = OVH::Bastion::account_config(
-        account => $account,
-        key     => OVH::Bastion::OPT_ACCOUNT_ALWAYS_ACTIVE,
-        public  => 1
-    ) ? 1 : 0;
-    if ($ret{'always_active'}) {
-        $ret{'is_active'} = 1;
+    if (
+        OVH::Bastion::account_config(
+            account => $account,
+            key     => OVH::Bastion::OPT_ACCOUNT_ALWAYS_ACTIVE,
+            public  => 1
+        )->value
+      )
+    {
+        $ret{'always_active'}        = 1;
+        $ret{'always_active_reason'} = 'account local configuration';
     }
     else {
-        $fnret = OVH::Bastion::is_account_active(account => $account);
-        if ($fnret->is_ok) {
-            $ret{'is_active'} = 1;
+        # maybe always_active through global configuration?
+        my $alwaysActiveAccounts = OVH::Bastion::config('alwaysActiveAccounts');
+        if ($alwaysActiveAccounts and $alwaysActiveAccounts->value) {
+            if (grep { $sysaccount eq $_ } @{$alwaysActiveAccounts->value}) {
+                $ret{'always_active'}        = 1;
+                $ret{'always_active_reason'} = 'account listed in global configuration';
+            }
         }
-        elsif ($fnret->is_ko) {
-            $canConnect = 0;
-            $ret{'is_active'} = 0;
+        else {
+            $ret{'always_active'} = 0;
         }
+    }
+
+    my $canConnect = 1;
+    $fnret = OVH::Bastion::is_account_active(account => $account);
+    if ($fnret->is_ok) {
+        $ret{'is_active'} = 1;
+    }
+    elsif ($fnret->is_ko) {
+        $canConnect = 0;
+        $ret{'is_active'} = 0;
     }
 
     if (OVH::Bastion::is_auditor(account => $self)) {
