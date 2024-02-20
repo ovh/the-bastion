@@ -1272,7 +1272,7 @@ if [ "${opt[generate-mfa-secret]}" = 1 ]; then
     if [ -e "$BASTION_ETC_DIR/mfa-token.conf" ]; then
         action_na
     else
-        secret=$(tr -dc A-Za-z0-9 < /dev/urandom 2>/dev/null | head -c32)
+        secret=$(env LANG=C tr -dc A-Za-z0-9 < /dev/urandom 2>/dev/null | head -c32)
         touch "$BASTION_ETC_DIR/mfa-token.conf"
         chown 0:bastion-users "$BASTION_ETC_DIR/mfa-token.conf"
         chmod 640 "$BASTION_ETC_DIR/mfa-token.conf"
