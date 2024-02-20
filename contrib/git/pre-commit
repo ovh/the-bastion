@@ -91,25 +91,21 @@ fi
 
 # Now execute shellcheck in every changed .sh file
 for f in $(git diff --cached --name-only --diff-filter=ACM $against); do
-    if echo "$f" | grep -q -e "lib/shell" -e "bin/" -e "docker/devenv" && head -1 "$f" | grep -Eq '/env (ba)?sh|/bin/(ba)?sh'; then
-        if ! ./docker/devenv/run-tool.sh shellcheck "$f"; then
-            echo
-            echo "ERROR: shell-check failed on $f"
-            isbad=1
-        fi
+    if ! ./docker/devenv/run-tool.sh shellcheck "$f"; then
+        echo
+        echo "ERROR: shell-check failed on $f"
+        isbad=1
     fi
 
-    if echo "$f" | grep -q -e "lib/perl" -e "bin/" && head -20 "$f" | grep -Eq '/env perl|/bin/perl|package OVH::|use common::|use strict|use warnings'; then
-        if ! ./docker/devenv/run-tool.sh checktidy "$f"; then
-            echo
-            echo "ERROR: perl tidy failed on $f"
-            isbad=1
-        fi
+    if ! ./docker/devenv/run-tool.sh checktidy "$f"; then
+        echo
+        echo "ERROR: perl tidy failed on $f"
+        isbad=1
     fi
 done
 
 # check versions and docs
-ver=$(grep -F 'our $VERSION =' lib/perl/OVH/Bastion.pm | cut -d"'" -f2)
+ver=$(grep -F 'our $VERSION =' lib/perl/OVH/Bastion.pm | cut -d"'" -f2 | cut -d- -f1)
 if ! grep -Eq "^## v$ver - 202./[01][0-9]/.." doc/CHANGELOG.md; then
     echo
     echo "ERROR: detected version '$ver', but no matching entry in doc/CHANGELOG.md"

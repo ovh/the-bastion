@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 # vim: set filetype=sh ts=4 sw=4 sts=4 et:
-set -ueo pipefail
+set -ue
 
 basedir=$(readlink -f "$(dirname "$0")"/../..)
 # shellcheck source=lib/shell/functions.inc
@@ -39,18 +39,11 @@ params="$params \
     --maximum-line-length=120 \
 "
 
-if [ -z "${2:-}" ]; then
-    # run on all perl files
-    # shellcheck disable=SC2086
-    find . -type f ! -name "*.tdy" ! -name "*.ERR" ! -name ".tidybak" ! -name "$(basename "$0")" -print0 | \
-        xargs -r0 grep -l 'set filetype=perl' -- | \
-        xargs -r perltidy $params
-else
-    # run on only one file
-    action_detail "${BLUE}$2${NOC}"
-    # shellcheck disable=SC2086
-    perltidy $params "$2"
-fi
+# run on all perl files (".") or only the $2 file if specified
+# shellcheck disable=SC2086
+find "${2:-.}" -type f ! -name "*.tdy" ! -name "*.ERR" ! -name "*.tidybak" ! -name "*.html" ! -name "$(basename "$0")" -print0 | \
+    xargs -r0 grep -l 'set filetype=perl' -- | \
+    xargs -r perltidy $params
 
 bad=""
 nbbad=0
