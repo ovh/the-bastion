@@ -47,7 +47,7 @@ testsuite_accountinfo()
 
     # a0 should see basic info about a2
     success a0_accountinfo_a2_basic $a0 --osh accountInfo --account $account2
-    json_document '{"error_message":"OK","command":"accountInfo","error_code":"OK","value":{"account":"'"$account2"'","always_active":1,"is_active":1,"allowed_commands":[],"groups":{}}}'
+    json_document '{"error_message":"OK","command":"accountInfo","error_code":"OK","value":{"account":"'"$account2"'","always_active":1,"always_active_reason":"account local configuration","is_active":1,"allowed_commands":[],"groups":{}}}'
 
     # a1 should see detailed info about a2
     success a1_accountinfo_a2_detailed $a1 --osh accountInfo --account $account2 --with-mfa-password-info
