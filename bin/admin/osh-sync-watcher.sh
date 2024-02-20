@@ -62,6 +62,12 @@ if [ "$enabled" != "1" ] ; then
         exit 0
 fi
 
+# check that rshcmd is not empty after loading the config
+if [ -z "$rshcmd" ]; then
+    _err "The 'rshcmd' mandatory config value is empty, please review the configuration ($configfile)"
+    exit 1
+fi
+
 # is another copy of myself still running ?
 if [ -e "$PIDFILE" ] ; then
     oldpid=$(head -1 "$PIDFILE")

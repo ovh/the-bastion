@@ -93,9 +93,9 @@ rshcmd
 
 :Default: ``""``
 
-:Example: ``"ssh -q -i /root/.ssh/id_master2slave"``
+:Example: ``"ssh -q -i /root/.ssh/id_master2slave -o StrictHostKeyChecking=accept-new"``
 
-This value will be passed as the ``--rsh`` parameter of ``rsync`` (don't use ``-p`` to specify the port heree, use the ``remotehostlist`` config below instead), this can be used to specify which SSH key to use, for example. Note that this option is mandatory (if you don't have anything to specify here, you can just say ``ssh``).
+This value will be passed as the ``--rsh`` parameter of ``rsync`` (don't use ``-p`` to specify the port here, use the ``remotehostlist`` config below instead), this can be used to specify which SSH key to use, for example. NOTE THAT THIS OPTION IS MANDATORY (if you don't have anything to specify here, you can just say ``ssh``). If you followed the standard installation procedure, the "example" value specified below will work.
 
 remoteuser
 **********
