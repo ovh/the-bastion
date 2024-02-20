@@ -672,7 +672,7 @@ runtests()
     configchg 's=^\\\\x22bastionCommand\\\\x22.+=\\\\x22bastionCommand\\\\x22:\\\\x22ssh\\\\x20USER\\\\x40'"$remote_ip"'\\\\x20-p\\\\x20'"$remote_port"'\\\\x20-t\\\\x20--\\\\x22,='
 
     # account1 skips PAM MFA
-    success account1_nopam $r0 "usermod -a -G bastion-nopam $account0"
+    success account1_nopam $r0 "command -v pw \>/dev/null \&\& pw groupmod -n bastion-nopam -m $account0 \|\| usermod -a -G bastion-nopam $account0"
 
     # backup the original default configuration on target side
     now=$(date +%s)

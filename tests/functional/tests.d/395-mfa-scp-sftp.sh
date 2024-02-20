@@ -134,7 +134,7 @@ testsuite_mfa_scp_sftp()
         expect \":\" { sleep 0.2; send \"$a0_password\\n\"; };
         expect eof;
         lassign [wait] pid spawnid value value;
-        exit \$value' | expect -f -"
+        exit \$value' | timeout --foreground $default_timeout expect -f -"
     retvalshouldbe 0
     unset a0_password_tmp
     nocontain 'enter this:'
@@ -149,7 +149,7 @@ testsuite_mfa_scp_sftp()
         expect \":\" { sleep 0.2; send \"$a0_password\\n\"; };
         expect eof;
         lassign [wait] pid spawnid value value;
-        exit \$value' | expect -f -"
+        exit \$value' | timeout --foreground $default_timeout expect -f -"
     nocontain 'MFA_TOKEN=notrequired'
     if [ "${capabilities[mfa]}" = 1 ] || [ "${capabilities[mfa-password]}" = 1 ]; then
         retvalshouldbe 0
@@ -166,7 +166,7 @@ testsuite_mfa_scp_sftp()
         expect \":\" { sleep 0.2; send \"$a0_password\\n\"; };
         expect eof;
         lassign [wait] pid spawnid value value;
-        exit \$value' | expect -f -"
+        exit \$value' | timeout --foreground $default_timeout expect -f -"
     nocontain 'MFA_TOKEN=notrequired'
     if [ "${capabilities[mfa]}" = 1 ] || [ "${capabilities[mfa-password]}" = 1 ]; then
         retvalshouldbe 0
@@ -182,12 +182,12 @@ testsuite_mfa_scp_sftp()
     json .error_code KO_MFA_FAILED_INVALID_FORMAT
 
     local invalid_token
-    invalid_token="v1,$(date +%s -d '1 hour ago'),9f25d680b1bae2ef73abc3c62926ddb9c88f8ea1f4120b1125cc09720c74268b"
+    invalid_token="v1,$(perl -e 'CORE::say time()-3600'),9f25d680b1bae2ef73abc3c62926ddb9c88f8ea1f4120b1125cc09720c74268b"
     run scp_upload_bad_token_expired $a0 --osh scp --host 127.0.0.2 --port 22 --user $shellaccount --mfa-token "$invalid_token"
     retvalshouldbe 125
     json .error_code KO_MFA_FAILED_EXPIRED_TOKEN
 
-    invalid_token="v1,$(date +%s -d '1 hour'),9f25d680b1bae2ef73abc3c62926ddb9c88f8ea1f4120b1125cc09720c74268b"
+    invalid_token="v1,$(perl -e 'CORE::say time()+3600'),9f25d680b1bae2ef73abc3c62926ddb9c88f8ea1f4120b1125cc09720c74268b"
     run scp_upload_bad_token_future $a0 --osh scp --host 127.0.0.2 --port 22 --user $shellaccount --mfa-token "$invalid_token"
     retvalshouldbe 125
     json .error_code KO_MFA_FAILED_FUTURE_TOKEN
@@ -200,7 +200,7 @@ testsuite_mfa_scp_sftp()
             expect \"word:\" { sleep 0.2; send \"$a0_password\\n\"; };
             expect eof;
             lassign [wait] pid spawnid value value;
-            exit \$value' | expect -f -"
+            exit \$value' | timeout --foreground $default_timeout expect -f -"
             retvalshouldbe 0
             json .error_code OK .command selfMFAResetPassword
     else
