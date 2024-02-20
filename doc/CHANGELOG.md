@@ -1,3 +1,16 @@
+## v3.14.16 - 2024/02/20
+feat: add ``ttyrecStealthStdoutPattern`` config
+enh: ``batch``: openhandle() is overkill and doesn't work on EOF
+enh: ``osh-lingering-sessions-reaper.sh``: handle dangling plugins
+enh: ``osh-orphaned-homedir.sh``: also cleanup ``/run/faillock``
+enh: plugins: better signal handling to avoid dangling children processes
+fix: ``accountInfo``: return always\_active=1 for globally-always-active accounts
+fix: don't exit with ``fping`` when host is unreachable
+fix: ``fixrights.sh``: add +x ``run-tool.sh``
+fix: ``osh-sync-watcher``: default to a valid ``rshcmd`` (fixes #433)
+fix: install: generation of the MFA secret under FreeBSD
+fix: install: silence ``tr`` message on secret generation
+
 ## v3.14.15 - 2023/11/08
 - feat: support JIT MFA through plugins, including ``sftp`` and ``scp`` (fixes CVE-2023-45140)
 - feat: add configuration option for plugins to override the global lock/kill timeout
