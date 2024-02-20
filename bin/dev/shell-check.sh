@@ -46,30 +46,20 @@ else
     action_doing "Checking shell files syntax using system shellcheck"
 fi
 
-if [ -z "${2:-}" ]; then
-    for i in $(find . -type f ! -name "*.swp" ! -name "*.orig" ! -name "*.rej" -print0 | xargs -r0 grep -l 'set filetype=sh' | sort)
-    do
-        run_shellcheck "$i"; ret=$?
-        if [ $ret != 0 ]; then
-            (( fails++ ))
-        fi
-        if [ $ret = 3 ] || [ $ret = 4 ]; then
-            echo "${RED}WARNING: your shellcheck seems too old (code $ret), please upgrade it or use a more recent docker tag!${NOC}" >&2
-        fi
-    done
+for i in $(find "${2:-.}" -type f ! -name "*.swp" ! -name "*.orig" ! -name "*.rej" -print0 | xargs -r0 grep -l 'set filetype=sh' | sort)
+do
+    run_shellcheck "$i"; ret=$?
+    if [ $ret != 0 ]; then
+        (( fails++ ))
+    fi
+    if [ $ret = 3 ] || [ $ret = 4 ]; then
+        echo "${RED}WARNING: your shellcheck seems too old (code $ret), please upgrade it or use a more recent docker tag!${NOC}" >&2
+    fi
+done
 
-    if [ "$fails" -ne 0 ] ; then
-        action_error "Got $fails errors"
-    else
-        action_done "success"
-    fi
-    exit "$fails"
+if [ "$fails" -ne 0 ] ; then
+    action_error "Got $fails errors"
 else
-    run_shellcheck "$2"; ret=$?
-    if [ "$ret" -ne 0 ] ; then
-        action_error
-    else
-        action_done
-    fi
-    exit $ret
+    action_done "success"
 fi
+exit "$fails"
