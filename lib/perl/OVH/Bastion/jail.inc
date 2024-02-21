@@ -13,7 +13,7 @@ sub jailify {
     my $user         = delete $params{'user'};
     my $group        = delete $params{'group'};
     my $no_new_privs = delete $params{'no_new_privs'};
-    my $set_env      = delete $params{'set_env'};
+    my $env_add      = delete $params{'env_add'};
     my $pid_ns       = delete $params{'pid_ns'};
     my $mount_mode   = delete $params{'mount_mode'};
     my $mount_ns     = delete $params{'mount_ns'};
@@ -22,7 +22,6 @@ sub jailify {
     my $mounts       = delete $params{'mounts'};
     my $seccomp      = delete $params{'seccomp'};
     my $uts          = delete $params{'uts'};
-    my $ld_preload   = delete $params{'ld_preload'};
     my $dev          = delete $params{'dev'};
     my $cmd          = delete $params{'cmd'};
 
@@ -80,7 +79,6 @@ sub jailify {
     push @jailcmd, "--uts"         if $uts;
     push @jailcmd, "-K$mount_mode" if $mount_mode;
     push @jailcmd, "-d"            if $dev;
-    push @jailcmd, "--child-ld-preload", $ld_preload if $ld_preload;
 
     if ($pivot_root) {
         return R('ERR_INVALID_PARAMETER', msg => "Specified pivot_root ($pivot_root) is not a directory")
@@ -104,9 +102,9 @@ sub jailify {
         push @jailcmd, "-k", $_ for (@$mounts);
     }
 
-    if (defined $set_env) {
-        return R('ERR_INVALID_PARAMETER', msg => "Specified set_env is not an arrayref") if (ref $set_env ne 'ARRAY');
-        push @jailcmd, "--set-env", $_ for (@$set_env);
+    if (defined $env_add) {
+        return R('ERR_INVALID_PARAMETER', msg => "Specified env_add is not an arrayref") if (ref $env_add ne 'ARRAY');
+        push @jailcmd, "--env-add", $_ for (@$env_add);
     }
 
     push @jailcmd, '--', @$cmd;
