@@ -144,20 +144,22 @@ EOS
     plgfail a1_add_access_force_key_and_pwd_g1 $a1 --osh groupAddServer --host 127.1.2.3 --user-any --port-any --force --force-password '$1$2$3456' --force-key "$key1fp" --group $group1
     json .error_code ERR_INCOMPATIBLE_PARAMETERS
 
-    success a1_add_access_force_key_g1 $a1 --osh groupAddServer --host 127.1.2.3 --user-any --port-any --force --force-key "$key1fp" --group $group1
+    success a1_add_access_force_key_g1 $a1 --osh groupAddServer --host 127.1.2.3 --user 'ar@base' --port-any --force --force-key "$key1fp" --group $group1
+    .value.user 'ar@base'
 
     success a1_list_servers_check_force_key_g1 $a1 --osh groupListServers --group $group1
     json '.value|.[]|select(.ip=="127.1.2.3")|.forceKey' "$key1fp"
+    json '.value|.[]|select(.ip=="127.1.2.3")|.user'     "ar@base"
 
     # try to use the force key
 
-    run a1_connect_g1_with_forcekey $a1 forcedkey@127.1.2.3 -- false
+    run a1_connect_g1_with_forcekey $a1 ar@base@127.1.2.3 -- false
     contain 'Connecting...'
     contain 'FORCED IN ACL'
     contain "$key1fp"
     nocontain "$key0fp"
 
-    success a1_remove_forcekey_acl_g1 $a1 --osh groupDelServer --host 127.1.2.3 --user-any --port-any --group $group1
+    success a1_remove_forcekey_acl_g1 $a1 --osh groupDelServer --host 127.1.2.3 --user 'ar@base' --port-any --group $group1
 
     # /force-key
 

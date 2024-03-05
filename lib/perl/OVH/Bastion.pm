@@ -733,7 +733,7 @@ sub is_valid_port {
 sub is_valid_remote_user {
     my %params = @_;
     my $user   = $params{'user'};
-    if ($user =~ /^([a-zA-Z0-9._!-]{1,128})$/) {
+    if ($user =~ /^([a-zA-Z0-9._@!-]{1,128})$/) {
         return R('OK', value => $1);
     }
     return R('ERR_INVALID_PARAMETER', msg => "Specified user doesn't seem to be valid");
