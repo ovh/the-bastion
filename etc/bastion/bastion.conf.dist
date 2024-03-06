@@ -119,6 +119,13 @@
 # > Global network policies
 # >> Those options can set a few global network policies to be applied bastion-wide.
 #
+# dnsSupportLevel (integer between 0 and 2)
+#      DESC: If set to 0, The Bastion will never attempt to do DNS or reverse-DNS resolutions, and return an error if you request connection to a hostname instead of an IP. Use this if you know there's no working DNS in your environment and only use IPs everywhere.
+#            If set to 1, The Bastion will not attempt to do DNS or reverse-DNS resolutions unless you force it to (i.e. by requesting connection to a hostname instead of an IP). You may use this if for example you have well-known hostnames in /etc/hosts, but don't have a working DNS (which would imply that reverse-DNS resolutions will always fail).
+#            If set to 2, The Bastion will make the assumption that you have a working DNS setup, and will do DNS and reverse-DNS resolutions normally.
+#   DEFAULT: 2
+"dnsSupportLevel": 2,
+#
 # allowedNetworks (array of strings (IPs and/or prefixes))
 #     DESC: Restricts egress connection attempts to those listed networks only. This is enforced at all times and can NOT be overridden by users. If you are lucky enough to have you own IP blocks, it's probably a good idea to list them here. An empty array means no restriction is applied.
 #  DEFAULT: []

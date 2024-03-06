@@ -211,47 +211,44 @@ sub load_configuration {
         {name => 'accountMaxInactiveDays',                min => 0,    max => 365 * 5,     default => 0},
         {name => 'interactiveModeTimeout',                min => 0,    max => 86400 * 365, default => 15},
         {name => 'interactiveModeProactiveMFAexpiration', min => 0,    max => 86400,       default => 900},
+        {name => 'dnsSupportLevel',                       min => 0,    max => 2,           default => 2},
       )
     {
         if (not defined $C->{$o->{'name'}}) {
             $C->{$o->{'name'}} = $o->{'default'};
-            push @errors, "Configuration error: missing option '" . $o->{'name'} . "', defaulting to " . $o->{'default'}
+            push @errors,
+              sprintf("Configuration error: missing option '%s', defaulting to %s", $o->{'name'}, $o->{'default'})
               if $test;
         }
         if ($C->{$o->{'name'}} =~ /^(-?\d+)$/) {
-
             # untaint
             $C->{$o->{'name'}} = $1;
         }
         else {
             push @errors,
-                "Configuration error: value of option '"
-              . $o->{'name'} . "' ('"
-              . $C->{$o->{'name'}}
-              . "') is not a number, defaulting to "
-              . $o->{'default'};
+              sprintf(
+                "Configuration error: value of option '%s' ('%s') is not a number, defaulting to %s",
+                $o->{'name'}, $C->{$o->{'name'}},
+                $o->{'default'}
+              );
             $C->{$o->{'name'}} = $o->{'default'};
         }
         if ($C->{$o->{'name'}} > $o->{'max'}) {
             push @errors,
-                "Configuration error: value of option '"
-              . $o->{'name'} . "' ("
-              . $C->{$o->{'name'}}
-              . ") is higher than allowed value ("
-              . $o->{'max'}
-              . "), defaulting to "
-              . $o->{'default'};
+              sprintf(
+                "Configuration error: value of option '%s' (%s) is higher than allowed value (%s), defaulting to %s",
+                $o->{'name'}, $C->{$o->{'name'}},
+                $o->{'max'}, $o->{'default'}
+              );
             $C->{$o->{'name'}} = $o->{'default'};
         }
         elsif ($C->{$o->{'name'}} < $o->{'min'}) {
             push @errors,
-                "Configuration error: value of option '"
-              . $o->{'name'} . "' ("
-              . $C->{$o->{'name'}}
-              . ") is lower than allowed value ("
-              . $o->{'min'}
-              . "), defaulting to "
-              . $o->{'default'};
+              sprintf(
+                "Configuration error: value of option '%s' (%s) is lower than allowed value (%s), defaulting to %s",
+                $o->{'name'}, $C->{$o->{'name'}},
+                $o->{'min'}, $o->{'default'}
+              );
             $C->{$o->{'name'}} = $o->{'default'};
         }
         delete $unknownkeys{$o->{'name'}};
