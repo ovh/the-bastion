@@ -47,6 +47,7 @@ Global network policies options
 
 Those options can set a few global network policies to be applied bastion-wide.
 
+- `dnsSupportLevel`_
 - `allowedNetworks`_
 - `forbiddenNetworks`_
 - `ingressToEgressRules`_
@@ -344,6 +345,19 @@ Additional parameters that will be passed as-is to mosh-server. See ``man mosh-s
 
 Global network policies
 -----------------------
+
+.. _dnsSupportLevel:
+
+dnsSupportLevel
+***************
+
+:Type: ``integer between 0 and 2``
+
+:Default: ``2``
+
+If set to 0, The Bastion will never attempt to do DNS or reverse-DNS resolutions, and return an error if you request connection to a hostname instead of an IP. Use this if you know there's no working DNS in your environment and only use IPs everywhere.
+ If set to 1, The Bastion will not attempt to do DNS or reverse-DNS resolutions unless you force it to (i.e. by requesting connection to a hostname instead of an IP). You may use this if for example you have well-known hostnames in /etc/hosts, but don't have a working DNS (which would imply that reverse-DNS resolutions will always fail).
+ If set to 2, The Bastion will make the assumption that you have a working DNS setup, and will do DNS and reverse-DNS resolutions normally.
 
 .. _allowedNetworks:
 

@@ -287,6 +287,10 @@ sub get_ip {
         return R('ERR_INVALID_IP', msg => "IP $host version is not allowed");
     }
 
+    if (OVH::Bastion::config('dnsSupportLevel')->value < 1) {
+        return R('ERR_DNS_DISABLED', msg => "DNS resolving is disabled on this bastion");
+    }
+
     osh_debug("Trying to resolve '$host' because is_valid_ip() says it's not an IP");
     my ($err, @res);
     eval {
@@ -333,6 +337,10 @@ sub get_ip {
 sub ip2host {
     my $ip = shift;
     my ($err, @sockaddr, $host);
+
+    if (OVH::Bastion::config('dnsSupportLevel')->value < 2) {
+        return R('ERR_DNS_DISABLED');
+    }
 
     eval {
         # ip => packedip. AI_PASSIVE: don't use dns, just build sockaddr
