@@ -1,9 +1,9 @@
 {
     "interactive": [
-        "accountList"                 , {"ac" : ["--inactive-only","--realm-only","--account"]},
-        "accountList --account"       , {"ac" : ["<ACCOUNT>"]},
-        "accountList --account \\S+"  , {"pr" : ["<enter>"]},
-        "accountList --inactive-only" , {"pr" : ["<enter>"]},
-        "accountList --realm-only"    , {"pr" : ["<enter>"]}
+        "accountList"                   , {"ac" : ["--inactive-only","--realm-only","--account"]},
+        "accountList +--account"        , {"ac" : ["<ACCOUNT>"]},
+        "accountList +--account +\\S+"  , {"pr" : ["<enter>"]},
+        "accountList +--inactive-only"  , {"pr" : ["<enter>"]},
+        "accountList +--realm-only"     , {"pr" : ["<enter>"]}
     ]
 }

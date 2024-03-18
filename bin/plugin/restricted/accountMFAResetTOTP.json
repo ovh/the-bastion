@@ -1,8 +1,8 @@
 {
     "interactive": [
-        "accountMFAResetTOTP"               , {"ac" : ["--account"]},
-        "accountMFAResetTOTP --account"     , {"ac" : ["<ACCOUNT>"]},
-        "accountMFAResetTOTP --account \\S+" , {"pr" : ["<enter>"]}
+        "accountMFAResetTOTP"                  , {"ac" : ["--account"]},
+        "accountMFAResetTOTP +--account"       , {"ac" : ["<ACCOUNT>"]},
+        "accountMFAResetTOTP +--account +\\S+" , {"pr" : ["<enter>"]}
     ],
     "master_only": true
 }

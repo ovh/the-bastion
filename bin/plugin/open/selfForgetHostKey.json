@@ -1,9 +1,9 @@
 {
     "interactive": [
-        "selfForgetHostKey"                       , {"ac" : ["--host"]},
-        "selfForgetHostKey --host"                , {"pr" : ["<HOST>"]},
-        "selfForgetHostKey --host \\S+"            , {"ac" : ["<enter>", "--port"]},
-        "selfForgetHostKey --host \\S+ --port"     , {"pr" : ["<PORT>"]},
-        "selfForgetHostKey --host \\S+ --port \\S+" , {"pr" : ["<enter>"]}
+        "selfForgetHostKey"                             , {"ac" : ["--host"]},
+        "selfForgetHostKey +--host"                     , {"pr" : ["<HOST>"]},
+        "selfForgetHostKey +--host +\\S+"               , {"ac" : ["<enter>", "--port"]},
+        "selfForgetHostKey +--host +\\S+ +--port"       , {"pr" : ["<PORT>"]},
+        "selfForgetHostKey +--host +\\S+ +--port +\\S+" , {"pr" : ["<enter>"]}
     ]
 }

@@ -1,12 +1,12 @@
 {
     "interactive": [
-        "groupModify"                                    , {"ac" : ["--group"]},
-        "groupModify --group"                            , {"ac" : ["<GROUP>"]},
-        "groupModify --group \\S+"                       , {"ac" : ["--mfa-required","--guest-ttl-limit"]},
-        "groupModify --group \\S+ --mfa-required"        , {"ac" : ["password","totp","any","none"]},
-        "groupModify --group \\S+ --mfa-required \\S+"   , {"pr" : ["<ENTER>"]},
-        "groupModify --group \\S+ --guest-ttl-limit"     , {"pr" : ["<DURATION>"]},
-        "groupModify --group \\S+ --guest-ttl-limit \\S+", {"pr" : ["<ENTER>"]}
+        "groupModify"                                        , {"ac" : ["--group"]},
+        "groupModify +--group"                               , {"ac" : ["<GROUP>"]},
+        "groupModify +--group +\\S+"                         , {"ac" : ["--mfa-required","--guest-ttl-limit"]},
+        "groupModify +--group +\\S+ +--mfa-required"         , {"ac" : ["password","totp","any","none"]},
+        "groupModify +--group +\\S+ +--mfa-required +\\S+"   , {"pr" : ["<ENTER>"]},
+        "groupModify +--group +\\S+ +--guest-ttl-limit"      , {"pr" : ["<DURATION>"]},
+        "groupModify +--group +\\S+ +--guest-ttl-limit +\\S+", {"pr" : ["<ENTER>"]}
     ],
     "master_only": 1
 }

@@ -1,10 +1,10 @@
 {
     "interactive": [
-        "accountRevokeCommand"                             , {"ac" : ["--account"]},
-        "accountRevokeCommand --account"                   , {"ac" : ["<ACCOUNT>"]},
-        "accountRevokeCommand --account \\S+"               , {"ac" : ["--command"]},
-        "accountRevokeCommand --account \\S+ --command"     , {"ac" : ["<RESTRICTED_COMMAND>"]},
-        "accountRevokeCommand --account \\S+ --command \\S+" , {"pr" : ["<enter>"]}
+        "accountRevokeCommand"                                   , {"ac" : ["--account"]},
+        "accountRevokeCommand +--account"                        , {"ac" : ["<ACCOUNT>"]},
+        "accountRevokeCommand +--account +\\S+"                  , {"ac" : ["--command"]},
+        "accountRevokeCommand +--account +\\S+ +--command"       , {"ac" : ["<RESTRICTED_COMMAND>"]},
+        "accountRevokeCommand +--account +\\S+ +--command +\\S+" , {"pr" : ["<enter>"]}
     ],
     "master_only": 1
 }

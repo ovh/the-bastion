@@ -1,8 +1,8 @@
 {
     "interactive": [
-        "selfPlaySession"           , {"ac" : ["--id"]},
-        "selfPlaySession --id"      , {"pr" : ["<ID>"]},
-        "selfPlaySession --id \\S+" , {"pr" : ["<enter>"]}
+        "selfPlaySession"             , {"ac" : ["--id"]},
+        "selfPlaySession +--id"       , {"pr" : ["<ID>"]},
+        "selfPlaySession +--id +\\S+" , {"pr" : ["<enter>"]}
     ],
     "terminal_mode": "cbreak",
     "execution_mode": "binary"

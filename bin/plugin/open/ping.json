@@ -1,7 +1,7 @@
 {
     "interactive": [
-        "ping"            , {"ac" : ["--host"]},
-        "ping --host"     , {"pr" : ["<HOST>"]},
-        "ping --host \\S+" , {"pr" : ["<enter>"]}
+        "ping"               , {"ac" : ["--host"]},
+        "ping +--host"       , {"pr" : ["<HOST>"]},
+        "ping +--host +\\S+" , {"pr" : ["<enter>"]}
     ]
 }

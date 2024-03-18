@@ -1,9 +1,9 @@
 {
     "interactive": [
-        "groupListGuestAccesses"                             , {"ac" : ["--account"]},
-        "groupListGuestAccesses --account"                   , {"ac" : ["<ACCOUNT>"]},
-        "groupListGuestAccesses --account \\S+"              , {"ac" : ["--group"]},
-        "groupListGuestAccesses --account \\S+ --group"      , {"ac" : ["<GROUP>"]},
-        "groupListGuestAccesses --account \\S+ --group \\S+" , {"pr" : ["<enter>"]}
+        "groupListGuestAccesses"                                 , {"ac" : ["--account"]},
+        "groupListGuestAccesses +--account"                      , {"ac" : ["<ACCOUNT>"]},
+        "groupListGuestAccesses +--account +\\S+"                , {"ac" : ["--group"]},
+        "groupListGuestAccesses +--account +\\S+ +--group"       , {"ac" : ["<GROUP>"]},
+        "groupListGuestAccesses +--account +\\S+ +--group +\\S+" , {"pr" : ["<enter>"]}
     ]
 }

@@ -1,11 +1,11 @@
 {
     "interactive": [
-        "selfGenerateEgressKey"                   , {"ac" : ["--algo"]},
-        "selfGenerateEgressKey --algo"            , {"ac" : ["rsa", "ecdsa", "ed25519"]},
-        "selfGenerateEgressKey --algo \\S+"        , {"ac" : ["--size"]},
-        "selfGenerateEgressKey --algo \\S+ --size" , {"pr" : ["<SIZE>"]},
-        "selfGenerateEgressKey --algo \\S+ --size \\d+"             , {"ac" : ["<enter>", "--encrypted"]},
-        "selfGenerateEgressKey --algo \\S+ --size \\d+ --encrypted" , {"pr" : ["<enter>"]}
+        "selfGenerateEgressKey"                                          , {"ac" : ["--algo"]},
+        "selfGenerateEgressKey +--algo"                                  , {"ac" : ["rsa", "ecdsa", "ed25519"]},
+        "selfGenerateEgressKey +--algo +\\S+"                            , {"ac" : ["--size"]},
+        "selfGenerateEgressKey +--algo +\\S+ +--size"                    , {"pr" : ["<SIZE>"]},
+        "selfGenerateEgressKey +--algo +\\S+ +--size +\\d+"              , {"ac" : ["<enter>", "--encrypted"]},
+        "selfGenerateEgressKey +--algo +\\S+ +--size +\\d+ +--encrypted" , {"pr" : ["<enter>"]}
     ],
     "master_only": true,
     "terminal_mode": "raw"

@@ -1,10 +1,10 @@
 {
     "interactive": [
-        "groupDelAclkeeper"                             , {"ac" : ["--account"]},
-        "groupDelAclkeeper --account"                   , {"ac" : ["<ACCOUNT>"]},
-        "groupDelAclkeeper --account \\S+"              , {"ac" : ["--group"]},
-        "groupDelAclkeeper --account \\S+ --group"      , {"ac" : ["<GROUP>"]},
-        "groupDelAclkeeper --account \\S+ --group \\S+" , {"pr" : ["<enter>"]}
+        "groupDelAclkeeper"                                 , {"ac" : ["--account"]},
+        "groupDelAclkeeper +--account"                      , {"ac" : ["<ACCOUNT>"]},
+        "groupDelAclkeeper +--account +\\S+"                , {"ac" : ["--group"]},
+        "groupDelAclkeeper +--account +\\S+ +--group"       , {"ac" : ["<GROUP>"]},
+        "groupDelAclkeeper +--account +\\S+ +--group +\\S+" , {"pr" : ["<enter>"]}
     ],
     "master_only": true
 }

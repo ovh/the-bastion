@@ -1,10 +1,10 @@
 {
     "interactive": [
-        "groupAddGatekeeper"                             , {"ac" : ["--account"]},
-        "groupAddGatekeeper --account"                   , {"ac" : ["<ACCOUNT>"]},
-        "groupAddGatekeeper --account \\S+"              , {"ac" : ["--group"]},
-        "groupAddGatekeeper --account \\S+ --group"      , {"ac" : ["<GROUP>"]},
-        "groupAddGatekeeper --account \\S+ --group \\S+" , {"pr" : ["<enter>"]}
+        "groupAddGatekeeper"                                 , {"ac" : ["--account"]},
+        "groupAddGatekeeper +--account"                      , {"ac" : ["<ACCOUNT>"]},
+        "groupAddGatekeeper +--account +\\S+"                , {"ac" : ["--group"]},
+        "groupAddGatekeeper +--account +\\S+ +--group"       , {"ac" : ["<GROUP>"]},
+        "groupAddGatekeeper +--account +\\S+ +--group +\\S+" , {"pr" : ["<enter>"]}
     ],
     "master_only": true
 }

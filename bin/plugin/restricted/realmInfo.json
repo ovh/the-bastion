@@ -1,7 +1,7 @@
 {
     "interactive": [
-        "realmInfo"              ,  {"ac" : ["--realm"]},
-        "realmInfo --realm"      ,  {"ac" : ["<REALM>"]},
-        "realmInfo --realm \\S+" ,  {"pr" : ["<enter>"]}
+        "realmInfo"                ,  {"ac" : ["--realm"]},
+        "realmInfo +--realm"       ,  {"ac" : ["<REALM>"]},
+        "realmInfo +--realm +\\S+" ,  {"pr" : ["<enter>"]}
     ]
 }

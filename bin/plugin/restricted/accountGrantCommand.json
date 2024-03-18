@@ -1,10 +1,10 @@
 {
     "interactive": [
-        "accountGrantCommand"                             , {"ac" : ["--account"]},
-        "accountGrantCommand --account"                   , {"ac" : ["<ACCOUNT>"]},
-        "accountGrantCommand --account \\S+"               , {"ac" : ["--command"]},
-        "accountGrantCommand --account \\S+ --command"     , {"ac" : ["<RESTRICTED_COMMAND>"]},
-        "accountGrantCommand --account \\S+ --command \\S+" , {"pr" : ["<enter>"]}
+        "accountGrantCommand"                                   , {"ac" : ["--account"]},
+        "accountGrantCommand +--account"                        , {"ac" : ["<ACCOUNT>"]},
+        "accountGrantCommand +--account +\\S+"                  , {"ac" : ["--command"]},
+        "accountGrantCommand +--account +\\S+ +--command"       , {"ac" : ["<RESTRICTED_COMMAND>"]},
+        "accountGrantCommand +--account +\\S+ +--command +\\S+" , {"pr" : ["<enter>"]}
     ],
     "master_only": true
 }

@@ -1,7 +1,7 @@
 {
     "interactive": [
-        "accountListIngressKeys"               , {"ac" : ["--account"]},
-        "accountListIngressKeys --account"     , {"ac" : ["<ACCOUNT>"]},
-        "accountListIngressKeys --account \\S+" , {"pr" : ["<enter>"]}
+        "accountListIngressKeys"                  , {"ac" : ["--account"]},
+        "accountListIngressKeys +--account"       , {"ac" : ["<ACCOUNT>"]},
+        "accountListIngressKeys +--account +\\S+" , {"pr" : ["<enter>"]}
     ]
 }

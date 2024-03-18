@@ -1,10 +1,10 @@
 {
     "interactive": [
-        "selfDelIngressKey"                             , {"ac" : ["--line-number-to-delete", "--fingerprint-to-delete", "<enter>"]},
-        "selfDelIngressKey --line-number-to-delete"     , {"pr" : ["<NUMBER>"]},
-        "selfDelIngressKey --line-number-to-delete \\S+" , {"pr" : ["<enter>"]},
-        "selfDelIngressKey --fingerprint-to-delete"     , {"pr" : ["<FINGERPRINT>"]},
-        "selfDelIngressKey --fingerprint-to-delete \\S+" , {"pr" : ["<enter>"]}
+        "selfDelIngressKey"                                , {"ac" : ["--line-number-to-delete", "--fingerprint-to-delete", "<enter>"]},
+        "selfDelIngressKey +--line-number-to-delete"       , {"pr" : ["<NUMBER>"]},
+        "selfDelIngressKey +--line-number-to-delete +\\S+" , {"pr" : ["<enter>"]},
+        "selfDelIngressKey +--fingerprint-to-delete"       , {"pr" : ["<FINGERPRINT>"]},
+        "selfDelIngressKey +--fingerprint-to-delete +\\S+" , {"pr" : ["<enter>"]}
     ],
     "master_only": true
 }

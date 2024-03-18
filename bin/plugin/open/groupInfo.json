@@ -1,7 +1,7 @@
 {
     "interactive": [
-        "groupInfo"              ,  {"ac" : ["--group"]},
-        "groupInfo --group"      ,  {"ac" : ["<GROUP>"]},
-        "groupInfo --group \\S+" ,  {"pr" : ["<enter>"]}
+        "groupInfo"                ,  {"ac" : ["--group"]},
+        "groupInfo +--group"       ,  {"ac" : ["<GROUP>"]},
+        "groupInfo +--group +\\S+" ,  {"pr" : ["<enter>"]}
     ]
 }

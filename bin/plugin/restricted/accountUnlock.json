@@ -1,8 +1,8 @@
 {
     "interactive": [
-        "accountUnlock"                 , {"ac" : ["--account"]},
-        "accountUnlock --account"       , {"ac" : ["<ACCOUNT>"]},
-        "accountUnlock --account \\S+"  , {"pr" : ["<enter>"]}
+        "accountUnlock"                   , {"ac" : ["--account"]},
+        "accountUnlock +--account"        , {"ac" : ["<ACCOUNT>"]},
+        "accountUnlock +--account +\\S+"  , {"pr" : ["<enter>"]}
     ],
     "master_only": 1
 }

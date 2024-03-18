@@ -1,10 +1,10 @@
 {
     "interactive": [
-        "groupTransmitOwnership"                             , {"ac" : ["--account"]},
-        "groupTransmitOwnership --account"                   , {"ac" : ["<ACCOUNT>"]},
-        "groupTransmitOwnership --account \\S+"              , {"ac" : ["--group"]},
-        "groupTransmitOwnership --account \\S+ --group"      , {"ac" : ["<GROUP>"]},
-        "groupTransmitOwnership --account \\S+ --group \\S+" , {"pr" : ["<enter>"]}
+        "groupTransmitOwnership"                                 , {"ac" : ["--account"]},
+        "groupTransmitOwnership +--account"                      , {"ac" : ["<ACCOUNT>"]},
+        "groupTransmitOwnership +--account +\\S+"                , {"ac" : ["--group"]},
+        "groupTransmitOwnership +--account +\\S+ +--group"       , {"ac" : ["<GROUP>"]},
+        "groupTransmitOwnership +--account +\\S+ +--group +\\S+" , {"pr" : ["<enter>"]}
     ],
     "master_only": true
 }
