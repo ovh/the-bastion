@@ -30,13 +30,6 @@ sub _get_prompt {
     return $prompt;
 }
 
-sub _get_prompt_non_readline {
-    my %info                = @_;
-    my $prompt_non_readline = _get_prompt(%info);
-    $prompt_non_readline =~ s=\001|\002==g;
-    return $prompt_non_readline;
-}
-
 sub interactive {
     my %params         = @_;
     my $realOptions    = $params{'realOptions'};
@@ -190,7 +183,7 @@ EOM
             if ($item->{'pr'}) {
                 print "\n"
                   . join("\n", @{$item->{'pr'}}) . "\n"
-                  . _get_prompt_non_readline($self, $bastionName, $slaveOrMaster)
+                  . _get_prompt($self, $bastionName, $slaveOrMaster)
                   . $line;
                 return ();
             }
