@@ -1,10 +1,10 @@
 {
     "interactive": [
-        "accountListAccesses"                             , {"ac" : ["--account"]},
-        "accountListAccesses --account"                   , {"ac" : ["<ACCOUNT>"]},
-        "accountListAccesses --account \\S+"               , {"ac" : ["<enter>", "--hide-groups", "--reverse-dns"]},
-        "accountListAccesses --account \\S+ --hide-groups" , {"ac" : ["<enter>", "--reverse-dns"]},
-        "accountListAccesses --account \\S+ --reverse-dns" , {"ac" : ["<enter>", "--hide-groups"]},
-        "accountListAccesses --account \\S+ --(reverse-dns|hide-groups) --(reverse-dns|hide-groups)" , {"pr" : ["<enter>"]}
+        "accountListAccesses"                                 , {"ac" : ["--account"]},
+        "accountListAccesses +--account"                      , {"ac" : ["<ACCOUNT>"]},
+        "accountListAccesses +--account +\\S+"                , {"ac" : ["<enter>", "--hide-groups", "--reverse-dns"]},
+        "accountListAccesses +--account +\\S+ +--hide-groups" , {"ac" : ["<enter>", "--reverse-dns"]},
+        "accountListAccesses +--account +\\S+ +--reverse-dns" , {"ac" : ["<enter>", "--hide-groups"]},
+        "accountListAccesses +--account +\\S+ +--(reverse-dns|hide-groups) +--(reverse-dns|hide-groups)" , {"pr" : ["<enter>"]}
     ]
 }

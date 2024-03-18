@@ -1,10 +1,10 @@
 {
     "interactive": [
-        "groupAddOwner"                             , {"ac" : ["--account"]},
-        "groupAddOwner --account"                   , {"ac" : ["<ACCOUNT>"]},
-        "groupAddOwner --account \\S+"              , {"ac" : ["--group"]},
-        "groupAddOwner --account \\S+ --group"      , {"ac" : ["<GROUP>"]},
-        "groupAddOwner --account \\S+ --group \\S+" , {"pr" : ["<enter>"]}
+        "groupAddOwner"                                 , {"ac" : ["--account"]},
+        "groupAddOwner +--account"                      , {"ac" : ["<ACCOUNT>"]},
+        "groupAddOwner +--account +\\S+"                , {"ac" : ["--group"]},
+        "groupAddOwner +--account +\\S+ +--group"       , {"ac" : ["<GROUP>"]},
+        "groupAddOwner +--account +\\S+ +--group +\\S+" , {"pr" : ["<enter>"]}
     ],
     "master_only": true
 }

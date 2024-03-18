@@ -1,10 +1,10 @@
 {
     "interactive": [
-        "groupDelOwner"                             , {"ac" : ["--account"]},
-        "groupDelOwner --account"                   , {"ac" : ["<ACCOUNT>"]},
-        "groupDelOwner --account \\S+"              , {"ac" : ["--group"]},
-        "groupDelOwner --account \\S+ --group"      , {"ac" : ["<GROUP>"]},
-        "groupDelOwner --account \\S+ --group \\S+" , {"pr" : ["<enter>"]}
+        "groupDelOwner"                                 , {"ac" : ["--account"]},
+        "groupDelOwner +--account"                      , {"ac" : ["<ACCOUNT>"]},
+        "groupDelOwner +--account +\\S+"                , {"ac" : ["--group"]},
+        "groupDelOwner +--account +\\S+ +--group"       , {"ac" : ["<GROUP>"]},
+        "groupDelOwner +--account +\\S+ +--group +\\S+" , {"pr" : ["<enter>"]}
     ],
     "master_only": true
 }

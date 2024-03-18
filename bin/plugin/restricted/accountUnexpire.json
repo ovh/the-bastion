@@ -1,7 +1,7 @@
 {
     "interactive": [
-        "accountUnexpire"                 , {"ac" : ["--account"]},
-        "accountUnexpire --account"       , {"ac" : ["<ACCOUNT>"]},
-        "accountUnexpire --account \\S+"  , {"pr" : ["<enter>"]}
+        "accountUnexpire"                   , {"ac" : ["--account"]},
+        "accountUnexpire +--account"        , {"ac" : ["<ACCOUNT>"]},
+        "accountUnexpire +--account +\\S+"  , {"pr" : ["<enter>"]}
     ]
 }

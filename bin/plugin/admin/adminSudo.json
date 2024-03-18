@@ -1,10 +1,10 @@
 {
     "interactive": [
-        "adminSudo" , { "ac" : ["-- --sudo-as"]},
-        "adminSudo -- --sudo-as" , { "ac" : ["<ACCOUNT>" ]},
-        "adminSudo -- --sudo-as \\S+" , { "ac" : ["--sudo-cmd" ]},
-        "adminSudo -- --sudo-as \\S+ --sudo-cmd" , { "ac" : ["<COMMAND>" ]},
-        "adminSudo -- --sudo-as \\S+ --sudo-cmd \\S+" , { "ac" : ["--" ]},
-        "adminSudo -- --sudo-as \\S+ --sudo-cmd \\S+ --" , { "pr" : ["<enter> or additional COMMAND-specific options" ]}
+        "adminSudo"                                            , { "ac" : ["-- --sudo-as"]},
+        "adminSudo +-- +--sudo-as"                             , { "ac" : ["<ACCOUNT>" ]},
+        "adminSudo +-- +--sudo-as +\\S+"                       , { "ac" : ["--sudo-cmd" ]},
+        "adminSudo +-- +--sudo-as +\\S+ +--sudo-cmd"           , { "ac" : ["<COMMAND>" ]},
+        "adminSudo +-- +--sudo-as +\\S+ +--sudo-cmd +\\S+"     , { "ac" : ["--" ]},
+        "adminSudo +-- +--sudo-as +\\S+ +--sudo-cmd +\\S+ +--" , { "pr" : ["<enter> or additional COMMAND-specific options" ]}
     ]
 }

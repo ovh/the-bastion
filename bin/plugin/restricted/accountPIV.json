@@ -1,13 +1,13 @@
 {
     "interactive": [
-        "accountPIV"                                                        , {"ac": ["--account"]},
-        "accountPIV --account"                                              , {"ac": ["<ACCOUNT>"]},
-        "accountPIV --account \\S+"                                         , {"ac": ["--policy"]},
-        "accountPIV --account \\S+ --policy"                                , {"ac": ["default","enforce","never","grace"]},
-        "accountPIV --account \\S+ --policy (default|enforce|never|grace)"  , {"pr": ["<enter>"]},
-        "accountPIV --account \\S+ --policy grace"                          , {"ac": ["--ttl"]},
-        "accountPIV --account \\S+ --policy grace --ttl"                    , {"pr": ["<duration>"]},
-        "accountPIV --account \\S+ --policy grace --ttl (.*)"               , {"pr": ["<enter>"]}
+        "accountPIV"                                                           , {"ac": ["--account"]},
+        "accountPIV +--account"                                                , {"ac": ["<ACCOUNT>"]},
+        "accountPIV +--account +\\S+"                                          , {"ac": ["--policy"]},
+        "accountPIV +--account +\\S+ +--policy"                                , {"ac": ["default","enforce","never","grace"]},
+        "accountPIV +--account +\\S+ +--policy +(default|enforce|never|grace)" , {"pr": ["<enter>"]},
+        "accountPIV +--account +\\S+ +--policy +grace"                         , {"ac": ["--ttl"]},
+        "accountPIV +--account +\\S+ +--policy +grace +--ttl"                  , {"pr": ["<duration>"]},
+        "accountPIV +--account +\\S+ +--policy +grace +--ttl +(.*)"            , {"pr": ["<enter>"]}
     ],
     "master_only": 1
 }

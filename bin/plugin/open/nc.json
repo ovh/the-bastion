@@ -1,10 +1,10 @@
 {
     "interactive": [
-        "nc"                                     , {"ac" : ["--host"]},
-        "nc --host"                              , {"pr" : ["<HOST>"]},
-        "nc --host \\S+"                          , {"ac" : ["--port"]},
-        "nc --host \\S+ --port \\d+"               , {"ac" : ["<enter>", "--timeout"]},
-        "nc --host \\S+ --port \\d+ --timeout"     , {"pr" : ["<TIMEOUT>"]},
-        "nc --host \\S+ --port \\d+ --timeout \\d+" , {"pr" : ["<enter>"]}
+        "nc"                                              , {"ac" : ["--host"]},
+        "nc +--host"                                      , {"pr" : ["<HOST>"]},
+        "nc +--host +\\S+"                                , {"ac" : ["--port"]},
+        "nc +--host +\\S+ +--port +\\d+"                  , {"ac" : ["<enter>", "--timeout"]},
+        "nc +--host +\\S+ +--port +\\d+ +--timeout"       , {"pr" : ["<TIMEOUT>"]},
+        "nc +--host +\\S+ +--port +\\d+ +--timeout +\\d+" , {"pr" : ["<enter>"]}
     ]
 }

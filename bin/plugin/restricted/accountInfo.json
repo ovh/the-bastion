@@ -1,7 +1,7 @@
 {
     "interactive": [
-        "accountInfo"               , {"ac" : ["--account"]},
-        "accountInfo --account"     , {"ac" : ["<ACCOUNT>"]},
-        "accountInfo --account \\S+" , {"pr" : ["<enter>"]}
+        "accountInfo"                  , {"ac" : ["--account"]},
+        "accountInfo +--account"       , {"ac" : ["<ACCOUNT>"]},
+        "accountInfo +--account +\\S+" , {"pr" : ["<enter>"]}
     ]
 }

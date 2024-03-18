@@ -1,8 +1,8 @@
 {
     "interactive": [
-        "realmDelete"              ,  {"ac" : ["--realm"]},
-        "realmDelete --realm"      ,  {"ac" : ["<REALM>"]},
-        "realmDelete --realm \\S+" ,  {"pr" : ["<enter>"]}
+        "realmDelete"                ,  {"ac" : ["--realm"]},
+        "realmDelete +--realm"       ,  {"ac" : ["<REALM>"]},
+        "realmDelete +--realm +\\S+" ,  {"pr" : ["<enter>"]}
     ],
     "master_only": true
 }

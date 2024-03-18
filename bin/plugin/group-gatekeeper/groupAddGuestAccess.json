@@ -1,17 +1,17 @@
 {
     "interactive": [
-        "groupAddGuestAccess"                                               , {"ac" : ["--account"]},
-        "groupAddGuestAccess --account"                                     , {"ac" : ["<ACCOUNT>"]},
-        "groupAddGuestAccess --account \\S+"                                 , {"ac" : ["--group"]},
-        "groupAddGuestAccess --account \\S+ --group"                         , {"ac" : ["<GROUP>"]},
-        "groupAddGuestAccess --account \\S+ --group \\S+"                     , {"ac" : ["--host"]},
-        "groupAddGuestAccess --account \\S+ --group \\S+ --host"              , {"pr" : ["<HOST>", "<IP>", "<IP/MASK>"]},
-        "groupAddGuestAccess --account \\S+ --group \\S+ --host \\S+"          , {"ac" : ["<enter>", "--user", "--port"]},
-        "groupAddGuestAccess --account \\S+ --group \\S+ --host \\S+ .*--user" , {"pr" : ["<USER>"]},
-        "groupAddGuestAccess --account \\S+ --group \\S+ --host \\S+ .*--port" , {"pr" : ["<PORT>"]},
-        "groupAddGuestAccess --account \\S+ --group \\S+ --host \\S+ --user \\S+"                          , {"ac" : ["<enter>", "--port"]},
-        "groupAddGuestAccess --account \\S+ --group \\S+ --host \\S+ --port \\S+"                          , {"ac" : ["<enter>", "--user"]},
-        "groupAddGuestAccess --account \\S+ --group \\S+ --host \\S+ --(port|user) \\S+ --(port|user) \\S+" , {"pr" : ["<enter>"]}
+        "groupAddGuestAccess"                                                         , {"ac" : ["--account"]},
+        "groupAddGuestAccess +--account"                                              , {"ac" : ["<ACCOUNT>"]},
+        "groupAddGuestAccess +--account +\\S+"                                        , {"ac" : ["--group"]},
+        "groupAddGuestAccess +--account +\\S+ +--group"                               , {"ac" : ["<GROUP>"]},
+        "groupAddGuestAccess +--account +\\S+ +--group +\\S+"                         , {"ac" : ["--host"]},
+        "groupAddGuestAccess +--account +\\S+ +--group +\\S+ +--host"                 , {"pr" : ["<HOST>", "<IP>", "<IP/MASK>"]},
+        "groupAddGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+"           , {"ac" : ["<enter>", "--user", "--port"]},
+        "groupAddGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +.*--user" , {"pr" : ["<USER>"]},
+        "groupAddGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +.*--port" , {"pr" : ["<PORT>"]},
+        "groupAddGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +--user +\\S+"                             , {"ac" : ["<enter>", "--port"]},
+        "groupAddGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +--port +\\S+"                             , {"ac" : ["<enter>", "--user"]},
+        "groupAddGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +--(port|user) +\\S+ +--(port|user) +\\S+" , {"pr" : ["<enter>"]}
     ],
     "master_only": true
 }

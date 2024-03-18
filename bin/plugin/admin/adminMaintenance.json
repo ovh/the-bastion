@@ -1,9 +1,9 @@
 {
     "interactive": [
-        "adminMaintenance" , { "ac" : ["--lock","--unlock"]},
-        "adminMaintenance --lock" , { "ac" : ["--message","<enter>"]},
-        "adminMaintenance --lock --message" , { "pr" : ["\"<MESSAGE>\""]},
-        "adminMaintenance --lock --message .+" , { "pr" : ["<enter>"]},
-        "adminMaintenance --unlock" , { "pr" : ["<enter>"]}
+        "adminMaintenance"                        , { "ac" : ["--lock","--unlock"]},
+        "adminMaintenance +--lock"                , { "ac" : ["--message","<enter>"]},
+        "adminMaintenance +--lock +--message"     , { "pr" : ["\"<MESSAGE>\""]},
+        "adminMaintenance +--lock +--message +.+" , { "pr" : ["<enter>"]},
+        "adminMaintenance +--unlock"              , { "pr" : ["<enter>"]}
     ]
 }
