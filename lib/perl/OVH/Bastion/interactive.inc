@@ -142,7 +142,8 @@ EOM
         my $groupList            = OVH::Bastion::get_group_list(cache => 1, groupType => 'key')->value;
         my $realmList            = OVH::Bastion::get_realm_list(cache => 1)->value;
         my $pluginListRestricted = OVH::Bastion::get_plugin_list(restrictedOnly => 1)->value;
-        foreach my $i (0 .. $#rules) {
+        my $i                    = 0;
+        while ($i + 1 < $#rules) {
             my $re   = $rules[$i++];
             my $item = $rules[$i++];
 
