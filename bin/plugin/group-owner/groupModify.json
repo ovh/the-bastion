@@ -1,12 +1,12 @@
 {
     "interactive": [
-        "groupModify"                                        , {"ac" : ["--group"]},
-        "groupModify +--group"                               , {"ac" : ["<GROUP>"]},
-        "groupModify +--group +\\S+"                         , {"ac" : ["--mfa-required","--guest-ttl-limit"]},
-        "groupModify +--group +\\S+ +--mfa-required"         , {"ac" : ["password","totp","any","none"]},
-        "groupModify +--group +\\S+ +--mfa-required +\\S+"   , {"pr" : ["<ENTER>"]},
-        "groupModify +--group +\\S+ +--guest-ttl-limit"      , {"pr" : ["<DURATION>"]},
-        "groupModify +--group +\\S+ +--guest-ttl-limit +\\S+", {"pr" : ["<ENTER>"]}
+        "groupModify"                                 , {"ac" : ["--group"]},
+        "groupModify +--group"                        , {"ac" : ["<GROUP>"]},
+        "groupModify +--group +.+--mfa-required"      , {"ac" : ["password","totp","any","none"]},
+        "groupModify +--group +.+--guest-ttl-limit"   , {"pr" : ["<DURATION>"]},
+        "groupModify +--group +.+--idle-lock-timeout" , {"pr" : ["<DURATION>","0 (disable)","-1 (use bastion default)"]},
+        "groupModify +--group +.+--idle-kill-timeout" , {"pr" : ["<DURATION>","0 (disable)","-1 (use bastion default)"]},
+        "groupModify +--group +.+"                    , {"ac" : ["--mfa-required","--guest-ttl-limit","--idle-lock-timeout","--idle-kill-timeout","<ENTER>"]}
     ],
     "master_only": 1
 }
