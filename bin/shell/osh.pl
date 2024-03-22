@@ -1808,6 +1808,11 @@ sub do_plugin_jit_mfa {
         main_exit(OVH::Bastion::EXIT_NO_HOST, 'no_host', "A host is required for this plugin but none was specified");
     }
 
+    # if $ip is undef it's because $host didn't resolve, exit
+    if (!$ip) {
+        main_exit OVH::Bastion::EXIT_HOST_NOT_FOUND, 'host_not_found', "Unable to resolve host '$host'";
+    }
+
     # if no user yet, fix it to remote user
     # we need it to be able to get the proper answer for is_access_granted, and we need to
     # call is_access_granted so that we know whether we need to trigger JIT MFA for this
