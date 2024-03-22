@@ -1,3 +1,10 @@
+## v3.15.00 - 2024/03/22
+- feat: add ``dnsSupportLevel`` option for systems with broken DNS (fixes #397)
+- enh: allow ``@`` as a valid remote user char (fixes #437)
+- enh: ``interactive``: autocomplete: allow multi-spaces, remove unnecessary loops, fix display
+- fix: ``connect.pl``: don't look for error messages when sysret==0
+- fix: avoid a warning when an non-resolvable host is specified with ``scp`` or ``sftp``
+
 ## v3.14.16 - 2024/02/20
 feat: add ``ttyrecStealthStdoutPattern`` config
 enh: ``batch``: openhandle() is overkill and doesn't work on EOF
