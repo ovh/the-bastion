@@ -27,6 +27,11 @@ See the ``--help`` for a more fine-grained upgrade path if needed.
 Version-specific upgrade instructions
 =====================================
 
+v3.15.00 - 2024/03/22
+*********************
+
+No specific upgrade instructions.
+
 v3.14.16 - 2024/02/20
 *********************
 
