@@ -57,7 +57,7 @@
 # allowedIngressSshAlgorithms (array of strings (algorithm names))
 #     DESC: The algorithms authorized for ingress ssh public keys added to this bastion. Possible values: ``dsa``, ``rsa``, ``ecdsa``, ``ed25519``, note that some of those might not be supported by your current version of ``OpenSSH``: unsupported algorithms are automatically omitted at runtime.
 #  DEFAULT: [ "rsa", "ecdsa", "ed25519" ]
-"allowedIngressSshAlgorithms": [ "rsa", "ecdsa", "ed25519" ],
+"allowedIngressSshAlgorithms": [ "rsa", "ecdsa", "ed25519", "ecdsa-sk", "ed25519-sk" ],
 #
 # allowedEgressSshAlgorithms (array of strings (algorithm names))
 #     DESC: The algorithms authorized for egress ssh public keys generated on this bastion. Possible values: ``dsa``, ``rsa``, ``ecdsa``, ``ed25519``, note that some of those might not be supported by your current version of ``OpenSSH``, unsupported algorithms are automatically omitted at runtime.
