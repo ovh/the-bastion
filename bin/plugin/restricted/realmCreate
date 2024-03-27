@@ -57,24 +57,17 @@ if ($fnret) {
 # TODO check $from
 
 if (!$pubKey) {
-    $fnret = OVH::Bastion::get_supported_ssh_algorithms_list(way => 'ingress');
-    $fnret or osh_exit $fnret;
-    my @algoList = @{$fnret->value};
-    my $algos    = join(' ', @algoList);
-    osh_info "Please paste the SSH key you want to add. This bastion supports the following algorithms:\n";
-    if (grep { 'ed25519' eq $_ } @algoList) {
-        osh_info "ED25519: strongness[#####] speed[#####], use `ssh-keygen -t ed25519' to generate one";
-    }
-    if (grep { 'ecdsa' eq $_ } @algoList) {
-        osh_info "ECDSA  : strongness[####.] speed[#####], use `ssh-keygen -t ecdsa -b 521' to generate one";
-    }
-    if (grep { 'rsa' eq $_ } @algoList) {
-        osh_info "RSA    : strongness[###..] speed[#....], use `ssh-keygen -t rsa -b 4096' to generate one";
-    }
-    osh_info
-      "\nThis should be the egress key of the group named 'realm' from the other side (your paste won't be echoed).";
+    osh_info("Please paste the SSH key you want to add, which should be the egress key ");
+    osh_info("of the group on the other side you want members to have access to this realm.");
+
+    osh_info("\nThis bastion supports the following algorithms:\n\n");
+
+    # don't display info about generating keys, as the public key is supposed to already exist
+    # skip fido algos as the key is supposed to be the egress key of another bastion
+    OVH::Bastion::print_accepted_key_algorithms(way => "ingress", fido => 0, generate => 0);
+
+    osh_info("\nNote that your paste won't be echoed:");
     $pubKey = <STDIN>;
-    ## use critic
 }
 
 $fnret = OVH::Bastion::is_valid_public_key(pubKey => $pubKey, way => 'ingress');

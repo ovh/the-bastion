@@ -61,9 +61,9 @@ if (!OVH::Bastion::has_piv_helper()) {
 }
 
 if (not defined $pubKey) {
-    osh_info "Please paste the SSH key you want to add. This bastion supports the following algorithms:\n";
+    osh_info "Please paste the SSH key you want to add.";
     OVH::Bastion::print_accepted_key_algorithms(way => "ingress");
-    osh_info "\nIn any case, don't save it without a passphrase.";
+    osh_info "\nPlease ensure your private key is encrypted using a proper passphrase.";
 
     if (OVH::Bastion::config('ingressKeysFromAllowOverride')->value) {
         osh_info
