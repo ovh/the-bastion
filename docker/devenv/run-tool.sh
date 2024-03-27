@@ -72,6 +72,7 @@ case "$cmd" in
         fi
         ;;
     bash) docker exec -it $NAME bash;;
+    run) docker exec -it $NAME bash;;
     *)
         cat <<EOF
 Usage: $0 COMMAND [OPTIONS]
