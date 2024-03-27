@@ -2,58 +2,58 @@
 groupCreate
 ============
 
-Create a new bastion group
-==========================
+Create a group
+==============
 
 
 .. admonition:: usage
    :class: cmdusage
 
-   --osh groupCreate --group NAME --owner ACCOUNT --algo ALGO --size SIZE [OPTIONS]
+   --osh groupCreate --group GROUP --owner ACCOUNT <--algo ALGO --size SIZE [--encrypted]|--no-key>
 
 .. program:: groupCreate
 
 
-.. option:: --group NAME
+.. option:: --group
 
-   Group name to create, NAME must contain only valid UNIX group name characters
+   Group name to create
 
-.. option:: --owner ACCOUNT
 
-   Account to set as the group owner, this account will have complete rights to manage the group
+.. option:: --owner
 
-.. option:: --algo ALGO
+   Preexisting bastion account to assign as owner (can be you)
 
-   Specifies the algo of the key, usually either rsa, ecdsa or ed25519. Note that the available algorithms depend on the OS the bastion is running on, along with its configuration policies
-
-.. option:: --size SIZE
-
-   Specifies the size of the key to be generated.
-   For RSA, choose between 2048 and 8192 (any value above 4096 is probably not very useful).
-   For ECDSA, choose either 256, 384 or 521.
-   For ED25519, size is always 256.
 
 .. option:: --encrypted
 
-   When specified, a passphrase will be prompted for the new key, and the private key will be stored encrypted on the bastion. Note that the passphrase will be required each time you want to use the key.
+   Add a passphrase to the key. Beware that you'll have to enter it for each use.
+
+                  Do NOT add the passphrase after this option, you'll be prompted interactively for it.
+
+.. option:: --algo
+
+   Specifies the algo of the key, either rsa, ecdsa or ed25519.
+
+.. option:: --size
+
+   Specifies the size of the key to be generated.
+
+                  For RSA, choose between 2048 and 8192 (4096 is good).
+                  For ECDSA, choose either 256, 384 or 521.
+                  For ED25519, size is always 256.
 
 .. option:: --no-key
 
-   No egress key pair will be generated. In that case, omit ``--algo`` and ``--size``.
+   Don't generate an egress SSH key at all for this group
 
-Algorithms guideline
-====================
 
-A quick overview of the different algorithms::
+A quick overview of the different algorithms:
 
-  +---------+------+-----------+---------+-----------------------------------------+
-  | algo    | size | strength  | speed   | compatibility                           |
-  +=========+======+===========+=========+=========================================+
-  | DSA     |  any | 0         | n/a     | obsolete, do not use                    |
-  | RSA     | 2048 | **        | **      | works everywhere                        |
-  | RSA     | 4096 | ***       | *       | works almost everywhere                 |
-  | ECDSA   |  521 | ****      | *****   | OpenSSH 5.7+ (debian 7+, ubuntu 12.04+) |
-  | ED25519 |  256 | *****     | *****   | OpenSSH 6.5+ (debian 8+, ubuntu 14.04+) |
-  +---------+------+-----------+---------+-----------------------------------------+
+.. code-block:: none
 
-This table is meant as a quick cheat-sheet, you're warmly advised to do your own research, as other constraints may apply to your environment.
+   Ed25519      : robustness[###] speed[###]
+   ECDSA        : robustness[##.] speed[###]
+   RSA          : robustness[#..] speed[#..]
+
+This table is meant as a quick cheat-sheet, you're warmly advised to do
+your own research, as other constraints may apply to your environment.

@@ -1050,29 +1050,73 @@ sub is_effective_piv_account_policy_enabled {
 
 # Deduces from the bastion config what algorithms are accepted.
 sub print_accepted_key_algorithms {
-    my %params = @_;
-    my $way    = $params{'way'};
+    my %params   = @_;
+    my $way      = $params{'way'};
+    my $fido     = ($params{'fido'} // 1);
+    my $generate = ($params{'generate'} // 1);
     my $fnret;
 
+    my @algoList;
     $fnret = OVH::Bastion::get_supported_ssh_algorithms_list(way => $way);
-    $fnret or return $fnret;
-    my @algoList = @{$fnret->value};
+    if (!$fnret && $ENV{'PLUGIN_DOCGEN'}) {
+        @algoList = qw{ rsa ecdsa ed25519 };
+        push @algoList, qw{ ecdsa-sk ed25519-sk } if ($way eq 'ingress');
+    }
+    elsif (!$fnret) {
+        return $fnret;
+    }
+    else {
+        @algoList = @{$fnret->value};
+    }
 
-    if (grep { 'ed25519-sk' eq $_ } @algoList) {
-        osh_info "FIDO2 Ed25519: strongness[######] speed[#####], use `ssh-keygen -t ed25519-sk' to generate one";
+    my ($X, $o) = qw{ # . };
+    if (OVH::Bastion::can_use_utf8() && OVH::Bastion::config('fanciness')->value eq 'full') {
+        $X = "\N{U+2713}";
+        $o = " ";
+    }
+
+    require POSIX;
+    my $bastionName = OVH::Bastion::config('bastionName')->value;
+    my $appName     = "ssh:" . POSIX::strftime("%Y-%m-%d.", localtime()) . substr($bastionName, 0, 24);
+
+    my $hasFido = 0;
+
+    my $prefix = "";
+    osh_info("A quick overview of the different algorithms:");
+    if ($ENV{'PLUGIN_DOCGEN'}) {
+        $prefix = "   ";
+        osh_info("\n.. code-block:: none\n");
+    }
+
+    if ($fido && grep { 'ed25519-sk' eq $_ } @algoList) {
+        osh_info("${prefix}FIDO2 Ed25519: robustness[$X$X$X] speed[$X$X$X]"
+              . ($generate ? ", generate: `ssh-keygen -t ed25519-sk -O resident -O application=$appName" : ""));
+        $hasFido = 1;
     }
     if (grep { 'ed25519' eq $_ } @algoList) {
-        osh_info "ED25519      : strongness[#####.] speed[#####], use `ssh-keygen -t ed25519' to generate one";
+        osh_info("${prefix}Ed25519      : robustness[$X$X$X] speed[$X$X$X]"
+              . ($generate ? ", generate: `ssh-keygen -t ed25519'" : ""));
     }
-    if (grep { 'ecdsa-sk' eq $_ } @algoList) {
-        osh_info "FIDO2 ECDSA  : strongness[#####.] speed[#####], use `ssh-keygen -t ecdsa-sk -b 521' to generate one";
+    if ($fido && grep { 'ecdsa-sk' eq $_ } @algoList) {
+        osh_info("${prefix}FIDO2 ECDSA  : robustness[$X$X$o] speed[$X$X$X]"
+              . ($generate ? ", generate: `ssh-keygen -t ecdsa-sk -b 521 -O resident -O application=$appName" : ""));
+        $hasFido = 1;
     }
     if (grep { 'ecdsa' eq $_ } @algoList) {
-        osh_info "ECDSA        : strongness[####..] speed[#####], use `ssh-keygen -t ecdsa -b 521' to generate one";
+        osh_info("${prefix}ECDSA        : robustness[$X$X$o] speed[$X$X$X]"
+              . ($generate ? ", generate: `ssh-keygen -t ecdsa -b 521'" : ""));
     }
     if (grep { 'rsa' eq $_ } @algoList) {
-        osh_info "RSA          : strongness[###...] speed[#....], use `ssh-keygen -t rsa -b 4096' to generate one";
+        osh_info("${prefix}RSA          : robustness[$X$o$o] speed[$X$o$o]"
+              . ($generate ? ", generate: `ssh-keygen -t rsa -b 4096'" : ""));
     }
+
+    if ($hasFido) {
+        osh_info("\nNote that FIDO2 algorithms require a FIDO2-compatible hardware Security Key.");
+    }
+    osh_info("\nThis table is meant as a quick cheat-sheet, you're warmly advised to do");
+    osh_info("your own research, as other constraints may apply to your environment.");
+    return;
 }
 
 1;

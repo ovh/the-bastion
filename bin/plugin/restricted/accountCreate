@@ -103,9 +103,9 @@ if (defined $maxInactiveDays && $maxInactiveDays < 0) {
 }
 
 if (!$pubKey && !$noKey) {
-    osh_info "Please paste the SSH key you want to add. This bastion supports the following algorithms:\n";
+    osh_info "Please paste the SSH key you want to add.";
     OVH::Bastion::print_accepted_key_algorithms(way => "ingress");
-    osh_info "\nIn any case, don't save it without a passphrase (your paste won't be echoed).";
+    osh_info "\nPlease ensure your private key is encrypted using a proper passphrase (your paste won't be echoed).";
     $pubKey = <STDIN>;
 }
 
