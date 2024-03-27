@@ -25,27 +25,10 @@ EOF
     }
     else {
         osh_info <<"EOF";
-With the policy and SSH version on this bastion,
-the following algorithms are supported: $algos.
-
 A quick overview of the different algorithms:
 EOF
     }
-    osh_info <<"EOF";
-
-  +---------+------+----------+-------+-----------------------------------------+
-  | algo    | size | strength | speed | compatibility                           |
-  +=========+======+==========+=======+=========================================+
-  | DSA     |  any | 0        | n/a   | obsolete, do not use                    |
-  | RSA     | 2048 | **       | **    | works everywhere                        |
-  | RSA     | 4096 | ***      | *     | works almost everywhere                 |
-  | ECDSA   |  521 | ****     | ***** | OpenSSH 5.7+ (Debian 7+, Ubuntu 12.04+) |
-  | Ed25519 |  256 | *****    | ***** | OpenSSH 6.5+ (Debian 8+, Ubuntu 14.04+) |
-  +---------+------+----------+-------+-----------------------------------------+
-
-This table is meant as a quick cheat-sheet, you're warmly advised to do
-your own research, as other constraints may apply to your environment.
-EOF
+    OVH::Bastion::print_accepted_key_algorithms(way => "egress");
     return 0;
 }
 
