@@ -464,12 +464,34 @@ EOS
         .value.key.line   "ecdsa-sha2-nistp521 $b64 test@ecdsa521" \
         .value.key.prefix ""
 
+b64='AAAAInNrLWVjZHNhLXNoYTItbmlzdHAyNTZAb3BlbnNzaC5jb20AAAAIbmlzdHAyNTYAAABBBBTjpImSazDYONgM5plDyz7R2dFmVJMtKCYRemL+XNvVpyRc4e+V8GBF+UZFSc2ieCpGmcB54GfjryznSgyYHHYAAAAEc3NoOg=='
+    local fpe256_sk
+    fpe256_sk="SHA256:DRMDgE8K3ByBwYEcosmosvLfHMT7XabCzzM4MoIiIgU"
+    [ "$FP_TYPE" = md5 ] && fpe256_sk="dc:e1:9b:e4:64:97:d6:c3:47:a7:9b:33:3d:35:e2:cb"
+    script  sk-ecdsa256  $a1 -osh selfAddIngressKey "<<< \"sk-ecdsa-sha2-nistp256@openssh.com $b64 test@ecdsa256-sk\""
+    retvalshouldbe 0
+    contain "key successfully added"
+    json $(cat <<EOS
+    .command                selfAddIngressKey
+    .error_code             OK
+    .value.key.base64       $b64
+    .value.key.comment      test@ecdsa256-sk
+    .value.key.typecode     sk-ecdsa-sha2-nistp256@openssh.com
+    .value.key.fingerprint  $fpe256_sk
+    .value.key.family       ECDSA-SK
+    .value.key.size         256
+EOS
+    ) \
+        .value.key.line   "sk-ecdsa-sha2-nistp256@openssh.com $b64 test@ecdsa256-sk" \
+        .value.key.prefix ""
+
+
     b64='AAAAC3NzaC1lZDI1NTE5AAAAIB+fS15BtjxBL338aMGMZus6OuPYP1Ix1yKY1RRCa5VB'
     local fped
     fped="SHA256:DFITA8tNfJknq6a/xbro1SxTLTWn/vwZkEROk4IB2LM"
     [ "$FP_TYPE" = md5 ] && fped="d7:92:5b:77:8b:69:03:cb:e7:5a:11:76:d1:a6:ea:e4"
     local fplist
-    fplist="$fp4096 $fp8192 $fp16384 $fpe256 $fpe384 $fpe521"
+    fplist="$fp4096 $fp8192 $fp16384 $fpe256 $fpe384 $fpe521 $fpe256_sk"
     script  ed25519   $a1 -osh selfAddIngressKey "<<< \"ssh-ed25519 $b64 test@ed25519\""
     if [ "${capabilities[ed25519]}" = "1" ] ; then
         fplist="$fplist $fped"
@@ -503,6 +525,46 @@ EOS
 EOS
         ) \
             .value.key.line   "ssh-ed25519 $b64 test@ed25519" \
+            .value.key.prefix ""
+    fi
+
+    b64='AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIELpTERg9ds+oj8afq/8fOHdpbf1HBhbRcn5JTzv2QOSAAAABHNzaDo='
+    local fped_sk
+    fped_sk="SHA256:iV2l8+uJjJwyHnbaWAO25xIsYbZWN77C1kx5vxzbz9k"
+    [ "$FP_TYPE" = md5 ] && fped_sk="f5:bd:0c:4f:c7:6a:9d:15:d9:9e:55:9d:89:b3:2b:8f"
+    script  ed25519-sk   $a1 -osh selfAddIngressKey "<<< \"sk-ssh-ed25519@openssh.com $b64 test@ed25519-sk\""
+    if [ "${capabilities[ed25519]}" = "1" ] ; then
+        fplist="$fplist $fped_sk"
+        retvalshouldbe 0
+        contain "key successfully added"
+        json $(cat <<EOS
+        .command                selfAddIngressKey
+        .error_code             OK
+        .value.key.base64       $b64
+        .value.key.comment      test@ed25519-sk
+        .value.key.typecode     sk-ssh-ed25519@openssh.com
+        .value.key.fingerprint  $fped_sk
+        .value.key.family       ED25519-SK
+        .value.key.size         256
+EOS
+    ) \
+            .value.key.line   "sk-ssh-ed25519@openssh.com $b64 test@ed25519-sk" \
+            .value.key.prefix ""
+    else
+        retvalshouldbe 100
+        contain "look like an SSH public key"
+        json $(cat <<EOS
+        .command                selfAddIngressKey
+        .error_code             KO_NOT_A_KEY
+        .value.key.base64       $b64
+        .value.key.comment      test@ed25519-sk
+        .value.key.typecode     sk-ssh-ed25519@openssh.com
+        .value.key.fingerprint  null
+        .value.key.family       null
+        .value.key.size         null
+EOS
+        ) \
+            .value.key.line   "sk-ssh-ed25519@openssh.com $b64 test@ed25519-sk" \
             .value.key.prefix ""
     fi
 
