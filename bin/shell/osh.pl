@@ -371,7 +371,6 @@ my $remainingOptions;
     "interactive|i"   => \my $interactive,
     "netconf"         => \my $netconf,
     "wait"            => \my $wait,
-    "wait-port=i"     => \my $wait_port,
     "ssh-as=s"        => \my $sshAs,
     "use-key=s"       => \my $useKey,
     "kbd-interactive" => \my $userKbdInteractive,
@@ -1488,39 +1487,27 @@ osh_debug("about to exec: " . join(' ', @ttyrec));
 
 # if --wait is specified, we wait for the host to be alive before connecting
 if ($wait) {
+    require IO::Socket::INET;
     my $startedat = time();
-    osh_info "Pinging $host, will connect as soon as it's alive...";
-    while (1) {
-        my @pingcmd = qw{ fping -- };
-        push @pingcmd, $host;
-
-        my $fnretexec = OVH::Bastion::execute(cmd => \@pingcmd, noisy_stdout => 1, noisy_stderr => 1);
-        $fnretexec or exit(OVH::Bastion::EXIT_EXEC_FAILED);
-        if ($fnretexec->value->{'sysret'} == 0) {
+    my $loops     = 0;
+    osh_info "Waiting for port $port to be open on $host before attempting to connect...";
+    while ($loops < 3600) {    # can be up to 2h (socket timeout + sleep 1)
+        my $Sock = IO::Socket::INET->new(
+            Proto    => 'tcp',
+            Timeout  => 1,
+            PeerAddr => $ip,
+            PeerPort => $port,
+        );
+        if ($Sock) {
             osh_info "Alive after waiting for " . (time() - $startedat) . " seconds, connecting...";
-            sleep 2 if (time() > $startedat + 1);    # so that ssh has the time to startup... hopefully
+            $Sock->close();
             last;
         }
-        sleep 1;
-    }
-}
-
-# if --wait-port is specified, we wait for the host specific port to be open before connecting
-if ($wait_port) {
-    my $startedat = time();
-    osh_info "Testing $host port $wait_port, will connect as soon as it's open...";
-    while (1) {
-        my @testportcmd = qw{ nc -w 1 -z -v -n };
-        push @testportcmd, $host, $wait_port;
-
-        my $fnretexec = OVH::Bastion::execute(cmd => \@testportcmd, noisy_stdout => 1, noisy_stderr => 1);
-        $fnretexec or exit(OVH::Bastion::EXIT_EXEC_FAILED);
-        if ($fnretexec->value->{'sysret'} == 0) {
-            osh_info "Open after waiting for " . (time() - $startedat) . " seconds, connecting...";
-            sleep 2 if (time() > $startedat + 1);    # so that ssh has the time to startup... hopefully
-            last;
+        sleep 1;    # to avoid looping too fast if the failure is immediate and not a timeout (i.e. port closed)
+        $loops++;
+        if ($loops % 5 == 0) {
+            osh_info("Still trying to connect to $host:$port after " . (time() - $startedat) . " seconds...");
         }
-        sleep 1;
     }
 }
 
@@ -2021,7 +2008,6 @@ Usage (osh cmd): $bastionName --osh [OSH_COMMAND] [OSH_OPTIONS]
     --always-escape      Bypass config and force the bugged behavior of old bastions for REMOTE_COMMAND escaping. Don't use.
     --never-escape       Bypass config and force the new behavior of new bastions for REMOTE_COMMAND escaping. Don't use.
     --wait               Ping the host before connecting to it (useful to ssh just after a reboot!)
-    --wait-port          Test the host specific port to be open before connecting to it
     --long-help          Print this
 
 [REMOTE_COMMAND]

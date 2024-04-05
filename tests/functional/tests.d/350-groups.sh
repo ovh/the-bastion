@@ -141,27 +141,40 @@ EOS
 
     # now that we have several keys, take the opportunity to test force-key
 
-    plgfail a1_add_access_force_key_and_pwd_g1 $a1 --osh groupAddServer --host 127.1.2.3 --user-any --port-any --force --force-password '$1$2$3456' --force-key "$key1fp" --group $group1
+    plgfail a1_add_access_force_key_and_pwd_g1 $a1 --osh groupAddServer --host 127.0.0.5 --user-any --port-any --force --force-password '$1$2$3456' --force-key "$key1fp" --group $group1
     json .error_code ERR_INCOMPATIBLE_PARAMETERS
 
-    success a1_add_access_force_key_g1 $a1 --osh groupAddServer --host 127.1.2.3 --user 'ar@base' --port-any --force --force-key "$key1fp" --group $group1
+    success a1_add_access_force_key_g1 $a1 --osh groupAddServer --host 127.0.0.5 --user 'ar@base' --port-any --force --force-key "$key1fp" --group $group1
     json .value.user 'ar@base'
 
     success a1_list_servers_check_force_key_g1 $a1 --osh groupListServers --group $group1
-    json '.value|.[]|select(.ip=="127.1.2.3")|.forceKey' "$key1fp"
-    json '.value|.[]|select(.ip=="127.1.2.3")|.user'     "ar@base"
+    json '.value|.[]|select(.ip=="127.0.0.5")|.forceKey' "$key1fp"
+    json '.value|.[]|select(.ip=="127.0.0.5")|.user'     "ar@base"
 
-    # try to use the force key
+    # try to use the force key AND --wait
 
-    run a1_connect_g1_with_forcekey $a1 ar@base@127.1.2.3 -- false
+    run a1_connect_g1_with_forcekey_and_wait $a1 --wait ar@base@127.0.0.5 -- false
     contain 'Connecting...'
     contain 'FORCED IN ACL'
     contain "$key1fp"
     nocontain "$key0fp"
+    contain "Waiting for port 22 to be open on "
+    contain REGEX "Alive after waiting for [0-9] seconds"
 
-    success a1_remove_forcekey_acl_g1 $a1 --osh groupDelServer --host 127.1.2.3 --user 'ar@base' --port-any --group $group1
+    success a1_remove_forcekey_acl_g1 $a1 --osh groupDelServer --host 127.0.0.5 --user 'ar@base' --port-any --group $group1
 
     # /force-key
+
+    success a1_add_non_routable_ip $a1 --osh groupAddServer --host 192.0.2.0 --user-any --port-any --force --group $group1
+
+    run a1_ssh_wait $a1 --wait 192.0.2.0
+    retvalshouldbe 124 # timeout
+    contain "Waiting for port 22 to be open on 192.0.2.0"
+    contain REGEX "Still trying to connect to 192.0.2.0:22 after 1[0-9] seconds"
+
+    success a1_remove_non_routable_ip $a1 --osh groupDelServer --host 192.0.2.0 --user-any --port-any --group $group1
+
+    # test --alive
 
     run a0_del_key_g1 $a0 --osh groupDelEgressKey --group $group1 --id $key1id
     retvalshouldbe 106
