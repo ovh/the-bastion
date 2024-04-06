@@ -7,11 +7,12 @@
 
 # --- PASSWORD CHECK SECTION
 # proceed in this section ONLY if the user is in group mfa-password-configd, skip it entirely otherwise
-auth       [success=ignore ignore=ignore default=4] pam_succeed_if.so quiet user ingroup mfa-password-configd
+auth       [success=ignore ignore=ignore default=3] pam_succeed_if.so quiet user ingroup mfa-password-configd
 auth       optional                                 pam_echo.so       Your account has Multi-Factor Authentication enabled, an additional authentication factor is required (password).
 auth       optional                                 pam_exec.so       quiet debug stdout /opt/bastion/bin/shell/pam_exec_pwd_info.sh
 # lock account after 6 failures, for 5 minutes
 # ... but disabled, as at least the official CentOS docker images don't seem to have pam_tally nor pam_tally2
+# ... if you uncomment the below line, set the default= line above to default=4 instead of default=3
 #auth       required                                 pam_tally2.so     onerr=fail deny=6 unlock_time=300
 # then check password
 auth       required                                 pam_unix.so
