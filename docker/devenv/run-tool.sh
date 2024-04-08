@@ -90,7 +90,7 @@ Usage: $0 COMMAND [OPTIONS]
   doc-serve <PORT>     starts a local HTTP python server on PORT to view generated documentation
 
   bash                 spawns an interactive shell to run any arbitrary command in the devenv docker
-  run <COMMAND>        run an arbitrary command in the devenv docker
+  run <COMMAND>        runs an arbitrary command in the devenv docker
   rebuild              forces the rebuild of the devenv docker image that is needed to run all the above commands
 
 EOF
