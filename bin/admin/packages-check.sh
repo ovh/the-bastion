@@ -35,7 +35,7 @@ if echo "$DISTRO_LIKE" | grep -q -w debian; then
                 libjson-xs-perl inotify-tools lsof curl libterm-readline-gnu-perl \
                 libwww-perl libdigest-sha-perl libnet-ssleay-perl \
                 libnet-server-perl cryptsetup mosh expect openssh-server locales \
-                coreutils netcat-traditional bash libcgi-pm-perl iputils-ping tar \
+                coreutils bash libcgi-pm-perl iputils-ping tar \
                 liblinux-prctl-perl libpam-google-authenticator pamtester"
     # workaround for debian/armhf: curl fails to validate some SSL certificates,
     # whereas wget succeeds; this is needed for e.g. install-ttyrec.sh
@@ -61,7 +61,7 @@ elif echo "$DISTRO_LIKE" | grep -q -w rhel; then
             sudo fping xz sqlite binutils acl gnupg2 rsync perl-DateTime \
             perl-JSON-XS inotify-tools lsof curl perl-Term-ReadLine-Gnu \
             perl-libwww-perl perl-Digest perl-Net-Server cryptsetup mosh \
-            expect openssh-server netcat bash perl-CGI perl-Test-Simple passwd \
+            expect openssh-server bash perl-CGI perl-Test-Simple passwd \
             cracklib-dicts perl-Time-Piece perl-Time-HiRes diffutils \
             perl-Sys-Syslog pamtester google-authenticator qrencode-libs \
             perl-LWP-Protocol-https perl-Test-Deep findutils tar iputils"
@@ -117,7 +117,7 @@ elif echo "$DISTRO_LIKE" | grep -q -w suse; then
             perl-JSON-XS inotify-tools lsof curl perl-TermReadLine-Gnu \
             perl-libwww-perl perl-Digest perl-IO-Socket-SSL \
             perl-Net-Server cryptsetup mosh expect openssh \
-            coreutils netcat-openbsd bash perl-CGI iputils \
+            coreutils bash perl-CGI iputils \
             perl-Time-HiRes perl-Unix-Syslog hostname perl-LWP-Protocol-https \
             google-authenticator-libpam tar perl-Test-Deep"
     [ "$opt_syslogng" = 1 ] && wanted_list="$wanted_list syslog-ng"

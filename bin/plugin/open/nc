@@ -2,6 +2,8 @@
 # vim: set filetype=perl ts=4 sw=4 sts=4 et:
 use common::sense;
 
+use IO::Socket;
+
 use File::Basename;
 use lib dirname(__FILE__) . '/../../../lib/perl';
 use OVH::Result;
@@ -10,7 +12,7 @@ use OVH::Bastion::Plugin qw( :DEFAULT help );
 
 my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv     => \@ARGV,
-    header   => "netcat -z",
+    header   => "simulate a netcat -z",
     options  => {"w=i" => \my $timeout},
     helptext => <<'EOF',
 Check whether a remote TCP port is open
@@ -57,33 +59,39 @@ if (!$fnret) {
     osh_exit $fnret;
 }
 
-my @command = qw{ nc -v -z -w };
-push @command, ($timeout and $timeout > 0 and $timeout <= 3600) ? $timeout : 3;
-push @command, $host;
-push @command, $port;
-
 osh_info "Checking whether TCP port $port of $host is reachable...";
 
-$fnret = OVH::Bastion::execute(cmd => \@command, noisy_stdout => 1, noisy_stderr => 1);
-$fnret or osh_exit $fnret;
+my $Sock = IO::Socket->new(
+    Domain   => IO::Socket::AF_INET,
+    Type     => IO::Socket::SOCK_STREAM,
+    Proto    => 'tcp',
+    Timeout  => ($timeout and $timeout > 0 and $timeout <= 3600) ? $timeout : 3,
+    PeerAddr => $host,
+    PeerPort => $port,
+);
+
+my $errmsg = $@;
+$errmsg =~ s{IO::Socket(::[a-zA-Z0-9]*)?: }{};
+$errmsg =~ s{connect: }{};
 
 # try to guess what happened
 my $answer = 'unknown';
-if ($fnret->value->{'sysret'} == 0) {
+if ($Sock) {
     $answer = 'open';
+    osh_info("Port $port is open");
 }
-elsif (grep { /timeout|timed out/i } @{$fnret->value->{'stderr'}}) {
-    $answer = 'timeout';
-}
-elsif (grep { /refused/i } @{$fnret->value->{'stderr'}}) {
+elsif ($errmsg =~ m{refused}i) {
     $answer = 'closed';
+    osh_info("Port $port is closed");
+}
+elsif ($errmsg =~ m{timeout}i) {
+    $answer = 'timeout';
+    osh_info("Connection timed out");
 }
 
 osh_ok {
-    sysret => $fnret->value->{'sysret'} + 0,
-    output => $fnret->value->{'stderr'},
     host   => $host,
     port   => $port + 0,
-    result => $answer
+    result => $answer,
 };
 
