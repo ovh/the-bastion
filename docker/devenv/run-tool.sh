@@ -89,7 +89,7 @@ Usage: $0 COMMAND [OPTIONS]
   sphinx-view-objects  shows the named objects of the Sphinx documentation that can be referenced
   doc-serve <PORT>     starts a local HTTP python server on PORT to view generated documentation
 
-  bash                 spawn an interactive shell to run any arbitrary command in the devenv docker
+  bash                 spawns an interactive shell to run any arbitrary command in the devenv docker
   run <COMMAND>        run an arbitrary command in the devenv docker
   rebuild              forces the rebuild of the devenv docker image that is needed to run all the above commands
 
