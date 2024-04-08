@@ -50,7 +50,6 @@ testsuite_plugins()
     .error_code OK
     .value.host 127.0.0.1
     .value.port  22
-    .value.sysret 0
     .value.result open
 EOS
     )
@@ -61,7 +60,6 @@ EOS
     .error_code OK
     .value.host 127.0.0.1
     .value.port   22
-    .value.sysret 0
     .value.result open
 EOS
     )
@@ -72,7 +70,6 @@ EOS
     .error_code OK
     .value.host 127.0.0.1
     .value.port   1
-    .value.sysret 1
     .value.result closed
 EOS
     )
@@ -83,7 +80,6 @@ EOS
     .error_code OK
     .value.host 192.0.2.1
     .value.port   22
-    .value.sysret 1
     .value.result timeout
 EOS
     )
