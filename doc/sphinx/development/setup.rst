@@ -160,6 +160,7 @@ to get up-to-date information):
        --has-mfa-password=[0|1]   PAM is usable to check passwords (default: 0)
        --has-pamtester=[0|1]      The `pamtester` binary is available, and PAM is usable (default: 1)
        --has-piv=[0|1]            The `yubico-piv-tool` binary is available (default: 1)
+       --has-sk=[0|1]             The openssh-server supports Secure Keys (FIDO2) (default: 0)
 
 Without Docker
 --------------

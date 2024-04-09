@@ -17,7 +17,7 @@ opt_slowness_factor=1
 opt_log_prefix=
 opt_module=
 opt_post_run=
-declare -A capabilities=( [ed25519]=1 [mfa]=1 [mfa-password]=0 [pamtester]=1 [piv]=1 )
+declare -A capabilities=( [ed25519]=1 [mfa]=1 [mfa-password]=0 [pamtester]=1 [piv]=1 [sk]=0 )
 
 # set the helptext now to get the proper default values
 help_text=$(cat <<EOF
@@ -39,6 +39,7 @@ Specifying features support of the underlying OS of the tested bastion:
     --has-mfa-password=[0|1]   PAM is usable to check passwords (default: ${capabilities[mfa-password]})
     --has-pamtester=[0|1]      The \`pamtester\` binary is available, and PAM is usable (default: ${capabilities[pamtester]})
     --has-piv=[0|1]            The \`yubico-piv-tool\` binary is available (default: ${capabilities[piv]})
+    --has-sk=[0|1]             The openssh-server supports Secure Keys (FIDO2) (default: ${capabilities[sk]})
 
 EOF
 )
