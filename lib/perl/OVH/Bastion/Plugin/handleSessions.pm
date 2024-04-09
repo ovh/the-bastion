@@ -45,7 +45,7 @@ sub kill_sessions {
     if ($problems) {
         return R('ERR_CANNOT_TERMINATE_PROCESSES', msg => "Couldn't terminate $problems out of $count processes");
     }
-    return R('OK');
+    return R('OK', value => {count => $count, terminated => ($count - $problems)});
 }
 
 1;

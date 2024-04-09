@@ -20,11 +20,11 @@ Add a personal server access on your account
 
 .. option:: --user USER
 
-   Remote login to use, if you want to allow any login, use --user-any
+   Remote login to use, globbing characters '?' and '*' are supported
 
 .. option:: --user-any
 
-   Allow access with any remote login
+   Allow access with any remote login (synonym of ``--user *``)
 
 .. option:: --port PORT
 

@@ -871,11 +871,11 @@ EOS
 
     success a3_list_own_accesses $a3 --osh selfListAccesses
     json .command selfListAccesses .error_code OK
-    contain REGEX '77\.66\.55\.0/24[[:space:]]+\(any\)[[:space:]]+\(any\)[[:space:]]+personal[[:space:]]+'$account0'[[:space:]]'
-    contain REGEX '1\.2\.3\.4[[:space:]]+\(any\)[[:space:]]+\(any\)[[:space:]]+personal[[:space:]]+'$account0'[[:space:]]'
-    contain REGEX '77\.66\.55\.4[[:space:]]+\(any\)[[:space:]]+\(any\)[[:space:]]+personal[[:space:]]+'$account0'[[:space:]]'
+    contain REGEX '77\.66\.55\.0/24[[:space:]]+\*[[:space:]]+\*[[:space:]]+personal[[:space:]]+'$account0'[[:space:]]'
+    contain REGEX '1\.2\.3\.4[[:space:]]+\*[[:space:]]+\*[[:space:]]+personal[[:space:]]+'$account0'[[:space:]]'
+    contain REGEX '77\.66\.55\.4[[:space:]]+\*[[:space:]]+\*[[:space:]]+personal[[:space:]]+'$account0'[[:space:]]'
     contain REGEX '127\.0\.0\.1[[:space:]]+22[[:space:]]+g1[[:space:]]+'$group1'\(group-guest\)[[:space:]]+'$account2'[[:space:]]'
-    contain REGEX '10\.20\.0\.0/17[[:space:]]+\(any\)[[:space:]]+\(any\)[[:space:]]+'$group3'\(group-member\)[[:space:]]+'$account3'[[:space:]]'
+    contain REGEX '10\.20\.0\.0/17[[:space:]]+\*[[:space:]]+\*[[:space:]]+'$group3'\(group-member\)[[:space:]]+'$account3'[[:space:]]'
     contain "5 accesses listed"
 
     run notingroup $a1 --osh accountDelete --account $account2
@@ -1009,9 +1009,9 @@ EOS
     json .command groupListServers .error_code OK
     contain REGEX '127\.0\.0\.1[[:space:]]+22[[:space:]]+g1[[:space:]]+'$group1'\(group\)[[:space:]]+'$account2'[[:space:]]'
     contain REGEX '127\.0\.0\.2[[:space:]]+22[[:space:]]+g2[[:space:]]+'$group1'\(group\)[[:space:]]+'$account2'[[:space:]]'
-    contain REGEX '127\.0\.0\.10[[:space:]]+\(any\)[[:space:]]+\(any\)[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
-    contain REGEX '127\.0\.0\.11[[:space:]]+\(any\)[[:space:]]+\(any\)[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
-    contain REGEX '127\.0\.0\.12[[:space:]]+\(any\)[[:space:]]+\(any\)[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]+\S+[[:space:]]+00:00:[01][0123456789]'
+    contain REGEX '127\.0\.0\.10[[:space:]]+\*[[:space:]]+\*[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
+    contain REGEX '127\.0\.0\.11[[:space:]]+\*[[:space:]]+\*[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
+    contain REGEX '127\.0\.0\.12[[:space:]]+\*[[:space:]]+\*[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]+\S+[[:space:]]+00:00:[01][0123456789]'
     contain '5 accesses listed'
 
     # wait for the access to expire
@@ -1022,16 +1022,16 @@ EOS
     json .command groupListServers .error_code OK
     contain REGEX '127\.0\.0\.1[[:space:]]+22[[:space:]]+g1[[:space:]]+'$group1'\(group\)[[:space:]]+'$account2'[[:space:]]'
     contain REGEX '127\.0\.0\.2[[:space:]]+22[[:space:]]+g2[[:space:]]+'$group1'\(group\)[[:space:]]+'$account2'[[:space:]]'
-    contain REGEX '127\.0\.0\.10[[:space:]]+\(any\)[[:space:]]+\(any\)[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
-    contain REGEX '127\.0\.0\.11[[:space:]]+\(any\)[[:space:]]+\(any\)[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
-    nocontain REGEX '127\.0\.0\.12[[:space:]]+\(any\)[[:space:]]+\(any\)[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
+    contain REGEX '127\.0\.0\.10[[:space:]]+\*[[:space:]]+\*[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
+    contain REGEX '127\.0\.0\.11[[:space:]]+\*[[:space:]]+\*[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
+    nocontain REGEX '127\.0\.0\.12[[:space:]]+\*[[:space:]]+\*[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
     contain '4 accesses listed'
 
     success include $a1 --osh groupListServers --group $group1 --include 127.0.0.1
     json .command groupListServers .error_code OK
     contain REGEX '127\.0\.0\.1[[:space:]]+22[[:space:]]+g1[[:space:]]+'$group1'\(group\)[[:space:]]+'$account2'[[:space:]]'
-    contain REGEX '127\.0\.0\.10[[:space:]]+\(any\)[[:space:]]+\(any\)[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
-    contain REGEX '127\.0\.0\.11[[:space:]]+\(any\)[[:space:]]+\(any\)[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
+    contain REGEX '127\.0\.0\.10[[:space:]]+\*[[:space:]]+\*[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
+    contain REGEX '127\.0\.0\.11[[:space:]]+\*[[:space:]]+\*[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
     contain '3 accesses listed'
 
     success include_exclude $a1 --osh groupListServers --group $group1 --include 127.0.0.1 --exclude 127.0.0.10 --exclude 127.?.0.11

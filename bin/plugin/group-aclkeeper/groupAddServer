@@ -10,9 +10,10 @@ use OVH::Bastion::Plugin qw( :DEFAULT help );
 use OVH::Bastion::Plugin::ACL;
 
 my $remainingOptions = OVH::Bastion::Plugin::begin(
-    argv    => \@ARGV,
-    header  => "adding a server to a group",
-    options => {
+    argv               => \@ARGV,
+    header             => "adding a server to a group",
+    userAllowWildcards => 1,
+    options            => {
         "group=s"          => \my $group,
         "user-any"         => \my $userAny,
         "port-any"         => \my $portAny,
@@ -33,8 +34,9 @@ Usage: --osh SCRIPT_NAME --group GROUP [OPTIONS]
   --group GROUP            Specify which group this machine should be added to (it should have the public group key of course)
   --host HOST|IP|NET/CIDR  Host(s) to add access to, either a HOST which will be resolved to an IP immediately, or an IP,
                              or a whole network using the NET/CIDR notation
-  --user USER              Specify which remote user should be allowed (root, run, etc...)
-  --user-any               Allow any remote user (the remote user should still have the public group key in all cases)
+  --user USER              Specify which remote user should be allowed (root, run, etc...).
+                             Globbing characters '*' and '?' are supported.
+  --user-any               Synonym of '--user *', allows any remote user (the remote user should still have the public group key in all cases)
   --port PORT              Only allow access to this port (e.g. 22)
   --port-any               Allow access to any port
   --scpup                  Allow SCP upload, you--bastion-->server (omit --user in this case)

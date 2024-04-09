@@ -11,9 +11,10 @@ use OVH::Bastion::Plugin::groupSetRole;
 use OVH::Bastion::Plugin::ACL;
 
 my $remainingOptions = OVH::Bastion::Plugin::begin(
-    argv    => \@ARGV,
-    header  => "add access to one server of a group to an account",
-    options => {
+    argv               => \@ARGV,
+    header             => "add access to one server of a group to an account",
+    userAllowWildcards => 1,
+    options            => {
         "group=s"   => \my $group,
         "account=s" => \my $account,
         "user-any"  => \my $userAny,

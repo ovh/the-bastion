@@ -10,9 +10,10 @@ use OVH::Bastion::Plugin qw( :DEFAULT help );
 use OVH::Bastion::Plugin::ACL;
 
 my $remainingOptions = OVH::Bastion::Plugin::begin(
-    argv    => \@ARGV,
-    header  => "removing a server from a group",
-    options => {
+    argv               => \@ARGV,
+    header             => "removing a server from a group",
+    userAllowWildcards => 1,
+    options            => {
         "group=s"  => \my $group,
         "user-any" => \my $userAny,
         "port-any" => \my $portAny,
