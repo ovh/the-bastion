@@ -339,6 +339,11 @@ sub access_modify {
     undef $user if (defined $user && $user eq '');
     undef $port if (defined $port && $port eq '');
 
+    # allow wildcards, but standardize full wildcard to user=undef
+    if ($user && $user =~ m{^\*+$}) {
+        undef $user;
+    }
+
     # check way
     if ($way eq 'personal') {
         return R('ERR_INVALID_PARAMETER', msg => "Group parameter specified with way=personal") if defined $group;
@@ -390,7 +395,7 @@ sub access_modify {
 
     # check remote user
     if (defined $user) {
-        $fnret = OVH::Bastion::is_valid_remote_user(user => $user);
+        $fnret = OVH::Bastion::is_valid_remote_user(user => $user, allowWildcards => 1);
         return $fnret unless $fnret;
         $user = $fnret->value;
     }
@@ -398,7 +403,6 @@ sub access_modify {
     # check account
     my ($remoteaccount, $sysaccount);
     if (defined $account) {
-
         # accountType==normal : account must NOT be a realm_* account (but can be a realm/jdoe account)
         $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account, accountType => 'normal');
         $fnret or return $fnret;

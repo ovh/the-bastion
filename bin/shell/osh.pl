@@ -595,7 +595,9 @@ else {
     }
 }
 
-if ($user && !OVH::Bastion::is_valid_remote_user(user => $user)) {
+# for plugins (osh_command), do a first check with allowWildcards, it'll be re-done in Plugin::start with
+# either allowWildcards set to 0 or 1 depending on the plugin configuration that we don't have at this stage yet
+if ($user && !OVH::Bastion::is_valid_remote_user(user => $user, allowWildcards => ($osh_command ? 1 : 0))) {
     main_exit OVH::Bastion::EXIT_INVALID_REMOTE_USER, 'invalid_remote_user', "Remote user name '$user' seems invalid";
 }
 if ($host && $host !~ m{^[a-zA-Z0-9._/:-]+$}) {

@@ -80,9 +80,9 @@ sub is_access_way_granted {
     my $ignoreUser = $params{'ignoreUser'};  # ignore remote user COMPLETELY (plop@, or root@, or <nil>@ will all match)
     my $ignorePort = $params{'ignorePort'};  # ignore port COMPLETELY (port 22, 2345, or port-wildcard will all match)
 
-    my $wantedUser = $params{'user'};        # if undef, means we look for a user wildcard allow
+    my $wantedUser = $params{'user'};        # if undef, means we look for a user-any allow
     my $wantedIp   = $params{'ip'};          # can be a single IP or a prefix
-    my $wantedPort = $params{'port'};        # if undef, means we look for a port wildcard allow
+    my $wantedPort = $params{'port'};        # if undef, means we look for a port-any allow
 
     my $way     = $params{'way'};            # personal|group|groupguest|legacy
     my $group   = $params{'group'};          # only meaningful and needed if type=group or type=groupguest
@@ -124,7 +124,6 @@ sub is_access_way_granted {
         # if we get ignorePort, we skip the checks entirely
         if (not $ignorePort) {
             if ($exactPortMatch) {
-
                 # we want an exact match
                 if (not defined $allowedPort) {
                     if (not defined $wantedPort) {
@@ -144,7 +143,7 @@ sub is_access_way_granted {
                 }
             }
             else {
-                # we don't want an exact match (aka wildcards allowed)
+                # we don't want an exact match (aka port-any allowed)
                 if (not defined $allowedPort) {
                     ;                                             # it's a wildcard, will always match
                 }
@@ -163,7 +162,6 @@ sub is_access_way_granted {
         # if we get ignoreUser, we skip the checks entirely
         if (not $ignoreUser) {
             if ($exactUserMatch) {
-
                 # we want an exact match
                 if (not defined $allowedUser) {
                     if (not defined $wantedUser) {
@@ -183,7 +181,7 @@ sub is_access_way_granted {
                 }
             }
             else {
-                # we don't want an exact match (aka wildcards allowed)
+                # we don't want an exact match (aka user-any allowed)
                 if (not defined $allowedUser) {
                     ;                                             # it's a wildcard, will always match
                 }
@@ -192,7 +190,18 @@ sub is_access_way_granted {
                         next;                                     # we want a wildcard, but we don't have it
                     }
                     else {
-                        next if ($wantedUser ne $allowedUser);    # both defined but unequal, not a match
+                        # handle the case where $allowedUser contains wildcards such as '?' or '*'
+                        if (index($allowedUser, '*') >= 0 || index($allowedUser, '?') >= 0) {
+                            # turn wildcards into a regexp
+                            my $allowedUserRe = quotemeta($allowedUser);
+                            $allowedUserRe =~ s{\\\?}{.}g;
+                            $allowedUserRe =~ s{\\\*}{.*}g;
+                            next if ($wantedUser !~ /^$allowedUserRe$/);
+                        }
+                        else {
+                            # doesn't contain a wildcard, simple comparison
+                            next if ($wantedUser ne $allowedUser);    # both defined but unequal, not a match
+                        }
                     }
                 }
             }
@@ -574,8 +583,8 @@ sub print_acls {
             $entry->{'reverseDns'} = $ipReverse;
 
             my @row = (
-                $ipReverse ? $ipReverse : $entry->{'ip'}, $entry->{'port'} ? $entry->{'port'} : '(any)',
-                $entry->{'user'} ? $entry->{'user'} : '(any)', $accessType,
+                $ipReverse ? $ipReverse : $entry->{'ip'}, $entry->{'port'} ? $entry->{'port'} : '*',
+                $entry->{'user'} ? $entry->{'user'} : '*', $accessType,
                 $addedBy,  $addedDate,
                 $expiry,   $entry->{'userComment'} || '-',
                 $forceKey, $forcePassword
@@ -937,9 +946,14 @@ sub ssh_test_access_way {
     $user = OVH::Bastion::config("defaultLogin")->value if not $user;
     $user = $account                                    if not $user;    # defaultLogin empty means the user himself
     $user = OVH::Bastion::get_user_from_env()->value    if not $user;    # no user or account ? get from env then
-    $fnret = OVH::Bastion::is_valid_remote_user(user => $user);
+    $fnret = OVH::Bastion::is_valid_remote_user(user => $user, allowWildcards => 1);
     $fnret or return $fnret;
     $user = $fnret->value;
+
+    # skip special users and wildcarded-users which are not actual remote users
+    if ((grep { $user eq $_ } qw{ !scpupload !scpdownload !sftp }) || ($user =~ /[*?]/)) {
+        return R('OK_MAGIC_USER', msg => "Didn't really test the connection, as the specified user is special");
+    }
 
     if ($group) {
         $fnret = OVH::Bastion::is_valid_group_and_existing(group => $group, groupType => "key");
@@ -974,10 +988,6 @@ sub ssh_test_access_way {
             msg =>
               "Couldn't find any accessible SSH key to test connection with, you're probably adding access to an account or a group you don't have access to yourself, nevermind, will continue"
         );
-    }
-
-    if (grep { $user eq $_ } qw{ !scpupload !scpdownload !sftp }) {
-        return R('OK_MAGIC_USER', msg => "Didn't really test the connection, as the specified user is special");
     }
 
     my $preferredAuthentications = 'publickey';
@@ -1285,7 +1295,7 @@ sub _get_acl_from_file {
 
         # extract custom user if present
         if ($line =~ s/^(\S+)\@//) {
-            $fnret = OVH::Bastion::is_valid_remote_user(user => $1);
+            $fnret = OVH::Bastion::is_valid_remote_user(user => $1, allowWildcards => 1);
             if (!$fnret) {
                 osh_debug("skipping line <$line> because user ($1) is invalid");
                 next;

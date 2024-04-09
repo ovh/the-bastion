@@ -25,11 +25,12 @@ Add an IP or IP block to a group's servers list
                              or a whole network using the NET/CIDR notation
 .. option:: --user USER
 
-   Specify which remote user should be allowed (root, run, etc...)
+   Specify which remote user should be allowed (root, run, etc...).
 
+                             Globbing characters '*' and '?' are supported.
 .. option:: --user-any
 
-   Allow any remote user (the remote user should still have the public group key in all cases)
+   Synonym of '--user *', allows any remote user (the remote user should still have the public group key in all cases)
 
 .. option:: --port PORT
 

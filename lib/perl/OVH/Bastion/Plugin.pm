@@ -24,12 +24,13 @@ sub help { osh_info $_helptext; return 1; }
 sub begin {
     my %params = @_;
 
-    my $options      = $params{'options'};
-    my $header       = $params{'header'};
-    my $argv         = $params{'argv'};
-    my $loadConfig   = $params{'loadConfig'};
-    my $exitOnSignal = $params{'exitOnSignal'};
-    my $helpfunc     = $params{'help'};
+    my $options            = $params{'options'};
+    my $header             = $params{'header'};
+    my $argv               = $params{'argv'};
+    my $loadConfig         = $params{'loadConfig'};
+    my $exitOnSignal       = $params{'exitOnSignal'};
+    my $helpfunc           = $params{'help'};
+    my $userAllowWildcards = $params{'userAllowWildcards'};
     $_helptext = $params{'helptext'};
 
     my $fnret;
@@ -63,7 +64,7 @@ sub begin {
     # validate user, ip, port when specified, undef them otherwise (instead of '')
 
     if (defined $user && $user ne '') {
-        $fnret = OVH::Bastion::is_valid_remote_user(user => $user);
+        $fnret = OVH::Bastion::is_valid_remote_user(user => $user, allowWildcards => $userAllowWildcards);
         $fnret or osh_exit $fnret;
         $user = $fnret->value;
     }

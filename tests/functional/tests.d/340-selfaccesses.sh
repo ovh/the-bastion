@@ -380,6 +380,50 @@ testsuite_selfaccesses()
     nocontain "Permission denied"
     contain "$randomstr"
 
+    # user wildcards
+
+    success a0_add_access_wild1 $a0 --osh selfAddPersonalAccess -h 127.6.4.2 -u "prefix-*" -p 101
+    json .command selfAddPersonalAccess .error_code OK .value.ip 127.6.4.2 .value.user "prefix-*" .value.port 101
+
+    success a0_add_access_wild1_dupe $a0 --osh selfAddPersonalAccess -h 127.6.4.2 -u "prefix-*" -p 101
+    json .command selfAddPersonalAccess .error_code OK_NO_CHANGE
+
+    success a0_add_access_wild2 $a0 --osh selfAddPersonalAccess -h 127.6.4.2 -u "a?b?c" -p 102
+    json .command selfAddPersonalAccess .error_code OK .value.ip 127.6.4.2 .value.user "a?b?c" .value.port 102
+
+    run a0_test_ssh_wild1 $a0 prefix-12@127.6.4.2 -p 101
+    contain "allowed ... log on"
+
+    run a0_test_ssh_wild2 $a0 prefix-@127.6.4.2 -p 101
+    contain "allowed ... log on"
+
+    run a0_test_ssh_wild3 $a0 a_b_c@127.6.4.2 -p 102
+    contain "allowed ... log on"
+
+    run a0_test_ssh_wild4 $a0 a_b_c_no@127.6.4.2 -p 102
+    nocontain "allowed ... log on"
+
+    run a0_test_ssh_wild5 $a0 denied@127.6.4.2 -p 102
+    nocontain "allowed ... log on"
+
+    run a0_test_ssh_wild6 $a0 a_b_c@127.6.4.2 -p 101
+    nocontain "allowed ... log on"
+
+    run a0_test_ssh_wild7 $a0 'prefix-*@127.6.4.2' -p 101
+    retvalshouldbe 127
+    json .error_code KO_INVALID_REMOTE_USER
+
+    success a0_del_access_wild1 $a0 --osh selfDelPersonalAccess -h 127.6.4.2 -u "prefix-*" -p 101
+    json .command selfDelPersonalAccess .error_code OK .value.ip 127.6.4.2 .value.user "prefix-*" .value.port 101
+
+    success a0_del_access_wild2 $a0 --osh selfDelPersonalAccess -h 127.6.4.2 -u "a?b?c" -p 102
+    json .command selfDelPersonalAccess .error_code OK .value.ip 127.6.4.2 .value.user "a?b?c" .value.port 102
+
+    success a0_del_access_wild2_dupe $a0 --osh selfDelPersonalAccess -h 127.6.4.2 -u "a?b?c" -p 102
+    json .command selfDelPersonalAccess .error_code OK_NO_CHANGE
+
+    # /user wildcards
+
     success mustwork $a0 -osh selfDelPersonalAccess -h 127.0.0.2 -u $shellaccount -p 226
     contain "Access to $shellaccount@127.0.0.2:226"
     json .command selfDelPersonalAccess .error_code OK .value.ip 127.0.0.2 .value.user $shellaccount .value.port 226

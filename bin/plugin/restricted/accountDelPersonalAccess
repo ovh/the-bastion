@@ -10,9 +10,10 @@ use OVH::Bastion::Plugin qw( :DEFAULT help );
 use OVH::Bastion::Plugin::ACL;
 
 my $remainingOptions = OVH::Bastion::Plugin::begin(
-    argv    => \@ARGV,
-    header  => "removing personal access to a server from an account",
-    options => {
+    argv               => \@ARGV,
+    header             => "removing personal access to a server from an account",
+    userAllowWildcards => 1,
+    options            => {
         "account=s" => \my $account,
         "user-any"  => \my $userAny,
         "port-any"  => \my $portAny,
