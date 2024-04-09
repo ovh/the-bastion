@@ -145,7 +145,7 @@ EOS
     json .error_code ERR_INCOMPATIBLE_PARAMETERS
 
     success a1_add_access_force_key_g1 $a1 --osh groupAddServer --host 127.1.2.3 --user 'ar@base' --port-any --force --force-key "$key1fp" --group $group1
-    .value.user 'ar@base'
+    json .value.user 'ar@base'
 
     success a1_list_servers_check_force_key_g1 $a1 --osh groupListServers --group $group1
     json '.value|.[]|select(.ip=="127.1.2.3")|.forceKey' "$key1fp"
