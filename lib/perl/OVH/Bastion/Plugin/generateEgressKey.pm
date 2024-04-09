@@ -20,7 +20,7 @@ sub help_algos {
         osh_info <<"EOF";
 Note that the actually available algorithms on a bastion depend on the underlying OS and the configured policy.
 
-A quick overview of the different algorithms::
+A quick overview of the different algorithms:
 EOF
     }
     else {

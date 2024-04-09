@@ -218,7 +218,7 @@ allowedIngressSshAlgorithms
 
 :Default: ``[ "rsa", "ecdsa", "ed25519" ]``
 
-The algorithms authorized for ingress ssh public keys added to this bastion. Possible values: ``dsa``, ``rsa``, ``ecdsa``, ``ed25519``, note that some of those might not be supported by your current version of ``OpenSSH``: unsupported algorithms are automatically omitted at runtime.
+The algorithms authorized for ingress ssh public keys added to this bastion. Possible values: ``rsa``, ``ecdsa``, ``ed25519``, ``ecdsa-sk``, ``ed25519-sk``, note that some of those might not be supported by your current version of ``OpenSSH``: unsupported algorithms are automatically omitted at runtime.
 
 .. _allowedEgressSshAlgorithms:
 
@@ -229,7 +229,7 @@ allowedEgressSshAlgorithms
 
 :Default: ``[ "rsa", "ecdsa", "ed25519" ]``
 
-The algorithms authorized for egress ssh public keys generated on this bastion. Possible values: ``dsa``, ``rsa``, ``ecdsa``, ``ed25519``, note that some of those might not be supported by your current version of ``OpenSSH``, unsupported algorithms are automatically omitted at runtime.
+The algorithms authorized for egress ssh public keys generated on this bastion. Possible values: ``rsa``, ``ecdsa``, ``ed25519``, note that some of those might not be supported by your current version of ``OpenSSH``, unsupported algorithms are automatically omitted at runtime.
 
 .. _minimumIngressRsaKeySize:
 

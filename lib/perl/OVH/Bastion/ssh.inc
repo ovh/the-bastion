@@ -1096,7 +1096,7 @@ sub print_accepted_key_algorithms {
     }
 
     if ($hasFido) {
-        osh_info "\nNote that FIDO2 algorithms require a FIDO2-compatible hardware Security Key.";
+        osh_info("\nNote that FIDO2 algorithms require a FIDO2-compatible hardware Security Key.");
     }
     osh_info("\nThis table is meant as a quick cheat-sheet, you're warmly advised to do");
     osh_info("your own research, as other constraints may apply to your environment.");

@@ -41,16 +41,9 @@ Note that the actually available algorithms on a bastion depend on the underlyin
 
 A quick overview of the different algorithms::
 
-
-  +---------+------+----------+-------+-----------------------------------------+
-  | algo    | size | strength | speed | compatibility                           |
-  +=========+======+==========+=======+=========================================+
-  | DSA     |  any | 0        | n/a   | obsolete, do not use                    |
-  | RSA     | 2048 | **       | **    | works everywhere                        |
-  | RSA     | 4096 | ***      | *     | works almost everywhere                 |
-  | ECDSA   |  521 | ****     | ***** | OpenSSH 5.7+ (Debian 7+, Ubuntu 12.04+) |
-  | Ed25519 |  256 | *****    | ***** | OpenSSH 6.5+ (Debian 8+, Ubuntu 14.04+) |
-  +---------+------+----------+-------+-----------------------------------------+
+Ed25519      : robustness[✓✓✓] speed[✓✓✓], generate: `ssh-keygen -t ed25519'
+ECDSA        : robustness[✓✓ ] speed[✓✓✓], generate: `ssh-keygen -t ecdsa -b 521'
+RSA          : robustness[✓  ] speed[✓  ], generate: `ssh-keygen -t rsa -b 4096'
 
 This table is meant as a quick cheat-sheet, you're warmly advised to do
 your own research, as other constraints may apply to your environment.
