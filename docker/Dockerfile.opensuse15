@@ -30,5 +30,5 @@ RUN ["/opt/bastion/bin/admin/install","--new-install"]
 # start at entrypoint
 ENTRYPOINT /opt/bastion/docker/entrypoint.sh
 
-# TESTOPT --has-mfa=0 --has-pamtester=0 --has-piv=0
-# TESTFROM opensuse/leap:15.2 opensuse/leap:15.3
+# TESTOPT --has-mfa=0 --has-pamtester=0 --has-piv=0 --has-sk=1
+# TESTFROM opensuse/leap:15.4 opensuse/leap:15.5
