@@ -10,7 +10,7 @@ testsuite_config_options()
     configchg 's=^\\\\x22dnsSupportLevel\\\\x22.+=\\\\x22dnsSupportLevel\\\\x22:0,='
 
     run a1_connect_nodns $a0 localhost
-    retvalmustbe 102
+    retvalshouldbe 102
     json .error_code KO_HOST_NOT_FOUND
     contain 'DNS resolving is disabled'
 }

@@ -165,7 +165,8 @@ fi
     mytmpdir=$(mktemp -d -t bastiontest.XXXXXX)
     tmp_a=$(mktemp -t bastiontest.XXXXXX)
     tmp_b=$(mktemp -t bastiontest.XXXXXX)
-    trap 'echo CLEANING UP ; rm -rf "$mytmpdir" ; rm -f "$tmp_a" "$tmp_b" ; exit 255' EXIT
+    source_stderr=$(mktemp -t bastiontest.XXXXXX)
+    trap 'echo CLEANING UP ; rm -rf "$mytmpdir" ; rm -f "$tmp_a" "$tmp_b" "$source_stderr"; exit 255' EXIT
     account0key1file="$mytmpdir/account0key1file"
     account1key1file="$mytmpdir/account1key1file"
     account1key2file="$mytmpdir/account1key2file"
@@ -701,12 +702,24 @@ runtests()
 
         dump_vars_and_funcs > "$tmp_a"
         module_ret=0
-        # as this is a loop, we do the shellcheck in a reversed way, see any included module for more info:
-        # shellcheck disable=SC1090
-        if source "$module"; then
-            module_ret=0
+        if [ "$COUNTONLY" = 0 ]; then
+            # as this is a loop, we do the shellcheck in a reversed way, see any included module for more info:
+            # shellcheck disable=SC1090
+            source "$module" || module_ret=$?
         else
-            module_ret=$?
+            # take the opportunity to ensure there's nothing in stderr, or there might be
+            # errors in the module we're sourcing by capturing 2>
+            # shellcheck disable=SC1090
+            source "$module" 2>"$source_stderr" || module_ret=$?
+            if [ -s "$source_stderr" ]; then
+                echo
+                echo "DEFINITION ERROR in module $module, aborting:"
+                echo "-----"
+                cat "$source_stderr"
+                echo "-----"
+                echo
+                exit 1
+            fi
         fi
         dump_vars_and_funcs > "$tmp_b"
         success module_postrun test "$module_ret" = 0
