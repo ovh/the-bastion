@@ -47,6 +47,7 @@ Create a group
    Don't generate an egress SSH key at all for this group
 
 
+
 A quick overview of the different algorithms:
 
 .. code-block:: none

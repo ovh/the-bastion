@@ -27,6 +27,26 @@ See the ``--help`` for a more fine-grained upgrade path if needed.
 Version-specific upgrade instructions
 =====================================
 
+v3.16.00 - 2024/04/10
+*********************
+
+This version adds support for Secure Keys (FIDO2) for ingress authentication. It requires at least OpenSSH 8.2
+installed on the server hosting The Bastion, as support for FIDO2 was added in this version.
+Of the currently supported OS versions, the following are known to have a recent-enough version:
+
+- Debian 11
+- Debian 12
+- Ubuntu 20.04
+- Ubuntu 22.04
+- OpenSUSE Leap 15.5
+- Rocky Linux 9
+
+Note that if you are upgrading, you'll need to enable the new ingress algorithms in the ``/etc/bastion/bastion.conf``
+file, under the ``allowedIngressSshAlgorithms`` option. You may want to add ``ecdsa-sk`` and ``ed25519-sk`` to the list
+if you want to support the FIDO2-backed versions of these two algorithms.
+You may also refer to the distributed default configuration file in ``etc/bastion/bastion.conf.dist``,
+which enables them by default.
+
 v3.15.00 - 2024/03/22
 *********************
 
