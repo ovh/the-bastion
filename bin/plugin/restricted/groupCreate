@@ -45,6 +45,7 @@ Usage: --osh $scriptName --group GROUP --owner ACCOUNT <--algo ALGO --size SIZE 
                   For ED25519, size is always 256.
 
   --no-key      Don't generate an egress SSH key at all for this group
+
 EOF
     OVH::Bastion::print_accepted_key_algorithms(way => "egress", generate => 0);
     return 0;

@@ -1,3 +1,9 @@
+## v3.16.00 - 2024/04/10
+- feat: support hardware-based Secure Keys (FIDO2) for ingress authentication
+- enh: remove netcat dependency by using perl builtins
+- enh: --wait now checks whether the TCP port is open instead of just pinging the host
+- fix: logic error in etc/pam.d/sshd.rhel breaking MFA handling if enabled
+
 ## v3.15.00 - 2024/03/22
 - feat: add ``dnsSupportLevel`` option for systems with broken DNS (fixes #397)
 - enh: allow ``@`` as a valid remote user char (fixes #437)
@@ -6,17 +12,17 @@
 - fix: avoid a warning when an non-resolvable host is specified with ``scp`` or ``sftp``
 
 ## v3.14.16 - 2024/02/20
-feat: add ``ttyrecStealthStdoutPattern`` config
-enh: ``batch``: openhandle() is overkill and doesn't work on EOF
-enh: ``osh-lingering-sessions-reaper.sh``: handle dangling plugins
-enh: ``osh-orphaned-homedir.sh``: also cleanup ``/run/faillock``
-enh: plugins: better signal handling to avoid dangling children processes
-fix: ``accountInfo``: return always\_active=1 for globally-always-active accounts
-fix: don't exit with ``fping`` when host is unreachable
-fix: ``fixrights.sh``: add +x ``run-tool.sh``
-fix: ``osh-sync-watcher``: default to a valid ``rshcmd`` (fixes #433)
-fix: install: generation of the MFA secret under FreeBSD
-fix: install: silence ``tr`` message on secret generation
+- feat: add ``ttyrecStealthStdoutPattern`` config
+- enh: ``batch``: openhandle() is overkill and doesn't work on EOF
+- enh: ``osh-lingering-sessions-reaper.sh``: handle dangling plugins
+- enh: ``osh-orphaned-homedir.sh``: also cleanup ``/run/faillock``
+- enh: plugins: better signal handling to avoid dangling children processes
+- fix: ``accountInfo``: return always\_active=1 for globally-always-active accounts
+- fix: don't exit with ``fping`` when host is unreachable
+- fix: ``fixrights.sh``: add +x ``run-tool.sh``
+- fix: ``osh-sync-watcher``: default to a valid ``rshcmd`` (fixes #433)
+- fix: install: generation of the MFA secret under FreeBSD
+- fix: install: silence ``tr`` message on secret generation
 
 ## v3.14.15 - 2023/11/08
 - feat: support JIT MFA through plugins, including ``sftp`` and ``scp`` (fixes CVE-2023-45140)
