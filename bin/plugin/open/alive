@@ -10,10 +10,12 @@ use OVH::Bastion;
 use OVH::Bastion::Plugin qw( :DEFAULT help );
 
 my $remainingOptions = OVH::Bastion::Plugin::begin(
-    argv     => \@ARGV,
-    header   => "ping until host is alive",
-    options  => {},
-    helptext => <<'EOF',
+    argv   => \@ARGV,
+    header => "ping until host is alive",
+    # we don't want to have this plugin looping endlessly in the void when there's no longer a terminal attached:
+    exitOnSignal => 1,
+    options      => {},
+    helptext     => <<'EOF',
 Ping a host and exit as soon as it answers
 
 This command can be used to monitor a host that is expected to go back online soon.
