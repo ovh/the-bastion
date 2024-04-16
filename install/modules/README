@@ -1,0 +1,3 @@
+This directory may contain optional modules in the form of other directories
+containing at least an executable file named "install", which will be called
+by the main installation script of the bastion, if present.
