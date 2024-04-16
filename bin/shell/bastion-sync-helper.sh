@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#!/bin/sh
 # vim: set filetype=sh ts=4 sw=4 sts=4 et:
 if [ "$USER" != "bastionsync" ]; then
     echo "Unexpected user, aborting" >&2
