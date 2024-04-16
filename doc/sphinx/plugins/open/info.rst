@@ -58,3 +58,29 @@ Output example
   ~ BOFH excuse #444:
   ~ overflow error in /dev/null
 
+
+Plugin configuration
+====================
+
+Options
+-------
+
+.. option:: admin_show_system_info (optional, boolean)
+
+    If enabled, bastion admins get more output regarding information of the
+    underlying OS. When omitted, this is enabled by default.
+
+.. option:: show_fortune (optional, boolean)
+
+    If enabled, and if the ``fortune`` package is installed on your OS,
+    shows a fortune. When omitted, this is enabled by default.
+
+Example
+-------
+
+Configuration, in JSON format, must be in :file:`/etc/bastion/plugin.info.conf`:
+
+.. code-block:: json
+   :emphasize-lines: 1
+
+   { "admin_show_system_info": false, "show_fortune": false }

@@ -15,15 +15,39 @@ $ENV{'PW_GR_CACHE'} = 1;
 
 my ($name);
 OVH::Bastion::Plugin::begin(
-    argv     => \@ARGV,
-    header   => "information",
-    options  => {'name' => \$name},
-    helptext => <<'EOF',
+    loadConfig => 1,
+    argv       => \@ARGV,
+    header     => "information",
+    options    => {'name' => \$name},
+    helptext   => <<'EOF',
 Displays some information about this bastion instance
 
 Usage: --osh SCRIPT_NAME
 EOF
 );
+
+=pod CONFIGURATION
+
+=head1 items
+
+=head2 admin_show_system_info (optional, boolean)
+
+If enabled, bastion admins get more output regarding information of the underlying OS.
+When omitted, this is enabled by default.
+
+=head2 show_fortune (optional, boolean)
+
+If enabled, and if the ``fortune`` package is installed on your OS, shows a fortune.
+When omitted, this is enabled by default.
+
+=head1 example
+
+{
+    "admin_show_system_info": false,
+    "show_fortune": false
+}
+
+=cut
 
 my $fnret = OVH::Bastion::load_configuration();
 $fnret or osh_exit($fnret);
@@ -269,20 +293,24 @@ osh_info "- The Multi-Factor Authentication (MFA) policy is "
 osh_info "- The PIV-enforced ingress keys policy is "
   . colored($config->{'ingressRequirePIV'} ? 'ENABLED' : 'DISABLED', $config->{'ingressRequirePIV'} ? 'red' : 'green');
 
-if (OVH::Bastion::is_admin(account => $self)) {
+my $showSystemInfo = 0;
+if (   !$pluginConfig
+    || !defined $pluginConfig->{'admin_show_system_info'}
+    || $pluginConfig->{'admin_show_system_info'})
+{
+    $showSystemInfo = 1;
+}
+if ($showSystemInfo && OVH::Bastion::is_admin(account => $self)) {
     osh_info "\nAs you are a bastion admin, more information follows:";
     $fnret = OVH::Bastion::sysinfo();
     if ($fnret and $fnret->value) {
-        osh_info "We're running under " . $fnret->value->{'system'} . " " . $fnret->value->{'release'};
-        $ret{'os_system'}  = $fnret->value->{'system'};
-        $ret{'os_release'} = $fnret->value->{'release'};
+        osh_info("We're running under " . $fnret->value->{'pretty_name'});
     }
 
     $fnret = OVH::Bastion::execute(cmd => ['uptime']);
     if ($fnret) {
         $fnret->value->{'stdout'}->[0] =~ s/^\s+//;
         osh_info $fnret->value->{'stdout'}->[0];
-        $ret{'uptime'} = $fnret->value->{'stdout'}->[0];
     }
 
     $fnret = OVH::Bastion::execute(cmd => ['free', '-h']);
@@ -292,7 +320,11 @@ if (OVH::Bastion::is_admin(account => $self)) {
     }
 }
 
-if (-x "/usr/games/fortune") {
+my $showFortune = 0;
+if (!$pluginConfig || !defined $pluginConfig->{'show_fortune'} || $pluginConfig->{'show_fortune'}) {
+    $showFortune = 1;
+}
+if ($showFortune && -x "/usr/games/fortune") {
     my @command = qw{ /usr/games/fortune bofh-excuses };
     $fnret = OVH::Bastion::execute(cmd => \@command);
     if ($fnret) {
