@@ -6,25 +6,44 @@ use common::sense;
 sub sysinfo {
     state $cached_response;
     if (not defined $cached_response) {
-        my $fnret = OVH::Bastion::execute(cmd => [qw{ uname -sr }]);
-
-        if ($fnret and $fnret->value and $fnret->value->{'stdout'}) {
-            my ($system, $release) = split(/ /, $fnret->value->{'stdout'}->[0]);
-            my $flavor = 'unknown';
-            $flavor = 'debian' if -f "/etc/debian_version";
-            $flavor = 'redhat' if -f "/etc/redhat-release";
-            $cached_response = R('OK', value => {system => $system, release => $release, flavor => $flavor});
+        my %data;
+        if (open(my $fh, '<', '/etc/os-release')) {
+            while (my $line = <$fh>) {
+                chomp $line;
+                # man 5 os-release
+                foreach my $key (qw{ NAME VERSION ID ID_LIKE PRETTY_NAME }) {
+                    $data{lc($key)} = $1 if $line =~ m{^${key}="?([^"]+)};
+                }
+            }
+            $cached_response = R('OK', value => \%data);
+            close($fh);
         }
         else {
-            $cached_response = R('OK', value => {system => 'unknown', release => 'unknown', flavor => 'unknown'});
+            $cached_response = R('ERR_MISSING_FILE', msg => "The /etc/os-release file couldn't be opened");
         }
     }
     return $cached_response;
 }
 
 sub is_linux { return R($^O eq 'linux' ? 'OK' : 'KO'); }
-sub is_debian { return R(is_linux && sysinfo()->value->{'flavor'} eq 'debian' ? 'OK' : 'KO'); }
-sub is_redhat { return R(is_linux && sysinfo()->value->{'flavor'} eq 'redhat' ? 'OK' : 'KO'); }
+
+sub _is_distro {
+    return R('KO') if !is_linux();
+
+    my $distro  = shift;
+    my $sysinfo = sysinfo();
+    return $sysinfo if !$sysinfo;
+
+    if ($sysinfo->value->{'id'} && $sysinfo->value->{'id'} eq $distro) {
+        return R('OK');
+    }
+    if ($sysinfo->value->{'id_like'} && $sysinfo->value->{'id_like'} =~ /\Q$distro\E/) {
+        return R('OK');
+    }
+    return R('KO');
+}
+sub is_debian { return _is_distro('debian'); }
+sub is_redhat { return _is_distro('rhel'); }
 
 sub is_bsd     { return R($^O =~ /bsd$/    ? 'OK' : 'KO'); }
 sub is_freebsd { return R($^O eq 'freebsd' ? 'OK' : 'KO'); }
