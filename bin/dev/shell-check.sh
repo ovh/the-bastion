@@ -46,7 +46,9 @@ else
     action_doing "Checking shell files syntax using system shellcheck"
 fi
 
-for i in $(find "${2:-.}" -type f ! -name "*.swp" ! -name "*.orig" ! -name "*.rej" -print0 | xargs -r0 grep -l 'set filetype=sh' | sort)
+for i in $(find ${2:-bin contrib docker install lib tests} -type f \
+            ! -name "*.swp" ! -name "*.orig" ! -name "*.rej" ! -name "$(basename "$0")" -print0 \
+            | xargs -r0 grep -l 'set filetype=sh' | sort)
 do
     run_shellcheck "$i"; ret=$?
     if [ $ret != 0 ]; then
