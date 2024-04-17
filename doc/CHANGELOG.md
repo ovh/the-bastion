@@ -1,3 +1,10 @@
+## v3.16.01 - 2024/04/17
+- enh: info: removed uname dependency, added configuration
+- chg: bastion-sync-helper.sh: use sh instead of bash
+- fix: alive: don't mask signals
+- chore: add README file into install/modules to ensure the folder exists even if empty
+- chore: linters: limit to known directories
+
 ## v3.16.00 - 2024/04/10
 - feat: support hardware-based Secure Keys (FIDO2) for ingress authentication
 - enh: remove netcat dependency by using perl builtins
