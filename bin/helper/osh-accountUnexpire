@@ -49,11 +49,6 @@ else {
     }
 }
 
-# for this special helper, $account must be equal to $ENV{'USER'}
-if (OVH::Bastion::get_user_from_env()->value ne $account) {
-    HEXIT('ERR_SECURITY_VIOLATION', msg => "You're not allowed to run this on $account, dear $self");
-}
-
 #<RIGHTSCHECK
 
 #>PARAMS:ACCOUNT
@@ -61,23 +56,33 @@ osh_debug("Checking account");
 $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
 $fnret or HEXIT($fnret);
 $account = $fnret->value->{'account'};    # untainted
+my $sysaccount    = $fnret->value->{'sysaccount'};
+my $remoteaccount = $fnret->value->{'remoteaccount'};
+my $accounthome   = $fnret->value->{'dir'};
 
 #<PARAMS:ACCOUNT
 
-my $accounthome = $fnret->value->{'dir'};
+# for this special helper, $sysaccount must be equal to $ENV{'USER'}
+if (OVH::Bastion::get_user_from_env()->value ne $sysaccount) {
+    HEXIT('ERR_SECURITY_VIOLATION', msg => "You're not allowed to run this on $account, dear $self");
+}
+
 if (!-d $accounthome) {
     HEXIT('ERR_INVALID_HOME', msg => "Invalid HOME directory for this account");
 }
 
-$fnret = OVH::Bastion::is_account_nonexpired(sysaccount => $account);
-$fnret->is_err and HEXIT($fnret);         # couldn't read file or other error
-$fnret->is_ok  and HEXIT($fnret);         # wasn't expired
+$fnret = OVH::Bastion::is_account_nonexpired(
+    sysaccount       => $sysaccount,
+    remoteaccount    => $remoteaccount,
+    update_lastlog   => 1,
+    no_create_remote => 1,
+);
+use Data::Dumper;
+print Dumper($fnret);
+$fnret->is_err and HEXIT($fnret);    # couldn't read file or other error
+$fnret->is_ok  and HEXIT($fnret);    # wasn't expired
 
 # is_ko: is expired
-my $days     = $fnret->value->{'days'};
-my $filepath = $fnret->value->{'filepath'};
-
-$fnret = OVH::Bastion::touch_file($filepath);
-$fnret or HEXIT($fnret);
+my $days = $fnret->value->{'days'};
 
 HEXIT('OK', value => {account => $account, days => $days});

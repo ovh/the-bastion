@@ -41,9 +41,10 @@ if (not $account) {
 $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
 $fnret or osh_exit $fnret;
 $account = $fnret->value->{'account'};
+my $sysaccount = $fnret->value->{'sysaccount'};
 
 my @command = qw{ sudo -n -u };
-push @command, ($account, '--');
+push @command, ($sysaccount, '--');
 push @command, qw{ /usr/bin/env perl -T };
 push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountUnexpire';
 push @command, ('--account', $account);
@@ -51,12 +52,32 @@ push @command, ('--account', $account);
 $fnret = OVH::Bastion::helper(cmd => \@command);
 $fnret or osh_exit $fnret;
 
+my $retvalue = {account => $account};
+$retvalue->{'days'} = $fnret->value->{'days'} if ($fnret->value && defined $fnret->value->{'days'});
+
 if ($fnret->err eq 'OK') {
-    my $days = $fnret->value->{'days'};
     osh_ok R(
         'OK',
-        value => {account => $account, days => $days},
-        msg   => "Account $account was expired ($days days without connection), it is now active again."
+        value => $retvalue,
+        msg   => "Account $account was expired ("
+          . $retvalue->{'days'}
+          . ") days without connection), it is now active again."
+    );
+}
+elsif ($fnret->err eq 'OK_EXPIRATION_NOT_CONFIGURED') {
+    osh_ok R(
+        $fnret->err,
+        value => $fnret->value,
+        msg =>
+          "Expiration is not configured on this bastion, but account ${account}'s expiration has been refreshed nevertheless."
+    );
+}
+elsif ($fnret->err eq 'OK_NOT_EXPIRED') {
+    osh_ok R(
+        $fnret->err,
+        value => $fnret->value,
+        msg =>
+          "Expiration is not configured on this bastion, but account ${account}'s expiration has been refreshed nevertheless."
     );
 }
 elsif ($fnret->is_ok) {

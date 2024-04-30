@@ -210,9 +210,13 @@ sub is_account_nonfrozen {
 
 # checks whether an account is expired (inactivity) if that's configured on this bastion
 sub is_account_nonexpired {
-    my %params        = @_;
-    my $sysaccount    = $params{'sysaccount'};
-    my $remoteaccount = $params{'remoteaccount'};
+    my %params         = @_;
+    my $sysaccount     = $params{'sysaccount'};
+    my $remoteaccount  = $params{'remoteaccount'};
+    my $updateLastlog  = $params{'update_lastlog'};      # update lastlog and lastlog_$remote
+    my $noCreateRemote = $params{'no_create_remote'};    # don't create lastlog_$remote if doesn't exist already
+    my $ipfrom         = $params{'ipfrom'};              # only used for update_lastlog
+    my $hostfrom       = $params{'hostfrom'};            # only used for update_lastlog
 
     if (not $sysaccount) {
         return R('ERR_MISSING_PARAMETER', msg => "Missing 'sysaccount' argument");
@@ -227,18 +231,41 @@ sub is_account_nonexpired {
 
     # some accounts might have a specific configuration overriding the global one
     $fnret = OVH::Bastion::account_config(account => $sysaccount, %{OVH::Bastion::OPT_ACCOUNT_MAX_INACTIVE_DAYS()});
-    if ($fnret) {
-        $accountMaxInactiveDays = $fnret->value;
-    }
+    $accountMaxInactiveDays = $fnret->value if $fnret;
 
-    my $isFirstLogin;
+    my @lastlogFilesToRead;
+    my @lastlogFilesToUpdate;
+    if ($remoteaccount) {
+        # if we have a remoteaccount, this file takes precedence, however if it doesn't
+        # exist, we'll fallback to the lastlog file of the shared realm account itself
+        my $lastlogRemote = "/home/$sysaccount/lastlog_$remoteaccount";
+        push @lastlogFilesToRead, $lastlogRemote;
+
+        # if noCreateRemote, don't add it to @lastlogFilesToUpdate if it doesn't exist.
+        # don't use test -f to check that, in case we have -r+x on the folder:
+        # directly try to open it instead
+        if ($noCreateRemote) {
+            if (open(my $fh, "<", $lastlogRemote)) {
+                push @lastlogFilesToUpdate, $lastlogRemote;
+                close($fh);
+            }
+        }
+        else {
+            push @lastlogFilesToUpdate, $lastlogRemote;
+        }
+    }
+    # the main lastlogfile of the sysaccount must be read and updated at all times
+    push @lastlogFilesToRead,   "/home/$sysaccount/lastlog";
+    push @lastlogFilesToUpdate, "/home/$sysaccount/lastlog";
+
     my $lastlog;
-    my $filepath = "/home/$sysaccount/lastlog" . ($remoteaccount ? "_$remoteaccount" : "");
-    my $value    = {filepath => $filepath};
-    if (-e $filepath) {
-        $isFirstLogin = 0;
-        $lastlog      = (stat(_))[9];
-        osh_debug("is_account_nonexpired: got lastlog date: $lastlog");
+    my $value = {};
+    # use the first lastlog file that exists in the list
+    foreach my $filepath (@lastlogFilesToRead) {
+        next if !-e $filepath;
+
+        $lastlog = (stat(_))[9];
+        osh_warn("is_account_nonexpired: got lastlog date: $lastlog from file $filepath");
 
         # if lastlog file is available, fetch some info from it
         if (open(my $lastloginfh, "<", $filepath)) {
@@ -247,13 +274,23 @@ sub is_account_nonexpired {
             close($lastloginfh);
             $value->{'info'} = $info;
         }
+
+        # no need to continue once we have the proper info
+        last;
     }
-    else {
+
+    my $isFirstLogin = 0;
+    if (not defined $lastlog) {
+        # the lastlog file doesn't exist, or maybe we just don't have access to it.
+        # by trying to chdir() to the folder, we're confirming we do have -x on it,
+        # otherwise that would explain why we can't open lastlog or even know whether it exists:
         my ($previousDir) = getcwd() =~ m{^(/[a-z0-9_./-]+)}i;
         if (!chdir("/home/$sysaccount")) {
             osh_debug("is_account_nonexpired: no exec access to the folder!");
             return R('ERR_NO_ACCESS', msg => "No read access to this account folder to compute last login time");
         }
+        # access rights to the home of the account confirmed, so lastlog doesn't exist,
+        # so this is the first login
         chdir($previousDir);
         $isFirstLogin = 1;
 
@@ -263,51 +300,70 @@ sub is_account_nonexpired {
             $lastlog = $fnret->value;
             osh_debug("is_account_nonexpired: got creation date from config.creation_timestamp: $lastlog");
         }
-        elsif (-e "/home/$sysaccount/accountCreate.comment") {
-
-            # fall back to the stat of the accountCreate.comment file
-            $lastlog = (stat(_))[9];
-            osh_debug("is_account_nonexpired: got creation date from accountCreate.comment stat: $lastlog");
-        }
-        else {
-            # last fall back to the stat of the ttyrec/ folder
-            $lastlog = (stat("/home/$sysaccount/ttyrec"))[9];
-            osh_debug("is_account_nonexpired: got creation date from ttyrec/ stat: $lastlog");
-        }
     }
 
-    my $seconds = time() - $lastlog;
-    my $days    = int($seconds / 86400);
-    $value->{'days'}                = $days;
-    $value->{'seconds'}             = $seconds;
     $value->{'already_seen_before'} = !$isFirstLogin;
-    osh_debug("Last account activity: $days days ago");
+    if (defined $lastlog) {
+        $value->{'seconds'} = time() - $lastlog;
+        $value->{'days'}    = int($value->{'seconds'} / 86400);
+        osh_debug("Last account activity: " . $value->{'days'} . " days ago");
+    }
+    else {
+        # can't tell the last log nor the creation date
+        syslog_warn("Couldn't tell the last login date of $sysaccount" . ($remoteaccount ? "/$remoteaccount" : ""));
+    }
+
+    if (not defined $lastlog) {
+        # last login date is unknown, but there is an expiration policy configured,
+        # err to the side of caution and return an error to deny login
+        return R('KO_UNKNOWN_LAST_LOGIN', msg => "Couldn't determine last login date");
+    }
+
+    # called at several places below, only when we return OK
+    my $updateFunc = sub {
+        return if !$updateLastlog;
+        foreach my $file (@lastlogFilesToUpdate) {
+            if ($ipfrom && $hostfrom) {
+                if (open(my $lastlogfh, '>', $file)) {
+                    print $lastlogfh sprintf("%s(%s)", $ipfrom, $hostfrom);
+                    close($lastlogfh);
+                }
+                else {
+                    warn_syslog("Couldn't update the lastlog file '$file' ($!)");
+                }
+            }
+            else {
+                # just touch it (i.e. accountUnexpire case)
+                $fnret = OVH::Bastion::touch_file($file);
+                if (!$fnret) {
+                    warn_syslog("Couldn't update the lastlog file '$file' ($fnret)");
+                }
+            }
+        }
+    };
 
     if ($accountMaxInactiveDays == 0) {
-
         # no expiration configured, allow login and return some info
+        $updateFunc->();
         return R('OK_FIRST_LOGIN',               value => $value) if $isFirstLogin;
         return R('OK_EXPIRATION_NOT_CONFIGURED', value => $value);
     }
-    else {
-        if ($days < $accountMaxInactiveDays) {
 
-            # expiration configured, but account not expired, allow login
-            return R('OK_NOT_EXPIRED', value => $value);
-        }
-        else {
-            # account expired, deny login
-            my $msg = OVH::Bastion::config("accountExpiredMessage")->value;
-            $msg = "Sorry, but your account has expired (#DAYS# days), access denied by policy." if !$msg;
-            $msg =~ s/#DAYS#/$days/g;
-            return R(
-                'KO_EXPIRED',
-                value => $value,
-                msg   => $msg,
-            );
-        }
+    if ($value->{'days'} < $accountMaxInactiveDays) {
+        # expiration configured, but account not expired, allow login
+        $updateFunc->();
+        return R('OK_NOT_EXPIRED', value => $value);
     }
-    return R('ERR_INTERNAL_ERROR');
+
+    # account expired, deny login
+    my $msg = OVH::Bastion::config("accountExpiredMessage")->value;
+    $msg = "Sorry, but your account has expired (#DAYS# days), access denied by policy." if !$msg;
+    $msg =~ s/#DAYS#/$value->{'days'}/g;
+    return R(
+        'KO_EXPIRED',
+        value => $value,
+        msg   => $msg,
+    );
 }
 
 sub is_account_ttl_nonexpired {
@@ -786,6 +842,7 @@ sub touch_file {
     else {
         $ret = sysopen($fh, $file, O_RDWR | O_CREAT);
     }
+    my $err = $!;
 
     if ($ret) {
         close($fh);
@@ -796,8 +853,8 @@ sub touch_file {
     }
 
     # else
-    warn_syslog(sprintf("Couldn't touch file '%s' with perms %o: %s", $file, $perms, $!));
-    return R('KO', msg => "Couldn't create file $file: $!");
+    warn_syslog(sprintf("Couldn't touch file '%s' with perms %o: %s", $file, $perms, $err));
+    return R('KO', msg => "Couldn't create file $file: $err");
 }
 
 sub create_file_if_not_exists {
@@ -968,8 +1025,13 @@ sub can_account_execute_plugin {
     # restricted plugins (osh-* system groups based)
     if (-f ($path_plugin . '/restricted/' . $plugin)) {
         if (OVH::Bastion::is_user_in_group(user => $account, group => "osh-$plugin", cache => $cache)) {
-            return R('OK',
-                value => {fullpath => $path_plugin . '/restricted/' . $plugin, type => 'restricted', plugin => $plugin}
+            return R(
+                'OK',
+                value => {
+                    fullpath => $path_plugin . '/restricted/' . $plugin,
+                    type     => 'restricted',
+                    plugin   => $plugin
+                }
             );
         }
         else {
