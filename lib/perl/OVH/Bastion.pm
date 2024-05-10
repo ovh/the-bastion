@@ -23,6 +23,10 @@ BEGIN {
         # eval{} in a BEGIN{} in Net::DNS, ignore it
         return 1 if (defined $msg and $msg =~ m{^Can't locate Net/});
 
+        # we can have weird errors during global destruction, such as
+        # "Warning: unable to close filehandle properly: during global destruction"
+        return 1 if (defined ${^GLOBAL_PHASE} and ${^GLOBAL_PHASE} eq 'DESTRUCT');
+
         my $criticity = ($type eq 'die' ? 'err' : 'warning');
 
         # Net::Server can be noisy if the client fails to establish the SSL connection,
