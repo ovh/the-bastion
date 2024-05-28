@@ -9,14 +9,10 @@ Generate a new ingress password to use the bastion HTTPS proxy
 .. admonition:: usage
    :class: cmdusage
 
-   --osh selfGenerateProxyPassword [--size SIZE] --do-it
+   --osh selfGenerateProxyPassword --do-it
 
 .. program:: selfGenerateProxyPassword
 
-
-.. option:: --size SIZE
-
-   Size of the password to generate
 
 .. option:: --do-it
 
