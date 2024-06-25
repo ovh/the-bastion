@@ -1292,7 +1292,8 @@ if ($telnet) {
         osh_debug("going to use telnet with this password file : $passwordFile");
         osh_print(" will use TELNET with password autologin\n") unless $quiet;
         push @command, $OVH::Bastion::BASEPATH . '/bin/shell/autologin', 'telnet', $user, $ip, $port,
-          $passwordFile, $forcePasswordId, ($timeout ? $timeout : 45), ($fallbackPasswordDelay // 3);
+          $passwordFile, $forcePasswordId, ($timeout ? $timeout : 45), ($fallbackPasswordDelay // 3),
+          $notty ? "raw -echo" : "";
     }
 
     # TELNET PASSWORD INTERACTIVE
@@ -1367,7 +1368,8 @@ else {
         osh_debug("going to use ssh with this password file : $passwordFile");
         osh_print(" will use SSH with password autologin\n") unless $quiet;
         push @command, $OVH::Bastion::BASEPATH . '/bin/shell/autologin', 'ssh', $user, $ip, $port,
-          $passwordFile, $forcePasswordId, ($timeout ? $timeout : 45), ($fallbackPasswordDelay // 3);
+          $passwordFile, $forcePasswordId, ($timeout ? $timeout : 45), ($fallbackPasswordDelay // 3),
+          $notty ? "raw -echo" : "";
     }
 
     # SSH EGRESS KEYS (and maybe password interactive as a fallback if passwordAllowed)

@@ -7,9 +7,9 @@
 
 set ::env(TERM) ""
 
-# we need 6 arguments
-if { [llength $argv] < 8 } {
-    puts {BASTION SAYS: autologin usage error, expected 6 args: <ssh|telnet> <login> <ip> <port> <file_with_password> <password_id> <timeout> <fallback_delay> [passthrough arguments to ssh or telnet]}
+# we need at least 9 positional arguments
+if { [llength $argv] < 9 } {
+    puts {BASTION SAYS: autologin usage error, expected 9 positional args: <ssh|telnet> <login> <ip> <port> <file_with_password> <password_id> <timeout> <fallback_delay> <stty_options> [passthrough arguments to ssh or telnet]}
     exit 1
 }
 
@@ -22,7 +22,8 @@ set arg_file           [lindex $argv 4]
 set arg_password_id    [lindex $argv 5]
 set arg_timeout        [lindex $argv 6]
 set arg_fallback_delay [lindex $argv 7]
-set arg_remaining      [lrange $argv 8 end]
+set arg_stty_options   [lindex $argv 8]
+set arg_remaining      [lrange $argv 9 end]
 
 # start the program
 if { $arg_prog == "ssh" } {
@@ -52,6 +53,7 @@ proc attempt_to_login args {
     set file               [lindex $args 3]
     set arg_fallback_delay [lindex $args 4]
     set spawn_args         [lindex $args 5]
+    set stty_options       [lindex $args 6]
 
     if { [file exists $file] == 0 } {
         if { $tryid == 0 } { puts "BASTION SAYS: file $file does not exist" }
@@ -72,6 +74,10 @@ proc attempt_to_login args {
     set pass [read $pass_fh 256]
     close $pass_fh
 
+    # stty_init: if we have $stty_options, use it
+    if { $stty_options != "" } {
+        set stty_init "$stty_options"
+    }
     spawn -noecho $prog {*}$spawn_args
 
     if { $prog == "telnet" } {
@@ -83,11 +89,21 @@ proc attempt_to_login args {
         }
     }
 
+    if { $stty_options != "" } {
+        # in that case, silence the "Password:" prompt, as our caller propably doesn't expect (sic) to see it
+        log_user 0
+    }
+
     # send password
     expect {
         -re {[Pp]assword:|Password for [a-zA-Z0-9@._-]+:} { send -- "$pass" }
         eof     { puts "BASTION SAYS: connection aborted"; exit 3 }
         timeout { puts "BASTION SAYS: timed out while waiting for password prompt"; exit 3 }
+    }
+
+    if { $stty_options != "" } {
+        # restore log_user to its default value after the "Password:" prompt
+        log_user 1
     }
 
     # do we have a login success with interactive prompt?
@@ -116,15 +132,15 @@ proc attempt_to_login args {
 # if no specific pasword was requested, try to login with the main password file, then try the fallbacks
 set tryid 0
 if { $arg_password_id == -1 } {
-    set last_attempt [attempt_to_login $tryid $arg_prog $arg_login $arg_file $arg_fallback_delay $spawn_args]
+    set last_attempt [attempt_to_login $tryid $arg_prog $arg_login $arg_file $arg_fallback_delay $spawn_args $arg_stty_options]
     while { $last_attempt == 100 && $tryid < 10 } {
         # auth failed, might want to try with the fallback
         incr tryid
-        set last_attempt [attempt_to_login $tryid $arg_prog $arg_login "$arg_file.$tryid" $arg_fallback_delay $spawn_args]
+        set last_attempt [attempt_to_login $tryid $arg_prog $arg_login "$arg_file.$tryid" $arg_fallback_delay $spawn_args $arg_stty_options]
     }
 } elseif { $arg_password_id == 0 } {
-    set last_attempt [attempt_to_login $tryid $arg_prog $arg_login $arg_file $arg_fallback_delay $spawn_args]
+    set last_attempt [attempt_to_login $tryid $arg_prog $arg_login $arg_file $arg_fallback_delay $spawn_args $arg_stty_options]
 } else {
-    set last_attempt [attempt_to_login $tryid $arg_prog $arg_login "$arg_file.$arg_password_id" $arg_fallback_delay $spawn_args]
+    set last_attempt [attempt_to_login $tryid $arg_prog $arg_login "$arg_file.$arg_password_id" $arg_fallback_delay $spawn_args $arg_stty_options]
 }
 exit $last_attempt
