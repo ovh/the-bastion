@@ -30,14 +30,33 @@ if (not $account) {
     osh_exit 'ERR_MISSING_PARAMETER', "Missing 'account' parameter";
 }
 
+if ($account eq $self) {
+    osh_exit 'ERR_INVALID_PARAMETER', "Please don't freeze yourself, dear $self, we need you!";
+}
+
 # Here we parse account name
-$fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
+$fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account, localOnly => 1);
 $fnret or osh_exit $fnret;
 $account = $fnret->value->{'account'};
+
+osh_info("Freezing $account...");
 
 my @command = qw{ sudo -n -u allowkeeper -- /usr/bin/env perl -T };
 push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountFreezeToggle', '--action', 'freeze';
 push @command, ('--account', $account);
 push @command, ('--reason',  $reason) if $reason;
+
+$fnret = OVH::Bastion::helper(cmd => \@command);
+if (!$fnret) {
+    osh_warn("An error occurred while attempting to freeze account ($fnret), not killing sessions");
+    osh_exit($fnret);
+}
+osh_info($fnret);
+
+osh_info("\nTerminating sessions if any...");
+
+@command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
+push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountKillSessions';
+push @command, ('--account', $account);
 
 osh_exit(OVH::Bastion::helper(cmd => \@command));

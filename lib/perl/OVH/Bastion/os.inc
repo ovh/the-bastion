@@ -834,4 +834,28 @@ sub sys_getgr_name {
     return R('ERR_INTERNAL');
 }
 
+sub sys_list_processes {
+    my %params = @_;
+    my $user   = $params{'user'};
+
+    if (!$user) {
+        return R('ERR_MISSING_PARAMETER', msg => "Missing 'user' parameter");
+    }
+
+    # works for Linux and FreeBSD
+    my $fnret = OVH::Bastion::execute_simple(cmd => ['ps', '-U', $user, '-o', 'pid']);
+
+    # ps can return 1 if no process found, so don't test $fnret, just read the output if any
+    my @pids;
+    if ($fnret->value) {
+        osh_debug("ps output: " . $fnret->value->{'output'}) if $fnret->value->{'output'};
+        foreach my $line (split(/\n/, $fnret->value->{'output'} // '')) {
+            chomp $line;
+            push @pids, $1 if ($line =~ /^\s*([0-9]+)\s*$/);
+        }
+    }
+
+    return R('OK', value => \@pids);
+}
+
 1;
