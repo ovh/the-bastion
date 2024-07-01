@@ -45,6 +45,7 @@ action_static() {
     cd docs
     for file in *.1; do
         action_detail "/usr/local/man/man1/$file"
+        mkdir -p /usr/local/man/man1/
         install -m 0644 "$file" /usr/local/man/man1/
     done
     action_done
