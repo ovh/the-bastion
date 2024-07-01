@@ -74,7 +74,7 @@ Linux distros below are tested with each release, but as this is a security prod
 
 - Debian 12 (Bookworm), 11 (Bullseye), 10 (Buster)
 - RockyLinux 8.x, 9.x
-- Ubuntu LTS 22.04, 20.04, 18.04, 16.04
+- Ubuntu LTS 22.04, 20.04, 18.04
 - OpenSUSE Leap 15.5\*
 
 \*: Note that these versions have no out-of-the-box MFA support, as they lack packaged versions of `pamtester`, `pam-google-authenticator`, or both. Of course, you may compile those yourself.
