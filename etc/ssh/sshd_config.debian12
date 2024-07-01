@@ -65,7 +65,7 @@ MACs umac-128-etm@openssh.com,umac-64-etm@openssh.com,hmac-sha2-512-etm@openssh.
 # the most secure dh-based kex.
 # we avoid algorithms based on the disputed NIST curves, and anything based
 # on sha1.
-KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group18-sha512,diffie-hellman-group16-sha512,diffie-hellman-group14-sha256,diffie-hellman-group-exchange-sha256
+KexAlgorithms sntrup761x25519-sha512@openssh.com,curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group18-sha512,diffie-hellman-group16-sha512,diffie-hellman-group14-sha256,diffie-hellman-group-exchange-sha256
 
 # force rekey every 512M of data or 6 hours of connection, whichever comes first
 RekeyLimit 512M 6h
