@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM ubuntu:24.04
 LABEL maintainer="stephane.lesimple+bastion@ovhcloud.com"
 
 # cache builds efficiently: just copy the scripts to install packages first
@@ -32,4 +32,4 @@ RUN ["/opt/bastion/bin/admin/install","--new-install"]
 # start at entrypoint
 ENTRYPOINT /opt/bastion/docker/entrypoint.sh
 
-# TESTOPT --has-mfa=1 --has-pamtester=1 --has-piv=1
+# TESTOPT --has-mfa=1 --has-pamtester=1 --has-piv=1 --has-sk=1
