@@ -275,9 +275,7 @@ if [ "${opt[modify-ssh-config]}" = 1 ] || [ "${opt[modify-sshd-config]}" = 1 ] ;
         filesuffix=$short_suffix_name
     elif [ "$OS_FAMILY" = Linux ]; then
         if [ "$LINUX_DISTRO" = ubuntu ]; then
-              if [ "$DISTRO_VERSION_MAJOR" -le 16 ]; then
-                filesuffix=debian9
-            elif [ "$DISTRO_VERSION_MAJOR" -le 18 ]; then
+              if [ "$DISTRO_VERSION_MAJOR" -le 18 ]; then
                 filesuffix=debian10
             elif [ "$DISTRO_VERSION_MAJOR" -le 20 ]; then
                 filesuffix=debian11
@@ -1235,7 +1233,10 @@ fi
 if [ "${opt[modify-pam-lastlog]}" = 1 ]; then
     # pam.d lastlogin
     action_doing "Adjust lastlog in pam.d/sshd if applicable"
-    if [ -e "$PAM_SSHD" ] ; then
+    # don't do it for Ubuntu 24.04, as they removed pam_lastlog.so entirely
+    if [ "$LINUX_DISTRO" = ubuntu ] && [ "$DISTRO_VERSION_MAJOR" -ge 24 ]; then
+        action_na "Not supported under $LINUX_DISTRO $DISTRO_VERSION_MAJOR"
+    elif [ -e "$PAM_SSHD" ] ; then
         if ! grep -Eq '^\s*session\s+optional\s+pam_lastlog.so' "$PAM_SSHD" ; then
             action_detail "missing lastlog config in file, adjusting"
             # shellcheck disable=SC1004
