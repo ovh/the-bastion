@@ -59,4 +59,7 @@ osh_info("\nTerminating sessions if any...");
 push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountKillSessions';
 push @command, ('--account', $account);
 
-osh_exit(OVH::Bastion::helper(cmd => \@command));
+# don't check result for this, our behaviour doesn't depend on it
+OVH::Bastion::helper(cmd => \@command);
+
+osh_exit($fnret);
