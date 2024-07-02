@@ -25,14 +25,17 @@ Remove a personal server access from your account
 
 Usage: --osh SCRIPT_NAME --host HOST [OPTIONS]
 
-  --host IP|HOST|IP/MASK  Server to remove access from
-  --user USER             Remote user that was allowed, if any user was allowed, use --user-any
-  --user-any              Use if any remote login was allowed
-  --port PORT             Remote SSH port that was allowed, if any port was allowed, use --port-any
-  --port-any              Use if any remote port was allowed
-  --scpup                 Remove SCP upload right, you--bastion-->server (omit --user in this case)
-  --scpdown               Remove SCP download right, you<--bastion--server (omit --user in this case)
-  --sftp                  Remove usage of the SFTP subsystem, you<--bastion-->server (omit --user in this case)
+  --host HOST|IP|NET/CIDR  Host(s) to remove access from, either a HOST which will be resolved to an IP immediately,
+                             or an IP, or a whole network using the NET/CIDR notation
+  --user USER              Specify which remote user was allowed to connect as.
+                             Globbing characters '*' and '?' are supported, so you can specify a pattern
+                             that will be matched against the actual remote user name.
+  --user-any               Synonym of '--user *', allowed connecting as any remote user.
+  --port PORT              Remote port that was allowed to connect to
+  --port-any               Use when access was allowed to any remote port
+  --scpup                  Remove SCP upload right, you--bastion-->server (omit --user in this case)
+  --scpdown                Remove SCP download right, you<--bastion--server (omit --user in this case)
+  --sftp                   Remove usage of the SFTP subsystem, you<--bastion-->server (omit --user in this case)
 EOF
 );
 

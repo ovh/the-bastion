@@ -9,7 +9,7 @@ Remove an IP or IP block from a group's server list
 .. admonition:: usage
    :class: cmdusage
 
-   --osh groupDelServer --group GROUP [OPTIONS]
+   --osh groupDelServer --group GROUP --host HOST [OPTIONS]
 
 .. program:: groupDelServer
 
@@ -20,23 +20,26 @@ Remove an IP or IP block from a group's server list
 
 .. option:: --host HOST|IP|NET/CIDR
 
-   Host(s) we want to remove access to
+   Host(s) to remove access from, either a HOST which will be resolved to an IP immediately,
 
+                             or an IP, or a whole network using the NET/CIDR notation
 .. option:: --user USER
 
-   Remote user that was allowed, if any user was allowed, use --user-any
+   Specify which remote user was allowed to connect as.
 
+                             Globbing characters '*' and '?' are supported, so you can specify a pattern
+                             that will be matched against the actual remote user name.
 .. option:: --user-any
 
-   Use if any remote login was allowed
+   Synonym of '--user *', allowed connecting as any remote user.
 
 .. option:: --port PORT
 
-   Remote SSH port that was allowed, if any port was allowed, use --port-any
+   Remote port that was allowed to connect to
 
 .. option:: --port-any
 
-   Use if any remote port was allowed
+   Use when access was allowed to any remote port
 
 .. option:: --scpup
 
@@ -50,3 +53,12 @@ Remove an IP or IP block from a group's server list
 
    Remove usage of the SFTP subsystem, you<--bastion-->server (omit --user in this case)
 
+
+This command adds, to an existing bastion account, access to a given server, using the
+egress keys of the group. The list of eligible servers for a given group is given by ``groupListServers``
+
+If you want to add member access to an account to all the present and future servers
+of the group, using the group key, please use ``groupAddMember`` instead.
+
+If you want to add access to an account to a group server but using their personal bastion
+key instead of the group key, please use ``accountAddPersonalAccess`` instead.
