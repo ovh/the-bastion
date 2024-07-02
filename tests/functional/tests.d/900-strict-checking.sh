@@ -29,8 +29,10 @@ testsuite_strict_checking()
     retvalshouldbe 255
     contain "Permanently added"
 
-    # change the remote hostkeys
-    success change_host_keys $r0 "\"find /etc/ssh/ -type f -name 'ssh_host_*' -delete; ssh-keygen -A\""
+    # change the remote hostkeys, also send HUP to force sshd to take the change into account (Ubuntu 24+ at least),
+    # don't check return value as we'll kill our own session with pkill, as a collateral damage.
+    # uname -s: under FreeBSD, this interrupts the tests otherwise.
+    run change_host_keys $r0 "\"find /etc/ssh/ -type f -name 'ssh_host_*' -delete; ssh-keygen -A; test \$(uname -s) = Linux && pkill -HUP sshd\""
 
     # set bastion ssh_client config to StrictHostKeyChecking yes
     sshclientconfigchg 's=StrictHostKeyChecking.*=StrictHostKeyChecking\\\\x20yes=g'
