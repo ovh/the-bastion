@@ -18,25 +18,28 @@ Add a personal server access to an account
 
    Bastion account to add the access to
 
-.. option:: --host IP|HOST|IP/MASK
+.. option:: --host HOST|IP|NET/CIDR
 
-   Server to add access to
+   Host(s) to add access to, either a HOST which will be resolved to an IP immediately,
 
+                             or an IP, or a whole network using the NET/CIDR notation
 .. option:: --user USER
 
-   Remote login to use, globbing characters '?' and '*' are supported
+   Specify which remote user should be allowed to connect as.
 
+                             Globbing characters '*' and '?' are supported, so you can specify a pattern
+                             that will be matched against the actual remote user name.
 .. option:: --user-any
 
-   Allow access with any remote login (synonym of ``--user *``)
+   Synonym of '--user *', allows connecting as any remote user.
 
 .. option:: --port PORT
 
-   Remote SSH port to use, if you want to allow any port, use --port-any
+   Remote port allowed to connect to
 
 .. option:: --port-any
 
-   Allow access to all remote ports
+   Allow access to any remote port
 
 .. option:: --scpup
 

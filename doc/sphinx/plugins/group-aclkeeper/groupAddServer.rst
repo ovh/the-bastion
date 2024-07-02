@@ -16,29 +16,30 @@ Add an IP or IP block to a group's servers list
 
 .. option:: --group GROUP
 
-   Specify which group this machine should be added to (it should have the public group key of course)
+   Specify which group this machine should be added to
 
 .. option:: --host HOST|IP|NET/CIDR
 
-   Host(s) to add access to, either a HOST which will be resolved to an IP immediately, or an IP,
+   Host(s) to add access to, either a HOST which will be resolved to an IP immediately,
 
-                             or a whole network using the NET/CIDR notation
+                             or an IP, or a whole network using the NET/CIDR notation
 .. option:: --user USER
 
-   Specify which remote user should be allowed (root, run, etc...).
+   Specify which remote user should be allowed to connect as.
 
-                             Globbing characters '*' and '?' are supported.
+                             Globbing characters '*' and '?' are supported, so you can specify a pattern
+                             that will be matched against the actual remote user name.
 .. option:: --user-any
 
-   Synonym of '--user *', allows any remote user (the remote user should still have the public group key in all cases)
+   Synonym of '--user *', allows connecting as any remote user.
 
 .. option:: --port PORT
 
-   Only allow access to this port (e.g. 22)
+   Remote port allowed to connect to
 
 .. option:: --port-any
 
-   Allow access to any port
+   Allow access to any remote port
 
 .. option:: --scpup
 
@@ -68,9 +69,9 @@ Add an IP or IP block to a group's servers list
 
    Specify a number of seconds (or a duration string, such as "1d7h8m") after which the access will automatically expire
 
-.. option:: --comment '"ANY TEXT'"
+.. option:: --comment "'ANY TEXT'"
 
-   Add a comment alongside this server
+   Add a comment alongside this server. Quote it twice as shown if you're under a shell.
 
 
 Examples::

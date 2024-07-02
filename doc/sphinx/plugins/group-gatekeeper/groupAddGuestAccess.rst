@@ -14,45 +14,49 @@ Add a specific group server access to an account
 .. program:: groupAddGuestAccess
 
 
-.. option:: --group GROUP
-
-   group to add guest access to
-
 .. option:: --account ACCOUNT
 
-   name of the other bastion account to add access to, they'll be given access to the GROUP key
+   Name of the other bastion account to add access to, they'll be given access to the GROUP key
 
-.. option:: --host HOST|IP
+.. option:: --group GROUP
 
-   add access to this HOST (which must belong to the GROUP)
+   Group to add the guest access to, note that this group should already have access
 
+                             to the USER/HOST/PORT tuple you'll specify with the options below.
+.. option:: --host HOST|IP|NET/CIDR
+
+   Host(s) to add access to, either a HOST which will be resolved to an IP immediately,
+
+                             or an IP, or a whole network using the NET/CIDR notation
 .. option:: --user USER
 
-   allow connecting to HOST only with remote login USER
+   Specify which remote user should be allowed to connect as.
 
+                             Globbing characters '*' and '?' are supported, so you can specify a pattern
+                             that will be matched against the actual remote user name.
 .. option:: --user-any
 
-   allow connecting to HOST with any remote login
+   Synonym of '--user *', allows connecting as any remote user.
 
 .. option:: --port PORT
 
-   allow connecting to HOST only to remote port PORT
+   Remote port allowed to connect to
 
 .. option:: --port-any
 
-   allow connecting to HOST with any remote port
+   Allow access to any remote port
 
 .. option:: --scpup
 
-   allow SCP upload, you--bastion-->server (omit --user in this case)
+   Allow SCP upload, you--bastion-->server (omit --user in this case)
 
 .. option:: --scpdown
 
-   allow SCP download, you<--bastion--server (omit --user in this case)
+   Allow SCP download, you<--bastion--server (omit --user in this case)
 
 .. option:: --sftp
 
-   allow usage of the SFTP subsystem, you<--bastion-->server (omit --user in this case)
+   Allow usage of the SFTP subsystem, you<--bastion-->server (omit --user in this case)
 
 .. option:: --ttl SECONDS|DURATION
 
