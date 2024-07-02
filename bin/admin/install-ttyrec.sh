@@ -55,7 +55,7 @@ action_static() {
 
 # only used when/if the API is down and we're in CI mode
 default_urls() {
-    local ver="1.1.7.0"
+    local ver="1.1.7.1"
     local rpmver="${ver}-1"
     local list="
         -${rpmver}.aarch64.rpm
