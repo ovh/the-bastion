@@ -1,3 +1,17 @@
+## v3.16.99-rc1 - 2024/07/04
+feat: support wildcards in --user for ACL management plugins (fix #461)
+feat: accountFreeze: terminate running sessions if any
+chg: support: add Ubuntu 24.04 LTS
+chg: support: bump OpenSUSE Leap from 15.5 to 15.6
+chg: support: remove CentOS 7 (EOL)
+chg: support: remove Ubuntu 16.04 LTS (EOL)
+enh: enable sntrup KEX by default for supported OpenSSH versions (Debian12, Ubuntu20+)
+enh: autologin: set term to ``raw noecho`` when --no-tty is used
+fix: stealth\_stdout/stderr was ignored for plugins (fix #482)
+fix: ignore transient errors during global destruction
+fix: install of ttyrec was failing under FreeBSD 13.2
+fix: selfGenerateProxyPassword: help message was incorrect
+
 ## v3.16.01 - 2024/04/17
 - enh: info: removed uname dependency, added configuration
 - chg: bastion-sync-helper.sh: use sh instead of bash
