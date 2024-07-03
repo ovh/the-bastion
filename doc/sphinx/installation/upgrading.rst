@@ -27,6 +27,25 @@ See the ``--help`` for a more fine-grained upgrade path if needed.
 Version-specific upgrade instructions
 =====================================
 
+v3.16.99-rc1 - 2024/07/04
+*************************
+
+This release drops support for Ubuntu 16.04 and CentOS 7. If you're still using these EOL OS releases (which is
+obviously discouraged), proper functioning of The Bastion is no longer tested or guaranteed.
+
+This release adds official support for Ubuntu 24.04 LTS and OpenSUSE Leap 15.6, these were already working but
+are now part of the integration tests.
+
+This release adds support of wildcards (also called "shell-style globbing characters"), namely ``?`` and ``*``,
+when using the ``--user`` option for plugins such as ``groupAddServer``, ``groupDelServer``, ``groupAddGuestAccess``,
+``groupDelGuestAccess``, ``accountAddPersonalAccess``, ``accountDelPersonalAccess``, ``selfAddPersonalAccess``,
+``selfDelPersonalAccess``.
+
+This release adds support of the ``sntrup761x25519-sha512@openssh.com`` KEX algorithm by default on shipped versions
+of ``sshd_config`` and ``ssh_config``. If you're upgrading, these files won't be touched, so if you want to add
+support, you'll need to modify them manually by prepending ``sntrup761x25519-sha512@openssh.com`` to the
+``KexAlgorithms`` line. Verify that the OpenSSH version shipped by your OS does support it (run ``ssh -Q kex``).
+
 v3.16.01 - 2024/04/17
 *********************
 
