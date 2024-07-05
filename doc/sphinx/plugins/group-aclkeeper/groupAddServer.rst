@@ -53,6 +53,10 @@ Add an IP or IP block to a group's servers list
 
    Allow usage of the SFTP subsystem, you<--bastion-->server (omit --user in this case)
 
+.. option:: --rsync
+
+   Allow usage of rsync through the bastion
+
 .. option:: --force
 
    Don't try the ssh connection, just add the host to the group blindly

@@ -2,7 +2,7 @@ FROM debian:bookworm
 LABEL maintainer="stephane.lesimple+bastion@ovhcloud.com"
 
 # install prerequisites
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y jq netcat-traditional openssh-client procps bsdutils screen expect shellcheck libperl-critic-perl fping curl
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y jq netcat-traditional openssh-client procps bsdutils screen expect shellcheck libperl-critic-perl fping curl rsync
 
 # add our code
 COPY . /opt/bastion

@@ -951,7 +951,7 @@ sub ssh_test_access_way {
     $user = $fnret->value;
 
     # skip special users and wildcarded-users which are not actual remote users
-    if ((grep { $user eq $_ } qw{ !scpupload !scpdownload !sftp }) || ($user =~ /[*?]/)) {
+    if ((grep { $user eq $_ } qw{ !scpupload !scpdownload !sftp !rsync }) || ($user =~ /[*?]/)) {
         return R('OK_MAGIC_USER', msg => "Didn't really test the connection, as the specified user is special");
     }
 

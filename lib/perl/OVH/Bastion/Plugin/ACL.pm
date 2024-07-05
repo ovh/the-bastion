@@ -9,8 +9,8 @@ use OVH::Bastion;
 
 sub check {
     my %params = @_;
-    my ($port, $portAny, $user, $userAny, $scpUp, $scpDown, $sftp) =
-      @params{qw{ port portAny user userAny scpUp scpDown sftp }};
+    my ($port, $portAny, $user, $userAny, $scpUp, $scpDown, $sftp, $rsync) =
+      @params{qw{ port portAny user userAny scpUp scpDown sftp rsync }};
 
     if ($user and $userAny) {
         return R('ERR_INCOMPATIBLE_PARAMETERS',
@@ -24,13 +24,13 @@ sub check {
               . "if you want to grant both, please do it in two separate commands");
     }
 
-    if ($sftp and ($scpUp or $scpDown)) {
+    if ($sftp and ($scpUp or $scpDown or $rsync)) {
         return R('ERR_INCOMPATIBLE_PARAMETERS',
-            msg => "You specified both --scp* and --sftp, "
-              . "if you want to grant both protocols, please do it in two separate commands");
+            msg => "You can specify only one of --sftp --scpup --scpdown --rsync at a time, "
+              . "if you want to grant several of those protocols, please do it in separate commands");
     }
 
-    if (($scpUp or $scpDown or $sftp) and ($user or $userAny)) {
+    if (($scpUp or $scpDown or $sftp or $rsync) and ($user or $userAny)) {
         return R('ERR_INCOMPATIBLE_PARAMETERS',
                 msg => "To grant SCP or SFTP access, first ensure SSH access "
               . "is granted to the machine (with the --user you need, or --user-any), then grant with --scpup and/or "
@@ -39,6 +39,7 @@ sub check {
     $user = '!scpupload'   if $scpUp;
     $user = '!scpdownload' if $scpDown;
     $user = '!sftp'        if $sftp;
+    $user = '!rsync'       if $rsync;
 
     if (not $user and not $userAny) {
         return R('ERR_MISSING_PARAMETER',

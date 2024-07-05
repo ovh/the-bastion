@@ -22,6 +22,7 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
         "scpup"     => \my $scpUp,
         "scpdown"   => \my $scpDown,
         "sftp"      => \my $sftp,
+        "rsync"     => \my $rsync,
     },
     helptext => <<'EOF',
 Remove a specific group server access from an account
@@ -41,6 +42,7 @@ Usage: --osh SCRIPT_NAME --group GROUP --account ACCOUNT [OPTIONS]
   --scpup                  Remove SCP upload right, you--bastion-->server (omit --user in this case)
   --scpdown                Remove SCP download right, you<--bastion--server (omit --user in this case)
   --sftp                   Remove usage of the SFTP subsystem, you<--bastion-->server (omit --user in this case)
+  --rsync                  Remove usage of rsync through the bastion
 
 This command removes, from an existing bastion account, access to a given server, using the
 egress keys of the group. The list of such servers is given by ``groupListGuestAccesses``
@@ -69,7 +71,8 @@ $fnret = OVH::Bastion::Plugin::ACL::check(
     portAny => $portAny,
     scpUp   => $scpUp,
     scpDown => $scpDown,
-    sftp    => $sftp
+    sftp    => $sftp,
+    rsync   => $rsync,
 );
 if (!$fnret) {
     help();
