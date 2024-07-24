@@ -77,20 +77,57 @@ osh_info sprintf "%8s: %s@%s:%s\n",   "Via",  $r->{'account'}, $r->{'bastionip'}
 if ($r->{user} || $r->{ipto} || $r->{portto} || $r->{hostto}) {
     osh_info sprintf "%8s: %s@%s:%s (%s)\n", "To", $r->{'user'}, $r->{'ipto'}, $r->{'portto'}, $r->{'hostto'};
 }
-osh_info sprintf "%8s: %s%s\n", "RetCode", defined $r->{returnvalue} ? $r->{returnvalue} : 'n/a',
-  $r->{params} ? " params $r->{params}" : '';
+osh_info sprintf "%8s: %s\n", "RetCode", $r->{returnvalue} // 'n/a';
+osh_info sprintf "%8s: %s\n", "Params",  $r->{params}      // "''";
 osh_info "\n";
 
 my $ttyrecfile = $r->{'ttyrecfile'};
-if (!$ttyrecfile) {
-    osh_info "There were no terminal recording for this session";
-    osh_ok {};
-}
 
 # if we used on-the-fly compression, maybe the file ends in ".zst"
-$ttyrecfile .= ".zst" if !-r $ttyrecfile;
+if ($ttyrecfile && !-r $ttyrecfile) {
+    $ttyrecfile .= ".zst";
+}
 
-if (!-r $ttyrecfile) {
+# if the column is not present in db
+if (!$ttyrecfile) {
+    # find it ourselves: this can only work if &uniqid is referenced somewhere in the
+    # "ttyrecFilenameFormat" global config parameter
+    if (OVH::Bastion::config('ttyrecFilenameFormat')->value !~ /&uniqid/) {
+        osh_exit R('ERR_NOT_FOUND',
+            msg =>
+              "Can't look for the recorded session of ID $id, as the ttyrec files naming pattern doesn't contain the uniqid"
+        );
+    }
+
+    my $dirname = "$HOME/ttyrec/";
+    if ($r->{ipto}) {
+        $dirname .= $r->{ipto};
+    }
+    elsif ($r->{plugin}) {
+        $dirname .= $r->{plugin};
+    }
+    else {
+        osh_info "There were no terminal recording for this session";
+        osh_ok {};
+    }
+
+    # look for *.ttyrec and *.ttyrec.zst, we use readdir so that we can stop on the first match
+    my $uniqid = $r->{uniqid};
+    if (opendir(my $dh, $dirname)) {
+        while (my $filename = readdir $dh) {
+            next if ($filename !~ m{\Q$uniqid\E.+\.ttyrec(?:\.zst)?$});
+            $ttyrecfile = "$dirname/$filename";
+            last;
+        }
+        closedir($dh);
+    }
+    else {
+        syslog_warn("Couldn't open ttyrec directory $dirname: $!");
+        osh_exit R('ERR_NOT_FOUND', msg => "Couldn't open the directory containing the ttyrec files");
+    }
+}
+
+if (!$ttyrecfile || !-r $ttyrecfile) {
     osh_exit R('ERR_NOT_FOUND', msg => "Recorded session for ID $id couldn't be found, it might have been archived");
 }
 
