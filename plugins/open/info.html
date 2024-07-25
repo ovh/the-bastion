@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>info &mdash; The Bastion 3.16.99-rc1 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/thebastion.css" type="text/css" />
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="lock" href="lock.html" />
+    <link rel="prev" title="help" href="help.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> The Bastion
+          </a>
+              <div class="version">
+                3.16.99-rc1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using/basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/sftp_scp.html">SFTP &amp; SCP support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/configuration/index.html">Configuration files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">open plugins</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="alive.html">alive</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batch.html">batch</a></li>
+<li class="toctree-l2"><a class="reference internal" href="clush.html">clush</a></li>
+<li class="toctree-l2"><a class="reference internal" href="groupInfo.html">groupInfo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="groupList.html">groupList</a></li>
+<li class="toctree-l2"><a class="reference internal" href="groupListPasswords.html">groupListPasswords</a></li>
+<li class="toctree-l2"><a class="reference internal" href="groupListServers.html">groupListServers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="help.html">help</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">info</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#displays-some-information-about-this-bastion-instance">Displays some information about this bastion instance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#output-example">Output example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#plugin-configuration">Plugin configuration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#options">Options</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#example">Example</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="lock.html">lock</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mtr.html">mtr</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nc.html">nc</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ping.html">ping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scp.html">scp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfAddIngressKey.html">selfAddIngressKey</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfDelIngressKey.html">selfDelIngressKey</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfForgetHostKey.html">selfForgetHostKey</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfGenerateEgressKey.html">selfGenerateEgressKey</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfGeneratePassword.html">selfGeneratePassword</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfGenerateProxyPassword.html">selfGenerateProxyPassword</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfListAccesses.html">selfListAccesses</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfListEgressKeys.html">selfListEgressKeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfListIngressKeys.html">selfListIngressKeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfListPasswords.html">selfListPasswords</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfListSessions.html">selfListSessions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfMFAResetPassword.html">selfMFAResetPassword</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfMFAResetTOTP.html">selfMFAResetTOTP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfMFASetupPassword.html">selfMFASetupPassword</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfMFASetupTOTP.html">selfMFASetupTOTP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfPlaySession.html">selfPlaySession</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sftp.html">sftp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="unlock.html">unlock</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="index.html">open plugins</a> &raquo;</li>
+      <li>info</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/plugins/open/info.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="info">
+<h1>info<a class="headerlink" href="#info" title="Permalink to this headline"></a></h1>
+<section id="displays-some-information-about-this-bastion-instance">
+<h2>Displays some information about this bastion instance<a class="headerlink" href="#displays-some-information-about-this-bastion-instance" title="Permalink to this headline"></a></h2>
+<div class="cmdusage admonition">
+<p class="admonition-title">usage</p>
+<p>--osh info</p>
+</div>
+</section>
+<section id="output-example">
+<h2>Output example<a class="headerlink" href="#output-example" title="Permalink to this headline"></a></h2>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>~ You are user1
+~
+~ Your <span class="nb">alias</span> to connect to this bastion is:
+~ <span class="nb">alias</span> <span class="nv">bastion</span><span class="o">=</span><span class="s1">&#39;ssh user1@testbastion.example.org -p 22 -t -- &#39;</span>
+~ Your <span class="nb">alias</span> to connect to this bastion with MOSH is:
+~ <span class="nb">alias</span> <span class="nv">bastionm</span><span class="o">=</span><span class="s1">&#39;mosh --ssh=&quot;ssh -p 22 -t&quot; user1@testbastion.example.org -- &#39;</span>
+~
+~ Multi-Factor Authentication <span class="o">(</span>MFA<span class="o">)</span> on your account:
+~ - Additional password authentication is not required
+~ - Additional password authentication bypass is disabled
+~ - Additional password authentication is enabled and active
+~ - Additional TOTP authentication is not required
+~ - Additional TOTP authentication bypass is disabled
+~ - Additional TOTP authentication is disabled
+~
+~ I am testbastion-a.example.org, aka bastion
+~ I have <span class="m">42</span> registered accounts and <span class="m">46</span> groups
+~ I am a MASTER, which means I accept modifications
+~ The networks I<span class="s1">&#39;m able to connect you to on the egress side are: all</span>
+<span class="s1">~ The networks that are explicitly forbidden on the egress side are: none</span>
+<span class="s1">~ My egress connection IP to remote servers is 192.0.2.45/32</span>
+<span class="s1">~ ...don&#39;</span>t forget to whitelist me <span class="k">in</span> your firewalls!
+~
+~ The following policy applies on this bastion:
+~ - The interactive mode <span class="o">(</span>-i<span class="o">)</span> is ENABLED
+~ - The support of mosh is ENABLED
+~ - Account expiration is DISABLED
+~ - Keyboard input idle <span class="nb">time</span> <span class="k">for</span> session locking is DISABLED
+~ - Keyboard input idle <span class="nb">time</span> <span class="k">for</span> session killing is DISABLED
+~ - The forced <span class="s2">&quot;from&quot;</span> prepend on ingress keys is DISABLED
+~ - The following algorithms are allowed <span class="k">for</span> ingress SSH keys: rsa, ecdsa, ed25519
+~ - The RSA key size <span class="k">for</span> ingress SSH keys must be between <span class="m">2048</span> and <span class="m">8192</span> bits
+~ - The following algorithms are allowed <span class="k">for</span> egress SSH keys: rsa, ecdsa, ed25519
+~ - The RSA key size <span class="k">for</span> egress SSH keys must be between <span class="m">2048</span> and <span class="m">8192</span> bits
+~ - The Multi-Factor Authentication <span class="o">(</span>MFA<span class="o">)</span> policy is ENABLED
+~
+~ Here is your excuse <span class="k">for</span> anything not working today:
+~ BOFH excuse <span class="c1">#444:</span>
+~ overflow error <span class="k">in</span> /dev/null
+</pre></div>
+</div>
+</section>
+<section id="plugin-configuration">
+<h2>Plugin configuration<a class="headerlink" href="#plugin-configuration" title="Permalink to this headline"></a></h2>
+<section id="options">
+<h3>Options<a class="headerlink" href="#options" title="Permalink to this headline"></a></h3>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-info-arg-admin_show_system_info">
+<span id="cmdoption-info-arg-admin-show-system-info"></span><span id="cmdoption-info-arg-boolean"></span><span class="sig-name descname"><span class="pre">admin_show_system_info</span></span><span class="sig-prename descclassname"> <span class="pre">(optional</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">boolean)</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-info-arg-admin_show_system_info" title="Permalink to this definition"></a></dt>
+<dd><p>If enabled, bastion admins get more output regarding information of the
+underlying OS. When omitted, this is enabled by default.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-info-arg-show_fortune">
+<span id="cmdoption-info-arg-show-fortune"></span><span id="cmdoption-info-arg-0"></span><span class="sig-name descname"><span class="pre">show_fortune</span></span><span class="sig-prename descclassname"> <span class="pre">(optional</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">boolean)</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-info-arg-show_fortune" title="Permalink to this definition"></a></dt>
+<dd><p>If enabled, and if the <code class="docutils literal notranslate"><span class="pre">fortune</span></code> package is installed on your OS,
+shows a fortune. When omitted, this is enabled by default.</p>
+</dd></dl>
+
+</section>
+<section id="example">
+<h3>Example<a class="headerlink" href="#example" title="Permalink to this headline"></a></h3>
+<p>Configuration, in JSON format, must be in <code class="file docutils literal notranslate"><span class="pre">/etc/bastion/plugin.info.conf</span></code>:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="hll"><span class="p">{</span><span class="w"> </span><span class="nt">&quot;admin_show_system_info&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;show_fortune&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+</span></pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="help.html" class="btn btn-neutral float-left" title="help" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="lock.html" class="btn btn-neutral float-right" title="lock" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>selfDelPersonalAccess &mdash; The Bastion 3.16.99-rc1 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/thebastion.css" type="text/css" />
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="whoHasAccessTo" href="whoHasAccessTo.html" />
+    <link rel="prev" title="selfAddPersonalAccess" href="selfAddPersonalAccess.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> The Bastion
+          </a>
+              <div class="version">
+                3.16.99-rc1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using/basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/sftp_scp.html">SFTP &amp; SCP support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/configuration/index.html">Configuration files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../open/index.html">open plugins</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">restricted plugins</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="accountAddPersonalAccess.html">accountAddPersonalAccess</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountCreate.html">accountCreate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountDelPersonalAccess.html">accountDelPersonalAccess</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountDelete.html">accountDelete</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountFreeze.html">accountFreeze</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountGeneratePassword.html">accountGeneratePassword</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountGrantCommand.html">accountGrantCommand</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountInfo.html">accountInfo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountList.html">accountList</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountListAccesses.html">accountListAccesses</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountListEgressKeys.html">accountListEgressKeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountListIngressKeys.html">accountListIngressKeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountListPasswords.html">accountListPasswords</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountMFAResetPassword.html">accountMFAResetPassword</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountMFAResetTOTP.html">accountMFAResetTOTP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountModify.html">accountModify</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountPIV.html">accountPIV</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountRevokeCommand.html">accountRevokeCommand</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountUnexpire.html">accountUnexpire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountUnfreeze.html">accountUnfreeze</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountUnlock.html">accountUnlock</a></li>
+<li class="toctree-l2"><a class="reference internal" href="groupCreate.html">groupCreate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="groupDelete.html">groupDelete</a></li>
+<li class="toctree-l2"><a class="reference internal" href="realmCreate.html">realmCreate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="realmDelete.html">realmDelete</a></li>
+<li class="toctree-l2"><a class="reference internal" href="realmInfo.html">realmInfo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="realmList.html">realmList</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rootListIngressKeys.html">rootListIngressKeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfAddPersonalAccess.html">selfAddPersonalAccess</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">selfDelPersonalAccess</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#remove-a-personal-server-access-from-your-account">Remove a personal server access from your account</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="whoHasAccessTo.html">whoHasAccessTo</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="index.html">restricted plugins</a> &raquo;</li>
+      <li>selfDelPersonalAccess</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/plugins/restricted/selfDelPersonalAccess.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="selfdelpersonalaccess">
+<h1>selfDelPersonalAccess<a class="headerlink" href="#selfdelpersonalaccess" title="Permalink to this headline"></a></h1>
+<section id="remove-a-personal-server-access-from-your-account">
+<h2>Remove a personal server access from your account<a class="headerlink" href="#remove-a-personal-server-access-from-your-account" title="Permalink to this headline"></a></h2>
+<div class="cmdusage admonition">
+<p class="admonition-title">usage</p>
+<p>--osh selfDelPersonalAccess --host HOST [OPTIONS]</p>
+</div>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-selfDelPersonalAccess-host">
+<span id="cmdoption-selfdelpersonalaccess-host"></span><span class="sig-name descname"><span class="pre">--host</span></span><span class="sig-prename descclassname"> <span class="pre">HOST|IP|NET/CIDR</span></span><a class="headerlink" href="#cmdoption-selfDelPersonalAccess-host" title="Permalink to this definition"></a></dt>
+<dd><p>Host(s) to remove access from, either a HOST which will be resolved to an IP immediately,</p>
+<blockquote>
+<div><p>or an IP, or a whole network using the NET/CIDR notation</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-selfDelPersonalAccess-user">
+<span id="cmdoption-selfdelpersonalaccess-user"></span><span class="sig-name descname"><span class="pre">--user</span></span><span class="sig-prename descclassname"> <span class="pre">USER</span></span><a class="headerlink" href="#cmdoption-selfDelPersonalAccess-user" title="Permalink to this definition"></a></dt>
+<dd><p>Specify which remote user was allowed to connect as.</p>
+<blockquote>
+<div><p>Globbing characters '*' and '?' are supported, so you can specify a pattern
+that will be matched against the actual remote user name.</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-selfDelPersonalAccess-user-any">
+<span id="cmdoption-selfdelpersonalaccess-user-any"></span><span class="sig-name descname"><span class="pre">--user-any</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-selfDelPersonalAccess-user-any" title="Permalink to this definition"></a></dt>
+<dd><p>Synonym of '--user <a href="#id1"><span class="problematic" id="id2">*</span></a>', allowed connecting as any remote user.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-selfDelPersonalAccess-port">
+<span id="cmdoption-selfdelpersonalaccess-port"></span><span class="sig-name descname"><span class="pre">--port</span></span><span class="sig-prename descclassname"> <span class="pre">PORT</span></span><a class="headerlink" href="#cmdoption-selfDelPersonalAccess-port" title="Permalink to this definition"></a></dt>
+<dd><p>Remote port that was allowed to connect to</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-selfDelPersonalAccess-port-any">
+<span id="cmdoption-selfdelpersonalaccess-port-any"></span><span class="sig-name descname"><span class="pre">--port-any</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-selfDelPersonalAccess-port-any" title="Permalink to this definition"></a></dt>
+<dd><p>Use when access was allowed to any remote port</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-selfDelPersonalAccess-scpup">
+<span id="cmdoption-selfdelpersonalaccess-scpup"></span><span class="sig-name descname"><span class="pre">--scpup</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-selfDelPersonalAccess-scpup" title="Permalink to this definition"></a></dt>
+<dd><p>Remove SCP upload right, you--bastion--&gt;server (omit --user in this case)</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-selfDelPersonalAccess-scpdown">
+<span id="cmdoption-selfdelpersonalaccess-scpdown"></span><span class="sig-name descname"><span class="pre">--scpdown</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-selfDelPersonalAccess-scpdown" title="Permalink to this definition"></a></dt>
+<dd><p>Remove SCP download right, you&lt;--bastion--server (omit --user in this case)</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-selfDelPersonalAccess-sftp">
+<span id="cmdoption-selfdelpersonalaccess-sftp"></span><span class="sig-name descname"><span class="pre">--sftp</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-selfDelPersonalAccess-sftp" title="Permalink to this definition"></a></dt>
+<dd><p>Remove usage of the SFTP subsystem, you&lt;--bastion--&gt;server (omit --user in this case)</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="selfAddPersonalAccess.html" class="btn btn-neutral float-left" title="selfAddPersonalAccess" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="whoHasAccessTo.html" class="btn btn-neutral float-right" title="whoHasAccessTo" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

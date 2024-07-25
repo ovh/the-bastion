@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>First steps &mdash; The Bastion 3.16.99-rc1 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/thebastion.css" type="text/css" />
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Access management" href="access_management.html" />
+    <link rel="prev" title="The basics" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> The Bastion
+          </a>
+              <div class="version">
+                3.16.99-rc1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">The basics</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">First steps</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#bastion-alias">Bastion alias</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#plugins">Plugins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#setting-up-access-to-a-server">Setting up access to a server</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#connecting-to-a-server-and-reviewing-the-session">Connecting to a server and reviewing the session</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="access_management.html">Access management</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sftp_scp.html">SFTP &amp; SCP support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/configuration/index.html">Configuration files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/open/index.html">open plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="index.html">The basics</a> &raquo;</li>
+      <li>First steps</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/using/basics/first_steps.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="first-steps">
+<h1>First steps<a class="headerlink" href="#first-steps" title="Permalink to this headline"></a></h1>
+<section id="bastion-alias">
+<h2>Bastion alias<a class="headerlink" href="#bastion-alias" title="Permalink to this headline"></a></h2>
+<p>You should setup a <em>bastion alias</em> to make it easy to connect to the bastion.
+An example of the proper alias to use for your account is given to the bastion administrator
+when they creates your account, and is usually something along the lines of:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll"><span class="nb">alias</span> <span class="nv">bssh</span><span class="o">=</span><span class="s1">&#39;ssh -t myname@the-bastion.example.org --&#39;</span>
+</span></pre></div>
+</div>
+<p>Of course, you can modify it as you see fit, for example adding the <code class="docutils literal notranslate"><span class="pre">-i</span></code> argument to specify the private SSH key
+to use to connect to the bastion. You can use any name as the alias,
+but it's advised to keep it short, as you'll use it quite often.</p>
+<p>For the remaining of this documentation, we'll assume your bastion alias is <code class="docutils literal notranslate"><span class="pre">bssh</span></code>.</p>
+<p>You can do two categories of things on the bastion:</p>
+<ul class="simple">
+<li><p>Connect to infrastructures through it</p></li>
+<li><p>Interact with the bastion itself, for example to manage your account, and/or groups,
+through so-called <strong>PLUGINS</strong> aka <em>osh commands</em></p></li>
+</ul>
+</section>
+<section id="plugins">
+<h2>Plugins<a class="headerlink" href="#plugins" title="Permalink to this headline"></a></h2>
+<p>We'll start by using the <code class="docutils literal notranslate"><span class="pre">info</span></code> plugin, to verify that your bastion access works correctly:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh --osh info
+</span>*------------------------------------------------------------------------------*
+<span class="p">|</span>THIS IS A PRIVATE COMPUTER SYSTEM, UNAUTHORIZED ACCESS IS STRICTLY PROHIBITED.<span class="p">|</span>
+<span class="p">|</span>ALL CONNECTIONS ARE LOGGED. IF YOU ARE NOT AUTHORIZED, DISCONNECT NOW.        <span class="p">|</span>
+*------------------------------------------------------------------------------*
+Enter PIN <span class="k">for</span> <span class="s1">&#39;PIV Card Holder pin (PIV_II)&#39;</span>:
+---the-bastion.example.org----------------------------the-bastion-2.99.99-rc9---
+<span class="o">=</span>&gt; information
+--------------------------------------------------------------------------------
+~ You are johndoe
+~ You are a bastion auditor!
+~ Look at you, you are a bastion superowner!
+~ Woosh, you are even a bastion admin!
+~
+~ Your <span class="nb">alias</span> to connect to this bastion is:
+~ <span class="nb">alias</span> <span class="nv">bssh</span><span class="o">=</span><span class="s1">&#39;ssh johndoe@the-bastion.example.org -p 22 -t -- &#39;</span>
+~ Your <span class="nb">alias</span> to connect to this bastion with MOSH is:
+~ <span class="nb">alias</span> <span class="nv">bsshm</span><span class="o">=</span><span class="s1">&#39;mosh --ssh=&quot;ssh -p 22 -t&quot; johndoe@the-bastion.example.org -- &#39;</span>
+~
+~ <span class="o">[</span>...<span class="o">]</span>
+~
+~ Here is your excuse <span class="k">for</span> anything not working today:
+~ BOFH excuse <span class="c1">#46:</span>
+~ waste water tank overflowed onto computer
+----------------------------------------------------------------------&lt;/info&gt;---
+Connection to the-bastion.example.org closed.
+</pre></div>
+</div>
+<p>Congratulations, you've just used your first command on the bastion!</p>
+<p>You can get a list of all the plugins you can use by saying:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh --osh <span class="nb">help</span>
+</span></pre></div>
+</div>
+<p>The list will depend on your access level on the bastion, as some commands are restricted.
+You can have more information about any command by using <code class="docutils literal notranslate"><span class="pre">--help</span></code> with it:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh --osh selfAddIngressKey --help
+</span></pre></div>
+</div>
+<p>See the <strong>PLUGINS</strong> section on the left menu, for more information about the plugins.</p>
+<p>Instead of using <code class="docutils literal notranslate"><span class="pre">--osh</span></code> to call plugins, you can enter the special <em>interactive mode</em>, by saying:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh -i
+</span></pre></div>
+</div>
+<p>In this mode, you can directly enter commands, and also use auto-completion features with the <code class="docutils literal notranslate"><span class="pre">&lt;TAB&gt;</span></code> key.
+You can start by just typing <code class="docutils literal notranslate"><span class="pre">help</span></code>, which is the equivalent of saying <code class="docutils literal notranslate"><span class="pre">bssh</span> <span class="pre">--osh</span> <span class="pre">help</span></code>.
+For security reasons, the interactive mode will disconnect you after a given amount of idle-time.</p>
+</section>
+<section id="setting-up-access-to-a-server">
+<h2>Setting up access to a server<a class="headerlink" href="#setting-up-access-to-a-server" title="Permalink to this headline"></a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This section assumes that you've just set up your bastion and your account is the one that has been created
+on installation, with all the super-powers included, especially access to the restricted
+<a class="reference internal" href="../../plugins/restricted/selfAddPersonalAccess.html"><span class="doc">selfAddPersonalAccess</span></a> command that we'll use below.
+If this is not the case, you'll need first to have a bastion admin grant you this command
+through <a class="reference internal" href="../../plugins/restricted/accountGrantCommand.html"><span class="doc">accountGrantCommand</span></a></p>
+</div>
+<p>Let's say that you have a server you want to secure access to, using the bastion.
+We'll call it <em>server42.example.org</em>, with IP 198.51.100.42.
+To do this, we'll use the <a class="reference internal" href="../../plugins/restricted/selfAddPersonalAccess.html"><span class="doc">selfAddPersonalAccess</span></a> command.</p>
+<p>We can use the interactive mode to get the auto-completion features:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh -i
+</span>Enter PIN <span class="k">for</span> <span class="s1">&#39;PIV Card Holder pin (PIV_II)&#39;</span>:
+
+Welcome to bssh interactive mode, <span class="nb">type</span> <span class="sb">`</span>help<span class="s1">&#39; for available commands.</span>
+<span class="s1">You can use &lt;tab&gt; and &lt;tab&gt;&lt;tab&gt; for autocompletion.</span>
+<span class="s1">You&#39;</span>ll be disconnected after <span class="m">60</span> seconds of inactivity.
+Loading... <span class="m">88</span> commands and <span class="m">341</span> autocompletion rules loaded.
+
+bssh<span class="o">(</span>master<span class="o">)</span>&gt;
+</pre></div>
+</div>
+<p>You can enter the first few characters of the command, then use <code class="docutils literal notranslate"><span class="pre">&lt;TAB&gt;</span></code> to help you complete it,
+then use <code class="docutils literal notranslate"><span class="pre">&lt;TAB&gt;</span></code> again to show you the required arguments. The complete command would be as follows:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh(master)&gt; selfAddPersonalAccess --host 198.51.100.42 --port 22 --user root
+</span>---the-bastion.example.org----------------------------the-bastion-2.99.99-rc9---
+=&gt; adding private access to a server on your account
+--------------------------------------------------------------------------------
+~ Testing connection to root@198.51.100.42, please wait...
+Warning: Permanently added &#39;198.51.100.42&#39; (ECDSA) to the list of known hosts.
+root@198.51.100.42: Permission denied (publickey).
+~ Note: if you still want to add this access even if it doesn&#39;t work, use --force
+~ Couldn&#39;t connect to root@198.51.100.42 (ssh returned error 255). Hint: did you add the proper public key to the remote&#39;s authorized_keys?
+-----------------------------------------------------&lt;/selfAddPersonalAccess&gt;---
+bssh(master)&gt;
+</pre></div>
+</div>
+<p>You'll notice that it didn't work. This is because first, you need to add your <em>personal egress key</em> to the
+remote machine's <em>authorized_keys</em> file. If this seems strange, here is
+<a class="reference internal" href="../../presentation/principles.html"><span class="doc">how it works</span></a>.
+To get your <em>personal egress key</em>, you can use this command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh<span class="o">(</span>master<span class="o">)</span>&gt; selfListEgressKeys
+</span>---the-bastion.example.org----------------------------the-bastion-2.99.99-rc9---
+<span class="o">=</span>&gt; the public part of your personal bastion key
+--------------------------------------------------------------------------------
+~ You can copy one of those keys to a remote machine to get access to it through your account
+~ on this bastion, <span class="k">if</span> it is listed <span class="k">in</span> your private access list <span class="o">(</span>check selfListAccesses<span class="o">)</span>
+~
+~ Always include the <span class="nv">from</span><span class="o">=</span><span class="s2">&quot;198.51.100.1/32&quot;</span> part when copying the key to a server!
+~
+~ fingerprint: SHA256:rMpoCaYPSfRqmOBFOJvEr5uLqxYjqYtRDgUoqUwH2nA <span class="o">(</span>ED25519-256<span class="o">)</span> <span class="o">[</span><span class="m">2019</span>/07/11<span class="o">]</span>
+~ keyline follows, please copy the *whole* line:
+<span class="nv">from</span><span class="o">=</span><span class="s2">&quot;198.51.100.1/32&quot;</span> ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILnY2NQTKsTDxgcaTE6vHVm9FIbud1rJcYQ/4xUyr+DK johndoe@bssh:1562861572
+--------------------------------------------------------&lt;/selfListEgressKeys&gt;---
+</pre></div>
+</div>
+<p>Now that you have it, you can push this public key (the line starting with the <em>from=</em>) to the remote server's
+root authorized_keys, i.e. <code class="docutils literal notranslate"><span class="pre">/root/.ssh/authorized_keys</span></code>. Now, you can add your access properly:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh<span class="o">(</span>master<span class="o">)</span>&gt; selfAddPersonalAccess --host <span class="m">198</span>.51.100.42 --port <span class="m">22</span> --user root
+</span>---the-bastion.example.org----------------------------the-bastion-2.99.99-rc9---
+<span class="o">=</span>&gt; adding private access to a server on your account
+--------------------------------------------------------------------------------
+~ Testing connection to root@198.51.100.42, please wait...
+Warning: Permanently added <span class="s1">&#39;198.51.100.42&#39;</span> <span class="o">(</span>ECDSA<span class="o">)</span> to the list of known hosts.
+~ Access to root@198.51.100.42:22 successfully added
+-----------------------------------------------------&lt;/selfAddPersonalAccess&gt;---
+bssh<span class="o">(</span>master<span class="o">)</span>&gt;
+</pre></div>
+</div>
+<p>All seems in order! Can we see this access we just created?</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh<span class="o">(</span>master<span class="o">)</span>&gt; selfListAccesses
+</span>---the-bastion.example.org----------------------------the-bastion-2.99.99-rc9---
+<span class="o">=</span>&gt; your access list
+--------------------------------------------------------------------------------
+~ Dear johndoe, you have access to the following servers:
+~ IP               PORT     USER    ACCESS-BY   ADDED-BY      ADDED-AT
+~ <span class="m">198</span>.51.100.42      <span class="m">22</span>     root    personal     johndoe    <span class="m">2020</span>-05-01
+-----------------------------------------------------&lt;/selfListAccesses&gt;---
+bssh<span class="o">(</span>master<span class="o">)</span>&gt;
+</pre></div>
+</div>
+</section>
+<section id="connecting-to-a-server-and-reviewing-the-session">
+<h2>Connecting to a server and reviewing the session<a class="headerlink" href="#connecting-to-a-server-and-reviewing-the-session" title="Permalink to this headline"></a></h2>
+<p>Good! Let's try to connect now!</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh<span class="o">(</span>master<span class="o">)</span>&gt; ssh root@198.51.100.42
+</span>~ Welcome to the-bastion, johndoe, your last login was <span class="m">00</span>:13:37 ago <span class="o">(</span>Fri <span class="m">2020</span>-08-28 <span class="m">13</span>:07:43 UTC<span class="o">)</span> from <span class="m">192</span>.0.2.11<span class="o">(</span>proxy-11.example.org<span class="o">)</span>
+
+proxy-11.example.org:40610 <span class="o">=</span>&gt; johndoe@the-bastion.example.org:22 <span class="o">=</span>&gt; root@server42.example.org:22 ...
+ allowed ... log on<span class="o">(</span>/home/johndoe/ttyrec/198.51.100.42/2020-08-28.13-07-45.497020.fb00e1957b22.johndoe.root.198.51.100.42.22.ttyrec<span class="o">)</span>
+
+ will try the following accesses you have:
+  - personal access with ED25519-256 key SHA256:rMpoCaYPSfRqmOBFOJvEr5uLqxYjqYtRDgUoqUwH2nA <span class="o">[</span><span class="m">2019</span>/07/11<span class="o">]</span>
+
+Connecting...
+
+root@server42:~# id
+<span class="nv">uid</span><span class="o">=</span><span class="m">0</span><span class="o">(</span>root<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span><span class="m">0</span><span class="o">(</span>root<span class="o">)</span> <span class="nv">groups</span><span class="o">=</span><span class="m">0</span><span class="o">(</span>root<span class="o">)</span>,2<span class="o">(</span>bin<span class="o">)</span>
+root@server42:~#
+</pre></div>
+</div>
+<p>We're now connected to server42, and can do our work as usual. Note that to connect to server42, one can directly use:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh root@198.51.100.42
+</span></pre></div>
+</div>
+<p>Where <code class="docutils literal notranslate"><span class="pre">bssh</span></code> is the bastion alias we've just set up above, no need to enter interactive mode first of course.</p>
+<p>When we're done with server42, let's see if everything was correctly recorded:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh<span class="o">(</span>master<span class="o">)</span>&gt; selfListSessions --type ssh --detailed
+</span>---the-bastion.example.org---------------------the-bastion-2.99.99-rc9.2-ovh1---
+<span class="o">=</span>&gt; your past sessions list
+--------------------------------------------------------------------------------
+~ The list of your <span class="m">100</span> past sessions follows:
+~
+f4cca44a848e <span class="o">[</span><span class="m">2020</span>/08/26@09:28:57 - <span class="m">2020</span>/08/26@09:29:57 <span class="o">(</span>         <span class="m">60</span>.0<span class="o">)]</span> <span class="nb">type</span> ssh from <span class="m">192</span>.0.2.11:33450<span class="o">(</span>proxy-11.example.org<span class="o">)</span> via johndoe@198.51.100.1:22 to root@198.51.100.42:22<span class="o">(</span>server42.example.org<span class="o">)</span> returned <span class="m">0</span>
+----------------------------------------------------------&lt;/selfListSessions&gt;---
+</pre></div>
+</div>
+<p>The first column is the unique identifier of the connection (or osh command).
+Let's see what we did exactly during this session:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh(master)&gt; selfPlaySession --id f4cca44a848e
+</span>---the-bastion.example.org---------------------the-bastion-2.99.99-rc9.2-ovh1---
+=&gt; replay a past session
+--------------------------------------------------------------------------------
+~       ID: f4cca44a848e
+~  Started: 2020/08/26 09:28:57
+~    Ended: 2020/08/26 09:29:57
+~ Duration: 0d+00:01:00.382820
+~     Type: ssh
+~     From: 192.0.2.11:33450 (proxy-11.example.org)
+~      Via: johndoe@198.51.100.1:22
+~       To: root@198.51.100.42:22 (server42.example.org)
+~  RetCode: 0
+~
+~ Press &#39;+&#39; to play faster
+~ Press &#39;-&#39; to play slower
+~ Press &#39;1&#39; to restore normal playing speed
+~
+~ When you&#39;re ready to replay session 9f352fd4b85c, press ENTER.
+~ Starting from the next line, the Total Recall begins. Press CTRL+C to jolt awake.
+</pre></div>
+</div>
+<p>Now that you've connected to your first server, using a personal access,
+you may want to learn more about the <a class="reference internal" href="access_management.html"><span class="doc">Access management</span></a>, or directly dive into the <strong>PLUGINS</strong> on the left menu.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="The basics" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="access_management.html" class="btn btn-neutral float-right" title="Access management" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
