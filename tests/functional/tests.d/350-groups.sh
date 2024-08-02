@@ -1039,6 +1039,56 @@ EOS
     contain REGEX '127\.0\.0\.1[[:space:]]+22[[:space:]]+g1[[:space:]]+'$group1'\(group\)[[:space:]]+'$account2'[[:space:]]'
     contain '1 accesses listed'
 
+    # test groupSetServers here, then restore the previous ACL so the tests can continue
+    # shellcheck disable=SC1004
+    script groupSetServers_valid_dryrun $a1 --osh groupSetServers --group $group1 --dry-run '< <(printf \
+        "%s\n%s\n%s\n"                            \
+        "user@127.0.0.1:1234 comment with spaces" \
+        "localhost"                               \
+        "0.0.0.0/4:42"                            \
+    )'
+    json .command groupSetServers .error_code OK .value.parsedLines 3 .value.errors '[]' .value.dryrun true
+    json '.value.ACL[0].user' user '.value.ACL[0].ip' 127.0.0.1 '.value.ACL[0].port' 1234 '.value.ACL[0].comment' 'comment with spaces'
+    json '.value.ACL[1].user' null '.value.ACL[1].ip' 127.0.0.1 '.value.ACL[1].port' null '.value.ACL[1].comment' null
+    json '.value.ACL[2].user' null '.value.ACL[2].ip' 0.0.0.0/4 '.value.ACL[2].port' 42   '.value.ACL[2].comment' null
+
+    # shellcheck disable=SC1004
+    script groupSetServers_invalid $a1 --osh groupSetServers --group $group1 --dry-run '< <(printf \
+        "%s\n%s\n%s\n%s\n"    \
+        "inva{}lid@127.0.0.1" \
+        "doesntexist.invalid" \
+        "0.0.0.0:77777"       \
+        "203.0.113.4/4:42"    \
+    )'
+    json .command groupSetServers .error_code ERR_INVALID_PARAMETER .value.parsedLines 4 '.value.errors|length' 4 .value.dryrun true
+
+    # restore the previous ACL
+    # shellcheck disable=SC1004
+    script groupSetServers_valid_skiperrors $a1 --osh groupSetServers --group $group1 --skip-errors '< <(printf \
+        "%s\n%s\n%s\n%s\n%s\n" \
+        "g1@127.0.0.1:22"      \
+        "badport:99999"        \
+        "g2@127.0.0.2:22"      \
+        "127.0.0.10"           \
+        "127.0.0.11"           \
+    )'
+    json .command groupSetServers .error_code OK .value.parsedLines 5 '.value.errors|length' 1 .value.dryrun false
+    json '.value.ACL[0].user' 'g1' '.value.ACL[0].ip' 127.0.0.1  '.value.ACL[0].port' 22   '.value.ACL[0].comment' null
+    json '.value.ACL[1].user' 'g2' '.value.ACL[1].ip' 127.0.0.2  '.value.ACL[1].port' 22   '.value.ACL[1].comment' null
+    json '.value.ACL[2].user' null '.value.ACL[2].ip' 127.0.0.10 '.value.ACL[2].port' null '.value.ACL[2].comment' null
+    json '.value.ACL[3].user' null '.value.ACL[3].ip' 127.0.0.11 '.value.ACL[3].port' null '.value.ACL[3].comment' null
+
+    success groupListServers_verify_after_groupSetServers $a1 --osh groupListServers --group $group1
+    json .command groupListServers .error_code OK
+    contain REGEX '127\.0\.0\.1[[:space:]]+22[[:space:]]+g1[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
+    contain REGEX '127\.0\.0\.2[[:space:]]+22[[:space:]]+g2[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
+    contain REGEX '127\.0\.0\.10[[:space:]]+\*[[:space:]]+\*[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
+    contain REGEX '127\.0\.0\.11[[:space:]]+\*[[:space:]]+\*[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
+    nocontain REGEX '127\.0\.0\.12[[:space:]]+\*[[:space:]]+\*[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
+    contain '4 accesses listed'
+
+    # /groupSetServers tests
+
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2() servers(127.0.0.10,127.0.0.11)
     plgfail list   $a2 --osh groupListServers --group $group1
     json .command groupListServers .error_code KO_ACCESS_DENIED .value      null
