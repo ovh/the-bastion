@@ -31,8 +31,8 @@ jobs:
           # to do proper tests, we need the fs to have ACLs enabled
           sudo mount -o acls /
           # install required packages
-          sudo pkg update
-          sudo pkg install -y bash rsync ca_root_nss jq fping screen flock curl
+          sudo env IGNORE_OSVERSION=yes pkg update
+          sudo env IGNORE_OSVERSION=yes pkg install -y bash rsync ca_root_nss jq fping screen flock curl
           # create required folder
           sudo mkdir -p /opt/bastion
           # copy bastion code to the proper location
