@@ -34,5 +34,8 @@ SUPEROWNERS, %%GROUP%-gatekeeper ALL=(allowkeeper) NOPASSWD: /usr/bin/env perl -
 # as an aclkeeper, we can add/del a server from the group server list in /home/%GROUP%/allowed.ip
 SUPEROWNERS, %%GROUP%-aclkeeper  ALL=(%GROUP%)     NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupAddServer --group %GROUP% *
 
+# as an aclkeeper, we can replace the group servers list in /home/%GROUP%/allowed.ip in batch with one command
+SUPEROWNERS, %%GROUP%-aclkeeper  ALL=(%GROUP%)     NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupSetServers --group %GROUP%
+
 # as an owner, we can delete our own group
 SUPEROWNERS, %%GROUP%-owner      ALL=(root)        NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupDelete --group %GROUP%

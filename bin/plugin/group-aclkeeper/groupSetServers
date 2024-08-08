@@ -1,0 +1,188 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+use JSON;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+use OVH::Bastion::Plugin::ACL;
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv               => \@ARGV,
+    header             => "replace a group's current ACL by a new one",
+    userAllowWildcards => 1,
+    options            => {
+        "group=s"     => \my $group,
+        "dry-run"     => \my $dryRun,
+        "skip-errors" => \my $skipErrors,
+    },
+    helptext => <<'EOF',
+Replace a group's current ACL by a new list
+
+Usage: --osh SCRIPT_NAME --group GROUP [OPTIONS]
+
+  --group GROUP  Specify which group to modify the ACL of
+  --dry-run      Don't actually modify the ACL, just report whether the input contains errors
+  --skip-errors  Don't abort on STDIN parsing errors, just skip the non-parseable lines
+
+The list of the assets to constitute the new ACL should then be given on ``STDIN``,
+respecting the following format: ``[USER@]HOST[:PORT][ COMMENT]``, with ``USER`` and ``PORT`` being optional,
+and ``HOST`` being either a hostname, an IP, or an IP block in CIDR notation. The ``COMMENT`` is also optional,
+and may contain spaces.
+
+Example of valid lines to be fed through ``STDIN``::
+
+  server12.example.org
+  logs@server
+  192.0.2.21
+  host1.example.net:2222 host1 on secondary sshd with alternate port
+  root@192.0.2.0/24 production database cluster
+EOF
+);
+
+my $fnret;
+
+if (not $group) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing mandatory parameter 'group'";
+}
+
+$fnret = OVH::Bastion::is_valid_group_and_existing(group => $group, groupType => "key");
+$fnret or osh_exit($fnret);
+
+# get returned untainted value
+$group = $fnret->value->{'group'};
+my $shortGroup = $fnret->value->{'shortGroup'};
+
+$fnret = OVH::Bastion::is_group_aclkeeper(account => $self, group => $shortGroup, superowner => 1);
+$fnret
+  or osh_exit 'ERR_NOT_GROUP_ACLKEEPER',
+  "Sorry, you must be an aclkeeper of group $shortGroup to be able to add servers to it";
+
+osh_info
+  "Specify the entries of the new ACL below, one per line, with the following format: [USER\@]HOST[:PORT][ COMMENT]";
+osh_info "The list ends at EOF (usually CTRL+D).";
+osh_info "You may abort with CTRL+C if needed.";
+
+my @ACL;
+my @errors;
+my $nbLines = 0;
+my $comment;
+while (my $line = <STDIN>) {
+    # trim white spaces
+    $line =~ s/^\s+|\s+$//g;
+
+    # empty line ?
+    $line or next;
+
+    $nbLines++;
+
+    my ($acl_user, $acl_host, $acl_ip, $acl_port);
+    if ($line =~ m{^(?:(\S+)\@)?([a-zA-Z0-9_./-]+)(?::(\d+))?(?:\s+(.+))?$}) {
+        $acl_user = $1;
+        $acl_host = $2;
+        $acl_port = $3;
+        $comment  = $4;
+    }
+    else {
+        push @errors, "Couldn't parse the line '$line'";
+        osh_warn($errors[-1]);
+        next;
+    }
+
+    # check port
+    if (defined $acl_port) {
+        $fnret = OVH::Bastion::is_valid_port(port => $acl_port);
+        if (!$fnret) {
+            push @errors, "In line $nbLines ($line), port '$acl_port' is invalid";
+            osh_warn($errors[-1]);
+            next;
+        }
+        $acl_port = $fnret->value;
+    }
+
+    # check user
+    if (defined $acl_user) {
+        $fnret = OVH::Bastion::is_valid_remote_user(user => $acl_user, allowWildcards => 1);
+        if (!$fnret) {
+            push @errors, "In line $nbLines ($line), user '$acl_user' is invalid";
+            osh_warn($errors[-1]);
+            next;
+        }
+        $acl_user = $fnret->value;
+    }
+
+    # resolve host, unless it looks like a prefix
+    if ($acl_host =~ m{/}) {
+        $fnret = OVH::Bastion::is_valid_ip(ip => $acl_host, allowPrefixes => 1);
+    }
+    else {
+        $fnret = OVH::Bastion::get_ip(host => $acl_host);
+    }
+    if (!$fnret) {
+        push @errors, "In line $nbLines ($line), $fnret";
+        osh_warn($errors[-1]);
+        next;
+    }
+    else {
+        $acl_ip = $fnret->value->{'ip'};
+    }
+
+    push @ACL, {ip => $acl_ip, port => $acl_port, user => $acl_user, comment => $comment};
+}
+
+osh_info("Parsed " . @ACL . "/$nbLines lines successfully");
+
+if (@errors && !$skipErrors) {
+    osh_exit(
+        R(
+            'ERR_INVALID_PARAMETER',
+            msg => "Aborting due to the "
+              . @errors
+              . " parsing or host resolving errors above, use --skip-errors to proceed anyway",
+            value => {parsedLines => $nbLines, dryrun => $dryRun ? \1 : \0, errors => \@errors, ACL => \@ACL},
+        )
+    );
+}
+
+if ($dryRun) {
+    osh_ok({parsedLines => $nbLines, errors => \@errors, dryrun => \1, ACL => \@ACL});
+}
+
+#
+# Now do it
+#
+
+if (!@ACL) {
+    osh_exit(R('OK_NO_CHANGE', msg => "No ACL was given, no change was made"));
+}
+
+my @command = qw{ sudo -n -u };
+push @command,
+  ($group, '--', '/usr/bin/env', 'perl', '-T', $OVH::Bastion::BASEPATH . '/bin/helper/osh-groupSetServers');
+push @command, '--group', $group;
+
+$fnret = OVH::Bastion::helper(cmd => \@command, stdin_str => encode_json(\@ACL));
+$fnret or osh_exit($fnret);
+
+# merge both error lists
+if ($fnret->value && $fnret->value->{'errors'}) {
+    push @errors, @{$fnret->value->{'errors'} || []};
+}
+
+osh_exit(
+    R(
+        'OK',
+        msg   => "The new ACL has been set with " . @{$fnret->value->{'ACL'}} . " entries and " . @errors . " errors",
+        value => {
+            parsedLines => $nbLines,
+            dryrun      => $dryRun ? \1 : \0,
+            group       => $shortGroup,
+            ACL         => $fnret->value->{'ACL'},
+            errors      => \@errors
+        }
+    )
+);

@@ -326,9 +326,15 @@ sub access_modify {
 
     my $fnret;
 
-    foreach my $mandatoryParam (qw/action ip way/) {
-        if (!$params{$mandatoryParam}) {
-            return R('ERR_MISSING_PARAMETER', msg => "Missing parameter '$mandatoryParam'");
+    if (!grep { $action eq $_ } qw{ add del clear }) {
+        return R('ERR_INVALID_PARAMETER', msg => "Action should be add, del or clear");
+    }
+
+    if ($action ne 'clear') {
+        foreach my $mandatoryParam (qw/action ip way/) {
+            if (!$params{$mandatoryParam}) {
+                return R('ERR_MISSING_PARAMETER', msg => "Missing parameter '$mandatoryParam'");
+            }
         }
     }
 
@@ -363,26 +369,24 @@ sub access_modify {
         return R('ERR_INVALID_PARAMETER', msg => "Parameter 'way' must be either personal, group or groupguest");
     }
 
-    if ($action ne 'add' and $action ne 'del') {
-        return R('ERR_INVALID_PARAMETER', msg => "Action should be either 'del' or 'add'");
-    }
-
     # check ip
-    $fnret = OVH::Bastion::is_valid_ip(ip => $ip, allowPrefixes => 1);
-    return $fnret unless $fnret;
-    $ip = $fnret->value->{'ip'};
+    if ($action ne 'clear') {
+        $fnret = OVH::Bastion::is_valid_ip(ip => $ip, allowPrefixes => 1);
+        return $fnret unless $fnret;
+        $ip = $fnret->value->{'ip'};
 
-    if ($fnret->value->{'type'} eq 'prefix') {
-        my $ipVersion = $fnret->value->{'version'};
-        if (defined $widestVxPrefix{$ipVersion} && $fnret->value->{'prefixlen'} < $widestVxPrefix{$ipVersion}) {
-            return R(
-                'ERR_INVALID_PARAMETER',
-                msg => sprintf(
-                    "Specified prefix (/%d) is too wide, maximum allowed for IPv%d is /%d by this bastion policy",
-                    $fnret->value->{'prefixlen'},
-                    $ipVersion, $widestVxPrefix{$ipVersion}
-                ),
-            );
+        if ($fnret->value->{'type'} eq 'prefix') {
+            my $ipVersion = $fnret->value->{'version'};
+            if (defined $widestVxPrefix{$ipVersion} && $fnret->value->{'prefixlen'} < $widestVxPrefix{$ipVersion}) {
+                return R(
+                    'ERR_INVALID_PARAMETER',
+                    msg => sprintf(
+                        "Specified prefix (/%d) is too wide, maximum allowed for IPv%d is /%d by this bastion policy",
+                        $fnret->value->{'prefixlen'},
+                        $ipVersion, $widestVxPrefix{$ipVersion}
+                    ),
+                );
+            }
         }
     }
 
@@ -404,7 +408,8 @@ sub access_modify {
     my ($remoteaccount, $sysaccount);
     if (defined $account) {
         # accountType==normal : account must NOT be a realm_* account (but can be a realm/jdoe account)
-        $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account, accountType => 'normal');
+        $fnret =
+          OVH::Bastion::is_bastion_account_valid_and_existing(account => $account, accountType => 'normal', cache => 1);
         $fnret or return $fnret;
         $sysaccount    = $fnret->value->{'sysaccount'};
         $account       = $fnret->value->{'account'};
@@ -414,7 +419,7 @@ sub access_modify {
     # check group
     my $shortGroup;
     if (defined $group) {
-        $fnret = OVH::Bastion::is_valid_group_and_existing(group => $group, groupType => 'key');
+        $fnret = OVH::Bastion::is_valid_group_and_existing(group => $group, groupType => 'key', cache => 1);
         $fnret or return $fnret;
         $group      = $fnret->value->{'group'};         # untainted
         $shortGroup = $fnret->value->{'shortGroup'};    # untainted
@@ -509,28 +514,30 @@ sub access_modify {
     }
 
     # end of dryrun
-    return R('OK', msg => "Would have added the access but we've been called with dryrun") if $dryrun;
+    return R('OK', msg => "Would have modified the access ($action) but we've been called with dryrun") if $dryrun;
 
-    # now, check if the access we're being asked to change is already in place or not
-    osh_debug(
-        "for action $action of $user\@$ip:$port of way $way with account=$account and group=$group, checking if already granted"
-    );
-    $fnret = OVH::Bastion::is_access_way_granted(
-        user       => $user,
-        ip         => $ip,
-        port       => $port,
-        way        => $way,
-        group      => $shortGroup,
-        account    => $account,
-        exactMatch => 1,             # we're checking if the exact right we're asked to modify exists or not
-    );
-    osh_debug("... result is $fnret");
+    if ($action ne 'clear') {
+        # now, check if the access we're being asked to change is already in place or not
+        osh_debug(
+            "for action $action of $user\@$ip:$port of way $way with account=$account and group=$group, checking if already granted"
+        );
+        $fnret = OVH::Bastion::is_access_way_granted(
+            user       => $user,
+            ip         => $ip,
+            port       => $port,
+            way        => $way,
+            group      => $shortGroup,
+            account    => $account,
+            exactMatch => 1,             # we're checking if the exact right we're asked to modify exists or not
+        );
+        osh_debug("... result is $fnret");
 
-    if ($action eq 'add' and $fnret) {
-        return R('OK_NO_CHANGE', msg => "The requested access to add was already granted");
-    }
-    elsif ($action eq 'del' and not $fnret) {
-        return R('OK_NO_CHANGE', msg => "The requested access to delete was not found, no change made");
+        if ($action eq 'add' and $fnret) {
+            return R('OK_NO_CHANGE', msg => "The requested access to add was already granted");
+        }
+        elsif ($action eq 'del' and not $fnret) {
+            return R('OK_NO_CHANGE', msg => "The requested access to delete was not found, no change made");
+        }
     }
 
     # ok, now do the change, first define this sub
@@ -543,17 +550,39 @@ sub access_modify {
 
         # check if we can access the file
         if (!(-e $file)) {
-
             # it doesn't exist yet, create it
             OVH::Bastion::touch_file($file, oct(644));
             if (!(-e $file)) {
+                warn_syslog("Couldn't create $file ($!)");
                 return R('ERR_CANNOT_CREATE_FILE', msg => "File '$file' is missing and couldn't be created");
             }
         }
 
         # can we write to it ?
         if (!(-w $file)) {
+            warn_syslog("Couldn't write to $file ($!)");
             return R('ERR_CANNOT_OPEN_FILE', msg => "File '$file' cannot be written to");
+        }
+
+        # if we're being asked to clear, it's pretty straightforward
+        if ($action eq 'clear') {
+            if (truncate($file, 0)) {
+                OVH::Bastion::syslogFormatted(
+                    severity => 'info',
+                    type     => 'acl',
+                    fields   => [
+                        ['action',  'clear'],
+                        ['type',    $params{'way'}],
+                        ['group',   $shortGroup],
+                        ['account', $params{'account'}],
+                    ]
+                );
+                return R('OK', msg => "Accesses successfully cleared");
+            }
+            else {
+                warn_syslog("Couldn't truncate $file ($!)");
+                return R('ERR_CANNOT_OPEN_FILE', msg => "Unable to truncate $file");
+            }
         }
 
         # build the line we're either adding or looking for (to delete it)

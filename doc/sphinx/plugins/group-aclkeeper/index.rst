@@ -6,3 +6,4 @@ group-aclkeeper plugins
 
    groupAddServer
    groupDelServer
+   groupSetServers
