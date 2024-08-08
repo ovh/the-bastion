@@ -36,5 +36,6 @@ Example of valid lines to be fed through ``STDIN``::
 
   server12.example.org
   logs@server
+  192.0.2.21
   host1.example.net:2222 host1 on secondary sshd with alternate port
   root@192.0.2.0/24 production database cluster
