@@ -11,6 +11,7 @@ use lib dirname(__FILE__) . '/../../../lib/perl';
 use OVH::Result;
 use OVH::Bastion;
 use OVH::Bastion::Plugin qw( :DEFAULT );
+use OVH::Bastion::Plugin::otherProtocol;
 
 # stdout is used by scp, so ensure we output everything through stderr
 local $ENV{'FORCE_STDERR'} = 1;
@@ -277,60 +278,20 @@ if (not $ip) {
     osh_exit 'ERR_HOST_NOT_FOUND', "Sorry, couldn't resolve the host you specified ('$host'), aborting.";
 }
 
-my $machine = $ip;
-$machine = "$user\@$ip" if $user;
-$port ||= 22;       # sftp uses 22 if not specified, so we need to test access to that port and not any port (aka undef)
+$port ||= 22;       # scp uses 22 if not specified, so we need to test access to that port and not any port (aka undef)
 $user ||= $self;    # same for user
-$machine .= ":$port";
 
-my %keys;
-osh_debug("Checking access 1/2 of $self to $machine...");
-$fnret = OVH::Bastion::is_access_granted(
-    account => $self,
-    user    => $user,
-    ipfrom  => $ENV{'OSH_IP_FROM'},
-    ip      => $ip,
-    port    => $port,
-    details => 1
+$fnret = OVH::Bastion::Plugin::otherProtocol::has_protocol_access(
+    account  => $self,
+    user     => $user,
+    ip       => $ip,
+    port     => $port,
+    protocol => 'sftp',
 );
+$fnret or osh_exit($fnret);
 
-if (not $fnret) {
-    osh_exit 'ERR_ACCESS_DENIED', "Sorry, but you don't seem to have access to $machine";
-}
-
-# get the keys we would try
-foreach my $access (@{$fnret->value || []}) {
-    foreach my $key (@{$access->{'sortedKeys'} || []}) {
-        my $keyfile = $access->{'keys'}{$key}{'fullpath'};
-        $keys{$keyfile}++ if -r $keyfile;
-        osh_debug("Checking access 1/2 keyfile: $keyfile");
-    }
-}
-
-my $userToCheck = '!sftp';
-osh_debug("Checking access 2/2 of $self to $userToCheck of $machine...");
-$fnret = OVH::Bastion::is_access_granted(
-    account        => $self,
-    user           => $userToCheck,
-    ipfrom         => $ENV{'OSH_IP_FROM'},
-    ip             => $ip,
-    port           => $port,
-    exactUserMatch => 1,
-    details        => 1
-);
-if (not $fnret) {
-    osh_exit 'ERR_ACCESS_DENIED',
-      "Sorry, but even if you have ssh access to $machine, you still need to be granted specifically for sftp";
-}
-
-# get the keys we would try too
-foreach my $access (@{$fnret->value || []}) {
-    foreach my $key (@{$access->{'sortedKeys'} || []}) {
-        my $keyfile = $access->{'keys'}{$key}{'fullpath'};
-        $keys{$keyfile}++ if -r $keyfile;
-        osh_debug("Checking access 2/2 keyfile: $keyfile");
-    }
-}
+my $machine = $fnret->value->{'machine'};
+my @keys    = @{$fnret->value->{'keys'} || []};
 
 # now build the command
 
@@ -339,22 +300,8 @@ push @cmd, ('-p', $port) if $port;
 push @cmd, ('-l', $user) if $user;
 push @cmd, '-s';
 
-my $atleastonekey = 0;
-foreach my $keyfile (keys %keys) {
-    # only use the key if it has been seen in both allow_deny() calls, this is to avoid
-    # a security bypass where a user would have group access to a server, but not to the
-    # !sftp special user, and we would add himself this access through selfAddPrivateAccess.
-    # in that case both allow_deny would return OK, but with different keys.
-    # we'll only use the keys that matched BOTH calls.
-    next unless $keys{$keyfile} == 2;
-    push @cmd, ('-i', $keyfile);
-    $atleastonekey = 1;
-}
-
-if (not $atleastonekey) {
-    osh_exit('KO_ACCESS_DENIED',
-        "Sorry, you seem to have access through ssh and through sftp but by different and distinct means (distinct keys)."
-          . " The intersection between your rights for ssh and for sftp needs to be at least one.");
+foreach my $key (@keys) {
+    push @cmd, ('-i', $key);
 }
 
 push @cmd, "--", $ip, 'sftp';
