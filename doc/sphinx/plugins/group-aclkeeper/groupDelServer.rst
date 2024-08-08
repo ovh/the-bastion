@@ -53,6 +53,10 @@ Remove an IP or IP block from a group's server list
 
    Remove usage of the SFTP subsystem, you<--bastion-->server (omit --user in this case)
 
+.. option:: --rsync
+
+   Remove usage of rsync through the bastion
+
 
 This command adds, to an existing bastion account, access to a given server, using the
 egress keys of the group. The list of eligible servers for a given group is given by ``groupListServers``

@@ -58,6 +58,10 @@ Add a specific group server access to an account
 
    Allow usage of the SFTP subsystem, you<--bastion-->server (omit --user in this case)
 
+.. option:: --rsync
+
+   Allow usage of rsync through the bastion
+
 .. option:: --ttl SECONDS|DURATION
 
    specify a number of seconds after which the access will automatically expire

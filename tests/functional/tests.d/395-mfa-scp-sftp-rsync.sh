@@ -120,6 +120,8 @@ EOF
     grant selfAddPersonalAccess
     grant selfDelPersonalAccess
 
+    # scp
+
     success a0_add_ssh_access $a0 --osh selfAddPersonalAccess -h 127.0.0.2 -u $shellaccount -p 22 --kbd-interactive
     success a0_add_scp_up $a0 --osh selfAddPersonalAccess --host 127.0.0.2 --scpup --port 22
 
@@ -208,6 +210,28 @@ EOF
     contain '>>> Done,'
 
     success forsftpremove $a0 --osh selfDelPersonalAccess --host 127.0.0.2 --sftp --port 22
+
+    # rsync
+
+    run rsync_no_access rsync --rsh \"$a0 --osh rsync --\" /etc/passwd $shellaccount@127.0.0.2:/tmp/
+    retvalshouldbe 2
+    contain "Sorry, but even"
+
+    success rsync_add_access $a0 --osh selfAddPersonalAccess --host 127.0.0.2 --rsync --port 22
+
+    success rsync_upload rsync --rsh \"$a0 --osh rsync --\" /etc/passwd $shellaccount@127.0.0.2:rsync_file
+    nocontain "rsync:"
+    nocontain "rsync error:"
+    contain ">>> Hello"
+    contain ">>> Done,"
+
+    success rsync_upload rsync --rsh \"$a0 --osh rsync --\" $shellaccount@127.0.0.2:rsync_file /tmp/downloaded
+    nocontain "rsync:"
+    nocontain "rsync error:"
+    contain ">>> Hello"
+    contain ">>> Done,"
+
+    success rsync_remove_access $a0 --osh selfDelPersonalAccess --host 127.0.0.2 --rsync --port 22
 
     grant groupCreate
 

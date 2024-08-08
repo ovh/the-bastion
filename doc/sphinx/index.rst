@@ -66,7 +66,7 @@ The unavoidable and iconic FAQ is also available under the **PRESENTATION** sect
 
    using/basics/index
    using/piv
-   using/sftp_scp
+   using/sftp_scp_rsync
    using/http_proxy
    using/api
    using/specific_ssh_clients_tutorials/index

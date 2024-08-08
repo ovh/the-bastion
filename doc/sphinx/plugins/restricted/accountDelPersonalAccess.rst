@@ -53,3 +53,7 @@ Remove a personal server access from an account
 
    Remove usage of the SFTP subsystem, you<--bastion-->server (omit --user in this case)
 
+.. option:: --rsync
+
+   Remove usage of rsync through the bastion
+
