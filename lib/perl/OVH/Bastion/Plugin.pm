@@ -21,16 +21,94 @@ our @EXPORT_OK = qw( help );
 my $_helptext;
 sub help { osh_info $_helptext; return 1; }
 
+# when init=1, validate the $user/$host/$ip/$port vars that are exported to the plugins, undef them when invalid.
+# called in begin() below, which is called by most plugins.
+#
+# when init=0, explicitly called by the plugins themselves to change/validate the $user/$host/$ip/$port vars,
+# from arguments they might have received themselves.
+sub validate_tuple {
+    my %params             = @_;
+    my $userAllowWildcards = $params{'userAllowWildcards'};
+    my $init               = $params{'init'};
+    my $fnret;
+
+    # user
+    if (exists $params{'user'} || $init) {
+        $user = $params{'user'} if !$init;
+        if (defined $user && $user ne '') {
+            $fnret = OVH::Bastion::is_valid_remote_user(user => $user, allowWildcards => $userAllowWildcards);
+            $fnret or osh_exit $fnret;
+            $user = $fnret->value;
+        }
+        else {
+            undef $user;
+        }
+    }
+
+    # port
+    if (exists $params{'port'} || $init) {
+        $port = $params{'port'} if !$init;
+        if (defined $port && $port ne '') {
+            $fnret = OVH::Bastion::is_valid_port(port => $port);
+            $fnret or osh_exit $fnret;
+            $port = $fnret->value;
+        }
+        else {
+            undef $port;
+        }
+    }
+
+    if ($init) {
+        if (defined $ip && $ip ne '') {
+            $fnret = OVH::Bastion::is_valid_ip(ip => $ip, allowPrefixes => 1);
+            $fnret or osh_exit $fnret;
+            $ip = $fnret->value->{'ip'};
+        }
+        else {
+            # special case due to osh.pl: when host=1.2.3.0/24 then ip=''
+            # in that case, validate host and set ip to the same
+            if ($host =~ m{/}) {
+                $fnret = OVH::Bastion::is_valid_ip(ip => $host, allowPrefixes => 1);
+                $fnret or osh_exit $fnret;
+                $ip = $host = $fnret->value->{'ip'};
+            }
+            else {
+                undef $ip;
+            }
+        }
+    }
+    elsif (exists $params{'host'}) {
+        $host = $params{'host'};
+        if ($host) {
+            if ($host !~ m{^[a-zA-Z0-9._/:-]+$}) {
+                # can be an IP (v4 or v6), hostname, or prefix (with a /)
+                osh_exit('KO_INVALID_REMOTE_HOST', msg => "Remote host name '$host' seems invalid");
+            }
+            $fnret = OVH::Bastion::get_ip(host => $host);
+            if (!$fnret) {
+                osh_exit('KO_INVALID_REMOTE_HOST', msg => "Remote host name '$host' couldn't be resolved");
+            }
+            else {
+                $ip = $fnret->value->{'ip'};
+            }
+        }
+        undef $host if $host eq '';
+    }
+
+    return R('OK');
+}
+
 sub begin {
     my %params = @_;
 
-    my $options            = $params{'options'};
-    my $header             = $params{'header'};
-    my $argv               = $params{'argv'};
-    my $loadConfig         = $params{'loadConfig'};
-    my $exitOnSignal       = $params{'exitOnSignal'};
-    my $helpfunc           = $params{'help'};
-    my $userAllowWildcards = $params{'userAllowWildcards'};
+    my $options             = $params{'options'};
+    my $header              = $params{'header'};
+    my $argv                = $params{'argv'};
+    my $loadConfig          = $params{'loadConfig'};
+    my $exitOnSignal        = $params{'exitOnSignal'};
+    my $helpfunc            = $params{'help'};
+    my $userAllowWildcards  = $params{'userAllowWildcards'};
+    my $allowUnknownOptions = $params{'allowUnknownOptions'};
     $_helptext = $params{'helptext'};
 
     my $fnret;
@@ -61,42 +139,8 @@ sub begin {
         }
     }
 
-    # validate user, ip, port when specified, undef them otherwise (instead of '')
-
-    if (defined $user && $user ne '') {
-        $fnret = OVH::Bastion::is_valid_remote_user(user => $user, allowWildcards => $userAllowWildcards);
-        $fnret or osh_exit $fnret;
-        $user = $fnret->value;
-    }
-    else {
-        undef $user;
-    }
-
-    if (defined $ip && $ip ne '') {
-        $fnret = OVH::Bastion::is_valid_ip(ip => $ip, allowPrefixes => 1);
-        $fnret or osh_exit $fnret;
-        $ip = $fnret->value->{'ip'};
-    }
-    else {
-        # special case due to osh.pl: when host=1.2.3.0/24 then ip=''
-        # in that case, validate host and set ip to the same
-        if ($host =~ m{/}) {
-            $fnret = OVH::Bastion::is_valid_ip(ip => $host, allowPrefixes => 1);
-            $fnret or osh_exit $fnret;
-            $ip = $host = $fnret->value->{'ip'};
-        }
-        else {
-            undef $ip;
-        }
-    }
-
-    if (defined $port && $port ne '') {
-        $fnret = OVH::Bastion::is_valid_port(port => $port);
-        $fnret or osh_exit $fnret;
-        $port = $fnret->value;
-    }
-
-    undef $host if $host eq '';
+    # validate and untaint user/host/ip/port, exit if problem
+    validate_tuple(init => 1, userAllowWildcards => $userAllowWildcards);
 
     #
     # Options from extraArgs
@@ -107,7 +151,9 @@ sub begin {
     if (ref $options eq 'HASH' and %$options) {
         eval {
             local $SIG{__WARN__} = sub { push @optwarns, shift };
+            Getopt::Long::Configure("pass_through") if $allowUnknownOptions;
             $result = Getopt::Long::GetOptionsFromArray(\@pluginOptions, %$options);
+            Getopt::Long::Configure("no_pass_through") if $allowUnknownOptions;
         };
         if ($@) { die $@ }
     }
@@ -134,7 +180,7 @@ sub begin {
 
     osh_header($header) if $header;
 
-    if (!$result) {
+    if (!$result && !$allowUnknownOptions) {
         $helpfunc->();
         local $" = ", ";
         osh_exit 'ERR_BAD_OPTIONS', "Error parsing options: @optwarns";
