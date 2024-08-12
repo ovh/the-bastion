@@ -53,6 +53,10 @@ Add a personal server access to an account
 
    Allow usage of the SFTP subsystem, you<--bastion-->server (omit --user in this case)
 
+.. option:: --rsync
+
+   Allow usage of rsync through the bastion
+
 .. option:: --force-key FINGERPRINT
 
    Only use the key with the specified fingerprint to connect to the server (cf selfListEgressKeys)

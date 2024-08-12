@@ -301,9 +301,9 @@ sub access_modify {
 
     my $action = $params{'action'};                                              # add or del
 
-    my $user = $params{'user'};    # if undef, means a user-wildcard access
+    my $user = $params{'user'};    # can be undef or '*' for a user-wildcard access
     my $ip   = $params{'ip'};      # can be a single ip or prefix
-    my $port = $params{'port'};    # if undef, means a port-wildcard access
+    my $port = $params{'port'};    # can be undef or '*' for a port-wildcard access
 
     my $ttl     = $params{'ttl'};
     my $comment = $params{'comment'};
@@ -341,14 +341,10 @@ sub access_modify {
     # if undef, default to sudo==1
     $sudo //= 1;
 
-    # due to how plugins work, sometimes user and port are just '', make them undef in those cases
-    undef $user if (defined $user && $user eq '');
-    undef $port if (defined $port && $port eq '');
-
-    # allow wildcards, but standardize full wildcard to user=undef
-    if ($user && $user =~ m{^\*+$}) {
-        undef $user;
-    }
+    # normalize * into undef
+    # also, due to how plugins work, sometimes user and port are just '', make them undef in those cases
+    undef $user if (defined $user && ($user eq '*' || $user eq ''));
+    undef $port if (defined $port && ($port eq '*' || $port eq ''));
 
     # check way
     if ($way eq 'personal') {

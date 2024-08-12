@@ -15,33 +15,40 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
     header             => "adding personal access to a server on your account",
     userAllowWildcards => 1,
     options            => {
-        "user-any"         => \my $userAny,
-        "port-any"         => \my $portAny,
-        "scpup"            => \my $scpUp,
-        "scpdown"          => \my $scpDown,
-        "sftp"             => \my $sftp,
+        "protocol=s"       => \my $protocol,
         "force-key=s"      => \my $forceKey,
         "force-password=s" => \my $forcePassword,
         "force"            => \my $force,
         "ttl=s"            => \my $ttl,
         "comment=s"        => \my $comment,
+        # undocumented/compatibility:
+        "user-any" => \my $userAny,
+        "port-any" => \my $portAny,
+        "scpup"    => \my $scpUp,
+        "scpdown"  => \my $scpDown,
+        "sftp"     => \my $sftp,
     },
     helptext => <<'EOF',
 Add a personal server access to your account
 
-Usage: --osh SCRIPT_NAME --host HOST [OPTIONS]
+Usage: --osh SCRIPT_NAME --host HOST --user USER --port PORT [OPTIONS]
 
   --host HOST|IP|NET/CIDR  Host(s) to add access to, either a HOST which will be resolved to an IP immediately,
                              or an IP, or a whole network using the NET/CIDR notation
-  --user USER              Specify which remote user should be allowed to connect as.
+  --user USER|PATTERN|*    Specify which remote user should be allowed to connect as.
                              Globbing characters '*' and '?' are supported, so you can specify a pattern
                              that will be matched against the actual remote user name.
-  --user-any               Synonym of '--user *', allows connecting as any remote user.
-  --port PORT              Remote port allowed to connect to
-  --port-any               Allow access to any remote port
-  --scpup                  Allow SCP upload, you--bastion-->server (omit --user in this case)
-  --scpdown                Allow SCP download, you<--bastion--server (omit --user in this case)
-  --sftp                   Allow usage of the SFTP subsystem, you<--bastion-->server (omit --user in this case)
+                             To allow any user, use '--user *' (you might need to escape '*' from your shell)
+  --port PORT|*            Remote port allowed to connect to
+                             To allow any port, use '--port *' (you might need to escape '*' from your shell)
+  --protocol PROTO         Specify that a special protocol should be allowed for this HOST:PORT tuple, note that you
+                              must not specify --user in that case. However, for this protocol to be usable under a given
+                              remote user, access to the USER@HOST:PORT tuple must also be allowed.
+                              PROTO must be one of:
+                              scpup    allow SCP upload, you--bastion-->server
+                              scpdown  allow SCP download, you<--bastion--server
+                              sftp     allow usage of the SFTP subsystem, through the bastion
+                              rsync    allow usage of rsync, through the bastion
   --force                  Add the access without checking that the public SSH key is properly installed remotely
   --force-key FINGERPRINT  Only use the key with the specified fingerprint to connect to the server (cf selfListEgressKeys)
   --force-password HASH    Only use the password with the specified hash to connect to the server (cf selfListPasswords)
@@ -84,24 +91,30 @@ if (!$ip) {
 }
 
 $fnret = OVH::Bastion::Plugin::ACL::check(
-    user    => $user,
-    userAny => $userAny,
-    port    => $port,
-    portAny => $portAny,
-    scpUp   => $scpUp,
-    scpDown => $scpDown,
-    sftp    => $sftp
+    user     => $user,
+    userAny  => $userAny,
+    port     => $port,
+    portAny  => $portAny,
+    scpUp    => $scpUp,
+    scpDown  => $scpDown,
+    sftp     => $sftp,
+    protocol => $protocol,
 );
 if (!$fnret) {
     help();
     osh_exit($fnret);
 }
 $user = $fnret->value->{'user'};
+$port = $fnret->value->{'port'};
 
 if (defined $ttl) {
     $fnret = OVH::Bastion::is_valid_ttl(ttl => $ttl);
     $fnret or osh_exit $fnret;
     $ttl = $fnret->value->{'seconds'};
+}
+
+if ($forceKey && $forcePassword) {
+    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "Can't use --force-key and --force-password at the same time";
 }
 
 if ($forceKey) {
@@ -116,9 +129,9 @@ if ($forcePassword) {
     $forcePassword = $fnret->value->{'hash'};
 }
 
-if ($forceKey && $forcePassword) {
-    osh_exit 'ERR_INCOMPATIBLE_PARAMETERS', "Can't use --force-key and --force-password at the same time";
-}
+#
+# Now do it
+#
 
 # check plugin config
 if ($pluginConfig && $pluginConfig->{'self_remote_user_only'}) {

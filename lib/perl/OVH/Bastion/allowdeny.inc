@@ -92,6 +92,10 @@ sub is_access_way_granted {
 
     $exactIpMatch = $exactPortMatch = $exactUserMatch = 1 if $exactMatch;
 
+    # normalize '*' to undef
+    undef $wantedUser if (defined $wantedUser && $wantedUser eq '*');
+    undef $wantedPort if (defined $wantedPort && $wantedPort eq '*');
+
     # 'group', 'account', and 'way' parameters are only useful to, and checked by, get_acl_way()
     $fnret = OVH::Bastion::get_acl_way(way => $way, account => $account, group => $group);
     $fnret or return $fnret;
@@ -108,6 +112,10 @@ sub is_access_way_granted {
         my $allowedPort        = $entry->{'port'};            # can be undef (if any-port)
         my $localForceKey      = $entry->{'forceKey'};
         my $localForcePassword = $entry->{'forcePassword'};
+
+        # normalize '*' to undef
+        undef $allowedUser if (defined $allowedUser && $allowedUser eq '*');
+        undef $allowedPort if (defined $allowedPort && $allowedPort eq '*');
 
         osh_debug("checking wanted "
               . (defined $wantedUser ? $wantedUser : '<u>') . '@'
@@ -951,7 +959,7 @@ sub ssh_test_access_way {
     $user = $fnret->value;
 
     # skip special users and wildcarded-users which are not actual remote users
-    if ((grep { $user eq $_ } qw{ !scpupload !scpdownload !sftp }) || ($user =~ /[*?]/)) {
+    if ($user =~ /[*?]|^!/) {
         return R('OK_MAGIC_USER', msg => "Didn't really test the connection, as the specified user is special");
     }
 

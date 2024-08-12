@@ -14,30 +14,36 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
     header             => "removing personal access to a server from an account",
     userAllowWildcards => 1,
     options            => {
-        "account=s" => \my $account,
-        "user-any"  => \my $userAny,
-        "port-any"  => \my $portAny,
-        "scpup"     => \my $scpUp,
-        "scpdown"   => \my $scpDown,
-        "sftp"      => \my $sftp,
+        "account=s"  => \my $account,
+        "protocol=s" => \my $protocol,
+        # undocumented/compatibility:
+        "user-any" => \my $userAny,
+        "port-any" => \my $portAny,
+        "scpup"    => \my $scpUp,
+        "scpdown"  => \my $scpDown,
+        "sftp"     => \my $sftp,
     },
     helptext => <<'EOF',
 Remove a personal server access from an account
 
-Usage: --osh SCRIPT_NAME --account ACCOUNT --host HOST [OPTIONS]
+Usage: --osh SCRIPT_NAME --account ACCOUNT --host HOST --user USER --port PORT [OPTIONS]
 
   --account                Bastion account to remove access from
   --host HOST|IP|NET/CIDR  Host(s) to remove access from, either a HOST which will be resolved to an IP immediately,
                              or an IP, or a whole network using the NET/CIDR notation
-  --user USER              Specify which remote user was allowed to connect as.
+  --user USER|PATTERN|*    Specify which remote user was allowed to connect as.
                              Globbing characters '*' and '?' are supported, so you can specify a pattern
                              that will be matched against the actual remote user name.
-  --user-any               Synonym of '--user *', allowed connecting as any remote user.
-  --port PORT              Remote port that was allowed to connect to
-  --port-any               Use when access was allowed to any remote port
-  --scpup                  Remove SCP upload right, you--bastion-->server (omit --user in this case)
-  --scpdown                Remove SCP download right, you<--bastion--server (omit --user in this case)
-  --sftp                   Remove usage of the SFTP subsystem, you<--bastion-->server (omit --user in this case)
+                             If any user was allowed, use '--user *' (you might need to escape '*' from your shell)
+  --port PORT|*            Remote port that was allowed to connect to
+                             If any port was allowed, use '--port *' (you might need to escape '*' from your shell)
+  --protocol PROTO         Specify that a special protocol allowance should be removed from this HOST:PORT tuple, note that you
+                              must not specify --user in that case.
+                              PROTO must be one of:
+                              scpup    allow SCP upload, you--bastion-->server
+                              scpdown  allow SCP download, you<--bastion--server
+                              sftp     allow usage of the SFTP subsystem, through the bastion
+                              rsync    allow usage of rsync, through the bastion
 EOF
 );
 
@@ -49,19 +55,21 @@ if (!$ip) {
 }
 
 $fnret = OVH::Bastion::Plugin::ACL::check(
-    user    => $user,
-    userAny => $userAny,
-    port    => $port,
-    portAny => $portAny,
-    scpUp   => $scpUp,
-    scpDown => $scpDown,
-    sftp    => $sftp
+    user     => $user,
+    userAny  => $userAny,
+    port     => $port,
+    portAny  => $portAny,
+    scpUp    => $scpUp,
+    scpDown  => $scpDown,
+    sftp     => $sftp,
+    protocol => $protocol,
 );
 if (!$fnret) {
     help();
     osh_exit($fnret);
 }
 $user = $fnret->value->{'user'};
+$port = $fnret->value->{'port'};
 
 if (not $account) {
     help();

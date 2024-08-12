@@ -23,7 +23,7 @@ sub has_protocol_access {
     my $protocol = $params{'protocol'};
 
     if (!$account || !$ipfrom || !$ip || !$protocol || !$user || !$port) {
-        return R('ERR_MSSING_PARAMETERS', msg => "Missing mandatory parameters for has_protocol_access");
+        return R('ERR_MISSING_PARAMETERS', msg => "Missing mandatory parameters for has_protocol_access");
     }
 
     my $machine = "$user\@$ip:$port";
@@ -52,7 +52,7 @@ sub has_protocol_access {
         }
     }
 
-    osh_debug("Checking access 2/2 of !rsync to $user of $machine...");
+    osh_debug("Checking access 2/2 of !$protocol to $user of $machine...");
     $fnret = OVH::Bastion::is_access_granted(
         account        => $account,
         user           => "!$protocol",

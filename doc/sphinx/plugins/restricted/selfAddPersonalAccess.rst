@@ -49,6 +49,10 @@ Add a personal server access to your account
 
    Allow usage of the SFTP subsystem, you<--bastion-->server (omit --user in this case)
 
+.. option:: --rsync
+
+   Allow usage of rsync through the bastion
+
 .. option:: --force
 
    Add the access without checking that the public SSH key is properly installed remotely
