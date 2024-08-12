@@ -1025,7 +1025,7 @@ if ($osh_command) {
         # do it themselves, and as they're accessing a remote asset, JIT MFA should apply to them too)
         my $pluginJitMfa = OVH::Bastion::plugin_config(plugin => $osh_command, key => "jit_mfa")->value;
         if ($pluginJitMfa) {
-            $fnret = do_plugin_jit_mfa(pluginJitMfa => $pluginJitMfa);
+            $fnret = do_plugin_jit_mfa();
             # do_plugin_jit_mfa exits if needed, but just in case...
             main_exit(OVH::Bastion::EXIT_MFA_FAILED, "jit_mfa_failed", $fnret->msg) if !$fnret;
         }
@@ -1800,10 +1800,13 @@ sub do_jit_mfa {
     return R('OK_VALIDATED', value => {mfaInfo => \%mfaInfo});
 }
 
+# check whether this plugin wants us to trigger a JIT MFA check depending on the
+# specified user/host/ip, if this is configured in one of the matching bastion groups
+# we are a part of (plugins such as sftp or scp will require us to do this, as they can't
+# do it themselves, and as they're accessing a remote asset, JIT MFA should apply to them too)
+#
+# this func may exit
 sub do_plugin_jit_mfa {
-    my %params       = @_;
-    my $pluginJitMfa = $params{'pluginJitMfa'};    ### XXX NOT USED
-
     my $localfnret;
 
     if (!$host) {

@@ -13,6 +13,7 @@ use OVH::Bastion;
 # and also that, using the same access way (the same egress ssh keys), that they are granted
 # for this host:port using another protocol than ssh (scp, sftp, rsync)
 # this requirement will be lifted once we add the "protocol type" to the whole access tuple data model
+# while we're at it, return whether we found that this access requires MFA
 sub has_protocol_access {
     my %params   = @_;
     my $account  = $params{'account'};
@@ -67,12 +68,16 @@ sub has_protocol_access {
             msg => "Sorry, you have ssh access to $machine, but you need to be granted specifically for $protocol");
     }
 
-    # get the keys we would try too
+    # get the keys we would try, along with an eventual mfaRequired flag
+    my $mfaRequired;
     foreach my $access (@{$fnret->value || []}) {
         foreach my $key (@{$access->{'sortedKeys'} || []}) {
             my $keyfile = $access->{'keys'}{$key}{'fullpath'};
             $keys{$keyfile}++ if -r $keyfile;
             osh_debug("Checking access 2/2 keyfile: $keyfile");
+        }
+        if ($access->{'mfaRequired'} && $access->{'mfaRequired'} ne 'none') {
+            $mfaRequired = $access->{'mfaRequired'};
         }
     }
 
@@ -94,7 +99,7 @@ sub has_protocol_access {
               . " The intersection between your rights for ssh and for $protocol needs to be at least one.");
     }
 
-    return R('OK', value => {keys => \@validKeys, machine => $machine});
+    return R('OK', value => {keys => \@validKeys, machine => $machine, mfaRequired => $mfaRequired});
 }
 
 1;

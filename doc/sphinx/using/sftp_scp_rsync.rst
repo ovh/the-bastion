@@ -1,20 +1,24 @@
-==================
-SFTP & SCP support
-==================
+=========================
+SFTP, SCP & RSYNC support
+=========================
 
 .. contents::
 
 Introduction
 ============
 
-The Bastion's main goal is to secure ``ssh`` connections. However, one might also want to use ``sftp`` or ``scp`` through it.
+The Bastion's main goal is to secure ``ssh`` connections.
+However, one might also want to use ``sftp``, ``scp`` or ``rsync`` through it.
 
-Its use is supported through the :doc:`/plugins/open/scp` and :doc:`/plugins/open/sftp` bastion plugins,
-respectively, and documented as part of all the plugins.
+Its use is supported through the :doc:`/plugins/open/scp`, :doc:`/plugins/open/sftp` and
+:doc:`/plugins/open/rsync` bastion plugins, and documented as part of all the plugins.
 This additional documentation section gives some examples and outlines some common configuration errors.
 
 Prerequisites
 =============
+
+SFTP & SCP
+----------
 
 The use of SFTP or SCP through the bastion requires an SFTP or SCP program that supports the **-S** option,
 and a shell to run the wrapper. This is the case on all operating systems using OpenSSH such as Linux or \*BSD.
@@ -25,26 +29,34 @@ for Linux) environment, to have the OpenSSH version of ``scp`` or ``sftp`` and a
 Note that it won't work with Windows GUI apps, because there's no way to specify a wrapper (through **-S**),
 and no shell. For example, it won't work under WinSCP.
 
+RSYNC
+-----
+
+The use of RSYNC through the bastion only requires rsync to be installed locally and remotely, as is the
+case for usage without the bastion.
+
 Basic usage
 ===========
 
-Please check the :doc:`/plugins/open/scp` and :doc:`/plugins/open/sftp` documentation to see how to use these.
+Please check the :doc:`/plugins/open/scp`, :doc:`/plugins/open/sftp` and :doc:`/plugins/open/rsync`
+documentation to see how to use these.
 
 Access model
 ============
 
 .. note::
 
-   Currently, to be able to use SFTP or SCP with a remote server,
+   Currently, to be able to use SFTP, SCP or RSYNC with a remote server,
    you first need to have a declared SSH access to it.
    This might change in a future version.
 
 Error message 1
 ---------------
 
-This is briefly explained in the :doc:`/plugins/open/scp`/:doc:`/plugins/open/sftp` documentation,
-but having access rights to SSH to a machine is not enough to have the right to SCP to or from it, or use SFTP on it.
-If you have the following error, then this is your problem:
+This is briefly explained in the :doc:`/plugins/open/scp`/doc:`/plugins/open/sftp`/:doc:`/plugins/open/rsync`
+documentation, but having access rights to SSH to a machine is not enough to have the right to SCP to or from it,
+or use SFTP/RSYNC on it.
+If you have the following error, then this is the problem you're having:
 
 ::
 
@@ -52,18 +64,18 @@ If you have the following error, then this is your problem:
     The intersection between your rights for ssh and for scp needs to be at least one.
 
 When this happens, it means that you have at least one declared SSH access to this machine (through one or
-several groups, or through personal accesses). You also have at least one declared SCP/SFTP access to it.
+several groups, or through personal accesses). You also have at least one declared SCP/SFTP/RSYNC access to it.
 However **both accesses are declared through different means**, and more precisely different SSH keys. For example:
 
-- You are a member of a group having this machine on one hand, and you have a declared SCP/SFTP access to this machine
+- You are a member of a group having this machine on one hand, and you have a declared SCP/SFTP/RSYNC access to this machine
   using a personal access on the other hand. For SSH, the group key would be used, but for SCP/SFTP, your personal key
-  would be used. However, for technical reasons (that might be lifted in a future version), your SSH and SCP/SFTP access
+  would be used. However, for technical reasons (that might be lifted in a future version), your SSH and SCP/SFTP/RSYNC access
   must be declared with the same key, so in other words, using the same access mean (same group, or personal access).
 
-- You are a member of group **A** having this machine, but SCP/SFTP access is declared in group **B**.
+- You are a member of group **A** having this machine, but SCP/SFTP/RSYNC access is declared in group **B**.
   In that case, as previously, as two different keys are used, this won't work.
 
-To declare an SCP or SFTP access, in addition to a preexisting SSH access, you should use either:
+To declare an SCP/SFTP/RSYNC access, in addition to a preexisting SSH access, you should use either:
 
 - :doc:`/plugins/group-aclkeeper/groupAddServer`, if the SSH access is part of a group
 
@@ -71,17 +83,21 @@ To declare an SCP or SFTP access, in addition to a preexisting SSH access, you s
   if the SSH access is personal (tied to an account)
 
 In both cases, where you would use the ``--user`` option to the command, to specify the remote user to use for
-the SSH access being declared, you should replace it by either ``--scpdown``, ``--scpup`` or ``--sftp``,
-to specify that you're about to add an SCP or SFTP access (not an SSH one), and which direction you want to allow.
-For SCP ,you can allow both directions by using the command first with ``--scpdown``, then with ``--scpup``.
-Note that for SFTP, you can't specify a direction, due to how the protocol works: you either have SFTP access (hence
-being able to upload and download files), or you don't.
+the SSH access being declared, you should replace it by either ``--protocol scpdown``, ``--protocol scpup``,
+``--protocol sftp`` or ``--protocol rsync``,
+to specify that you're about to add an SCP/SFTP/RSYNC access (and not a bare SSH one), and which direction you want
+to allow in the case of SCP.
+
+For SCP, you can allow both directions by using the command first with ``--protocol scpdown``,
+then with ``--protocol scpup``.
+Note that for SFTP and RYSNC, you can't specify a direction, due to how these protocols work: you either have
+SFTP/RSYNC access (hence being able to upload and download files), or you don't.
 
 For example, this is a valid command to add SFTP access to a machine which is part of a group:
 
 ::
 
-   bssh --osh groupAddServer --group mygroup --host scpserver.example.org --port 22 --sftp
+   bssh --osh groupAddServer --group mygroup --host scpserver.example.org --port 22 --protocol sftp
 
 Error message 2
 ---------------

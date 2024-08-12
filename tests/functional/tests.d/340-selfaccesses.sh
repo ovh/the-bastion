@@ -134,7 +134,7 @@ testsuite_selfaccesses()
     json .error_code ERR_INVALID_PARAMETER
     contain "IPv4 is /30 by this"
 
-    success selfAddPersonalAccess_constraints_ok $a0 --osh selfAddPersonalAccess --host 127.0.0.9 --user $account0 --port-any --ttl 1 --force
+    success selfAddPersonalAccess_constraints_ok $a0 --osh selfAddPersonalAccess --host 127.0.0.9 --user $account0 --port '*' --ttl 1 --force
 
     success selfAddPersonalAccess_delconfig $r0 "rm -f $opt_remote_etc_bastion/plugin.selfAddPersonalAccess.conf"
 
@@ -150,7 +150,7 @@ testsuite_selfaccesses()
     json .error_code ERR_INVALID_PARAMETER
     contain "IPv4 is /30 by this"
 
-    success accountAddPersonalAccess_constaints_ok $a0 --osh accountAddPersonalAccess --host 127.0.0.9 --user $account1 --port-any --ttl 1 --account $account1
+    success accountAddPersonalAccess_constaints_ok $a0 --osh accountAddPersonalAccess --host 127.0.0.9 --user $account1 --port '*' --ttl 1 --account $account1
 
     success accountAddPersonalAccess_delconfig $r0 "rm -f $opt_remote_etc_bastion/plugin.accountAddPersonalAccess.conf"
 
@@ -442,7 +442,7 @@ testsuite_selfaccesses()
     nocontain "already"
     json .command selfAddPersonalAccess .error_code ERR_MISSING_PARAMETER .value null
 
-    plgfail userportnoforce $a0 -osh selfAddPersonalAccess -h 127.0.0.4 --user-any --port 22
+    plgfail userportnoforce $a0 -osh selfAddPersonalAccess -h 127.0.0.4 --user '*' --port 22
     nocontain "already"
     contain REGEX "Couldn't connect to $account0@127.0.0.4 \\(ssh returned error (255|124)\\)"
     json .command selfAddPersonalAccess .error_code ERR_CONNECTION_FAILED .value      null
@@ -485,7 +485,7 @@ testsuite_selfaccesses()
     contain "Access to 127.0.0.4 "
     json .command selfDelPersonalAccess .error_code OK .value.ip 127.0.0.4 .value.port null .value.user null
 
-    success nousernoport_dupe $a0 -osh selfDelPersonalAccess -h 127.0.0.4 --user-any --port-any
+    success nousernoport_dupe $a0 -osh selfDelPersonalAccess -h 127.0.0.4 --user '*' --port '*'
     nocontain "no longer has a personal access"
     json .command selfDelPersonalAccess .error_code OK_NO_CHANGE .value      null
 

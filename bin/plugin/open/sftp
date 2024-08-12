@@ -13,10 +13,10 @@ use OVH::Bastion;
 use OVH::Bastion::Plugin qw( :DEFAULT );
 use OVH::Bastion::Plugin::otherProtocol;
 
-# stdout is used by scp, so ensure we output everything through stderr
+# stdout is used by sftp, so ensure we output everything through stderr
 local $ENV{'FORCE_STDERR'} = 1;
 
-# don't output fancy stuff, this can get digested by scp and we get garbage output
+# don't output fancy stuff, this can get digested by sftp and we get garbage output
 local $ENV{'PLUGIN_QUIET'} = 1;
 
 my $remainingOptions = OVH::Bastion::Plugin::begin(
@@ -278,7 +278,7 @@ if (not $ip) {
     osh_exit 'ERR_HOST_NOT_FOUND', "Sorry, couldn't resolve the host you specified ('$host'), aborting.";
 }
 
-$port ||= 22;       # scp uses 22 if not specified, so we need to test access to that port and not any port (aka undef)
+$port ||= 22;       # sftp uses 22 if not specified, so we need to test access to that port and not any port (aka undef)
 $user ||= $self;    # same for user
 
 $fnret = OVH::Bastion::Plugin::otherProtocol::has_protocol_access(

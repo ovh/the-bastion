@@ -9,7 +9,7 @@ Add a personal server access to an account
 .. admonition:: usage
    :class: cmdusage
 
-   --osh accountAddPersonalAccess --account ACCOUNT --host HOST [OPTIONS]
+   --osh accountAddPersonalAccess --account ACCOUNT --host HOST --user USER --port PORT [OPTIONS]
 
 .. program:: accountAddPersonalAccess
 
@@ -23,43 +23,26 @@ Add a personal server access to an account
    Host(s) to add access to, either a HOST which will be resolved to an IP immediately,
 
                              or an IP, or a whole network using the NET/CIDR notation
-.. option:: --user USER
-
-   Specify which remote user should be allowed to connect as.
-
+  --user USER|PATTERN|*    Specify which remote user should be allowed to connect as.
                              Globbing characters '*' and '?' are supported, so you can specify a pattern
                              that will be matched against the actual remote user name.
-.. option:: --user-any
+                             To allow any user, use '--user *' (you might need to escape '*' from your shell)
+  --port PORT|*            Remote port allowed to connect to
+                             To allow any port, use '--port *' (you might need to escape '*' from your shell)
+.. option:: --protocol PROTO
 
-   Synonym of '--user *', allows connecting as any remote user.
+   Specify that a special protocol should be allowed for this HOST:PORT tuple, note that you
 
-.. option:: --port PORT
-
-   Remote port allowed to connect to
-
-.. option:: --port-any
-
-   Allow access to any remote port
-
-.. option:: --scpup
-
-   Allow SCP upload, you--bastion-->server (omit --user in this case)
-
-.. option:: --scpdown
-
-   Allow SCP download, you<--bastion--server (omit --user in this case)
-
-.. option:: --sftp
-
-   Allow usage of the SFTP subsystem, you<--bastion-->server (omit --user in this case)
-
-.. option:: --rsync
-
-   Allow usage of rsync through the bastion
-
+                              must not specify --user in that case. However, for this protocol to be usable under a given
+                              remote user, access to the USER@HOST:PORT tuple must also be allowed.
+                              PROTO must be one of:
+                              scpup    allow SCP upload, you--bastion-->server
+                              scpdown  allow SCP download, you<--bastion--server
+                              sftp     allow usage of the SFTP subsystem, through the bastion
+                              rsync    allow usage of rsync, through the bastion
 .. option:: --force-key FINGERPRINT
 
-   Only use the key with the specified fingerprint to connect to the server (cf selfListEgressKeys)
+   Only use the key with the specified fingerprint to connect to the server (cf accountListEgressKeys)
 
 .. option:: --force-password HASH
 

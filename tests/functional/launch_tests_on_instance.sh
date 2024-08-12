@@ -5,6 +5,9 @@
 # shellcheck disable=SC2046
 set -eu
 
+# ensure a sparse '*' somewhere doesn't end up in us expanding it silently
+set -f
+
 basedir=$(readlink -f "$(dirname "$0")"/../..)
 # shellcheck source=lib/shell/functions.inc
 . "$basedir"/lib/shell/functions.inc
@@ -424,7 +427,7 @@ run()
     # put an invalid value in this file, should be overwritten. we also use it as a lock file.
     echo -1 > $outdir/$basename.retval
     # run the test
-    flock "$outdir/$basename.retval" $screen "$outdir/$basename.log" -D -m -fn -ln bash -c "$* ; echo \$? > $outdir/$basename.retval ; sleep $sleepafter"
+    flock "$outdir/$basename.retval" $screen "$outdir/$basename.log" -D -m -fn -ln bash -c "set -f; $* ; echo \$? > $outdir/$basename.retval ; sleep $sleepafter"
     flock "$outdir/$basename.retval" true
     unset sleepafter
 
@@ -682,7 +685,8 @@ runtests()
 
     grant accountRevokeCommand
 
-    for module in "$(dirname $0)"/tests.d/???-*.sh
+    # shellcheck disable=SC2044
+    for module in $(find "$(dirname $0)/tests.d/" -mindepth 1 -maxdepth 1 -type f -name '???-*.sh' | sort)
     do
         module="$(readlink -f "$module")"
         modulename="$(basename "$module" .sh)"
