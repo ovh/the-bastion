@@ -9,13 +9,26 @@ use OVH::Bastion;
 
 sub check {
     my %params = @_;
-    my ($port, $portAny, $user, $userAny, $scpUp, $scpDown, $sftp) =
-      @params{qw{ port portAny user userAny scpUp scpDown sftp }};
+    my ($port, $portAny, $user, $userAny, $scpUp, $scpDown, $sftp, $protocol) =
+      @params{qw{ port portAny user userAny scpUp scpDown sftp protocol }};
 
     if ($user and $userAny) {
         return R('ERR_INCOMPATIBLE_PARAMETERS',
             msg => "A user was specified with --user, along with --user-any, "
               . "both are contradictory, please check your command");
+    }
+
+    # legacy option mapping
+    $user = '*' if $userAny;
+
+    if ($protocol) {
+        if ($scpUp or $scpDown or $sftp) {
+            return R('ERR_INCOMPATIBLE_PARAMETERS', msg => "Can't use --protocol with --scpup, --scpdown or --sftp");
+        }
+        if (!grep { $protocol eq $_ } qw{ scpup scpdown sftp rsync }) {
+            return R('ERR_INVALID_PARAMETER',
+                msg => "The protocol '$protocol' is not supported, expected either scpup, scpdown, sftp or rsync");
+        }
     }
 
     if ($scpUp and $scpDown) {
@@ -26,23 +39,32 @@ sub check {
 
     if ($sftp and ($scpUp or $scpDown)) {
         return R('ERR_INCOMPATIBLE_PARAMETERS',
-            msg => "You specified both --scp* and --sftp, "
-              . "if you want to grant both protocols, please do it in two separate commands");
+            msg => "You can specify only one of --sftp --scpup --scpdown at a time, "
+              . "if you want to grant several of those protocols, please do it in separate commands");
     }
 
-    if (($scpUp or $scpDown or $sftp) and ($user or $userAny)) {
-        return R('ERR_INCOMPATIBLE_PARAMETERS',
-                msg => "To grant SCP or SFTP access, first ensure SSH access "
-              . "is granted to the machine (with the --user you need, or --user-any), then grant with --scpup and/or "
-              . "--scpdown and/or --sftp, omitting --user/--user-any");
+    # legacy options mapping
+    if (!$protocol) {
+        $protocol = 'sftp'        if $sftp;
+        $protocol = 'scpupload'   if $scpUp;
+        $protocol = 'scpdownload' if $scpDown;
     }
-    $user = '!scpupload'   if $scpUp;
-    $user = '!scpdownload' if $scpDown;
-    $user = '!sftp'        if $sftp;
+
+    if ($protocol and $user) {
+        return R('ERR_INCOMPATIBLE_PARAMETERS',
+                msg => "To grant access using the $protocol protocol, first ensure SSH access "
+              . "is granted to the machine (with the --user you need), then grant with --protocol, "
+              . "omitting --user");
+    }
+
+    # special user when a protocol is specified
+    $user = "!$protocol" if $protocol;
 
     if (not $user and not $userAny) {
         return R('ERR_MISSING_PARAMETER',
-            msg => "No user specified, if you want to add this server with any user, use --user-any");
+            msg =>
+              "No user specified, if you want to add this server with any user, use --user * (you might need to escape it from your shell)"
+        );
     }
 
     if ($portAny and $port) {
@@ -51,12 +73,21 @@ sub check {
               . "along with --port-any, both are contradictory, please check your command");
     }
 
-    if (not $port and not $portAny) {
+    # legacy option mapping
+    $port = '*' if $portAny;
+
+    if (not defined $port) {
         return R('ERR_MISSING_PARAMETER',
-            msg => "No port specified, if you want to add this server with any port, use --port-any");
+            msg =>
+              "No port specified, if you want to add this server with any port, use --port * (you might need to escape it from your shell)"
+        );
     }
 
-    return R('OK', value => {user => $user});
+    # now, remap port and user '*' back to undef
+    undef $user if $user eq '*';
+    undef $port if $port eq '*';
+
+    return R('OK', value => {user => $user, port => $port, protocol => $protocol});
 }
 
 1;
