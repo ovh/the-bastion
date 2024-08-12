@@ -17,6 +17,7 @@ open plugins
    mtr
    nc
    ping
+   rsync
    scp
    selfAddIngressKey
    selfDelIngressKey

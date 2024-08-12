@@ -8,12 +8,14 @@ use lib dirname(__FILE__) . '/../../../../../lib/perl';
 use OVH::Result;
 use OVH::Bastion;
 
+# Called by the helper osh-groupSetRole, and also by act() below.
 sub preconditions {
     my %params = @_;
-    my ($self, $account, $group, $action, $type, $user, $userAny, $port, $portAny, $host, $ttl, $sudo, $silentoverride)
-      = @params{
-        qw{ self   account   group   action   type   user   userAny   port   portAny   host   ttl   sudo   silentoverride }
-      };
+    # common params:
+    my ($self, $account, $group, $action, $type, $sudo, $silentoverride) =
+      @params{qw{ self   account   group   action   type   sudo   silentoverride }};
+    # params only used for adding/removing guest accesses:
+    my ($user, $port, $host, $ttl) = @params{qw{ user port host ttl }};
     my $fnret;
 
     if (!$self || !$account || !$group || !$type || !$action) {
@@ -34,15 +36,10 @@ sub preconditions {
     $type = $1;                                                      ## no critic (ProhibitCaptureWithoutTest)
 
     if ($type eq 'guest' && !$sudo) {
+        # Guest access require a host, user and port might be undef to say 'any', and a ttl can be provided too.
+        # In sudo mode, these are not used, because the osh-groupSetRole helper that calls us doesn't handle the guest
+        # access add by itself, the act() func of this package, directly called by the group(Del|Add)GuestAccess plugin, does.
 
-        # guest access need (user||user-any), host and (port||port-any)
-        # in sudo mode, these are not used, because the helper doesn't handle the guest access add by itself, the act() func of this package does
-        if (!($user xor $userAny)) {
-            return R('ERR_MISSING_PARAMETER', msg => "Require exactly one argument of user or user-any");
-        }
-        if (!($port xor $portAny)) {
-            return R('ERR_MISSING_PARAMETER', msg => "Require exactly one argument of port or port-any");
-        }
         if (not $host) {
             return R('ERR_MISSING_PARAMETER', msg => "Missing argument host for type guest");
         }
@@ -50,12 +47,12 @@ sub preconditions {
             $fnret = OVH::Bastion::is_valid_port(port => $port);
             $fnret or return $fnret;
         }
-        if ($user and $user !~ /^[a-zA-Z0-9!._-]+$/) {
-            return R('ERR_INVALID_PARAMETER', msg => "Invalid remote user ($user) specified");
+        if ($user) {
+            $fnret = OVH::Bastion::is_valid_remote_user(user => $user, allowWildcards => 1);
+            $fnret or return $fnret;
         }
 
         if ($action eq 'add') {
-
             # policy check for guest accesses: if group forces ttl, the account creation must comply
             $fnret = OVH::Bastion::group_config(group => $group, key => "guest_ttl_limit");
 
@@ -160,6 +157,10 @@ sub preconditions {
     );
 }
 
+# We handle the proper helper calls (osh-groupSetRole, osh-groupAddSymlinkToAccount, osh-accountAddGroupServer) to modify the roles as asked.
+# Called by all the plugins that modify account roles on groups, and also by the groupCreate helper.
+# This sub also calls itself in the case of group member add,
+# if the account had guest group accesses before, so as to remove them.
 sub act {
     my %params = @_;
     my $fnret  = preconditions(%params);
@@ -171,8 +172,6 @@ sub act {
       @values{qw{ group shortGroup account type realm remoteaccount sysaccount }};
     my ($action, $self, $user, $host, $port, $ttl, $comment) = @params{qw{ action self user host port ttl comment }};
 
-    undef $user if $params{'userAny'};
-    undef $port if $params{'portAny'};
     my @command;
 
     osh_debug(
@@ -216,9 +215,7 @@ sub act {
                         action  => 'del',
                         type    => 'guest',
                         user    => $access->{'user'},
-                        userAny => (defined $access->{'user'} ? 0 : 1),
                         port    => $access->{'port'},
-                        portAny => (defined $access->{'port'} ? 0 : 1),
                         host    => $access->{'ip'},
                         self    => $self,
                     );

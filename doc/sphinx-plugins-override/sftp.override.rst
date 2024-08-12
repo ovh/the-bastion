@@ -28,4 +28,4 @@ For a group, the right should be added with ``--sftp`` of the :doc:`/plugins/gro
 For a personal access, the right should be added with ``--sftp`` of the :doc:`/plugins/restricted/selfAddPersonalAccess` command.
 :doc:`/plugins/open/selfListEgressKeys`
 
-You'll find more information and examples in :doc:`/using/sftp_scp`.
+You'll find more information and examples in :doc:`/using/sftp_scp_rsync`.

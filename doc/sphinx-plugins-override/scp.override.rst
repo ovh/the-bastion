@@ -25,4 +25,4 @@ with scp to/from the remote host, in addition to having the right to SSH to it.
 For a group, the right should be added with ``--scpup``/``--scpdown`` of the :doc:`/plugins/group-aclkeeper/groupAddServer` command.
 For a personal access, the right should be added with ``--scpup``/``--scpdown`` of the :doc:`/plugins/restricted/selfAddPersonalAccess` command.
 
-You'll find more information and examples in :doc:`/using/sftp_scp`.
+You'll find more information and examples in :doc:`/using/sftp_scp_rsync`.

@@ -1,0 +1,149 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT );
+use OVH::Bastion::Plugin::otherProtocol;
+# stdout is used by rsync, so ensure we output everything through stderr
+local $ENV{'FORCE_STDERR'} = 1;
+
+# don't output fancy stuff, this can get digested by rsync and we get garbage output
+local $ENV{'PLUGIN_QUIET'} = 1;
+
+# rsync will craft a command-line for our plugin like this one (to upload):
+# -l REMOTE_USER REMOTE_HOST rsync --server -vlogDtpre.iLsfxC . REMOTE_DIR
+# and like this (to download)
+# -l REMOTE_USER REMOTE_HOST rsync --server --sender -vlogDtpre.iLsfxC . REMOTE_DIR
+#
+# we parse the REMOTE_USER thanks to "options" below, and the remaining of the command-line
+# is left untouched thanks to allowUnknownOptions==1
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv                => \@ARGV,
+    header              => undef,
+    allowUnknownOptions => 1,
+    options             => {
+        "l=s" => \my $opt_user,
+    },
+    helptext => <<'EOF',
+rsync passthrough using the bastion
+
+Usage examples:
+
+  rsync -va --rsh "ssh -T BASTION_USER@BASTION_HOST -p BASTION_PORT -- --osh rsync --" /srcdir remoteuser@remotehost:/dest/
+  rsync -va --rsh "ssh -T BASTION_USER@BASTION_HOST -p BASTION_PORT -- --osh rsync --" remoteuser@remotehost:/srcdir /dest/
+
+Note that you'll need to be specifically granted to use rsync on the remote server,
+in addition to being granted normal SSH access to it.
+EOF
+);
+
+# validate $opt_user and export it as $user
+OVH::Bastion::Plugin::validate_tuple(user => $opt_user);
+
+# validate host passed by rsync and export it as $host/$ip
+if (ref $remainingOptions eq 'ARRAY' && @$remainingOptions) {
+    my $opt_host = shift(@$remainingOptions);
+    OVH::Bastion::Plugin::validate_tuple(host => $opt_host);
+}
+else {
+    osh_exit 'ERR_INVALID_COMMAND',
+      "No host found, this plugin should be called by rsync.\nUse \`--osh rsync --help\` for more information.";
+}
+
+if (ref $remainingOptions eq 'ARRAY' && @$remainingOptions && $remainingOptions->[0] eq 'rsync') {
+    ;    # ok, we'll pass all the remaining options as options to the remote server, which will start rsync
+}
+else {
+    osh_exit 'ERR_INVALID_COMMAND',
+      "This plugin should be called by rsync.\nUse \`--osh rsync --help\` for more information.";
+}
+
+#
+# code
+#
+my $fnret;
+
+if (not $host) {
+    help();
+    osh_exit;
+}
+
+if (not $ip) {
+    # note that the calling-side rsync will not passthrough this exit code, but most probably "1" instead.
+    osh_exit 'ERR_HOST_NOT_FOUND', "Sorry, couldn't resolve the host you specified ('$host'), aborting.";
+}
+
+$port ||= 22;      # rsync uses 22 if not specified, so we need to test access to that port and not any port (aka undef)
+$user ||= $self;   # same for user
+
+$fnret = OVH::Bastion::Plugin::otherProtocol::has_protocol_access(
+    account  => $self,
+    user     => $user,
+    ip       => $ip,
+    port     => $port,
+    protocol => 'rsync',
+);
+$fnret or osh_exit($fnret);
+
+my $machine     = $fnret->value->{'machine'};
+my @keys        = @{$fnret->value->{'keys'} || []};
+my $mfaRequired = $fnret->value->{'mfaRequired'};
+
+# if we have an mfaRequired here, we have a problem because as we're run by rsync on the client side,
+# it's too late to ask for any interactive user input now, as we don't have access to the terminal:
+# we can only bail out if MFA was required for this host/group.
+if ($mfaRequired) {
+    # is this account exempt from MFA?
+    my $hasMfaPasswordBypass =
+      OVH::Bastion::is_user_in_group(account => $sysself, group => OVH::Bastion::MFA_PASSWORD_BYPASS_GROUP);
+    my $hasMfaTOTPBypass =
+      OVH::Bastion::is_user_in_group(account => $sysself, group => OVH::Bastion::MFA_TOTP_BYPASS_GROUP);
+
+    if ($mfaRequired eq 'password' && $hasMfaPasswordBypass) {
+        print STDERR "This host requires password MFA but your account has password MFA bypass, allowing...\n";
+    }
+    elsif ($mfaRequired eq 'totp' && $hasMfaTOTPBypass) {
+        print STDERR "This host requires TOTP MFA but your account has TOTP MFA bypass, allowing...\n";
+    }
+    elsif ($mfaRequired eq 'any' && $hasMfaPasswordBypass && $hasMfaTOTPBypass) {
+        print STDERR "This host requires MFA but your account has MFA bypass, allowing...\n";
+    }
+    else {
+        osh_exit('KO_MFA_REQUIRED', "MFA is required for this host, which is not supported by rsync.");
+    }
+}
+
+# now build the command
+
+my @cmd = qw{ ssh -x -oForwardAgent=no -oPermitLocalCommand=no -oClearAllForwardings=yes };
+push @cmd, ('-p', $port) if $port;
+push @cmd, ('-l', $user) if $user;
+
+foreach my $key (@keys) {
+    push @cmd, ('-i', $key);
+}
+
+push @cmd, "--", $ip, @$remainingOptions;
+
+print STDERR ">>> Hello $self, running rsync through the bastion on $machine...\n";
+
+$fnret = OVH::Bastion::execute(cmd => \@cmd, expects_stdin => 1, is_binary => 1);
+if ($fnret->err ne 'OK') {
+    osh_exit 'ERR_TRANSFER_FAILED', "Error launching transfer: $fnret";
+}
+print STDERR sprintf(
+    ">>> Done, %d bytes uploaded, %d bytes downloaded\n",
+    $fnret->value->{'bytesnb'}{'stdin'} + 0,
+    $fnret->value->{'bytesnb'}{'stdout'} + 0
+);
+
+if ($fnret->value->{'sysret'} != 0) {
+    print STDERR ">>> On bastion side, rsync exited with return code " . $fnret->value->{'sysret'} . ".\n";
+}
+
+# don't use osh_exit() to avoid getting a footer
+exit OVH::Bastion::EXIT_OK;
