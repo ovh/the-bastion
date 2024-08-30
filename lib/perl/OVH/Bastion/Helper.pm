@@ -75,27 +75,52 @@ if (not defined $self) {
 }
 
 sub get_lock_fh {
-    my $fh;
-    my $lockdir  = "/tmp/bastion.lock";
-    my $lockfile = "$lockdir/lock";
+    my %params   = @_;
+    my $category = $params{'category'};
 
-    # to avoid symlink attacks, we first create a subdir only accessible by root
-    unlink $lockdir;    # will silently fail if doesn't exist or is not a file
-    mkdir $lockdir;     # will silently fail if we lost the race
-    chown 0, 0, $lockdir;
-    chmod 0700, $lockdir;
+    return R('ERR_MISSING_PARAMETER', msg => "Missing category in get_lock_fh") if !$category;
 
-    # now, check if we do have a directory, or if we lost the race
-    if (!-d $lockdir) {
-        warn_syslog("Couldn't create $lockdir: are we being raced against?");
-        return R('ERR_CANNOT_LOCK', msg => "Couldn't create lock file, please retry");
+    my ($lockdir, $lockfile, $lockdircreate);
+    if ($category eq 'passwd') {
+        $lockdir       = "/tmp/bastion.lock.passwd";
+        $lockfile      = "$lockdir/lock";
+        $lockdircreate = 1;
     }
-    # here, $lockdir is guaranteed to be a directory, check its perms
-    my @perms = stat($lockdir);
-    if ($perms[4] != 0 || $perms[5] != 0 || S_IMODE($perms[2]) != oct(700)) {
-        warn_syslog("The $lockdir directory has invalid perms: are we being raced against? mode="
-              . sprintf("%04o", S_IMODE($perms[2])));
-        return R('ERR_CANNOT_LOCK', msg => "Couldn't create lock file, please retry");
+    elsif ($category eq 'groupacl') {
+        $lockdir       = $params{'basepath'};
+        $lockdircreate = 0;                     # must already exist
+        if (!$lockdir || !-d $lockdir || !-w $lockdir) {
+            return R('ERR_INVALID_PARAMETER',
+                msg => "Missing or invalid basepath '" . ($lockdir // '<u>') . "' in get_lock_fh");
+        }
+        # we use the .db suffix because it's already excluded from the cluster sync:
+        $lockfile = "$lockdir/lock.db";
+    }
+    else {
+        return R('ERR_INVALID_PARAMETER', msg => "Unknown category '$category' in get_lock_fh");
+    }
+
+    my $fh;
+
+    if ($lockdircreate) {
+        # to avoid symlink attacks, we first create a subdir only accessible by root
+        unlink $lockdir;    # will silently fail if doesn't exist or is not a file
+        mkdir $lockdir;     # will silently fail if we lost the race
+        chown 0, 0, $lockdir;
+        chmod 0700, $lockdir;
+
+        # now, check if we do have a directory, or if we lost the race
+        if (!-d $lockdir) {
+            warn_syslog("Couldn't create $lockdir: are we being raced against?");
+            return R('ERR_CANNOT_LOCK', msg => "Couldn't create lock file, please retry");
+        }
+        # here, $lockdir is guaranteed to be a directory, check its perms
+        my @perms = stat($lockdir);
+        if ($perms[4] != $< || $perms[5] != $( || S_IMODE($perms[2]) != oct(700)) {
+            warn_syslog("The $lockdir directory has invalid perms: are we being raced against? mode="
+                  . sprintf("%04o", S_IMODE($perms[2])));
+            return R('ERR_CANNOT_LOCK', msg => "Couldn't create lock file, please retry");
+        }
     }
 
     # here, $lockdir is guaranteed to be owned only by us. but rogue files

@@ -77,6 +77,13 @@ if (!$data || ref $data ne 'ARRAY') {
     HEXIT('ERR_INVALID_ARGUMENT', msg => "Invalid JSON import format sent by the plugin");
 }
 
+# take a lock here, to block other group ACL modifying commands for this group until we're done.
+$fnret = OVH::Bastion::Helper::get_lock_fh(category => "groupacl", basepath => "/home/$group");
+$fnret or HEXIT($fnret);
+my $lock_fh = $fnret->value;
+$fnret = OVH::Bastion::Helper::acquire_lock($lock_fh);
+$fnret or HEXIT($fnret);
+
 $fnret = OVH::Bastion::access_modify(
     way    => 'group',
     action => 'clear',

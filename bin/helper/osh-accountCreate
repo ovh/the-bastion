@@ -69,7 +69,9 @@ if (not grep { $type eq $_ } qw{ normal realm }) {
 # take a lock here, do it before checking for account existence,
 # because another parallel creation of the same account might be
 # occuring, in which case we'd still hit a race condition
-$fnret = OVH::Bastion::Helper::get_lock_fh();
+# additionally, the lock type "passwd" is used by all helpers
+# that may modify /etc/passwd or /etc/group.
+$fnret = OVH::Bastion::Helper::get_lock_fh(category => "passwd");
 $fnret or HEXIT($fnret);
 my $lock_fh = $fnret->value;
 $fnret = OVH::Bastion::Helper::acquire_lock($lock_fh);
