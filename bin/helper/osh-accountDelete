@@ -238,6 +238,15 @@ if (-d $fulldir) {
 }
 osh_info("Backup done");
 
+# take a lock here, as we're going to remove system accounts and groups.
+# additionally, the lock type "passwd" is used by all helpers
+# that may modify /etc/passwd or /etc/group.
+$fnret = OVH::Bastion::Helper::get_lock_fh(category => "passwd");
+$fnret or HEXIT($fnret);
+my $lock_fh = $fnret->value;
+$fnret = OVH::Bastion::Helper::acquire_lock($lock_fh);
+$fnret or HEXIT($fnret);
+
 osh_info "Removing '$account' group membership from 'keyreader' user";
 $fnret = OVH::Bastion::sys_delmemberfromgroup(user => "keyreader", group => $account);
 if (!$fnret) {
