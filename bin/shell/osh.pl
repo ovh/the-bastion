@@ -1570,6 +1570,10 @@ push @details_json, @previous_bastion_details if @previous_bastion_details;
 # then convert to json:
 $ENV{'LC_BASTION_DETAILS'} = encode_json(\@details_json);
 
+# make sure $home/tmp exists, as it might be used for egress ssh connection multiplexing.
+# just attempt to create it instead of check+create, as it's not faster to do otherwise.
+mkdir "$home/tmp", 0700;
+
 # here is a nice hack to drastically improve the memory footprint of a
 # heavily used bastion. we exec() another script that is way lighter, see
 # comments in the connect.pl file for more information.

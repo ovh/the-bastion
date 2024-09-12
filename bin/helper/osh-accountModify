@@ -398,6 +398,50 @@ foreach my $tuple (@modify) {
             }
         }
     }
+    elsif ($key eq 'egress-session-multiplexing') {
+        osh_info "Changing the egress ControlMaster/ControlPath options for this account...";
+        my $controlPath;
+        my $controlMaster;
+        if ($value eq 'default') {
+            # keep both vars undef, which will remove them from the account config file
+            ;
+        }
+        elsif ($value eq 'yes') {
+            $controlMaster = 'auto';
+            # '~' is handled by ssh_config as the account's home directory
+            # '%C' is a hash of local hostname, remote host, remote user, remote port
+            $controlPath = "~/tmp/ssh_egress_%C";
+        }
+        elsif ($value eq 'no') {
+            # never create a master connection
+            $controlMaster = 'no';
+            # 'none' is understood specifically for ssh_config as 'never try to use a master connection'
+            $controlPath = 'none';
+        }
+        else {
+            osh_warn "Invalid parameter '$value', skipping";
+            $result{$jsonkey} = R('ERR_INVALID_PARAMETER');
+        }
+        $fnret = OVH::Bastion::account_ssh_config_set(
+            account => $account,
+            key     => "ControlMaster",
+            value   => $controlMaster,
+        );
+        if ($fnret) {
+            $fnret = OVH::Bastion::account_ssh_config_set(
+                account => $account,
+                key     => "ControlPath",
+                value   => $controlPath,
+            );
+        }
+        $result{$jsonkey} = $fnret;
+        if ($fnret) {
+            osh_info "... modification done";
+        }
+        else {
+            osh_warn "... error while setting policy: $fnret";
+        }
+    }
     elsif ($key eq 'personal-egress-mfa-required') {
         osh_info
           "Changing the MFA policy for egress connections using the personal access (and keys) of the account...";

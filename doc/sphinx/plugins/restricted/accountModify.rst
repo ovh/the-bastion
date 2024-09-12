@@ -46,6 +46,13 @@ Modify an account configuration
                                                This effectively suppress the host key checking entirely. Please don't enable this blindly.
                                                'default' will remove this account's ``StrictHostKeyChecking`` setting override.
                                                All the other policies carry the same meaning that what is documented in `man ssh_config`.
+.. option:: --egress-session-multiplexing POLICY
+
+   Modify the egress SSH behavior of this account regarding ``ControlMaster`` and ``ControlPath``. POLICY can be:
+
+                                               'yes', setting ``ControlMaster`` to 'auto' and setting ``ControlPath`` properly for session sharing,
+                                               'no', setting ``ControlMaster`` to 'no' and ``ControlPath`` to 'none',
+                                               'default', removing this account ``ControlMaster`` and ``ControlPath`` overrides altogether.
 .. option:: --personal-egress-mfa-required POLICY
 
    Enforce UNIX password requirement, or TOTP requirement, or any MFA requirement, when connecting to a server

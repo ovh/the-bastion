@@ -19,6 +19,7 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
         "pam-auth-bypass=s"                 => \$modify{'pam-auth-bypass'},
         "always-active=s"                   => \$modify{'always-active'},
         "egress-strict-host-key-checking=s" => \$modify{'egress-strict-host-key-checking'},
+        "egress-session-multiplexing=s"     => \$modify{'egress-session-multiplexing'},
         "personal-egress-mfa-required=s"    => \$modify{'personal-egress-mfa-required'},
         "idle-ignore=s"                     => \$modify{'idle-ignore'},
         "max-inactive-days=i"               => \$modify{'max-inactive-days'},
@@ -47,6 +48,10 @@ Usage: --osh SCRIPT_NAME --account ACCOUNT [--option value [--option value [...]
                                                This effectively suppress the host key checking entirely. Please don't enable this blindly.
                                                'default' will remove this account's ``StrictHostKeyChecking`` setting override.
                                                All the other policies carry the same meaning that what is documented in `man ssh_config`.
+  --egress-session-multiplexing POLICY       Modify the egress SSH behavior of this account regarding ``ControlMaster`` and ``ControlPath``. POLICY can be:
+                                               'yes', setting ``ControlMaster`` to 'auto' and setting ``ControlPath`` properly for session sharing,
+                                               'no', setting ``ControlMaster`` to 'no' and ``ControlPath`` to 'none',
+                                               'default', removing this account ``ControlMaster`` and ``ControlPath`` overrides altogether.
   --personal-egress-mfa-required POLICY      Enforce UNIX password requirement, or TOTP requirement, or any MFA requirement, when connecting to a server
                                                using the personal keys of the account, POLICY can be 'password', 'totp', 'any' or 'none'
   --always-active yes|no                     Set or unset the account as always active (i.e. disable the check of the 'active' status on this account)
@@ -109,6 +114,12 @@ if ($modify{'personal-egress-mfa-required'} && !grep { $modify{'personal-egress-
     help();
     osh_exit 'ERR_INVALID_PARAMETER',
       "Expected option 'password', 'totp', 'any', 'none' to --personal-egress-mfa-required";
+}
+if ($modify{'egress-session-multiplexing'} && !grep { $modify{'egress-session-multiplexing'} eq $_ }
+    qw{ yes no default })
+{
+    help();
+    osh_exit 'ERR_INVALID_PARAMETER', "Expected option 'yes', 'no' or 'default' --egress-session-multiplexing";
 }
 if ($modify{'max-inactive-days'} && $modify{'max-inactive-days'} !~ /^(?:\d+|-1)$/) {
     help();

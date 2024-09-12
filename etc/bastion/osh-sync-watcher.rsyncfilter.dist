@@ -35,6 +35,7 @@
 - /home/*/*.log
 - /home/*/*.gz
 - /home/*/lastlog
+- /home/*/tmp/
 - /home/*/.ssh/known_hosts
 
 + /home/*/***
