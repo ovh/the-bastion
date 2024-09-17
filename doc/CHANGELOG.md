@@ -1,3 +1,12 @@
+## v3.16.99-rc2 - 2024/09/17
+feat: add rsync support through the ``--protocol rsync`` option in all plugins
+feat: add ``--egress-session-multiplexing`` option to ``accountModify``
+feat: add ``groupSetServers`` to entirely change a group ACL in one shot
+enh: add lock for group ACL change to avoid race conditions on busy bastions
+enh: ``selfPlaySession``: remove sqliteLog.ttyrecfile dependency
+chore: FreeBSD: ignore OS version mismatch with packages
+chore: ``selfMFASetupPassword``: clearer message
+
 ## v3.16.99-rc1 - 2024/07/04
 feat: support wildcards in --user for ACL management plugins (fix #461)
 feat: accountFreeze: terminate running sessions if any
