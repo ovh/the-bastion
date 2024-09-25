@@ -67,12 +67,13 @@ OVH::Bastion::load_configuration(
 my $fnret;
 
 $fnret = OVH::Bastion::build_ttyrec_cmdline(
-    ip      => "127.0.0.1",
-    port    => 7979,
-    user    => "randomuser",
-    account => "bastionuser",
-    uniqid  => 'cafed00dcafe',
-    home    => "/home/randomuser",
+    ip             => "127.0.0.1",
+    port           => 7979,
+    user           => "randomuser",
+    account        => "bastionuser",
+    uniqid         => 'cafed00dcafe',
+    home           => "/home/randomuser",
+    stealth_stdout => 1,
 );
 cmp_deeply(
     $fnret->value->{'saveFile'},
@@ -95,6 +96,7 @@ cmp_deeply(
         "To unlock, use '--osh unlock' from another console",
         '-k',
         29,
+        '--stealth-stdout',
     ],
     "build_ttyrec_cmdline cmd"
 );
@@ -129,6 +131,7 @@ $fnret = OVH::Bastion::build_ttyrec_cmdline_part2of2(
     input           => $fnret->value,
     idleKillTimeout => 88,
     idleLockTimeout => 99,
+    stealth_stderr  => 1,
 );
 cmp_deeply(
     $fnret->value->{'saveFile'},
@@ -151,6 +154,7 @@ cmp_deeply(
         "To unlock, use '--osh unlock' from another console",
         '-k',
         88,
+        '--stealth-stderr',
     ],
     "build_ttyrec_cmdline_part2of2 cmd"
 );

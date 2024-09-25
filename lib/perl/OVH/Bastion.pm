@@ -1081,19 +1081,25 @@ sub get_passfile {
         msg => "Unable to find (or read) a password file in context '$context' and name '$nameHint'");
 }
 
+# build the ttyrec cmdline in one shot if our caller has all the required info
 sub build_ttyrec_cmdline {
     my %params = @_;
     my $fnret  = build_ttyrec_cmdline_part1of2(%params);
     $fnret or return $fnret;
 
-    # for this simple version, use global timeout values if not specified in %params
+    # for this simple version, use global idle*Timeout values if not specified in %params
     return build_ttyrec_cmdline_part2of2(
         input           => $fnret->value,
         idleLockTimeout => ($params{'idleLockTimeout'} // OVH::Bastion::config("idleLockTimeout")->value),
-        idleKillTimeout => ($params{'idleKillTimeout'} // OVH::Bastion::config("idleKillTimeout")->value)
+        idleKillTimeout => ($params{'idleKillTimeout'} // OVH::Bastion::config("idleKillTimeout")->value),
+        stealth_stdout  => ($params{'stealth_stdout'}),
+        stealth_stderr  => ($params{'stealth_stderr'}),
     );
 }
 
+# if our caller doesn't have all the required info to build the entire cmdline,
+# they can do it in two times, part1of2 does return the saveFile that they might
+# need before calling part2of2
 sub build_ttyrec_cmdline_part1of2 {
     my %params = @_;
 
@@ -1150,8 +1156,6 @@ sub build_ttyrec_cmdline_part1of2 {
     push @ttyrec, '-v' if $params{'debug'};
     push @ttyrec, '-T', 'always' if $params{'tty'};
     push @ttyrec, '-T', 'never'  if $params{'notty'};
-    push @ttyrec, '--stealth-stdout' if $params{'stealth_stdout'};
-    push @ttyrec, '--stealth-stderr' if $params{'stealth_stderr'};
 
     my $fnret = OVH::Bastion::account_config(
         account => $params{'account'},
@@ -1202,6 +1206,10 @@ sub build_ttyrec_cmdline_part2of2 {
             push @cmd, '--warn-before-kill', $warnBeforeKillSeconds if $warnBeforeKillSeconds;
         }
     }
+
+    # do it here because we have this info at a late stage (i.e. not during part1of2)
+    push @cmd, '--stealth-stdout' if $params{'stealth_stdout'};
+    push @cmd, '--stealth-stderr' if $params{'stealth_stderr'};
 
     my $ttyrecAdditionalParameters = OVH::Bastion::config('ttyrecAdditionalParameters')->value;
     push @cmd, @$ttyrecAdditionalParameters if @$ttyrecAdditionalParameters;
