@@ -27,7 +27,7 @@ See the ``--help`` for a more fine-grained upgrade path if needed.
 Version-specific upgrade instructions
 =====================================
 
-v3.16.99-rc2 - 2024/09/17
+v3.16.99-rc3 - 2024/09/25
 *************************
 
 This release drops support for Ubuntu 16.04 and CentOS 7. If you're still using these EOL OS releases (which is

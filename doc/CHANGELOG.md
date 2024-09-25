@@ -1,3 +1,6 @@
+## v3.16.99-rc3 - 2024/09/25
+fix: regression introduced by 932e72e (rc1) for stealth stdout in ssh
+
 ## v3.16.99-rc2 - 2024/09/17
 feat: add rsync support through the ``--protocol rsync`` option in all plugins
 feat: add ``--egress-session-multiplexing`` option to ``accountModify``
