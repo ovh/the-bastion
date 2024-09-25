@@ -112,7 +112,7 @@ elif echo "$DISTRO_LIKE" | grep -q -w rhel; then
 elif echo "$DISTRO_LIKE" | grep -q -w suse; then
     wanted_list="perl-common-sense perl-JSON perl-Net-Netmask perl-Net-IP \
             perl-Net-DNS perl-DBD-SQLite perl-Term-ReadKey perl-DateTime \
-            fortune sudo fping perl perl-base gzip \
+            fortune sudo fping perl perl-base gzip procps \
             xz sqlite3 binutils acl gpg2 rsync \
             perl-JSON-XS inotify-tools lsof curl perl-TermReadLine-Gnu \
             perl-libwww-perl perl-Digest perl-IO-Socket-SSL \
