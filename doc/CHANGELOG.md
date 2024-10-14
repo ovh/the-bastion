@@ -1,3 +1,7 @@
+## v3.17.00 - 2024/10/14
+fix: osh.pl: propagate signals to plugins before exiting
+fix: opensuse: add procps package (for pkill)
+
 ## v3.16.99-rc3 - 2024/09/25
 fix: regression introduced by 932e72e (rc1) for stealth stdout in ssh
 

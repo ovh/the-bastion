@@ -27,8 +27,8 @@ See the ``--help`` for a more fine-grained upgrade path if needed.
 Version-specific upgrade instructions
 =====================================
 
-v3.16.99-rc3 - 2024/09/25
-*************************
+v3.17.00 - 2024/10/14
+*********************
 
 This release drops support for Ubuntu 16.04 and CentOS 7. If you're still using these EOL OS releases (which is
 obviously discouraged), proper functioning of The Bastion is no longer tested or guaranteed.

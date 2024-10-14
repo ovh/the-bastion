@@ -105,7 +105,7 @@ for f in $(git diff --cached --name-only --diff-filter=ACM $against); do
 done
 
 # check versions and docs
-ver=$(grep -E '^our \$VERSION = .[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?.;$' lib/perl/OVH/Bastion.pm | cut -d"'" -f2)
+ver=$(grep -Eo '^our \$VERSION = .[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?' lib/perl/OVH/Bastion.pm | cut -d"'" -f2)
 if ! grep -Eq "^## v$ver - 202./[01][0-9]/.." doc/CHANGELOG.md; then
     echo
     echo "ERROR: detected version '$ver', but no matching entry in doc/CHANGELOG.md"
