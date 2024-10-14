@@ -1612,6 +1612,9 @@ sub exit_sig {
             signal    => $sig,
         );
     }
+    # ensure the signal is propagated to our progress group, then exit
+    $SIG{$sig} = 'IGNORE';
+    kill $sig, 0;
     exit OVH::Bastion::EXIT_OK;
 }
 
