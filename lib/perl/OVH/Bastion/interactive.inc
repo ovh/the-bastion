@@ -204,11 +204,20 @@ EOM
             exit 1;    # normally not reached
         }
     );
+    # handle ^C to clear the current prompt
+    POSIX::sigaction POSIX::SIGINT, POSIX::SigAction->new(
+        sub {
+            print "\n";              # ensure we are on a new line
+            $term->on_new_line();    # print the prompt
+            $term->replace_line("", 0);    # clear the previous text
+            $term->redisplay();
+        }
+    );
 
     my $BASTION_USER = OVH::Bastion::get_user_from_env()->value;
     alarm($interactiveModeTimeout);
     while (defined(my $line = $term->readline(_get_prompt($self, $bastionName, $slaveOrMaster)))) {
-        alarm(0);      # disable timeout
+        alarm(0);                          # disable timeout
         $line =~ s/^\s+|\s+$//g;
 
         # disable proactive MFA if it has expired. Even if the user just typed "enter" with no command.
