@@ -1612,9 +1612,13 @@ sub exit_sig {
             signal    => $sig,
         );
     }
-    # ensure the signal is propagated to our progress group, then exit
-    $SIG{$sig} = 'IGNORE';
-    kill $sig, 0;
+    # ensure the signal is propagated to our progress group, then exit.
+    # this func is also called as the timeoutHandler of interactive mode,
+    # and in this case $sig == 'TIMEOUT', which is not a real signal
+    if ($sig ne 'TIMEOUT') {
+        $SIG{$sig} = 'IGNORE';
+        kill $sig, 0;
+    }
     exit OVH::Bastion::EXIT_OK;
 }
 
