@@ -1,32 +1,39 @@
+## v3.17.01 - 2024/10/23
+- enh: interactive: handle CTRL+C nicely (fix #497)
+- fix: osh.pl: remove a warning on interactive mode timeout
+- fix: allow ssh-as in connect.pl
+- chore: fix bad scpup/scpupload scp/scpdownload references in help and doc
+- chore: change pod cuts to make recent versions of perltidy happy
+
 ## v3.17.00 - 2024/10/14
-fix: osh.pl: propagate signals to plugins before exiting
-fix: opensuse: add procps package (for pkill)
+- fix: osh.pl: propagate signals to plugins before exiting
+- fix: opensuse: add procps package (for pkill)
 
 ## v3.16.99-rc3 - 2024/09/25
-fix: regression introduced by 932e72e (rc1) for stealth stdout in ssh
+- fix: regression introduced by 932e72e (rc1) for stealth stdout in ssh
 
 ## v3.16.99-rc2 - 2024/09/17
-feat: add rsync support through the ``--protocol rsync`` option in all plugins
-feat: add ``--egress-session-multiplexing`` option to ``accountModify``
-feat: add ``groupSetServers`` to entirely change a group ACL in one shot
-enh: add lock for group ACL change to avoid race conditions on busy bastions
-enh: ``selfPlaySession``: remove sqliteLog.ttyrecfile dependency
-chore: FreeBSD: ignore OS version mismatch with packages
-chore: ``selfMFASetupPassword``: clearer message
+- feat: add rsync support through the ``--protocol rsync`` option in all plugins
+- feat: add ``--egress-session-multiplexing`` option to ``accountModify``
+- feat: add ``groupSetServers`` to entirely change a group ACL in one shot
+- enh: add lock for group ACL change to avoid race conditions on busy bastions
+- enh: ``selfPlaySession``: remove sqliteLog.ttyrecfile dependency
+- chore: FreeBSD: ignore OS version mismatch with packages
+- chore: ``selfMFASetupPassword``: clearer message
 
 ## v3.16.99-rc1 - 2024/07/04
-feat: support wildcards in --user for ACL management plugins (fix #461)
-feat: accountFreeze: terminate running sessions if any
-chg: support: add Ubuntu 24.04 LTS
-chg: support: bump OpenSUSE Leap from 15.5 to 15.6
-chg: support: remove CentOS 7 (EOL)
-chg: support: remove Ubuntu 16.04 LTS (EOL)
-enh: enable sntrup KEX by default for supported OpenSSH versions (Debian12, Ubuntu20+)
-enh: autologin: set term to ``raw noecho`` when --no-tty is used
-fix: stealth\_stdout/stderr was ignored for plugins (fix #482)
-fix: ignore transient errors during global destruction
-fix: install of ttyrec was failing under FreeBSD 13.2
-fix: selfGenerateProxyPassword: help message was incorrect
+- feat: support wildcards in --user for ACL management plugins (fix #461)
+- feat: accountFreeze: terminate running sessions if any
+- chg: support: add Ubuntu 24.04 LTS
+- chg: support: bump OpenSUSE Leap from 15.5 to 15.6
+- chg: support: remove CentOS 7 (EOL)
+- chg: support: remove Ubuntu 16.04 LTS (EOL)
+- enh: enable sntrup KEX by default for supported OpenSSH versions (Debian12, Ubuntu20+)
+- enh: autologin: set term to ``raw noecho`` when --no-tty is used
+- fix: stealth\_stdout/stderr was ignored for plugins (fix #482)
+- fix: ignore transient errors during global destruction
+- fix: install of ttyrec was failing under FreeBSD 13.2
+- fix: selfGenerateProxyPassword: help message was incorrect
 
 ## v3.16.01 - 2024/04/17
 - enh: info: removed uname dependency, added configuration
