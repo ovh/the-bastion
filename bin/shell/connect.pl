@@ -84,12 +84,26 @@ if (open(my $fh, '<', "/proc/" . getppid() . '/cmdline')) {
     }
 
     # clush plugin
-    elsif ($pargv[1] =~ m{^/opt/bastion/bin/plugin/(open|restricted)/clush$}) {
+    elsif ($pargv[1] =~ m{/bin/plugin/(open|restricted)/clush$}) {
         ;    # we're being called by the clush plugin, ok
     }
 
     # interactive mode: our parent is osh.pl
-    elsif ($pargv[0] eq 'perl' and $pargv[1] eq '/opt/bastion/bin/shell/osh.pl') {
+    elsif ($pargv[0] eq 'perl' and $pargv[1] =~ m{/bin/shell/osh\.pl$}) {
+        ;    # we're being called by the interactive mode of osh.pl, ok
+    }
+
+    # --ssh-as
+    elsif ( @pargv == 10
+        and $pargv[0] eq 'sudo'
+        and $pargv[1] eq '-n'
+        and $pargv[2] eq '-u'
+        and $pargv[4] eq '--'
+        and $pargv[5] eq '/usr/bin/env'
+        and $pargv[6] eq 'perl'
+        and $pargv[7] =~ m{/bin/shell/osh\.pl$}
+        and $pargv[8] eq '-c')
+    {
         ;    # we're being called by the interactive mode of osh.pl, ok
     }
 
