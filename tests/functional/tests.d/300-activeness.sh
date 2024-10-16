@@ -40,6 +40,37 @@ testsuite_activeness()
     # for remaining tests, disable the feature
     configchg 's=^\\\\x22accountExternalValidationProgram\\\\x22.+=\\\\x22accountExternalValidationProgram\\\\x22:\\\\x22\\\\x22,='
 
+    # SSH-AS
+
+    grant accountAddPersonalAccess
+
+    # allow account1 to localhost, just so that ssh-as calls connect.pl (even if the connection doesn't make it through in the end)
+    success add_access_to_a1 $a0 --osh accountAddPersonalAccess --account $account2 --host 127.0.0.1 --user sshas --port 22
+
+    revoke accountAddPersonalAccess
+
+    # now, test ssh-as
+    run ssh_as_denied $a1 --ssh-as $account2 sshas@127.0.0.1
+    retvalshouldbe 106
+    json .error_code KO_SSHAS_DENIED
+
+    # set account1 as admin
+    success set_a1_as_admin $r0 "\". $opt_remote_basedir/lib/shell/functions.inc; add_user_to_group_compat $account1 osh-admin\""
+    configchg 's=^\\\\x22adminAccounts\\\\x22.+=\\\\x22adminAccounts\\\\x22:[\\\\x22'"$account0"'\\\\x22,\\\\x22'"$account1"'\\\\x22],='
+
+    # test ssh-as again
+    run ssh_as_allowed $a1 --ssh-as $account2 sshas@127.0.0.1
+    retvalshouldbe 255
+    contain "you'll now impersonate"
+    contain "Connecting..."
+    contain "Permission denied (publickey)"
+
+    # and finally remove admin grant
+    success del_a1_as_admin $r0 "\". $opt_remote_basedir/lib/shell/functions.inc; del_user_from_group_compat $account1 osh-admin\""
+    configchg 's=^\\\\x22adminAccounts\\\\x22.+=\\\\x22adminAccounts\\\\x22:[\\\\x22'"$account0"'\\\\x22],='
+
+    # /SSH-AS
+
     grant accountDelete
 
     # delete account1
