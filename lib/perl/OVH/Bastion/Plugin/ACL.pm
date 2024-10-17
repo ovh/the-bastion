@@ -27,7 +27,7 @@ sub check {
         }
         if (!grep { $protocol eq $_ } qw{ scpupload scpdownload sftp rsync }) {
             return R('ERR_INVALID_PARAMETER',
-                msg => "The protocol '$protocol' is not supported, expected either scpup, scpdown, sftp or rsync");
+                msg => "The protocol '$protocol' is not supported, expected either scpupload, scpdownload, sftp or rsync");
         }
     }
 

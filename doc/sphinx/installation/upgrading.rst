@@ -41,7 +41,7 @@ when using the ``--user`` option for plugins such as ``groupAddServer``, ``group
 ``selfDelPersonalAccess``.
 
 We also deprecate all the ``--sftp``, ``--scpdown``, ``--scpup`` options that are now replaced by a more generic
-``--protocol`` option, which supports ``sftp``, ``scpdown ``, ``scpup`` and now also ``rsync`` as parameters.
+``--protocol`` option, which supports ``sftp``, ``scpdownload``, ``scpupload`` and now also ``rsync`` as parameters.
 The use of rsync is similar to sftp and scp, and is detailed here: :doc:`/plugins/open/rsync`.
 
 Last but not least, the ``sntrup761x25519-sha512@openssh.com`` KEX algorithm is now enabled by default on shipped

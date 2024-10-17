@@ -83,13 +83,13 @@ To declare an SCP/SFTP/RSYNC access, in addition to a preexisting SSH access, yo
   if the SSH access is personal (tied to an account)
 
 In both cases, where you would use the ``--user`` option to the command, to specify the remote user to use for
-the SSH access being declared, you should replace it by either ``--protocol scpdown``, ``--protocol scpup``,
+the SSH access being declared, you should replace it by either ``--protocol scpdownload``, ``--protocol scpupload``,
 ``--protocol sftp`` or ``--protocol rsync``,
 to specify that you're about to add an SCP/SFTP/RSYNC access (and not a bare SSH one), and which direction you want
 to allow in the case of SCP.
 
-For SCP, you can allow both directions by using the command first with ``--protocol scpdown``,
-then with ``--protocol scpup``.
+For SCP, you can allow both directions by using the command first with ``--protocol scpdownload``,
+then with ``--protocol scpupload``.
 Note that for SFTP and RYSNC, you can't specify a direction, due to how these protocols work: you either have
 SFTP/RSYNC access (hence being able to upload and download files), or you don't.
 
