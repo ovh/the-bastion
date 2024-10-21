@@ -32,10 +32,10 @@ Add a personal server access to your account
                               must not specify --user in that case. However, for this protocol to be usable under a given
                               remote user, access to the USER@HOST:PORT tuple must also be allowed.
                               PROTO must be one of:
-                              scpup    allow SCP upload, you--bastion-->server
-                              scpdown  allow SCP download, you<--bastion--server
-                              sftp     allow usage of the SFTP subsystem, through the bastion
-                              rsync    allow usage of rsync, through the bastion
+                              scpupload    allow SCP upload, you--bastion-->server
+                              scpdownload  allow SCP download, you<--bastion--server
+                              sftp         allow usage of the SFTP subsystem, through the bastion
+                              rsync        allow usage of rsync, through the bastion
 .. option:: --force
 
    Add the access without checking that the public SSH key is properly installed remotely
