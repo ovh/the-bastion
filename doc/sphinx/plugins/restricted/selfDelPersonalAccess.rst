@@ -31,7 +31,7 @@ Remove a personal server access from your account
 
                               must not specify --user in that case.
                               PROTO must be one of:
-                              scpup    allow SCP upload, you--bastion-->server
-                              scpdown  allow SCP download, you<--bastion--server
-                              sftp     allow usage of the SFTP subsystem, through the bastion
-                              rsync    allow usage of rsync, through the bastion
+                              scpupload    allow SCP upload, you--bastion-->server
+                              scpdownload  allow SCP download, you<--bastion--server
+                              sftp         allow usage of the SFTP subsystem, through the bastion
+                              rsync        allow usage of rsync, through the bastion
