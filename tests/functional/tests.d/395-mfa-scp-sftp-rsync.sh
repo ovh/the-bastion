@@ -125,7 +125,7 @@ EOF
     # scp
 
     success personal_scp_add_ssh_access $a0 --osh selfAddPersonalAccess -h 127.0.0.2 -u $shellaccount -p 22 --kbd-interactive
-    success personal_scp_add_scpup_access $a0 --osh selfAddPersonalAccess --host 127.0.0.2 --scpup --port 22
+    success personal_scp_add_scpup_access $a0 --osh selfAddPersonalAccess --host 127.0.0.2 --protocol scpupload --port 22
 
     sleepafter 2
     run personal_scp_download_oldhelper_mustfail scp $scp_options -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file $shellaccount@127.0.0.2:uptest /tmp/downloaded
@@ -136,7 +136,7 @@ EOF
     retvalshouldbe 1
     contain "Sorry, you have ssh access to"
 
-    success personal_scp_add_scpdown_access $a0 --osh selfAddPersonalAccess --host 127.0.0.2 --scpdown --port 22
+    success personal_scp_add_scpdown_access $a0 --osh selfAddPersonalAccess --host 127.0.0.2 --protocol scpdownload --port 22
 
     sleepafter 2
     run personal_scp_download_oldhelper_badfile scp $scp_options -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file $shellaccount@127.0.0.2:uptest /tmp/downloaded
@@ -177,8 +177,8 @@ EOF
     contain "through the bastion from"
     contain "Done,"
 
-    success personal_scp_del_scpup_access $a0 --osh selfDelPersonalAccess --host 127.0.0.2 --scpup   --port 22
-    success personal_scp_del_scpdown_access $a0 --osh selfDelPersonalAccess --host 127.0.0.2 --scpdown --port 22
+    success personal_scp_del_scpup_access $a0 --osh selfDelPersonalAccess --host 127.0.0.2 --protocol scpupload --port 22
+    success personal_scp_del_scpdown_access $a0 --osh selfDelPersonalAccess --host 127.0.0.2 --protocol scpdownload --port 22
 
     # sftp
 
@@ -208,7 +208,7 @@ EOF
     contain 'sftp> exit'
     contain '>>> Done,'
 
-    success personal_sftp_del_sftp_access $a0 --osh selfDelPersonalAccess --host 127.0.0.2 --sftp --port 22
+    success personal_sftp_del_sftp_access $a0 --osh selfDelPersonalAccess --host 127.0.0.2 --protocol sftp --port 22
 
     # rsync
 
@@ -264,7 +264,7 @@ EOF
     contain 'need to be granted specifically for scpupload'
     nocontain '>>> Done'
 
-    success groupssh_groupprotocol_scp_add_scpup_access $a0 --osh groupAddServer --group $group1 --host 127.0.0.2 --scpup --port 22
+    success groupssh_groupprotocol_scp_add_scpup_access $a0 --osh groupAddServer --group $group1 --host 127.0.0.2 --protocol scpupload --port 22
 
     success groupssh_groupprotocol_scp_upload_ok /tmp/scpwrapper -i $account0key1file /etc/passwd $shellaccount@127.0.0.2:
     contain 'MFA_TOKEN=notrequired'
@@ -277,7 +277,7 @@ EOF
     contain 'need to be granted specifically for scpdownload'
     nocontain '>>> Done'
 
-    success groupssh_groupprotocol_scp_del_scpup_access $a0 --osh groupDelServer --group $group1 --host 127.0.0.2 --scpup --port 22
+    success groupssh_groupprotocol_scp_del_scpup_access $a0 --osh groupDelServer --group $group1 --host 127.0.0.2 --protocol scpupload --port 22
 
     # sftp
 
