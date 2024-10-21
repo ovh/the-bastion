@@ -258,8 +258,8 @@ For example:
 
 Please note that you need to be granted for uploading or downloading files
 with scp to/from the remote host, in addition to having the right to SSH to it.
-For a group, the right should be added with --scpup/--scpdown of the groupAddServer command.
-For a personal access, the right should be added with --scpup/--scpdown of the selfAddPersonalAccess command.
+For a group, the right should be added with --protocol scpupload/--protocol scpdownload of the groupAddServer command.
+For a personal access, the right should be added with --protocol scpupload/--protocol scpdownload of the selfAddPersonalAccess command.
 EOF
     osh_ok({script => $base64, "content-encoding" => 'base64-gzip'});
     return 0;
