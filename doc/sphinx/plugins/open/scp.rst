@@ -26,7 +26,7 @@ Or to recursively download a folder contents::
 
 Please note that you need to be granted for uploading or downloading files
 with scp to/from the remote host, in addition to having the right to SSH to it.
-For a group, the right should be added with ``--scpup``/``--scpdown`` of the :doc:`/plugins/group-aclkeeper/groupAddServer` command.
-For a personal access, the right should be added with ``--scpup``/``--scpdown`` of the :doc:`/plugins/restricted/selfAddPersonalAccess` command.
+For a group, the right should be added with ``--protocol scpupload``/``--protocol scpdownload`` of the :doc:`/plugins/group-aclkeeper/groupAddServer` command.
+For a personal access, the right should be added with ``--protocol scpupload``/``--protocol scpdownload`` of the :doc:`/plugins/restricted/selfAddPersonalAccess` command.
 
 You'll find more information and examples in :doc:`/using/sftp_scp_rsync`.
