@@ -1973,7 +1973,8 @@ sub do_plugin_jit_mfa {
 #
 sub help {
 
-=cut just to debug memory fingerprint
+=begin comment
+    # pod just to debug memory fingerprint
     use Devel::Size qw[total_size]; # pragma optional module
     my %siz;
     foreach (keys %::main::main::)
@@ -1985,6 +1986,7 @@ sub help {
         printf "%9d: %s\n", $_, join(' ', @{$siz{$_}});
     }
     exit OVH::Bastion::EXIT_OK;
+=end comment
 =cut
 
     print STDERR <<"EOF" ;
