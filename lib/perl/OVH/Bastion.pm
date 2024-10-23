@@ -394,12 +394,14 @@ sub is_account_active {
         return R('ERR_INTERNAL', msg => "The account activeness check program failed. Report this to sysadmin!");
     }
 
-=cut exit code meanings are as follows:
+=begin comment
+    # exit code meanings are as follows:
     EXIT_ACTIVE                => 0,
     EXIT_INACTIVE              => 1,
     EXIT_UNKNOWN               => 2,
     EXIT_UNKNOWN_SILENT_ERROR  => 3,
     EXIT_UNKNOWN_NOISY_ERROR   => 4,
+=end comment
 =cut
 
     if ($fnret->value->{'status'} == 0) {

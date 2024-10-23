@@ -47,7 +47,8 @@ sub new {                 ## no critic (ArgUnpacking)
 
 sub R { return OVH::Result->new(err => shift, @_); }
 
-=cut uncomment for result tracing
+=begin comment
+# uncomment for result tracing
 sub R {
     my ($package, $filename, $line) = caller(0);
     my (undef,undef,undef,$sub)     = caller(1);
@@ -56,6 +57,7 @@ sub R {
     print "R[err=$err msg=".$params{'msg'}."] sub=$sub in $filename:$line\n";
     return OVH::Result->new(err => $err, %params);
 }
+=end comment
 =cut
 
 sub err   { return shift->{'err'} }
