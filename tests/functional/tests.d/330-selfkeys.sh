@@ -11,7 +11,7 @@ _ingress_from_test()
 {
     local testname="$1" ip1="$2" ip2="$3" keytoadd="$4" fingerprint="$5"
 
-    script $testname "echo '$keytoadd' | $a1 --osh selfAddIngressKey"
+    script ${testname}_addkey "echo '$keytoadd' | $a1 --osh selfAddIngressKey"
     retvalshouldbe 0
     json .value.connect_only_from[0] $ip1
     json .value.connect_only_from[1] $ip2
@@ -23,7 +23,7 @@ _ingress_from_test()
         json .value.key.prefix "from=\"$ip1,$ip2\""
     fi
 
-    success $testname $a1 --osh selfListIngressKeys
+    success ${testname}_listkeys $a1 --osh selfListIngressKeys
     json .value.keys[1].from_list[0] $ip1
     json .value.keys[1].from_list[1] $ip2
     if [ "$ip1" = null ] && [ "$ip2" = null ]; then
@@ -32,18 +32,13 @@ _ingress_from_test()
         json .value.keys[1].prefix "from=\"$ip1,$ip2\""
     fi
 
-    success $testname $a1 --osh selfDelIngressKey -f "$fingerprint"
+    success ${testname}_delkey $a1 --osh selfDelIngressKey -f "$fingerprint"
 
     # now on account creation
-    grant accountCreate
-
-    script $testname "echo '$keytoadd' | $a0 --osh accountCreate --account $account2 --uid $uid2"
+    script ${testname}_create_a2 "echo '$keytoadd' | $a0 --osh accountCreate --account $account2 --uid $uid2"
     json .error_code OK .command accountCreate .value null
 
-    revoke accountCreate
-    grant accountListIngressKeys
-
-    success $testname $a0 --osh accountListIngressKeys --account $account2
+    success ${testname}_listkeys_a2 $a0 --osh accountListIngressKeys --account $account2
     json .value.keys[0].from_list[0] $ip1
     json .value.keys[0].from_list[1] $ip2
     if [ "$ip1" = null ] && [ "$ip2" = null ]; then
@@ -52,14 +47,10 @@ _ingress_from_test()
         json .value.keys[0].prefix "from=\"$ip1,$ip2\""
     fi
 
-    revoke accountListIngressKeys
-    grant accountDelete
-
-    script $testname "$a0 --osh accountDelete --account $account2" "<<< \"Yes, do as I say and delete $account2, kthxbye\""
+    script ${testname}_delete_a2 "$a0 --osh accountDelete --account $account2" "<<< \"Yes, do as I say and delete $account2, kthxbye\""
     retvalshouldbe 0
     json .error_code OK .command accountDelete
 
-    revoke accountDelete
 }
 
 testsuite_selfkeys()
@@ -643,6 +634,10 @@ EOS
 EOS
     )
 
+    grant accountCreate
+    grant accountListIngressKeys
+    grant accountDelete
+
     # ingresskeysfrom=0.0.0.0/0,255.255.255.255, allowoverride=1, noFrom
     configchg 's=^\\\\x22ingressKeysFromAllowOverride\\\\x22.+=\\\\x22ingressKeysFromAllowOverride\\\\x22:1,='
     configchg 's=^\\\\x22ingressKeysFrom\\\\x22:.+=\\\\x22ingressKeysFrom\\\\x22:\\\\x5B\\\\x220.0.0.0/0\\\\x22,\\\\x22255.255.255.255\\\\x22\\\\x5D,='
@@ -673,8 +668,10 @@ EOS
     # ingresskeysfrom=empty allowoverride=0, withFrom
     _ingress_from_test fromTest8 null null "from=\"1.2.3.4,5.6.7.8\" $(< $account1key2file.pub)" "$account1key2fp"
 
+    revoke accountCreate
+    revoke accountListIngressKeys
+
     # delete account1
-    grant accountDelete
     script cleanup $a0 --osh accountDelete --account $account1 "<<< \"Yes, do as I say and delete $account1, kthxbye\""
     retvalshouldbe 0
     revoke accountDelete
