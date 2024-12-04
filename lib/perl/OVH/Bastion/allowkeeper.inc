@@ -911,9 +911,19 @@ sub get_realm_list {
             cache       => 1
           );
 
+        my $entry = $fnret->value->{$name};
+
         # add proper realms
-        $name =~ s{^realm_}{};
-        $users{$name} = {name => $name};
+        my $realmName = $entry->{'name'};
+        $realmName =~ s{^realm_}{};
+        $users{$realmName} = {
+            sysaccount => $name,
+            name       => $realmName,
+            gid        => $entry->{'gid'},
+            home       => $entry->{'dir'},
+            shell      => $entry->{'shell'},
+            uid        => $entry->{'uid'},
+        };
     }
 
     return R('OK', value => \%users);

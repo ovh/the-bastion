@@ -1,0 +1,119 @@
+#! /usr/bin/perl -T
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+# NEEDGROUP osh-assetForgetHostKey
+# SUDOERS %osh-assetForgetHostKey ALL=(root) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-assetForgetHostKey *
+# FILEMODE 0700
+# FILEOWN 0 0
+
+#>HEADER
+use common::sense;
+use Getopt::Long qw(:config no_auto_abbrev no_ignore_case);
+use DateTime;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Helper;
+
+# Fetch command options
+my $fnret;
+my ($result, @optwarns);
+my ($ip,     $port);
+eval {
+    local $SIG{__WARN__} = sub { push @optwarns, shift };
+    $result = GetOptions(
+        "ip=s"   => sub { $ip   //= $_[1] },
+        "port=i" => sub { $port //= $_[1] },
+    );
+};
+if ($@) { die $@ }
+
+if (!$result) {
+    local $" = ", ";
+    HEXIT('ERR_BAD_OPTIONS', msg => "Error parsing options: @optwarns");
+}
+
+OVH::Bastion::Helper::check_spurious_args();
+
+if (not $ip or not $port) {
+    HEXIT('ERR_MISSING_PARAMETER', msg => "Missing argument 'ip' or 'port'");
+}
+
+#<HEADER
+
+#>CODE
+
+# Build the regex we'll be looking for.
+my $re;
+if ($port == 22) {
+    # format is "IP ssh-..."
+    $re = qr/^\Q$ip ssh-\E/m;
+}
+else {
+    # format is "[IP]:port ssh-..."
+    $re = qr/^\Q[$ip]:$port ssh-\E/m;
+}
+
+# First, get all bastion accounts, including realm sysaccounts
+$fnret = OVH::Bastion::get_account_list();
+$fnret or HEXIT($fnret);
+my %accounts = %{$fnret->value || {}};
+
+$fnret = OVH::Bastion::get_realm_list();
+$fnret or HEXIT($fnret);
+foreach my $realmName (keys %{$fnret->value || {}}) {
+    $accounts{$fnret->value->{$realmName}{'sysaccount'}} = $fnret->value->{$realmName};
+}
+
+my $nbchanges = 0;
+my $now       = DateTime->now()->iso8601() . 'Z';
+foreach my $name (keys %accounts) {
+    my $accountHome = $accounts{$name}{'home'};
+    if (!-d $accountHome) {
+        warn_syslog("Account '$name' home '$accountHome' doesn't exist");
+        next;
+    }
+
+    my $knownHosts = "$accountHome/.ssh/known_hosts";
+    if (!-f $knownHosts) {
+        # This can happen if the account has never been used yet
+        next;
+    }
+
+    # now, slurp the file and look for the host we're being asked about
+    if (open(my $fh, '<', $knownHosts)) {
+        my $contents = do {
+            local $/;
+            <$fh>;
+        };
+        close($fh);
+
+        my $nbmatches = $contents =~ s/$re/# removed by $self at $now in session with uniqid $ENV{'UNIQID'}: $&/g;
+
+        # remove found lines if any
+        if ($nbmatches) {
+            osh_info("Removing $nbmatches lines from ${name}'s known_hosts file");
+            if (open($fh, '>', $knownHosts)) {
+                print $fh $contents;
+                close($fh);
+                $nbchanges++;
+            }
+            else {
+                osh_warn("Couldn't adjust ${name}'s known_hosts file");
+                warn_syslog("Error while opening $knownHosts file for write: $!");
+            }
+        }
+    }
+    else {
+        warn_syslog("Couldn't open '$knownHosts': $!");
+    }
+}
+
+HEXIT(
+    R(
+        $nbchanges ? 'OK' : 'OK_NO_CHANGE',
+        msg   => "Finally modified $nbchanges known_hosts accounts' files",
+        value => {changed_files => $nbchanges}
+    )
+);
