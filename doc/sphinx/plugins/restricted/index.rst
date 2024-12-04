@@ -25,6 +25,7 @@ restricted plugins
    accountUnexpire
    accountUnfreeze
    accountUnlock
+   assetForgetHostKey
    groupCreate
    groupDelete
    realmCreate

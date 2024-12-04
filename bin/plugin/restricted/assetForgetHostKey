@@ -1,0 +1,43 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv     => \@ARGV,
+    header   => "remove the host key of a given asset from all accounts' known hosts",
+    options  => {},
+    helptext => <<'EOF',
+Remove the host key of a given asset from all accounts' known hosts
+
+Usage: --osh SCRIPT_NAME --host <HOST|IP> [--port <PORT>]
+
+  --host HOST|IP   Asset whose host key should be removed
+  --port PORT      Asset port serving SSH (default: 22)
+EOF
+);
+
+if (!$ip) {
+    help();
+    osh_exit 'ERR_MISSING_PARAMETER', "Missing mandatory parameter --host (or host didn't resolve correctly)";
+}
+
+# IP can't be a prefix
+if ($ip =~ m{/}) {
+    help();
+    osh_exit 'ERR_INVALID_PARAMETER', "Specified IP must not be a prefix ($ip)";
+}
+
+osh_info "Removing $ip host key from accounts...";
+
+my @command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
+push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-assetForgetHostKey';
+push @command, '--ip', $ip;
+push @command, '--port', ($port ? $port : 22);
+
+osh_exit OVH::Bastion::helper(cmd => \@command);
