@@ -1,3 +1,9 @@
+## v3.18.00 - 2024/12/10
+- feat: add assetForgetHostKey
+- fix: scp: downloads would sometimes stall (fix #486)
+- chore: add release notes to doc/
+- chore: add check of release-notes file in pre-commit
+
 ## v3.17.01 - 2024/10/23
 - enh: interactive: handle CTRL+C nicely (fix #497)
 - fix: osh.pl: remove a warning on interactive mode timeout

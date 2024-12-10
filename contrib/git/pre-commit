@@ -123,6 +123,11 @@ if [ -n "$reldate" ] && ! grep -Eq "^v$ver - $reldate" doc/sphinx/installation/u
     echo "ERROR: version '$ver' was not released at $reldate as said in doc/CHANGELOG.md (not seen in upgrading.rst)"
     isbad=1
 fi
+if ! test -f doc/release-notes/v$ver.md; then
+    echo
+    echo "ERROR: detected version '$ver', but no release notes file found in doc/release-notes/v$ver.md"
+    isbad=1
+fi
 
 # Is this file up to date?
 if ! cmp "$0" contrib/git/pre-commit >/dev/null; then
