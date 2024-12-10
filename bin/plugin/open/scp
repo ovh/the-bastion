@@ -311,8 +311,8 @@ $fnret or osh_exit($fnret);
 
 my $machine = $fnret->value->{'machine'};
 my @keys    = @{$fnret->value->{'keys'} || []};
-# now build the command
 
+# now build the command
 my @cmd = qw{ ssh -x -oForwardAgent=no -oPermitLocalCommand=no -oClearAllForwardings=yes };
 push @cmd, ('-p', $port) if $port;
 push @cmd, ('-l', $user) if $user;
@@ -327,19 +327,17 @@ print STDERR ">>> Hello $self, transferring your file through the bastion "
   . ($protocol eq 'scpupload' ? 'to' : 'from')
   . " $machine...\n";
 
-#print STDERR join('^', @cmd)."\n";
-$fnret = OVH::Bastion::execute(cmd => \@cmd, expects_stdin => 1, is_binary => 1);
+# Use system here and in plugin's json config to avoid buffering deadlock issues (#486)
+$fnret = OVH::Bastion::execute(cmd => \@cmd, system => 1);
 if ($fnret->err ne 'OK') {
     osh_exit 'ERR_TRANSFER_FAILED', "Error launching transfer: $fnret";
 }
-print STDERR sprintf(
-    ">>> Done, %d bytes uploaded, %d bytes downloaded\n",
-    $fnret->value->{'bytesnb'}{'stdin'} + 0,
-    $fnret->value->{'bytesnb'}{'stdout'} + 0
-);
 
 if ($fnret->value->{'sysret'} != 0) {
     print STDERR ">>> On bastion side, scp exited with return code " . $fnret->value->{'sysret'} . ".\n";
+}
+else {
+    print STDERR ">>> Done, scp exited successfully.\n";
 }
 
 # don't use osh_exit() to avoid getting a footer

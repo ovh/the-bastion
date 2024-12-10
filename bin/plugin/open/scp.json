@@ -1,5 +1,5 @@
 {
-    "execution_mode": "binary",
+    "execution_mode": "system",
     "stealth_stdout": true,
     "jit_mfa": "token",
     "jit_mfa_allow_no_host": true,
