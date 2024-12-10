@@ -5,7 +5,7 @@ use common::sense;
 use Fcntl;
 use POSIX qw(strftime);
 
-our $VERSION = '3.17.01';
+our $VERSION = '3.18.00';
 
 BEGIN {
     # only used by the handler below
