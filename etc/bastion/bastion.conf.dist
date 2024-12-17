@@ -86,13 +86,13 @@
 #
 # defaultAccountEgressKeyAlgorithm (string)
 #    DESC: The default algorithm to use to create the egress key of a newly created account
-# DEFAULT: "rsa"
-"defaultAccountEgressKeyAlgorithm": "rsa",
+# DEFAULT: "ecdsa"
+"defaultAccountEgressKeyAlgorithm": "ecdsa",
 #
 # defaultAccountEgressKeySize (int > 0)
 #    DESC: The default size to use to create the egress key of a newly created account (also see ``defaultAccountEgressKeyAlgorithm``)
-# DEFAULT: 4096
-"defaultAccountEgressKeySize": 4096,
+# DEFAULT: 521
+"defaultAccountEgressKeySize": 521,
 #
 # moshAllowed (boolean)
 #     DESC: If set to ``true``, mosh usage is allowed (mosh needs to be installed on serverside, obviously). Otherwise, this feature is disabled.
