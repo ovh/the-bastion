@@ -353,6 +353,11 @@ foreach my $accHash (@accounts) {
         $ret{'max_inactive_days'} =
           OVH::Bastion::account_config(account => $account, %{OVH::Bastion::OPT_ACCOUNT_MAX_INACTIVE_DAYS()})->value;
 
+        $ret{'osh_only'} = !!OVH::Bastion::account_config(
+            account => $account,
+            key     => OVH::Bastion::OPT_ACCOUNT_OSH_ONLY
+        ) + 0;
+
         if ($withPasswordInfo) {
             my @command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
             push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountGetPasswordInfo';
@@ -523,6 +528,11 @@ sub print_account_info {
         else {
             osh_info "- (unknown)";
         }
+    }
+
+    if (defined $ret{'osh_only'}) {
+        osh_info "\nThis account can only run commands (\"osh-only\"): "
+          . ($ret{'osh_only'} ? colored('yes', 'red') : colored('no', 'blue'));
     }
 
     if (exists $ret{'ingress_piv_policy'} && exists $ret{'ingress_piv_grace'}) {
