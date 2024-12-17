@@ -125,10 +125,10 @@ testsuite_selfkeys()
     tmpfp=$(get_json | $jq '.value|keys[0]')
     set -e
     json $(cat <<EOS
-    .value|.["$tmpfp"]|.family      RSA
-    .value|.["$tmpfp"]|.size        4096
+    .value|.["$tmpfp"]|.family      ECDSA
+    .value|.["$tmpfp"]|.size        521
     .value|.["$tmpfp"]|.fingerprint $tmpfp
-    .value|.["$tmpfp"]|.typecode    ssh-rsa
+    .value|.["$tmpfp"]|.typecode    ecdsa-sha2-nistp521
 EOS
     )
     set +e

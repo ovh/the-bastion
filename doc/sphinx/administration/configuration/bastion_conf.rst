@@ -282,7 +282,7 @@ defaultAccountEgressKeyAlgorithm
 
 :Type: ``string``
 
-:Default: ``"rsa"``
+:Default: ``"ecdsa"``
 
 The default algorithm to use to create the egress key of a newly created account
 
@@ -293,7 +293,7 @@ defaultAccountEgressKeySize
 
 :Type: ``int > 0``
 
-:Default: ``4096``
+:Default: ``521``
 
 The default size to use to create the egress key of a newly created account (also see ``defaultAccountEgressKeyAlgorithm``)
 
