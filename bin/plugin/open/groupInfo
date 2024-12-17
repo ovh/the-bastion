@@ -172,11 +172,6 @@ foreach my $groupData (@groups) {
             push @filtered_guests, $guest;
         }
 
-        # deprecated in v2.18.00+
-        $ret{'full_members'}    = \@members;
-        $ret{'partial_members'} = \@filtered_guests;
-        # /deprecated
-
         $ret{'members'}         = \@members;
         $ret{'guests'}          = \@filtered_guests;
         $ret{'guests_accesses'} = \%guest_nb_accesses;
