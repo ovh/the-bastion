@@ -10,9 +10,6 @@ testsuite_realm()
     local realm_egress_group=realm
     local realm_shared_account=UniVerse
 
-    grant accountCreate
-    grant accountModify
-
     # create account1 on local bastion
     success create_account1 $a0 --osh accountCreate --always-active --account $account1 --uid $uid1 --public-key \""$(cat $account1key1file.pub)"\"
     json .error_code OK .command accountCreate .value null
@@ -24,9 +21,6 @@ testsuite_realm()
     json .error_code OK .command accountCreate .value null
     success modify_account1 $a0 --osh accountModify --pam-auth-bypass yes --account $account2
     json .error_code OK .command accountModify
-
-    revoke accountModify
-    grant groupCreate
 
     # create realm-egress group on local bastion
     success create_support_group $a0 --osh groupCreate --group $realm_egress_group --owner $account0 --algo rsa --size 4096
@@ -41,8 +35,6 @@ testsuite_realm()
     # add account1 to this group on local bastion
     success add_account2_to_support_group $a0 --osh groupAddMember --group $realm_egress_group --account $account2
 
-    grant realmCreate
-
     # fail to create a realm with forbidden name
     plgfail realm_forbidden_name $a0 --osh realmCreate --realm realm --from 0.0.0.0/0 --public-key \"$realm_group_key\"
 
@@ -51,9 +43,6 @@ testsuite_realm()
 
     # create shared realm-account on remote bastion
     success create_shared_account $a0 --osh realmCreate --realm $realm_shared_account --public-key \"$realm_group_key\" --from 0.0.0.0/0
-
-    revoke accountCreate
-    revoke realmCreate
 
     # add remote bastion ip on group of local bastion
     success add_remote_bastion_to_group $a0 --osh groupAddServer --host 127.0.0.1 --user realm_$realm_shared_account --port 22 --group $realm_egress_group --kbd-interactive
@@ -74,8 +63,6 @@ testsuite_realm()
             json .error_message "Realm accounts can't execute this plugin, use --osh help to get the allowed plugin list" .error_code KO_RESTRICTED_COMMAND
     done
     unset plugin
-
-    grant accountAddPersonalAccess
 
     # add an access to account1 from realm on remote bastion
     success add_access_to_remote $a0 --osh accountAddPersonalAccess --account $realm_shared_account/$account1 --user-any --port-any --host 127.0.0.5
@@ -151,7 +138,6 @@ testsuite_realm()
 
     success removemyselffromaclk $a0 --osh groupDelAclkeeper --group $group1 --account $account0
     success a0_delowner_group1 $a0 --osh groupDelOwner --group $group1 --account $account0
-    grant accountListAccesses
 
     # check access list
     success access_list_account1 $a0 --osh accountListAccesses --account $realm_shared_account/$account1
@@ -238,8 +224,6 @@ testsuite_realm()
     # check max account length
     success add_guest_account3 $a0 --osh groupAddGuestAccess --account $realm_shared_account/verylongaccountnam --group $group1 --host 172.16.4.4 --user nobody --port 12345
 
-    grant accountDelete
-
     # delete account1
     success account1_cleanup $a0 --osh accountDelete --account $account1 --no-confirm
 
@@ -247,35 +231,21 @@ testsuite_realm()
     script account2_cleanup "$a0 --osh accountDelete --account $account2 <<< \"Yes, do as I say and delete $account2, kthxbye\""
     retvalshouldbe 0
 
-    revoke accountDelete
-    grant groupDelete
-
     # delete realm-egress group
     run cleanup_realm_support_group $a0 --osh groupDelete --group $realm_egress_group --no-confirm
     retvalshouldbe 0
-
-    revoke groupDelete
-    grant accountDelete
 
     # delete shared realm-account
     script cleanup_shared_realm_account_fail "$a0 --osh accountDelete --account realm_$realm_shared_account <<< \"Yes, do as I say and delete realm_$realm_shared_account, kthxbye\""
     retvalshouldbe 100
     json .error_code KO_FORBIDDEN_PREFIX
 
-    grant realmDelete
-
     script cleanup_shared_realm_account "$a0 --osh realmDelete --realm $realm_shared_account <<< \"Yes, do as I say and delete $realm_shared_account, kthxbye\""
     retvalshouldbe 0
-
-    revoke realmDelete
-    revoke accountDelete
-    grant groupDelete
 
     # delete group1
     script group_cleanup "$a0 --osh groupDelete --group $group1 <<< \"$group1\""
     retvalshouldbe 0
-
-    revoke groupDelete
 }
 
 testsuite_realm

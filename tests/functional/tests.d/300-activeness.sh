@@ -7,7 +7,6 @@
 
 testsuite_activeness()
 {
-    grant accountCreate
     # create account1 on local bastion
     success create_account1 $a0 --osh accountCreate --account $account1 --uid $uid1 --public-key \""$(cat $account1key1file.pub)"\"
     json .error_code OK .command accountCreate .value null
@@ -17,8 +16,6 @@ testsuite_activeness()
 
     success create_account3 $a0 --osh accountCreate --account $account3 --uid $uid3 --always-active --public-key \""$(cat $account3key1file.pub)"\"
     json .error_code OK .command accountCreate .value null
-
-    revoke accountCreate
 
     configchg 's=^\\\\x22accountExternalValidationProgram\\\\x22.+=\\\\x22accountExternalValidationProgram\\\\x22:\\\\x22/opt/bastion/bin/other/doesnotexist.pl\\\\x22,='
 
@@ -42,12 +39,8 @@ testsuite_activeness()
 
     # SSH-AS
 
-    grant accountAddPersonalAccess
-
     # allow account1 to localhost, just so that ssh-as calls connect.pl (even if the connection doesn't make it through in the end)
     success add_access_to_a1 $a0 --osh accountAddPersonalAccess --account $account2 --host 127.0.0.1 --user sshas --port 22
-
-    revoke accountAddPersonalAccess
 
     # now, test ssh-as
     run ssh_as_denied $a1 --ssh-as $account2 sshas@127.0.0.1
@@ -71,8 +64,6 @@ testsuite_activeness()
 
     # /SSH-AS
 
-    grant accountDelete
-
     # delete account1
     success account1_cleanup $a0 --osh accountDelete --account $account1 --no-confirm
 
@@ -82,8 +73,6 @@ testsuite_activeness()
 
     # delete account3
     success account3_cleanup $a0 --osh accountDelete --account $account3 --no-confirm
-
-    revoke accountDelete
 }
 
 testsuite_activeness

@@ -117,12 +117,8 @@ testsuite_proxy()
     contain "This account doesn't have access to this user@host tuple (Access denied for $account0 to test@127.0.0.1:9443)"
 
     # add ourselves access
-    grant selfAddPersonalAccess
-
     success add_personal_access $a0 --osh selfAddPersonalAccess --host 127.0.0.1 --port 9443 --user test --force
     json .command selfAddPersonalAccess .error_code OK
-
-    revoke selfAddPersonalAccess
 
     script missing_egress_pwd "curl -ski -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
