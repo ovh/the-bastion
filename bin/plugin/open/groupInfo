@@ -253,14 +253,15 @@ sub print_group_info {
       if $ret{'members'};
 
     # show guest info, along with the number of accesses each guest has
-    my @guest_text;
-    foreach my $guest (@{$ret{'guests'}}) {
-        my $nb = $ret{'guests_accesses'}{$guest};
-        push @guest_text, sprintf("%s[%s]", $guest, $nb // '?');
+    if ($ret{'guests'}) {
+        my @guest_text;
+        foreach my $guest (@{$ret{'guests'}}) {
+            my $nb = $ret{'guests_accesses'}{$guest};
+            push @guest_text, sprintf("%s[%s]", $guest, $nb // '?');
+        }
+        osh_info("Group ${groupName}'s Guests (with access to SOME of the group servers) are: "
+              . colored(@{$ret{'guests'}} ? join(" ", sort @guest_text) : '-', 'red'));
     }
-    osh_info("Group ${groupName}'s Guests (with access to SOME of the group servers) are: "
-          . colored(@{$ret{'guests'}} ? join(" ", sort @guest_text) : '-', 'red'))
-      if $ret{'guests'};
 
     # current user doesn't have enough rights to get this info, tell them that
     if (!$ret{'members'}) {
