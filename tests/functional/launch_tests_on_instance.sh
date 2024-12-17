@@ -14,7 +14,7 @@ basedir=$(readlink -f "$(dirname "$0")"/../..)
 
 opt_remote_etc_bastion=/etc/bastion
 opt_remote_basedir=$basedir
-opt_skip_consistency_check=0
+opt_consistency_check=0
 opt_no_pause_on_fail=0
 opt_slowness_factor=1
 opt_log_prefix=
@@ -25,7 +25,7 @@ declare -A capabilities=( [ed25519]=1 [mfa]=1 [mfa-password]=0 [pamtester]=1 [pi
 # set the helptext now to get the proper default values
 help_text=$(cat <<EOF
 Test Options:
-    --skip-consistency-check   Speed up tests by skipping the consistency check between every test
+    --consistency-check        Check system consistency between every test
     --no-pause-on-fail         Don't pause when a test fails
     --log-prefix=X             Prefix all logs by this name
     --module=X                 Only test this module (specify a filename found in \`functional/tests.d/\`), can be specified multiple times
@@ -70,7 +70,11 @@ do
             opt_remote_basedir="$optval"
             ;;
         --skip-consistency-check)
-            opt_skip_consistency_check=1
+            # deprecated and undocumented, as it is now the default
+            opt_consistency_check=0
+            ;;
+        --consistency-check)
+            opt_consistency_check=1
             ;;
         --no-pause-on-fail)
             opt_no_pause_on_fail=1
@@ -389,7 +393,7 @@ run()
         cat "$outdir/$basename.log"
         printf "%b%b%b\\n" "$WHITE_ON_BLUE" "[INFO] returned json follows" "$NOC"
         grep "^JSON_OUTPUT=" -- $outdir/$basename.log | cut -d= -f2- | jq --sort-keys .
-        if [ "$opt_skip_consistency_check" != 1 ]; then
+        if [ "$opt_consistency_check" = 1 ]; then
             printf "%b%b%b\\n" "$WHITE_ON_BLUE" "[INFO] consistency check follows" "$NOC"
             cat "$outdir/$basename.cc"
         fi
@@ -438,7 +442,7 @@ run()
     fi
 
     # now run consistency check on the target, unless configured otherwise
-    if [ "$opt_skip_consistency_check" != 1 ]; then
+    if [ "$opt_consistency_check" = 1 ]; then
         # sleep 1s if sshd has been reloaded
         [ "$case" = "sshd_reload" ] && sleep 1
         flock "$outdir/$basename.retval" $screen "$outdir/$basename.cc" -D -m -fn -ln $r0 '
