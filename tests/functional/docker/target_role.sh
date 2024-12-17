@@ -74,8 +74,7 @@ if [ -x "$bashlocation" ]; then
     chsh -s "$bashlocation" "$UID0"
 fi
 
-HOME="$UID0HOME" USER="$UID0" "$basedir"/bin/plugin/restricted/accountCreate       '' '' '' '' --uid 5000 --account "$TARGET_USER" --public-key "$user_pubkey FOR_TESTS_ONLY"
-HOME="$UID0HOME" USER="$UID0" "$basedir"/bin/plugin/restricted/accountGrantCommand '' '' '' '' --account "$TARGET_USER" --command accountGrantCommand
+"$basedir"/bin/admin/setup-first-admin-account.sh "$TARGET_USER" 5000 <<< "$user_pubkey FOR_TESTS_ONLY"
 
 # add an account with local shell access (to mimic a remote server)
 useradd_compat test-shell_ "" "" /bin/sh

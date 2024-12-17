@@ -7,9 +7,6 @@
 
 testsuite_mfa()
 {
-    grant accountCreate
-    grant accountModify
-
     # create account4
     success a0_create_a4 $a0 --osh accountCreate --always-active --account $account4 --uid $uid4 --public-key "\"$(cat $account4key1file.pub)\""
     json .error_code OK .command accountCreate .value null
@@ -111,11 +108,7 @@ testsuite_mfa()
     # /batch
 
     if [ "${capabilities[pamtester]}" = 1 ]; then
-        grant groupCreate
-
         success a0_create_g3 $a0 --osh groupCreate --group $group3 --algo rsa --size 4096 --owner $account4
-
-        revoke groupCreate
 
         # setup group to force JIT egress MFA
         script a4_modify_g3_egress_mfa "echo 'set timeout $default_timeout;
@@ -256,19 +249,11 @@ testsuite_mfa()
         run a3_connect_mfa_jit_need_pass_setup $a3 root@127.7.7.7
         json .error_code KO_MFA_ANY_SETUP_REQUIRED
 
-        grant groupDelete
-
         script a0_delete_g3 "$a0 --osh groupDelete --group $group3 <<< \"$group3\""
-
-        revoke groupDelete
-
-        grant accountDelete
 
         script a0_delete_a3 $a0 --osh accountDelete --account $account3 "<<< \"Yes, do as I say and delete $account3, kthxbye\""
         retvalshouldbe 0
         json .command accountDelete .error_code OK
-
-        revoke accountDelete
     fi
 
     # change our password
@@ -429,12 +414,8 @@ testsuite_mfa()
         # pubkey-auth-optional
 
         # remove totp from account4 to simplify the following tests
-        grant accountMFAResetTOTP
-
         success a0_nototp_a4 $a0 --osh accountMFAResetTOTP --account $account4
         json .command accountMFAResetTOTP .error_code OK
-
-        revoke accountMFAResetTOTP
 
         # pubkey-auth-optional disabled: success with pubkey and password
         script a4_no_pubkeyauthoptional_login_pubkey_pam "echo 'set timeout $default_timeout;
@@ -549,16 +530,10 @@ testsuite_mfa()
         retvalshouldbe 0
     fi
 
-    grant accountRevokeCommand
-    revoke accountModify
-    grant accountDelete
-
     # remove account
     script a0_delete_a4 $a0 --osh accountDelete --account $account4 "<<< \"Yes, do as I say and delete $account4, kthxbye\""
     retvalshouldbe 0
     json .command accountDelete .error_code OK
-
-    revoke accountDelete
 }
 
 testsuite_mfa

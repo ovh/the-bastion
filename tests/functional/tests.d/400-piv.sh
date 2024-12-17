@@ -55,15 +55,8 @@ CzYH/zLEaIsLjRg+tnmKJu2E4IdodScri7oGVhVyhUW5DrcX+/8CPqnoBpd7zQ==
 -----END CERTIFICATE-----
 EOF
 
-    grant accountCreate
-
     success accountCreate $a0 --osh accountCreate --always-active --account $account1 --uid $uid1 --public-key \""$(cat $account1key1file.pub)"\"
     json .error_code OK .command accountCreate .value null
-
-    revoke accountCreate
-    grant accountModify
-    grant accountPIV
-    grant accountListIngressKeys
 
     script piv_nopivspecified $a1 --osh selfAddIngressKey --piv "< $account2key1file.pub"
     retvalshouldbe 100
@@ -110,10 +103,6 @@ EOF
     json .command accountListIngressKeys .error_code OK .value.keys[1] null .value.keys[0].isPiv 1 .value.keys[0].pivInfo.Yubikey.SerialNumber 10595103
 
     # account0 sudo account1 to try to add a non-piv key. this must not work.
-    # for this trick, a0 needs to use adminSudo hence needs to be an admin
-    configchg 's=^\\\\x22adminAccounts\\\\x22.+=\\\\x22adminAccounts\\\\x22:[\\\\x22'"$account0"'\\\\x22],='
-
-    success set_a0_as_admin $r0 "\". $opt_remote_basedir/lib/shell/functions.inc; add_user_to_group_compat $account0 osh-admin\""
 
     script a0_sudo_a1_selfaddnonpiv $a0 --osh adminSudo -- --sudo-as $account1 --sudo-cmd selfAddIngressKey -- $js "< $account2key1file.pub"
     retvalshouldbe 0
@@ -168,19 +157,9 @@ EOF
     success a1_delkey_test $a1 --osh selfDelIngressKey --fingerprint-to-delete $other_fp
     json .command selfDelIngressKey .error_code OK
 
-    # remove a0 from admins
-    success del_a0_as_admin $r0 "\". $opt_remote_basedir/lib/shell/functions.inc; del_user_from_group_compat $account0 osh-admin\""
-
-    revoke accountListIngressKeys
-    revoke accountPIV
-    revoke accountModify
-
     # delete account1
-    grant accountDelete
     script cleanup $a0 --osh accountDelete --account $account1 "<<< \"Yes, do as I say and delete $account1, kthxbye\""
     retvalshouldbe 0
-
-    revoke accountDelete
 
     # restore default config
     success configrestore $r0 "dd if=$opt_remote_etc_bastion/bastion.conf.bak.$now of=$opt_remote_etc_bastion/bastion.conf"

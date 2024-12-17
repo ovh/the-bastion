@@ -8,16 +8,12 @@
 testsuite_selfaccesses_force_password()
 {
     # create account4, it will be used as an egress target to test password connections
-    grant accountCreate
     success a4_create $a0 --osh accountCreate --always-active --account $account4 --uid $uid4 --public-key "\"$(cat $account4key1file.pub)\""
     json .error_code OK .command accountCreate
-    revoke accountCreate
 
     # set account4 to require a password
-    grant accountModify
     success a4_setup_passreq $a0 --osh accountModify --account $account4 --mfa-password-required yes
     json .error_code OK .command accountModify .value.mfa_password_required.error_code OK
-    revoke accountModify
 
     # set a4's ingress password
     a4_password="276r8q76ZF5Y3"
@@ -41,10 +37,8 @@ testsuite_selfaccesses_force_password()
     json .error_code OK .command selfMFASetupPassword
 
     # disable account4's pubkey requirement because autologin doesn't handle that
-    grant accountModify
     success a4_unset_pubkey $a0 --osh accountModify --account $account4 --pubkey-auth-optional yes
     json .error_code OK .command accountModify .value.pubkey_auth_optional.error_code OK
-    revoke accountModify
 
     # on non-mfa systems, temporarily update sshd's config to accept passwords for account4
     if [ "${capabilities[mfa]}" = 0 ] && [ "${capabilities[mfa-password]}" = 0 ]
@@ -62,10 +56,8 @@ testsuite_selfaccesses_force_password()
     for mode in personal group-member
     do
         # create account1, it will be used to connect to account4
-        grant accountCreate
         success a1_create $a0 --osh accountCreate --always-active --account $account1 --uid $uid1 --public-key "\"$(cat $account1key1file.pub)\""
         json .error_code OK .command accountCreate
-        revoke accountCreate
 
         local target gen_pass_plugin list_pass_plugin add_access_plugin del_access_plugin password_switch password_base_path
         if [ $mode = "personal" ]
@@ -78,12 +70,6 @@ testsuite_selfaccesses_force_password()
             del_access_plugin="accountDelPersonalAccess"
             password_switch="-P"
             password_base_path="/home/${account1}/pass/${account1}"
-
-            # a few rights are needed
-            grant accountGeneratePassword
-            grant accountListPasswords
-            grant accountAddPersonalAccess
-            grant accountDelPersonalAccess
         else # group-member
             # in group-member mode, account1 is a member of group1 and we manipulate group1's accesses to connect to account4
             target="--group ${group1}"
@@ -95,10 +81,8 @@ testsuite_selfaccesses_force_password()
             password_base_path="/home/key${group1}/pass/${group1}"
 
             # create group1
-            grant groupCreate
             success g1_create $a0 --osh groupCreate --group $group1 --owner $account0 --no-key
             json .error_code OK .command groupCreate
-            revoke groupCreate
 
             # add account1 as member
             success g1_member_a1 $a0 --osh groupAddMember --group $group1 --account $account1
@@ -122,12 +106,10 @@ testsuite_selfaccesses_force_password()
         success ${mode}_add_a4_fp_fake $a0 --osh $add_access_plugin $target --host $remote_ip --user $account4 --port $remote_port --force-password "'${fake_hash}'"
         json .error_code OK .command $add_access_plugin
 
-        grant accountListAccesses
         success ${mode}_listaccess $a0 --osh accountListAccesses --account $account1
         json .error_code OK .command accountListAccesses
         contain "FORCED-PASSWORD"
         json .value[0].acl[0].forcePassword $fake_hash
-        revoke accountListAccesses
 
         success ${mode}_del_a4_fp_fake $a0 --osh $del_access_plugin $target --host $remote_ip --user $account4 --port $remote_port
         json .error_code OK .command $del_access_plugin
@@ -206,31 +188,19 @@ testsuite_selfaccesses_force_password()
         json .error_code OK .command $del_access_plugin
 
         # cleanup
-        if test $mode = "personal"
-        then
-            revoke accountGeneratePassword
-            revoke accountListPasswords
-            revoke accountAddPersonalAccess
-            revoke accountDelPersonalAccess
-        else
-            grant groupDelete
+        if [ $mode = "group-member" ]; then
             success ${mode}_delete_g1 $a0 --osh groupDelete --group $group1 --no-confirm
             json .error_code OK .command groupDelete
-            revoke groupDelete
         fi
 
         # cleanup account1
-        grant accountDelete
         success ${mode}_delete_a1 $a0 --osh accountDelete --account $account1 --no-confirm
         json .error_code OK .command accountDelete
-        revoke accountDelete
     done
 
     # final cleanup
-    grant accountDelete
     success a4_delete $a0 --osh accountDelete --account $account4 --no-confirm
     json .error_code OK .command accountDelete
-    revoke accountDelete
 
     # restore sshd_config on non-mfa systems
     if [ "${capabilities[mfa]}" = 0 ] && [ "${capabilities[mfa-password]}" = 0 ]

@@ -126,18 +126,11 @@ testsuite_scripts()
 
     # create and account and connect one to have a ttyrec file
 
-    grant accountCreate
-
     success a0_create_a1 $a0 --osh accountCreate --always-active --account $account1 --uid $uid1 --public-key "\"$(cat $account1key1file.pub)\""
     json .error_code OK .command accountCreate .value null
 
-    revoke accountCreate
-    grant accountAddPersonalAccess
-
     success a0_allow_a1 $a0 --osh accountAddPersonalAccess --account $account1 --host 127.0.0.1 --user none --port 22
     json .error_code OK .command accountAddPersonalAccess
-
-    revoke accountAddPersonalAccess
 
     run a1_connect $a1 none@127.0.0.1
 
@@ -155,11 +148,7 @@ testsuite_scripts()
 
     # cleanup account
 
-    grant accountDelete
-
     success a0_delete_a1 $a0 --osh accountDelete --account $account1 --no-confirm
-
-    revoke accountDelete
 }
 
 testsuite_scripts

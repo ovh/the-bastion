@@ -309,9 +309,6 @@ kTfIwdES
 '
 };
 
-grant()  { success grantcmd  $a0 --osh accountGrantCommand  --account $account0 --command "$1"; }
-revoke() { success revokecmd $a0 --osh accountRevokeCommand --account $account0 --command "$1"; }
-
 cat >"$mytmpdir/ssh_config" <<EOF
    StrictHostKeyChecking no
    SendEnv LC_*
@@ -662,7 +659,7 @@ dump_vars_and_funcs()
     set | grep -v -E '^('\
 'testno|section|code_warn_exclude|COPROC_PID|LINES|COLUMNS|PIPESTATUS|_|'\
 'BASH_LINENO|basename|case|json|name|tmpscript|grepit|got|isbad|'\
-'nbfailedgrep|shouldbe)='
+'nbfailedgrep|nbfailedcon|nbfailedgeneric|nbfailedlog|nbfailedret|shouldbe|modulename)='
 }
 
 runtests()
@@ -682,8 +679,6 @@ runtests()
     # backup the original default configuration on target side
     now=$(date +%s)
     success backupconfig $r0 "dd if=$opt_remote_etc_bastion/bastion.conf of=$opt_remote_etc_bastion/bastion.conf.bak.$now"
-
-    grant accountRevokeCommand
 
     # shellcheck disable=SC2044
     for module in $(find "$(dirname $0)/tests.d/" -mindepth 1 -maxdepth 1 -type f -name '???-*.sh' | sort)
@@ -726,14 +721,15 @@ runtests()
                 exit 1
             fi
         fi
-        dump_vars_and_funcs > "$tmp_b"
-        success module_postrun test "$module_ret" = 0
-
-        # put the backed up configuration back after each module, just in case the module modified it
         modulename=main
-        success configrestore $r0 "dd if=$opt_remote_etc_bastion/bastion.conf.bak.$now of=$opt_remote_etc_bastion/bastion.conf"
+        # dump vars after module run
+        dump_vars_and_funcs > "$tmp_b"
+        # ensure the module exited successfully
+        success module_postrun_exit_status test "$module_ret" = 0
+        # put the backed up configuration back after each module, just in case the module modified it
+        success module_postrun_config_restore $r0 "dd if=$opt_remote_etc_bastion/bastion.conf.bak.$now of=$opt_remote_etc_bastion/bastion.conf"
         # verify that the env hasn't been modified
-        success check_env_after_module diff -u "$tmp_a" "$tmp_b"
+        success module_postrun_check_env diff -u "$tmp_a" "$tmp_b"
     done
 
     # if the check_env_after_module of the last module fails, we wouldn't get the verbose error,

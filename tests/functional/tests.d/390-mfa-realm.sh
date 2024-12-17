@@ -9,28 +9,19 @@ testsuite_mfa_realm()
 {
     local realm_egress_group=realmsuppgrp
     local realm_shared_account=supplier42
-    grant accountCreate
 
     # create account4
     success a0_create_a4 $a0 --osh accountCreate --always-active --account $account4 --uid $uid4 --public-key "\"$(cat $account4key1file.pub)\""
     json .error_code OK .command accountCreate .value null
 
-    revoke accountCreate
-
     # now setup a realm
-    grant groupCreate
-
     # create realm-egress group on local bastion
     success create_support_group $a0 --osh groupCreate --group $realm_egress_group --owner $account4 --algo ed25519
     local realm_group_key
     realm_group_key=$(get_json | $jq '.value.public_key.line')
 
-    grant realmCreate
-
     # create shared realm-account on remote bastion
     success create_shared_account $a0 --osh realmCreate --realm $realm_shared_account --public-key \"$realm_group_key\" --from 0.0.0.0/0
-
-    revoke realmCreate
 
     # add remote bastion ip on group of local bastion
     success add_remote_bastion_to_group $a4 --osh groupAddServer --host 127.0.0.1 --user realm_$realm_shared_account --port 22 --group $realm_egress_group --kbd-interactive
@@ -41,7 +32,6 @@ testsuite_mfa_realm()
 
     # create a remote-group on which we'll add the realm user
     success remote_group_create $a0 --osh groupCreate --group remotegrp --owner $account0 --algo ed25519
-    revoke groupCreate
 
     success remote_group_add_server $a0 --osh groupAddServer --group remotegrp --host 127.0.0.5 --port 22 --user nevermind --force
 
@@ -92,12 +82,9 @@ testsuite_mfa_realm()
     json .command selfMFASetupPassword .error_code OK
 
     # set account4 as nopam, to only use JIT MFA because that's what we want to test
-    grant accountModify
 
     success a4_set_nopam $a0 --osh accountModify --account $account4 --pam-auth-bypass yes
     json .command accountModify .error_code OK
-
-    revoke accountModify
 
     # try to connect will still not work because we have MFA but we're asked for it on our first bastion
     run realm_user_still_fail_connect_no_mfa $a4 realm_$realm_shared_account@127.0.0.1 --kbd-interactive -- $js nevermind@127.0.0.5
@@ -120,23 +107,13 @@ testsuite_mfa_realm()
     contain "Permission denied (publickey)"
 
     # cleanup
-    grant realmDelete
-
     success realmDelete $a0 --osh realmDelete --realm $realm_shared_account "<<< \"Yes, do as I say and delete $realm_shared_account, kthxbye\""
-
-    revoke realmDelete
-    grant accountDelete
 
     script a0_delete_a4 $a0 --osh accountDelete --account $account4 "<<< \"Yes, do as I say and delete $account4, kthxbye\""
     retvalshouldbe 0
     json .command accountDelete .error_code OK
 
-    revoke accountDelete
-    grant groupDelete
-
     success groupDelete $a0 --osh groupDelete --group $realm_egress_group --no-confirm
-
-    revoke groupDelete
 }
 
 if [ "${capabilities[mfa]}" = 1 ] || [ "${capabilities[mfa-password]}" = 1 ]; then

@@ -117,9 +117,6 @@ EOF
         fi
     fi
 
-    grant selfAddPersonalAccess
-    grant selfDelPersonalAccess
-
     ### test personal ssh access, must fail without protocol access, must work with protocol access
 
     # scp
@@ -234,15 +231,11 @@ EOF
 
     ### test personal ssh access with group protocol access, must fail, and works only if group ssh access is added too
 
-    grant groupCreate
-
     # create group1
     success groupCreate $a0 --osh groupCreate --group $group1 --owner $account0 --algo ed25519 --size 256
     json .error_code OK .command groupCreate
     local g1key
     g1key="$(get_json | jq '.value.public_key.line')"
-
-    revoke groupCreate
 
     # push group1 egress key to $shellaccount@localhost
     success personalssh_groupprotocol_add_key_to_shellaccount $r0 "echo '$g1key' \>\> ~$shellaccount/.ssh/authorized_keys"
@@ -313,7 +306,6 @@ EOF
 
     ## set --personal-egress-mfa-required on this account, and add matching ssh/proto personal access: scp/sftp must request MFA, rsync must be denied
 
-    grant accountModify
     success personal_egress_mfa $a0 --osh accountModify --account $account0 --personal-egress-mfa-required password
 
     success personal_access_add_scpup $a0 --osh selfAddPersonalAccess --host 127.0.0.2 --port 22 --protocol scpupload
@@ -346,7 +338,6 @@ EOF
     # reset --personal-egress-mfa-required on this account and remove protocol personal accesses
 
     success personal_egress_nomfa $a0 --osh accountModify --account $account0 --personal-egress-mfa-required none
-    revoke accountModify
 
     success personal_access_del_scpup $a0 --osh selfDelPersonalAccess --host 127.0.0.2 --port 22 --protocol scpupload
     success personal_access_del_sftp $a0 --osh selfDelPersonalAccess --host 127.0.0.2 --port 22 --protocol sftp
@@ -484,13 +475,11 @@ EOF
             retvalshouldbe 0
             json .error_code OK .command selfMFAResetPassword
     else
-        grant accountMFAResetPassword
         success personal_mfa_reset_password $a0 --osh accountMFAResetPassword --account $account0
     fi
 
     ## set account as exempt from MFA, and see whether scp/sftp/rsync (that still require MFA as per the group) do work
 
-    grant accountModify
     success personal_mfa_set_exempt $a0 --osh accountModify --account $account0 --mfa-password-required bypass
 
     success scp_upload_mfa_exempt_oldhelper_ok /tmp/scpwrapper -i $account0key1file /etc/passwd $shellaccount@127.0.0.2:
@@ -525,13 +514,9 @@ EOF
 
     # reset account setup
     success personal_mfa_reset_policy $a0 --osh accountModify --account $account0 --mfa-password-required no
-    revoke accountModify
 
     # delete group1
     success groupDestroy $a0 --osh groupDestroy --group $group1 --no-confirm
-
-    revoke selfAddPersonalAccess
-    revoke selfDelPersonalAccess
 }
 
 testsuite_mfa_scp_sftp

@@ -50,23 +50,14 @@ _ingress_from_test()
     script ${testname}_delete_a2 "$a0 --osh accountDelete --account $account2" "<<< \"Yes, do as I say and delete $account2, kthxbye\""
     retvalshouldbe 0
     json .error_code OK .command accountDelete
-
 }
 
 testsuite_selfkeys()
 {
-    grant accountCreate
-
     success accountCreate $a0 --osh accountCreate --always-active --account $account1 --uid $uid1 --public-key \""$(cat $account1key1file.pub)"\"
     json .error_code OK .command accountCreate .value null
 
-    revoke accountCreate
-    grant accountModify
-
     # <accountModify --egress-strict-host-key-checking>
-    grant accountInfo
-    grant auditor
-
     configchg 's=^\\\\x22minimumIngressRsaKeySize\\\\x22.+=\\\\x22minimumIngressRsaKeySize\\\\x22:4096,='
 
     success info0 $a0 --osh accountInfo --account $account1
@@ -121,15 +112,10 @@ testsuite_selfkeys()
     json .error_code OK .command accountInfo
     json .value.account_egress_ssh_config.type default
 
-    revoke auditor
-    revoke accountInfo
     # </accountModify --egress-strict-host-key-checking>
 
     success modify_account1 $a0 --osh accountModify --pam-auth-bypass yes --account $account1
     json .error_code OK .command accountModify
-
-    revoke accountModify
-    grant accountListEgressKeys
 
     success accountListEgressKeys $a0 --osh accountListEgressKeys --account $account1
     contain "keyline"
@@ -149,8 +135,6 @@ EOS
     pattern "^$account1@fix-my-config-please-missing-bastion-name:[0-9]+$" "$(get_json | $jq ".value|.[\"$tmpfp\"]|.comment")"
     set -e
     unset tmpfp
-
-    revoke accountListEgressKeys
 
     # add del list pub keys
     success beforeadd $a1 -osh selfListIngressKeys
@@ -634,10 +618,6 @@ EOS
 EOS
     )
 
-    grant accountCreate
-    grant accountListIngressKeys
-    grant accountDelete
-
     # ingresskeysfrom=0.0.0.0/0,255.255.255.255, allowoverride=1, noFrom
     configchg 's=^\\\\x22ingressKeysFromAllowOverride\\\\x22.+=\\\\x22ingressKeysFromAllowOverride\\\\x22:1,='
     configchg 's=^\\\\x22ingressKeysFrom\\\\x22:.+=\\\\x22ingressKeysFrom\\\\x22:\\\\x5B\\\\x220.0.0.0/0\\\\x22,\\\\x22255.255.255.255\\\\x22\\\\x5D,='
@@ -668,13 +648,9 @@ EOS
     # ingresskeysfrom=empty allowoverride=0, withFrom
     _ingress_from_test fromTest8 null null "from=\"1.2.3.4,5.6.7.8\" $(< $account1key2file.pub)" "$account1key2fp"
 
-    revoke accountCreate
-    revoke accountListIngressKeys
-
     # delete account1
     script cleanup $a0 --osh accountDelete --account $account1 "<<< \"Yes, do as I say and delete $account1, kthxbye\""
     retvalshouldbe 0
-    revoke accountDelete
 
     # restore default config
     success configrestore $r0 "dd if=$opt_remote_etc_bastion/bastion.conf.bak.$now of=$opt_remote_etc_bastion/bastion.conf"
