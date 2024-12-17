@@ -478,7 +478,7 @@ sub print_account_info {
         }
     }
 
-    if ($ret{'creation_information'}) {
+    if (defined $ret{'creation_information'}) {
         if ($ret{'creation_information'}{'datetime_utc'}) {
             my $createdOnStr = $ret{'creation_information'}{'datetime_utc'};
             if (   $ret{'creation_information'}{'datetime_local'}
@@ -507,87 +507,101 @@ sub print_account_info {
         }
     }
 
-    osh_info "\nAccount egress SSH config:";
-    if ($ret{'account_egress_ssh_config'}{'type'} eq 'default') {
-        osh_info "- (default)";
-    }
-    elsif ($ret{'account_egress_ssh_config'}{'type'} eq 'locally_modified') {
-        osh_info "- (locally modified!)";
-    }
-    elsif ($ret{'account_egress_ssh_config'}{'type'} eq 'custom') {
-        foreach my $key (sort keys %{$ret{'account_egress_ssh_config'}{'items'} || {}}) {
-            osh_info "- $key " . $ret{'account_egress_ssh_config'}{'items'}{$key};
+    if (defined $ret{'account_egress_ssh_config'}) {
+        osh_info "\nAccount egress SSH config:";
+        if ($ret{'account_egress_ssh_config'}{'type'} eq 'default') {
+            osh_info "- (default)";
+        }
+        elsif ($ret{'account_egress_ssh_config'}{'type'} eq 'locally_modified') {
+            osh_info "- (locally modified!)";
+        }
+        elsif ($ret{'account_egress_ssh_config'}{'type'} eq 'custom') {
+            foreach my $key (sort keys %{$ret{'account_egress_ssh_config'}{'items'} || {}}) {
+                osh_info "- $key " . $ret{'account_egress_ssh_config'}{'items'}{$key};
+            }
+        }
+        else {
+            osh_info "- (unknown)";
         }
     }
-    else {
-        osh_info "- (unknown)";
+
+    if (exists $ret{'ingress_piv_policy'} && exists $ret{'ingress_piv_grace'}) {
+        osh_info "\nAccount PIV-only policy status:";
+        my $ingress_piv_policy_print = $ret{'ingress_piv_policy'} || 'default';
+        osh_info "- PIV policy for ingress keys on this account is set to "
+          . colored($ingress_piv_policy_print, $ingress_piv_policy_print eq 'default' ? 'blue' : 'green');
+
+        if ($ret{'ingress_piv_grace'} && $ret{'ingress_piv_grace'}{'seconds_remaining'}) {
+            $fnret = OVH::Bastion::duration2human(seconds => $ret{'ingress_piv_grace'}{'seconds_remaining'})->value;
+            osh_info("- PIV grace period for this account is "
+                  . colored('set', 'green')
+                  . " and expires in "
+                  . $fnret->value->{'human'});
+        }
+        else {
+            osh_info "- PIV grace period for this account is " . colored('inactive', 'blue');
+        }
     }
 
-    osh_info "\nAccount PIV-only policy status:";
-    my $ingress_piv_policy_print = $ret{'ingress_piv_policy'} || 'default';
-    osh_info "- PIV policy for ingress keys on this account is set to "
-      . colored($ingress_piv_policy_print, $ingress_piv_policy_print eq 'default' ? 'blue' : 'green');
-
-    if ($ret{'ingress_piv_grace'} && $ret{'ingress_piv_grace'}{'seconds_remaining'}) {
-        $fnret = OVH::Bastion::duration2human(seconds => $ret{'ingress_piv_grace'}{'seconds_remaining'})->value;
-        osh_info("- PIV grace period for this account is "
-              . colored('set', 'green')
-              . " and expires in "
-              . $fnret->value->{'human'});
-    }
-    else {
-        osh_info "- PIV grace period for this account is " . colored('inactive', 'blue');
+    if (defined $ret{'global_ingress_policy'}) {
+        osh_info "- Global PIV policy status is "
+          . ($ret{'global_ingress_policy'} ? colored('enabled', 'red') : colored('disabled', 'blue'));
     }
 
-    osh_info "- Global PIV policy status is "
-      . ($ret{'global_ingress_policy'} ? colored('enabled', 'red') : colored('disabled', 'blue'));
-
-    osh_info "- As a consequence, PIV policy is "
-      . ($ret{'effective_ingress_piv_policy'} ? colored('enforced', 'red') : colored('inactive', 'blue'))
-      . " for this account";
-
-    osh_info "\nAccount Multi-Factor Authentication status:";
-    osh_info "- Additional password authentication is "
-      . ($ret{'mfa_password_required'} ? colored('required', 'green') : colored('not required', 'blue'))
-      . " for this account";
-    osh_info "- Additional password authentication bypass is "
-      . ($ret{'mfa_password_bypass'} ? colored('enabled', 'green') : colored('disabled', 'blue'))
-      . " for this account";
-    osh_info "- Additional password authentication is "
-      . ($ret{'mfa_password_configured'} ? colored('enabled and active', 'green') : colored('disabled', 'blue'));
-
-    osh_info "- Additional TOTP authentication is "
-      . ($ret{'mfa_totp_required'} ? colored('required', 'green') : colored('not required', 'blue'))
-      . " for this account";
-    osh_info "- Additional TOTP authentication bypass is "
-      . ($ret{'mfa_totp_bypass'} ? colored('enabled', 'green') : colored('disabled', 'blue'))
-      . " for this account";
-    osh_info "- Additional TOTP authentication is "
-      . ($ret{'mfa_totp_configured'} ? colored('enabled and active', 'green') : colored('disabled', 'blue'));
-
-    osh_info "- PAM authentication bypass is "
-      . ($ret{'pam_auth_bypass'} ? colored('enabled', 'green') : colored('disabled', 'blue'));
-
-    osh_info "- Optional public key authentication is "
-      . ($ret{'pubkey_auth_optional'} ? colored('enabled', 'green') : colored('disabled', 'blue'));
-
-    osh_info "- MFA policy on personal accesses (using personal keys) on egress side is: "
-      . $ret{'personal_egress_mfa_required'};
-
-    osh_info "\n- Account is immune to idle counter-measures: "
-      . ($ret{'idle_ignore'} ? colored('yes', 'green') : colored('no', 'blue'));
-
-    if (!defined $ret{'max_inactive_days'}) {
-        osh_info "- Maximum number of days of inactivity before account is disabled: (default)";
-    }
-    elsif ($ret{'max_inactive_days'} == 0) {
-        osh_info "- Maximum number of days of inactivity before account is disabled: never";
-    }
-    else {
-        osh_info "- Maximum number of days of inactivity before account is disabled: " . $ret{'max_inactive_days'};
+    if (defined $ret{'effective_ingress_piv_policy'}) {
+        osh_info "- As a consequence, PIV policy is "
+          . ($ret{'effective_ingress_piv_policy'} ? colored('enforced', 'red') : colored('inactive', 'blue'))
+          . " for this account";
     }
 
-    if ($ret{'password'}) {
+    if (exists $ret{'mfa_password_required'} && exists $ret{'mfa_totp_required'} && exists $ret{'pam_auth_bypass'}) {
+        osh_info "\nAccount Multi-Factor Authentication status:";
+        osh_info "- Additional password authentication is "
+          . ($ret{'mfa_password_required'} ? colored('required', 'green') : colored('not required', 'blue'))
+          . " for this account";
+        osh_info "- Additional password authentication bypass is "
+          . ($ret{'mfa_password_bypass'} ? colored('enabled', 'green') : colored('disabled', 'blue'))
+          . " for this account";
+        osh_info "- Additional password authentication is "
+          . ($ret{'mfa_password_configured'} ? colored('enabled and active', 'green') : colored('disabled', 'blue'));
+
+        osh_info "- Additional TOTP authentication is "
+          . ($ret{'mfa_totp_required'} ? colored('required', 'green') : colored('not required', 'blue'))
+          . " for this account";
+        osh_info "- Additional TOTP authentication bypass is "
+          . ($ret{'mfa_totp_bypass'} ? colored('enabled', 'green') : colored('disabled', 'blue'))
+          . " for this account";
+        osh_info "- Additional TOTP authentication is "
+          . ($ret{'mfa_totp_configured'} ? colored('enabled and active', 'green') : colored('disabled', 'blue'));
+
+        osh_info "- PAM authentication bypass is "
+          . ($ret{'pam_auth_bypass'} ? colored('enabled', 'green') : colored('disabled', 'blue'));
+
+        osh_info "- Optional public key authentication is "
+          . ($ret{'pubkey_auth_optional'} ? colored('enabled', 'green') : colored('disabled', 'blue'));
+
+        osh_info "- MFA policy on personal accesses (using personal keys) on egress side is: "
+          . $ret{'personal_egress_mfa_required'};
+    }
+
+    if (exists $ret{'idle_ignore'}) {
+        osh_info "\n- Account is immune to idle counter-measures: "
+          . ($ret{'idle_ignore'} ? colored('yes', 'green') : colored('no', 'blue'));
+    }
+
+    if (exists $ret{'max_inactive_days'}) {
+        if (!defined $ret{'max_inactive_days'}) {
+            osh_info "- Maximum number of days of inactivity before account is disabled: (default)";
+        }
+        elsif ($ret{'max_inactive_days'} == 0) {
+            osh_info "- Maximum number of days of inactivity before account is disabled: never";
+        }
+        else {
+            osh_info "- Maximum number of days of inactivity before account is disabled: " . $ret{'max_inactive_days'};
+        }
+    }
+
+    if (defined $ret{'password'}) {
         osh_info "Account PAM UNIX password information (used for password MFA):";
         if ($ret{'password'}{'password'} eq 'locked') {
             osh_info "- No valid password is set";
