@@ -9,20 +9,13 @@ testsuite_strict_checking()
 {
     # test that strict host key checking with hostkey change is detected by the bastion and prints a help message
 
-    grant accountCreate
-
     # first we need to create account1
     success a0_create_a1 $a0 --osh accountCreate --always-active --account $account1 --uid $uid1 --public-key "\"$(cat $account1key1file.pub)\""
     json .error_code OK .command accountCreate .value null
 
-    revoke accountCreate
-    grant accountAddPersonalAccess
-
     # add access to root@127.0.0.1 (there are no keys deployed, but we don't care, connection should fail early due to the hostkey change)
     success add_local_access $a0 --osh accountAddPersonalAccess --account $account1 --host 127.0.0.1 --port 22 --user root
     json .command accountAddPersonalAccess .error_code OK
-
-    revoke accountAddPersonalAccess
 
     # try to connect a first time, so that our bastion known_hosts is populated
     run connect_before $a1 root@127.0.0.1
@@ -52,11 +45,9 @@ testsuite_strict_checking()
     contain selfForgetHostKey
 
     # delete account1
-    grant accountDelete
     script a0_delete_a1 $a0 --osh accountDelete --account $account1 "<<< \"Yes, do as I say and delete $account1, kthxbye\""
     retvalshouldbe 0
     json .command accountDelete .error_code OK
-    revoke accountDelete
 }
 
 testsuite_strict_checking

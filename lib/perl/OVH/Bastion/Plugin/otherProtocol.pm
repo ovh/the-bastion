@@ -27,7 +27,7 @@ sub has_protocol_access {
         return R('ERR_MISSING_PARAMETERS', msg => "Missing mandatory parameters for has_protocol_access");
     }
 
-    my $machine = "$user\@$ip:$port";
+    my $machine = OVH::Bastion::machine_display(ip => $ip, port => $port, user => $user)->value;
 
     my %keys;
     osh_debug("Checking access 1/2 of $account to $machine...");

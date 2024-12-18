@@ -918,9 +918,7 @@ sub is_access_granted {
 
     return R('OK', value => \@grants) if @grants;
 
-    my $machine = $ip;
-    $machine .= ":$port" if $port;
-    $machine = $user . '@' . $machine if $user;
+    my $machine = OVH::Bastion::machine_display(ip => $ip, port => $port, user => $user)->value;
     return R('KO_ACCESS_DENIED', msg => "Access denied for $account to $machine");
 }
 
