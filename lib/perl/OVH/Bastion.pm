@@ -650,45 +650,30 @@ sub is_valid_ip {
     my $allowPrefixes = $params{'allowPrefixes'};    # if not, a /24 or /32 notation is rejected
     my $fast          = $params{'fast'};             # fast mode: avoid instantiating Net::IP... except if ipv6
 
-    if ($fast and $ip !~ m{:}) {
-        # fast asked and it's not an IPv6, regex ftw
-        ## no critic (ProhibitUnusedCapture)
-        if (
-            $ip =~ m{^(?<shortip>
-                (?<x1>[0-9]{1,3})
-                \.
-                (?<x2>[0-9]{1,3})
-                \.
-                (?<x3>[0-9]{1,3})
-                \.
-                (?<x4>[0-9]{1,3})
-               )
-               (
-                (?<slash>/)
-                (?<prefix>\d+)
-               )?
-            $}x
-          )
-        {
-            if (defined $+{'prefix'} and not $allowPrefixes) {
+    if ($fast and index($ip, ':') == -1) {
+        # We're being asked to be fast, and it's not an IPv6, just use a regex
+        # and don't instanciate a Net::IP. Also don't use named captures, as they're slower
+        if ($ip =~ m{^(([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3}))(/([0-9]{1,2}))?$}) {
+            if (defined $7 and not $allowPrefixes) {
                 return R('KO_INVALID_IP', msg => "Invalid IP address ($ip), as prefixes are not allowed");
             }
-            foreach my $key (qw{ x1 x2 x3 x4 }) {
-                return R('KO_INVALID_IP', msg => "Invalid IP address ($ip)")
-                  if (not defined $+{$key} or $+{$key} > 255);
-            }
-            if (defined $+{'prefix'} and $+{'prefix'} > 32) {
+            if ($2 > 255 || $3 > 255 || $4 > 255 || $5 > 255) {
                 return R('KO_INVALID_IP', msg => "Invalid IP address ($ip)");
             }
-            if (defined $+{'slash'} and not defined $+{'prefix'}) {
-                # got a / in $ip but it's not followed by \d+
-                return R('KO_INVALID_IP', msg => "Invalid IP address ($ip)");
+            # int() to remove useless zeroes such as 01.002.003.04 => 1.2.3.4
+            my $dottedquad = int($2) . '.' . int($3) . '.' . int($4) . '.' . int($5);
+            if (defined $7) {
+                if ($7 > 32) {
+                    return R('KO_INVALID_IP', msg => "Invalid IP address ($ip)");
+                }
+                # valid prefix?
+                if (((2**24 * $2 + 2**16 * $3 + 2**8 * $4 + $5) & (2**(32 - $7) - 1)) != 0) {
+                    return R('KO_INVALID_IP', msg => "Invalid prefix ($7) for this IP address ($ip)");
+                }
+                return R('OK', value => {ip => "$dottedquad/$7", prefix => $7}) if ($7 != 32);
+                # if prefix == 32, fallthrough and return the $dottedquad as a single IP below
             }
-
-            if (defined $+{'prefix'} && $+{'prefix'} != 32) {
-                return R('OK', value => {ip => $ip, prefix => $+{'prefix'}});
-            }
-            return R('OK', value => {ip => $+{'shortip'}});
+            return R('OK', value => {ip => $dottedquad});
         }
         return R('KO_INVALID_IP', msg => "Invalid IP address ($ip)");
     }
