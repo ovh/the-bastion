@@ -649,48 +649,46 @@ sub _osh_log {
 sub is_valid_ip {
     my %params       = @_;
     my $ip           = $params{'ip'};
-    my $allowSubnets = $params{'allowSubnets'};    # if not, a /24 or /32 notation is rejected
-    my $fast         = $params{'fast'};            # fast mode: avoid instantiating Net::IP... except if ipv6
+    my $allowSubnets = $params{'allowSubnets'};    # if not, a prefix/size (e.g. /24) notation is rejected
+    my $fast         = $params{'fast'};            # fast mode: avoid instantiating Net::IP, except if IPv6
 
-    if ($fast and $ip !~ m{:}) {
-        # fast asked and it's not an IPv6, regex ftw
-        ## no critic (ProhibitUnusedCapture)
+    if ($fast and index($ip, ':') == -1) {
+        # We're being asked to be fast, and it's not an IPv6, just use a regex
+        # and don't instanciate a Net::IP. Also don't use named captures, as they're slower
         if (
-            $ip =~ m{^(?<shortip>
-                (?<x1>[0-9]{1,3})
-                \.
-                (?<x2>[0-9]{1,3})
-                \.
-                (?<x3>[0-9]{1,3})
-                \.
-                (?<x4>[0-9]{1,3})
-               )
-               (
-                (?<slash>/)
-                (?<prefixlen>\d+)
-               )?
+            $ip =~ m{^
+                (?:
+                    ([0-9]{1,3})\.
+                    ([0-9]{1,3})\.
+                    ([0-9]{1,3})\.
+                    ([0-9]{1,3})
+                )
+                (?:/
+                    ([0-9]{1,2})
+                )?
             $}x
           )
         {
-            if (defined $+{'prefixlen'} and not $allowSubnets) {
-                return R('KO_INVALID_IP', msg => "Invalid IP address ($ip), as subnets are not allowed");
-            }
-            foreach my $key (qw{ x1 x2 x3 x4 }) {
-                return R('KO_INVALID_IP', msg => "Invalid IP address ($ip)")
-                  if (not defined $+{$key} or $+{$key} > 255);
-            }
-            if (defined $+{'prefixlen'} and $+{'prefixlen'} > 32) {
+            if ($1 > 255 || $2 > 255 || $3 > 255 || $4 > 255) {
                 return R('KO_INVALID_IP', msg => "Invalid IP address ($ip)");
             }
-            if (defined $+{'slash'} and not defined $+{'prefixlen'}) {
-                # got a / in $ip but it's not followed by \d+
-                return R('KO_INVALID_IP', msg => "Invalid IP address ($ip)");
+            # int() to remove useless zeroes such as 192.00.002.03 => 192.0.2.3
+            my $dottedquad = int($1) . '.' . int($2) . '.' . int($3) . '.' . int($4);
+            if (defined $5) {
+                if (!$allowSubnets && $5 != 32) {
+                    return R('KO_INVALID_IP', msg => "Invalid IP address ($ip), as subnets are not allowed");
+                }
+                if ($5 > 32) {
+                    return R('KO_INVALID_IP', msg => "Invalid IP address ($ip)");
+                }
+                # valid prefixlen?
+                if (((2**24 * $1 + 2**16 * $2 + 2**8 * $3 + $4) & (2**(32 - $5) - 1)) != 0) {
+                    return R('KO_INVALID_IP', msg => "Invalid prefix length ($5) for this prefix ($dottedquad)");
+                }
+                return R('OK', value => {ip => "$dottedquad/$5", prefix => $5}) if ($5 != 32);
+                # if prefixlen == 32, fallthrough and return the $dottedquad as a single IP below
             }
-
-            if (defined $+{'prefixlen'} && $+{'prefixlen'} != 32) {
-                return R('OK', value => {ip => $ip, prefixlen => $+{'prefixlen'}});
-            }
-            return R('OK', value => {ip => $+{'shortip'}});
+            return R('OK', value => {ip => $dottedquad});
         }
         return R('KO_INVALID_IP', msg => "Invalid IP address ($ip)");
     }
@@ -710,8 +708,8 @@ sub is_valid_ip {
             $type    = 'single';
         }
         else {
-            $shortip = $IpObject->prefix;
-            $type    = 'prefix';
+            $shortip = $IpObject->prefix;    # what Net::IP calls a prefix is in fact the subnet in CIDR notation
+            $type    = 'subnet';
         }
     }
     elsif ($IpObject->version == 6) {
@@ -721,19 +719,18 @@ sub is_valid_ip {
         }
         else {
             $shortip = $IpObject->short . '/' . $IpObject->prefixlen;
-            $type    = 'prefix';
+            $type    = 'subnet';
         }
     }
 
-    if (not $allowSubnets and $type eq 'prefix') {
-        return R('KO_INVALID_IP', msg => "Invalid IP address ($ip), as prefixes are not allowed");
+    if (!$allowSubnets && $type eq 'subnet') {
+        return R('KO_INVALID_IP', msg => "Invalid IP address ($ip), as subnets are not allowed");
     }
 
     return R(
         'OK',
         value => {
             ip        => $shortip,
-            prefix    => $IpObject->prefix,
             prefixlen => $IpObject->prefixlen,
             version   => $IpObject->version,
             type      => $type

@@ -115,7 +115,7 @@ testsuite_selfaccesses()
 
     plgfail selfAddPersonalAccess_too_wide $a0 --osh selfAddPersonalAccess --host 127.0.0.0/8 --user $account0 --port-any
     json .error_code ERR_INVALID_PARAMETER
-    contain "IPv4 is /30 by this"
+    contain "IPv4 is /30 by policy"
 
     success selfAddPersonalAccess_constraints_ok $a0 --osh selfAddPersonalAccess --host 127.0.0.9 --user $account0 --port '*' --ttl 1 --force
 
@@ -130,7 +130,7 @@ testsuite_selfaccesses()
 
     plgfail accountAddPersonalAccess_too_wide $a0 --osh accountAddPersonalAccess --host 127.0.0.0/8 --user $account1 --port-any --account $account1
     json .error_code ERR_INVALID_PARAMETER
-    contain "IPv4 is /30 by this"
+    contain "IPv4 is /30 by policy"
 
     success accountAddPersonalAccess_constaints_ok $a0 --osh accountAddPersonalAccess --host 127.0.0.9 --user $account1 --port '*' --ttl 1 --account $account1
 
