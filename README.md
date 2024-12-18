@@ -3,25 +3,72 @@
 :lock: The Bastion
 ==================
 
+## Overview
+
 Bastions are a cluster of machines used as the unique entry point by operational teams (such as sysadmins, developers, database admins, ...) to securely connect to devices (servers, virtual machines, cloud instances, network equipment, ...), usually using `ssh`.
 
-Bastions provides mechanisms for authentication, authorization, traceability and auditability for the whole infrastructure.
+Bastions provide mechanisms for authentication, authorization, traceability and auditability for your whole infrastructure.
 
-Learn more by reading the blog post series that announced the release:
+Being between your users and your infrastructure, bastions add a layer of abstraction in-between so that your infrastructure doesn't need to know your operational team members individually.
+
+Each of your team member has an individual account on The Bastion, and may be a member of one or several bastion groups that may give them access to one or more infrastructures. The infrastructure devices only need to know and trust the bastion group(s) they may be a part of.
+
+The Bastion fine-grained RBAC makes it possible to delegate some responsibilities to any account, group-scoped or bastion-wide, including to accounts that might be used by your automation to e.g. managing the lifecycle of the accounts (linked to your human resources management system, your LDAP or AD), ensure a group's ACL is up to date (linked to your CMDB), etc. Automated processes are easy to implement through the [JSON API over SSH](https://ovh.github.io/the-bastion/using/api.html).
+
+## Knowledge resources
+
+Want to know more while viewing some nice drawings? Here is a series of blog posts that dig more into the core functionalities and principles of The Bastion:
 - [Part 1 - Genesis](https://blog.ovhcloud.com/the-ovhcloud-bastion-part-1/)
 - [Part 2 - Delegation Dizziness](https://blog.ovhcloud.com/the-ovhcloud-ssh-bastion-part-2-delegation-dizziness/)
 - [Part 3 - Security at the Core](https://blog.ovhcloud.com/the-bastion-part-3-security-at-the-core/)
 - [Part 4 - A new era](https://blog.ovhcloud.com/the-bastion-part-4-a-new-era/)
 
-## :movie_camera: Quick connection and replay example
+Other resources that might be of interest:
+- [Online documentation](https://ovh.github.io/the-bastion/)
+- (Video in French, slides in English) [The Bastion at the Very Tech Trip 2023](https://verytechtrip.ovhcloud.com/fr-ca/sessions), case study of managing an infrastructure with and without a bastion
+- (Video in French, slides in English) [The Bastion at the OSSIR, 2021](https://www.youtube.com/watch?v=UjiNMiB1LDU), quickly explaining the core principles, then detailing the realm functionality, and finally zooming on why the technical implementation choices that have been made enhance security (voluntarily adding a security vulnerability in the code to prove it!)
+- (Podcast in French) [The Bastion at NoLimitSecu, 2021](https://www.nolimitsecu.fr/the-bastion), interview with questions & answers
 
-[![asciicast](https://asciinema.org/a/369555.png)](https://asciinema.org/a/369555?autoplay=1)
+## :recycle: Zero assumptions on your environment
+
+Nothing fancy is needed either on the ingress or the egress side of The Bastion to make it work.
+
+Only your good old `ssh` client is needed to connect through it, and on the other side, any standard `sshd` server will do the trick. This includes, for example, network devices on which you may not have the possibility to install any custom software.
+
+Ancient devices that only support low-security cryptography algorithms or telnet can be hidden from the Internet by firewalling them and only allowing The Bastion, hereby avoiding a low-security trade-off by still allowing only high-security grade connections on the bastion ingress side.
+
+## :curly_loop: Reliability
+
+* Only a few well-known libraries are used, less third party code means a tinier attack surface
+* The bastion is engineered to be self-sufficient: no dependencies such as databases, other daemons, other machines, or third-party cloud services, neither for the authentication or authorization phase, statistically means less downtime
+* High availability can be setup so that multiple bastion instances form a cluster of several instances, with any instance usable at all times (active/active scheme)
+
+## :godmode: Non-exhaustive features list
+
+- [Personal](https://ovh.github.io/the-bastion/using/basics/access_management.html#personal-accesses) and [group](https://ovh.github.io/the-bastion/using/basics/access_management.html#group-accesses) access schemes with group roles delegation to ensure teams autonomy without security trade-offs
+- SSH protocol break between the ingress and egress connections
+- Interactive session recording (in standard ttyrec files)
+- Non-interactive session recording (stdout and stderr through ttyrec)
+- Extensive [logging](https://ovh.github.io/the-bastion/administration/logs.html) support through syslog for easy SIEM consumption
+- Authentication features include support for [MFA/2FA](https://ovh.github.io/the-bastion/administration/mfa.html) (password, TOTP) in addition to publickey authentication
+- Supports Yubico [PIV](https://ovh.github.io/the-bastion/using/piv.html) keys attestation checking and enforcement on the ingress connection side
+- Supports [mosh](https://github.com/mobile-shell/mosh) on the ingress connection side
+- Supports [scp, sftp and rsync](https://ovh.github.io/the-bastion/using/sftp_scp_rsync.html) passthrough, to upload and/or download files from/to remote servers
+- Supports netconf SSH subsystem passthrough
+- Supports realms, to create a trust between two bastions of possibly two different companies, splitting the authentication and authorization phases while still enforcing local policies
+- Supports SSH password autologin on the egress side for legacy devices not supporting pubkey authentication, while still forcing proper pubkey authentication on the ingress side
+- Supports telnet password autologin on the egress side for ancient devices not supporting SSH, while still forcing proper SSH pubkey authentication on the ingress side
+- Supports [HTTPS proxying](https://ovh.github.io/the-bastion/using/http_proxy.html) with man-in-the-middle authentication and authorization handling, for ingress and egress password decoupling (mainly useful for network device APIs)
 
 ## :wrench: Installing, upgrading, using The Bastion
 
 Please see the [online documentation](https://ovh.github.io/the-bastion/), or the corresponding text-based version found in the `doc/` folder.
 
-## :zap: TL;DR: disposable sandbox using Docker
+## :movie_camera: Quick connection and replay example
+
+[![asciicast](https://asciinema.org/a/369555.png)](https://asciinema.org/a/369555?autoplay=1)
+
+## :zap: TL;DR: test it: disposable sandbox using Docker
 
 This is a good way to test The Bastion within seconds, but [read the FAQ](https://ovh.github.io/the-bastion/faq.html#can-i-run-it-under-docker-in-production) if you're serious about using containerization in production.
 
@@ -66,15 +113,13 @@ That's it! Of course, there is a lot more to it, documentation is available unde
 Be sure to check the help of the bastion (`bastion --help`) and the help of each osh plugin (`bastion --osh command --help`).
 Also don't forget to customize your `bastion.conf` file, which can be found in `/etc/bastion/bastion.conf` (for Linux).
 
-## :twisted_rightwards_arrows: Compatibility
-
-### Supported OS for installation
+## :twisted_rightwards_arrows: Supported OS for installation
 
 Linux distros below are tested with each release, but as this is a security product, you are **warmly** advised to run it on the latest up-to-date stable version of your favorite OS:
 
 - Debian 12 (Bookworm), 11 (Bullseye), 10 (Buster)
-- RockyLinux 8.x, 9.x
-- Ubuntu LTS 22.04, 20.04, 18.04
+- RockyLinux 9.x, 8.x
+- Ubuntu LTS 24.04, 22.04, 20.04, 18.04
 - OpenSUSE Leap 15.5\*
 
 \*: Note that these versions have no out-of-the-box MFA support, as they lack packaged versions of `pamtester`, `pam-google-authenticator`, or both. Of course, you may compile those yourself.
@@ -87,19 +132,6 @@ The following OS are also tested with each release:
 \*\*: Note that these have partial MFA support, due to their reduced set of available `pam` plugins. Support for either an additional password or TOTP factor can be configured, but not both at the same time. The code is actually known to work on FreeBSD/HardenedBSD 10+, but it's only regularly tested under 13.2.
 
 Other BSD variants, such as OpenBSD and NetBSD, are unsupported as they have a severe limitation over the maximum number of supplementary groups, causing problems for group membership and restricted commands checks, as well as no filesystem-level ACL support and missing PAM support (hence no MFA).
-
-### Zero assumption on your environment
-
-Nothing fancy is needed either on the ingress or the egress side of The Bastion to make it work.
-
-In other words, only your good old `ssh` client is needed to connect through it, and on the other side, any standard `sshd` server will do the trick. This includes, for example, network devices on which you may not have the possibility to install any custom software.
-
-## :curly_loop: Reliability
-
-* The KISS principle is used where possible for design and code: less complicated code means more auditability and less bugs
-* Only a few well-known libraries are used, less third party code means a tinier attack surface
-* The bastion is engineered to be self-sufficient: no dependencies such as databases, other daemons, other machines, or third-party cloud services, statistically means less downtime
-* High availability can be setup so that multiple bastion instances form a cluster of several instances, with any instance usable at all times (active/active scheme)
 
 ## :ok: Code quality
 
@@ -161,6 +193,12 @@ Even with the most conservative, precautionous and paranoid coding process, code
 - [puppet-thebastion](https://forge.puppet.com/modules/goldenkiwi/thebastion) ([GitHub](https://github.com/ovh/puppet-thebastion)) - a Puppet module to automate and maintain the configuration of The Bastion machines
 - [the-bastion-ansible-wrapper](https://github.com/ovh/the-bastion-ansible-wrapper) - a wrapper to make it possible to run Ansible playbooks through The Bastion
 - [debian-cis](https://github.com/ovh/debian-cis) - a script to apply and monitor the hardening of Debian hosts as per the [CIS](https://www.cisecurity.org/benchmark/debian_linux/) recommendations
+
+### Community tools
+
+A non-exhaustive list of related tools that are maintained by the community:
+
+- [chef-cookbook](https://github.com/axl89/ovh_the_bastion) - a chef cookbook to install the-bastion and setup its default configuration
 
 ## :memo: License
 
