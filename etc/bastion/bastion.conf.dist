@@ -173,6 +173,16 @@
 #  DEFAULT: []
 "ingressToEgressRules": [],
 #
+# IPv4Allowed (boolean)
+#    DESC: If enabled, IPv4 egress connections will be allowed, and IPv4 will be enabled in the DNS queries. This is the default. Do NOT disable this unless you enable IPv6Allowed, if you need to have an IPv6-only bastion.
+# DEFAULT: true
+"IPv4Allowed": true,
+#
+# IPv6Allowed (boolean)
+#    DESC: If enabled, IPv6 egress connections will be allowed, and IPv6 will be enabled in the DNS queries. By default, only IPv4 is allowed.
+# DEFAULT: false
+"IPv6Allowed": false,
+#
 ###########
 # > Logging
 # >> Options to customize how logs should be produced.

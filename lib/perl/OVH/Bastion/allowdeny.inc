@@ -280,19 +280,19 @@ sub is_access_way_granted {
 sub get_ip {
     my %params = @_;
     my $host   = $params{'host'};
-    my $v4     = $params{'v4'};     # allow ipv4 ?
-    my $v6     = $params{'v6'};     # allow ipv6 ?
+    my $v4     = $params{'v4'} // OVH::Bastion::config('IPv4Allowed')->value;
+    my $v6     = $params{'v6'} // OVH::Bastion::config('IPv6Allowed')->value;
 
     if (!$host) {
         return R('ERR_MISSING_PARAMETER', msg => "Missing parameter 'host'");
     }
 
-    # by default, only v4 unless specified otherwise
-    $v4 = 1 if not defined $v4;
-    $v6 = 0 if not defined $v6;
+    # if v4 or v6 are disabled in config, force-disable them here too
+    $v4 = 0 if !OVH::Bastion::config('IPv4Allowed')->value;
+    $v6 = 0 if !OVH::Bastion::config('IPv6Allowed')->value;
 
     # try to see if it's already an IP
-    osh_debug("checking if '$host' is already an IP");
+    osh_debug("checking if '$host' is already an IP (v4=$v4 v6=$v6)");
     my $fnret = OVH::Bastion::is_valid_ip(ip => $host, allowPrefixes => 0);
     if ($fnret) {
         osh_debug("Host $host is already an IP");
@@ -301,7 +301,7 @@ sub get_ip {
         {
             return R('OK', value => {ip => $fnret->value->{'ip'}, iplist => [$fnret->value->{'ip'}]});
         }
-        return R('ERR_INVALID_IP', msg => "IP $host version is not allowed");
+        return R('ERR_INVALID_IP', msg => "IP $host version (IPv" . $fnret->value->{'version'} . ") is not allowed");
     }
 
     if (OVH::Bastion::config('dnsSupportLevel')->value < 1) {
@@ -309,26 +309,33 @@ sub get_ip {
     }
 
     osh_debug("Trying to resolve '$host' because is_valid_ip() says it's not an IP");
-    my ($err, @res);
-    eval {
+    my ($err, @res) = eval {
         # dns resolving, v4/v6 compatible
         # can croak
-        ($err, @res) = getaddrinfo($host, undef, {socktype => SOCK_STREAM});
+        getaddrinfo($host, undef, {socktype => SOCK_STREAM});
     };
-    return R('ERR_HOST_NOT_FOUND', msg => $@)   if $@;
-    return R('ERR_HOST_NOT_FOUND', msg => $err) if $err;
+    return R('ERR_HOST_NOT_FOUND', msg => "Unable to resolve '$host' ($@)")   if $@;
+    return R('ERR_HOST_NOT_FOUND', msg => "Unable to resolve '$host' ($err)") if $err;
 
     my %iplist;
     my $lastip;
+    my $skippedcount = 0;
     foreach my $item (@res) {
         if ($item->{'family'} == AF_INET) {
-            next if not $v4;
+            if (!$v4) {
+                $skippedcount++;
+                next;
+            }
         }
         elsif ($item->{'family'} == AF_INET6) {
-            next if not $v6;
+            if (!$v6) {
+                $skippedcount++;
+                next;
+            }
         }
         else {
             # unknown weird family ?
+            $skippedcount++;
             next;
         }
         my $as_text;
@@ -347,6 +354,9 @@ sub get_ip {
     }
 
     # %iplist empty, not resolved (?)
+    return R('ERR_HOST_NOT_FOUND',
+        msg => "Unable to resolve '$host' (some IPv4 and/or IPv6 were skipped due to policy)")
+      if $skippedcount;
     return R('ERR_HOST_NOT_FOUND', msg => "Unable to resolve '$host'");
 }
 

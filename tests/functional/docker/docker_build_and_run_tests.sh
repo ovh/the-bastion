@@ -123,7 +123,13 @@ docker rm -f "bastion_${target}_tester" 2>/dev/null || true
 if docker inspect "bastion-$target" >/dev/null 2>&1; then
     docker network rm "bastion-$target" >/dev/null
 fi
-docker network create "bastion-$target" >/dev/null
+
+# trying with IPv6
+if ! docker network create --ipv6 --subnet fd42:cafe:efac:"$(printf "%x" $RANDOM)"::/64 "bastion-$target" >/dev/null; then
+    # didn't work... retry without IPv6
+    echo "... IPv6 is not enabled in docker daemon, falling back to IPv4-only network"
+    docker network create "bastion-$target" >/dev/null
+fi
 
 # run target but force entrypoint to test one, and add some keys in env (will be shared with tester)
 echo "Starting target instance"
