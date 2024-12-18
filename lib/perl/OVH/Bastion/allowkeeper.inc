@@ -582,8 +582,9 @@ sub access_modify {
         }
 
         # build the line we're either adding or looking for (to delete it)
-        my $machine = OVH::Bastion::machine_display(ip => $ip, port => $port, user => $user)->value;
-        my $entry   = $machine;
+        my $entry = (index($ip, ':') >= 0 ? "[$ip]" : $ip);
+        $entry .= ":$port" if $port;
+        $entry = $user . '@' . $entry if $user;
 
         my $t            = localtime(time);
         my $fmt          = "%Y-%m-%d %H:%M:%S";
@@ -592,11 +593,9 @@ sub access_modify {
 
         # if we're adding it, append other parameters as comments
         if ($action eq 'add') {
-
             $entry .= " $entryComment";
 
             if ($forceKey) {
-
                 # hash is case-sensitive only for new SHA256 format
                 $forceKey = lc($forceKey) if ($forceKey !~ /^sha256:/i);
                 $entry .= " # FORCEKEY=" . $forceKey;
@@ -628,6 +627,7 @@ sub access_modify {
             else {
                 return R('ERR_CANNOT_OPEN_FILE', msg => "Error opening $file: $!");
             }
+            my $machine = OVH::Bastion::machine_display(ip => $ip, port => $port, user => $user)->value;
             my $ttlmsg =
               $ttl ? (' (expires in ' . OVH::Bastion::duration2human(seconds => $ttl)->value->{'human'} . ')') : '';
             $returnmsg = "Access to $machine successfully added$ttlmsg";
@@ -652,6 +652,7 @@ sub access_modify {
                     if (open(my $fh_file, '>', $file)) {
                         print $fh_file $newFile;
                         close($fh_file);
+                        my $machine = OVH::Bastion::machine_display(ip => $ip, port => $port, user => $user)->value;
                         $returnmsg = "Access to $machine successfully removed";
                     }
                     else {

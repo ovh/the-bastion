@@ -380,16 +380,27 @@ sub process_http_request {
     # in our case, the LOGIN should in fact be of the form bastion_account@remote_login_expression@remote_host_to_connect_to,
     # where remote_login_expression can be one of "$user", "group=$shortGroup,user=$user" or "user=$user"
     my ($loginpart, $pass) = ($1, $2);    ## no critic (ProhibitCaptureWithoutTest)
-    if ($loginpart !~ m{^([^@]+)@([^@]+)@([0-9a-zA-Z._-]+)(%(\d+))?$}) {    ## no critic (ProhibitUnusedCapture)
+    if (
+        $loginpart !~ m{^
+            ([^@]+)@ # account
+            ([^@]+)@ # user_expression
+            (\[?[0-9a-zA-Z._:-]+\]?) # remotemachine, can be a host, IPv4 or IPv6
+            (?:%
+                ([0-9]+) # port, optional
+            )?
+        $}x
+      )
+    {
         return $self->log_and_exit(
             400,
             "Bad Request (bad login format)",
-            "Expected an Authorization line with credentials of the form 'BASTIONACCOUNT\@DEVICEUSER\@HOST' or "
-              . "'BASTIONACCOUNT\@group=BASTIONGROUP,user=DEVICEUSER\@HOST' or 'BASTIONACCOUNT\@user=DEVICEUSER\@HOST'",
+            "Expected an Authorization line with credentials of the form 'BASTIONACCOUNT\@USEREXPR\@HOSTEXPR' where\n"
+              . "USEREXPR can be either 'DEVICEUSER' or 'group=BASTIONGROUP,user=DEVICEUSER' or 'user=DEVICEUSER'\n"
+              . "HOSTEXPR can be either a 'HOST' or 'HOST%PORT', with HOST being a resolvable hostname or IP",
             {comment => "bad_login_format"}
         );
     }
-    my ($account, $user_expression, $remotemachine, $remoteport) = ($1, $2, $3, $5); ## no critic (ProhibitCaptureWithoutTest)
+    my ($account, $user_expression, $remotemachine, $remoteport) = ($1, $2, $3, $4); ## no critic (ProhibitCaptureWithoutTest)
     undef $loginpart;                                                                # no longer needed
     $remoteport               = 443 if not defined $remoteport;
     $self->{'_log'}{'hostto'} = $remotemachine;

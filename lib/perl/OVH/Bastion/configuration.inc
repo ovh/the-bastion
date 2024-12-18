@@ -265,7 +265,7 @@ sub load_configuration {
             options => [
                 qw{
                   enableSyslog enableGlobalAccessLog enableAccountAccessLog enableGlobalSqlLog enableAccountSqlLog displayLastLogin
-                  interactiveModeByDefault interactiveModeProactiveMFAenabled
+                  interactiveModeByDefault interactiveModeProactiveMFAenabled IPv4Allowed
                   }
             ],
         },
@@ -275,7 +275,7 @@ sub load_configuration {
                 qw{
                   interactiveModeAllowed readOnlySlaveMode sshClientHasOptionE ingressKeysFromAllowOverride
                   moshAllowed debug keyboardInteractiveAllowed passwordAllowed telnetAllowed remoteCommandEscapeByDefault
-                  accountExternalValidationDenyOnFailure ingressRequirePIV
+                  accountExternalValidationDenyOnFailure ingressRequirePIV IPv6Allowed
                   }
             ],
         }
@@ -640,6 +640,13 @@ sub config {
 
     my $fnret = OVH::Bastion::load_configuration();
     $fnret or return $fnret;
+
+    # special case: override IPv6Allowed to false if system doesn't support it, and log it
+    if ($key && $key eq 'IPv6Allowed' && $fnret->value->{$key} && !OVH::Bastion::system_supports_ipv6()) {
+        warn_syslog("System does not support IPv6, disabling it");
+        return R('OK', value => 0);
+    }
+
     if (exists $fnret->value->{$key}) {
         return R('OK', value => $fnret->value->{$key});
     }

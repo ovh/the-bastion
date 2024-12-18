@@ -32,4 +32,4 @@ RUN ["/opt/bastion/bin/admin/install","--new-install"]
 # start at entrypoint
 ENTRYPOINT /opt/bastion/docker/entrypoint.sh
 
-# TESTOPT --has-mfa=1 --has-pamtester=1 --has-piv=1
+# TESTOPT --has-mfa=1 --has-pamtester=1 --has-piv=1 --has-ipv6=0

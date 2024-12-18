@@ -55,7 +55,7 @@ testsuite_proxy()
     # now try to use these
     script good_auth_bad_host "curl -ski -u '$account0@test@test.invalid:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
-    contain 'HTTP/1.0 400 Bad Request (host not resolved)'
+    contain 'HTTP/1.0 400 Bad Request (ERR_HOST_NOT_FOUND)'
     contain 'Server: The Bastion'
     contain 'X-Bastion-Instance: '
     contain 'X-Bastion-ReqID: '
@@ -65,7 +65,7 @@ testsuite_proxy()
     contain 'X-Bastion-Request-Length: 0'
     contain 'X-Bastion-Local-Status: 400'
     contain 'Content-Type: text/plain'
-    contain "Specified remote host couldn't be resolved through the DNS"
+    contain "Unable to resolve 'test.invalid' (Name or service not known)"
 
     # change credentials again
     success generate_proxy_password2 $a0 --osh selfGenerateProxyPassword --do-it
@@ -229,6 +229,11 @@ testsuite_proxy()
     contain "X-Bastion-Egress-Timing: "
     contain "Content-Length: 8"
     contain "somedata"
+
+    # try an IPv6
+    script ipv6 "curl -ski -u '$account0@test@[::1]%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit ${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain 'ERR_IP_VERSION_DISABLED'
 }
 
 [ "${remote_proxy_port:-0}" != 0 ] && testsuite_proxy

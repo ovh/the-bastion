@@ -51,6 +51,8 @@ Those options can set a few global network policies to be applied bastion-wide.
 - `allowedNetworks`_
 - `forbiddenNetworks`_
 - `ingressToEgressRules`_
+- `IPv4Allowed`_
+- `IPv6Allowed`_
 
 Logging options
 ---------------
@@ -425,6 +427,28 @@ For example, take the following configuration:
 - All the other networks can access any other network (including egress ``10.20.0.0/16`` or egress ``192.168.0.0/16``)
 
 In any case, all the personal and group accesses still apply in addition to these global rules.
+
+.. _IPv4Allowed:
+
+IPv4Allowed
+***********
+
+:Type: ``boolean``
+
+:Default: ``true``
+
+If enabled, IPv4 egress connections will be allowed, and IPv4 will be enabled in the DNS queries. This is the default. Do NOT disable this unless you enable IPv6Allowed, if you need to have an IPv6-only bastion.
+
+.. _IPv6Allowed:
+
+IPv6Allowed
+***********
+
+:Type: ``boolean``
+
+:Default: ``false``
+
+If enabled, IPv6 egress connections will be allowed, and IPv6 will be enabled in the DNS queries. By default, only IPv4 is allowed.
 
 Logging
 -------
