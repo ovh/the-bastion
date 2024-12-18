@@ -75,6 +75,8 @@ sub main_exit {
 
     my $R = R($retcode eq OVH::Bastion::EXIT_OK ? 'OK' : 'KO_' . uc($comment), msg => $msg);
 
+    # always print to STDERR as some plugins (such as scp) won't display STDOUT
+    $ENV{'FORCE_STDERR'} = 1;
     OVH::Bastion::osh_crit($R->msg) if not $R;
     OVH::Bastion::json_output($R)   if $ENV{'PLUGIN_JSON'};
 
@@ -600,18 +602,25 @@ else {
 if ($user && !OVH::Bastion::is_valid_remote_user(user => $user, allowWildcards => ($osh_command ? 1 : 0))) {
     main_exit OVH::Bastion::EXIT_INVALID_REMOTE_USER, 'invalid_remote_user', "Remote user name '$user' seems invalid";
 }
-if ($host && $host !~ m{^[a-zA-Z0-9._/:-]+$}) {
-
-    # can be an IP (v4 or v6), hostname, or prefix (with a /)
-    main_exit OVH::Bastion::EXIT_INVALID_REMOTE_HOST, 'invalid_remote_host', "Remote host name '$host' seems invalid";
-}
 
 # Get real ip from host
-$fnret = R('ERR_INTERNAL', silent => 1);
+$fnret = R('ERR_MISSING_HOST', msg => "No host specified", silent => 1);
 my $ip = undef;
 
 # if: avoid loading Net::IP and BigInt if there's no host specified
 if ($host) {
+
+    # can be an IP (v4 or v6), hostname, or netblock (with a /)
+    if ($host !~ m{^\[?[a-zA-Z0-9._/:-]+\]?$}) {
+        main_exit OVH::Bastion::EXIT_INVALID_REMOTE_HOST, 'invalid_remote_host',
+          "Remote host name '$host' seems invalid";
+    }
+
+    # netblocks are only allowed for plugins
+    if (index($host, '/') != -1 && !$osh_command) {
+        main_exit OVH::Bastion::EXIT_INVALID_REMOTE_HOST, 'invalid_remote_host',
+          "Remote host '$host' looks like a netblock, can't connect to that";
+    }
 
     # probably this "host" is in fact an option, but we didn't parse it because it's an unknown one,
     # so we call the long_help() for the user, before exiting
@@ -621,24 +630,36 @@ if ($host) {
     }
 
     # otherwise, resolve the host
-    $fnret = OVH::Bastion::get_ip(host => $host);
-}
-if (!$fnret) {
+    $fnret = OVH::Bastion::get_ip(host => $host, allowPrefixes => ($osh_command ? 1 : 0));
 
-    # exit error when not osh ...
-    if (!$osh_command) {
-        main_exit OVH::Bastion::EXIT_HOST_NOT_FOUND, 'host_not_found', "Unable to resolve host '$host' ($fnret)";
-    }
-    elsif ($host && $host !~ m{^[0-9.:]+/\d+$})    # in some osh plugins, ip/mask is accepted, don't yell.
-    {
-        osh_warn("I was unable to resolve host '$host'. Something shitty might happen.");
+    # if it's a netblock but get_ip() sends an error, it's an invalid netblock
+    if (!$fnret && index($host, '/') != -1) {
+        main_exit OVH::Bastion::EXIT_INVALID_REMOTE_HOST, 'invalid_remote_host',
+          "Remote host '$host' looks like a netblock, but with an invalid prefix";
     }
 }
-else {
+
+# if couldn't resolve host and either:
+# - it's a plugin and a host was specified, or
+# - it's not a plugin
+# then exit
+if (!$fnret && (($osh_command && $host) || !$osh_command)) {
+    if ($fnret->err eq 'ERR_DNS_DISABLED') {
+        main_exit OVH::Bastion::EXIT_DNS_DISABLED, 'dns_disabled', $fnret->msg;
+    }
+    elsif ($fnret->err eq 'ERR_IP_VERSION_DISABLED') {
+        main_exit OVH::Bastion::EXIT_IP_VERSION_DISABLED, 'ip_version_disabled', $fnret->msg;
+    }
+    else {
+        main_exit OVH::Bastion::EXIT_HOST_NOT_FOUND, 'host_not_found', $fnret->msg;
+    }
+}
+
+# if host was resolved, store its IP
+if ($fnret) {
     $ip = $fnret->value->{'ip'};
+    osh_debug("will work on IP $ip");
 }
-
-osh_debug("will work on IP $ip");
 
 # Check if we got a telnet or ssh password user
 my $userPasswordClue;

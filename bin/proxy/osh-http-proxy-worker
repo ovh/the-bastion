@@ -148,28 +148,28 @@ if (not $pass) {
 }
 
 # convert the remotemachine into an IP if needed
-# if: avoid loading Net::IP and BigInt if there's no host specified
-if ($remotemachine !~ /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/) {
-    $fnret = OVH::Bastion::get_ip(host => $remotemachine);
-    if ($fnret && $fnret->value->{'ip'} =~ /^([0-9.:]+)$/) {
-        $remotemachine = $1;    # untaint
-    }
-    else {
-        log_and_exit(
-            400,
-            "Bad Request (host not resolved)",
-            "Specified remote host couldn't be resolved through the DNS",
-            {comment => "host_not_found"}
-        );
-    }
+$fnret = OVH::Bastion::get_ip(host => $remotemachine);
+if ($fnret && $fnret->value->{'ip'} && $fnret->value->{'ip'} =~ /^([0-9a-f.:]+)$/) {
+    $remotemachine = $1;    # untaint
 }
 else {
-    # it's already an IP, get $1 for untaint
-    $remotemachine = $1;
+    my $comment = lc($fnret->err);
+    $comment =~ tr/-/_/;
+    log_and_exit(400, "Bad Request (" . $fnret->err . ")", $fnret->msg, {comment => $comment});
 }
 
 delete $log_params{'hostto'};
 $log_params{'ipto'} = $remotemachine;
+
+# if it's an IPv6, need to transform it for some use cases below
+my $remotemachine_uri       = $remotemachine;
+my $remotemachine_directory = $remotemachine;
+if (index($remotemachine, ':') != -1) {
+    $remotemachine_uri = "[$remotemachine]";
+    # as :'s might not be allowed on all filesystems, replace :'s by .'s and surround by v6[]
+    $remotemachine_directory =~ tr/:/./;
+    $remotemachine_directory = "v6[$remotemachine_directory]";
+}
 
 # now check that the password we were given for account matches the hash we have stored for it
 # first get our stored hash
@@ -282,7 +282,7 @@ else {
         log_and_exit(
             403,
             "Access Denied (access denied to remote this way)",
-            "This account doesn't have access to $user\@$remotemachine:$remoteport using this auth mode ($authmode)\n",
+            "This account doesn't have access to $user\@$remotemachine_uri:$remoteport using this auth mode ($authmode)\n",
             {comment => "access_denied_this_way"}
         );
     }
@@ -319,7 +319,7 @@ if ($insecure) {
 }
 
 # set the remote URL
-my $req = HTTP::Request->new($method => "https://" . $remotemachine . ':' . $remoteport . $path);
+my $req = HTTP::Request->new($method => "https://" . $remotemachine_uri . ':' . $remoteport . $path);
 
 # add the content we get (passthru)
 $req->content($content);
@@ -443,7 +443,7 @@ my $delay = Time::HiRes::tv_interval($start_time, [Time::HiRes::gettimeofday()])
 my $basedir = "/home/$account/ttyrec";
 -d $basedir || mkdir $basedir;
 
-my $finaldir = "$basedir/$remotemachine";
+my $finaldir = "$basedir/$remotemachine_directory";
 -d $finaldir || mkdir $finaldir;
 
 # depending on whether we must log the body or not, and whether there is a max size specified,

@@ -105,35 +105,29 @@ sub is_access_way_granted {
         "checking way $way/$account/$group with ignorePort=$ignorePort ignoreUser=$ignoreUser exactIpMatch=$exactIpMatch exactPortMatch=$exactPortMatch exactUserMatch=$exactUserMatch"
     );
 
-    my ($bestMatch, $bestMatchSize, $bestMatchComment, $forceKey, $forcePassword);
+    my %match;
     foreach my $entry (@acl) {
-        my $allowedIp          = $entry->{'ip'};              # can be a prefix
-        my $allowedUser        = $entry->{'user'};            # can be undef (if any-user)
-        my $allowedPort        = $entry->{'port'};            # can be undef (if any-port)
-        my $localForceKey      = $entry->{'forceKey'};
-        my $localForcePassword = $entry->{'forcePassword'};
-
         # normalize '*' to undef
-        undef $allowedUser if (defined $allowedUser && $allowedUser eq '*');
-        undef $allowedPort if (defined $allowedPort && $allowedPort eq '*');
+        undef $entry->{'user'} if (defined $entry->{'user'} && $entry->{'user'} eq '*');
+        undef $entry->{'port'} if (defined $entry->{'port'} && $entry->{'port'} eq '*');
 
         osh_debug("checking wanted "
-              . (defined $wantedUser ? $wantedUser : '<u>') . '@'
-              . (defined $wantedIp   ? $wantedIp   : '<u>') . ':'
-              . (defined $wantedPort ? $wantedPort : '<u>')
+              . ($wantedUser // '<u>') . '@'
+              . ($wantedIp   // '<u>') . ':'
+              . ($wantedPort // '<u>')
               . ' against '
-              . (defined $allowedUser ? $allowedUser : '<u>') . '@'
-              . (defined $allowedIp   ? $allowedIp   : '<u>') . ':'
-              . (defined $allowedPort ? $allowedPort : '<u>'));
+              . ($entry->{'user'} // '<u>') . '@'
+              . ($entry->{'ip'}   // '<u>') . ':'
+              . ($entry->{'port'} // '<u>'));
 
-        $allowedIp or next;    # can't be empty
+        $entry->{'ip'} or next;    # can't be empty
 
         # first, check port stuff
         # if we get ignorePort, we skip the checks entirely
         if (not $ignorePort) {
             if ($exactPortMatch) {
                 # we want an exact match
-                if (not defined $allowedPort) {
+                if (not defined $entry->{'port'}) {
                     if (not defined $wantedPort) {
                         ;    # both undefined ? ok
                     }
@@ -146,21 +140,21 @@ sub is_access_way_granted {
                         next;    # if only one of two is undef, it's not an exact match
                     }
                     else {
-                        next if ($wantedPort ne $allowedPort);    # both defined but unequal, not a match
+                        next if ($wantedPort ne $entry->{'port'});    # both defined but unequal, not a match
                     }
                 }
             }
             else {
                 # we don't want an exact match (aka port-any allowed)
-                if (not defined $allowedPort) {
-                    ;                                             # it's a wildcard, will always match
+                if (not defined $entry->{'port'}) {
+                    ;                                                 # it's a wildcard, will always match
                 }
                 else {
                     if (not defined $wantedPort) {
-                        next;                                     # we want a wildcard, but we don't have it
+                        next;                                         # we want a wildcard, but we don't have it
                     }
                     else {
-                        next if ($wantedPort ne $allowedPort);    # both defined but unequal, not a match
+                        next if ($wantedPort ne $entry->{'port'});    # both defined but unequal, not a match
                     }
                 }
             }
@@ -171,7 +165,7 @@ sub is_access_way_granted {
         if (not $ignoreUser) {
             if ($exactUserMatch) {
                 # we want an exact match
-                if (not defined $allowedUser) {
+                if (not defined $entry->{'user'}) {
                     if (not defined $wantedUser) {
                         ;    # both undefined ? ok
                     }
@@ -184,31 +178,31 @@ sub is_access_way_granted {
                         next;    # if only one of two is undef, it's not an exact match
                     }
                     else {
-                        next if ($wantedUser ne $allowedUser);    # both defined but unequal, not a match
+                        next if ($wantedUser ne $entry->{'user'});    # both defined but unequal, not a match
                     }
                 }
             }
             else {
                 # we don't want an exact match (aka user-any allowed)
-                if (not defined $allowedUser) {
-                    ;                                             # it's a wildcard, will always match
+                if (not defined $entry->{'user'}) {
+                    ;                                                 # it's a wildcard, will always match
                 }
                 else {
                     if (not defined $wantedUser) {
-                        next;                                     # we want a wildcard, but we don't have it
+                        next;                                         # we want a wildcard, but we don't have it
                     }
                     else {
-                        # handle the case where $allowedUser contains wildcards such as '?' or '*'
-                        if (index($allowedUser, '*') >= 0 || index($allowedUser, '?') >= 0) {
+                        # handle the case where $entry->{'user'} contains wildcards such as '?' or '*'
+                        if (index($entry->{'user'}, '*') >= 0 || index($entry->{'user'}, '?') >= 0) {
                             # turn wildcards into a regexp
-                            my $allowedUserRe = quotemeta($allowedUser);
-                            $allowedUserRe =~ s{\\\?}{.}g;
-                            $allowedUserRe =~ s{\\\*}{.*}g;
-                            next if ($wantedUser !~ /^$allowedUserRe$/);
+                            my $entryUserRe = quotemeta($entry->{'user'});
+                            $entryUserRe =~ s{\\\?}{.}g;
+                            $entryUserRe =~ s{\\\*}{.*}g;
+                            next if ($wantedUser !~ /^$entryUserRe$/);
                         }
                         else {
                             # doesn't contain a wildcard, simple comparison
-                            next if ($wantedUser ne $allowedUser);    # both defined but unequal, not a match
+                            next if ($wantedUser ne $entry->{'user'});    # both defined but unequal, not a match
                         }
                     }
                 }
@@ -216,60 +210,69 @@ sub is_access_way_granted {
         }
 
         # then, check IP
-        # if we want an exact match, it's a stupid strcmp()
-        if ($exactIpMatch) {
-            next if ($allowedIp ne $wantedIp);
+        my $isIPv6     = (index($entry->{'ip'}, ':') != -1);
+        my $isNetblock = (index($entry->{'ip'}, '/') != -1);
+
+        # if we want an exact match, it's a simple strcmp() for IPv4
+        if ($exactIpMatch && !$isIPv6) {
+            next if ($entry->{'ip'} ne $wantedIp);
 
             # here, we got a perfect match
-            $forceKey         = $localForceKey;
-            $forcePassword    = $localForcePassword;
-            $bestMatch        = $allowedIp;
-            $bestMatchComment = $entry->{'userComment'};
-            $bestMatchSize    = undef;                     # not needed
-            last;                                          # perfect match, don't search further
+            %match = (
+                forceKey      => $entry->{'forceKey'},
+                forcePassword => $entry->{'forcePassword'},
+                ip            => $entry->{'ip'},
+                comment       => $entry->{'userComment'},
+                size          => undef,                       # not needed
+            );
+            last;                                             # perfect match, don't search further
         }
 
-        # check IP in not-exactIpMatch case. if it contains / then it's a prefix
-        if ($allowedIp =~ m{/}) {
+        # check IP in not-exactIpMatch case. if it's a netblock (v4/v6) OR an IPv6, use Netmask matching
+        if ($isNetblock || $isIPv6) {
 
             # build slash and test
             require Net::Netmask;
-            my $ipCheck = Net::Netmask->new2($allowedIp);
-            if ($ipCheck && $ipCheck->match($wantedIp)) {
-                osh_debug("... we got a slash match !");
-                if (not defined $bestMatchSize or $ipCheck->size() < $bestMatchSize) {
-                    $forceKey         = $localForceKey;
-                    $forcePassword    = $localForcePassword;
-                    $bestMatch        = $allowedIp;
-                    $bestMatchComment = $entry->{'userComment'};
-                    $bestMatchSize    = $ipCheck->size();
-                    $bestMatchSize == 1 and last;    # we won't get better than this
+            my $ipCheck = Net::Netmask->new2($entry->{'ip'});
+            if ($ipCheck && ($isNetblock ? $ipCheck->contains($wantedIp) : $ipCheck->match($wantedIp))) {
+                osh_debug("... we got a netblock match!");
+                if (not defined $match{'size'} or $ipCheck->size() < $match{'size'}) {
+                    %match = (
+                        forceKey      => $entry->{'forceKey'},
+                        forcePassword => $entry->{'forcePassword'},
+                        ip            => $entry->{'ip'},
+                        comment       => $entry->{'userComment'},
+                        size          => $ipCheck->size(),
+                    );
+                    last if $match{'size'} == 1;    # we won't get better than this
                 }
             }
         }
         else {
-            # it's a single ip, so a stupid strcmp() does the trick
-            if ($allowedIp eq $wantedIp) {
-                osh_debug("... we got a singleip match !");
-                $forceKey         = $localForceKey;
-                $forcePassword    = $localForcePassword;
-                $bestMatch        = $allowedIp;
-                $bestMatchComment = $entry->{'userComment'};
-                $bestMatchSize    = 1;
+            # it's a single ipv4, so a simple strcmp() does the trick
+            if ($entry->{'ip'} eq $wantedIp) {
+                osh_debug("... we got a singleip match!");
+                %match = (
+                    forceKey      => $entry->{'forceKey'},
+                    forcePassword => $entry->{'forcePassword'},
+                    ip            => $entry->{'ip'},
+                    comment       => $entry->{'userComment'},
+                    size          => 1,
+                );
                 last;
             }
         }
     }
 
-    if (defined $bestMatch) {
+    if (%match) {
         return R(
             'OK',
             value => {
-                match         => $bestMatch,
-                size          => $bestMatchSize,
-                forceKey      => $forceKey,
-                forcePassword => $forcePassword,
-                comment       => $bestMatchComment
+                match         => $match{'ip'},
+                size          => $match{'size'},
+                forceKey      => $match{'forceKey'},
+                forcePassword => $match{'forcePassword'},
+                comment       => $match{'comment'},
             }
         );
     }
@@ -278,22 +281,23 @@ sub is_access_way_granted {
 
 # from a given hostname, check if we have an ip or a range of ip or try to resolve
 sub get_ip {
-    my %params = @_;
-    my $host   = $params{'host'};
-    my $v4     = $params{'v4'};     # allow ipv4 ?
-    my $v6     = $params{'v6'};     # allow ipv6 ?
+    my %params        = @_;
+    my $host          = $params{'host'};
+    my $v4            = $params{'v4'} // OVH::Bastion::config('IPv4Allowed')->value;
+    my $v6            = $params{'v6'} // OVH::Bastion::config('IPv6Allowed')->value;
+    my $allowPrefixes = $params{'allowPrefixes'} ||= 0;
 
     if (!$host) {
         return R('ERR_MISSING_PARAMETER', msg => "Missing parameter 'host'");
     }
 
-    # by default, only v4 unless specified otherwise
-    $v4 = 1 if not defined $v4;
-    $v6 = 0 if not defined $v6;
+    # if v4 or v6 are disabled in config, force-disable them here too
+    $v4 = 0 if !OVH::Bastion::config('IPv4Allowed')->value;
+    $v6 = 0 if !OVH::Bastion::config('IPv6Allowed')->value;
 
     # try to see if it's already an IP
-    osh_debug("checking if '$host' is already an IP");
-    my $fnret = OVH::Bastion::is_valid_ip(ip => $host, allowPrefixes => 0);
+    osh_debug("checking if '$host' is already an IP (v4=$v4 v6=$v6)");
+    my $fnret = OVH::Bastion::is_valid_ip(ip => $host, allowPrefixes => $allowPrefixes);
     if ($fnret) {
         osh_debug("Host $host is already an IP");
         if (   ($fnret->value->{'version'} == 4 && $v4)
@@ -301,7 +305,8 @@ sub get_ip {
         {
             return R('OK', value => {ip => $fnret->value->{'ip'}, iplist => [$fnret->value->{'ip'}]});
         }
-        return R('ERR_INVALID_IP', msg => "IP $host version is not allowed");
+        return R('ERR_IP_VERSION_DISABLED',
+            msg => "Can't use '$host', IPv" . $fnret->value->{'version'} . " support disabled by policy");
     }
 
     if (OVH::Bastion::config('dnsSupportLevel')->value < 1) {
@@ -309,26 +314,33 @@ sub get_ip {
     }
 
     osh_debug("Trying to resolve '$host' because is_valid_ip() says it's not an IP");
-    my ($err, @res);
-    eval {
+    my ($err, @res) = eval {
         # dns resolving, v4/v6 compatible
         # can croak
-        ($err, @res) = getaddrinfo($host, undef, {socktype => SOCK_STREAM});
+        getaddrinfo($host, undef, {socktype => SOCK_STREAM});
     };
-    return R('ERR_HOST_NOT_FOUND', msg => $@)   if $@;
-    return R('ERR_HOST_NOT_FOUND', msg => $err) if $err;
+    return R('ERR_HOST_NOT_FOUND', msg => "Unable to resolve '$host' ($@)")   if $@;
+    return R('ERR_HOST_NOT_FOUND', msg => "Unable to resolve '$host' ($err)") if $err;
 
     my %iplist;
     my $lastip;
+    my $skippedcount = 0;
     foreach my $item (@res) {
         if ($item->{'family'} == AF_INET) {
-            next if not $v4;
+            if (!$v4) {
+                $skippedcount++;
+                next;
+            }
         }
         elsif ($item->{'family'} == AF_INET6) {
-            next if not $v6;
+            if (!$v6) {
+                $skippedcount++;
+                next;
+            }
         }
         else {
             # unknown weird family ?
+            $skippedcount++;
             next;
         }
         my $as_text;
@@ -347,6 +359,9 @@ sub get_ip {
     }
 
     # %iplist empty, not resolved (?)
+    return R('ERR_HOST_NOT_FOUND',
+        msg => "Unable to resolve '$host' (some IPv4 and/or IPv6 were skipped due to policy)")
+      if $skippedcount;
     return R('ERR_HOST_NOT_FOUND', msg => "Unable to resolve '$host'");
 }
 
@@ -681,18 +696,10 @@ sub _is_in_any_net {
         return R('ERR_INVALID_PARAMETER', msg => "Parameter 'networks' must be an array");
     }
 
+    require Net::Netmask;
     foreach my $net (@$networks) {
-        if ($net =~ m{/}) {
-
-            # build slash and test
-            require Net::Netmask;
-            my $ipCheck = Net::Netmask->new2($net);
-            return R('OK', value => {matched => $net}) if ($ipCheck && $ipCheck->match($ip));
-        }
-        else {
-            # it's a single ip, so it's a stupid strcmp() does the trick
-            return R('OK', value => {matched => $net}) if ($net eq $ip);
-        }
+        my $Netmask = Net::Netmask->new2($net);
+        return R('OK', value => {matched => $net}) if ($Netmask && $Netmask->match($ip));
     }
     return R('KO', msg => "No match found");
 }
@@ -1289,31 +1296,47 @@ sub _get_acl_from_file {
         # empty line ?
         $line or next;
 
+        $line =~ m{^
+            (
+                (\S+)@       # $2 == $user
+            )? # user part, optional
+            (
+                [0-9.]+(/[0-9]+)?         # IPv4
+                |                         # or
+                \[[0-9a-f:.]+(/[0-9]+)?\] # IPv6
+            ) # ip or netblock part, mandatory ($3)
+            (
+                :([0-9]+)      # $7 == port
+            )?
+        $}x or next;
+
+        ($user, $ip, $port) = ($2, $3, $7);
+
         # extract custom port if present
-        if ($line =~ s/:(\d+)$//) {
-            $fnret = OVH::Bastion::is_valid_port(port => $1);
+        if (defined $port) {
+            $fnret = OVH::Bastion::is_valid_port(port => $port);
             if (!$fnret) {
-                osh_debug("skipping line <$line> because port ($1) is invalid");
+                osh_debug("skipping line <$line> because port ($port) is invalid");
                 next;
             }
             $port = $fnret->value;
         }
 
         # extract custom user if present
-        if ($line =~ s/^(\S+)\@//) {
-            $fnret = OVH::Bastion::is_valid_remote_user(user => $1, allowWildcards => 1);
+        if (defined $user) {
+            $fnret = OVH::Bastion::is_valid_remote_user(user => $user, allowWildcards => 1);
             if (!$fnret) {
-                osh_debug("skipping line <$line> because user ($1) is invalid");
+                osh_debug("skipping line <$line> because user ($user) is invalid");
                 next;
             }
             $user = $fnret->value;
         }
 
         # extract ip (v4 or v6)
-        if ($line =~ m{([0-9a-f./:]+)}i) {
-            $fnret = OVH::Bastion::is_valid_ip(ip => $1, allowPrefixes => 1, fast => 1);
+        if (defined $ip) {
+            $fnret = OVH::Bastion::is_valid_ip(ip => $ip, allowPrefixes => 1, fast => 1);
             if (!$fnret) {
-                osh_debug("skipping line <$line> because IP ($1) is invalid");
+                osh_debug("skipping line <$line> because IP ($ip) is invalid");
                 next;
             }
             $ip = $fnret->value->{'ip'};

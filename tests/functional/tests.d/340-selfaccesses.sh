@@ -82,8 +82,8 @@ testsuite_selfaccesses()
     json .command    null .error_code KO_ACCESS_DENIED
 
     run invalid_host $a1 127.0./0.1 -- id
-    retvalshouldbe 102
-    json .error_code KO_HOST_NOT_FOUND
+    retvalshouldbe 128
+    json .error_code KO_INVALID_REMOTE_HOST
 
     run invalid_host $a1 127.0.%0.1 -- id
     retvalshouldbe 128

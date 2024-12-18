@@ -20,7 +20,7 @@ opt_slowness_factor=1
 opt_log_prefix=
 opt_module=
 opt_post_run=
-declare -A capabilities=( [ed25519]=1 [mfa]=1 [mfa-password]=0 [pamtester]=1 [piv]=1 [sk]=0 )
+declare -A capabilities=( [ed25519]=1 [mfa]=1 [mfa-password]=0 [pamtester]=1 [piv]=1 [sk]=0 [ipv6]=1 )
 
 # set the helptext now to get the proper default values
 help_text=$(cat <<EOF
@@ -43,6 +43,7 @@ Specifying features support of the underlying OS of the tested bastion:
     --has-pamtester=[0|1]      The \`pamtester\` binary is available, and PAM is usable (default: ${capabilities[pamtester]})
     --has-piv=[0|1]            The \`yubico-piv-tool\` binary is available (default: ${capabilities[piv]})
     --has-sk=[0|1]             The openssh-server supports Secure Keys (FIDO2) (default: ${capabilities[sk]})
+    --has-ipv6=[0|1]           OS supports IPv6 and has a recent-enough version of Net::Netmask (default: ${capabilities[ipv6]})
 
 EOF
 )
@@ -447,7 +448,7 @@ run()
         [ "$case" = "sshd_reload" ] && sleep 1
         flock "$outdir/$basename.retval" $screen "$outdir/$basename.cc" -D -m -fn -ln $r0 '
                 /opt/bastion/bin/admin/check-consistency.pl ; echo _RETVAL_CC=$?= ;
-                grep -Fw -e warn -e die -e code-warning /var/log/bastion/bastion.log | grep -Fv "'"${code_warn_exclude:-__none__}"'" | sed "s/^/_SYSLOG=/" ;
+                grep -Fw -e warn -e die -e code-warning /var/log/bastion/bastion.log | grep -Fv -e "'"${code_warn_exclude:-__none__}"'" -e "System does not support IPv6" | sed "s/^/_SYSLOG=/" ;
                 : > /var/log/bastion/bastion.log
             '
         flock "$outdir/$basename.retval" true

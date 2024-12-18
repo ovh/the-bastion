@@ -733,7 +733,7 @@ EOS
     json .command accountAddPersonalAccess .error_code OK .value.ip 77.66.55.0/24 .value.port null .value.user null
 
     run a0_add_personal_access_to_a3_fail_badslash $a0 --osh accountAddPersonalAccess --account $account3 --host 77.66.55.0/23 --user-any --port-any
-    json .command null .error_code KO_INVALID_IP .value null
+    json .command null .error_code KO_INVALID_REMOTE_HOST .value null
 
     run a0_add_personal_access_to_a3_works_slash_2 $a0 --osh accountAddPersonalAccess --account $account3 --host 1.2.3.4/32 --user-any --port-any
     json .command accountAddPersonalAccess .error_code OK .value.ip 1.2.3.4 .value.port null .value.user null
@@ -751,7 +751,7 @@ EOS
             do
                 run a0a3_add_personalxs_batch $a0 --osh  accountAddPersonalAccess --account $account3 --host $todo_ip $todo_port $todo_user
                 if [ "$todo_ip" = "2.$todo_inc.5.0/23" ]; then
-                    retvalshouldbe 100
+                    retvalshouldbe 128
                 else
                     retvalshouldbe 0
                 fi
@@ -762,7 +762,7 @@ EOS
             do
                 run a2g3_add_server_batch $a2 --osh  groupAddServer --group $group3 --host $todo_ip $todo_port $todo_user --force
                 if [ "$todo_ip" = "2.$todo_inc.5.0/23" ]; then
-                    retvalshouldbe 100
+                    retvalshouldbe 128
                 else
                     retvalshouldbe 0
                 fi
@@ -807,7 +807,7 @@ EOS
             do
                 run a0a3_del_personalxs_batch $a0 --osh  accountDelPersonalAccess --account $account3 --host $todo_ip $todo_port $todo_user
                 if [ "$todo_ip" = "2.$todo_inc.5.0/23" ]; then
-                    retvalshouldbe 100
+                    retvalshouldbe 128
                 else
                     retvalshouldbe 0
                 fi
@@ -818,7 +818,7 @@ EOS
             do
                 run a2g3_del_server_batch $a2 --osh  groupDelServer --group $group3 --host $todo_ip $todo_port $todo_user --force
                 if [ "$todo_ip" = "2.$todo_inc.5.0/23" ]; then
-                    retvalshouldbe 100
+                    retvalshouldbe 128
                 else
                     retvalshouldbe 0
                 fi
