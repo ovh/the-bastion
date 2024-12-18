@@ -592,11 +592,9 @@ sub access_modify {
 
         # if we're adding it, append other parameters as comments
         if ($action eq 'add') {
-
             $entry .= " $entryComment";
 
             if ($forceKey) {
-
                 # hash is case-sensitive only for new SHA256 format
                 $forceKey = lc($forceKey) if ($forceKey !~ /^sha256:/i);
                 $entry .= " # FORCEKEY=" . $forceKey;
