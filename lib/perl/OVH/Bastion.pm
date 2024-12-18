@@ -750,6 +750,19 @@ sub is_valid_remote_user {
     return R('ERR_INVALID_PARAMETER', msg => "Specified user doesn't seem to be valid");
 }
 
+sub machine_display {
+    my %params = @_;
+    my $ip     = $params{'ip'};
+    my $port   = $params{'port'};
+    my $user   = $params{'user'};
+
+    my $machine = (index($ip, ':') >= 0 ? "[$ip]" : $ip);
+    $machine .= ":$port" if $port;
+    $machine = $user . '@' . $machine if $user;
+
+    return R('OK', value => $machine);
+}
+
 sub touch_file {
     my $file  = shift;
     my $perms = shift;
