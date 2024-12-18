@@ -265,7 +265,7 @@ sub load_configuration {
             options => [
                 qw{
                   enableSyslog enableGlobalAccessLog enableAccountAccessLog enableGlobalSqlLog enableAccountSqlLog displayLastLogin
-                  interactiveModeByDefault interactiveModeProactiveMFAenabled
+                  interactiveModeByDefault interactiveModeProactiveMFAenabled IPv4Allowed
                   }
             ],
         },
@@ -275,7 +275,7 @@ sub load_configuration {
                 qw{
                   interactiveModeAllowed readOnlySlaveMode sshClientHasOptionE ingressKeysFromAllowOverride
                   moshAllowed debug keyboardInteractiveAllowed passwordAllowed telnetAllowed remoteCommandEscapeByDefault
-                  accountExternalValidationDenyOnFailure ingressRequirePIV
+                  accountExternalValidationDenyOnFailure ingressRequirePIV IPv6Allowed
                   }
             ],
         }
