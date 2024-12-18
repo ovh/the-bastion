@@ -371,7 +371,7 @@ sub access_modify {
         return $fnret unless $fnret;
         $ip = $fnret->value->{'ip'};
 
-        if ($fnret->value->{'type'} eq 'prefix') {
+        if ($fnret->value->{'type'} eq 'subnet') {
             my $ipVersion = $fnret->value->{'version'};
             if (defined $widestVxPrefix{$ipVersion} && $fnret->value->{'prefixlen'} < $widestVxPrefix{$ipVersion}) {
                 return R(

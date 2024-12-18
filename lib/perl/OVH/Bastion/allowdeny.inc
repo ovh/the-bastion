@@ -949,8 +949,8 @@ sub ssh_test_access_way {
 
     $fnret = OVH::Bastion::is_valid_ip(ip => $ip, allowSubnets => 1);
     $fnret or return $fnret;
-    if ($fnret->value->{'type'} eq 'prefix') {
-        return R('OK_PREFIX', msg => "Can't test a connection to a prefix, assuming it's OK");
+    if ($fnret->value->{'type'} eq 'subnet') {
+        return R('OK_SUBNET', msg => "Can't test a connection to a subnet, assuming it's OK");
     }
     $ip = $fnret->value->{'ip'};
 
