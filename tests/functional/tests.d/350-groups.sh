@@ -7,13 +7,9 @@
 
 testsuite_groups()
 {
-    grant accountCreate
-
     # first we need to create account1, account2 and account3
     success a0_create_a1 $a0 --osh accountCreate --always-active --account $account1 --uid $uid1 --public-key "\"$(cat $account1key1file.pub)\""
     json .error_code OK .command accountCreate .value null
-
-    #grant accountModify
 
     #success realm modify_account1 $a0 --osh accountModify --pam-auth-bypass yes --account $account1
     #json .error_code OK .command accountModify
@@ -33,18 +29,12 @@ testsuite_groups()
     contain "info"
     json .command accountCreate .error_code OK .value      null
 
-    grant accountListIngressKeys
-
     success a0_check_a2_ingress_keys $a0 --osh accountListIngressKeys --account $account2
     json .command accountListIngressKeys .error_code OK .value.account "$account2" .value.keys '[]'
 
-    revoke accountListIngressKeys
-
-    grant accountDelete
     script a0_delete_a2 $a0 --osh accountDelete --account $account2 "<<< \"Yes, do as I say and delete $account2, kthxbye\""
     retvalshouldbe 0
     json .command accountDelete .error_code OK
-    revoke accountDelete
     # /account with no key
 
     script a0_create_a2 $a0 --osh accountCreate --always-active --account $account2 --uid $uid2 \< $account2key1file.pub
@@ -77,11 +67,7 @@ testsuite_groups()
     contain "Your alias to connect"
     json .command info .error_code OK .value.account $account3
 
-    revoke accountCreate
-
     # now create g1
-
-    grant groupCreate
 
     run a2_fail_to_create_g1_with_a1_as_owner_because_not_granted $a2 --osh groupCreate --group $group1 --algo rsa --size 2048 --owner $account1
     retvalshouldbe 106
@@ -119,7 +105,7 @@ EOS
     success a0_create_g3_with_a3_as_owner $a0 --osh groupCreate --group $group3 --algo ed25519 --owner $account3
 
     # test egress key generation as an owner
-    run a0_generate_key_g1_fail $a0 --osh groupGenerateEgressKey --group $group1 --algo ed25519
+    run a2_generate_key_g1_fail $a2 --osh groupGenerateEgressKey --group $group1 --algo ed25519
     retvalshouldbe 106
     json .command null .error_code KO_RESTRICTED_COMMAND .value null
 
@@ -176,7 +162,7 @@ EOS
 
     # test --alive
 
-    run a0_del_key_g1 $a0 --osh groupDelEgressKey --group $group1 --id $key1id
+    run a2_del_key_g1 $a2 --osh groupDelEgressKey --group $group1 --id $key1id
     retvalshouldbe 106
     json .command null .error_code KO_RESTRICTED_COMMAND .value null
 
@@ -188,10 +174,8 @@ EOS
     unset key1id
     unset key1fp
 
-    grant groupDelete
     script a0_delete_g3 $a0 --osh groupDelete --group $group3 '<<<' "$group3"
     retvalshouldbe 0
-    revoke groupDelete
     # /egress key generation
 
     # now test all group-* commands from a2 to grant a3 on g1 => should get an early deny
@@ -218,8 +202,6 @@ EOS
     json .value.public_key.family ECDSA .value.public_key.typecode ecdsa-sha2-nistp256 .value.public_key.size 256
     #g3_pubkey=$(get_json | $jq .value.public_key.line)
     #g3_fp=$(    get_json | $jq .value.public_key.fingerprint)
-
-    revoke groupCreate
 
     success   a0_info_on_g3_after_create $a0 --osh groupInfo --group $group3
     json .error_code OK .command groupInfo .value.group $group3
@@ -380,8 +362,6 @@ EOS
 
     # ... for accounts
 
-    grant accountGeneratePassword
-
     success works1 $a0 --osh accountGeneratePassword --account $account1 --do-it
     json .command accountGeneratePassword .error_code OK .value.account $account1
     md5a=$(get_json | $jq '.value.hashes.md5crypt')
@@ -389,9 +369,6 @@ EOS
     sha512a=$(get_json | $jq '.value.hashes.sha512crypt')
     type8a=$(get_json | $jq '.value.hashes.type8')
     type9a=$(get_json | $jq '.value.hashes.type9')
-
-    revoke accountGeneratePassword
-    grant accountListPasswords
 
     success works $a0 --osh accountListPasswords --account $account1
     json $(cat <<EOS
@@ -406,8 +383,6 @@ EOS
     .value[1]                     null
 EOS
     )
-
-    revoke accountListPasswords
 
     success works2 $a1 --osh selfGeneratePassword --do-it
     json .command selfGeneratePassword .error_code OK
@@ -560,10 +535,8 @@ EOS
     # new state: g1[a1(ow,gk,acl,member) a2(acl)] g3[a0,a2,a3(ow,gk,acl,member)]
 
     # --all requires auditor rights
-    plgfail a0_groupInfo_all_not_auditor $a0 --osh groupInfo --all
+    plgfail a2_groupInfo_all_not_auditor $a2 --osh groupInfo --all
     json .command groupInfo .error_code ERR_ACCESS_DENIED .value null
-
-    grant auditor
 
     success a0_groupInfo_all $a0 --osh groupInfo --all
     json $(cat <<EOS
@@ -582,8 +555,6 @@ EOS
     .value["$group3"].owners[2]      $account2
 EOS
 )
-
-    revoke auditor
 
     # then check that owner/gatekeeper commands still don't work
 
@@ -758,8 +729,6 @@ EOS
 
     success a3_add_server_to_g3 $a3 --osh groupAddServer --group $group3 --host 10.20.0.0/17 --port-any --user-any
 
-    grant accountAddPersonalAccess
-
     run a0_add_personal_access_to_a3_works_slash_1 $a0 --osh accountAddPersonalAccess --account $account3 --host 77.66.55.0/24 --user-any --port-any
     json .command accountAddPersonalAccess .error_code OK .value.ip 77.66.55.0/24 .value.port null .value.user null
 
@@ -828,9 +797,6 @@ EOS
 
     # TODO try keys with from="" and command="" etc (also in selfAddIngressKey)
 
-    revoke accountAddPersonalAccess
-    grant accountDelPersonalAccess
-
     (( todo_inc=1 ))
     for todo_port in --port-any "--port 33"
     do
@@ -866,9 +832,6 @@ EOS
         done
     done
 
-    revoke accountDelPersonalAccess
-    grant accountAddPersonalAccess
-
     success a3_list_own_accesses $a3 --osh selfListAccesses
     json .command selfListAccesses .error_code OK
     contain REGEX '77\.66\.55\.0/24[[:space:]]+\*[[:space:]]+\*[[:space:]]+personal[[:space:]]+'$account0'[[:space:]]'
@@ -885,7 +848,6 @@ EOS
     json .command   null .value      null .error_code KO_RESTRICTED_COMMAND
 
     #sudo usermod -a -G osh-accountDelete $account1
-    grant accountDelete
     script sudookbadconfirm $a0 --osh accountDelete --account $account2 "<<<" "foobar"
     retvalshouldbe 100
     contain "aborted"
@@ -903,22 +865,15 @@ EOS
     nocontain "attempting to continue"
     json .command accountDelete .error_code KO_NOT_FOUND .value      null
 
-    revoke accountDelete
-
     run nosuchaccount $a2 --osh info
     retvalshouldbe 255
     contain "Permission denied"
     nocontain "Your alias to connect"
 
-    grant accountCreate
-
     script sudookrecreate $a0 --osh accountCreate --always-active --account $account2 --uid $uid2 \< $account2key1file.pub
     retvalshouldbe 0
     contain "info"
     json .command accountCreate .error_code OK .value      null
-
-    revoke accountCreate
-    grant groupCreate
 
     #success realm modify_account1 $a0 --osh accountModify --pam-auth-bypass yes --account $account2
     #json .error_code OK .command accountModify
@@ -927,8 +882,6 @@ EOS
     plgfail dup $a0 --osh groupCreate --group $group1 --algo rsa --size 4096 --owner $account2
     contain "The group $group1 already exists"
     json .command groupCreate .error_code KO_ALREADY_EXISTING .value      null
-
-    revoke groupCreate
 
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2() servers()
     success noaccess $a2 --osh groupList --all
@@ -1015,7 +968,10 @@ EOS
     contain '5 accesses listed'
 
     # wait for the access to expire
-    [ "$COUNTONLY" != 1 ] && sleep 20
+    if [ "$COUNTONLY" != 1 ]; then
+        echo "Waiting 20 seconds for the access to expire..."
+        sleep 20
+    fi
 
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2() servers(127.0.0.10,127.0.0.11)
     success listttlexpired   $a1 --osh groupListServers --group $group1
@@ -1166,8 +1122,6 @@ EOS
 
     # even if user2 adds himself private access to .11 ? TODO
 
-    grant accountAddPersonalAccess
-
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2(guest(127.0.0.10)) servers(127.0.0.10,127.0.0.11)
     success own11 $a0 --osh accountAddPersonalAccess --account $account2 --host 127.0.0.11 --user $account2 --port 22
     contain "adding the access blindly"
@@ -1189,17 +1143,15 @@ EOS
 
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2(guest(127.0.0.10)) servers(127.0.0.10,127.0.0.11)
     # account1: perso(account1@127.0.0.11:22)
-    plgfail noright1 $a0 --osh groupTransmitOwnership --group $group1 --account $account1
+    plgfail transmitownership_noright1 $a3 --osh groupTransmitOwnership --group $group1 --account $account1
     json .command groupTransmitOwnership .error_code ERR_NOT_GROUP_OWNER .value null
 
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2(guest(127.0.0.10)) servers(127.0.0.10,127.0.0.11)
     # account1: perso(account1@127.0.0.11:22)
-    plgfail noright2 $a1 --osh groupTransmitOwnership --group $group2 --account $account0
+    plgfail transmitownership_noright2 $a1 --osh groupTransmitOwnership --group $group2 --account $account0
     json .command groupTransmitOwnership .error_code KO_GROUP_NOT_FOUND
 
-    grant groupCreate
-    success works      $a0  --osh groupCreate --group $group2 --owner $account2 --algo ecdsa --size 521
-    revoke groupCreate
+    success create_grp2      $a0  --osh groupCreate --group $group2 --owner $account2 --algo ecdsa --size 521
 
     success owner $a2 --osh groupInfo --group $group2
     tmpfp=$(get_json | $jq '.value.keys|keys[0]')
@@ -1212,9 +1164,9 @@ EOS
     .value.owners[1]   null
     .value.gatekeepers[0]   $account2
     .value.gatekeepers[1]   null
-    .value.full_members[0]   $account2
-    .value.full_members[1]   null
-    .value.partial_members[0]   null
+    .value.members[0]   $account2
+    .value.members[1]   null
+    .value.guests[0]   null
     .value.keys|.["$tmpfp"]|.family      ECDSA
     .value.keys|.["$tmpfp"]|.size        521
     .value.keys|.["$tmpfp"]|.fingerprint $tmpfp
@@ -1223,20 +1175,20 @@ EOS
     )
     unset tmpfp
 
-    plgfail nope     $a2 --osh groupTransmitOwnership --group $group1 --account $account0
+    plgfail transmitownership_not_owner     $a3 --osh groupTransmitOwnership --group $group1 --account $account0
     json .command groupTransmitOwnership .error_code ERR_NOT_GROUP_OWNER .value          null
 
-    success oknochg  $a1 --osh groupTransmitOwnership --group $group1 --account $account1
+    success transmitownership_oknochg  $a1 --osh groupTransmitOwnership --group $group1 --account $account1
     json .command groupTransmitOwnership .error_code OK_NO_CHANGE .value          null
 
-    success ok       $a1 --osh groupTransmitOwnership --group $group1 --account $account2
+    success transmitownership_ok       $a1 --osh groupTransmitOwnership --group $group1 --account $account2
     json .command groupTransmitOwnership .error_code OK .value          null
 
-    run     nopedup  $a1 --osh groupTransmitOwnership --group $group1 --account $account2
+    run     transmitownership_restricted  $a1 --osh groupTransmitOwnership --group $group1 --account $account2
     retvalshouldbe 106
     json .command   null .error_code KO_RESTRICTED_COMMAND .value      null
 
-    run   notmember $a0 --osh groupInfo --group $group1
+    run   groupinfo_notmember $a3 --osh groupInfo --group $group1
     tmpfp=$(get_json | $jq '.value.keys|keys[0]')
     json $(cat <<EOS
     .command groupInfo
@@ -1246,8 +1198,8 @@ EOS
     .value.owners[1]   null
     .value.gatekeepers[0]   $account1
     .value.gatekeepers[1]   null
-    .value.full_members[0]   null
-    .value.partial_members[0]   null
+    .value.members[0]   null
+    .value.guests[0]   null
     .value.keys|.["$tmpfp"]|.family      RSA
     .value.keys|.["$tmpfp"]|.size        4096
     .value.keys|.["$tmpfp"]|.fingerprint $tmpfp
@@ -1267,18 +1219,9 @@ EOS
     json $(cat <<EOS
     .command groupInfo
     .error_code OK
-    .members        null
-    .value.owners[0]    $account2
-    .value.owners[1]    null
     .value.gatekeepers[0]   $account1
     .value.gatekeepers[1]   $account2
     .value.gatekeepers[2]   null
-    .value.full_members[0]  null
-    .value.partial_members[0]   null
-    .value.keys|.["$tmpfp"]|.family      RSA
-    .value.keys|.["$tmpfp"]|.size        4096
-    .value.keys|.["$tmpfp"]|.fingerprint $tmpfp
-    .value.keys|.["$tmpfp"]|.typecode    ssh-rsa
 EOS
     )
 
@@ -1299,8 +1242,6 @@ EOS
     .value.owners[1]    null
     .value.gatekeepers[0]   $account2
     .value.gatekeepers[1]   null
-    .value.full_members[0]  null
-    .value.partial_members[0]   null
     .value.keys|.["$tmpfp"]|.family      RSA
     .value.keys|.["$tmpfp"]|.size        4096
     .value.keys|.["$tmpfp"]|.fingerprint $tmpfp
@@ -1322,8 +1263,6 @@ EOS
     success  groupDestroy   $a2 --osh groupDestroy --group $group1 --no-confirm
     json .command groupDestroy .error_code OK
 
-    grant accountDelete
-
     script   accountDelete   $a0 --osh accountDelete --account $account3 "<<< \"Yes, do as I say and delete $account3, kthxbye\""
     retvalshouldbe 0
     nocontain "attempting to continue"
@@ -1338,8 +1277,6 @@ EOS
     retvalshouldbe 0
     nocontain "attempting to continue"
     json .command accountDelete .error_code OK
-
-    revoke accountDelete
 }
 
 testsuite_groups

@@ -7,9 +7,6 @@
 
 testsuite_admin_superowner()
 {
-    grant accountCreate
-    grant groupCreate
-
     # create account1
     success create_a1 $a0 --osh accountCreate --always-active --account $account1 --uid $uid1 --public-key "\"$(cat $account1key1file.pub)\""
     json .error_code OK .command accountCreate .value null
@@ -71,11 +68,6 @@ testsuite_admin_superowner()
     retvalshouldbe 106
     json .error_code KO_RESTRICTED_COMMAND .command null
 
-    revoke accountCreate
-    revoke groupCreate
-    grant accountDelete
-    grant groupDelete
-
     script delete_a1 $a0 --osh accountDelete --account $account1 "<<< \"Yes, do as I say and delete $account1, kthxbye\""
     retvalshouldbe 0
     json .command accountDelete .error_code OK
@@ -83,9 +75,6 @@ testsuite_admin_superowner()
     script delete_g1 "$a0 --osh groupDelete --group $group1 <<< $group1"
     retvalshouldbe 0
     json .command groupDelete .error_code OK
-
-    revoke accountDelete
-    revoke groupDelete
 }
 
 testsuite_admin_superowner

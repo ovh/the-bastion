@@ -145,7 +145,7 @@ to get up-to-date information):
    Usage: /home/user/bastion/tests/functional/launch_tests_on_instance.sh [OPTIONS] <IP> <SSH_Port> <HTTP_Proxy_Port_or_Zero> <Remote_Admin_User_Name> <Admin_User_SSH_Key_Path> <Root_SSH_Key_Path>
 
    Test Options:
-       --skip-consistency-check   Speed up tests by skipping the consistency check between every test
+       --consistency-check        Check system consistency between every test
        --no-pause-on-fail         Don't pause when a test fails
        --log-prefix=X             Prefix all logs by this name
        --module=X                 Only test this module (specify a filename found in `functional/tests.d/`), can be specified multiple times
