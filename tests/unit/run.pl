@@ -424,4 +424,861 @@ is(
     "build_re_from_wildcards() 2"
 );
 
+# is_valid_ip
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "1.2.0.0", allowPrefixes => 0, fast => 0),
+    R(
+        "OK",
+        msg => ignore(),
+        value =>
+          {"prefix" => "1.2.0.0/32", "version" => "4", "prefixlen" => "32", "ip" => "1.2.0.0", "type" => "single",}
+    ),
+    "is_valid_ip(1.2.0.0,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "1.2.0.0/0", allowPrefixes => 0, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(1.2.0.0/0,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "1.2.0.0/16", allowPrefixes => 0, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(1.2.0.0/16,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "1.2.0.0/24", allowPrefixes => 0, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(1.2.0.0/24,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "1.2.0.0/32", allowPrefixes => 0, fast => 0),
+    R(
+        "OK",
+        msg => ignore(),
+        value =>
+          {"prefix" => "1.2.0.0/32", "version" => "4", "prefixlen" => "32", "ip" => "1.2.0.0", "type" => "single",}
+    ),
+    "is_valid_ip(1.2.0.0/32,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "1.2.0.0/33", allowPrefixes => 0, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(1.2.0.0/33,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "255.255.255.255", allowPrefixes => 0, fast => 0),
+    R(
+        "OK",
+        msg   => ignore(),
+        value => {
+            "prefix"    => "255.255.255.255/32",
+            "version"   => "4",
+            "prefixlen" => "32",
+            "ip"        => "255.255.255.255",
+            "type"      => "single",
+        }
+    ),
+    "is_valid_ip(255.255.255.255,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "255.255.255.255/0", allowPrefixes => 0, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(255.255.255.255/0,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "255.255.255.255/16", allowPrefixes => 0, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(255.255.255.255/16,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "255.255.255.255/24", allowPrefixes => 0, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(255.255.255.255/24,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "255.255.255.255/32", allowPrefixes => 0, fast => 0),
+    R(
+        "OK",
+        msg   => ignore(),
+        value => {
+            "prefix"    => "255.255.255.255/32",
+            "version"   => "4",
+            "prefixlen" => "32",
+            "ip"        => "255.255.255.255",
+            "type"      => "single",
+        }
+    ),
+    "is_valid_ip(255.255.255.255/32,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "255.255.255.255/33", allowPrefixes => 0, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(255.255.255.255/33,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "256.0.0.0", allowPrefixes => 0, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(256.0.0.0,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "256.0.0.0/0", allowPrefixes => 0, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(256.0.0.0/0,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "256.0.0.0/16", allowPrefixes => 0, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(256.0.0.0/16,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "256.0.0.0/24", allowPrefixes => 0, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(256.0.0.0/24,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "256.0.0.0/32", allowPrefixes => 0, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(256.0.0.0/32,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "256.0.0.0/33", allowPrefixes => 0, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(256.0.0.0/33,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "4.5.6.0", allowPrefixes => 0, fast => 0),
+    R(
+        "OK",
+        msg => ignore(),
+        value =>
+          {"prefix" => "4.5.6.0/32", "version" => "4", "prefixlen" => "32", "ip" => "4.5.6.0", "type" => "single",}
+    ),
+    "is_valid_ip(4.5.6.0,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "4.5.6.0/0", allowPrefixes => 0, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(4.5.6.0/0,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "4.5.6.0/16", allowPrefixes => 0, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(4.5.6.0/16,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "4.5.6.0/24", allowPrefixes => 0, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(4.5.6.0/24,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "4.5.6.0/32", allowPrefixes => 0, fast => 0),
+    R(
+        "OK",
+        msg => ignore(),
+        value =>
+          {"prefix" => "4.5.6.0/32", "version" => "4", "prefixlen" => "32", "ip" => "4.5.6.0", "type" => "single",}
+    ),
+    "is_valid_ip(4.5.6.0/32,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "4.5.6.0/33", allowPrefixes => 0, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(4.5.6.0/33,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "::feef:0:0", allowPrefixes => 0, fast => 0),
+    R(
+        "OK",
+        msg   => ignore(),
+        value => {
+            "prefix"    => "0000:0000:0000:0000:0000:feef:0000:0000/128",
+            "version"   => "6",
+            "prefixlen" => "128",
+            "ip"        => "::feef:0:0",
+            "type"      => "single",
+        }
+    ),
+    "is_valid_ip(::feef:0:0,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "::feef:0:0/0", allowPrefixes => 0, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(::feef:0:0/0,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "::feef:0:0/16", allowPrefixes => 0, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(::feef:0:0/16,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "::feef:0:0/24", allowPrefixes => 0, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(::feef:0:0/24,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "::feef:0:0/32", allowPrefixes => 0, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(::feef:0:0/32,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "::feef:0:0/33", allowPrefixes => 0, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(::feef:0:0/33,fast=0,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "1.2.0.0", allowPrefixes => 1, fast => 0),
+    R(
+        "OK",
+        msg => ignore(),
+        value =>
+          {"prefix" => "1.2.0.0/32", "version" => "4", "prefixlen" => "32", "ip" => "1.2.0.0", "type" => "single",}
+    ),
+    "is_valid_ip(1.2.0.0,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "1.2.0.0/0", allowPrefixes => 1, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(1.2.0.0/0,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "1.2.0.0/16", allowPrefixes => 1, fast => 0),
+    R(
+        "OK",
+        msg => ignore(),
+        value =>
+          {"prefix" => "1.2.0.0/16", "version" => "4", "prefixlen" => "16", "ip" => "1.2.0.0/16", "type" => "prefix",}
+    ),
+    "is_valid_ip(1.2.0.0/16,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "1.2.0.0/24", allowPrefixes => 1, fast => 0),
+    R(
+        "OK",
+        msg => ignore(),
+        value =>
+          {"prefix" => "1.2.0.0/24", "version" => "4", "prefixlen" => "24", "ip" => "1.2.0.0/24", "type" => "prefix",}
+    ),
+    "is_valid_ip(1.2.0.0/24,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "1.2.0.0/32", allowPrefixes => 1, fast => 0),
+    R(
+        "OK",
+        msg => ignore(),
+        value =>
+          {"prefix" => "1.2.0.0/32", "version" => "4", "prefixlen" => "32", "ip" => "1.2.0.0", "type" => "single",}
+    ),
+    "is_valid_ip(1.2.0.0/32,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "1.2.0.0/33", allowPrefixes => 1, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(1.2.0.0/33,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "255.255.255.255", allowPrefixes => 1, fast => 0),
+    R(
+        "OK",
+        msg   => ignore(),
+        value => {
+            "prefix"    => "255.255.255.255/32",
+            "version"   => "4",
+            "prefixlen" => "32",
+            "ip"        => "255.255.255.255",
+            "type"      => "single",
+        }
+    ),
+    "is_valid_ip(255.255.255.255,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "255.255.255.255/0", allowPrefixes => 1, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(255.255.255.255/0,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "255.255.255.255/16", allowPrefixes => 1, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(255.255.255.255/16,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "255.255.255.255/24", allowPrefixes => 1, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(255.255.255.255/24,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "255.255.255.255/32", allowPrefixes => 1, fast => 0),
+    R(
+        "OK",
+        msg   => ignore(),
+        value => {
+            "prefix"    => "255.255.255.255/32",
+            "version"   => "4",
+            "prefixlen" => "32",
+            "ip"        => "255.255.255.255",
+            "type"      => "single",
+        }
+    ),
+    "is_valid_ip(255.255.255.255/32,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "255.255.255.255/33", allowPrefixes => 1, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(255.255.255.255/33,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "256.0.0.0", allowPrefixes => 1, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(256.0.0.0,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "256.0.0.0/0", allowPrefixes => 1, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(256.0.0.0/0,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "256.0.0.0/16", allowPrefixes => 1, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(256.0.0.0/16,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "256.0.0.0/24", allowPrefixes => 1, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(256.0.0.0/24,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "256.0.0.0/32", allowPrefixes => 1, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(256.0.0.0/32,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "256.0.0.0/33", allowPrefixes => 1, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(256.0.0.0/33,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "4.5.6.0", allowPrefixes => 1, fast => 0),
+    R(
+        "OK",
+        msg => ignore(),
+        value =>
+          {"prefix" => "4.5.6.0/32", "version" => "4", "prefixlen" => "32", "ip" => "4.5.6.0", "type" => "single",}
+    ),
+    "is_valid_ip(4.5.6.0,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "4.5.6.0/0", allowPrefixes => 1, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(4.5.6.0/0,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "4.5.6.0/16", allowPrefixes => 1, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(4.5.6.0/16,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "4.5.6.0/24", allowPrefixes => 1, fast => 0),
+    R(
+        "OK",
+        msg => ignore(),
+        value =>
+          {"prefix" => "4.5.6.0/24", "version" => "4", "prefixlen" => "24", "ip" => "4.5.6.0/24", "type" => "prefix",}
+    ),
+    "is_valid_ip(4.5.6.0/24,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "4.5.6.0/32", allowPrefixes => 1, fast => 0),
+    R(
+        "OK",
+        msg => ignore(),
+        value =>
+          {"prefix" => "4.5.6.0/32", "version" => "4", "prefixlen" => "32", "ip" => "4.5.6.0", "type" => "single",}
+    ),
+    "is_valid_ip(4.5.6.0/32,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "4.5.6.0/33", allowPrefixes => 1, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(4.5.6.0/33,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "::feef:0:0", allowPrefixes => 1, fast => 0),
+    R(
+        "OK",
+        msg   => ignore(),
+        value => {
+            "prefix"    => "0000:0000:0000:0000:0000:feef:0000:0000/128",
+            "version"   => "6",
+            "prefixlen" => "128",
+            "ip"        => "::feef:0:0",
+            "type"      => "single",
+        }
+    ),
+    "is_valid_ip(::feef:0:0,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "::feef:0:0/0", allowPrefixes => 1, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(::feef:0:0/0,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "::feef:0:0/16", allowPrefixes => 1, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(::feef:0:0/16,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "::feef:0:0/24", allowPrefixes => 1, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(::feef:0:0/24,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "::feef:0:0/32", allowPrefixes => 1, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(::feef:0:0/32,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "::feef:0:0/33", allowPrefixes => 1, fast => 0),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(::feef:0:0/33,fast=0,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "1.2.0.0", allowPrefixes => 0, fast => 1),
+    R("OK", msg => ignore(), value => {"ip" => "1.2.0.0",}),
+    "is_valid_ip(1.2.0.0,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "1.2.0.0/0", allowPrefixes => 0, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(1.2.0.0/0,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "1.2.0.0/16", allowPrefixes => 0, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(1.2.0.0/16,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "1.2.0.0/24", allowPrefixes => 0, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(1.2.0.0/24,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "1.2.0.0/32", allowPrefixes => 0, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(1.2.0.0/32,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "1.2.0.0/33", allowPrefixes => 0, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(1.2.0.0/33,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "255.255.255.255", allowPrefixes => 0, fast => 1),
+    R("OK", msg => ignore(), value => {"ip" => "255.255.255.255",}),
+    "is_valid_ip(255.255.255.255,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "255.255.255.255/0", allowPrefixes => 0, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(255.255.255.255/0,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "255.255.255.255/16", allowPrefixes => 0, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(255.255.255.255/16,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "255.255.255.255/24", allowPrefixes => 0, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(255.255.255.255/24,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "255.255.255.255/32", allowPrefixes => 0, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(255.255.255.255/32,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "255.255.255.255/33", allowPrefixes => 0, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(255.255.255.255/33,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "256.0.0.0", allowPrefixes => 0, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(256.0.0.0,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "256.0.0.0/0", allowPrefixes => 0, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(256.0.0.0/0,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "256.0.0.0/16", allowPrefixes => 0, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(256.0.0.0/16,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "256.0.0.0/24", allowPrefixes => 0, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(256.0.0.0/24,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "256.0.0.0/32", allowPrefixes => 0, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(256.0.0.0/32,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "256.0.0.0/33", allowPrefixes => 0, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(256.0.0.0/33,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "4.5.6.0", allowPrefixes => 0, fast => 1),
+    R("OK", msg => ignore(), value => {"ip" => "4.5.6.0",}),
+    "is_valid_ip(4.5.6.0,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "4.5.6.0/0", allowPrefixes => 0, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(4.5.6.0/0,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "4.5.6.0/16", allowPrefixes => 0, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(4.5.6.0/16,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "4.5.6.0/24", allowPrefixes => 0, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(4.5.6.0/24,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "4.5.6.0/32", allowPrefixes => 0, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(4.5.6.0/32,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "4.5.6.0/33", allowPrefixes => 0, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(4.5.6.0/33,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "::feef:0:0", allowPrefixes => 0, fast => 1),
+    R(
+        "OK",
+        msg   => ignore(),
+        value => {
+            "prefix"    => "0000:0000:0000:0000:0000:feef:0000:0000/128",
+            "version"   => "6",
+            "prefixlen" => "128",
+            "ip"        => "::feef:0:0",
+            "type"      => "single",
+        }
+    ),
+    "is_valid_ip(::feef:0:0,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "::feef:0:0/0", allowPrefixes => 0, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(::feef:0:0/0,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "::feef:0:0/16", allowPrefixes => 0, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(::feef:0:0/16,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "::feef:0:0/24", allowPrefixes => 0, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(::feef:0:0/24,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "::feef:0:0/32", allowPrefixes => 0, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(::feef:0:0/32,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "::feef:0:0/33", allowPrefixes => 0, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(::feef:0:0/33,fast=1,pfx=0)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "1.2.0.0", allowPrefixes => 1, fast => 1),
+    R("OK", msg => ignore(), value => {"ip" => "1.2.0.0",}),
+    "is_valid_ip(1.2.0.0,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "1.2.0.0/0", allowPrefixes => 1, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(1.2.0.0/0,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "1.2.0.0/16", allowPrefixes => 1, fast => 1),
+    R("OK", msg => ignore(), value => {"prefix" => "16", "ip" => "1.2.0.0/16",}),
+    "is_valid_ip(1.2.0.0/16,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "1.2.0.0/24", allowPrefixes => 1, fast => 1),
+    R("OK", msg => ignore(), value => {"prefix" => "24", "ip" => "1.2.0.0/24",}),
+    "is_valid_ip(1.2.0.0/24,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "1.2.0.0/32", allowPrefixes => 1, fast => 1),
+    R("OK", msg => ignore(), value => {"ip" => "1.2.0.0"}),
+    "is_valid_ip(1.2.0.0/32,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "1.2.0.0/33", allowPrefixes => 1, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(1.2.0.0/33,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "255.255.255.255", allowPrefixes => 1, fast => 1),
+    R("OK", msg => ignore(), value => {"ip" => "255.255.255.255",}),
+    "is_valid_ip(255.255.255.255,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "255.255.255.255/0", allowPrefixes => 1, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(255.255.255.255/0,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "255.255.255.255/16", allowPrefixes => 1, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(255.255.255.255/16,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "255.255.255.255/24", allowPrefixes => 1, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(255.255.255.255/24,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "255.255.255.255/32", allowPrefixes => 1, fast => 1),
+    R("OK", msg => ignore(), value => {"ip" => "255.255.255.255",}),
+    "is_valid_ip(255.255.255.255/32,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "255.255.255.255/33", allowPrefixes => 1, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(255.255.255.255/33,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "256.0.0.0", allowPrefixes => 1, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(256.0.0.0,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "256.0.0.0/0", allowPrefixes => 1, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(256.0.0.0/0,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "256.0.0.0/16", allowPrefixes => 1, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(256.0.0.0/16,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "256.0.0.0/24", allowPrefixes => 1, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(256.0.0.0/24,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "256.0.0.0/32", allowPrefixes => 1, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(256.0.0.0/32,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "256.0.0.0/33", allowPrefixes => 1, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(256.0.0.0/33,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "4.5.6.0", allowPrefixes => 1, fast => 1),
+    R("OK", msg => ignore(), value => {"ip" => "4.5.6.0",}),
+    "is_valid_ip(4.5.6.0,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "4.5.6.0/0", allowPrefixes => 1, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(4.5.6.0/0,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "4.5.6.0/16", allowPrefixes => 1, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(4.5.6.0/16,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "4.5.6.0/24", allowPrefixes => 1, fast => 1),
+    R("OK", msg => ignore(), value => {"prefix" => "24", "ip" => "4.5.6.0/24",}),
+    "is_valid_ip(4.5.6.0/24,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "4.5.6.0", allowPrefixes => 1, fast => 1),
+    R("OK", msg => ignore(), value => {"ip" => "4.5.6.0",}),
+    "is_valid_ip(4.5.6.0/32,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "4.5.6.0/33", allowPrefixes => 1, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(4.5.6.0/33,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "::feef:0:0", allowPrefixes => 1, fast => 1),
+    R(
+        "OK",
+        msg   => ignore(),
+        value => {
+            "prefix"    => "0000:0000:0000:0000:0000:feef:0000:0000/128",
+            "version"   => "6",
+            "prefixlen" => "128",
+            "ip"        => "::feef:0:0",
+            "type"      => "single",
+        }
+    ),
+    "is_valid_ip(::feef:0:0,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "::feef:0:0/0", allowPrefixes => 1, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(::feef:0:0/0,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "::feef:0:0/16", allowPrefixes => 1, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(::feef:0:0/16,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "::feef:0:0/24", allowPrefixes => 1, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(::feef:0:0/24,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "::feef:0:0/32", allowPrefixes => 1, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(::feef:0:0/32,fast=1,pfx=1)"
+);
+
+cmp_deeply(
+    OVH::Bastion::is_valid_ip(ip => "::feef:0:0/33", allowPrefixes => 1, fast => 1),
+    R("KO_INVALID_IP", msg => ignore(), value => undef),
+    "is_valid_ip(::feef:0:0/33,fast=1,pfx=1)"
+);
+
 done_testing();
