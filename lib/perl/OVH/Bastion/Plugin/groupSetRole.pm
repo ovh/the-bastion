@@ -206,10 +206,12 @@ sub act {
 
                 # foreach guest access, delete
                 foreach my $access (@acl) {
-                    my $machine = $access->{'ip'};
-                    $machine .= ':' . $access->{'port'} if defined $access->{'port'};
-                    $machine = $access->{'user'} . '@' . $machine if defined $access->{'user'};
-                    $fnret   = OVH::Bastion::Plugin::groupSetRole::act(
+                    my $machine = OVH::Bastion::machine_display(
+                        ip   => $access->{'ip'},
+                        port => $access->{'port'},
+                        user => $access->{'user'}
+                    )->value;
+                    $fnret = OVH::Bastion::Plugin::groupSetRole::act(
                         account => $account,
                         group   => $shortGroup,
                         action  => 'del',
@@ -251,9 +253,7 @@ sub act {
 
         # in that case, we need to handle the add/del of the guest access to $user@$host:$port
         # check if group has access to $user@$ip:$port
-        my $machine = $host;
-        $port and $machine .= ":$port";
-        $user and $machine = $user . '@' . $machine;
+        my $machine = OVH::Bastion::machine_display(ip => $host, port => $port, user => $user)->value;
         osh_debug(
             "groupSetRole::act, checking if group $group has access to $machine to $action $type access to $account");
 

@@ -582,10 +582,8 @@ sub access_modify {
         }
 
         # build the line we're either adding or looking for (to delete it)
-        my $entry = $ip;
-        $entry = $user . "@" . $entry if defined $user;
-        $entry = $entry . ":" . $port if defined $port;
-        my $machine = $entry;
+        my $machine = OVH::Bastion::machine_display(ip => $ip, port => $port, user => $user)->value;
+        my $entry   = $machine;
 
         my $t            = localtime(time);
         my $fmt          = "%Y-%m-%d %H:%M:%S";

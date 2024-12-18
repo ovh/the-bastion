@@ -81,9 +81,7 @@ if (not grep { $action eq $_ } qw{ add del }) {
 #<PARAMS:ACTION
 
 #>CODE
-my $machine = $ip;
-$port and $machine .= ":$port";
-$user and $machine = $user . '@' . $machine;
+my $machine = OVH::Bastion::machine_display(ip => $ip, port => $port, user => $user)->value;
 
 my $plugin = ($target eq 'self' ? 'self' : 'account') . 'AddPersonalAccess';
 

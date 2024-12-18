@@ -1131,7 +1131,11 @@ $user = $user || $config->{'defaultLogin'} || $remoteself || $sysself;
 # log request
 osh_debug("final request : " . "$user\@$ip -p $port -- $command'\n");
 
-my $displayLine = "$hostfrom:$portfrom => $self\@$bastionhost:$bastionport => $user\@$hostto:$port";
+my $displayLine = sprintf("%s => %s => %s",
+    OVH::Bastion::machine_display(ip => $hostfrom,    port => $portfrom)->value,
+    OVH::Bastion::machine_display(ip => $bastionhost, port => $bastionport, user => $self)->value,
+    OVH::Bastion::machine_display(ip => $hostto,      port => $port, user => $user)->value,
+);
 
 if (!$quiet) {
     osh_print("$displayLine ...");
