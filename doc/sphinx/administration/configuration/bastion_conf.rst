@@ -366,7 +366,7 @@ If set to 0, The Bastion will never attempt to do DNS or reverse-DNS resolutions
 allowedNetworks
 ***************
 
-:Type: ``array of strings (IPs and/or prefixes)``
+:Type: ``array of strings (IPs and/or subnets)``
 
 :Default: ``[]``
 
@@ -379,13 +379,13 @@ Restricts egress connection attempts to those listed networks only. This is enfo
 forbiddenNetworks
 *****************
 
-:Type: ``array of strings (IPs and/or prefixes)``
+:Type: ``array of strings (IPs and/or subnets)``
 
 :Default: ``[]``
 
 :Example: ``["10.42.42.0/24"]``
 
-Prevents egress connection to the listed networks, this takes precedence over ``allowedNetworks``. This can be used to prevent connection to some hosts or subnets in a broadly allowed prefix. This is enforced at all times and can NOT be overridden by users.
+Prevents egress connection to the listed networks, this takes precedence over ``allowedNetworks``. This can be used to prevent connection to some hosts or subnets in a broadly allowed subnet. This is enforced at all times and can NOT be overridden by users.
 
 .. _ingressToEgressRules:
 
@@ -575,11 +575,11 @@ Other ingress policies
 ingressKeysFrom
 ***************
 
-:Type: ``array of strings (list of IPs and/or prefixes)``
+:Type: ``array of strings (list of IPs and/or subnets)``
 
 :Default: ``[]``
 
-This array of IPs (or prefixes, such as ``10.20.30.0/24``) will be used to build the ``from="..."`` in front of the ingress account public keys used to connect to the bastion (in ``accountCreate`` or ``selfAddIngressKey``). If the array is empty, then **NO** ``from="..."`` is added (this lowers the security).
+This array of IPs (or subnets, such as ``10.20.30.0/24``) will be used to build the ``from="..."`` in front of the ingress account public keys used to connect to the bastion (in ``accountCreate`` or ``selfAddIngressKey``). If the array is empty, then **NO** ``from="..."`` is added (this lowers the security).
 
 .. _ingressKeysFromAllowOverride:
 
@@ -613,7 +613,7 @@ The default remote user to use for egress ssh connections where no user has been
 egressKeysFrom
 **************
 
-:Type: ``array of strings (IPs and/or prefixes)``
+:Type: ``array of strings (IPs and/or subnets)``
 
 :Default: ``[]``
 
@@ -864,7 +864,7 @@ List of system groups to add a new account to when its created (see ``accountCre
 accountCreateDefaultPersonalAccesses
 ************************************
 
-:Type: ``array of strings (list of IPs and/or prefixes)``
+:Type: ``array of strings (list of IPs and/or subnets)``
 
 :Default: ``[]``
 

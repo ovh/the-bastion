@@ -367,7 +367,7 @@ sub access_modify {
 
     # check ip
     if ($action ne 'clear') {
-        $fnret = OVH::Bastion::is_valid_ip(ip => $ip, allowPrefixes => 1);
+        $fnret = OVH::Bastion::is_valid_ip(ip => $ip, allowSubnets => 1);
         return $fnret unless $fnret;
         $ip = $fnret->value->{'ip'};
 
@@ -377,7 +377,7 @@ sub access_modify {
                 return R(
                     'ERR_INVALID_PARAMETER',
                     msg => sprintf(
-                        "Specified prefix (/%d) is too wide, maximum allowed for IPv%d is /%d by this bastion policy",
+                        "Specified prefix length (/%d) is too wide, maximum allowed for IPv%d is /%d by policy",
                         $fnret->value->{'prefixlen'},
                         $ipVersion, $widestVxPrefix{$ipVersion}
                     ),

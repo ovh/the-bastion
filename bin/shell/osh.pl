@@ -610,16 +610,16 @@ my $ip = undef;
 # if: avoid loading Net::IP and BigInt if there's no host specified
 if ($host) {
 
-    # can be an IP (v4 or v6), hostname, or netblock (with a /)
+    # can be an IP (v4 or v6), hostname, or subnet (with a /)
     if ($host !~ m{^\[?[a-zA-Z0-9._/:-]+\]?$}) {
         main_exit OVH::Bastion::EXIT_INVALID_REMOTE_HOST, 'invalid_remote_host',
           "Remote host name '$host' seems invalid";
     }
 
-    # netblocks are only allowed for plugins
+    # subnets are only allowed for plugins
     if (index($host, '/') != -1 && !$osh_command) {
         main_exit OVH::Bastion::EXIT_INVALID_REMOTE_HOST, 'invalid_remote_host',
-          "Remote host '$host' looks like a netblock, can't connect to that";
+          "Remote host '$host' looks like a subnet, can't connect to that";
     }
 
     # probably this "host" is in fact an option, but we didn't parse it because it's an unknown one,
@@ -630,12 +630,12 @@ if ($host) {
     }
 
     # otherwise, resolve the host
-    $fnret = OVH::Bastion::get_ip(host => $host, allowPrefixes => ($osh_command ? 1 : 0));
+    $fnret = OVH::Bastion::get_ip(host => $host, allowSubnets => ($osh_command ? 1 : 0));
 
-    # if it's a netblock but get_ip() sends an error, it's an invalid netblock
+    # if it's a subnet but get_ip() sends an error, it's an invalid subnet
     if (!$fnret && index($host, '/') != -1) {
         main_exit OVH::Bastion::EXIT_INVALID_REMOTE_HOST, 'invalid_remote_host',
-          "Remote host '$host' looks like a netblock, but with an invalid prefix";
+          "Remote host '$host' looks like a subnet, but with an invalid prefix";
     }
 }
 

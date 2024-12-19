@@ -729,13 +729,13 @@ EOS
 
     success a3_add_server_to_g3 $a3 --osh groupAddServer --group $group3 --host 10.20.0.0/17 --port-any --user-any
 
-    run a0_add_personal_access_to_a3_works_slash_1 $a0 --osh accountAddPersonalAccess --account $account3 --host 77.66.55.0/24 --user-any --port-any
+    run a0_add_personal_access_to_a3_works_subnet_1 $a0 --osh accountAddPersonalAccess --account $account3 --host 77.66.55.0/24 --user-any --port-any
     json .command accountAddPersonalAccess .error_code OK .value.ip 77.66.55.0/24 .value.port null .value.user null
 
-    run a0_add_personal_access_to_a3_fail_badslash $a0 --osh accountAddPersonalAccess --account $account3 --host 77.66.55.0/23 --user-any --port-any
+    run a0_add_personal_access_to_a3_fail_badsubnet $a0 --osh accountAddPersonalAccess --account $account3 --host 77.66.55.0/23 --user-any --port-any
     json .command null .error_code KO_INVALID_REMOTE_HOST .value null
 
-    run a0_add_personal_access_to_a3_works_slash_2 $a0 --osh accountAddPersonalAccess --account $account3 --host 1.2.3.4/32 --user-any --port-any
+    run a0_add_personal_access_to_a3_works_subnet_2 $a0 --osh accountAddPersonalAccess --account $account3 --host 1.2.3.4/32 --user-any --port-any
     json .command accountAddPersonalAccess .error_code OK .value.ip 1.2.3.4 .value.port null .value.user null
 
     success a0_add_personal_access_to_a3_works $a0 --osh accountAddPersonalAccess --account $account3 --host 77.66.55.4 --user-any --port-any

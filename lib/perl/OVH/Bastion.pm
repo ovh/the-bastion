@@ -647,10 +647,10 @@ sub _osh_log {
 }
 
 sub is_valid_ip {
-    my %params        = @_;
-    my $ip            = $params{'ip'};
-    my $allowPrefixes = $params{'allowPrefixes'};    # if not, a /24 or /32 notation is rejected
-    my $fast          = $params{'fast'};             # fast mode: avoid instantiating Net::IP... except if ipv6
+    my %params       = @_;
+    my $ip           = $params{'ip'};
+    my $allowSubnets = $params{'allowSubnets'};    # if not, a /24 or /32 notation is rejected
+    my $fast         = $params{'fast'};            # fast mode: avoid instantiating Net::IP... except if ipv6
 
     if ($fast and $ip !~ m{:}) {
         # fast asked and it's not an IPv6, regex ftw
@@ -667,28 +667,28 @@ sub is_valid_ip {
                )
                (
                 (?<slash>/)
-                (?<prefix>\d+)
+                (?<prefixlen>\d+)
                )?
             $}x
           )
         {
-            if (defined $+{'prefix'} and not $allowPrefixes) {
-                return R('KO_INVALID_IP', msg => "Invalid IP address ($ip), as prefixes are not allowed");
+            if (defined $+{'prefixlen'} and not $allowSubnets) {
+                return R('KO_INVALID_IP', msg => "Invalid IP address ($ip), as subnets are not allowed");
             }
             foreach my $key (qw{ x1 x2 x3 x4 }) {
                 return R('KO_INVALID_IP', msg => "Invalid IP address ($ip)")
                   if (not defined $+{$key} or $+{$key} > 255);
             }
-            if (defined $+{'prefix'} and $+{'prefix'} > 32) {
+            if (defined $+{'prefixlen'} and $+{'prefixlen'} > 32) {
                 return R('KO_INVALID_IP', msg => "Invalid IP address ($ip)");
             }
-            if (defined $+{'slash'} and not defined $+{'prefix'}) {
+            if (defined $+{'slash'} and not defined $+{'prefixlen'}) {
                 # got a / in $ip but it's not followed by \d+
                 return R('KO_INVALID_IP', msg => "Invalid IP address ($ip)");
             }
 
-            if (defined $+{'prefix'} && $+{'prefix'} != 32) {
-                return R('OK', value => {ip => $ip, prefix => $+{'prefix'}});
+            if (defined $+{'prefixlen'} && $+{'prefixlen'} != 32) {
+                return R('OK', value => {ip => $ip, prefixlen => $+{'prefixlen'}});
             }
             return R('OK', value => {ip => $+{'shortip'}});
         }
@@ -725,7 +725,7 @@ sub is_valid_ip {
         }
     }
 
-    if (not $allowPrefixes and $type eq 'prefix') {
+    if (not $allowSubnets and $type eq 'prefix') {
         return R('KO_INVALID_IP', msg => "Invalid IP address ($ip), as prefixes are not allowed");
     }
 

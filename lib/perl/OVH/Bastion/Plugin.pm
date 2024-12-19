@@ -60,7 +60,7 @@ sub validate_tuple {
 
     if ($init) {
         if (defined $ip && $ip ne '') {
-            $fnret = OVH::Bastion::is_valid_ip(ip => $ip, allowPrefixes => 1);
+            $fnret = OVH::Bastion::is_valid_ip(ip => $ip, allowSubnets => 1);
             $fnret or osh_exit $fnret;
             $ip = $fnret->value->{'ip'};
         }
@@ -68,7 +68,7 @@ sub validate_tuple {
             # special case due to osh.pl: when host=1.2.3.0/24 then ip=''
             # in that case, validate host and set ip to the same
             if ($host =~ m{/}) {
-                $fnret = OVH::Bastion::is_valid_ip(ip => $host, allowPrefixes => 1);
+                $fnret = OVH::Bastion::is_valid_ip(ip => $host, allowSubnets => 1);
                 $fnret or osh_exit $fnret;
                 $ip = $host = $fnret->value->{'ip'};
             }
