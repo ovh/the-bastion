@@ -73,7 +73,9 @@ sub main_exit {
         uniqid      => $log_uniq_id
     ) if (not defined $log_db_name or not defined $log_insert_id);
 
-    my $R = R($retcode eq OVH::Bastion::EXIT_OK ? 'OK' : 'KO_' . uc($comment), msg => $msg);
+    my $exitcode = uc($comment);
+    $exitcode =~ tr/-/_/;
+    my $R = R($retcode eq OVH::Bastion::EXIT_OK ? 'OK' : "KO_$exitcode", msg => $msg);
 
     OVH::Bastion::osh_crit($R->msg) if not $R;
     OVH::Bastion::json_output($R)   if $ENV{'PLUGIN_JSON'};

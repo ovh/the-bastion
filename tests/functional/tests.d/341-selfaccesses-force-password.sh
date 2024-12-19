@@ -154,7 +154,7 @@ testsuite_selfaccesses_force_password()
 
         run ${mode}_connect_a4_fp_hashnotfound $a1 $account4@$remote_ip $password_switch -- --osh help
         retvalshouldbe 108
-        json .error_code KO_FORCED-PASSWORD-NOT-FOUND
+        json .error_code KO_FORCED_PASSWORD_NOT_FOUND
         nocontain "will use SSH with password autologin"
 
         success ${mode}_del_a4_fp_hashnotfound $a0 --osh $del_access_plugin $target --host $remote_ip --user $account4 --port $remote_port

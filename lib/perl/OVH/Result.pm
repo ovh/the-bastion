@@ -74,6 +74,7 @@ sub TO_JSON {
         error_code    => $self->err,
         value         => $self->value,
         error_message => $self->msg,
+        session_id    => $ENV{'UNIQID'},
       }
       if (ref $self eq 'OVH::Result');
     return {};

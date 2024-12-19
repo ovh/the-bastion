@@ -691,18 +691,10 @@ sub _is_in_any_net {
         return R('ERR_INVALID_PARAMETER', msg => "Parameter 'networks' must be an array");
     }
 
+    require Net::Netmask;
     foreach my $net (@$networks) {
-        if ($net =~ m{/}) {
-
-            # build slash and test
-            require Net::Netmask;
-            my $ipCheck = Net::Netmask->new2($net);
-            return R('OK', value => {matched => $net}) if ($ipCheck && $ipCheck->match($ip));
-        }
-        else {
-            # it's a single ip, so it's a stupid strcmp() does the trick
-            return R('OK', value => {matched => $net}) if ($net eq $ip);
-        }
+        my $Netmask = Net::Netmask->new2($net);
+        return R('OK', value => {matched => $net}) if ($Netmask && $Netmask->match($ip));
     }
     return R('KO', msg => "No match found");
 }

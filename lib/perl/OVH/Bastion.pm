@@ -446,7 +446,7 @@ sub json_output {    ## no critic (ArgUnpacking)
         $JsonObject->pretty(1);
     }
     my $encoded_json =
-      $JsonObject->encode({error_code => $R->err, error_message => $R->msg, command => $command, value => $R->value});
+      $JsonObject->encode({error_code => $R->err, error_message => $R->msg, command => $command, value => $R->value, session_id => $ENV{'UNIQID'}});
 
     # rename forbidden strings
     $encoded_json =~ s/JSON_(START|OUTPUT|END)/JSON__$1/g;

@@ -186,7 +186,7 @@ EOS
     script  bogus $a1 -osh selfAddIngressKey '<<<' "bogus"
     retvalshouldbe 100
     contain "look like an SSH public key"
-    json .command selfAddIngressKey .error_code KO_NOT_A_KEY .value.key.line bogus
+    json .command selfAddIngressKey .error_code KO_NOT_A_KEY .value null
 
     script  eof $a1 -osh selfAddIngressKey '</dev/null'
     retvalshouldbe 100

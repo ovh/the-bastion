@@ -1,0 +1,386 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://www.ovhcloud.com/the-bastion/schemas/bastion.conf",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "bastionName": {
+      "pattern": "^[a-zA-Z0-9._-]+$"
+    },
+    "bastionCommand": {
+      "type": "string",
+      "minLength": 2
+    },
+    "readOnlySlaveMode": {
+      "type": "boolean"
+    },
+    "adminAccounts": {
+      "type": "array",
+      "items": {
+        "pattern": "^[a-zA-Z0-9._-]+$"
+      }
+    },
+    "superOwnerAccounts": {
+      "type": "array",
+      "items": {
+        "pattern": "^[a-zA-Z0-9._-]+$"
+      }
+    },
+    "allowedIngressSshAlgorithms": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "rsa",
+          "ecdsa",
+          "ed25519",
+          "ecdsa-sk",
+          "ed25519-sk"
+        ]
+      }
+    },
+    "allowedEgressSshAlgorithms": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "rsa",
+          "ecdsa",
+          "ed25519"
+        ]
+      }
+    },
+    "minimumIngressRsaKeySize": {
+      "type": "integer",
+      "minimum": 1024,
+      "maximum": 16384
+    },
+    "maximumIngressRsaKeySize": {
+      "type": "integer",
+      "minimum": 1024,
+      "maximum": 32768
+    },
+    "minimumEgressRsaKeySize": {
+      "type": "integer",
+      "minimum": 1024,
+      "maximum": 16384
+    },
+    "maximumEgressRsaKeySize": {
+      "type": "integer",
+      "minimum": 1024,
+      "maximum": 32768
+    },
+    "defaultAccountEgressKeyAlgorithm": {
+      "enum": [
+        "rsa",
+        "ecdsa",
+        "ed25519"
+      ]
+    },
+    "defaultAccountEgressKeySize": {
+      "type": "integer",
+      "minimum": 256,
+      "maximum": 32768
+    },
+    "moshAllowed": {
+      "type": "boolean"
+    },
+    "moshTimeoutNetwork": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 31536000,
+      "$comment": "maximum is 365 days"
+    },
+    "moshTimeoutSignal": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 31536000,
+      "$comment": "maximum is 365 days"
+    },
+    "moshCommandLine": {
+      "type": "string"
+    },
+    "dnsSupportLevel": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 2
+    },
+    "allowedNetworks": {
+      "type": "array",
+      "items": {
+        "pattern": "^[0-9.:/]+$"
+      }
+    },
+    "forbiddenNetworks": {
+      "type": "array",
+      "items": {
+        "pattern": "^[0-9.:/]+$"
+      }
+    },
+    "ingressToEgressRules": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "minItems": 3,
+        "maxItems": 3,
+        "prefixItems": [
+          {
+            "type": "array",
+            "items": {
+              "pattern": "^[0-9.:/]+$"
+            }
+          },
+          {
+            "type": "array",
+            "items": {
+              "pattern": "^[0-9.:/]+$"
+            }
+          },
+          {
+            "enum": [
+              "ALLOW",
+              "ALLOW-EXCLUSIVE",
+              "DENY"
+            ]
+          }
+        ]
+      }
+    },
+    "IPv4Allowed": {
+      "type": "boolean"
+    },
+    "IPv6Allowed": {
+      "type": "boolean"
+    },
+    "enableSyslog": {
+      "type": "boolean"
+    },
+    "syslogFacility": {
+      "type": "string"
+    },
+    "syslogDescription": {
+      "type": "string"
+    },
+    "enableGlobalAccessLog": {
+      "type": "boolean"
+    },
+    "enableAccountAccessLog": {
+      "type": "boolean"
+    },
+    "enableGlobalSqlLog": {
+      "type": "boolean"
+    },
+    "enableAccountSqlLog": {
+      "type": "boolean"
+    },
+    "ttyrecFilenameFormat": {
+      "type": "string",
+      "pattern": "^([a-zA-Z0-9%&#_.-]+)$"
+    },
+    "ttyrecAdditionalParameters": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "ttyrecStealthStdoutPattern": {
+      "type": "string"
+    },
+    "ingressKeysFrom": {
+      "type": "array",
+      "items": {
+        "pattern": "^[0-9.:/]+$"
+      }
+    },
+    "ingressKeysFromAllowOverride": {
+      "type": "boolean"
+    },
+    "defaultLogin": {
+      "type": "string"
+    },
+    "egressKeysFrom": {
+      "type": "array",
+      "items": {
+        "pattern": "^[0-9.:/]+$"
+      }
+    },
+    "keyboardInteractiveAllowed": {
+      "type": "boolean"
+    },
+    "passwordAllowed": {
+      "type": "boolean"
+    },
+    "telnetAllowed": {
+      "type": "boolean"
+    },
+    "displayLastLogin": {
+      "type": "boolean"
+    },
+    "fanciness": {
+      "enum": [
+        "none",
+        "basic",
+        "full",
+        "boomer",
+        "millenial",
+        "genz"
+      ]
+    },
+    "interactiveModeAllowed": {
+      "type": "boolean"
+    },
+    "interactiveModeTimeout": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 31536000,
+      "$comment": "maximum is 365 days"
+    },
+    "interactiveModeByDefault": {
+      "type": "boolean"
+    },
+    "interactiveModeProactiveMFAenabled": {
+      "type": "boolean"
+    },
+    "interactiveModeProactiveMFAexpiration": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 86400
+    },
+    "idleLockTimeout": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 31536000,
+      "$comment": "maximum is 365 days"
+    },
+    "idleKillTimeout": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 31536000,
+      "$comment": "maximum is 365 days"
+    },
+    "warnBeforeLockSeconds": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 31536000,
+      "$comment": "maximum is 365 days"
+    },
+    "warnBeforeKillSeconds": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 31536000,
+      "$comment": "maximum is 365 days"
+    },
+    "accountExternalValidationProgram": {
+      "type": "string"
+    },
+    "accountExternalValidationDenyOnFailure": {
+      "type": "boolean"
+    },
+    "alwaysActiveAccounts": {
+      "type": "array",
+      "items": {
+        "pattern": "^[a-zA-Z0-9._-]+$"
+      }
+    },
+    "accountMaxInactiveDays": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1825,
+      "$comment": "maximum is 5 years"
+    },
+    "accountExpiredMessage": {
+      "type": "string"
+    },
+    "accountCreateSupplementaryGroups": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "accountCreateDefaultPersonalAccesses": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "ingressRequirePIV": {
+      "type": "boolean"
+    },
+    "accountMFAPolicy": {
+      "enum": [
+        "disabled",
+        "enabled",
+        "password-required",
+        "totp-required",
+        "any-required"
+      ]
+    },
+    "MFAPasswordMinDays": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1825,
+      "$comment": "maximum is 5 years"
+    },
+    "MFAPasswordMaxDays": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1825,
+      "$comment": "maximum is 5 years"
+    },
+    "MFAPasswordWarnDays": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1825,
+      "$comment": "maximum is 5 years"
+    },
+    "MFAPasswordInactiveDays": {
+      "type": "integer",
+      "minimum": -1,
+      "maximum": 1825,
+      "$comment": "maximum is 5 years"
+    },
+    "MFAPostCommand": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "TOTPProvider": {
+      "enum": [
+        "none",
+        "google-authenticator",
+        "duo"
+      ]
+    },
+    "accountUidMin": {
+      "type": "integer",
+      "minimum": 100,
+      "maximum": 999999999
+    },
+    "accountUidMax": {
+      "type": "integer",
+      "minimum": 100,
+      "maximum": 999999999
+    },
+    "ttyrecGroupIdOffset": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 999999999
+    },
+    "documentationURL": {
+      "type": "string"
+    },
+    "debug": {
+      "type": "boolean"
+    },
+    "remoteCommandEscapeByDefault": {
+      "type": "boolean"
+    },
+    "sshClientDebugLevel": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 3
+    },
+    "sshClientHasOptionE": {
+      "type": "boolean"
+    }
+  }
+}

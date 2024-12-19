@@ -394,8 +394,10 @@ run()
         cat "$outdir/$basename.log"
         printf "%b%b%b\\n" "$WHITE_ON_BLUE" "[INFO] returned json follows" "$NOC"
         grep "^JSON_OUTPUT=" -- $outdir/$basename.log | cut -d= -f2- | jq --sort-keys .
-        printf "%b%b%b\\n" "$WHITE_ON_BLUE" "[INFO] json validation information follows" "$NOC"
-        cat "$outdir/$basename.jv"
+        if [ -s "$outdir/$basename.jv" ]; then
+            printf "%b%b%b\\n" "$WHITE_ON_BLUE" "[INFO] json validation information follows" "$NOC"
+            cat "$outdir/$basename.jv"
+        fi
         if [ "$opt_consistency_check" = 1 ]; then
             printf "%b%b%b\\n" "$WHITE_ON_BLUE" "[INFO] consistency check follows" "$NOC"
             cat "$outdir/$basename.cc"
@@ -436,6 +438,7 @@ run()
     unset sleepafter
 
     # look for generally bad strings in the output
+    local _bad _badexclude
     _bad='at /usr/share/perl|compilation error|compilation aborted|BEGIN failed|gonna crash|/opt/bastion/|sudo:|ontinuing anyway|MAKETESTFAIL'
     _badexclude='/etc/shells'
     # shellcheck disable=SC2126
@@ -445,30 +448,46 @@ run()
     fi
 
     # do we have a json output and if we do, do we have a jsonschema for the command?
+    returned_json=$(grep "^JSON_OUTPUT=" -- $outdir/$basename.log | tail -n1 | cut -d= -f2-)
     local _osh
-    _osh=$(get_json | $jq '.command')
-    if [ -n "$_osh" ] && [ "$_osh" != "null" ] && [ -e "$basedir/$_osh.jsonschema" ]; then
-        get_json | perl -e '
+    _osh=$(echo "$returned_json" | $jq '.command')
+    if [ -n "$_osh" ]; then
+        echo "$returned_json" | env basedir="$basedir" osh="$_osh" perl -e '
             use strict;
             use warnings;
             use JSON;
             use JSON::Validator;
-            my $jv = JSON::Validator->new()->schema("file://'"$basedir/$_osh"'.jsonschema");
-            my $schema = $jv->schema; # will die if file is invalid json, this is what we want
-            if ($schema->is_invalid) {
-                CORE::say $_->to_string() for @{ $schema->errors };
-                exit 1;
+
+            sub validate {
+                my ($filename, $data) = @_;
+                return 0 if ! defined $data;
+                my $file = $ENV{"basedir"}."/json-schema/plugins/$filename.jsonschema";
+                return 0 if ! -e $file;
+                my $jv = JSON::Validator->new()->schema("file://$file");
+                my $schema = $jv->schema; # will die if file is invalid json, this is what we want
+                if ($schema->is_invalid) {
+                    print "Schema is invalid:\n";
+                    CORE::say $_->to_string() for @{ $schema->errors };
+                    exit 1;
+                }
+                my @errors = $schema->validate($data);
+                CORE::say $_->to_string() for (@errors);
+                return 1;
             }
-            my $data = eval { local $/; <>; };
-            my $json = decode_json($data); # will die if it fails, this is what we want
-            my @errors = $schema->validate($json);
-            CORE::say $_->to_string() for (@errors);
+
+            my $datastr = eval { local $/; <>; };
+            my $json = decode_json($datastr); # will die if it fails, this is what we want
+
+            my $count = 0;
+            $count += validate("_allPlugins", $json);
+            $count += validate($ENV{"osh"}, $json->{"value"});
+            die "Nothing to validate" if !$count;
         ' > "$outdir/$basename.jv" 2>&1
         if [ -s "$outdir/$basename.jv" ]; then
             nbfailedgeneric=$(( nbfailedgeneric + 1 ))
-            fail "JSON SCHEMA" "(json validation failed against the schema of $_osh)"
+            fail "JSON SCHEMA" "(json validation failed against the schema)"
         elif [ -f "$outdir/$basename.jv" ]; then
-            ok "JSON SCHEMA" "(json data matches the schema of $_osh)"
+            ok "JSON SCHEMA" "(json data matches the schema)"
         else
             nbfailedgeneric=$(( nbfailedgeneric + 1 ))
             fail "JSON SCHEMA" "(json validation didn't produce an output at all)"
@@ -508,6 +527,7 @@ script() {
         return
     fi
 
+    local tmpscript
     tmpscript=$(mktemp)
     echo "#! /usr/bin/env bash" > "$tmpscript"
     echo "$*" >> "$tmpscript"
@@ -559,12 +579,6 @@ ignorecodewarn()
     code_warn_exclude="$*"
 }
 
-get_json()
-{
-    [ "$COUNTONLY" = 1 ] && return
-    grep "^JSON_OUTPUT=" -- $outdir/$basename.log | tail -n1 | cut -d= -f2-
-}
-
 get_stdout()
 {
     [ "$COUNTONLY" = 1 ] && return
@@ -574,7 +588,7 @@ get_stdout()
 json()
 {
     [ "$COUNTONLY" = 1 ] && return
-    local jq1="" jq2="" jq3=""
+    local jq1="" jq2="" jq3="" got="" expected=""
     local splitsort=0
     while [ $# -ge 2 ] ; do
         if [ "$1" = "--splitsort" ]; then
@@ -590,28 +604,32 @@ json()
         fi
         local filter="$1" expected="$2"
         shift 2
-        json=$(get_json)
         set +e
         if [ -n "$jq3" ]; then
-            got=$($jq "$jq1" "$jq2" "$jq3" "$filter" <<< "$json")
+            got=$($jq "$jq1" "$jq2" "$jq3" "$filter" <<< "$returned_json")
         else
-            got=$($jq "$filter" <<< "$json")
+            got=$($jq "$filter" <<< "$returned_json")
         fi
         if [ "$splitsort" = 1 ]; then
             expected=$(echo "$expected" | tr " " "\\n" | sort)
             got=$($jq ".[]" <<< "$got" | sort)
         fi
         set -e
-        if [ -z "$json" ] ; then
+        if [ -z "$returned_json" ] ; then
             nbfailedgrep=$(( nbfailedgrep + 1 ))
             fail "JSON VALUE" "(no json found in output, couldn't look for key <$filter>)"
         elif [ "$expected" = "$got" ] ; then
-            ok "JSON VALUE" "($filter => $expected) [$jq1 $jq3 $jq3]"
+            ok "JSON VALUE" "($filter => $expected) [$jq1 $jq2 $jq3]"
         else
             nbfailedgrep=$(( nbfailedgrep + 1 ))
             fail "JSON VALUE" "(for key <$filter> wanted <$expected> but got <$got>, with optional params jq1='$jq1' jq2='$jq2' jq3='$jq3')"
         fi
     done
+}
+
+get_json()
+{
+    echo "${returned_json:-}"
 }
 
 json_document()
@@ -620,7 +638,7 @@ json_document()
     local fulljson="$1"
     local tmpdiff; tmpdiff=$(mktemp)
     local diffret=0
-    diff -u0 <(echo "$fulljson" | jq -S .) <(get_json | jq -S .) > "$tmpdiff"; diffret=$?
+    diff -u0 <(echo "$fulljson" | jq -S .) <(echo "$returned_json" | jq -S .) > "$tmpdiff"; diffret=$?
     if [ "$diffret" = 0 ]; then
         ok "JSON DOCUMENT" "(fully matched)"
     else
@@ -662,6 +680,7 @@ contain()
 nocontain()
 {
     [ "$COUNTONLY" = 1 ] && return
+    local grepit
     grepit="$1"
     if grep -Eq "$grepit" "$outdir/$basename.log"; then
         nbfailedgrep=$(( nbfailedgrep + 1 ))
@@ -696,7 +715,7 @@ dump_vars_and_funcs()
 {
     set | grep -v -E '^('\
 'testno|section|code_warn_exclude|COPROC_PID|LINES|COLUMNS|PIPESTATUS|_|'\
-'BASH_LINENO|basename|case|json|name|tmpscript|grepit|got|isbad|'\
+'BASH_LINENO|basename|case|json|name|isbad|returned_json|'\
 'nbfailedgrep|nbfailedcon|nbfailedgeneric|nbfailedlog|nbfailedret|shouldbe|modulename)='
 }
 

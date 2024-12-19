@@ -308,7 +308,7 @@ sub get_ssh_pub_key_info {
         ($prefix, $typecode, $base64, $comment) = ($2, $3, $4, $6);
     }
     else {
-        return R('KO_NOT_A_KEY', value => {line => $pubKey});
+        return R('KO_NOT_A_KEY');
     }
     my $line = "$typecode $base64";
     $prefix = '' if not defined $prefix;
