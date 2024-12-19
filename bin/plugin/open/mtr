@@ -44,7 +44,7 @@ if (not $host) {
 
 if ($host =~ m{/}) {
     help();
-    osh_exit 'ERR_INVALID_PARAMETER', "Please use a single IP, not a netblock";
+    osh_exit 'ERR_INVALID_PARAMETER', "Please use a single IP, not a subnet";
 }
 
 my @command = qw{ mtr --show-ips --aslookup -n };

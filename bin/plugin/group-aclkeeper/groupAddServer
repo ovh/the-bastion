@@ -16,7 +16,7 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
     options            => {
         "group=s"          => \my $group,
         "protocol=s"       => \my $protocol,
-        "force"            => \my $force,           # for slashes, and/or for servers that are down (no connection test)
+        "force"            => \my $force,           # for subnets, and/or for servers that are down (no connection test)
         "force-key=s"      => \my $forceKey,
         "force-password=s" => \my $forcePassword,
         "ttl=s"            => \my $ttl,
@@ -34,8 +34,8 @@ Add an IP or IP block to a group's servers list
 Usage: --osh SCRIPT_NAME --group GROUP --host HOST --user USER|* --port PORT|* [OPTIONS]
 
   --group GROUP            Specify which group this machine should be added to
-  --host HOST|IP|NET/CIDR  Host(s) to add access to, either a HOST which will be resolved to an IP immediately,
-                             or an IP, or a whole network using the NET/CIDR notation
+  --host HOST|IP|SUBNET    Host(s) to add access to, either a HOST which will be resolved to an IP immediately,
+                             or an IP, or a whole subnet using the PREFIX/SIZE notation
   --user USER|PATTERN|*    Specify which remote user should be allowed to connect as.
                              Globbing characters '*' and '?' are supported, so you can specify a pattern
                              that will be matched against the actual remote user name.

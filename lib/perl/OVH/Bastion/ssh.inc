@@ -477,7 +477,7 @@ sub get_from_for_user_key {
         @ipList = @$forcedList;
     }
 
-    my @ipListVerified = grep { OVH::Bastion::is_valid_ip(ip => $_, allowPrefixes => 1) } @ipList;
+    my @ipListVerified = grep { OVH::Bastion::is_valid_ip(ip => $_, allowSubnets => 1) } @ipList;
 
     my $from = '';
     if (@ipListVerified) {
@@ -596,7 +596,7 @@ sub get_bastion_ips {
         @ips = @$egressKeysFrom;
     }
 
-    my @checkedIps = grep { OVH::Bastion::is_valid_ip(ip => $_, allowPrefixes => 1) } @ips;
+    my @checkedIps = grep { OVH::Bastion::is_valid_ip(ip => $_, allowSubnets => 1) } @ips;
 
     return R('OK', value => \@checkedIps);
 }

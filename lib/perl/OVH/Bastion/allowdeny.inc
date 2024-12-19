@@ -72,7 +72,7 @@ sub get_group_keys {
 sub is_access_way_granted {
     my %params = @_;
 
-    my $exactIpMatch = $params{'exactIpMatch'}; # $ip must be explicitly allowed (not given through a wider slash or a 0.0.0.0/0 in grantfile)
+    my $exactIpMatch = $params{'exactIpMatch'}; # $ip must be explicitly allowed (not given through a wider subnet or a 0.0.0.0/0 in grantfile)
     my $exactPortMatch = $params{'exactPortMatch'}; # $port must be explicitly allowed (port wildcards in grantfile will be ignored)
     my $exactUserMatch = $params{'exactUserMatch'}; # $user must be explicitly allowed (user wildcards in grantfile will be ignored)
     my $exactMatch     = $params{'exactMatch'};     # sets exactIpMatch exactPortMatch and exactUserMatch
@@ -81,7 +81,7 @@ sub is_access_way_granted {
     my $ignorePort = $params{'ignorePort'};  # ignore port COMPLETELY (port 22, 2345, or port-wildcard will all match)
 
     my $wantedUser = $params{'user'};        # if undef, means we look for a user-any allow
-    my $wantedIp   = $params{'ip'};          # can be a single IP or a prefix
+    my $wantedIp   = $params{'ip'};          # can be a single IP or a subnet
     my $wantedPort = $params{'port'};        # if undef, means we look for a port-any allow
 
     my $way     = $params{'way'};            # personal|group|groupguest|legacy
@@ -228,14 +228,14 @@ sub is_access_way_granted {
             last;                                             # perfect match, don't search further
         }
 
-        # check IP in not-exactIpMatch case. if it's a netblock (v4/v6) OR an IPv6, use Netmask matching
+        # check IP in not-exactIpMatch case. if it's a subnet (v4/v6) OR an IPv6, use Netmask matching
         if ($isNetblock || $isIPv6) {
 
-            # build slash and test
+            # build subnet and test
             require Net::Netmask;
             my $ipCheck = Net::Netmask->new2($entry->{'ip'});
             if ($ipCheck && ($isNetblock ? $ipCheck->contains($wantedIp) : $ipCheck->match($wantedIp))) {
-                osh_debug("... we got a netblock match!");
+                osh_debug("... we got a subnet match!");
                 if (not defined $match{'size'} or $ipCheck->size() < $match{'size'}) {
                     %match = (
                         forceKey      => $entry->{'forceKey'},
@@ -281,11 +281,11 @@ sub is_access_way_granted {
 
 # from a given hostname, check if we have an ip or a range of ip or try to resolve
 sub get_ip {
-    my %params        = @_;
-    my $host          = $params{'host'};
-    my $v4            = $params{'v4'} // OVH::Bastion::config('IPv4Allowed')->value;
-    my $v6            = $params{'v6'} // OVH::Bastion::config('IPv6Allowed')->value;
-    my $allowPrefixes = $params{'allowPrefixes'} ||= 0;
+    my %params       = @_;
+    my $host         = $params{'host'};
+    my $v4           = $params{'v4'} // OVH::Bastion::config('IPv4Allowed')->value;
+    my $v6           = $params{'v6'} // OVH::Bastion::config('IPv6Allowed')->value;
+    my $allowSubnets = $params{'allowSubnets'} ||= 0;
 
     if (!$host) {
         return R('ERR_MISSING_PARAMETER', msg => "Missing parameter 'host'");
@@ -297,7 +297,7 @@ sub get_ip {
 
     # try to see if it's already an IP
     osh_debug("checking if '$host' is already an IP (v4=$v4 v6=$v6)");
-    my $fnret = OVH::Bastion::is_valid_ip(ip => $host, allowPrefixes => $allowPrefixes);
+    my $fnret = OVH::Bastion::is_valid_ip(ip => $host, allowSubnets => $allowSubnets);
     if ($fnret) {
         osh_debug("Host $host is already an IP");
         if (   ($fnret->value->{'version'} == 4 && $v4)
@@ -683,7 +683,7 @@ sub print_acls {
     return R('OK', value => \@jsonRows);
 }
 
-# checks if ip matches any given array of prefixes/networks
+# checks if ip matches any given array of subnets
 sub _is_in_any_net {
     my %params   = @_;
     my $ip       = $params{'ip'};
@@ -696,12 +696,12 @@ sub _is_in_any_net {
         return R('ERR_INVALID_PARAMETER', msg => "Parameter 'networks' must be an array");
     }
 
-    my $isNetblock = (index($ip, '/') != -1);
+    my $isSubnet = (index($ip, '/') != -1);
 
     require Net::Netmask;
     foreach my $net (@$networks) {
         my $Netmask = Net::Netmask->new2($net);
-        if ($Netmask && ($isNetblock ? $Netmask->contains($ip) : $Netmask->match($ip))) {
+        if ($Netmask && ($isSubnet ? $Netmask->contains($ip) : $Netmask->match($ip))) {
             return R('OK', value => {matched => $net});
         }
     }
@@ -722,7 +722,7 @@ sub is_access_granted {
                                                 # can also be of the format "realm/remoteself"
 
     my $ipfrom = $params{'ipfrom'};             # must be an IP (client IP)
-    my $ip     = $params{'ip'};                 # can be a single IP or a slash
+    my $ip     = $params{'ip'};                 # can be a single IP or a subnet
     my $port   = $params{'port'};               # if undef, means we look for a port wildcard allow
     my $user   = $params{'user'};               # if undef, means we look for a user wildcard allow
 
@@ -947,7 +947,7 @@ sub ssh_test_access_way {
         return R('ERR_INCOMPATIBLE_PARAMETERS');
     }
 
-    $fnret = OVH::Bastion::is_valid_ip(ip => $ip, allowPrefixes => 1);
+    $fnret = OVH::Bastion::is_valid_ip(ip => $ip, allowSubnets => 1);
     $fnret or return $fnret;
     if ($fnret->value->{'type'} eq 'prefix') {
         return R('OK_PREFIX', msg => "Can't test a connection to a prefix, assuming it's OK");
@@ -1308,7 +1308,7 @@ sub _get_acl_from_file {
                 [0-9.]+(/[0-9]+)?         # IPv4
                 |                         # or
                 \[[0-9a-f:.]+(/[0-9]+)?\] # IPv6
-            ) # ip or netblock part, mandatory ($3)
+            ) # ip or subnet part, mandatory ($3)
             (
                 :([0-9]+)      # $7 == port
             )?
@@ -1338,7 +1338,7 @@ sub _get_acl_from_file {
 
         # extract ip (v4 or v6)
         if (defined $ip) {
-            $fnret = OVH::Bastion::is_valid_ip(ip => $ip, allowPrefixes => 1, fast => 1);
+            $fnret = OVH::Bastion::is_valid_ip(ip => $ip, allowSubnets => 1, fast => 1);
             if (!$fnret) {
                 osh_debug("skipping line <$line> because IP ($ip) is invalid");
                 next;

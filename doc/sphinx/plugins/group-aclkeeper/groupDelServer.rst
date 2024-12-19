@@ -18,11 +18,11 @@ Remove an IP or IP block from a group's server list
 
    Specify which group this machine should be removed from
 
-.. option:: --host HOST|IP|NET/CIDR
+.. option:: --host HOST|IP|SUBNET
 
    Host(s) to remove access from, either a HOST which will be resolved to an IP immediately,
 
-                             or an IP, or a whole network using the NET/CIDR notation
+                             or an IP, or a whole subnet using the PREFIX/SIZE notation
   --user USER|PATTERN|*    Specify which remote user was allowed to connect as.
                              Globbing characters '*' and '?' are supported, so you can specify a pattern
                              that will be matched against the actual remote user name.

@@ -115,9 +115,9 @@ while (my $line = <STDIN>) {
         $acl_user = $fnret->value;
     }
 
-    # resolve host, unless it looks like a prefix
+    # resolve host, unless it looks like a subnet
     if ($acl_host =~ m{/}) {
-        $fnret = OVH::Bastion::is_valid_ip(ip => $acl_host, allowPrefixes => 1);
+        $fnret = OVH::Bastion::is_valid_ip(ip => $acl_host, allowSubnets => 1);
     }
     else {
         $fnret = OVH::Bastion::get_ip(host => $acl_host);

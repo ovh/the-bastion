@@ -14,11 +14,11 @@ Add a personal server access to your account
 .. program:: selfAddPersonalAccess
 
 
-.. option:: --host HOST|IP|NET/CIDR
+.. option:: --host HOST|IP|SUBNET
 
    Host(s) to add access to, either a HOST which will be resolved to an IP immediately,
 
-                             or an IP, or a whole network using the NET/CIDR notation
+                             or an IP, or a whole subnet using the PREFIX/SIZE notation
   --user USER|PATTERN|*    Specify which remote user should be allowed to connect as.
                              Globbing characters '*' and '?' are supported, so you can specify a pattern
                              that will be matched against the actual remote user name.
@@ -65,9 +65,9 @@ Options
 
 .. option:: widest_v4_prefix (optional, integer, between 0 and 32)
 
-    When specified, this limits the size of prefixes that can be added to an
-    ACL, e.g. 24 would not allow prefixes wider than /24 (such as /20 or
-    /16).
+    When specified, this limits the size of subnets that can be added to an
+    ACL, e.g. 24 would not allow prefix lengths wider than /24 (such as /20
+    or /16).
     Note that this doesn't prevent users from adding thousands of ACLs to
     cover a wide range of networks, but this helps ensuring ACLs such as
     0.0.0.0/0 can't be added in a single command.

@@ -23,11 +23,11 @@ Add a specific group server access to an account
    Group to add the guest access to, note that this group should already have access
 
                              to the USER/HOST/PORT tuple you'll specify with the options below.
-.. option:: --host HOST|IP|NET/CIDR
+.. option:: --host HOST|IP|SUBNET
 
    Host(s) to add access to, either a HOST which will be resolved to an IP immediately,
 
-                             or an IP, or a whole network using the NET/CIDR notation
+                             or an IP, or a whole subnet using the PREFIX/SIZE notation
   --user USER|PATTERN|*    Specify which remote user should be allowed to connect as.
                              Globbing characters '*' and '?' are supported, so you can specify a pattern
                              that will be matched against the actual remote user name.

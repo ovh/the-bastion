@@ -61,7 +61,7 @@ if (!$fnret) {
 
 if ($host =~ m{/}) {
     help();
-    osh_exit 'ERR_INVALID_PARAMETER', "Please use a single IP, not a netblock";
+    osh_exit 'ERR_INVALID_PARAMETER', "Please use a single IP, not a subnet";
 }
 
 osh_info "Checking whether TCP port $port of $host is reachable...";
