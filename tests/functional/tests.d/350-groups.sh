@@ -153,7 +153,7 @@ EOS
 
     success a1_add_non_routable_ip $a1 --osh groupAddServer --host 192.0.2.0 --user-any --port-any --force --group $group1
 
-    run a1_ssh_wait $a1 --wait 192.0.2.0
+    run a1_ssh_wait $a1f --wait 192.0.2.0
     retvalshouldbe 124 # timeout
     contain "Waiting for port 22 to be open on 192.0.2.0"
     contain REGEX "Still trying to connect to 192.0.2.0:22 after 1[0-9] seconds"

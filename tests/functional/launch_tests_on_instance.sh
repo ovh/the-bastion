@@ -200,6 +200,7 @@ fi
     a0="  $t ssh -F $mytmpdir/ssh_config -i $account0key1file $account0@$remote_ip -p $remote_port -- $js "
     a0f="$tf ssh -F $mytmpdir/ssh_config -i $account0key1file $account0@$remote_ip -p $remote_port -- $js "
     a1="  $t ssh -F $mytmpdir/ssh_config -i $account1key1file $account1@$remote_ip -p $remote_port -- $js "
+    a1f="$tf ssh -F $mytmpdir/ssh_config -i $account1key1file $account1@$remote_ip -p $remote_port -- $js "
     a1k2="$t ssh -F $mytmpdir/ssh_config -i $account1key2file $account1@$remote_ip -p $remote_port -- $js "
     a2="  $t ssh -F $mytmpdir/ssh_config -i $account2key1file $account2@$remote_ip -p $remote_port -- $js "
     a3="  $t ssh -F $mytmpdir/ssh_config -i $account3key1file $account3@$remote_ip -p $remote_port -- $js "
@@ -393,6 +394,8 @@ run()
         cat "$outdir/$basename.log"
         printf "%b%b%b\\n" "$WHITE_ON_BLUE" "[INFO] returned json follows" "$NOC"
         grep "^JSON_OUTPUT=" -- $outdir/$basename.log | cut -d= -f2- | jq --sort-keys .
+        printf "%b%b%b\\n" "$WHITE_ON_BLUE" "[INFO] json validation information follows" "$NOC"
+        cat "$outdir/$basename.jv"
         if [ "$opt_consistency_check" = 1 ]; then
             printf "%b%b%b\\n" "$WHITE_ON_BLUE" "[INFO] consistency check follows" "$NOC"
             cat "$outdir/$basename.cc"
@@ -439,6 +442,37 @@ run()
     if [ "$(grep -qE "$_bad" $outdir/$basename.log | grep -Ev "$_badexclude" | wc -l)" -gt 0 ]; then
         nbfailedgeneric=$(( nbfailedgeneric + 1 ))
         fail "BAD STRING" "(generic known-bad string found in output)"
+    fi
+
+    # do we have a json output and if we do, do we have a jsonschema for the command?
+    local _osh
+    _osh=$(get_json | $jq '.command')
+    if [ -n "$_osh" ] && [ "$_osh" != "null" ] && [ -e "$basedir/$_osh.jsonschema" ]; then
+        get_json | perl -e '
+            use strict;
+            use warnings;
+            use JSON;
+            use JSON::Validator;
+            my $jv = JSON::Validator->new()->schema("file://'"$basedir/$_osh"'.jsonschema");
+            my $schema = $jv->schema; # will die if file is invalid json, this is what we want
+            if ($schema->is_invalid) {
+                CORE::say $_->to_string() for @{ $schema->errors };
+                exit 1;
+            }
+            my $data = eval { local $/; <>; };
+            my $json = decode_json($data); # will die if it fails, this is what we want
+            my @errors = $schema->validate($json);
+            CORE::say $_->to_string() for (@errors);
+        ' > "$outdir/$basename.jv" 2>&1
+        if [ -s "$outdir/$basename.jv" ]; then
+            nbfailedgeneric=$(( nbfailedgeneric + 1 ))
+            fail "JSON SCHEMA" "(json validation failed against the schema of $_osh)"
+        elif [ -f "$outdir/$basename.jv" ]; then
+            ok "JSON SCHEMA" "(json data matches the schema of $_osh)"
+        else
+            nbfailedgeneric=$(( nbfailedgeneric + 1 ))
+            fail "JSON SCHEMA" "(json validation didn't produce an output at all)"
+        fi
     fi
 
     # now run consistency check on the target, unless configured otherwise
