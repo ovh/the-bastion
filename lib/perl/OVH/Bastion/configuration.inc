@@ -265,7 +265,7 @@ sub load_configuration {
             options => [
                 qw{
                   enableSyslog enableGlobalAccessLog enableAccountAccessLog enableGlobalSqlLog enableAccountSqlLog displayLastLogin
-                  interactiveModeByDefault interactiveModeProactiveMFAenabled
+                  interactiveModeByDefault interactiveModeProactiveMFAenabled IPv4Allowed
                   }
             ],
         },
@@ -275,7 +275,7 @@ sub load_configuration {
                 qw{
                   interactiveModeAllowed readOnlySlaveMode sshClientHasOptionE ingressKeysFromAllowOverride
                   moshAllowed debug keyboardInteractiveAllowed passwordAllowed telnetAllowed remoteCommandEscapeByDefault
-                  accountExternalValidationDenyOnFailure ingressRequirePIV
+                  accountExternalValidationDenyOnFailure ingressRequirePIV IPv6Allowed
                   }
             ],
         }
@@ -325,7 +325,7 @@ sub load_configuration {
 
     # 4/6) Strings that must be one item of a specific enum.
     foreach my $o (
-        {name => 'defaultAccountEgressKeyAlgorithm', default => 'rsa', valid => [qw{ rsa ecdsa ed25519 }]},
+        {name => 'defaultAccountEgressKeyAlgorithm', default => 'ecdsa', valid => [qw{ rsa ecdsa ed25519 }]},
         {
             name    => 'accountMFAPolicy',
             default => 'enabled',

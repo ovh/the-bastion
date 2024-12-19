@@ -172,11 +172,6 @@ foreach my $groupData (@groups) {
             push @filtered_guests, $guest;
         }
 
-        # deprecated in v2.18.00+
-        $ret{'full_members'}    = \@members;
-        $ret{'partial_members'} = \@filtered_guests;
-        # /deprecated
-
         $ret{'members'}         = \@members;
         $ret{'guests'}          = \@filtered_guests;
         $ret{'guests_accesses'} = \%guest_nb_accesses;
@@ -253,14 +248,15 @@ sub print_group_info {
       if $ret{'members'};
 
     # show guest info, along with the number of accesses each guest has
-    my @guest_text;
-    foreach my $guest (@{$ret{'guests'}}) {
-        my $nb = $ret{'guests_accesses'}{$guest};
-        push @guest_text, sprintf("%s[%s]", $guest, $nb // '?');
+    if ($ret{'guests'}) {
+        my @guest_text;
+        foreach my $guest (@{$ret{'guests'}}) {
+            my $nb = $ret{'guests_accesses'}{$guest};
+            push @guest_text, sprintf("%s[%s]", $guest, $nb // '?');
+        }
+        osh_info("Group ${groupName}'s Guests (with access to SOME of the group servers) are: "
+              . colored(@{$ret{'guests'}} ? join(" ", sort @guest_text) : '-', 'red'));
     }
-    osh_info("Group ${groupName}'s Guests (with access to SOME of the group servers) are: "
-          . colored(@{$ret{'guests'}} ? join(" ", sort @guest_text) : '-', 'red'))
-      if $ret{'guests'};
 
     # current user doesn't have enough rights to get this info, tell them that
     if (!$ret{'members'}) {

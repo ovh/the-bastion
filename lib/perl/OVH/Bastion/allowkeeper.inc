@@ -367,7 +367,7 @@ sub access_modify {
 
     # check ip
     if ($action ne 'clear') {
-        $fnret = OVH::Bastion::is_valid_ip(ip => $ip, allowPrefixes => 1);
+        $fnret = OVH::Bastion::is_valid_ip(ip => $ip, allowNetblocks => 1);
         return $fnret unless $fnret;
         $ip = $fnret->value->{'ip'};
 
@@ -582,10 +582,8 @@ sub access_modify {
         }
 
         # build the line we're either adding or looking for (to delete it)
-        my $entry = $ip;
-        $entry = $user . "@" . $entry if defined $user;
-        $entry = $entry . ":" . $port if defined $port;
-        my $machine = $entry;
+        my $machine = OVH::Bastion::machine_display(ip => $ip, port => $port, user => $user)->value;
+        my $entry   = $machine;
 
         my $t            = localtime(time);
         my $fmt          = "%Y-%m-%d %H:%M:%S";
@@ -594,11 +592,9 @@ sub access_modify {
 
         # if we're adding it, append other parameters as comments
         if ($action eq 'add') {
-
             $entry .= " $entryComment";
 
             if ($forceKey) {
-
                 # hash is case-sensitive only for new SHA256 format
                 $forceKey = lc($forceKey) if ($forceKey !~ /^sha256:/i);
                 $entry .= " # FORCEKEY=" . $forceKey;

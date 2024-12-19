@@ -51,6 +51,8 @@ Those options can set a few global network policies to be applied bastion-wide.
 - `allowedNetworks`_
 - `forbiddenNetworks`_
 - `ingressToEgressRules`_
+- `IPv4Allowed`_
+- `IPv6Allowed`_
 
 Logging options
 ---------------
@@ -282,7 +284,7 @@ defaultAccountEgressKeyAlgorithm
 
 :Type: ``string``
 
-:Default: ``"rsa"``
+:Default: ``"ecdsa"``
 
 The default algorithm to use to create the egress key of a newly created account
 
@@ -293,7 +295,7 @@ defaultAccountEgressKeySize
 
 :Type: ``int > 0``
 
-:Default: ``4096``
+:Default: ``521``
 
 The default size to use to create the egress key of a newly created account (also see ``defaultAccountEgressKeyAlgorithm``)
 
@@ -364,7 +366,7 @@ If set to 0, The Bastion will never attempt to do DNS or reverse-DNS resolutions
 allowedNetworks
 ***************
 
-:Type: ``array of strings (IPs and/or prefixes)``
+:Type: ``array of strings (IPs and/or netblocks)``
 
 :Default: ``[]``
 
@@ -377,13 +379,13 @@ Restricts egress connection attempts to those listed networks only. This is enfo
 forbiddenNetworks
 *****************
 
-:Type: ``array of strings (IPs and/or prefixes)``
+:Type: ``array of strings (IPs and/or netblocks)``
 
 :Default: ``[]``
 
 :Example: ``["10.42.42.0/24"]``
 
-Prevents egress connection to the listed networks, this takes precedence over ``allowedNetworks``. This can be used to prevent connection to some hosts or subnets in a broadly allowed prefix. This is enforced at all times and can NOT be overridden by users.
+Prevents egress connection to the listed networks, this takes precedence over ``allowedNetworks``. This can be used to prevent connection to some hosts or subnets in a broadly allowed netblock. This is enforced at all times and can NOT be overridden by users.
 
 .. _ingressToEgressRules:
 
@@ -425,6 +427,28 @@ For example, take the following configuration:
 - All the other networks can access any other network (including egress ``10.20.0.0/16`` or egress ``192.168.0.0/16``)
 
 In any case, all the personal and group accesses still apply in addition to these global rules.
+
+.. _IPv4Allowed:
+
+IPv4Allowed
+***********
+
+:Type: ``boolean``
+
+:Default: ``true``
+
+If enabled, IPv4 egress connections will be allowed, and IPv4 will be enabled in the DNS queries. This is the default. Do NOT disable this unless you enable IPv6Allowed, if you need to have an IPv6-only bastion.
+
+.. _IPv6Allowed:
+
+IPv6Allowed
+***********
+
+:Type: ``boolean``
+
+:Default: ``false``
+
+If enabled, IPv6 egress connections will be allowed, and IPv6 will be enabled in the DNS queries. By default, only IPv4 is allowed.
 
 Logging
 -------
@@ -551,11 +575,11 @@ Other ingress policies
 ingressKeysFrom
 ***************
 
-:Type: ``array of strings (list of IPs and/or prefixes)``
+:Type: ``array of strings (list of IPs and/or netblocks)``
 
 :Default: ``[]``
 
-This array of IPs (or prefixes, such as ``10.20.30.0/24``) will be used to build the ``from="..."`` in front of the ingress account public keys used to connect to the bastion (in ``accountCreate`` or ``selfAddIngressKey``). If the array is empty, then **NO** ``from="..."`` is added (this lowers the security).
+This array of IPs (or netblocks, such as ``10.20.30.0/24``) will be used to build the ``from="..."`` in front of the ingress account public keys used to connect to the bastion (in ``accountCreate`` or ``selfAddIngressKey``). If the array is empty, then **NO** ``from="..."`` is added (this lowers the security).
 
 .. _ingressKeysFromAllowOverride:
 
@@ -589,7 +613,7 @@ The default remote user to use for egress ssh connections where no user has been
 egressKeysFrom
 **************
 
-:Type: ``array of strings (IPs and/or prefixes)``
+:Type: ``array of strings (IPs and/or netblocks)``
 
 :Default: ``[]``
 
@@ -840,7 +864,7 @@ List of system groups to add a new account to when its created (see ``accountCre
 accountCreateDefaultPersonalAccesses
 ************************************
 
-:Type: ``array of strings (list of IPs and/or prefixes)``
+:Type: ``array of strings (list of IPs and/or netblocks)``
 
 :Default: ``[]``
 
