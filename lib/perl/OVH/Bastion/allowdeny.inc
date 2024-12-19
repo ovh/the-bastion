@@ -293,7 +293,7 @@ sub get_ip {
 
     # try to see if it's already an IP
     osh_debug("checking if '$host' is already an IP (v4=$v4 v6=$v6)");
-    my $fnret = OVH::Bastion::is_valid_ip(ip => $host, allowPrefixes => 0);
+    my $fnret = OVH::Bastion::is_valid_ip(ip => $host, allowNetblocks => 0);
     if ($fnret) {
         osh_debug("Host $host is already an IP");
         if (   ($fnret->value->{'version'} == 4 && $v4)
@@ -946,7 +946,7 @@ sub ssh_test_access_way {
         return R('ERR_INCOMPATIBLE_PARAMETERS');
     }
 
-    $fnret = OVH::Bastion::is_valid_ip(ip => $ip, allowPrefixes => 1);
+    $fnret = OVH::Bastion::is_valid_ip(ip => $ip, allowNetblocks => 1);
     $fnret or return $fnret;
     if ($fnret->value->{'type'} eq 'prefix') {
         return R('OK_PREFIX', msg => "Can't test a connection to a prefix, assuming it's OK");
@@ -1321,7 +1321,7 @@ sub _get_acl_from_file {
 
         # extract ip (v4 or v6)
         if ($line =~ m{([0-9a-f./:]+)}i) {
-            $fnret = OVH::Bastion::is_valid_ip(ip => $1, allowPrefixes => 1, fast => 1);
+            $fnret = OVH::Bastion::is_valid_ip(ip => $1, allowNetblocks => 1, fast => 1);
             if (!$fnret) {
                 osh_debug("skipping line <$line> because IP ($1) is invalid");
                 next;

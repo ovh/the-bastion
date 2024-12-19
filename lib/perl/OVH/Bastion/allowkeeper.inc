@@ -367,7 +367,7 @@ sub access_modify {
 
     # check ip
     if ($action ne 'clear') {
-        $fnret = OVH::Bastion::is_valid_ip(ip => $ip, allowPrefixes => 1);
+        $fnret = OVH::Bastion::is_valid_ip(ip => $ip, allowNetblocks => 1);
         return $fnret unless $fnret;
         $ip = $fnret->value->{'ip'};
 

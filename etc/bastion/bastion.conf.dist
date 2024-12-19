@@ -126,14 +126,14 @@
 #   DEFAULT: 2
 "dnsSupportLevel": 2,
 #
-# allowedNetworks (array of strings (IPs and/or prefixes))
+# allowedNetworks (array of strings (IPs and/or netblocks))
 #     DESC: Restricts egress connection attempts to those listed networks only. This is enforced at all times and can NOT be overridden by users. If you are lucky enough to have you own IP blocks, it's probably a good idea to list them here. An empty array means no restriction is applied.
 #  DEFAULT: []
 #  EXAMPLE: ["10.42.0.0/16","192.168.111.0/24","203.0.113.42"]
 "allowedNetworks": [],
 #
-# forbiddenNetworks (array of strings (IPs and/or prefixes))
-#     DESC: Prevents egress connection to the listed networks, this takes precedence over ``allowedNetworks``. This can be used to prevent connection to some hosts or subnets in a broadly allowed prefix. This is enforced at all times and can NOT be overridden by users.
+# forbiddenNetworks (array of strings (IPs and/or netblocks))
+#     DESC: Prevents egress connection to the listed networks, this takes precedence over ``allowedNetworks``. This can be used to prevent connection to some hosts or subnets in a broadly allowed netblock. This is enforced at all times and can NOT be overridden by users.
 #  DEFAULT: []
 #  EXAMPLE: ["10.42.42.0/24"]
 "forbiddenNetworks": [],
@@ -244,8 +244,8 @@
 # > Other ingress policies
 # >> Policies applying to the ingress connections
 #
-# ingressKeysFrom (array of strings (list of IPs and/or prefixes))
-#    DESC: This array of IPs (or prefixes, such as ``10.20.30.0/24``) will be used to build the ``from="..."`` in front of the ingress account public keys used to connect to the bastion (in ``accountCreate`` or ``selfAddIngressKey``). If the array is empty, then **NO** ``from="..."`` is added (this lowers the security).
+# ingressKeysFrom (array of strings (list of IPs and/or netblocks))
+#    DESC: This array of IPs (or netblocks, such as ``10.20.30.0/24``) will be used to build the ``from="..."`` in front of the ingress account public keys used to connect to the bastion (in ``accountCreate`` or ``selfAddIngressKey``). If the array is empty, then **NO** ``from="..."`` is added (this lowers the security).
 # DEFAULT: []
 "ingressKeysFrom": [],
 #
@@ -265,7 +265,7 @@
 #   DEFAULT: ""
 "defaultLogin": "",
 #
-# egressKeysFrom (array of strings (IPs and/or prefixes))
+# egressKeysFrom (array of strings (IPs and/or netblocks))
 #     DESC: These IPs will be added to the ``from="..."`` of the personal account keys and the group keys. Typically you want to specify only the bastions IP here (including all the slaves). Note that if this option is NOT set at all or set to the empty array, it will default to autodetection at runtime (using ``hostname --all-ip-addresses`` under the hood). This is dependent from your system configuration and is therefore discouraged.
 #  DEFAULT: []
 "egressKeysFrom": [],
@@ -391,7 +391,7 @@
 #  DEFAULT: []
 "accountCreateSupplementaryGroups": [],
 #
-# accountCreateDefaultPersonalAccesses (array of strings (list of IPs and/or prefixes))
+# accountCreateDefaultPersonalAccesses (array of strings (list of IPs and/or netblocks))
 #     DESC: List of strings of the form USER@IP or USER@IP:PORT or IP or IP:PORT, with IP being IP or prefix (such as 1.2.3.0/24). This is the list of accesses to add to the personal access list of newly created accounts. The special value ACCOUNT is replaced by the name of the account being created. This can be useful to grant some accesses by default to new accounts (for example ACCOUNT@0.0.0.0/0)
 #  DEFAULT: []
 "accountCreateDefaultPersonalAccesses": [],

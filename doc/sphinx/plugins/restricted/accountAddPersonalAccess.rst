@@ -18,11 +18,11 @@ Add a personal server access to an account
 
    Bastion account to add the access to
 
-.. option:: --host HOST|IP|NET/CIDR
+.. option:: --host HOST|IP|PREFIX/SIZE
 
    Host(s) to add access to, either a HOST which will be resolved to an IP immediately,
 
-                             or an IP, or a whole network using the NET/CIDR notation
+                             or an IP, or a whole netblock using the PREFIX/SIZE notation
   --user USER|PATTERN|*    Specify which remote user should be allowed to connect as.
                              Globbing characters '*' and '?' are supported, so you can specify a pattern
                              that will be matched against the actual remote user name.

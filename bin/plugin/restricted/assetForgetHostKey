@@ -27,10 +27,10 @@ if (!$ip) {
     osh_exit 'ERR_MISSING_PARAMETER', "Missing mandatory parameter --host (or host didn't resolve correctly)";
 }
 
-# IP can't be a prefix
+# IP can't be a netblock
 if ($ip =~ m{/}) {
     help();
-    osh_exit 'ERR_INVALID_PARAMETER', "Specified IP must not be a prefix ($ip)";
+    osh_exit 'ERR_INVALID_PARAMETER', "Specified IP must not be a netblock ($ip)";
 }
 
 osh_info "Removing $ip host key from accounts...";

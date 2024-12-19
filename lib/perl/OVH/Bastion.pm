@@ -645,16 +645,16 @@ sub _osh_log {
 }
 
 sub is_valid_ip {
-    my %params        = @_;
-    my $ip            = $params{'ip'};
-    my $allowPrefixes = $params{'allowPrefixes'};    # if not, a /24 or /32 notation is rejected
-    my $fast          = $params{'fast'};             # fast mode: avoid instantiating Net::IP... except if ipv6
+    my %params         = @_;
+    my $ip             = $params{'ip'};
+    my $allowNetblocks = $params{'allowNetblocks'};    # if not, a /24 or /32 notation is rejected
+    my $fast           = $params{'fast'};              # fast mode: avoid instantiating Net::IP... except if ipv6
 
     if ($fast and index($ip, ':') == -1) {
         # We're being asked to be fast, and it's not an IPv6, just use a regex
         # and don't instanciate a Net::IP. Also don't use named captures, as they're slower
         if ($ip =~ m{^(([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3}))(/([0-9]{1,2}))?$}) {
-            if (defined $7 and not $allowPrefixes) {
+            if (defined $7 and not $allowNetblocks) {
                 return R('KO_INVALID_IP', msg => "Invalid IP address ($ip), as prefixes are not allowed");
             }
             if ($2 > 255 || $3 > 255 || $4 > 255 || $5 > 255) {
@@ -708,7 +708,7 @@ sub is_valid_ip {
         }
     }
 
-    if (not $allowPrefixes and $type eq 'prefix') {
+    if (not $allowNetblocks and $type eq 'prefix') {
         return R('KO_INVALID_IP', msg => "Invalid IP address ($ip), as prefixes are not allowed");
     }
 

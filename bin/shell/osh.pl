@@ -601,7 +601,7 @@ if ($user && !OVH::Bastion::is_valid_remote_user(user => $user, allowWildcards =
     main_exit OVH::Bastion::EXIT_INVALID_REMOTE_USER, 'invalid_remote_user', "Remote user name '$user' seems invalid";
 }
 if ($host && $host !~ m{^\[?[a-zA-Z0-9._/:-]+\]?$}) {
-    # can be an IP (v4 or v6), hostname, or prefix (with a /)
+    # can be an IP (v4 or v6), hostname, or netblock (with a /)
     main_exit OVH::Bastion::EXIT_INVALID_REMOTE_HOST, 'invalid_remote_host', "Remote host name '$host' seems invalid";
 }
 
