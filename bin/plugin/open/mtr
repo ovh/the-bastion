@@ -42,6 +42,11 @@ if (not $host) {
     osh_exit 'ERR_MISSING_PARAMETER', "Missing required host parameter";
 }
 
+if ($host =~ m{/}) {
+    help();
+    osh_exit 'ERR_INVALID_PARAMETER', "Please use a single IP, not a netblock";
+}
+
 my @command = qw{ mtr --show-ips --aslookup -n };
 push @command, ($report ? '--report' : '--curses');
 push @command, $host;
