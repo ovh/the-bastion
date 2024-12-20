@@ -8,36 +8,24 @@
 testsuite_selfaccesses()
 {
     # now bastion key stuff
+    local i
 
-    # create 10 accounts with no keys and with default uids
-    grant accountCreate
-
-    for i in {1..10}; do
+    # create 5 accounts with no ingress keys and with default uids
+    for i in {1..5}; do
         success a0_create_a1_uidauto_nokey_$i $a0 --osh accountCreate --account delme$i --uid-auto --no-key
         json .error_code OK .command accountCreate
     done
 
-    revoke accountCreate
-    grant accountDelete
-
     # delete those accounts
-    for i in {1..10}; do
+    for i in {1..5}; do
         script a0_delete_a1_uidauto_nokey_$i $a0 --osh accountDelete --account delme$i "<<< \"Yes, do as I say and delete delme$i, kthxbye\""
         retvalshouldbe 0
         json .error_code OK .command accountDelete
     done
 
-    revoke accountDelete
-    grant accountCreate
-
-    unset i
-
     # create account1
     success accountCreate $a0 --osh accountCreate --always-active --account $account1 --uid $uid1 --public-key "\"$(cat $account1key1file.pub)\""
     json .error_code OK .command accountCreate .value null
-
-    revoke accountCreate
-    grant accountModify
 
     success modify_account1 $a0 --osh accountModify --pam-auth-bypass yes --account $account1
     json .error_code OK .command accountModify
@@ -60,8 +48,6 @@ testsuite_selfaccesses()
     json .error_code KO_ACCESS_DENIED
     contain "Access denied"
     nocontain "anywhere"
-
-    revoke accountModify
 
     success beforeadd $a1 -osh selfListEgressKeys
     tmpfp=$(get_json | $jq '.value|keys[0]')
@@ -107,9 +93,6 @@ testsuite_selfaccesses()
     retvalshouldbe 127
     json .error_code KO_INVALID_REMOTE_USER
 
-    grant selfAddPersonalAccess
-    grant selfDelPersonalAccess
-
     run mustfail $a1 -osh selfAddPersonalAccess -h 127.0.0.2 -u $shellaccount -p 22
     retvalshouldbe 106
     contain "you to be specifically granted"
@@ -139,7 +122,6 @@ testsuite_selfaccesses()
     success selfAddPersonalAccess_delconfig $r0 "rm -f $opt_remote_etc_bastion/plugin.selfAddPersonalAccess.conf"
 
     # same with accountAddPersonalAccess
-    grant accountAddPersonalAccess
     success accountAddPersonalAccess_setconfig1 $r0 "echo '\{\\\"self_remote_user_only\\\":true\,\\\"widest_v4_prefix\\\":30\}' \> $opt_remote_etc_bastion/plugin.accountAddPersonalAccess.conf \; chmod o+r $opt_remote_etc_bastion/plugin.accountAddPersonalAccess.conf"
 
     plgfail accountAddPersonalAccess_self_remote_user_only $a0 --osh accountAddPersonalAccess --host 127.0.0.9 --user notme --port-any --account $account1
@@ -154,7 +136,6 @@ testsuite_selfaccesses()
 
     success accountAddPersonalAccess_delconfig $r0 "rm -f $opt_remote_etc_bastion/plugin.accountAddPersonalAccess.conf"
 
-    revoke accountAddPersonalAccess
     # /test (self|account)AddPersonalAccess config items
 
     success withttl $a0 -osh selfAddPersonalAccess -h 127.0.0.4 -u $shellaccount -p 22 --force --ttl 0d0h0m3s
@@ -523,8 +504,6 @@ testsuite_selfaccesses()
     success   dupe   $a0 --osh selfForgetHostKey --host 127.0.0.2
     json .command selfForgetHostKey .error_code OK '.value."127.0.0.2".action'   OK_NO_MATCH
 
-    grant accountUnexpire
-
     success nochange $a0 --osh accountUnexpire --account $account1
     json .command accountUnexpire .error_code OK_NO_CHANGE
 
@@ -550,13 +529,9 @@ testsuite_selfaccesses()
     success worksnochange $a0 --osh accountUnexpire --account $account1
     json .command accountUnexpire .error_code OK_NO_CHANGE
 
-    revoke accountUnexpire
-
     # delete account1
-    grant accountDelete
     script cleanup $a0 --osh accountDelete --account $account1 "<<< \"Yes, do as I say and delete $account1, kthxbye\""
     retvalshouldbe 0
-    revoke accountDelete
 }
 
 testsuite_selfaccesses

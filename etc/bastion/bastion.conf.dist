@@ -86,13 +86,13 @@
 #
 # defaultAccountEgressKeyAlgorithm (string)
 #    DESC: The default algorithm to use to create the egress key of a newly created account
-# DEFAULT: "rsa"
-"defaultAccountEgressKeyAlgorithm": "rsa",
+# DEFAULT: "ecdsa"
+"defaultAccountEgressKeyAlgorithm": "ecdsa",
 #
 # defaultAccountEgressKeySize (int > 0)
 #    DESC: The default size to use to create the egress key of a newly created account (also see ``defaultAccountEgressKeyAlgorithm``)
-# DEFAULT: 4096
-"defaultAccountEgressKeySize": 4096,
+# DEFAULT: 521
+"defaultAccountEgressKeySize": 521,
 #
 # moshAllowed (boolean)
 #     DESC: If set to ``true``, mosh usage is allowed (mosh needs to be installed on serverside, obviously). Otherwise, this feature is disabled.
@@ -172,6 +172,16 @@
 #          In any case, all the personal and group accesses still apply in addition to these global rules.
 #  DEFAULT: []
 "ingressToEgressRules": [],
+#
+# IPv4Allowed (boolean)
+#    DESC: If enabled, IPv4 egress connections will be allowed, and IPv4 will be enabled in the DNS queries. This is the default. Do NOT disable this unless you enable IPv6Allowed, if you need to have an IPv6-only bastion.
+# DEFAULT: true
+"IPv4Allowed": true,
+#
+# IPv6Allowed (boolean)
+#    DESC: If enabled, IPv6 egress connections will be allowed, and IPv6 will be enabled in the DNS queries. By default, only IPv4 is allowed.
+# DEFAULT: false
+"IPv6Allowed": false,
 #
 ###########
 # > Logging

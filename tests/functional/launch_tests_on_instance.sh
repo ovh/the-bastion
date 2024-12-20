@@ -14,7 +14,7 @@ basedir=$(readlink -f "$(dirname "$0")"/../..)
 
 opt_remote_etc_bastion=/etc/bastion
 opt_remote_basedir=$basedir
-opt_skip_consistency_check=0
+opt_consistency_check=0
 opt_no_pause_on_fail=0
 opt_slowness_factor=1
 opt_log_prefix=
@@ -25,7 +25,7 @@ declare -A capabilities=( [ed25519]=1 [mfa]=1 [mfa-password]=0 [pamtester]=1 [pi
 # set the helptext now to get the proper default values
 help_text=$(cat <<EOF
 Test Options:
-    --skip-consistency-check   Speed up tests by skipping the consistency check between every test
+    --consistency-check        Check system consistency between every test
     --no-pause-on-fail         Don't pause when a test fails
     --log-prefix=X             Prefix all logs by this name
     --module=X                 Only test this module (specify a filename found in \`functional/tests.d/\`), can be specified multiple times
@@ -70,7 +70,11 @@ do
             opt_remote_basedir="$optval"
             ;;
         --skip-consistency-check)
-            opt_skip_consistency_check=1
+            # deprecated and undocumented, as it is now the default
+            opt_consistency_check=0
+            ;;
+        --consistency-check)
+            opt_consistency_check=1
             ;;
         --no-pause-on-fail)
             opt_no_pause_on_fail=1
@@ -309,9 +313,6 @@ kTfIwdES
 '
 };
 
-grant()  { success grantcmd  $a0 --osh accountGrantCommand  --account $account0 --command "$1"; }
-revoke() { success revokecmd $a0 --osh accountRevokeCommand --account $account0 --command "$1"; }
-
 cat >"$mytmpdir/ssh_config" <<EOF
    StrictHostKeyChecking no
    SendEnv LC_*
@@ -392,7 +393,7 @@ run()
         cat "$outdir/$basename.log"
         printf "%b%b%b\\n" "$WHITE_ON_BLUE" "[INFO] returned json follows" "$NOC"
         grep "^JSON_OUTPUT=" -- $outdir/$basename.log | cut -d= -f2- | jq --sort-keys .
-        if [ "$opt_skip_consistency_check" != 1 ]; then
+        if [ "$opt_consistency_check" = 1 ]; then
             printf "%b%b%b\\n" "$WHITE_ON_BLUE" "[INFO] consistency check follows" "$NOC"
             cat "$outdir/$basename.cc"
         fi
@@ -441,7 +442,7 @@ run()
     fi
 
     # now run consistency check on the target, unless configured otherwise
-    if [ "$opt_skip_consistency_check" != 1 ]; then
+    if [ "$opt_consistency_check" = 1 ]; then
         # sleep 1s if sshd has been reloaded
         [ "$case" = "sshd_reload" ] && sleep 1
         flock "$outdir/$basename.retval" $screen "$outdir/$basename.cc" -D -m -fn -ln $r0 '
@@ -662,7 +663,7 @@ dump_vars_and_funcs()
     set | grep -v -E '^('\
 'testno|section|code_warn_exclude|COPROC_PID|LINES|COLUMNS|PIPESTATUS|_|'\
 'BASH_LINENO|basename|case|json|name|tmpscript|grepit|got|isbad|'\
-'nbfailedgrep|shouldbe)='
+'nbfailedgrep|nbfailedcon|nbfailedgeneric|nbfailedlog|nbfailedret|shouldbe|modulename)='
 }
 
 runtests()
@@ -682,8 +683,6 @@ runtests()
     # backup the original default configuration on target side
     now=$(date +%s)
     success backupconfig $r0 "dd if=$opt_remote_etc_bastion/bastion.conf of=$opt_remote_etc_bastion/bastion.conf.bak.$now"
-
-    grant accountRevokeCommand
 
     # shellcheck disable=SC2044
     for module in $(find "$(dirname $0)/tests.d/" -mindepth 1 -maxdepth 1 -type f -name '???-*.sh' | sort)
@@ -726,14 +725,15 @@ runtests()
                 exit 1
             fi
         fi
-        dump_vars_and_funcs > "$tmp_b"
-        success module_postrun test "$module_ret" = 0
-
-        # put the backed up configuration back after each module, just in case the module modified it
         modulename=main
-        success configrestore $r0 "dd if=$opt_remote_etc_bastion/bastion.conf.bak.$now of=$opt_remote_etc_bastion/bastion.conf"
+        # dump vars after module run
+        dump_vars_and_funcs > "$tmp_b"
+        # ensure the module exited successfully
+        success module_postrun_exit_status test "$module_ret" = 0
+        # put the backed up configuration back after each module, just in case the module modified it
+        success module_postrun_config_restore $r0 "dd if=$opt_remote_etc_bastion/bastion.conf.bak.$now of=$opt_remote_etc_bastion/bastion.conf"
         # verify that the env hasn't been modified
-        success check_env_after_module diff -u "$tmp_a" "$tmp_b"
+        success module_postrun_check_env diff -u "$tmp_a" "$tmp_b"
     done
 
     # if the check_env_after_module of the last module fails, we wouldn't get the verbose error,
