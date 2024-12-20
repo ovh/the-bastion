@@ -51,6 +51,11 @@ if (not $host) {
     osh_exit 'ERR_MISSING_PARAMETER', "Missing required host parameter";
 }
 
+if ($host =~ m{/}) {
+    help();
+    osh_exit 'ERR_INVALID_PARAMETER', "Please use a single IP, not a netblock";
+}
+
 osh_info "Waiting for $host to be alive...";
 my $startedat = Time::HiRes::gettimeofday();
 my $firstLoop = 1;
