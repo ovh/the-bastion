@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://www.ovhcloud.com/the-bastion/schemas/plugins/accountAddPersonalAccess",
+  "$id": "https://ovh.github.io/the-bastion/schemas/plugins/accountAddPersonalAccess",
   "type": "object",
   "additionalProperties": false,
   "minProperties": 7,
@@ -34,8 +34,7 @@
       ]
     },
     "ip": {
-      "type": "string",
-      "pattern": "^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}(/[0-9]+)?$|^\\[[:a-f0-9]+]\\](/[0-9]+)?$"
+      "$ref": "file://./include/ip-or-netblock.jsonschema"
     },
     "user": {
       "type": [

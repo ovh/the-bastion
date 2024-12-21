@@ -12,13 +12,11 @@ testsuite_ipv6()
     json .error_code OK .command accountCreate .value null
 
     plgfail use_ipv6_notenabled_1 $a0 --osh selfAddPersonalAccess --host ::1 --force --user-any --port-any
-    contain 'IP ::1 version (IPv6) is not allowed'
-    contain 'looks like an IPv6'
+    contain "Can't use '::1', IPv6 support disabled by policy"
     json .command selfAddPersonalAccess .error_code ERR_MISSING_PARAMETER
 
     plgfail use_ipv6_notenabled_2 $a0 --osh selfAddPersonalAccess --host '[::1]' --force --user-any --port-any
-    contain 'IP [::1] version (IPv6) is not allowed'
-    contain 'looks like an IPv6'
+    contain "Can't use '[::1]', IPv6 support disabled by policy"
     json .command selfAddPersonalAccess .error_code ERR_MISSING_PARAMETER
 
     # now enable IPv6

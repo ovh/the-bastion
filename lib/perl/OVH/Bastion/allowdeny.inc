@@ -301,7 +301,7 @@ sub get_ip {
         {
             return R('OK', value => {ip => $fnret->value->{'ip'}, iplist => [$fnret->value->{'ip'}]});
         }
-        return R('ERR_INVALID_IP', msg => "IP $host version (IPv" . $fnret->value->{'version'} . ") is not allowed");
+        return R('ERR_INVALID_IP', msg => "Can't use '$host', IPv" . $fnret->value->{'version'} ." support disabled by policy");
     }
 
     if (OVH::Bastion::config('dnsSupportLevel')->value < 1) {

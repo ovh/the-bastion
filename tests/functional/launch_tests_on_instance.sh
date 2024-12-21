@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-# vim: set filetype=sh ts=4 sw=4 sts=4 et:
+#evim: set filetype=sh ts=4 sw=4 sts=4 et:
 # shellcheck disable=SC2086
 # shellcheck disable=SC2016
 # shellcheck disable=SC2046
@@ -452,6 +452,7 @@ run()
     local _osh
     _osh=$(echo "$returned_json" | $jq '.command')
     if [ -n "$_osh" ]; then
+        local jv_ret
         echo "$returned_json" | env basedir="$basedir" osh="$_osh" perl -e '
             use strict;
             use warnings;
@@ -461,36 +462,52 @@ run()
             sub validate {
                 my ($filename, $data) = @_;
                 return 0 if ! defined $data;
-                my $file = $ENV{"basedir"}."/json-schema/plugins/$filename.jsonschema";
+                my $file = $ENV{"basedir"}."/json-schema/$filename.jsonschema";
                 return 0 if ! -e $file;
-                my $jv = JSON::Validator->new()->schema("file://$file");
-                my $schema = $jv->schema; # will die if file is invalid json, this is what we want
+                my $jv = eval {
+                    JSON::Validator->new()->schema("file://$file");
+                };
+                if ($@) {
+                    print STDERR "Failed to load schema file://$file:\n";
+                    die $@;
+                }
+                my $schema = $jv->schema;
                 if ($schema->is_invalid) {
                     print "Schema is invalid:\n";
                     CORE::say $_->to_string() for @{ $schema->errors };
                     exit 1;
                 }
                 my @errors = $schema->validate($data);
-                CORE::say $_->to_string() for (@errors);
+                if (@errors) {
+                    print "Data failed validation of schema file://$file:\n";
+                    CORE::say $_->to_string() for @errors;
+                }
                 return 1;
             }
 
             my $datastr = eval { local $/; <>; };
             my $json = decode_json($datastr); # will die if it fails, this is what we want
 
-            my $count = 0;
-            $count += validate("_allPlugins", $json);
-            $count += validate($ENV{"osh"}, $json->{"value"});
-            die "Nothing to validate" if !$count;
-        ' > "$outdir/$basename.jv" 2>&1
+            my $workdir = $ENV{"basedir"}."/json-schema";
+            chdir $workdir or die("Could not chdir to $workdir");
+            if (!validate("include/result", $json)) {
+                die "Could not validate result format";
+            }
+            exit validate("plugins/".$ENV{"osh"}, $json->{"value"}); # may or may not be present
+        ' > "$outdir/$basename.jv" 2>&1; jv_ret=$?
         if [ -s "$outdir/$basename.jv" ]; then
             nbfailedgeneric=$(( nbfailedgeneric + 1 ))
             fail "JSON SCHEMA" "(json validation failed against the schema)"
         elif [ -f "$outdir/$basename.jv" ]; then
-            ok "JSON SCHEMA" "(json data matches the schema)"
+            ok "JSON SCHEMA" "(json data matches the common result schema)"
         else
             nbfailedgeneric=$(( nbfailedgeneric + 1 ))
             fail "JSON SCHEMA" "(json validation didn't produce an output at all)"
+        fi
+        if [ "$jv_ret" != 1 ]; then
+            warn "JSON SCHEMA" "(specific json schema is missing for the plugin $_osh)"
+        else
+            ok "JSON SCHEMA" "(json data matches the specific json schema for $_osh)"
         fi
     fi
 
@@ -540,6 +557,7 @@ retvalshouldbe()
 {
     [ "$COUNTONLY" = 1 ] && return
     shouldbe=$1
+    local got
     got=$(< $outdir/$basename.retval)
     if [ "$got" = "$shouldbe" ] ; then
         ok "RETURN VALUE" "($shouldbe)"
@@ -552,6 +570,9 @@ retvalshouldbe()
 fail() {
     printf '%b %b[FAIL]%b %b\n' "$(prefix)" "$BLACK_ON_RED" "$NOC" "$*"
     isbad=1
+}
+warn() {
+    printf '%b %b[WARN]%b %b\n' "$(prefix)" "$BLACK_ON_YELLOW" "$NOC" "$*"
 }
 ok() {
     printf '%b %b[ OK ]%b %b\n' "$(prefix)" "$BLACK_ON_GREEN" "$NOC" "$*"

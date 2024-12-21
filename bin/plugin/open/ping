@@ -97,5 +97,7 @@ foreach (@{$fnret->value->{'stdout'}}) {
         @$result_hash{keys %+} = values %+;
     }
 }
+# ensure we get numeric values in the json output
+$result_hash->{$_} += 0 for qw{avg max min mdev packets_loss_percentage packets_received packets_transmitted ping_duration};
 
 osh_ok $result_hash;

@@ -17,5 +17,6 @@ WHITE_ON_RED=$(printf "%b" '\033[41m')
 WHITE_ON_BLUE=$(printf "%b" '\033[44m')
 BLACK_ON_GREEN=$(printf "%b" '\033[30m\033[42m')
 BLACK_ON_RED=$(printf "%b" '\033[1;30m\033[41m')
+BLACK_ON_YELLOW=$(printf "%b" '\033[1;30m\033[43m')
 
 NOC=$(printf "%b" '\033[0m')

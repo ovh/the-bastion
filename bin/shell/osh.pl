@@ -630,11 +630,7 @@ if (!$fnret) {
     }
     elsif ($host && $host !~ m{^[0-9.:]+/\d+$})    # in some osh plugins, ip/mask is accepted, don't yell.
     {
-        osh_warn($fnret->msg);
-        osh_warn("Trying to proceed with $osh_command anyway, but things might go wrong.");
-        if (index($host, ':') >= 0 && !OVH::Bastion::config('IPv6Allowed')->value) {
-            osh_warn("Note that '$host' looks like an IPv6 but IPv6 support has not been enabled.");
-        }
+        main_exit OVH::Bastion::EXIT_INVALID_REMOTE_HOST, 'invalid_remote_host', $fnret->msg;
     }
 }
 else {
