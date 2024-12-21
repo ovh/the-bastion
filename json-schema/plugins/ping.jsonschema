@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ovh.github.io/the-bastion/schemas/plugins/ping",
+  "type": "object",
+  "allowAdditionalProperties": false,
+  "required":["sysret","host"],
+  "properties": {
+    "max": {
+      "type": "number",
+      "minimum": 0
+    },
+    "sysret": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 255
+    },
+    "packets_received": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "host": {
+      "type": "string",
+      "format": "hostname"
+    },
+    "packets_loss_percentage": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "min": {
+      "type": "number",
+      "minimum": 0
+    },
+    "ping_duration": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "mdev": {
+      "type": "number",
+      "minimum": 0
+    },
+    "packets_transmitted": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "avg": {
+      "type": "number",
+      "minimum": 0
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ovh.github.io/the-bastion/schemas/plugins/alive",
+  "type": "object",
+  "allowAdditionalProperties": false,
+  "properties": {
+    "waited_for": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

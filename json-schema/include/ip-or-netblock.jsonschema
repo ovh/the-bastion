@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ovh.github.io/the-bastion/schemas/plugins-include/ip-or-netblock",
+  "type": "string",
+  "anyOf": [
+    {
+      "format": "ipv4"
+    },
+    {
+      "format": "ipv6"
+    },
+    {
+      "$comment": "IPv4 netblock",
+      "pattern": "^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}/(\\d|[12]\\d|3[012])$"
+    },
+    {
+      "$comment": "IPv6 validation through regexes is extremely cumbersome, so just validate that it does roughly look like an IPv6 netblock",
+      "pattern": "^[a-fA-F0-9:]+/(12[0-8]|1[01]\\d|\\d\\d?)$"
+    }
+  ]
+}
