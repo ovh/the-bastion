@@ -9,7 +9,7 @@ Bastions are a cluster of machines used as the unique entry point by operational
 
 The Bastion provides mechanisms for authentication, authorization, traceability and auditability for your whole infrastructure.
 
-Being between your users and your infrastructure, bastions add a layer of abstraction in-between so that your infrastructure doesn't need to know your operational team members individually.
+Being between your users and your infrastructure, The Bastion adds a layer of abstraction in-between so that your infrastructure doesn't need to know your operational team members individually.
 
 Each of your team member has an individual account on The Bastion, and may be a member of one or several bastion groups that may give them access to one or more infrastructures. The infrastructure devices only need to know and trust the bastion group(s) they may be a part of.
 
