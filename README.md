@@ -43,7 +43,7 @@ Ancient devices that only support low-security cryptography algorithms or telnet
 * The Bastion is engineered to be self-sufficient: no dependencies such as databases, other daemons, other machines, or third-party cloud services, neither for the authentication or authorization phase, statistically means less downtime
 * High availability can be setup so that multiple bastion instances form a cluster of several instances, with any instance usable at all times (active/active scheme)
 
-## :godmode: Non-exhaustive features list
+## :godmode: Non-exhaustive feature list
 
 - [Personal](https://ovh.github.io/the-bastion/using/basics/access_management.html#personal-accesses) and [group](https://ovh.github.io/the-bastion/using/basics/access_management.html#group-accesses) access schemes with group roles delegation to ensure teams autonomy without security trade-offs
 - SSH protocol break between the ingress and egress connections
