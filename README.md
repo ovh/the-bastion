@@ -40,7 +40,7 @@ Ancient devices that only support low-security cryptography algorithms or telnet
 ## :curly_loop: Reliability
 
 * Only a few well-known libraries are used, less third party code means a tinier attack surface
-* The bastion is engineered to be self-sufficient: no dependencies such as databases, other daemons, other machines, or third-party cloud services, neither for the authentication or authorization phase, statistically means less downtime
+* The Bastion is engineered to be self-sufficient: no dependencies such as databases, other daemons, other machines, or third-party cloud services, neither for the authentication or authorization phase, statistically means less downtime
 * High availability can be setup so that multiple bastion instances form a cluster of several instances, with any instance usable at all times (active/active scheme)
 
 ## :godmode: Non-exhaustive features list
