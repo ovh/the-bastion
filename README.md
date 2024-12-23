@@ -25,7 +25,7 @@ Want to know more while viewing some nice drawings? Here is a series of blog pos
 
 Other resources that might be of interest:
 - [Online documentation](https://ovh.github.io/the-bastion/)
-- (Video in French, slides in English) [The Bastion at the Very Tech Trip 2023](https://verytechtrip.ovhcloud.com/fr-ca/sessions), case study of managing an infrastructure with and without a bastion
+- (Video in French, slides in English) [The Bastion at the Very Tech Trip 2023](https://verytechtrip.ovhcloud.com/fr-ca/sessions), case study of managing an infrastructure with and without The Bastion
 - (Video in French, slides in English) [The Bastion at the OSSIR, 2021](https://www.youtube.com/watch?v=UjiNMiB1LDU), quickly explaining the core principles, then detailing the realm functionality, and finally zooming on why the technical implementation choices that have been made enhance security (voluntarily adding a security vulnerability in the code to prove it!)
 - (Podcast in French) [The Bastion at NoLimitSecu, 2021](https://www.nolimitsecu.fr/the-bastion), interview with questions & answers
 
