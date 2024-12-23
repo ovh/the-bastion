@@ -50,7 +50,7 @@ Ancient devices that only support low-security cryptography algorithms or telnet
 - Interactive session recording (in standard ttyrec files)
 - Non-interactive session recording (stdout and stderr through ttyrec)
 - Extensive [logging](https://ovh.github.io/the-bastion/administration/logs.html) support through syslog for easy SIEM consumption
-- Authentication features include support for [MFA/2FA](https://ovh.github.io/the-bastion/administration/mfa.html) (password, TOTP) in addition to publickey authentication
+- Authentication features include support for [MFA/2FA](https://ovh.github.io/the-bastion/administration/mfa.html) (password, TOTP) in addition to public key authentication
 - Supports Yubico [PIV](https://ovh.github.io/the-bastion/using/piv.html) keys attestation checking and enforcement on the ingress connection side
 - Supports [mosh](https://github.com/mobile-shell/mosh) on the ingress connection side
 - Supports [scp, sftp and rsync](https://ovh.github.io/the-bastion/using/sftp_scp_rsync.html) passthrough, to upload and/or download files from/to remote servers
