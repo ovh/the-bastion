@@ -13,7 +13,7 @@ Being between your users and your infrastructure, The Bastion adds a layer of ab
 
 Each of your team member has an individual account on The Bastion, and may be a member of one or several bastion groups that may give them access to one or more infrastructures. The infrastructure devices only need to know and trust the bastion group(s) they may be a part of.
 
-The Bastion fine-grained RBAC makes it possible to delegate some responsibilities to any account, group-scoped or bastion-wide, including to accounts that might be used by your automation to e.g. managing the lifecycle of the accounts (linked to your human resources management system, your LDAP or AD), ensure a group's ACL is up to date (linked to your CMDB), etc. Automated processes are easy to implement through the [JSON API over SSH](https://ovh.github.io/the-bastion/using/api.html).
+The Bastion fine-grained RBAC makes it possible to delegate some responsibilities to any account, group-scoped or bastion-wide, including to accounts that might be used by your automation to e.g. manage the lifecycle of the accounts (linked to your human resources management system, your LDAP or AD), ensure a group's ACL is up to date (linked to your CMDB), etc. Automated processes are easy to implement through the [JSON API over SSH](https://ovh.github.io/the-bastion/using/api.html).
 
 ## Knowledge resources
 
