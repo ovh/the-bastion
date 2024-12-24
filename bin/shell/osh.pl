@@ -600,8 +600,7 @@ else {
 if ($user && !OVH::Bastion::is_valid_remote_user(user => $user, allowWildcards => ($osh_command ? 1 : 0))) {
     main_exit OVH::Bastion::EXIT_INVALID_REMOTE_USER, 'invalid_remote_user', "Remote user name '$user' seems invalid";
 }
-if ($host && $host !~ m{^[a-zA-Z0-9._/:-]+$}) {
-
+if ($host && $host !~ m{^\[?[a-zA-Z0-9._/:-]+\]?$}) {
     # can be an IP (v4 or v6), hostname, or prefix (with a /)
     main_exit OVH::Bastion::EXIT_INVALID_REMOTE_HOST, 'invalid_remote_host', "Remote host name '$host' seems invalid";
 }
@@ -612,7 +611,6 @@ my $ip = undef;
 
 # if: avoid loading Net::IP and BigInt if there's no host specified
 if ($host) {
-
     # probably this "host" is in fact an option, but we didn't parse it because it's an unknown one,
     # so we call the long_help() for the user, before exiting
     if ($host =~ m{^--}) {
@@ -624,14 +622,17 @@ if ($host) {
     $fnret = OVH::Bastion::get_ip(host => $host);
 }
 if (!$fnret) {
-
-    # exit error when not osh ...
+    # exit error when not a plugin call
     if (!$osh_command) {
-        main_exit OVH::Bastion::EXIT_HOST_NOT_FOUND, 'host_not_found', "Unable to resolve host '$host' ($fnret)";
+        main_exit OVH::Bastion::EXIT_HOST_NOT_FOUND, 'host_not_found', $fnret->msg;
     }
     elsif ($host && $host !~ m{^[0-9.:]+/\d+$})    # in some osh plugins, ip/mask is accepted, don't yell.
     {
-        osh_warn("I was unable to resolve host '$host'. Something shitty might happen.");
+        osh_warn($fnret->msg);
+        osh_warn("Trying to proceed with $osh_command anyway, but things might go wrong.");
+        if (index($host, ':') >= 0 && !OVH::Bastion::config('IPv6Allowed')->value) {
+            osh_warn("Note that '$host' looks like an IPv6 but IPv6 support has not been enabled.");
+        }
     }
 }
 else {

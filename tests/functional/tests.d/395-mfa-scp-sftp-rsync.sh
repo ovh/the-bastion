@@ -152,11 +152,11 @@ EOF
 
     run invalidhostname_scp_oldhelper scp $scp_options -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file $shellaccount@_invalid._invalid:uptest /tmp/downloaded
     retvalshouldbe 1
-    contain REGEX "Sorry, couldn't resolve the host you specified|I was unable to resolve host"
+    contain "Unable to resolve"
 
     run invalidhostname_scp_newwrapper /tmp/scpwrapper -i $account0key1file $shellaccount@_invalid._invalid:uptest /tmp/downloaded
     retvalshouldbe 1
-    contain REGEX "Sorry, couldn't resolve the host you specified|I was unable to resolve host"
+    contain "Unable to resolve"
 
     success personal_scp_upload_oldhelper_ok scp $scp_options -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file /etc/passwd $shellaccount@127.0.0.2:uptest
     contain "through the bastion to"

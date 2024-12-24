@@ -694,21 +694,33 @@ sub is_valid_ip {
     }
 
     require Net::IP;
+    $ip =~ s{^\[|\]$}{}g;    # remove IPv6 brackets, if any
     my $IpObject = Net::IP->new($ip);
 
     if (not $IpObject) {
         return R('KO_INVALID_IP', msg => "Invalid IP address ($ip)");
     }
 
-    my $shortip = $IpObject->prefix;
-
-    # if /32 or /128, omit the /prefixlen on $shortip
-    my $type = 'prefix';
-    if (   ($IpObject->version == 4 and $IpObject->prefixlen == 32)
-        or ($IpObject->version == 6 and $IpObject->prefixlen == 128))
-    {
-        $shortip =~ s'/\d+$'';
-        $type = 'single';
+    my ($shortip, $type);
+    if ($IpObject->version == 4) {
+        if ($IpObject->prefixlen == 32) {
+            $shortip = $IpObject->ip;
+            $type    = 'single';
+        }
+        else {
+            $shortip = $IpObject->prefix;
+            $type    = 'prefix';
+        }
+    }
+    elsif ($IpObject->version == 6) {
+        if ($IpObject->prefixlen == 128) {
+            $shortip = $IpObject->short;
+            $type    = 'single';
+        }
+        else {
+            $shortip = $IpObject->short . '/' . $IpObject->prefixlen;
+            $type    = 'prefix';
+        }
     }
 
     if (not $allowPrefixes and $type eq 'prefix') {
@@ -1123,6 +1135,12 @@ sub build_ttyrec_cmdline_part1of2 {
     }
     if (!$params{'ip'}) {
         return R('ERR_MISSING_PARAMETER', msg => "Missing ip parameter");
+    }
+
+    # if ip is an IPv6, replace :'s by .'s and surround by v6[]'s (which is allowed on all filesystems)
+    if ($params{'ip'} && index($params{'ip'}, ':') >= 0) {
+        $params{'ip'} =~ tr/:/./;
+        $params{'ip'} = 'v6[' . $params{'ip'} . ']';
     }
 
     # build ttyrec filename format
