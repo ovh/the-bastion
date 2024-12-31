@@ -20,17 +20,23 @@ opt_slowness_factor=1
 opt_log_prefix=
 opt_module=
 opt_post_run=
+opt_functional_tests=1
+opt_unit_tests=1
 declare -A capabilities=( [ed25519]=1 [mfa]=1 [mfa-password]=0 [pamtester]=1 [piv]=1 [sk]=0 [ipv6]=1 )
 
 # set the helptext now to get the proper default values
 help_text=$(cat <<EOF
-Test Options:
+Functional Test Options:
     --consistency-check        Check system consistency between every test
     --no-pause-on-fail         Don't pause when a test fails
     --log-prefix=X             Prefix all logs by this name
     --module=X                 Only test this module (specify a filename found in \`functional/tests.d/\`), can be specified multiple times
     --slowness-factor=X        If your test environment is slow, set this to 2, 3 or more to use higher timeouts (default: 1)
     --post-run=X               Commands to run after we're done testing
+    --skip-functional-tests    Skip functional tests
+
+Unit Test Options:
+    --skip-unit-tests          Skip unit tests
 
 Remote OS directory locations:
     --remote-etc-bastion=X     Override the default remote bastion configuration directory (default: $opt_remote_etc_bastion)
@@ -99,6 +105,12 @@ do
                 exit 1
             fi
             opt_module="$opt_module $optval"
+            ;;
+        --skip-functional-tests)
+            opt_functional_tests=0
+            ;;
+        --skip-unit-tests)
+            opt_unit_tests=0
             ;;
         --has-*=*)
             optname=${1/--has-/}
@@ -744,35 +756,38 @@ runtests()
     success "done" true
 }
 
-COUNTONLY=0
-echo '=== running unit tests ==='
-# a while read loop doesn't work well here:
-# shellcheck disable=SC2044
-for f in $(find "$basedir/tests/unit/" -mindepth 1 -maxdepth 1 -type f -name "*.pl" -print)
-do
-    fbasename=$(basename "$f")
-    echo "-> $fbasename"
-    set +e
-    $r0 perl "$opt_remote_basedir/tests/unit/$fbasename"; ret=$?
-    set -e
-    if [ $ret != 0 ]; then
-        printf "%b%b%b\\n" "$WHITE_ON_RED" "Unit tests failed (ret=$ret) :(" "$NOC"
-        exit 1
-    fi
-done
+if [ "$opt_unit_tests" = 1 ]; then
+    echo '=== running unit tests ==='
+    # a while read loop doesn't work well here:
+    # shellcheck disable=SC2044
+    for f in $(find "$basedir/tests/unit/" -mindepth 1 -maxdepth 1 -type f -name "*.pl" -print)
+    do
+        fbasename=$(basename "$f")
+        echo "-> $fbasename"
+        set +e
+        $r0 perl "$opt_remote_basedir/tests/unit/$fbasename"; ret=$?
+        set -e
+        if [ $ret != 0 ]; then
+            printf "%b%b%b\\n" "$WHITE_ON_RED" "Unit tests failed (ret=$ret) :(" "$NOC"
+            exit 1
+        fi
+    done
+fi
 
-COUNTONLY=1
-testno=0
-echo '=== counting functional tests ==='
-runtests
-testcount=$testno
+if [ "$opt_functional_tests" = 1 ]; then
+    COUNTONLY=1
+    testno=0
+    echo '=== counting functional tests ==='
+    runtests
+    testcount=$testno
 
-echo "=== will run $testcount functional tests ==="
-COUNTONLY=0
-testno=0
-runtests
+    echo "=== will run $testcount functional tests ==="
+    COUNTONLY=0
+    testno=0
+    runtests
+fi
+
 echo
-
 if [ $((nbfailedret + nbfailedgrep + nbfailedcon + nbfailedgeneric)) -eq 0 ] ; then
     printf "%b%b%b\\n" "$BLACK_ON_GREEN" "All tests succeeded :)" "$NOC"
 else
