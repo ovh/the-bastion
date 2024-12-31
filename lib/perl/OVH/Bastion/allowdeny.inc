@@ -696,10 +696,14 @@ sub _is_in_any_net {
         return R('ERR_INVALID_PARAMETER', msg => "Parameter 'networks' must be an array");
     }
 
+    my $isNetblock = (index($ip, '/') != -1);
+
     require Net::Netmask;
     foreach my $net (@$networks) {
         my $Netmask = Net::Netmask->new2($net);
-        return R('OK', value => {matched => $net}) if ($Netmask && $Netmask->match($ip));
+        if ($Netmask && ($isNetblock ? $Netmask->contains($ip) : $Netmask->match($ip))) {
+            return R('OK', value => {matched => $net});
+        }
     }
     return R('KO', msg => "No match found");
 }
