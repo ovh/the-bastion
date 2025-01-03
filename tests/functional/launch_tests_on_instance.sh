@@ -758,20 +758,11 @@ runtests()
 
 if [ "$opt_unit_tests" = 1 ]; then
     echo '=== running unit tests ==='
-    # a while read loop doesn't work well here:
-    # shellcheck disable=SC2044
-    for f in $(find "$basedir/tests/unit/" -mindepth 1 -maxdepth 1 -type f -name "*.pl" -print)
-    do
-        fbasename=$(basename "$f")
-        echo "-> $fbasename"
-        set +e
-        $r0 perl "$opt_remote_basedir/tests/unit/$fbasename"; ret=$?
-        set -e
-        if [ $ret != 0 ]; then
-            printf "%b%b%b\\n" "$WHITE_ON_RED" "Unit tests failed (ret=$ret) :(" "$NOC"
-            exit 1
-        fi
-    done
+    $r0 perl "$opt_remote_basedir/tests/unit/run-tests.pl"; ret=$?
+    if [ $ret != 0 ]; then
+        printf "%b%b%b\\n" "$WHITE_ON_RED" "Unit tests failed (ret=$ret) :(" "$NOC"
+        exit 1
+    fi
 fi
 
 if [ "$opt_functional_tests" = 1 ]; then
