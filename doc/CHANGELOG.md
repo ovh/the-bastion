@@ -1,3 +1,21 @@
+## v3.18.99-rc1 - 2025/01/03
+- feat: IPv6 support
+- chg: set ECDSA as default egress key algo for new installs
+- chg: ``groupInfo``: remove deprecated JSON fields
+- enh: 35% faster ``is_valid_ip()`` when fast=1
+- enh: ``accountInfo``: add osh-only information for accounts
+- enh: tests: add ``--skip-functional-tests`` and ``--skip-unit-tests``
+- fix: ``accountInfo``: don't attempt (and fail) to display info non-auditors don't have access to
+- fix: ``groupInfo``: don't attempt to (and fail) display the guest list when account doesn't have access to it
+- fix: deny subnets for ``nc``, ``mtr``, ``ping``, ``alive`` plugins
+- fix: is_in_any_net: support matching netblocks
+- chore: faster tests by removing grant/revoke command dance
+- chore: tests: no longer run consistency check by default
+- chore: update README
+- chore: use proper naming of 'subnet' instead of 'prefix' or 'slash'
+- chore: use ``TAP::Harness`` for unit tests
+- chore: factorize user@host:port display in ``machine_display()``
+
 ## v3.18.00 - 2024/12/10
 - feat: add assetForgetHostKey
 - fix: scp: downloads would sometimes stall (fix #486)

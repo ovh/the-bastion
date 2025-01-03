@@ -27,6 +27,22 @@ See the ``--help`` for a more fine-grained upgrade path if needed.
 Version-specific upgrade instructions
 =====================================
 
+v3.18.99-rc1 - 2025/01/03
+*************************
+
+This release now supports IPv6, which is disabled by default unless you set ``IPv6Allowed`` to ``true``.
+
+Note that some OS versions have an ancient version of ``Net::Netmask`` that doesn't support IPv6, these will
+behave as if ``IPv6Allowed`` is always set to ``false``, even if you set it to ``true``. A message will be logged
+in the syslog if this happens on your system. Of the currently supported list of OS versions, the two following
+versions are affected: Ubuntu 18.04 and OpenSUSE Leap 15.6.
+
+Two deprecated JSON fields have been removed from the ``groupInfo`` plugin response, these were never documented
+and were duplicates of current fields, but with ancient names dating back to a version before the first public release.
+Those fields were named ``full_members`` (corresponding to the current ``members``) and
+``partial_members`` (corresponding to the current ``guests``).
+Ensure you don't happen to reference them in any system that consumes the :doc:`JSON API </using/api>`.
+
 v3.18.00 - 2024/12/10
 *********************
 
