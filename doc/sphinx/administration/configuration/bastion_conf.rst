@@ -140,6 +140,7 @@ These options are either discouraged (in which case this is explained in the des
 - `remoteCommandEscapeByDefault`_
 - `sshClientDebugLevel`_
 - `sshClientHasOptionE`_
+- `sshAddKeysToAgentAllowed`_
 
 Option Reference
 ================
@@ -1063,4 +1064,15 @@ sshClientHasOptionE
 :Default: ``false``
 
 Set to ``true`` if your ssh client supports the ``-E`` option and you want to use it to log debug info on opened sessions. **Discouraged** because it has some annoying side effects (some ssh errors then go silent from the user perspective).
+
+.. _sshAddKeysToAgentAllowed:
+
+sshAddKeysToAgentAllowed
+************************
+
+:Type: ``boolean``
+
+:Default: ``false``
+
+Set to ``true`` if you want to allow to spawn an ssh-agent and forward it over the egress session when specifically requested with the '--forward-agent' or '-x' flag, with the egress key added to the agent. Useful if you need the ssh-key for authentication on other systems (another jumpserver for example). 
 

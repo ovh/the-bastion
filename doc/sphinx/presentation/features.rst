@@ -25,6 +25,7 @@ Features
   splitting the authentication and authorization phases while still enforcing local policies
 - Supports SSH password autologin on the egress side for legacy devices not supporting pubkey authentication,
   while still forcing proper pubkey authentication on the ingress side
+- Supports ssh-agent forwarding with the egress ssh key added to the agent
 - Supports telnet password autologin on the egress side for ancient devices not supporting SSH,
   while still forcing proper SSH pubkey authentication on the ingress side
 - Supports HTTPS proxying with man-in-the-middle authentication and authorization handling,

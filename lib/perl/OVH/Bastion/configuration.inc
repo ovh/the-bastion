@@ -275,7 +275,7 @@ sub load_configuration {
                 qw{
                   interactiveModeAllowed readOnlySlaveMode sshClientHasOptionE ingressKeysFromAllowOverride
                   moshAllowed debug keyboardInteractiveAllowed passwordAllowed telnetAllowed remoteCommandEscapeByDefault
-                  accountExternalValidationDenyOnFailure ingressRequirePIV IPv6Allowed
+                  accountExternalValidationDenyOnFailure ingressRequirePIV IPv6Allowed sshAddKeysToAgentAllowed
                   }
             ],
         }

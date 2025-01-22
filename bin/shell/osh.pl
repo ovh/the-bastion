@@ -373,6 +373,7 @@ my $remainingOptions;
     "interactive|i"   => \my $interactive,
     "netconf"         => \my $netconf,
     "wait"            => \my $wait,
+    "forward-agent|x" => \my $sshAddKeysToAgent,
     "ssh-as=s"        => \my $sshAs,
     "use-key=s"       => \my $useKey,
     "kbd-interactive" => \my $userKbdInteractive,
@@ -1411,6 +1412,8 @@ else {
         # also set password if allowed in bastion config (to allow users to enter a remote password interactively)
         push @preferredAuths, 'password' if $config->{'passwordAllowed'};
 
+        # If sshAddKeystoAgent is set, run 'ssh-agent' first and let it spawn 'ssh'
+        push @command, 'ssh-agent', '-t', '60' if ($config->{'sshAddKeysToAgentAllowed'} && $sshAddKeysToAgent);
         push @command, '/usr/bin/ssh', $ip, '-l', $user, '-p', $port;
 
         $fnret = get_details_from_access_array(
@@ -1459,6 +1462,10 @@ else {
         }
     }
 
+    # -x flag is set and allowed, as such set the -A flag (enable agent forwarding) and '-o AddKeysToAgent=yes' to automatically add the egress sshkey to the agent, so that it can be used
+    if ($config->{'sshAddKeysToAgentAllowed'} && $sshAddKeysToAgent) {
+        push @command, '-A', '-o', 'AddKeysToAgent=yes';
+    }
     push @command, '-o', 'PreferredAuthentications=' . (join(',', @preferredAuths));
 
     if ($config->{'sshClientHasOptionE'}) {
@@ -2053,6 +2060,7 @@ Usage (osh cmd): $bastionName --osh [OSH_COMMAND] [OSH_OPTIONS]
     --always-escape      Bypass config and force the bugged behavior of old bastions for REMOTE_COMMAND escaping. Don't use.
     --never-escape       Bypass config and force the new behavior of new bastions for REMOTE_COMMAND escaping. Don't use.
     --wait               Ping the host before connecting to it (useful to ssh just after a reboot!)
+    --forward-agent, -x  Enables ssh agent forwarding on the egress connection
     --long-help          Print this
 
 [REMOTE_COMMAND]
