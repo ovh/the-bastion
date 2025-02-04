@@ -109,7 +109,7 @@ EOF
     ## detect recent scp
     local scp_options=""
     if [ "$COUNTONLY" != 1 ]; then
-        if scp -O -S /bin/true a: b 2>/dev/null; then
+        if scp -O -S $(command -v true) a: b 2>/dev/null; then
             echo "scp: will use new version params"
             scp_options="-O"
         else

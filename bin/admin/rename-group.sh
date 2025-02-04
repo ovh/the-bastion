@@ -1,6 +1,8 @@
 #! /usr/bin/env bash
 # vim: set filetype=sh ts=4 sw=4 sts=4 et:
 basedir=$(readlink -f "$(dirname "$0")"/../..)
+# shellcheck source=lib/shell/functions.inc
+. "$basedir"/lib/shell/functions.inc
 
 from=$1
 to=$2
@@ -18,6 +20,7 @@ fail()
 
 really_run_commands=0
 
+finalret=0
 _run()
 {
     local ret
@@ -25,6 +28,9 @@ _run()
         echo "Executing: $*"
         "$@"; ret=$?
         echo "... return code: $ret"
+        if [ "$ret" -ne 0 ]; then
+            (( ++finalret ))
+        fi
     else
         echo "DRY RUN: would execute: $*"
     fi
@@ -34,18 +40,33 @@ batchrun()
 {
 getent group "key$from" >/dev/null  || fail "group key$from doesn't exist"
 getent group "key$to"   >/dev/null  && fail "group key$to already exists"
-_run groupmod -n "key$to" "key$from"
+if [ "$OS_FAMILY" = FreeBSD ]; then
+    _run pw groupmod -n "key$from" -l "key$to"
+else
+    _run groupmod -n "key$to" "key$from"
+fi
+
 
 getent passwd "key$from" >/dev/null || fail "user key$from doesn't exist"
 getent passwd "key$to"   >/dev/null && fail "user key$to already exists"
 test -d "/home/key$from" || fail "directory /home/key$from doesn't exists"
 test -d "/home/key$to"   && fail "directory /home/key$to already exists"
-_run usermod -m -d /home/"key$to" -l "key$to" "key$from"
+if [ "$OS_FAMILY" = FreeBSD ]; then
+    # FreeBSD doesn't move the home on rename, do it ourselves
+    _run mv -v "/home/key$from" "/home/key$to"
+    _run pw usermod -n "key$from" -d /home/"key$to" -l "key$to"
+else
+    _run usermod -m -d /home/"key$to" -l "key$to" "key$from"
+fi
 
 for suffix in gatekeeper aclkeeper owner; do
     if getent group "key$from-$suffix" >/dev/null ; then
         getent group "key$to-$suffix"   >/dev/null && fail "group key$to-$suffix already exists"
-        _run groupmod -n "key$to-$suffix" "key$from-$suffix"
+        if [ "$OS_FAMILY" = FreeBSD ]; then
+            _run pw groupmod -n "key$from-$suffix" -l "key$to-$suffix"
+        else
+            _run groupmod -n "key$to-$suffix" "key$from-$suffix"
+        fi
     fi
 done
 
@@ -94,9 +115,10 @@ _run "$basedir"/bin/sudogen/generate-sudoers.sh delete group "key$from"
 really_run_commands=0
 batchrun
 echo
-echo "OK to proceed ? (CTRL+C to abort)"
+echo "OK to proceed? (CTRL+C to abort)"
 # shellcheck disable=SC2034
 read -r ___
 really_run_commands=1
 batchrun
 echo "Done."
+exit $finalret
