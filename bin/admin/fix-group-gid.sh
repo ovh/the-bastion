@@ -107,7 +107,7 @@ main()
     fi
 
     echo
-    echo "$group: OK to proceed ? (CTRL+C to abort). You'll still have to validate each commands I'm going to run"
+    echo "$group: OK to proceed? (CTRL+C to abort). You'll still have to validate each commands I'm going to run"
     # shellcheck disable=SC2034
     read -r ___
     really_run_commands=1

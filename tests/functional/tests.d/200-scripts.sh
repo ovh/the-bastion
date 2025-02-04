@@ -108,6 +108,7 @@ testsuite_scripts()
     contain "Done"
     nocontain "WARN:"
     nocontain "ERROR:"
+    nocontain "Unexpected termination"
 
     # encrypt rsync (nothing to encrypt)
 
@@ -116,6 +117,7 @@ testsuite_scripts()
     contain "Done"
     nocontain "WARN:"
     nocontain "ERROR:"
+    nocontain "Unexpected termination"
 
     # ttyrec subfolders cleanup
     success ttyrec_cleanup $r0 /opt/bastion/bin/cron/osh-remove-empty-folders.sh
@@ -146,9 +148,46 @@ testsuite_scripts()
     nocontain "ERROR:"
     nocontain "Unexpected termination"
 
-    # cleanup account
+    # rename account
+    script account_rename $r0 /opt/bastion/bin/admin/rename-account.sh $account1 $account2 '</dev/null'
+    retvalshouldbe 0
+    contain "Done"
+    nocontain "WARN:"
+    nocontain "ERROR:"
+    nocontain "Unexpected termination"
 
-    success a0_delete_a1 $a0 --osh accountDelete --account $account1 --no-confirm
+    # rename account a second time
+    script account_rename2 $r0 /opt/bastion/bin/admin/rename-account.sh $account2 $account3 '</dev/null'
+    retvalshouldbe 0
+    contain "Done"
+    nocontain "WARN:"
+    nocontain "ERROR:"
+    nocontain "Unexpected termination"
+
+    # cleanup account
+    success a0_delete_a3 $a0 --osh accountDelete --account $account3 --no-confirm
+
+    # create a group to try to rename it
+    success a0_create_g1 $a0 --osh groupCreate --owner $account0 --algo ed25519 --size 256 --group $group1
+
+    # rename the group
+    script group_rename $r0 /opt/bastion/bin/admin/rename-group.sh $group1 $group2 '</dev/null'
+    retvalshouldbe 0
+    contain "Done"
+    nocontain "WARN:"
+    nocontain "ERROR:"
+    nocontain "Unexpected termination"
+
+    # rename the group, again
+    script group_rename2 $r0 /opt/bastion/bin/admin/rename-group.sh $group2 $group3 '</dev/null'
+    retvalshouldbe 0
+    contain "Done"
+    nocontain "WARN:"
+    nocontain "ERROR:"
+    nocontain "Unexpected termination"
+
+    # cleanup group
+    success a0_delete_g3 $a0 --osh groupDelete --group $group3 --no-confirm
 }
 
 testsuite_scripts

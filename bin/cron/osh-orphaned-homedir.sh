@@ -39,6 +39,46 @@ esac
 
 mkdir -p "/home/oldkeeper/orphaned"
 
+archive_dir() {
+    _dir="$1"
+
+    archive="/home/oldkeeper/orphaned/$(basename "$_dir").at-$(date +%s).by-orphaned-homedir-script.tar.gz"
+    _log "Found orphaned $_dir [$(ls -ld "$_dir")], archiving..."
+    chmod 0700 /home/oldkeeper/orphaned
+    if [ "$OS_FAMILY" = "Linux" ]; then
+        find "$_dir" -mindepth 1 -maxdepth 1 -type f -name "*.log" -print0 | xargs -r0 chattr -a
+    fi
+
+    # remove empty directories if we have some
+    find "$_dir" -type d -delete 2>/dev/null || true
+    acls_param=''
+    [ "$OS_FAMILY" = "Linux"   ] && acls_param='--acls'
+    [ "$OS_FAMILY" = "FreeBSD" ] && acls_param='--acls'
+
+    set +e
+    tar czf "$archive" $acls_param --one-file-system -p --remove-files --exclude=ttyrec "$_dir" 2>/dev/null; ret=$?
+    set -e
+
+    if [ $ret -ne 0 ]; then
+        # $? can be 2 if we can't delete because ttyrec dir remains so it might not be a problem
+        if [ $ret -eq 2 ] && [ -s "$archive" ] && [ -d "$_dir" ] && [ "$(find "$_dir" -name ttyrec -prune -o -print | wc -l)" = 1 ]; then
+            # it's OK. We chown all to root to avoid orphan UID/GID and we let the backup script take care of those
+            # if we still have files under $dir/ttyrec, chown all them to root:root to avoid orphan UID/GID,
+            # and just wait for them to be encrypted/rsynced out of the bastion by the usual ttyrec archiving script
+            _log "Archived $_dir to $archive"
+            chmod 0 "$archive"
+
+            chown -R root:root "$_dir"
+            _warn "Some files remain in $_dir, we chowned everything to root"
+        else
+            _err "Couldn't archive $_dir to $archive"
+        fi
+    else
+        _log "Archived $_dir to $archive"
+        chmod 0 "$archive"
+    fi
+}
+
 while IFS= read -r -d '' dir
 do
     # just in case, check ourselves again that the folder's UID/GID don't resolve
@@ -70,42 +110,46 @@ do
         continue
     fi
 
-    archive="/home/oldkeeper/orphaned/$(basename "$dir").at-$(date +%s).by-orphaned-homedir-script.tar.gz"
-    _log "Found orphaned $dir [$(ls -ld "$dir")], archiving..."
-    chmod 0700 /home/oldkeeper/orphaned
-    if [ "$OS_FAMILY" = "Linux" ]; then
-        find "$dir" -mindepth 1 -maxdepth 1 -type f -name "*.log" -print0 | xargs -r0 chattr -a
-    fi
-
-    # remove empty directories if we have some
-    find "$dir" -type d -delete 2>/dev/null || true
-    acls_param=''
-    [ "$OS_FAMILY" = "Linux"   ] && acls_param='--acls'
-    [ "$OS_FAMILY" = "FreeBSD" ] && acls_param='--acls'
-
-    set +e
-    tar czf "$archive" $acls_param --one-file-system -p --remove-files --exclude=ttyrec "$dir" 2>/dev/null; ret=$?
-    set -e
-
-    if [ $ret -ne 0 ]; then
-        # $? can be 2 if we can't delete because ttyrec dir remains so it might not be a problem
-        if [ $ret -eq 2 ] && [ -s "$archive" ] && [ -d "$dir" ] && [ "$(find "$dir" -name ttyrec -prune -o -print | wc -l)" = 1 ]; then
-            # it's ok. we chown all to root to avoid orphan UID/GID and we let the backup script take care of those
-            # if we still have files under $dir/ttyrec, chown all them to root:root to avoid orphan UID/GID,
-            # and just wait for them to be encrypted/rsynced out of the bastion by the usual ttyrec archiving script
-            _log "Archived $dir to $archive"
-            chmod 0 "$archive"
-
-            chown -R root:root "$dir"
-            _warn "Some files remain in $dir, we chowned everything to root"
-        else
-            _err "Couldn't archive $dir to $archive"
-        fi
-    else
-        _log "Archived $dir to $archive"
-        chmod 0 "$archive"
-    fi
+    archive_dir "$dir"
 done < <(find /home/ -mindepth 1 -maxdepth 1 -type d -nouser -nogroup -mmin +3 -print0)
+
+# corner case for manually renamed accounts on master: the old homedir will stay on slaves,
+# with only logs, ttyrecs and such (files excluded from the cluster sync).
+# in that case, the old homedir is owned by the new account name, and there is no corresponding allowkeeper directory.
+# look for those, and archive them if found.
+if [ "$role" = "slave" ]; then
+    while IFS= read -r -d '' file
+    do
+        # we're getting all the folders with a "lastlog" file, skip all those that are present
+        # in the proper home of their file owner
+        file_owner=$(stat -c %U "$file" 2>/dev/null)
+        [ -n "$file_owner" ] || continue
+
+        owner_home=$(getent passwd "$file_owner" 2>/dev/null | cut -d: -f6)
+        [ -n "$owner_home" ] || continue
+        [ -d "$owner_home" ] || continue
+
+        if [ "$file" = "$owner_home/lastlog" ]; then
+            # all is good, nothing to see here
+            continue
+        fi
+
+        _log "Found a misowned lastlog file as $file, owned by $file_owner who's home is $owner_home"
+
+        orphanhome="$(dirname "$file")"
+
+        # ensure that the only other present files in this home are: ttyrec/*, *.log and *.sqlite
+        otherfiles=$(find "$orphanhome/" -mindepth 1 -name ttyrec -prune -o -name tmp -prune \
+            -o ! -name lastlog ! -name "*.log" ! -name "*.sqlite" -print | head -n 1)
+        if [ -n "$otherfiles" ]; then
+            _warn "... at least another file has been found in $orphanhome, skipping"
+            continue
+        fi
+
+        _log "Proceeding in archiving $orphanhome..."
+        archive_dir "$orphanhome"
+    done < <(find /home/ -mindepth 2 -maxdepth 2 -type f -name lastlog -print0)
+fi
 
 # there are also temporary files that might not be cleaned when an account disappears,
 # so check for those here
