@@ -1027,12 +1027,14 @@ EOS
         "g2@127.0.0.2:22"      \
         "127.0.0.10"           \
         "127.0.0.11"           \
+        "root@192.0.2.1:22 comment with spaces"\
     )'
-    json .command groupSetServers .error_code OK .value.parsedLines 5 '.value.errors|length' 1 .value.dryrun false
+    json .command groupSetServers .error_code OK .value.parsedLines 6 '.value.errors|length' 1 .value.dryrun false
     json '.value.ACL[0].user' 'g1' '.value.ACL[0].ip' 127.0.0.1  '.value.ACL[0].port' 22   '.value.ACL[0].comment' null
     json '.value.ACL[1].user' 'g2' '.value.ACL[1].ip' 127.0.0.2  '.value.ACL[1].port' 22   '.value.ACL[1].comment' null
     json '.value.ACL[2].user' null '.value.ACL[2].ip' 127.0.0.10 '.value.ACL[2].port' null '.value.ACL[2].comment' null
     json '.value.ACL[3].user' null '.value.ACL[3].ip' 127.0.0.11 '.value.ACL[3].port' null '.value.ACL[3].comment' null
+    json '.value.ACL[4].user' 'root' '.value.ACL[4].ip' 192.0.2.1  '.value.ACL[4].port' 22   '.value.ACL[4].comment' 'comment with spaces'
 
     success groupListServers_verify_after_groupSetServers $a1 --osh groupListServers --group $group1
     json .command groupListServers .error_code OK
@@ -1040,8 +1042,9 @@ EOS
     contain REGEX '127\.0\.0\.2[[:space:]]+22[[:space:]]+g2[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
     contain REGEX '127\.0\.0\.10[[:space:]]+\*[[:space:]]+\*[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
     contain REGEX '127\.0\.0\.11[[:space:]]+\*[[:space:]]+\*[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
+    contain REGEX '192\.0\.2\.1[[:space:]]+22[[:space:]]+root[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]+[0-9]{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])[[:space:]]comment with spaces'
     nocontain REGEX '127\.0\.0\.12[[:space:]]+\*[[:space:]]+\*[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
-    contain '4 accesses listed'
+    contain '5 accesses listed'
 
     # /groupSetServers tests
 

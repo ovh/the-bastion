@@ -96,12 +96,13 @@ osh_info("Setting ACL entries, this may take a while...");
 my @errors;
 foreach my $entry (@$data) {
     $fnret = OVH::Bastion::access_modify(
-        way    => 'group',
-        action => 'add',
-        group  => $group,
-        ip     => $entry->{ip},
-        user   => $entry->{user},
-        port   => $entry->{port},
+        way     => 'group',
+        action  => 'add',
+        group   => $group,
+        ip      => $entry->{ip},
+        user    => $entry->{user},
+        port    => $entry->{port},
+        comment => $entry->{comment},
     );
     push @errors, $fnret if !$fnret;
 }
