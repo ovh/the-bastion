@@ -102,5 +102,13 @@
 #           very busy bastions, by ensuring logs growth don't get out of hand, as some responses to queries can
 #           take megabytes, with possibly limited added value to traceability.
 #  DEFAULT: 65536
-"log_request_response_max_size": 65536
+"log_request_response_max_size": 65536,
+#
+# allowed_egress_protocols (array of strings)
+#     DESC: This array lists the allowed egress protocols. By default, only https is allowed.
+#           If required, plain http egress can be enabled here, which is of course strongly discouraged,
+#           but might be required for your environment if business constraints out of your control force you to.
+#  EXAMPLE: ["https","http"]
+#  DEFAULT: ["https"]
+"allowed_egress_protocols": ["https"]
 }

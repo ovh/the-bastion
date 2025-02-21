@@ -92,6 +92,7 @@ OVH::Bastion::ProxyHTTP->new()->run(
         timeout => $config->{'timeout'}, # our worker will wait for up to this amount of time for the egress connection to complete
         log_request_response          => $config->{'log_request_response'} ? 1 : 0,
         log_request_response_max_size => $config->{'log_request_response_max_size'},
+        allowed_egress_protocols      => $config->{'allowed_egress_protocols'} || ['https'],
     },
 ) or die "Proxy launch failed!";
 

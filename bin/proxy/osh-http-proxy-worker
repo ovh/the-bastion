@@ -88,6 +88,7 @@ GetOptions(
     "monitoring"                      => \my $monitoring,
     "log-request-response"            => \my $log_request_response,
     "log-request-response-max-size=i" => \my $log_request_response_max_size,
+    "egress-protocol=s"               => \my $egress_protocol,
 );
 push @headers, ["X-Bastion-Remote-IP" => $remotemachine];
 
@@ -107,6 +108,8 @@ if ($monitoring) {
     exit 0;
 }
 
+$egress_protocol ||= "https";
+
 $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);    # time: 20ms
 $fnret or log_and_exit(400, "Bad Request (bad account)", "Account name is invalid", {comment => "invalid_account"});
 $account               = $fnret->value->{'account'};                                  # untaint
@@ -114,8 +117,51 @@ $log_params{'account'} = $account;
 $log_params{'user'}    = $user;
 $log_params{'hostto'}  = $remotemachine;
 $log_params{'params'}  = $path;
-$log_params{'plugin'}  = uc($method);
+$log_params{'plugin'}  = uc("$egress_protocol/$method");
 push @{$log_params{'custom'}}, ['post_length' => length($content)];
+
+# hardcoded list of protocols we support
+if (!grep { $egress_protocol eq $_ } qw{ http https }) {
+    log_and_exit(400, "Bad Request (bad protocol)", "Egress protocol is invalid", {comment => "invalid_protocol"});
+}
+
+# check egress protocol against the list of allowed ones
+$fnret = OVH::Bastion::load_configuration_file(
+    file   => OVH::Bastion::main_configuration_directory() . "/osh-http-proxy.conf",
+    secure => 1,
+);
+if (not $fnret) {
+    osh_warn "Error loading configuration: $fnret";
+    log_and_exit(
+        500,
+        "Internal Error",
+        "Configuration is invalid, please contact the bastion admin",
+        {comment => "invalid_configuration"}
+    );
+}
+
+my $config = $fnret->value();
+
+# just look at the egress protocol, the other configuration values are handled by the daemon, not the worker (us)
+$config->{'allowed_egress_protocols'} ||= ['https'];    # default value
+if (ref $config->{'allowed_egress_protocols'} ne 'ARRAY') {
+    osh_warn "Invalid allowed_egress_protocols config type: " . (ref $config->{'allowed_egress_protocols'});
+    log_and_exit(
+        500,
+        "Internal Error",
+        "Configuration is invalid, please contact the bastion admin",
+        {comment => "invalid_configuration"}
+    );
+}
+
+if (not grep { $egress_protocol eq $_ } @{$config->{'allowed_egress_protocols'}}) {
+    log_and_exit(
+        400,
+        "Bad Request (forbidden protocol)",
+        "Requested protocol '$egress_protocol' is forbidden",
+        {comment => "forbidden_protocol"}
+    );
+}
 
 my $shortGroup;
 if ($group) {
@@ -312,14 +358,14 @@ else {
 my $ua = LWP::UserAgent->new();
 $ua->agent("The Bastion " . $OVH::Bastion::VERSION);
 $ua->timeout($timeout);
-$ua->protocols_allowed(['https']);
+$ua->protocols_allowed($config->{'allowed_egress_protocols'});
 if ($insecure) {
     $ua->ssl_opts('verify_hostname' => 0);
     $ua->ssl_opts('SSL_verify_mode' => IO::Socket::SSL::SSL_VERIFY_NONE);
 }
 
 # set the remote URL
-my $req = HTTP::Request->new($method => "https://" . $remotemachine_uri . ':' . $remoteport . $path);
+my $req = HTTP::Request->new($method => $egress_protocol . "://" . $remotemachine_uri . ':' . $remoteport . $path);
 
 # add the content we get (passthru)
 $req->content($content);
