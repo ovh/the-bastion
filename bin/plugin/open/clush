@@ -59,14 +59,13 @@ if (not $command) {
 #
 # and test external command call
 #
-my %hosts;
+my @hosts;
 foreach my $host (split /,/, $list) {
-    if ($host !~ /^[a-zA-Z0-9.-]+$/) {
+    if ($host !~ /^[a-zA-Z0-9._:-]+$/) {
         osh_exit 'ERR_INVALID_PARAMETER', "This doesn't appear to be a valid host '$host'";
     }
-    $hosts{$host} = 1;
+    push @hosts, $host;
 }
-my @hosts = keys %hosts;
 
 if (not @hosts) {
     help();
