@@ -12,17 +12,13 @@ Transfer files from/to remote servers using rsync through the bastion
 Usage examples
 --------------
 
-To transfer all files from ``/srcdir`` to the ``remotehost``'s ``/dest/`` directory:
-
-.. code-block: none
+To transfer all files from ``/srcdir`` to the ``remotehost``'s ``/dest/`` directory::
 
    rsync -va --rsh "ssh -T BASTION_USER@BASTION_HOST -p BASTION_PORT -- --osh rsync --" /srcdir remoteuser@remotehost:/dest/
 
 The ``-va`` options are just examples, you can use any option of ``rsync`` that you see fit.
 
-To transfer all remote files from ``/srcdir`` to the local ``/dest`` directory:
-
-.. code-block: none
+To transfer all remote files from ``/srcdir`` to the local ``/dest`` directory::
 
    rsync -va --rsh "ssh -T BASTION_USER@BASTION_HOST -p BASTION_PORT -- --osh rsync --" remoteuser@remotehost:/srcdir /dest/
 
