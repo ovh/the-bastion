@@ -29,6 +29,7 @@ These options modify the behavior of the HTTP Proxy, an optional module of The B
 - `timeout`_
 - `log_request_response`_
 - `log_request_response_max_size`_
+- `allowed_egress_protocols`_
 
 Option Reference
 ================
@@ -175,4 +176,17 @@ the query response will only be partially logged, with full status and headers b
 to the specified size. This is a way to avoid turning off request response logging completely on
 very busy bastions, by ensuring logs growth don't get out of hand, as some responses to queries can
 take megabytes, with possibly limited added value to traceability.
+
+allowed_egress_protocols
+************************
+
+:Type: ``array of strings``
+
+:Default: ``["https"]``
+
+:Example: ``["https","http"]``
+
+This array lists the allowed egress protocols. By default, only https is allowed.
+If required, plain http egress can be enabled here, which is of course strongly discouraged,
+but might be required for your environment if business constraints out of your control force you to.
 

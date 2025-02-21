@@ -160,19 +160,26 @@ if [ "$WANT_HTTP_PROXY" = 1 ]; then
     sed -i -re 's="ssl_key":.*="ssl_key": "/tmp/selfsigned.key",=' /etc/bastion/osh-http-proxy.conf
     sed -i -re 's="enabled":.+="enabled":true,=' /etc/bastion/osh-http-proxy.conf
     sed -i -re 's="insecure":.+="insecure":true,=' /etc/bastion/osh-http-proxy.conf
+    # also build a config with disallowed https egress and allowed http egress
+    sed -re 's="allowed_egress_protocols":.+="allowed_egress_protocols":["http"]=' /etc/bastion/osh-http-proxy.conf > /etc/bastion/osh-http-proxy-httponly.conf
 
     # ensure the remote daemon is executable
     chmod 0755 "$basedir"/tests/functional/proxy/remote-daemon
 
+    echo "Starting HTTP Proxy and fake remote server"
     while : ; do
-        echo "Starting HTTP Proxy and fake remote server"
-        if [ -x /etc/init.d/osh-http-proxy ]; then
-            /etc/init.d/osh-http-proxy start
-        else
-            sudo -n -u proxyhttp -- /opt/bastion/bin/proxy/osh-http-proxy-daemon &
+        if ! pgrep -f /osh-http-proxy-daemon >/dev/null; then
+            if [ -x /etc/init.d/osh-http-proxy ]; then
+                /etc/init.d/osh-http-proxy start
+            else
+                sudo -n -u proxyhttp -- /opt/bastion/bin/proxy/osh-http-proxy-daemon &
+                disown
+            fi
+        fi
+        if ! pgrep -f /remote-daemon >/dev/null; then
+            "$basedir"/tests/functional/proxy/remote-daemon &
             disown
         fi
-        "$basedir"/tests/functional/proxy/remote-daemon
         sleep 1
     done
 else

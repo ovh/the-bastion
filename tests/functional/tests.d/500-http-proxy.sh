@@ -230,8 +230,48 @@ testsuite_proxy()
     contain "Content-Length: 8"
     contain "somedata"
 
+    # use a disallowed egress method
+    script forbidden_egress_protocol "curl -ski -H 'X-Bastion-Egress-Protocol: http' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain 'HTTP/1.0 400 Bad Request (forbidden egress protocol)'
+    contain 'Server: The Bastion'
+    contain 'X-Bastion-Instance: '
+    contain 'X-Bastion-ReqID: '
+    nocontain 'WWW-Authenticate: '
+    contain 'Content-Type: text/plain'
+    contain 'not allowed by policy'
+
+    # use alternate config to only allow http egress
+    success config_swap $r0 "\"mv /etc/bastion/osh-http-proxy.conf /etc/bastion/osh-http-proxy-normal.conf; mv /etc/bastion/osh-http-proxy-httponly.conf /etc/bastion/osh-http-proxy.conf\""
+
+    # pkill doesn't work well under FreeBSD, so do it ourselves for all OSes
+    success force_restart $r0 "\"ps -U proxyhttp -o pid,command | grep -v PID | awk '{print \\\$1}' | xargs -r kill; true\""
+    [ "$COUNTONLY" != 1 ] && sleep 2
+
+    # http should be allowed now
+    script allowed_http_egress "curl -ski -H 'X-Bastion-Egress-Protocol: http' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test 2>&1 | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain 'HTTP/1.0 500 Status read failed: Connection reset by peer'
+    contain 'Server: The Bastion'
+    contain 'X-Bastion-Instance: '
+    contain 'X-Bastion-ReqID: '
+    contain 'X-Bastion-Local-Status: 200 OK'
+    nocontain 'WWW-Authenticate: '
+    nocontain "X-Bastion-Remote-Client-SSL"
+
+    # and https disallowed
+    script forbidden_https_egress "curl -ski -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain 'HTTP/1.0 400 Bad Request (forbidden egress protocol)'
+    contain 'Server: The Bastion'
+    contain 'X-Bastion-Instance: '
+    contain 'X-Bastion-ReqID: '
+    nocontain 'WWW-Authenticate: '
+    contain 'Content-Type: text/plain'
+    contain 'not allowed by policy'
+
     # try an IPv6
-    script ipv6 "curl -ski -u '$account0@test@[::1]%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit ${PIPESTATUS[0]}"
+    script ipv6 "curl -ski -H 'X-Bastion-Egress-Protocol: http' -u '$account0@test@[::1]%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit ${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'ERR_IP_VERSION_DISABLED'
 }

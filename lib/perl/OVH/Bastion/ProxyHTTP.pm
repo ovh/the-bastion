@@ -394,7 +394,7 @@ sub process_http_request {
         return $self->log_and_exit(
             400,
             "Bad Request (bad login format)",
-            "Expected an Authorization line with credentials of the form 'BASTIONACCOUNT\@USEREXPR\@HOSTEXPR' where\n"
+            "Expected an Authorization line with credentials of the form 'BASTIONACCOUNT\@USEREXPR\@HOSTEXPR:PASSWORD' where\n"
               . "USEREXPR can be either 'DEVICEUSER' or 'group=BASTIONGROUP,user=DEVICEUSER' or 'user=DEVICEUSER'\n"
               . "HOSTEXPR can be either a 'HOST' or 'HOST%PORT', with HOST being a resolvable hostname or IP",
             {comment => "bad_login_format"}
@@ -496,6 +496,21 @@ sub process_http_request {
         }
     }
 
+    # set default egress protocol if not specified in config
+    $self->{'proxy_config'}{'allowed_egress_protocols'} ||= ['https'];
+
+    # if there's an egress-protocol header, get it
+    my $egress_protocol = $req_headers->{'x-bastion-egress-protocol'} || 'https';
+    # protocol must be explicitely allowed per Bastion policy, by default only https is allowed
+    if (!grep { $egress_protocol eq $_ } @{$self->{'proxy_config'}{'allowed_egress_protocols'} || []}) {
+        return $self->log_and_exit(
+            400,
+            "Bad Request (forbidden egress protocol)",
+            "The egress protocol '$egress_protocol' is not allowed by policy",
+            {comment => "forbidden_egress_protocol"}
+        );
+    }
+
     # if there's an allow-downgrade header, get it
     my $allow_downgrade = 0;
     if ($req_headers->{'x-bastion-allow-downgrade'}) {
@@ -542,6 +557,7 @@ sub process_http_request {
     push @cmd, "--log-request-response" if ($self->{'proxy_config'}{'log_request_response'});
     push @cmd, "--log-request-response-max-size", $self->{'proxy_config'}{'log_request_response_max_size'}
       if ($self->{'proxy_config'}{'log_request_response'});
+    push @cmd, "--egress-protocol", $egress_protocol;
 
     # X-Test-* is only used for functional tests, and has to be passed to the remote
     foreach my $pattern (qw{ accept content-type content-length content-encoding x-test-[a-z-]+ }) {
