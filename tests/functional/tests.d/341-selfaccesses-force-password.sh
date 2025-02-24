@@ -167,7 +167,7 @@ testsuite_selfaccesses_force_password()
         run ${mode}_connect_a4_fp_wrong $a1 $account4@$remote_ip $password_switch -- --osh help
         retvalshouldbe 100
         contain "forcing password with hash: ${password3_sha256}"
-        contain "will use SSH with password autologin"
+        contain "will use SSH with password autologin with empty TERM"
         contain "authentication failed"
         nocontain "trying with fallback password 1 after sleeping"
 
@@ -178,9 +178,10 @@ testsuite_selfaccesses_force_password()
         success ${mode}_add_a4_fp_ok $a0 --osh $add_access_plugin $target --host $remote_ip --user $account4 --port $remote_port --force-password "'${password2_sha256}'"
         json .error_code OK .command $add_access_plugin
 
-        success ${mode}_connect_a4_fp_ok $a1 $account4@$remote_ip $password_switch -- --osh help --json-greppable
+        # take the opportunity to also test --term-passthrough along with the forced hash
+        success ${mode}_connect_a4_fp_ok env TERM=xterm $a1 --term-passthrough $account4@$remote_ip $password_switch -- --osh help --json-greppable
         contain "forcing password with hash: ${password2_sha256}"
-        contain "will use SSH with password autologin"
+        contain "will use SSH with password autologin with TERM=xterm"
         nocontain "trying with fallback password 1 after sleeping"
         json .error_code OK .command help
 

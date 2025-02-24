@@ -5,15 +5,13 @@
 #exp_internal 1
 #strace 2
 
-set ::env(TERM) ""
-
-# we need at least 9 positional arguments
-if { [llength $argv] < 9 } {
-    puts {BASTION SAYS: autologin usage error, expected 9 positional args: <ssh|telnet> <login> <ip> <port> <file_with_password> <password_id> <timeout> <fallback_delay> <stty_options> [passthrough arguments to ssh or telnet]}
+# we need at least 10 positional arguments (must be synchronized with osh.pl, our caller)
+if { [llength $argv] < 10 } {
+    puts {BASTION SAYS: autologin usage error, expected 10 positional args: <ssh|telnet> <login> <ip> <port> <file_with_password> <password_id> <timeout> <fallback_delay> <stty_options> <terminal> [passthrough arguments to ssh or telnet]}
     exit 1
 }
 
-# name our arguments
+# name our positional arguments
 set arg_prog           [lindex $argv 0]
 set arg_login          [lindex $argv 1]
 set arg_ip             [lindex $argv 2]
@@ -23,7 +21,11 @@ set arg_password_id    [lindex $argv 5]
 set arg_timeout        [lindex $argv 6]
 set arg_fallback_delay [lindex $argv 7]
 set arg_stty_options   [lindex $argv 8]
-set arg_remaining      [lrange $argv 9 end]
+set arg_term           [lindex $argv 9]
+set arg_remaining      [lrange $argv 10 end]
+
+# set the TERM env to the wanted value, this is passed through ssh so it may modify the behavior of the remote device
+set ::env(TERM) $arg_term
 
 # start the program
 if { $arg_prog == "ssh" } {
