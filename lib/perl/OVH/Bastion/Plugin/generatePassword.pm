@@ -99,8 +99,11 @@ sub act {
 
         # generate a password
         $pass = '';
+        # We only add 3 specials chars which are recognized as special chars in TL1,
+        # as some network devices are very picky and only allow these 3.
+        my @allowedChars = ('a' .. 'z', 'A' .. 'Z', '0' .. '9', '+', '%', '#');
         foreach (1 .. $size) {
-            $pass .= chr(int(rand(ord('~') - ord('!')) + ord('!')));
+            $pass .= $allowedChars[int(rand(@allowedChars))];
         }
 
         # get the corresponding hashes
