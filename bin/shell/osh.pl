@@ -381,6 +381,7 @@ my $remainingOptions;
     "fallback-password-delay=i" => \my $fallbackPasswordDelay,
     "generate-mfa-token"        => \my $generateMfaToken,
     "mfa-token=s"               => \my $mfaToken,
+    "term-passthrough"          => \my $termPassthrough,
 );
 if (not defined $realOptions) {
     help();
@@ -1319,9 +1320,18 @@ if ($telnet) {
     if ($userPasswordClue) {
         osh_debug("going to use telnet with this password file : $passwordFile");
         osh_print(" will use TELNET with password autologin\n") unless $quiet;
-        push @command, $OVH::Bastion::BASEPATH . '/bin/shell/autologin', 'telnet', $user, $ip, $port,
-          $passwordFile, $forcePasswordId, ($timeout ? $timeout : 45), ($fallbackPasswordDelay // 3),
-          $notty ? "raw -echo" : "";
+        push @command, $OVH::Bastion::BASEPATH . '/bin/shell/autologin';
+        # arguments are positional for the 'autologin' script, put one per line below for readability
+        push @command, 'telnet';
+        push @command, $user;
+        push @command, $ip;
+        push @command, $port;
+        push @command, $passwordFile;
+        push @command, $forcePasswordId;
+        push @command, ($timeout ? $timeout : 45);
+        push @command, ($fallbackPasswordDelay // 3);
+        push @command, ($notty           ? "raw -echo"  : "");
+        push @command, ($termPassthrough ? $ENV{'TERM'} : "");
     }
 
     # TELNET PASSWORD INTERACTIVE
@@ -1394,10 +1404,27 @@ else {
         push @preferredAuths, 'password';
 
         osh_debug("going to use ssh with this password file : $passwordFile");
-        osh_print(" will use SSH with password autologin\n") unless $quiet;
-        push @command, $OVH::Bastion::BASEPATH . '/bin/shell/autologin', 'ssh', $user, $ip, $port,
-          $passwordFile, $forcePasswordId, ($timeout ? $timeout : 45), ($fallbackPasswordDelay // 3),
-          $notty ? "raw -echo" : "";
+        if ($termPassthrough) {
+            osh_print(" will use SSH with password autologin with TERM=" . $ENV{'TERM'} . "\n") unless $quiet;
+        }
+        else {
+            osh_print(" will use SSH with password autologin with empty TERM, "
+                  . "use --term-passthrough if output is scrambled\n")
+              unless $quiet;
+        }
+
+        push @command, $OVH::Bastion::BASEPATH . '/bin/shell/autologin';
+        # arguments are positional for the 'autologin' script, put one per line below for readability
+        push @command, 'ssh';
+        push @command, $user;
+        push @command, $ip;
+        push @command, $port;
+        push @command, $passwordFile;
+        push @command, $forcePasswordId;
+        push @command, ($timeout ? $timeout : 45);
+        push @command, ($fallbackPasswordDelay // 3);
+        push @command, ($notty           ? "raw -echo"  : "");
+        push @command, ($termPassthrough ? $ENV{'TERM'} : "");
     }
 
     # SSH EGRESS KEYS (and maybe password interactive as a fallback if passwordAllowed)
@@ -2072,10 +2099,11 @@ Usage (osh cmd): $bastionName --osh [OSH_COMMAND] [OSH_OPTIONS]
     --verbose                    Enable verbose ssh
     --tty,      -t               Force tty allocation
     --no-tty,   -T               Prevent tty allocation
-    --use-key      FP            Explicitly specify the fingerprint of the egress key you want to use
+    --use-key      FINGERPRINT   Explicitly specify the fingerprint of the egress key you want to use
     --kbd-interactive            Enable the keyboard-interactive authentication scheme on egress connection
     --netconf                    Request to use netconf subsystem
-    --fallback-password-delay S  Amount of seconds to wait between subsequent tries in the SSH password autologin fallback mechanism (3).
+    --fallback-password-delay S  Amount of seconds to wait between subsequent tries in the SSH password autologin fallback mechanism (default: 3)
+    --term-passthrough           Don't override the TERM value in the SSH password autologin script (default: "")
 
 [OPTIONS (osh cmd)]
     --json              Return data in json format between JSON_START and JSON_END tags
