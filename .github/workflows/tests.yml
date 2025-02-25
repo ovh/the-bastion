@@ -8,7 +8,7 @@ jobs:
     tests_short:
         name: Short (deb12 only, w/o cc)
         runs-on: ubuntu-latest
-        if: contains(github.event.pull_request.labels.*.name, 'tests:short')
+        timeout-minutes: 45
         steps:
         - uses: actions/checkout@v4
           with:
@@ -25,6 +25,7 @@ jobs:
                 platform: [rockylinux9, debian12, 'opensuse15@opensuse/leap:15.6', ubuntu2404]
         runs-on: ubuntu-latest
         if: contains(github.event.pull_request.labels.*.name, 'tests:long')
+        timeout-minutes: 45
         steps:
         - uses: actions/checkout@v4
           with:
@@ -35,12 +36,13 @@ jobs:
             DOCKER_TTY: false
 
     tests_full:
-        name: Full (multi-distros all versions, w/ cc)
+        name: Full (exhaustive, w/ cc)
         strategy:
             matrix:
                 platform: [rockylinux8, rockylinux9, debian10, debian11, debian12, 'opensuse15@opensuse/leap:15.6', ubuntu1804, ubuntu2004, ubuntu2204, ubuntu2404]
         runs-on: ubuntu-latest
         if: contains(github.event.pull_request.labels.*.name, 'tests:full')
+        timeout-minutes: 45
         steps:
         - uses: actions/checkout@v4
           with:

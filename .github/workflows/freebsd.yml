@@ -8,8 +8,8 @@ jobs:
   freebsd:
     runs-on: ubuntu-latest
     name: FreeBSD
-    timeout-minutes: 180
     if: ${{ contains(github.event.pull_request.labels.*.name, 'tests:freebsd') }}
+    timeout-minutes: 45
     steps:
     - uses: actions/checkout@v4
       with:
