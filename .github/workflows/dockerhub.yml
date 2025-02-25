@@ -1,6 +1,7 @@
 name: dockerhub publish
 
 on:
+  workflow_dispatch:
   release:
     types: published
   repository_dispatch:
