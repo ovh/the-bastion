@@ -1,0 +1,79 @@
+==============
+CVE-2023-45140
+==============
+
+- ``Severity``: **4.8** (CVSS V3)
+- ``Vector: CVSS:3.1/AV:N/AC:L/PR:H/UI:R/S:C/C:L/I:L/A:N``
+- ``Affected versions``: from 3.0.0 included to 3.14.15 excluded
+- ``Patched versions``: 3.14.15 and up
+
+`This advisory is also available online <https://github.com/ovh/the-bastion/security/advisories/GHSA-pr4q-w883-pf5x>`_.
+
+Summary
+=======
+
+SCP and SFTP plugins don't honor group-based and account-based JIT MFA.
+
+Details
+=======
+Establishing a SCP/SFTP connection through The Bastion via a group access where MFA is enforced does not ask for additional factor. This abnormal behavior only applies to `per-group-based JIT MFA <https://ovh.github.io/the-bastion/administration/mfa.html#on-a-per-group-basis>`_ and `JIT MFA on a per-account basis <https://ovh.github.io/the-bastion/administration/mfa.ht↪·ml#on-a-per-account-basis>`_.
+
+Other MFA setup types, such as `Immediate MFA <https://ovh.github.io/the-bastion/administration/mfa.html#immediate-mfa>`_ and `JIT MFA on a per-plugin basis <https://ovh.github.io/the-bastion/administration/mfa.html#on-a-per-plugin-basis>`_ are not affected.
+
+Normal SSH access (i.e. not SCP nor SFTP) is not affected.
+
+How to reproduce for group-based JIT MFA
+========================================
+- Create a group
+- Apply ``groupModify --mfa-required any`` to this group
+- Grant SSH access to someone via this group on a given IP
+- Grant ``scp`` download right (or ``sftp`` right) to the same person via this group on the same IP
+- This group should now force MFA for any connection of the person allowed through the group's rights set. This is the case for SSH, but not for SCP or SFTP as would be expected.
+
+How to reproduce for account-based JIT MFA
+==========================================
+- Create an account
+- Apply ``accountModify --personal-egress-mfa-required any`` to this account
+- Grant a personal SSH access to this account on a given IP
+- Grant ``scp`` download right (or ``sftp`` right) to the same account via their personal access on the same IP
+- This account should now have forced MFA for any egress connection allowed through their personal rights set. This is the case for SSH, but not for SCP or SFTP as would be expected.
+
+Impact for group-based JIT MFA
+==============================
+For an actor to be able to bypass MFA for scp/sftp to a given remote server, ALL the following conditions must apply:
+
+- The target server must be part of a group (and have the egress group's public key trusted in its :file:`authorized_keys` file)
+- The group must have JIT MFA enabled on it (through ``groupModify --mfa-required any``)
+- The actor must have an account on the bastion
+- The actor must be a member of the group (granted by the groups's gatekeepers)
+- scp and/or sftp must be globally enabled on the bastion (this is the default)
+- scp and/or sftp must be explicitly allowed to the given remote server through the group (granted by the groups's aclkeepers)
+
+When all conditions above apply, the actor would be able to use scp or sftp on the target server without requiring to provide an additional factor where it should.
+
+Impact for account-based JIT MFA
+================================
+For an actor to be able to bypass MFA for scp/sftp to a given remote server, ALL the following conditions must apply:
+
+- The target server must be part of the actor's account personal accesses (and have the account's egress public key trusted in its :file:`authorized_keys` file)
+- The account must have JIT MFA enabled on it (through ``accountModify --personal-egress-mfa-required any``)
+- scp and/or sftp must be globally enabled on the bastion (this is the default)
+- scp and/or sftp must be explicitly allowed to the given remote server through this account's personal accesses (granted by either ``selfAddPersonalAccess`` or ``accountAddPersonalAccess``)
+
+When all conditions above apply, the actor would be able to use scp or sftp on the target server without requiring to provide an additional factor where it should.
+
+Mitigation
+==========
+If you don't use the `per-group-based JIT MFA <https://ovh.github.io/the-bastion/administration/mfa.html#on-a-per-group-basis>`_ on any of your groups (through ``groupModify --mfa-required``), and don't use the `JIT MFA on a per-account basis <https://ovh.gi↪·thub.io/the-bastion/administration/mfa.ht↪·ml#on-a-per-account-basis>`_ (through ``accountModify --personal-egress-mfa-required``), you don't need to mitigate the issue as you don't use the impacted feature (see above for impact details).
+
+Otherwise, if you can't immediately upgrade to v3.14.15 or more recent, and you feel that the aforementioned impacts are important enough in your environment, you may choose to temporarily disable the ``scp`` and ``sftp`` plugins globally on the bastion, by setting ``"disabled": true`` in these plugins configuration files, which can be found in :file:`/etc/bastion/plugin.scp.conf` and :file:`/etc/bastion/plugin.sftp.conf` respectively. If these files don't exist, create them with the contents as ``{ "disabled": true }``. They should be readable by anyone but modifiable only by root (i.e. ``chmod 664; chown root:root``)
+
+Timeline
+========
+
+- 2023-10-06: security bug report filed on GitHub
+- 2023-10-06: bug report accepted and confirmed as having a security impact
+- 2023-10-11: CVE ID requested
+- 2023-10-11: CVE ID assigned
+- 2023-11-07: fix pushed to a private fork for review
+- 2023-11-08: v3.14.15 released with the fix
