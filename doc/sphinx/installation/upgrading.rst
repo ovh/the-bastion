@@ -27,8 +27,8 @@ See the ``--help`` for a more fine-grained upgrade path if needed.
 Version-specific upgrade instructions
 =====================================
 
-v3.18.99-rc1 - 2025/01/03
-*************************
+v3.19.00 - 2025/02/25
+*********************
 
 This release now supports IPv6, which is disabled by default unless you set ``IPv6Allowed`` to ``true``.
 
