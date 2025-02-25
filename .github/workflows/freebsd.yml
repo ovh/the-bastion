@@ -1,8 +1,9 @@
 name: FreeBSD tests
 
 on:
-    pull_request:
-        types: [labeled, synchronize]
+  workflow_dispatch:
+  pull_request:
+    types: [labeled, synchronize]
 
 jobs:
   freebsd:
