@@ -250,7 +250,7 @@ testsuite_proxy()
     success force_restart $r0 "\"ps -U proxyhttp -o pid,command | grep -v PID | awk '{print \\\$1}' | xargs -r kill; true\""
     if [ "$COUNTONLY" != 1 ]; then
         # wait for target_role.sh to restart the daemon
-        sleep 2
+        sleep 4
     fi
 
     # when daemon will restart, it'll log stuff, ignore it
