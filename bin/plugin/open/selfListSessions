@@ -174,9 +174,9 @@ else {
         push @result,
           {
             id                => $r->{uniqid},
-            from              => {ip => $r->{ipfrom}, host => $r->{hostfrom}, port => $r->{portfrom}},
+            from              => {ip => $r->{ipfrom},    host => $r->{hostfrom},    port => $r->{portfrom}},
             via               => {ip => $r->{bastionip}, port => $r->{bastionport}, user => $r->{account}},
-            to                => {ip => $r->{ipto}, port => $r->{portto}, host => $r->{hostto}},
+            to                => {ip => $r->{ipto},      port => $r->{portto},      host => $r->{hostto}},
             timestamp_started => $r->{timestamp} + $r->{timestampusec} / 1_000_000,
             timestamp_ended   => $r->{timestampend} + $r->{timestampendusec} / 1_000_000,
             type              => $r->{cmdtype},

@@ -1,6 +1,6 @@
 # vim: set filetype=sh ts=4 sw=4 sts=4 et:
 # shellcheck shell=bash
-# shellcheck disable=SC2086,SC2016,SC2046
+# shellcheck disable=SC2317,SC2086,SC2016,SC2046
 # below: convoluted way that forces shellcheck to source our caller
 # shellcheck source=tests/functional/launch_tests_on_instance.sh
 . "$(dirname "${BASH_SOURCE[0]}")"/dummy
@@ -996,7 +996,7 @@ EOS
     contain '1 accesses listed'
 
     # test groupSetServers here, then restore the previous ACL so the tests can continue
-    # shellcheck disable=SC1004
+    # shellcheck disable=SC2317,SC1004
     script groupSetServers_valid_dryrun $a1 --osh groupSetServers --group $group1 --dry-run '< <(printf \
         "%s\n%s\n%s\n"                            \
         "user@127.0.0.1:1234 comment with spaces" \
@@ -1008,7 +1008,7 @@ EOS
     json '.value.ACL[1].user' null '.value.ACL[1].ip' 127.0.0.1 '.value.ACL[1].port' null '.value.ACL[1].comment' null
     json '.value.ACL[2].user' null '.value.ACL[2].ip' 0.0.0.0/4 '.value.ACL[2].port' 42   '.value.ACL[2].comment' null
 
-    # shellcheck disable=SC1004
+    # shellcheck disable=SC2317,SC1004
     script groupSetServers_invalid $a1 --osh groupSetServers --group $group1 --dry-run '< <(printf \
         "%s\n%s\n%s\n%s\n"    \
         "inva{}lid@127.0.0.1" \
@@ -1019,7 +1019,7 @@ EOS
     json .command groupSetServers .error_code ERR_INVALID_PARAMETER .value.parsedLines 4 '.value.errors|length' 4 .value.dryrun true
 
     # restore the previous ACL
-    # shellcheck disable=SC1004
+    # shellcheck disable=SC2317,SC1004
     script groupSetServers_valid_skiperrors $a1 --osh groupSetServers --group $group1 --skip-errors '< <(printf \
         "%s\n%s\n%s\n%s\n%s\n" \
         "g1@127.0.0.1:22"      \

@@ -40,7 +40,7 @@ sub verify_piv {
         require JSON;
         $keyPivInfo = JSON::decode_json($fnret->value->{'stdout'}->[0]);
     };
-    return R('OK', value => $keyPivInfo); # keyPivInfo can be undef if JSON decode failed, but the key is still a valid one
+    return R('OK', value => $keyPivInfo);    # keyPivInfo can be undef if JSON decode failed, but the key is still a valid one
 }
 
 sub get_authorized_keys_from_file {
@@ -110,8 +110,8 @@ sub get_authorized_keys_from_file {
             $key->{'err'}                       = $fnret->err;
             $key->{'index'}                     = $i;
             $key->{'pivAttestationCertificate'} = $pivAttestationCertificate if $pivAttestationCertificate;
-            $key->{'pivKeyCertificate'}         = $pivKeyCertificate if $pivKeyCertificate;
-            $key->{'info'}                      = $info if $info;
+            $key->{'pivKeyCertificate'}         = $pivKeyCertificate         if $pivKeyCertificate;
+            $key->{'info'}                      = $info                      if $info;
             if ($pivAttestationCertificate && $pivKeyCertificate) {
                 $fnret = OVH::Bastion::verify_piv(
                     key                    => $key->{'line'},
@@ -144,8 +144,8 @@ sub add_key_to_authorized_keys_file {
     my $key    = $params{'key'};
     my $fnret;
 
-    return R('ERR_MISSING_PARAMETER', msg => "Missing argument 'file'") if not $file;
-    return R('KO_NO_SUCH_FILE', msg => "Specified file ($file) doesn't exist") if not -f $file;
+    return R('ERR_MISSING_PARAMETER', msg => "Missing argument 'file'")              if not $file;
+    return R('KO_NO_SUCH_FILE',       msg => "Specified file ($file) doesn't exist") if not -f $file;
     if (!$key) {
         return R('ERR_MISSING_PARAMETER', msg => "Missing key param");
     }
@@ -312,7 +312,7 @@ sub get_ssh_pub_key_info {
     }
     my $line = "$typecode $base64";
     $prefix = '' if not defined $prefix;
-    $line .= " " . $comment if $comment;
+    $line .= " " . $comment       if $comment;
     $line = $prefix . " " . $line if $prefix;
     my @fromList;
     if ($prefix =~ /^from=["']([^ "']+)/) {
@@ -353,11 +353,12 @@ sub get_ssh_pub_key_info {
             chomp $sshkeygen;
         }
 
-=cut
+=begin comment
 2048 01:c0:37:5e:b4:bf:00:b6:ef:d3:65:a7:5c:60:b1:81  john@doe (RSA)
 521 af:84:cd:70:34:64:ca:51:b2:17:1a:85:3b:53:2e:52  john@doe (ECDSA)
 1024 c0:4d:f7:bf:55:1f:95:59:be:7e:50:47:e4:81:c3:6a  john@doe (DSA)
 256 SHA256:Yggd7VRRbbivxkdVwrdt0HpqKNylMK91nNIU+RxndTI john@doe (ED25519)
+=end comment
 =cut
 
         if (defined $sshkeygen and $sshkeygen =~ /^(\d+)\s+(\S+)\s+(.+)\s+\(([A-Z0-9-]+)\)$/) {
@@ -456,7 +457,7 @@ EOS
 sub get_from_for_user_key {
     my %params             = @_;
     my $userProvidedIpList = $params{'userProvidedIpList'} || [];    # arrayref
-    my $forcedList         = $params{'forcedList'} || [];            # arrayref
+    my $forcedList         = $params{'forcedList'}         || [];    # arrayref
     my $key                = $params{'key'};
 
     my $ingressKeysFrom              = OVH::Bastion::config('ingressKeysFrom');
@@ -567,8 +568,8 @@ sub generate_ssh_key {
         if (not -e $file) {
             return R('ERR_SSH_KEYGEN_FAILED', msg => "Couldn't find generated key ($file)");
         }
-        chown $uid, -1, $file if defined $uid;
-        chown -1, $gid, $file if defined $gid;
+        chown $uid, -1,   $file if defined $uid;
+        chown -1,   $gid, $file if defined $gid;
         chmod $chmod, $file;
     }
     return R('OK', value => {file => $sshKeyName});
@@ -790,8 +791,8 @@ sub print_public_key {
             $key->{'fingerprint'} || 'INVALID_FINGERPRINT',
             $key->{'family'}      || 'INVALID_FAMILY',
             $key->{'size'},
-            defined $id ? "ID = $id" : POSIX::strftime("%Y/%m/%d", localtime($key->{'mtime'})),
-            $err eq 'OK' ? '' : ' ***<<' . $err . '>>***',
+            defined $id  ? "ID = $id" : POSIX::strftime("%Y/%m/%d", localtime($key->{'mtime'})),
+            $err eq 'OK' ? ''         : ' ***<<' . $err . '>>***',
         )
     );
 
@@ -1052,7 +1053,7 @@ sub is_effective_piv_account_policy_enabled {
 sub print_accepted_key_algorithms {
     my %params   = @_;
     my $way      = $params{'way'};
-    my $fido     = ($params{'fido'} // 1);
+    my $fido     = ($params{'fido'}     // 1);
     my $generate = ($params{'generate'} // 1);
     my $fnret;
 

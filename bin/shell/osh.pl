@@ -141,10 +141,10 @@ else {
 # First Check : is USER valid ?
 #
 my $activenessDenyOnFailure = OVH::Bastion::config("accountExternalValidationDenyOnFailure")->value;
-my $msg_to_print_delayed; # if set, will be osh_warn()'ed if we're connecting through ssh (i.e. not scp/sftp, it breaks it)
+my $msg_to_print_delayed;    # if set, will be osh_warn()'ed if we're connecting through ssh (i.e. not scp/sftp, it breaks it)
 $fnret = OVH::Bastion::is_account_active(account => $self);
 if ($fnret) {
-    ;                     # OK
+    ;                        # OK
 }
 elsif ($fnret->is_ko || ($activenessDenyOnFailure && $fnret->is_err)) {
     main_exit OVH::Bastion::EXIT_ACCOUNT_INACTIVE, "account_inactive", "Sorry $self, your account is inactive.";
@@ -349,35 +349,35 @@ else {
 my $remainingOptions;
 ($result, $remainingOptions) = GetOptionsFromString(
     $beforeOptions // "",
-    "port|p=i"        => \my $optPort,
-    "verbose+"        => \my $verbose,
-    "tty|t"           => \my $tty,
-    "no-tty|T"        => \my $notty,
-    "user|u=s"        => \my $user,
-    "osh=s"           => \my $osh_command,
-    "telnet|e"        => \my $telnet,
-    "password=s"      => \my $passwordFile,
-    "self-password|P" => \my $selfPassword,
-    "host|h=s"        => \my $host,
-    "help"            => \my $help,
-    "long-help"       => \my $longHelp,
-    "quiet|q"         => \my $quiet,
-    "timeout=i"       => \my $timeout,
-    "bind=s"          => \my $bind,
-    "debug"           => \my $debug,
-    "json"            => \my $json,
-    "json-greppable"  => \my $json_greppable,
-    "json-pretty"     => \my $json_pretty,
-    "always-escape"   => \my $_dummy1,              # not used as corresponding option has already been ninja-used above
-    "never-escape"    => \my $_dummy2,              # not used as corresponding option has already been ninja-used above
-    "interactive|i"   => \my $interactive,
-    "netconf"         => \my $netconf,
-    "wait"            => \my $wait,
-    "forward-agent|x" => \my $sshAddKeysToAgent,
-    "ssh-as=s"        => \my $sshAs,
-    "use-key=s"       => \my $useKey,
-    "kbd-interactive" => \my $userKbdInteractive,
-    "proactive-mfa"   => \my $proactiveMfa,
+    "port|p=i"                  => \my $optPort,
+    "verbose+"                  => \my $verbose,
+    "tty|t"                     => \my $tty,
+    "no-tty|T"                  => \my $notty,
+    "user|u=s"                  => \my $user,
+    "osh=s"                     => \my $osh_command,
+    "telnet|e"                  => \my $telnet,
+    "password=s"                => \my $passwordFile,
+    "self-password|P"           => \my $selfPassword,
+    "host|h=s"                  => \my $host,
+    "help"                      => \my $help,
+    "long-help"                 => \my $longHelp,
+    "quiet|q"                   => \my $quiet,
+    "timeout=i"                 => \my $timeout,
+    "bind=s"                    => \my $bind,
+    "debug"                     => \my $debug,
+    "json"                      => \my $json,
+    "json-greppable"            => \my $json_greppable,
+    "json-pretty"               => \my $json_pretty,
+    "always-escape"             => \my $_dummy1,                 # not used as corresponding option has already been ninja-used above
+    "never-escape"              => \my $_dummy2,                 # not used as corresponding option has already been ninja-used above
+    "interactive|i"             => \my $interactive,
+    "netconf"                   => \my $netconf,
+    "wait"                      => \my $wait,
+    "forward-agent|x"           => \my $sshAddKeysToAgent,
+    "ssh-as=s"                  => \my $sshAs,
+    "use-key=s"                 => \my $useKey,
+    "kbd-interactive"           => \my $userKbdInteractive,
+    "proactive-mfa"             => \my $proactiveMfa,
     "fallback-password-delay=i" => \my $fallbackPasswordDelay,
     "generate-mfa-token"        => \my $generateMfaToken,
     "mfa-token=s"               => \my $mfaToken,
@@ -718,7 +718,7 @@ if ($userKbdInteractive && !$config->{'keyboardInteractiveAllowed'}) {
     main_exit OVH::Bastion::EXIT_CONFLICTING_OPTIONS, 'kbd_interactive_denied',
       "Sorry $self, the keyboard-interactive egress authentication scheme has been disabled by policy";
 }
-$ENV{'OSH_KBD_INTERACTIVE'} = 1 if $userKbdInteractive; # useful for plugins that need to call ssh by themselves (for example to test a connection, i.e. groupAddServer)
+$ENV{'OSH_KBD_INTERACTIVE'} = 1 if $userKbdInteractive;    # useful for plugins that need to call ssh by themselves (for example to test a connection, i.e. groupAddServer)
 
 # MFA enforcing for ingress connection, either on global bastion config, or on specific account config
 my $mfaPolicy = OVH::Bastion::config('accountMFAPolicy')->value;
@@ -886,7 +886,7 @@ if ($sshAs) {
             ['account' => $self],
             ['sudo-as', $sshAs],
             ['plugin',  'ssh'],
-            ['params', join(" ", @forwardOptions)]
+            ['params',  join(" ", @forwardOptions)]
         ]
     );
 
@@ -1023,7 +1023,8 @@ if ($osh_command) {
         }
 
         if (!grep { $MFArequiredForPlugin eq $_ } qw{ password totp any none }) {
-            main_exit(OVH::Bastion::EXIT_MFA_FAILED,
+            main_exit(
+                OVH::Bastion::EXIT_MFA_FAILED,
                 'mfa_plugin_configuration_failed',
                 "MFA configuration is incorrect for this plugin, report to your sysadmin!"
             );
@@ -1157,7 +1158,7 @@ osh_debug("final request : " . "$user\@$ip -p $port -- $command'\n");
 my $displayLine = sprintf("%s => %s => %s",
     OVH::Bastion::machine_display(ip => $hostfrom,    port => $portfrom)->value,
     OVH::Bastion::machine_display(ip => $bastionhost, port => $bastionport, user => $self)->value,
-    OVH::Bastion::machine_display(ip => $hostto,      port => $port, user => $user)->value,
+    OVH::Bastion::machine_display(ip => $hostto,      port => $port,        user => $user)->value,
 );
 
 if (!$quiet) {
@@ -1526,7 +1527,7 @@ $bastion_details{'mfa'}{'type'}{'totp'}     //= \0;
 $bastion_details{'piv'}{'enforced'}         //= \0;
 $bastion_details{'from'} = {addr => $ipfrom,    host => $hostfrom,    port => $portfrom + 0};
 $bastion_details{'via'}  = {addr => $bastionip, host => $bastionhost, port => $bastionport + 0, name => $bastionName};
-$bastion_details{'to'}   = {addr => $ip,        host => $hostto,      port => $port + 0, user => $user};
+$bastion_details{'to'}   = {addr => $ip,        host => $hostto,      port => $port + 0,        user => $user};
 $bastion_details{'account'} = $self;
 $bastion_details{'uniqid'}  = $log_uniq_id;
 $bastion_details{'version'} = $OVH::Bastion::VERSION;
@@ -1643,7 +1644,7 @@ if (!$quiet) {
 
 push @toExecute, $OVH::Bastion::BASEPATH . '/bin/shell/connect.pl';
 exec(
-    @toExecute, $ip, $port, $config->{'sshClientHasOptionE'},
+    @toExecute,        $ip, $port, $config->{'sshClientHasOptionE'},
     $userPasswordClue, $saveFile,
     $logret->value->{'insert_id'},
     $logret->value->{'db_name'},
@@ -1720,7 +1721,7 @@ sub get_details_from_access_array {
                 }
                 osh_printf(
                     "  - %s with %s-%s key %s %s%s",
-                    $type, $keyinfo->{'family'}, $keyinfo->{'size'}, $keyinfo->{'fingerprint'},
+                    $type,      $keyinfo->{'family'}, $keyinfo->{'size'}, $keyinfo->{'fingerprint'},
                     $generated, $forced
                 ) unless $quiet;
                 push @keysToTry, $keyinfo->{'fullpath'} if not(grep { $_ eq $keyinfo->{'fullpath'} } @keysToTry);

@@ -116,7 +116,7 @@ PID: foreach my $pid (@pidlist) {
         next;
     }
     while (<$fh>) {
-        next if (not /^[UG]id:/);    # parse Uid / Gid numbers
+        next if (not /^[UG]id:/);                                 # parse Uid / Gid numbers
         my ($id1, $id2, undef, $id4) = /(\d+)/g;
         next PID if (not grep { $_ == 0 } ($id1, $id2, $id4));    # Root detected
         _dbg("process $pid running as root, analyzing tty");

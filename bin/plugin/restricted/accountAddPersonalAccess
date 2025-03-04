@@ -184,15 +184,15 @@ osh_info "Can't verify whether $account\'s personal key has been installed to th
 
 my @command = qw{ sudo -n -u allowkeeper -- /usr/bin/env perl -T };
 push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountModifyPersonalAccess';
-push @command, '--target', 'any';
-push @command, '--action', 'add';
-push @command, '--account', $account;
-push @command, '--ip', $ip;
-push @command, '--user', $user if $user;
-push @command, '--port', $port if $port;
-push @command, '--force-key', $forceKey if $forceKey;
+push @command, '--target',         'any';
+push @command, '--action',         'add';
+push @command, '--account',        $account;
+push @command, '--ip',             $ip;
+push @command, '--user',           $user          if $user;
+push @command, '--port',           $port          if $port;
+push @command, '--force-key',      $forceKey      if $forceKey;
 push @command, '--force-password', $forcePassword if $forcePassword;
-push @command, '--ttl', $ttl if $ttl;
-push @command, '--comment', $comment if $comment;
+push @command, '--ttl',            $ttl           if $ttl;
+push @command, '--comment',        $comment       if $comment;
 
 osh_exit OVH::Bastion::helper(cmd => \@command);

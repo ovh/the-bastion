@@ -53,9 +53,9 @@ push @cmd, '-c';
 
 my $stringified;
 $stringified = " --osh $sudoCmd" if $sudoCmd;
-$stringified .= " --host $host" if $host;
-$stringified .= " --port $port" if $port;
-$stringified .= " --user $user" if $user;
+$stringified .= " --host $host"                     if $host;
+$stringified .= " --port $port"                     if $port;
+$stringified .= " --user $user"                     if $user;
 $stringified .= " " . join(" ", @$remainingOptions) if ($remainingOptions and @$remainingOptions);
 
 push @cmd, $stringified;
@@ -67,8 +67,8 @@ OVH::Bastion::syslogFormatted(
         ['type',    'admin-sudo'],
         ['account', $self],
         ['sudo-as', $sudoAs],
-        ['plugin', ($sudoCmd ? $sudoCmd : 'ssh')],
-        ['params', $stringified]
+        ['plugin',  ($sudoCmd ? $sudoCmd : 'ssh')],
+        ['params',  $stringified]
     ]
 );
 

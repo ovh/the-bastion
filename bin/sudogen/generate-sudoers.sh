@@ -205,5 +205,3 @@ else
     echo "Invalid type specified" >&2
     die_usage
 fi
-
-die_usage

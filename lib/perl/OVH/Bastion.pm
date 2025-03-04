@@ -49,8 +49,8 @@ BEGIN {
 use JSON;
 use Term::ANSIColor;
 
-use File::Basename;    # dirname
-use Cwd;               # need to use realpath because we use that to build sudoers for groups
+use File::Basename;                                                 # dirname
+use Cwd;                                                            # need to use realpath because we use that to build sudoers for groups
 our $BASEPATH = Cwd::realpath(dirname(__FILE__) . '/../../../');    # usually /opt/bastion
 
 # untaint $BASEPATH manually because realpath() tainted it back
@@ -439,7 +439,7 @@ sub json_output {    ## no critic (ArgUnpacking)
     my %params        = @_;
     my $force_default = $params{'force_default'};
     my $no_delimiters = $params{'no_delimiters'};
-    my $command       = $params{'command'} || $ENV{'PLUGIN_NAME'};
+    my $command       = $params{'command'}    || $ENV{'PLUGIN_NAME'};
     my $filehandle    = $params{'filehandle'} || *STDOUT;
 
     my $JsonObject = JSON->new->utf8;
@@ -768,7 +768,7 @@ sub machine_display {
     my $user   = $params{'user'};
 
     my $machine = (index($ip, ':') >= 0 ? "[$ip]" : $ip);
-    $machine .= ":$port" if $port;
+    $machine .= ":$port"              if $port;
     $machine = $user . '@' . $machine if $user;
 
     return R('OK', value => $machine);
@@ -879,7 +879,7 @@ sub can_account_execute_plugin {
     my %params  = @_;
     my $account = $params{'account'} || OVH::Bastion::get_user_from_env()->value;
     my $plugin  = $params{'plugin'};
-    my $cache = $params{'cache'};    # allow cache use in get_user_groups(), is_user_in_group() etc.
+    my $cache   = $params{'cache'};                                                 # allow cache use in get_user_groups(), is_user_in_group() etc.
     my $fnret;
 
     if (not $plugin or not $account) {
@@ -1064,7 +1064,7 @@ sub get_user_from_env {
 
 sub get_home_from_env {
     my ($sanitized) = (getpwuid($>))[7] =~ m{^([a-zA-Z0-9_/.-]+)$};
-    $sanitized =~ s/\.+/./g; # disallow 2 or more consecutive dots, i.e. "john.doe" is ok, "john/../../../etc/passwd" is not
+    $sanitized =~ s/\.+/./g;    # disallow 2 or more consecutive dots, i.e. "john.doe" is ok, "john/../../../etc/passwd" is not
     return R('OK', value => $sanitized);
 }
 
@@ -1146,10 +1146,10 @@ sub build_ttyrec_cmdline_part1of2 {
     my $bastionName          = OVH::Bastion::config('bastionName')->value;
     my $ttyrecFilenameFormat = OVH::Bastion::config('ttyrecFilenameFormat')->value;
     $ttyrecFilenameFormat =~ s/&bastionname/$bastionName/g;
-    $ttyrecFilenameFormat =~ s/&uniqid/$params{'uniqid'}/g if $params{'uniqid'};
-    $ttyrecFilenameFormat =~ s/&ip/$params{'ip'}/g if $params{'ip'};
-    $ttyrecFilenameFormat =~ s/&port/$params{'port'}/g if defined $params{'port'};
-    $ttyrecFilenameFormat =~ s/&user/$params{'user'}/g if defined $params{'user'};
+    $ttyrecFilenameFormat =~ s/&uniqid/$params{'uniqid'}/g   if $params{'uniqid'};
+    $ttyrecFilenameFormat =~ s/&ip/$params{'ip'}/g           if $params{'ip'};
+    $ttyrecFilenameFormat =~ s/&port/$params{'port'}/g       if defined $params{'port'};
+    $ttyrecFilenameFormat =~ s/&user/$params{'user'}/g       if defined $params{'user'};
     $ttyrecFilenameFormat =~ s/&account/$params{'account'}/g if $params{'account'};
 
     if ($ttyrecFilenameFormat =~ /&(bastionname|uniqid|ip|port|user|account)/) {

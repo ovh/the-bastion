@@ -119,9 +119,9 @@ if (!$noKey) {
 #
 my @command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
 push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountCreate';
-push @command, "--type", "normal";
+push @command, "--type",    "normal";
 push @command, "--account", $account;
-push @command, "--pubKey", $pubKey if !$noKey;
+push @command, "--pubKey",  $pubKey if !$noKey;
 push @command, "--always-active" if $alwaysActive;
 push @command, "--comment", $comment if $comment;
 push @command, "--uid",     $uid     if defined $uid;
@@ -129,7 +129,7 @@ push @command, "--osh-only", if $oshOnly;
 push @command, "--max-inactive-days", $maxInactiveDays if defined $maxInactiveDays;
 push @command, "--uid-auto"      if $uidAuto;
 push @command, "--immutable-key" if $immutableKey;
-push @command, '--ttl', $ttl if $ttl;
-push @command, '--force-key-from', $forceKeyFrom if ($forceKeyFrom && $< == 0 && $> == 0); # only to be used under root by the install script
+push @command, '--ttl',            $ttl          if $ttl;
+push @command, '--force-key-from', $forceKeyFrom if ($forceKeyFrom && $< == 0 && $> == 0);    # only to be used under root by the install script
 
 osh_exit OVH::Bastion::helper(cmd => \@command);

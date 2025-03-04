@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 LABEL maintainer="stephane.lesimple+bastion@ovhcloud.com"
 
 # temporarily copy code, just to be able to install packages

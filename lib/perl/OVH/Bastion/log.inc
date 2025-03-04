@@ -14,7 +14,7 @@ sub syslog {
     my ($criticity, $message) = @_;
 
     if (not OVH::Bastion::config('enableSyslog')->value()) {
-        return 1;          # don't do anything
+        return 1;    # don't do anything
     }
 
     if (not $_syslog_inited) {
@@ -52,7 +52,7 @@ sub syslogFormatted {
     # do NOT use warn_syslog in this func, or we would loop. warn() is fine.
     my %params    = @_;
     my $criticity = $params{'criticity'} || 'info';
-    my $type      = $params{'type'} || 'unknown';
+    my $type      = $params{'type'}      || 'unknown';
     my $fieldsref = $params{'fields'};
 
     if (ref $fieldsref ne 'ARRAY') {
@@ -63,14 +63,14 @@ sub syslogFormatted {
 
     my @fields = @$fieldsref;
 
-    unshift @fields, ['gid', ((split(/ /, $)))[0])];
+    unshift @fields, ['gid',       ((split(/ /, $)))[0])];
     unshift @fields, ['uid',       $>];
     unshift @fields, ['sudo_user', $ENV{'SUDO_USER'}];
     unshift @fields, ['sysuser',   OVH::Bastion::get_user_from_env()->value];
     unshift @fields, ['ppid',      getppid()];
     unshift @fields, ['pid',       $$];
     unshift @fields, ['version',   $OVH::Bastion::VERSION];
-    unshift @fields, ['uniqid', ($ENV{'UNIQID'} || '-')];
+    unshift @fields, ['uniqid',    ($ENV{'UNIQID'} || '-')];
 
     my @msg = ($type);
     if (($type eq 'die' || $type eq 'warn') && $criticity eq 'info') {
@@ -457,9 +457,9 @@ sub log_access_insert {
     # 2/3) push to syslog, we'll also say if any sqlinsert failed through globalsql/accountsql
     # even if syslog is disabled, syslogFormatted() will return a oneline $msg that we'll use afterwards
     my @fields = (
-        ['account', $account],
-        ['cmdtype', $params{'cmdtype'}],
-        ['allowed', ($params{'allowed'} ? 'true' : 'false')],
+        ['account',      $account],
+        ['cmdtype',      $params{'cmdtype'}],
+        ['allowed',      ($params{'allowed'} ? 'true' : 'false')],
         ['ip_from',      $params{'ipfrom'}],
         ['port_from',    $params{'portfrom'}],
         ['host_from',    $params{'hostfrom'}],

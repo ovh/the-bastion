@@ -18,14 +18,14 @@ my $bad;
 # generate a uniq prefix based on caller's lineno and caller's caller's lineno, useful to grep or grep -v
 sub _prefix { return uc(unpack('H*', pack('S', (caller(1))[2])) . unpack('H*', pack('S', (caller(2))[2]))) . ": "; }
 
-sub info { print $_[0] . "\n"; return 1; }
-sub _wrn { $bad++; print colored(_prefix() . $_[0], "blue") . "\n"; return 1; } ## no critic (ProhibitUnusedPrivateSubroutine)
+sub info  { print $_[0] . "\n"; return 1; }
+sub _wrn  { $bad++; print colored(_prefix() . $_[0], "blue") . "\n";     return 1; }    ## no critic (ProhibitUnusedPrivateSubroutine)
 sub _err  { $bad++; print colored(_prefix() . $_[0], "red") . "\n";      return 1; }
 sub _crit { $bad++; print colored(_prefix() . $_[0], "bold red") . "\n"; return 1; }
 
 # Linux and BSD don't always have the same account names for UID/GID 0
-my ($UID0) = (qx{getent passwd 0})[0] =~ /^([^:]+)/;                            ## no critic (ProhibitBacktickOperators)
-my ($GID0) = (qx{getent group 0})[0] =~ /^([^:]+)/;                             ## no critic (ProhibitBacktickOperators)
+my ($UID0)  = (qx{getent passwd 0})[0] =~ /^([^:]+)/;                                   ## no critic (ProhibitBacktickOperators)
+my ($GID0)  = (qx{getent group 0})[0]  =~ /^([^:]+)/;                                   ## no critic (ProhibitBacktickOperators)
 my $islinux = (($^O =~ /linux/i)         ? 1 : 0);
 my $hasacls = (($^O =~ /linux|freebsd/i) ? 1 : 0);
 
@@ -175,7 +175,7 @@ foreach (qx{find /home/key* /home/keykeeper /home/allowkeeper -print}) {    ## n
     $ALL_FILES{$_} = 1;
 }
 while (my $homedir = glob '/home/*') {
-    -d $homedir or next;
+    -d $homedir          or next;
     -d "$homedir/ttyrec" or next;
     next if $homedir eq '/home/proxyhttp';
     next if $homedir eq '/home/healthcheck';
@@ -284,7 +284,7 @@ sub check_file_rights {
     }
 
     if (!$hasacls) {
-        my ($modes, $owner, $group) = (qx{ls -ld $file})[0] =~ m{(\S+)\s+\d+\s+(\S+)\s+(\S+)}; ## no critic (ProhibitBacktickOperators)
+        my ($modes, $owner, $group) = (qx{ls -ld $file})[0] =~ m{(\S+)\s+\d+\s+(\S+)\s+(\S+)};    ## no critic (ProhibitBacktickOperators)
         if ($modes ne $expectedmodes) { $ok = 0; _err "on $file got $modes wanted $expectedmodes"; }
         if ($owner ne $expectedowner) { $ok = 0; _err "on $file got $owner wanted $expectedowner"; }
         if ($group ne $expectedgroup) { $ok = 0; _err "on $file got $group wanted $expectedgroup"; }
@@ -437,7 +437,7 @@ check_file_rights(
     "/home/allowkeeper",
     [
         "# file: /home/allowkeeper", "# owner: allowkeeper", "# group: allowkeeper", "user::rwx",
-        "group::r-x",                "other::r-x",
+        "group::r-x", "other::r-x",
     ],
     "drwxr-xr-x",
     "allowkeeper",

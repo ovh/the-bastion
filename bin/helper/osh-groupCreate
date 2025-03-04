@@ -114,7 +114,7 @@ foreach my $test ($group, "$group-gatekeeper", "$group-owner") {
 
 $fnret = OVH::Bastion::is_account_existing(account => $group);
 $fnret->is_err and HEXIT($fnret);
-$fnret->is_ok and HEXIT('KO_ALREADY_EXISTING', msg => "The account $group already exists");
+$fnret->is_ok  and HEXIT('KO_ALREADY_EXISTING', msg => "The account $group already exists");
 
 #<PARAMS:GROUP
 
@@ -180,7 +180,7 @@ OVH::Bastion::touch_file("/home/$group/allowed.ip");
 osh_info("Adjusting permissions...");
 my $bigX = (OVH::Bastion::is_linux() ? 'X' : 'x');
 foreach my $command (
-    ['chown', '-R',               "$group:$group",            "/home/$group"],
+    ['chown', '-R',               "$group:$group", "/home/$group"],
     ['chgrp', "$group-aclkeeper", "/home/$group/allowed.ip"],
     ['chmod', '-R',               "o-rwx,g=r$bigX,u=rw$bigX", "/home/$group"],
     ['chmod', '0664',             "/home/$group/allowed.ip"],

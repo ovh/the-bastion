@@ -197,5 +197,3 @@ case "$1" in
     "") do_usage; exit 0;;
     *) echo "Unknown command '$1'" >&2; echo; do_usage; exit 1;;
 esac
-
-exit 0

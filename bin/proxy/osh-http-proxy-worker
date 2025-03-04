@@ -18,7 +18,7 @@ use IO::Socket::SSL;
 use IO::Socket::SSL;
 use LWP::UserAgent;
 use MIME::Base64;
-use POSIX ();
+use POSIX    ();
 use Storable qw{ freeze thaw };
 use Sys::Hostname;
 use Time::HiRes ();
@@ -547,11 +547,11 @@ if ($res) {
         push @headers, [$key => $res->header($key)];
     }
 }
-push @headers, ["X-Bastion-Local-Status" => ($res ? "200 OK" : "504 Device Timeout")];
+push @headers, ["X-Bastion-Local-Status"  => ($res ? "200 OK" : "504 Device Timeout")];
 push @headers, ["X-Bastion-Remote-Status" => $res->code]             if $res;
 push @headers, ["X-Bastion-Remote-Server" => $res->header('server')] if ($res && $res->header('server'));
 push @headers, ["X-Bastion-Egress-Timing" => sprintf("%d", $delay * 1_000_000)];
-push @headers, ["X-Bastion-Downgraded" => 1] if $downgraded;
+push @headers, ["X-Bastion-Downgraded"    => 1] if $downgraded;
 
 # custom data will only be logged to logfile and syslog, not sql (it's not in the generic schema)
 if ($res) {
