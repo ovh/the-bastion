@@ -27,6 +27,11 @@ See the ``--help`` for a more fine-grained upgrade path if needed.
 Version-specific upgrade instructions
 =====================================
 
+v3.19.01 - 2025/03/04
+*********************
+
+No specific upgrade instructions.
+
 v3.19.00 - 2025/02/25
 *********************
 
