@@ -182,8 +182,8 @@ sub act {
     if (!($type eq 'guest' and $action eq 'del')) {
         @command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
         push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-groupSetRole';
-        push @command, '--type', $type;
-        push @command, '--group', $group;
+        push @command, '--type',    $type;
+        push @command, '--group',   $group;
         push @command, '--account', $account, '--action', $action;
         $fnret = OVH::Bastion::helper(cmd => \@command);
         $fnret or return $fnret;
@@ -234,7 +234,7 @@ sub act {
         # then, for add and del, we need to handle the symlink
         @command = qw{ sudo -n -u allowkeeper -- /usr/bin/env perl -T };
         push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-groupAddSymlinkToAccount';
-        push @command, '--group', $group;    # must be first params, forced in sudoers.d
+        push @command, '--group',   $group;     # must be first params, forced in sudoers.d
         push @command, '--account', $account;
         push @command, '--action',  $action;
         $fnret = OVH::Bastion::helper(cmd => \@command);
@@ -287,13 +287,13 @@ sub act {
         # Add/Del user access to user@host:port with group key
         @command = qw{ sudo -n -u allowkeeper -- /usr/bin/env perl -T };
         push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountAddGroupServer';
-        push @command, '--group', $group;    # must be first params, forced in sudoers.d
+        push @command, '--group',   $group;     # must be first params, forced in sudoers.d
         push @command, '--account', $account;
         push @command, '--action',  $action;
         push @command, '--ip',      $host;
-        push @command, '--user',    $user if $user;
-        push @command, '--port',    $port if $port;
-        push @command, '--ttl',     $ttl if $ttl;
+        push @command, '--user',    $user    if $user;
+        push @command, '--port',    $port    if $port;
+        push @command, '--ttl',     $ttl     if $ttl;
         push @command, '--comment', $comment if $comment;
 
         $fnret = OVH::Bastion::helper(cmd => \@command);
@@ -357,10 +357,10 @@ sub act {
                 #
                 @command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
                 push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-groupSetRole';
-                push @command, '--type', 'guest';
-                push @command, '--group', $group;
+                push @command, '--type',    'guest';
+                push @command, '--group',   $group;
                 push @command, '--account', $account;
-                push @command, '--action', 'del';
+                push @command, '--action',  'del';
 
                 $fnret = OVH::Bastion::helper(cmd => \@command);
                 $fnret or return $fnret;

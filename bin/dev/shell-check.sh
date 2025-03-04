@@ -19,7 +19,8 @@ cd "$basedir" || exit 254
 if [ "${1:-system}" = system ]; then
     unset dockertag
 elif [ "$1" = docker ]; then
-    dockertag=v0.8.0
+    # this is the version shipped with Ubuntu 24.04
+    dockertag=v0.9.0
 else
     dockertag="$1"
 fi

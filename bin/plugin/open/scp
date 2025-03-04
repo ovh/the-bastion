@@ -4,7 +4,7 @@ use common::sense;
 
 use MIME::Base64;
 use IO::Compress::Gzip qw{ gzip };
-use Sys::Hostname ();
+use Sys::Hostname      ();
 
 use File::Basename;
 use lib dirname(__FILE__) . '/../../../lib/perl';
@@ -297,8 +297,8 @@ if ($decoded =~ m{[\`\$\;><\|\&]}) {
     osh_exit('ERR_SECURITY_VIOLATION', "Invalid characters detected, bailing out");
 }
 
-$port ||= 22;       # scp uses 22 if not specified, so we need to test access to that port and not any port (aka undef)
-$user ||= $self;    # same for user
+$port ||= 22;                                              # scp uses 22 if not specified, so we need to test access to that port and not any port (aka undef)
+$user ||= $self;                                           # same for user
 
 $fnret = OVH::Bastion::Plugin::otherProtocol::has_protocol_access(
     account  => $self,

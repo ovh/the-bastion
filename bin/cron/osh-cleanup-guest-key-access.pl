@@ -148,10 +148,10 @@ foreach my $shortGroup (sort keys %$groups) {
             # remove account from group
             my @command = qw{ /usr/bin/env perl -T };
             push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-groupSetRole';
-            push @command, '--type', 'guest';
-            push @command, '--group', $group;
+            push @command, '--type',    'guest';
+            push @command, '--group',   $group;
             push @command, '--account', $account;
-            push @command, '--action', 'del';
+            push @command, '--action',  'del';
             $fnret = OVH::Bastion::helper(cmd => \@command);
 
             if (!$fnret) {

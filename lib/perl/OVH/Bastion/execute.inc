@@ -61,17 +61,17 @@ sub _set_non_blocking {
 
 ## no critic(ControlStructures::ProhibitDeepNests)
 sub execute {
-    my %params        = @_;
-    my $cmd           = $params{'cmd'};            # command to execute, must be an array ref (with possible parameters)
-    my $expects_stdin = $params{'expects_stdin'};  # the command called expects stdin, pipe caller stdin to it
-    my $noisy_stdout  = $params{'noisy_stdout'};   # capture stdout but print it too
-    my $noisy_stderr  = $params{'noisy_stderr'};   # capture stderr but print it too
-    my $is_helper     = $params{'is_helper'};      # hide JSON returns from stdout even if noisy_stdout
-    my $is_binary = $params{'is_binary'}; # used for e.g. scp, don't bother mimicking readline(), we lose debug and stdout/stderr are NOT returned to caller
-    my $stdin_str = $params{'stdin_str'}; # string to push to the STDIN of the command
-    my $must_succeed = $params{'must_succeed'}; # if the executed command returns a non-zero exit value, turn OK_NON_ZERO_EXIT to ERR_NON_ZERO_EXIT
-    my $max_stdout_bytes = $params{'max_stdout_bytes'}; # if the amount of stored stdout bytes exceeds this, halt the command and return to caller
-    my $system           = $params{'system'};           # if set to 1, will use system() instead of open3(), needed for some plugins
+    my %params           = @_;
+    my $cmd              = $params{'cmd'};                 # command to execute, must be an array ref (with possible parameters)
+    my $expects_stdin    = $params{'expects_stdin'};       # the command called expects stdin, pipe caller stdin to it
+    my $noisy_stdout     = $params{'noisy_stdout'};        # capture stdout but print it too
+    my $noisy_stderr     = $params{'noisy_stderr'};        # capture stderr but print it too
+    my $is_helper        = $params{'is_helper'};           # hide JSON returns from stdout even if noisy_stdout
+    my $is_binary        = $params{'is_binary'};           # used for e.g. scp, don't bother mimicking readline(), we lose debug and stdout/stderr are NOT returned to caller
+    my $stdin_str        = $params{'stdin_str'};           # string to push to the STDIN of the command
+    my $must_succeed     = $params{'must_succeed'};        # if the executed command returns a non-zero exit value, turn OK_NON_ZERO_EXIT to ERR_NON_ZERO_EXIT
+    my $max_stdout_bytes = $params{'max_stdout_bytes'};    # if the amount of stored stdout bytes exceeds this, halt the command and return to caller
+    my $system           = $params{'system'};              # if set to 1, will use system() instead of open3(), needed for some plugins
 
     $noisy_stderr = $noisy_stdout = 1 if ($ENV{'PLUGIN_DEBUG'} or $is_binary);
     my $fnret;
@@ -434,9 +434,9 @@ sub execute {
 # while execute_simple() uses a buffer of 16K instead, which is several orders of
 # magnitude faster for commands outputting large amounts of data (several megabytes) for example.
 sub execute_simple {
-    my %params = @_;
-    my $cmd    = $params{'cmd'};    # command to execute, must be an array ref (with possible parameters)
-    my $must_succeed = $params{'must_succeed'}; # if the executed command returns a non-zero exit value, turn OK_NON_ZERO_EXIT to ERR_NON_ZERO_EXIT
+    my %params       = @_;
+    my $cmd          = $params{'cmd'};             # command to execute, must be an array ref (with possible parameters)
+    my $must_succeed = $params{'must_succeed'};    # if the executed command returns a non-zero exit value, turn OK_NON_ZERO_EXIT to ERR_NON_ZERO_EXIT
     my $fnret;
 
     require Scalar::Util;

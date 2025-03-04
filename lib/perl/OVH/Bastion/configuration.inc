@@ -144,9 +144,9 @@ sub load_configuration {
             default => 'fix-my-config-please-missing-bastion-name',
             validre => qr/^([a-zA-Z0-9_.-]+)$/
         },
-        {name => 'bastionCommand', default => "ssh ACCOUNT\@HOSTNAME -t -- ", validre => qr/^(.+)$/},
-        {name => 'defaultLogin', default => "", validre => qr/^([a-zA-Z0-9_.-]*)$/, emptyok => 1},
-        {name => 'moshCommandLine', default => "", validre => qr/^(.*)$/, emptyok => 1},
+        {name => 'bastionCommand',  default => "ssh ACCOUNT\@HOSTNAME -t -- ", validre => qr/^(.+)$/},
+        {name => 'defaultLogin',    default => "", validre => qr/^([a-zA-Z0-9_.-]*)$/, emptyok => 1},
+        {name => 'moshCommandLine', default => "", validre => qr/^(.*)$/,              emptyok => 1},
         {
             name    => 'documentationURL',
             default => "https://ovh.github.io/the-bastion/",
@@ -162,7 +162,7 @@ sub load_configuration {
         {name => 'accountExpiredMessage', default => '', validre => qr/^(.*)$/, emptyok => 1},
         {name => 'fanciness', default => 'full', validre => qr/^((none|boomer)|(basic|millenial)|(full|genz))$/},
         {name => 'accountExternalValidationProgram', default => '', validre => qr'^([a-zA-Z0-9/$_.-]*)$', emptyok => 1},
-        {name => 'ttyrecStealthStdoutPattern', default => '', validre => qr'^(.{0,4096})$', emptyok => 1},
+        {name => 'ttyrecStealthStdoutPattern',       default => '', validre => qr'^(.{0,4096})$',         emptyok => 1},
       )
     {
         if (!$C->{$o->{'name'}} && !$o->{'emptyok'}) {
@@ -238,7 +238,7 @@ sub load_configuration {
               sprintf(
                 "Configuration error: value of option '%s' (%s) is higher than allowed value (%s), defaulting to %s",
                 $o->{'name'}, $C->{$o->{'name'}},
-                $o->{'max'}, $o->{'default'}
+                $o->{'max'},  $o->{'default'}
               );
             $C->{$o->{'name'}} = $o->{'default'};
         }
@@ -247,7 +247,7 @@ sub load_configuration {
               sprintf(
                 "Configuration error: value of option '%s' (%s) is lower than allowed value (%s), defaulting to %s",
                 $o->{'name'}, $C->{$o->{'name'}},
-                $o->{'min'}, $o->{'default'}
+                $o->{'min'},  $o->{'default'}
               );
             $C->{$o->{'name'}} = $o->{'default'};
         }
@@ -266,7 +266,7 @@ sub load_configuration {
                 qw{
                   enableSyslog enableGlobalAccessLog enableAccountAccessLog enableGlobalSqlLog enableAccountSqlLog displayLastLogin
                   interactiveModeByDefault interactiveModeProactiveMFAenabled IPv4Allowed
-                  }
+                }
             ],
         },
         {
@@ -276,7 +276,7 @@ sub load_configuration {
                   interactiveModeAllowed readOnlySlaveMode sshClientHasOptionE ingressKeysFromAllowOverride
                   moshAllowed debug keyboardInteractiveAllowed passwordAllowed telnetAllowed remoteCommandEscapeByDefault
                   accountExternalValidationDenyOnFailure ingressRequirePIV IPv6Allowed sshAddKeysToAgentAllowed
-                  }
+                }
             ],
         }
       )
@@ -658,8 +658,8 @@ sub account_config {
     my $account = $params{'account'} || OVH::Bastion::get_user_from_env()->value;
     my $key     = $params{'key'};
     my $value   = $params{'value'};                                                 # only for setter
-    my $delete = $params{'delete'};    # if true, delete the config param entirely
-    my $public = $params{'public'};    # if true, check in /home/allowkeeper/$account instead of /home/$account
+    my $delete  = $params{'delete'};                                                # if true, delete the config param entirely
+    my $public  = $params{'public'};                                                # if true, check in /home/allowkeeper/$account instead of /home/$account
     my $fnret;
 
     if (my @missingParameters = grep { not defined $params{$_} } qw{ account key }) {
@@ -702,7 +702,7 @@ sub account_config {
     elsif (defined $value) {
 
         # setter mode
-        unlink($filename);    # remove any previous value
+        unlink($filename);                                          # remove any previous value
         my $fh;
         if (!sysopen($fh, $filename, O_RDWR | O_CREAT | O_EXCL))    # sysopen: avoid symlink attacks
         {
@@ -890,7 +890,7 @@ sub group_config {
     elsif (defined $value) {
 
         # setter mode
-        unlink($filename);    # remove any previous value
+        unlink($filename);                                          # remove any previous value
         my $fh;
         if (!sysopen($fh, $filename, O_RDWR | O_CREAT | O_EXCL))    # sysopen: avoid symlink attacks
         {

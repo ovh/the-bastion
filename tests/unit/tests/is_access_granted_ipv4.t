@@ -27,7 +27,7 @@ OVH::Bastion::set_mock_data(
                       198.51.100.32/28:12
                       192.0.2.23
                       198.51.100.48/28
-                      }
+                    }
                 ],
             },
         },
@@ -39,7 +39,7 @@ OVH::Bastion::load_configuration(
     }
 );
 
-my %want;    # truth table
+my %want;                # truth table
 my $undef = '_none_';    # can't use undef as a hash key, so we'll use this special value instead
 
 $want{"192.0.2.12"}{$undef}{$undef} = 'KO_ACCESS_DENIED';

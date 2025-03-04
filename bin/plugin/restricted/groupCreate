@@ -103,8 +103,8 @@ if ($algo) {
 my @command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
 push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-groupCreate';
 push @command, "--group", $group, "--owner", $owner;
-push @command, "--algo", $algo if $algo;
-push @command, "--size", $size if $size;
+push @command, "--algo",  $algo if $algo;
+push @command, "--size",  $size if $size;
 push @command, "--encrypted" if $encrypted;
 push @command, "--no-key"    if $no_key;
 

@@ -4,7 +4,7 @@ use common::sense;
 
 use MIME::Base64;
 use IO::Compress::Gzip qw{ gzip };
-use Sys::Hostname ();
+use Sys::Hostname      ();
 
 use File::Basename;
 use lib dirname(__FILE__) . '/../../../lib/perl';

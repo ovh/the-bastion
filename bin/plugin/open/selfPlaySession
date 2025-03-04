@@ -64,7 +64,7 @@ else {
 $r->{params}      = undef         if ($r->{cmdtype} ne 'osh');
 $r->{returnvalue} = $r->{comment} if $r->{returnvalue} < 0;
 
-osh_info sprintf "%8s: %s\n", "ID", $r->{uniqid};
+osh_info sprintf "%8s: %s\n", "ID",      $r->{uniqid};
 osh_info sprintf "%8s: %s\n", "Started", POSIX::strftime("%Y/%m/%d %H:%M:%S", localtime($r->{timestamp}));
 osh_info sprintf "%8s: %s\n", "Ended",
   $r->{timestampend} ? POSIX::strftime("%Y/%m/%d %H:%M:%S", localtime($r->{timestampend})) : 'n/a';

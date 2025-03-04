@@ -114,7 +114,7 @@ if (open(my $fh, '<', "/proc/" . getppid() . '/cmdline')) {
     }
 }
 else {
-    ;        # grsec can deny us this. if that's the case, nevermind ... bypass this check
+    ;    # grsec can deny us this. if that's the case, nevermind ... bypass this check
 }
 
 # in any case, force this
