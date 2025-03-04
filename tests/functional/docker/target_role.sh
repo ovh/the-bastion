@@ -130,12 +130,12 @@ elif [ "$OS_FAMILY" = OpenBSD ] || [  "$OS_FAMILY" = FreeBSD ] || [ "$OS_FAMILY"
     : "${nic:=lo0}"
     i=2
     while [ $i -lt 20 ] ; do
-        ifconfig $nic 127.0.0.$i netmask 255.0.0.0 alias
+        ifconfig "$nic" 127.0.0.$i netmask 255.0.0.0 alias
         (( i++ ))
     done
-    ifconfig $nic 127.7.7.7 netmask 255.0.0.0 alias
+    ifconfig "$nic" 127.7.7.7 netmask 255.0.0.0 alias
     echo "Added a few local IP aliases"
-    ifconfig $nic
+    ifconfig "$nic"
 
     set +e
     for st in restart onestart

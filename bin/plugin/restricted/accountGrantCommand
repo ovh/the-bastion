@@ -56,7 +56,7 @@ $account = $fnret->value->{'account'};
 
 my @command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
 push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountModifyCommand';
-push @command, '--action', 'grant';
+push @command, '--action',  'grant';
 push @command, '--command', $command;
 push @command, '--account', $account;
 

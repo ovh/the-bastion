@@ -30,6 +30,7 @@ set_download_url() {
             wget $verbosity -O - --header="Accept: application/vnd.github.v3+json" "$1" || true
         }
         _download() {
+            # shellcheck disable=SC2317,SC2086
             wget $verbosity "$1"
         }
     elif command -v fetch >/dev/null; then
@@ -39,6 +40,7 @@ set_download_url() {
             fetch $verbosity -o - "$1" || true
         }
         _download() {
+            # shellcheck disable=SC2317,SC2086
             fetch $verbosity "$1"
         }
     elif command -v curl >/dev/null; then
@@ -49,6 +51,7 @@ set_download_url() {
             curl $verbosity -L -H 'Accept: application/vnd.github.v3+json' "$1" || true
         }
         _download() {
+            # shellcheck disable=SC2317,SC2086
             curl $verbosity -L -O "$1"
         }
     else
@@ -57,8 +60,6 @@ set_download_url() {
     fi
     action_doing "Getting latest release for arch $arch..."
     payload=$(mktemp)
-    # shellcheck disable=SC2064
-    trap "rm -f $payload" EXIT
 
     # shellcheck disable=SC2034
     for try in 1 2; do
@@ -91,6 +92,7 @@ set_download_url() {
         if [ -n "$url" ]; then
             # success
             action_detail "$url"
+            test -f "$payload" && rm -f "$payload"
             return 0
         elif [ -z "$urls" ]; then
             action_error "Couldn't find any URL in the returned body, did we hit the query limit? Body follows:"
@@ -104,6 +106,7 @@ set_download_url() {
             for line in $urls; do
                 action_detail "$line"
             done
+            test -f "$payload" && rm -f "$payload"
             exit 1
         fi
     done

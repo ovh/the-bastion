@@ -33,12 +33,12 @@ OVH::Bastion::Plugin::begin(
     options => {
         'account=s'                 => \my $account,
         "all"                       => \my $all,
-        "list-groups|with-groups"   => sub { $withGroups = 1 },
-        "without-groups"            => sub { $withGroups = 0 },
+        "list-groups|with-groups"   => sub { $withGroups       = 1 },
+        "without-groups"            => sub { $withGroups       = 0 },
         'with-mfa-password-info'    => sub { $withPasswordInfo = 1 },
         'without-mfa-password-info' => sub { $withPasswordInfo = 0 },
-        'with-egress-keys'          => sub { $withEgressKeys = 1 },
-        'without-egress-keys'       => sub { $withEgressKeys = 0 },
+        'with-egress-keys'          => sub { $withEgressKeys   = 1 },
+        'without-egress-keys'       => sub { $withEgressKeys   = 0 },
         'with-everything'           => sub { toggle_all(1) },
         'without-everything'        => sub { toggle_all(0) },
     },
@@ -143,11 +143,11 @@ foreach my $accHash (@accounts) {
     if ($withGroups) {
         foreach my $name (@groups) {
             my @flags;
-            push @flags, 'owner' if OVH::Bastion::is_group_owner(group => $name, account => $account);
+            push @flags, 'owner'      if OVH::Bastion::is_group_owner(group => $name, account => $account);
             push @flags, 'gatekeeper' if OVH::Bastion::is_group_gatekeeper(group => $name, account => $account);
-            push @flags, 'aclkeeper' if OVH::Bastion::is_group_aclkeeper(group => $name, account => $account);
-            push @flags, 'member' if OVH::Bastion::is_group_member(group => $name, account => $account);
-            push @flags, 'guest' if OVH::Bastion::is_group_guest(group => $name, account => $account);
+            push @flags, 'aclkeeper'  if OVH::Bastion::is_group_aclkeeper(group => $name, account => $account);
+            push @flags, 'member'     if OVH::Bastion::is_group_member(group => $name, account => $account);
+            push @flags, 'guest'      if OVH::Bastion::is_group_guest(group => $name, account => $account);
             $groups_hash->{$name} = {flags => \@flags, name => $name} if @flags;
         }
     }

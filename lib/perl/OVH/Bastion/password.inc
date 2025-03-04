@@ -32,7 +32,7 @@ sub _get_salt {
     my %params   = @_;
     my $password = $params{'password'};
     my $nonce    = $params{'nonce'} || $password;
-    my $len      = $params{'len'} || 4;
+    my $len      = $params{'len'}   || 4;
 
     if ($len > 16) {
         return R('ERR_INVALID_PARAMETER', msg => "Expected a len <= 16");

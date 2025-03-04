@@ -73,8 +73,8 @@ sub process_account {
         ipfrom     => $ENV{'OSH_IP_FROM'},
         port       => $port,
         cache      => 1,
-        ignorePort => ($port ? 0 : 1),       # return accesses without checking for the specified port
-        ignoreUser => ($user ? 0 : 1),       # return accesses without checking for the specified remote user
+        ignorePort => ($port ? 0 : 1),    # return accesses without checking for the specified port
+        ignoreUser => ($user ? 0 : 1),    # return accesses without checking for the specified remote user
     );
     if ($fnret) {
         my $byPersonal = 0;

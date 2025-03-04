@@ -41,7 +41,7 @@ sub gpg_sign {
     my %params = @_;
     my @cmd    = qw{ gpg --batch --trust-model always --sign --passphrase-fd 0 };
     push @cmd, qw{ --pinentry-mode loopback } if is_new_gpg();
-    push @cmd, "-v" if $verbose >= 2;
+    push @cmd, "-v"                           if $verbose >= 2;
     push @cmd, '--local-user', $params{'signkey'}, '--output', '-', $params{'infile'};
 
     my $outfile;

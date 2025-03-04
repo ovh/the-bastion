@@ -23,12 +23,12 @@ my ($group, $user, $ip, $port, $action, $force, $forcePassword, $forceKey, $ttl,
 eval {
     local $SIG{__WARN__} = sub { push @optwarns, shift };
     $result = GetOptions(
-        "group=s"  => sub { $group  //= $_[1] },    # ignore subsequent --group on cmdline (anti-sudoers-override)
-        "user=s"   => sub { $user   //= $_[1] },
-        "ip=s"     => sub { $ip     //= $_[1] },
-        "port=i"   => sub { $port   //= $_[1] },
-        "action=s" => sub { $action //= $_[1] },
-        "force"    => sub { $force  //= $_[1] },
+        "group=s"          => sub { $group         //= $_[1] },    # ignore subsequent --group on cmdline (anti-sudoers-override)
+        "user=s"           => sub { $user          //= $_[1] },
+        "ip=s"             => sub { $ip            //= $_[1] },
+        "port=i"           => sub { $port          //= $_[1] },
+        "action=s"         => sub { $action        //= $_[1] },
+        "force"            => sub { $force         //= $_[1] },
         "force-password=s" => sub { $forcePassword //= $_[1] },
         "force-key=s"      => sub { $forceKey      //= $_[1] },
         "ttl=i"            => sub { $ttl           //= $_[1] },

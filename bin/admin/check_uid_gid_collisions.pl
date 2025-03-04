@@ -250,10 +250,10 @@ sub handle_list {
                     push @cmds,
                       sprintf("find \$fslist -xdev -ignore_readdir_race -%s %d -ls -exec %s %d '{}' +",
                         lc($idtype), $master_id, $ch, $new_local_id);
-                    push @cmds, sprintf("pkill -%s %s && sleep 1", $type eq 'pw' ? 'U' : 'G', $local_name);
-                    push @cmds, sprintf("usermod  --uid %d %s", $new_local_id, $local_name) if $type eq 'pw';
-                    push @cmds, sprintf("groupmod --gid %d %s", $new_local_id, $local_name) if $type eq 'gr';
-                    push @grepcmds, sprintf("pgrep -%s %s", $type eq 'pw' ? 'U' : 'G', $local_name);
+                    push @cmds,     sprintf("pkill -%s %s && sleep 1", $type eq 'pw' ? 'U' : 'G', $local_name);
+                    push @cmds,     sprintf("usermod  --uid %d %s",    $new_local_id, $local_name) if $type eq 'pw';
+                    push @cmds,     sprintf("groupmod --gid %d %s",    $new_local_id, $local_name) if $type eq 'gr';
+                    push @grepcmds, sprintf("pgrep -%s %s",            $type eq 'pw' ? 'U' : 'G', $local_name);
                     # and we ask our caller to call us again as we've changed the local ID for this account or group
                     say "-> okay, offsetting local UID $master_id to $new_local_id";
                     return 0;
@@ -287,10 +287,10 @@ sub handle_list {
                     push @cmds,
                       sprintf("find \$fslist -xdev -ignore_readdir_race -%s %d -ls -exec %s %d '{}' +",
                         lc($idtype), $local_id, $ch, $master_id);
-                    push @cmds, sprintf("pkill -%s %s && sleep 1", $type eq 'pw' ? 'U' : 'G', $master_name);
-                    push @cmds, sprintf("usermod  --uid %d %s", $master_id, $master_name) if $type eq 'pw';
-                    push @cmds, sprintf("groupmod --gid %d %s", $master_id, $master_name) if $type eq 'gr';
-                    push @grepcmds, sprintf("pgrep -%s %s", $type eq 'pw' ? 'U' : 'G', $master_name);
+                    push @cmds,     sprintf("pkill -%s %s && sleep 1", $type eq 'pw' ? 'U' : 'G', $master_name);
+                    push @cmds,     sprintf("usermod  --uid %d %s",    $master_id, $master_name) if $type eq 'pw';
+                    push @cmds,     sprintf("groupmod --gid %d %s",    $master_id, $master_name) if $type eq 'gr';
+                    push @grepcmds, sprintf("pgrep -%s %s",            $type eq 'pw' ? 'U' : 'G', $master_name);
                     say "-> okay, setting local $idtype of $master_name to $master_id instead of $local_id";
                     # and we ask our caller to call us again as we've changed the local ID for this account or group
                     return 0;

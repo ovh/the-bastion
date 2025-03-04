@@ -111,7 +111,7 @@ do
                 _log "... got event, syncing in 3 secs!"
                 sleep 3
         else
-                _warn "... got weird return value $? (maxfiles=$maxfiles); sleeping a bit..."
+                _warn "... got weird return value $ret (maxfiles=$maxfiles); sleeping a bit..."
                 sleep "$timeout"
         fi
         # sanity check myself before

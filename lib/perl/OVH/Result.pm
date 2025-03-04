@@ -16,7 +16,7 @@ use overload (
     '""'   => \&msg,
 );
 
-sub new {                 ## no critic (ArgUnpacking)
+sub new {    ## no critic (ArgUnpacking)
     my $type   = shift;
     my %params = @_;
     my $err    = $params{'err'};

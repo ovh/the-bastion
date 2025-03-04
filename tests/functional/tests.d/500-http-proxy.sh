@@ -1,6 +1,6 @@
 # vim: set filetype=sh ts=4 sw=4 sts=4 et:
 # shellcheck shell=bash
-# shellcheck disable=SC2086,SC2016,SC2046
+# shellcheck disable=SC2317,SC2086,SC2016,SC2046
 # below: convoluted way that forces shellcheck to source our caller
 # shellcheck source=tests/functional/launch_tests_on_instance.sh
 . "$(dirname "${BASH_SOURCE[0]}")"/dummy
@@ -117,7 +117,7 @@ testsuite_proxy()
     contain "This account doesn't have access to this user@host tuple (Access denied for $account0 to test@127.0.0.1:9443)"
 
     # add ourselves access
-    success add_personal_access $a0 --osh selfAddPersonalAccess --host 127.0.0.1 --port 9443 --user test --force
+    success add_personal_access $a0 --osh selfAddPersonalAccess --host 127.0.0.1 --port-any --user test --force
     json .command selfAddPersonalAccess .error_code OK
 
     script missing_egress_pwd "curl -ski -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
@@ -244,20 +244,28 @@ testsuite_proxy()
     # use alternate config to only allow http egress
     success config_swap $r0 "\"mv /etc/bastion/osh-http-proxy.conf /etc/bastion/osh-http-proxy-normal.conf; mv /etc/bastion/osh-http-proxy-httponly.conf /etc/bastion/osh-http-proxy.conf\""
 
+    # when daemon will restart, it'll log stuff, ignore it
+    ignorecodewarn 'osh-http-proxy-daemon'
     # pkill doesn't work well under FreeBSD, so do it ourselves for all OSes
     success force_restart $r0 "\"ps -U proxyhttp -o pid,command | grep -v PID | awk '{print \\\$1}' | xargs -r kill; true\""
-    [ "$COUNTONLY" != 1 ] && sleep 2
+    if [ "$COUNTONLY" != 1 ]; then
+        # wait for target_role.sh to restart the daemon
+        sleep 2
+    fi
 
+    # when daemon will restart, it'll log stuff, ignore it
+    ignorecodewarn 'osh-http-proxy-daemon'
     # http should be allowed now
-    script allowed_http_egress "curl -ski -H 'X-Bastion-Egress-Protocol: http' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test 2>&1 | cat; exit \${PIPESTATUS[0]}"
+    script allowed_http_egress "curl -ski -H 'X-Bastion-Egress-Protocol: http' -u '$account0@test@127.0.0.1%22:$proxy_password' https://$remote_ip:$remote_proxy_port/test 2>&1 | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
-    contain 'HTTP/1.0 500 Status read failed: Connection reset by peer'
+    contain 'HTTP/1.0 200'
     contain 'Server: The Bastion'
     contain 'X-Bastion-Instance: '
     contain 'X-Bastion-ReqID: '
     contain 'X-Bastion-Local-Status: 200 OK'
     nocontain 'WWW-Authenticate: '
     nocontain "X-Bastion-Remote-Client-SSL"
+    contain 'SSH-2.0'
 
     # and https disallowed
     script forbidden_https_egress "curl -ski -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
@@ -271,7 +279,7 @@ testsuite_proxy()
     contain 'not allowed by policy'
 
     # try an IPv6
-    script ipv6 "curl -ski -H 'X-Bastion-Egress-Protocol: http' -u '$account0@test@[::1]%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit ${PIPESTATUS[0]}"
+    script ipv6 "curl -ski -H 'X-Bastion-Egress-Protocol: http' -u '$account0@test@[::1]%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'ERR_IP_VERSION_DISABLED'
 }

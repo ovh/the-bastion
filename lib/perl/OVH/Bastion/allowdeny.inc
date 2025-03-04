@@ -21,9 +21,9 @@ sub get_personal_account_keys {
     $account = $fnret->value->{'account'};    # untainted version
 
     return _get_pub_keys_from_directory(
-        dir     => "/home/$account/.ssh",
-        pattern => qr/^private\.pub$|^id_[a-z0-9]+[_.]private\.\d+\.pub$/,
-        listOnly    => $listOnly,             # don't be slow and don't parse the keys (by calling ssh-keygen -lf)
+        dir         => "/home/$account/.ssh",
+        pattern     => qr/^private\.pub$|^id_[a-z0-9]+[_.]private\.\d+\.pub$/,
+        listOnly    => $listOnly,                                                # don't be slow and don't parse the keys (by calling ssh-keygen -lf)
         forceKey    => $forceKey,
         wantPrivate => 1,
     );
@@ -72,21 +72,21 @@ sub get_group_keys {
 sub is_access_way_granted {
     my %params = @_;
 
-    my $exactIpMatch = $params{'exactIpMatch'}; # $ip must be explicitly allowed (not given through a wider subnet or a 0.0.0.0/0 in grantfile)
-    my $exactPortMatch = $params{'exactPortMatch'}; # $port must be explicitly allowed (port wildcards in grantfile will be ignored)
-    my $exactUserMatch = $params{'exactUserMatch'}; # $user must be explicitly allowed (user wildcards in grantfile will be ignored)
-    my $exactMatch     = $params{'exactMatch'};     # sets exactIpMatch exactPortMatch and exactUserMatch
+    my $exactIpMatch   = $params{'exactIpMatch'};      # $ip must be explicitly allowed (not given through a wider subnet or a 0.0.0.0/0 in grantfile)
+    my $exactPortMatch = $params{'exactPortMatch'};    # $port must be explicitly allowed (port wildcards in grantfile will be ignored)
+    my $exactUserMatch = $params{'exactUserMatch'};    # $user must be explicitly allowed (user wildcards in grantfile will be ignored)
+    my $exactMatch     = $params{'exactMatch'};        # sets exactIpMatch exactPortMatch and exactUserMatch
 
-    my $ignoreUser = $params{'ignoreUser'};  # ignore remote user COMPLETELY (plop@, or root@, or <nil>@ will all match)
-    my $ignorePort = $params{'ignorePort'};  # ignore port COMPLETELY (port 22, 2345, or port-wildcard will all match)
+    my $ignoreUser = $params{'ignoreUser'};            # ignore remote user COMPLETELY (plop@, or root@, or <nil>@ will all match)
+    my $ignorePort = $params{'ignorePort'};            # ignore port COMPLETELY (port 22, 2345, or port-wildcard will all match)
 
-    my $wantedUser = $params{'user'};        # if undef, means we look for a user-any allow
-    my $wantedIp   = $params{'ip'};          # can be a single IP or a subnet
-    my $wantedPort = $params{'port'};        # if undef, means we look for a port-any allow
+    my $wantedUser = $params{'user'};                  # if undef, means we look for a user-any allow
+    my $wantedIp   = $params{'ip'};                    # can be a single IP or a subnet
+    my $wantedPort = $params{'port'};                  # if undef, means we look for a port-any allow
 
-    my $way     = $params{'way'};            # personal|group|groupguest|legacy
-    my $group   = $params{'group'};          # only meaningful and needed if type=group or type=groupguest
-    my $account = $params{'account'};        # only meaningful and needed if type=personal or type=groupguest
+    my $way     = $params{'way'};                      # personal|group|groupguest|legacy
+    my $group   = $params{'group'};                    # only meaningful and needed if type=group or type=groupguest
+    my $account = $params{'account'};                  # only meaningful and needed if type=personal or type=groupguest
 
     my $fnret;
 
@@ -147,11 +147,11 @@ sub is_access_way_granted {
             else {
                 # we don't want an exact match (aka port-any allowed)
                 if (not defined $entry->{'port'}) {
-                    ;                                                 # it's a wildcard, will always match
+                    ;    # it's a wildcard, will always match
                 }
                 else {
                     if (not defined $wantedPort) {
-                        next;                                         # we want a wildcard, but we don't have it
+                        next;    # we want a wildcard, but we don't have it
                     }
                     else {
                         next if ($wantedPort ne $entry->{'port'});    # both defined but unequal, not a match
@@ -185,11 +185,11 @@ sub is_access_way_granted {
             else {
                 # we don't want an exact match (aka user-any allowed)
                 if (not defined $entry->{'user'}) {
-                    ;                                                 # it's a wildcard, will always match
+                    ;    # it's a wildcard, will always match
                 }
                 else {
                     if (not defined $wantedUser) {
-                        next;                                         # we want a wildcard, but we don't have it
+                        next;    # we want a wildcard, but we don't have it
                     }
                     else {
                         # handle the case where $entry->{'user'} contains wildcards such as '?' or '*'
@@ -346,7 +346,7 @@ sub get_ip {
         my $as_text;
         undef $err;
         eval {
-            ($err, $as_text) = getnameinfo($item->{'addr'}, NI_NUMERICHOST); # NI flag: don't use dns, just unpack the binary 'addr'
+            ($err, $as_text) = getnameinfo($item->{'addr'}, NI_NUMERICHOST);    # NI flag: don't use dns, just unpack the binary 'addr'
         };
         if (not $@ and not $err) {
             $iplist{$as_text} = 1;
@@ -447,10 +447,10 @@ sub _get_pub_keys_from_directory {
     my %params      = @_;
     my $dir         = $params{'dir'};
     my $pattern     = $params{'pattern'};
-    my $listOnly    = $params{'listOnly'};     # don't open the files, just return file names
-    my $noexec      = $params{'noexec'};       # passed to is_valid_public_key
+    my $listOnly    = $params{'listOnly'};       # don't open the files, just return file names
+    my $noexec      = $params{'noexec'};         # passed to is_valid_public_key
     my $forceKey    = $params{'forceKey'};
-    my $wantPrivate = $params{'wantPrivate'};  # if set, will return the fullpath of the private key, not the public one
+    my $wantPrivate = $params{'wantPrivate'};    # if set, will return the fullpath of the private key, not the public one
     my $fnret;
 
     osh_debug("looking for pub keys in dir $dir as user $ENV{'USER'}");
@@ -539,8 +539,8 @@ sub duration2human {
     my $tense  = $params{'tense'};
 
     require POSIX;
-    my $date_local = POSIX::strftime("%a %Y-%m-%d %H:%M:%S %Z", localtime(time() + ($tense eq 'past' ? -$s : $s)));
-    my $date_utc = POSIX::strftime("%a %Y-%m-%d %H:%M:%S UTC", gmtime(time() + ($tense eq 'past' ? -$s : $s)));
+    my $date_local = POSIX::strftime("%a %Y-%m-%d %H:%M:%S %Z",  localtime(time() + ($tense eq 'past' ? -$s : $s)));
+    my $date_utc   = POSIX::strftime("%a %Y-%m-%d %H:%M:%S UTC", gmtime(time() + ($tense eq 'past'    ? -$s : $s)));
 
     my $d = int($s / 86400);
     $s -= $d * 86400;
@@ -626,7 +626,7 @@ sub print_acls {
                 my $matched = 0;
                 foreach (@row) {
                     $matched++ if ($_ =~ $includere);
-                    last if $matched;
+                    last       if $matched;
                 }
                 next ENTRY if !$matched;
             }
@@ -729,10 +729,10 @@ sub is_access_granted {
     my $listOnly = $params{'listOnly'};         # don't open the files, just return file names
     my $noexec   = $params{'noexec'};           # passed to is_valid_public_key
 
-    my $details = delete $params{'details'}; # if set, look for and return ssh keys + config data along with allowed accesses
+    my $details = delete $params{'details'};    # if set, look for and return ssh keys + config data along with allowed accesses
 
-    delete $params{'way'};                   # WE specify this parameter, not our caller
-    delete $params{'group'};                 # WE specify this parameter, not our caller
+    delete $params{'way'};                      # WE specify this parameter, not our caller
+    delete $params{'group'};                    # WE specify this parameter, not our caller
 
     my @grants;
     my $fnret;
@@ -920,7 +920,7 @@ sub is_access_granted {
             if ($data{'keys'}) {
                 $access->{'keys'}            = $data{'keys'}->value->{'keys'};
                 $access->{'sortedKeys'}      = $data{'keys'}->value->{'sortedKeys'};
-                $access->{'mfaRequired'}     = $data{'mfa'}->value if $data{'mfa'};
+                $access->{'mfaRequired'}     = $data{'mfa'}->value               if $data{'mfa'};
                 $access->{'idleLockTimeout'} = $data{'idle_lock_timeout'}->value if $data{'idle_lock_timeout'};
                 $access->{'idleKillTimeout'} = $data{'idle_kill_timeout'}->value if $data{'idle_kill_timeout'};
             }
@@ -960,9 +960,9 @@ sub ssh_test_access_way {
         $port = $fnret->value;
     }
 
-    $user = OVH::Bastion::config("defaultLogin")->value if not $user;
-    $user = $account                                    if not $user;    # defaultLogin empty means the user himself
-    $user = OVH::Bastion::get_user_from_env()->value    if not $user;    # no user or account ? get from env then
+    $user  = OVH::Bastion::config("defaultLogin")->value if not $user;
+    $user  = $account                                    if not $user;    # defaultLogin empty means the user himself
+    $user  = OVH::Bastion::get_user_from_env()->value    if not $user;    # no user or account ? get from env then
     $fnret = OVH::Bastion::is_valid_remote_user(user => $user, allowWildcards => 1);
     $fnret or return $fnret;
     $user = $fnret->value;

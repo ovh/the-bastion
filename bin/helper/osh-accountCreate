@@ -7,7 +7,7 @@
 
 #>HEADER
 use common::sense;
-use Getopt::Long qw(:config no_auto_abbrev no_ignore_case);
+use Getopt::Long  qw(:config no_auto_abbrev no_ignore_case);
 use Sys::Hostname ();
 use JSON;
 use POSIX ();
@@ -28,12 +28,12 @@ my (
 eval {
     local $SIG{__WARN__} = sub { push @optwarns, shift };
     $result = GetOptions(
-        "force-key-from=s"    => sub { $forceKeyFrom    //= $_[1] },    # only to be used by the install script
-        "type=s"              => sub { $type            //= $_[1] },
-        "from=s"              => sub { $realmFrom       //= $_[1] },
-        "uid=s"               => sub { $uid             //= $_[1] },
-        "account=s"           => sub { $account         //= $_[1] },
-        "always-active"       => sub { $alwaysActive    //= $_[1] },
+        "force-key-from=s"    => sub { $forceKeyFrom //= $_[1] },    # only to be used by the install script
+        "type=s"              => sub { $type         //= $_[1] },
+        "from=s"              => sub { $realmFrom    //= $_[1] },
+        "uid=s"               => sub { $uid          //= $_[1] },
+        "account=s"           => sub { $account      //= $_[1] },
+        "always-active"       => sub { $alwaysActive //= $_[1] },
         "pubKey=s"            => \@pubKeys,
         "comment=s"           => sub { $comment         //= $_[1] },
         'uid-auto'            => sub { $uidAuto         //= $_[1] },
@@ -87,11 +87,11 @@ $account = $fnret->value->{'account'};
 
 $fnret = OVH::Bastion::is_account_existing(account => $account);
 $fnret->is_err and HEXIT($fnret);
-$fnret->is_ok and HEXIT('KO_ALREADY_EXISTING', msg => "The account $account already exists");
+$fnret->is_ok  and HEXIT('KO_ALREADY_EXISTING', msg => "The account $account already exists");
 
 $fnret = OVH::Bastion::is_group_existing(group => $account);
 $fnret->is_err and HEXIT($fnret);
-$fnret->is_ok and HEXIT('KO_ALREADY_EXISTING', msg => "The group $account already exists");
+$fnret->is_ok  and HEXIT('KO_ALREADY_EXISTING', msg => "The group $account already exists");
 
 if ($type eq 'realm') {
     $account = "realm_$account";
@@ -100,11 +100,11 @@ if ($type eq 'realm') {
 
     $fnret = OVH::Bastion::is_account_existing(account => $account, accountType => "realm");
     $fnret->is_err and HEXIT($fnret);
-    $fnret->is_ok and HEXIT('KO_ALREADY_EXISTING', msg => "The realm $account already exists");
+    $fnret->is_ok  and HEXIT('KO_ALREADY_EXISTING', msg => "The realm $account already exists");
 
     $fnret = OVH::Bastion::is_group_existing(group => $account);
     $fnret->is_err and HEXIT($fnret);
-    $fnret->is_ok and HEXIT('KO_ALREADY_EXISTING', msg => "The group $account already exists");
+    $fnret->is_ok  and HEXIT('KO_ALREADY_EXISTING', msg => "The group $account already exists");
 }
 
 #<PARAMS:ACCOUNT
@@ -328,10 +328,10 @@ if (ref $config->{'accountCreateDefaultPersonalAccesses'} eq 'ARRAY' && $type eq
         next unless $ip;
         my @command = qw{ sudo -n -u allowkeeper -- };
         push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountModifyPersonalAccess';
-        push @command, '--target', 'any';
-        push @command, '--action', 'add';
+        push @command, '--target',  'any';
+        push @command, '--action',  'add';
         push @command, '--account', $account;
-        push @command, '--ip', $ip;
+        push @command, '--ip',      $ip;
 
         if ($user) {
             push @command, '--user', ($user eq 'ACCOUNT' ? $account : $user);
@@ -348,7 +348,7 @@ my %metadata      = (
     by              => $self,
     bastion_version => $OVH::Bastion::VERSION,
     datetime_utc    => POSIX::strftime("%a %Y-%m-%d %H:%M:%S UTC", gmtime($creation_time)),
-    datetime_local  => POSIX::strftime("%a %Y-%m-%d %H:%M:%S %Z", localtime($creation_time)),
+    datetime_local  => POSIX::strftime("%a %Y-%m-%d %H:%M:%S %Z",  localtime($creation_time)),
     timestamp       => $creation_time,
     comment         => $comment,
 );
@@ -485,15 +485,15 @@ OVH::Bastion::syslogFormatted(
     severity => 'info',
     type     => 'account',
     fields   => [
-        ['action',      'create'],
-        ['account',     $account],
-        ['account_uid', $uid],
-        ['public_key',  @vettedKeys ? $vettedKeys[0] : undef],
+        ['action',        'create'],
+        ['account',       $account],
+        ['account_uid',   $uid],
+        ['public_key',    @vettedKeys ? $vettedKeys[0] : undef],
         ['always_active', ($alwaysActive ? 'true' : 'false')],
         ['uid_auto',      ($uidAuto      ? 'true' : 'false')],
         ['osh_only',      ($oshOnly      ? 'true' : 'false')],
         ['immutable_key', ($immutableKey ? 'true' : 'false')],
-        ['comment', $comment],
+        ['comment',       $comment],
     ]
 );
 

@@ -83,10 +83,10 @@ osh_info "Changing account configuration...";
 
 @command = qw{ sudo -n -u allowkeeper -- /usr/bin/env perl -T };
 push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountPIV';
-push @command, '--step', '1';
+push @command, '--step',    '1';
 push @command, '--account', $account;
-push @command, '--policy', $policy;
-push @command, '--ttl', $ttl if defined $ttl;
+push @command, '--policy',  $policy;
+push @command, '--ttl',     $ttl if defined $ttl;
 
 $fnret = OVH::Bastion::helper(cmd => \@command);
 $fnret or osh_exit $fnret;
@@ -98,10 +98,10 @@ osh_info "Applying change to keys...";
 push @command, $account;
 push @command, qw{ -- /usr/bin/env perl -T };
 push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountPIV';
-push @command, '--step', '2';
+push @command, '--step',    '2';
 push @command, '--account', $account;
-push @command, '--policy', $policy;
-push @command, '--ttl', $ttl if defined $ttl;
+push @command, '--policy',  $policy;
+push @command, '--ttl',     $ttl if defined $ttl;
 
 $fnret = OVH::Bastion::helper(cmd => \@command);
 osh_exit $fnret;

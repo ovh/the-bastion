@@ -10,7 +10,7 @@ use OVH::Bastion;
 
 use CGI;
 use JSON;
-use Fcntl qw(:flock);
+use Fcntl       qw(:flock);
 use Time::HiRes ();
 use MIME::Base64;
 use Net::Server::PreForkSimple;
@@ -37,7 +37,7 @@ sub send_status {
         $out .= "$row->[0]: $row->[1]\r\n";
         push @{$request_info->{'response_headers'}}, $row;
         $content_type_already_sent++ if (lc($row->[0]) eq 'content-type');
-        $want_gzip++ if (lc($row->[0]) eq 'content-encoding' && $row->[1] =~ /gzip/);
+        $want_gzip++                 if (lc($row->[0]) eq 'content-encoding' && $row->[1] =~ /gzip/);
     }
     $self->{'server'}->{'client'}->print($out);
     $request_info->{'http_version'}    = '1.0';
@@ -84,11 +84,11 @@ sub log_and_exit {
 
     # log in sql and/or logfile and/or syslog
     my $processing_delay = ($starttime ? int(Time::HiRes::tv_interval($starttime) * 1_000_000) : undef);
-    $params->{'account'} = $account;   # might be undef if we're called before the account is extracted from the payload
-    $params->{'user'}    = $user;      # ditto
-    $params->{'hostto'}  = $hostto;    # ditto
-    $params->{'portto'}  = $portto;    # ditto
-    $params->{'loghome'} = 'proxyhttp';
+    $params->{'account'}     = $account;                                        # might be undef if we're called before the account is extracted from the payload
+    $params->{'user'}        = $user;                                           # ditto
+    $params->{'hostto'}      = $hostto;                                         # ditto
+    $params->{'portto'}      = $portto;                                         # ditto
+    $params->{'loghome'}     = 'proxyhttp';
     $params->{'cmdtype'}     = 'proxyhttp_daemon';
     $params->{'ipfrom'}      = $self->{'request_info'}{'peeraddr'};
     $params->{'portfrom'}    = $self->{'request_info'}{'peerport'};
@@ -400,8 +400,8 @@ sub process_http_request {
             {comment => "bad_login_format"}
         );
     }
-    my ($account, $user_expression, $remotemachine, $remoteport) = ($1, $2, $3, $4); ## no critic (ProhibitCaptureWithoutTest)
-    undef $loginpart;                                                                # no longer needed
+    my ($account, $user_expression, $remotemachine, $remoteport) = ($1, $2, $3, $4);    ## no critic (ProhibitCaptureWithoutTest)
+    undef $loginpart;                                                                   # no longer needed
     $remoteport               = 443 if not defined $remoteport;
     $self->{'_log'}{'hostto'} = $remotemachine;
     $self->{'_log'}{'portto'} = $remoteport;
@@ -461,7 +461,7 @@ sub process_http_request {
             {comment => "invalid_credentials"}
         );
     }
-    $account = $fnret->value->{'account'};    # untaint
+    $account = $fnret->value->{'account'};                      # untaint
     $self->{'_log'}{'account'} = $account;
 
     if ($user !~ /^[a-zA-Z0-9._-]+/) {
@@ -544,12 +544,14 @@ sub process_http_request {
     }
 
     # here, we know the account is right, so we sudo to this account to proceed
-    my @cmd = ("sudo", "-n", "-u", $account, "--", "/usr/bin/env", "perl", "-T",
-        "/opt/bastion/bin/proxy/osh-http-proxy-worker");
+    my @cmd = (
+        "sudo", "-n", "-u", $account, "--", "/usr/bin/env", "perl", "-T",
+        "/opt/bastion/bin/proxy/osh-http-proxy-worker"
+    );
     push @cmd, "--account", $account, "--context", $context, "--user", $user, "--host", $remotemachine, "--uniqid",
       $ENV{'UNIQID'};
     push @cmd, "--method", $self->{'request_info'}{'request_method'}, "--path", $self->{'request_info'}{'request_path'};
-    push @cmd, "--port", $remoteport;
+    push @cmd, "--port",   $remoteport;
     push @cmd, "--group",   $group   if $group;
     push @cmd, "--timeout", $timeout if $timeout;
     push @cmd, "--allow-downgrade"      if $allow_downgrade;

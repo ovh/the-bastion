@@ -165,9 +165,9 @@ foreach my $account (sort keys %$accounts) {
         }
 
         $states{'can_connect'} = 1;
-        $states{'can_connect'} = 0 if (!defined $states{'is_active'} || $states{'is_active'} == 0);
-        $states{'can_connect'} = 0 if (!defined $states{'is_frozen'} || $states{'is_frozen'} == 0);
-        $states{'can_connect'} = 0 if (!defined $states{'is_expired'} || $states{'is_expired'} == 0);
+        $states{'can_connect'} = 0 if (!defined $states{'is_active'}      || $states{'is_active'} == 0);
+        $states{'can_connect'} = 0 if (!defined $states{'is_frozen'}      || $states{'is_frozen'} == 0);
+        $states{'can_connect'} = 0 if (!defined $states{'is_expired'}     || $states{'is_expired'} == 0);
         $states{'can_connect'} = 0 if (!defined $states{'is_ttl_expired'} || $states{'is_ttl_expired'} == 0);
 
         $states{'mfa_password_required'} = OVH::Bastion::is_user_in_group(

@@ -22,9 +22,10 @@ sleep 5
 echo "GO!"
 
 tempdir=$(mktemp -d)
+# shellcheck disable=SC2317
 cleanup() {
-	test -d "$tempdir" && rm -rf "$tempdir"
-	docker ps | grep -Eo 'bastion_.*_(target|tester)$' | xargs -r docker kill
+    test -d "$tempdir" && rm -rf "$tempdir"
+    docker ps | grep -Eo 'bastion_.*_(target|tester)$' | xargs -r docker kill
 }
 trap 'cleanup' EXIT
 
