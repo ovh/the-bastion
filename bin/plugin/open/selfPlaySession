@@ -122,7 +122,7 @@ if (!$ttyrecfile) {
         closedir($dh);
     }
     else {
-        syslog_warn("Couldn't open ttyrec directory $dirname: $!");
+        warn_syslog("Couldn't open ttyrec directory $dirname: $!");
         osh_exit R('ERR_NOT_FOUND', msg => "Couldn't open the directory containing the ttyrec files");
     }
 }
