@@ -1,3 +1,8 @@
+## v3.19.01 - 2025/03/04
+- feat: httpproxy: optional support for plain http on egress
+- fix: selfPlaySession: warn in syslog properly
+- chore: github actions: replace ubuntu 20.04 by 24.04 (EOL)
+
 ## v3.19.00 - 2025/02/25
 - feat: add agent forwarding support on egress side
 - feat: add undocumented rename-account.sh and modify osh-orphaned-homedir.sh accordingly

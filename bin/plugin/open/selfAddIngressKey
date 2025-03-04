@@ -13,8 +13,8 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,
     header  => "add a new public key to your account",
     options => {
-        "pubKey|public-key=s" => \my $pubKey,    # 'pubKey' is a deprecated name, keep it to not break scripts or people
-        "piv" => \my $pivExplicit,
+        "pubKey|public-key=s" => \my $pubKey,        # 'pubKey' is a deprecated name, keep it to not break scripts or people
+        "piv"                 => \my $pivExplicit,
     },
     helptext => <<'EOF',
 Add a new ingress public key to your account

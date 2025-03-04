@@ -137,7 +137,8 @@ sub get_next_available_uid {
 
         # if $available_gid, also check if the corresponding GID is available
         # if $available_gid_ttyrec, also check if the corresponding GID + the ttyrec offset is available
-        if (   (!$available_gid || !scalar(getgrgid($next)))
+        if (
+               (!$available_gid || !scalar(getgrgid($next)))
             && (!$available_gid_ttyrec || !scalar(getgrgid($next + OVH::Bastion::config('ttyrecGroupIdOffset')->value)))
           )
         {
@@ -170,11 +171,11 @@ sub is_bastion_account_valid_and_existing {
 
 # check if account name is valid, i.e. non-weird chars and non reserved parts
 sub is_account_valid {
-    my %params  = @_;
-    my $account = $params{'account'};
-    my $accountType = $params{'accountType'} || 'normal'; # normal (local account or $realm/$remoteself formatted account) | group (must start with key*) | realm (must start with realm_*)
-    my $localOnly   = $params{'localOnly'};               # for accountType == normal, disallow realm-formatted accounts ($realm/$remoteself)
-    my $realmOnly   = $params{'realmOnly'};               # for accountType == normal, allow only realm-formatted accounts ($realm/$remoteself)
+    my %params      = @_;
+    my $account     = $params{'account'};
+    my $accountType = $params{'accountType'} || 'normal';    # normal (local account or $realm/$remoteself formatted account) | group (must start with key*) | realm (must start with realm_*)
+    my $localOnly   = $params{'localOnly'};                  # for accountType == normal, disallow realm-formatted accounts ($realm/$remoteself)
+    my $realmOnly   = $params{'realmOnly'};                  # for accountType == normal, allow only realm-formatted accounts ($realm/$remoteself)
 
     if (!$account) {
         return R('ERR_MISSING_PARAMETER', msg => "Missing parameter 'account'");
@@ -226,7 +227,7 @@ sub is_account_valid {
         elsif (length($2) < 2) {
             return R('KO_TOO_SMALL', msg => "Remote account name is too short, length($2) < 2");
         }
-        return R('OK', value => {sysaccount => "realm_$1", realm => $1, remoteaccount => $2, account => "$1/$2"}); # untainted
+        return R('OK', value => {sysaccount => "realm_$1", realm => $1, remoteaccount => $2, account => "$1/$2"});    # untainted
     }
     elsif ($account =~ m/^([a-zA-Z0-9._-]+)$/) {
         if (length($1) < 2) {
@@ -237,7 +238,7 @@ sub is_account_valid {
         elsif (length($1) > 28) {
             return R('KO_TOO_LONG', msg => "$whatis name is too long, length($1) > 28");
         }
-        return R('OK', value => {sysaccount => $1, realm => undef, remoteaccount => undef, account => $1});  # untainted
+        return R('OK', value => {sysaccount => $1, realm => undef, remoteaccount => undef, account => $1});           # untainted
     }
     else {
         return R('KO_FORBIDDEN_CHARS', msg => "$whatis name contains forbidden characters $account");
@@ -282,13 +283,13 @@ sub is_account_existing {
         $entry{'name'} = $newname;    # untaint
 
         if ($checkBastionShell && $entry{'shell'} ne $OVH::Bastion::BASEPATH . "/bin/shell/osh.pl") {
-            return R('KO_NOT_FOUND', msg => "Account '$account' doesn't exist"); # msg is the same as below, voluntarily
+            return R('KO_NOT_FOUND', msg => "Account '$account' doesn't exist");    # msg is the same as below, voluntarily
         }
 
-        my ($newdir) = $entry{'dir'} =~ m{([/a-zA-Z0-9._-]+)};                   # untaint
+        my ($newdir) = $entry{'dir'} =~ m{([/a-zA-Z0-9._-]+)};                      # untaint
         return R('ERR_SECURITY_VIOLATION', msg => "Forbidden characters in account home directory")
           if ($newdir ne $entry{'dir'});
-        $entry{'dir'} = $newdir;                                                 # untaint
+        $entry{'dir'} = $newdir;                                                    # untaint
         return R('OK',
             value => {uid => $entry{'uid'}, gid => $entry{'gid'}, dir => $entry{'dir'}, account => $entry{'name'}});
     }
@@ -299,11 +300,11 @@ sub is_account_existing {
 sub access_modify {
     my %params = @_;
 
-    my $action = $params{'action'};                                              # add or del
+    my $action = $params{'action'};    # add or del
 
-    my $user = $params{'user'};    # can be undef or '*' for a user-wildcard access
-    my $ip   = $params{'ip'};      # can be a single ip or prefix
-    my $port = $params{'port'};    # can be undef or '*' for a port-wildcard access
+    my $user = $params{'user'};        # can be undef or '*' for a user-wildcard access
+    my $ip   = $params{'ip'};          # can be a single ip or prefix
+    my $port = $params{'port'};        # can be undef or '*' for a port-wildcard access
 
     my $ttl     = $params{'ttl'};
     my $comment = $params{'comment'};
@@ -583,7 +584,7 @@ sub access_modify {
 
         # build the line we're either adding or looking for (to delete it)
         my $entry = (index($ip, ':') >= 0 ? "[$ip]" : $ip);
-        $entry .= ":$port" if $port;
+        $entry .= ":$port"            if $port;
         $entry = $user . '@' . $entry if $user;
 
         my $t            = localtime(time);
@@ -1169,7 +1170,7 @@ sub is_group_member {
 sub get_remote_accounts_from_realm {
     my %params = @_;
     my $realm  = $params{'realm'};
-    my $cache  = $params{'cache'}; # allow cache use of sys_getpw_name() through is_bastion_account_valid_and_existing()
+    my $cache  = $params{'cache'};    # allow cache use of sys_getpw_name() through is_bastion_account_valid_and_existing()
 
     $realm = "realm_$realm" if $realm !~ /^realm_/;
     my $fnret =

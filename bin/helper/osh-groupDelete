@@ -175,7 +175,7 @@ $fnret or HEXIT($fnret);
 my $dh;
 if (opendir($dh, "/home/allowkeeper")) {
     while (my $dir = readdir($dh)) {
-        $dir =~ /^\./ and next;
+        $dir =~ /^\./                 and next;
         $dir !~ /^([a-zA-Z0-9._-]+)$/ and next;
         $dir = "/home/allowkeeper/$1";    # and untaint
         -d $dir or next;

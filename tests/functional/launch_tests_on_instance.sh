@@ -1,8 +1,6 @@
 #! /usr/bin/env bash
 # vim: set filetype=sh ts=4 sw=4 sts=4 et:
-# shellcheck disable=SC2086
-# shellcheck disable=SC2016
-# shellcheck disable=SC2046
+# shellcheck disable=SC2086,SC2016,SC2046,SC2317
 set -eu
 
 # ensure a sparse '*' somewhere doesn't end up in us expanding it silently

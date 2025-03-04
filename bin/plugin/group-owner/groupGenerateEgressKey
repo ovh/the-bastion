@@ -75,8 +75,8 @@ if ($encrypted) {
 my @command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
 push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-groupGenerateEgressKey';
 push @command, '--group', $group;
-push @command, '--algo', $algo;
-push @command, '--size', $size;
+push @command, '--algo',  $algo;
+push @command, '--size',  $size;
 push @command, '--encrypted' if $encrypted;
 
 $fnret = OVH::Bastion::helper(cmd => \@command, stdin_str => $passphrase);

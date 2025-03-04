@@ -82,11 +82,11 @@ $account = $fnret->value->{'account'};
 
 my @command = qw{ sudo -n -u allowkeeper -- /usr/bin/env perl -T };
 push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountModifyPersonalAccess';
-push @command, '--target', 'any';
-push @command, '--action', 'del';
+push @command, '--target',  'any';
+push @command, '--action',  'del';
 push @command, '--account', $account;
-push @command, '--ip', $ip;
-push @command, '--user', $user if $user;
-push @command, '--port', $port if $port;
+push @command, '--ip',      $ip;
+push @command, '--user',    $user if $user;
+push @command, '--port',    $port if $port;
 
 osh_exit OVH::Bastion::helper(cmd => \@command);

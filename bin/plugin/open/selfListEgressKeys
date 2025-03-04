@@ -2,7 +2,7 @@
 # vim: set filetype=perl ts=4 sw=4 sts=4 et:
 use common::sense;
 use Term::ANSIColor qw{ colored };
-use POSIX qw{ strftime };
+use POSIX           qw{ strftime };
 
 use File::Basename;
 use lib dirname(__FILE__) . '/../../../lib/perl';

@@ -78,7 +78,7 @@ $fnret or osh_exit $fnret;
 #
 my @command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
 push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountCreate';
-push @command, "--type", "realm", "--account", $realm, "--pubKey", $pubKey, "--always-active", "--uid-auto";
+push @command, "--type",    "realm", "--account", $realm, "--pubKey", $pubKey, "--always-active", "--uid-auto";
 push @command, "--from",    $from    if $from;
 push @command, "--comment", $comment if $comment;
 

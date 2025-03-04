@@ -32,7 +32,7 @@ OVH::Bastion::set_mock_data(
                       [2001:db8:feed::/48]:12
                       [2001:db8::2:3]
                       [2001:db8:deaf::/48]
-                      }
+                    }
                 ],
             },
         },
@@ -44,7 +44,7 @@ OVH::Bastion::load_configuration(
     }
 );
 
-my %want;    # truth table
+my %want;                # truth table
 my $undef = '_none_';    # can't use undef as a hash key, so we'll use this special value instead
 
 $want{"2001:0db8:0::1:2"}{$undef}{$undef} = 'KO_ACCESS_DENIED';

@@ -154,11 +154,13 @@ cleanup() {
     docker network rm "bastion-$target" >/dev/null
 }
 
+# shellcheck disable=SC2317
 cleanup_exit() {
     show_target_logs
     cleanup
 }
 
+# shellcheck disable=SC2317
 cleanup_int() {
     printf "%b%b%b\\n" "$WHITE_ON_RED" '>>> CLEANING UP, DO NOT CTRL+C AGAIN! <<<' "$NOC"
     cleanup

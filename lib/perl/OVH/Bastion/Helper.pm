@@ -3,7 +3,7 @@ package OVH::Bastion::Helper;
 # vim: set filetype=perl ts=4 sw=4 sts=4 et:
 use common::sense;
 
-use Fcntl qw{ :flock :mode };
+use Fcntl       qw{ :flock :mode };
 use Time::HiRes qw{ usleep };
 
 use File::Basename;
@@ -13,7 +13,7 @@ use OVH::Result;
 
 # We handle our importer's '$self' var, this is by design.
 use Exporter 'import';
-our $self;    ## no critic (ProhibitPackageVars)
+our $self;                          ## no critic (ProhibitPackageVars)
 our @EXPORT = qw( $self HEXIT );    ## no critic (ProhibitAutomaticExportation)
 
 # HEXIT aka "helper exit", used by helper scripts found in helpers/
@@ -57,7 +57,7 @@ sub check_spurious_args {
 $| = 1;
 
 # Don't let helpers be interrupted too easily
-$SIG{'HUP'} = 'IGNORE'; # continue even when attached terminal is closed (we're called with setsid on supported systems anyway)
+$SIG{'HUP'}  = 'IGNORE';    # continue even when attached terminal is closed (we're called with setsid on supported systems anyway)
 $SIG{'PIPE'} = 'IGNORE';    # continue even if osh_info gets a SIGPIPE because there's no longer a terminal
 
 # Ensure the PATH is not tainted, and has sane values

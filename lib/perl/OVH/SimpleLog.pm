@@ -64,9 +64,9 @@ sub closeSyslog {
     return 1;
 }
 
-sub _log  { _display('LOG',  @_); return 1; }                   ## no critic (ProhibitUnusedPrivateSubroutines)
+sub _log  { _display('LOG', @_); return 1; }                     ## no critic (ProhibitUnusedPrivateSubroutines)
 sub _warn { _display('WARN', @_); $NB_WARNINGS++; return 1; }
-sub _err  { _display('ERR',  @_); $NB_ERRORS++; return 1; }     ## no critic (ProhibitUnusedPrivateSubroutines)
+sub _err  { _display('ERR',  @_); $NB_ERRORS++;   return 1; }    ## no critic (ProhibitUnusedPrivateSubroutines)
 
 #   Display a message
 sub _display {
@@ -126,7 +126,7 @@ sub nb_errors   { return $NB_ERRORS; }
 sub nb_warnings { return $NB_WARNINGS; }
 
 END {
-    close($LOG_FH) if (defined $LOG_FH);
+    close($LOG_FH)          if (defined $LOG_FH);
     Sys::Syslog::closelog() if (defined $FACILITY);
 }
 

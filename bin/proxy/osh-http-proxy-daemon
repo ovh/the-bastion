@@ -69,14 +69,14 @@ $config->{'log_request_response'} //= 1;
 
 OVH::Bastion::ProxyHTTP->new()->run(
     %options,
-    port          => $config->{'port'} . '/ssl',
-    SSL_key_file  => $config->{'ssl_key'},
-    SSL_cert_file => $config->{'ssl_certificate'},
-    ipv           => 4,
-    server_type   => 'PreFork',
-    max_requests => 1,                        # DO NOT TOUCH, anything else that this seems to mix requests/answers (!?)
-    min_servers  => $config->{'min_servers'},
-    max_servers  => $config->{'max_servers'},
+    port              => $config->{'port'} . '/ssl',
+    SSL_key_file      => $config->{'ssl_key'},
+    SSL_cert_file     => $config->{'ssl_certificate'},
+    ipv               => 4,
+    server_type       => 'PreFork',
+    max_requests      => 1,                                # DO NOT TOUCH, anything else that this seems to mix requests/answers (!?)
+    min_servers       => $config->{'min_servers'},
+    max_servers       => $config->{'max_servers'},
     min_spare_servers => $config->{'min_spare_servers'},
     max_spare_servers => $config->{'max_spare_servers'},
     access_log_file   => "/home/proxyhttp/access.log",
@@ -88,8 +88,8 @@ OVH::Bastion::ProxyHTTP->new()->run(
     # which is also the max allowed value of the 'timeout' config param (see above).
     timeout_idle => 3600,
     proxy_config => {
-        insecure => $config->{'insecure'} ? 1 : 0,
-        timeout => $config->{'timeout'}, # our worker will wait for up to this amount of time for the egress connection to complete
+        insecure                      => $config->{'insecure'} ? 1 : 0,
+        timeout                       => $config->{'timeout'},                                 # our worker will wait for up to this amount of time for the egress connection to complete
         log_request_response          => $config->{'log_request_response'} ? 1 : 0,
         log_request_response_max_size => $config->{'log_request_response_max_size'},
         allowed_egress_protocols      => $config->{'allowed_egress_protocols'} || ['https'],
