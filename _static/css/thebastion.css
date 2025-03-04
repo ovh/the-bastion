@@ -1,0 +1,11 @@
+@import 'theme.css';
+
+.cmdusage .last {
+    font-family: SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",Courier,monospace;
+    white-space: nowrap;
+    font-size: 75%;
+}
+
+.wy-nav-content {
+    max-width: 1000px;
+}
