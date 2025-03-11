@@ -31,7 +31,7 @@ jobs:
           push: true
           file: docker/Dockerfile.sandbox
           tags: ovhcom/the-bastion:sandbox
-          platforms: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x
+          platforms: linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x
       -
         name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
