@@ -12,8 +12,8 @@ basedir=$(readlink -f "$(dirname "$0")"/../..)
 set_download_url_package() {
     type="$1"
     case "$type" in
-        rpm) set_download_url "/${PROGRAM_NAME}-.+\\.$archre\\.rpm$";;
-        deb) set_download_url "/${PROGRAM_NAME}_.+_$archre\\.deb$";;
+        rpm) set_download_url "/(ovh-)?${PROGRAM_NAME}-.+\\.$archre\\.rpm$";;
+        deb) set_download_url "/(ovh-)?${PROGRAM_NAME}_.+_$archre\\.deb$";;
         *) exit 1;;
     esac
 }
@@ -22,7 +22,7 @@ action_static() {
     set_archre
     os=$(uname -s | tr '[:upper:]' '[:lower:]')
 
-    set_download_url "/${PROGRAM_NAME}.*_${os}_${archre}\\.tar\\.gz$"
+    set_download_url "/(ovh-)?${PROGRAM_NAME}.*_${os}_${archre}\\.tar\\.gz$"
     prepare_temp_folder
 
     _download "$url"
