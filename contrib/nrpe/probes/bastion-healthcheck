@@ -58,7 +58,7 @@ $PROBE_NAME [options]
         --host HOST         Host to connect to. Default: $host
         --port PORT         Port to connect to. Default: $port
         --account ACCOUNT   Account name to use to authenticate. Default: $account
-        --keyfile PATH      Path to the private SSH key file to authenticate. Defaut: $keyfile
+        --keyfile PATH      Path to the private SSH key file to authenticate. Default: $keyfile
         --kbd-interactive   Allow keyboard-interactive authentication. Default: $kbdinteractive
 
         Note: don't specify an other option than --help to get the proper default values.

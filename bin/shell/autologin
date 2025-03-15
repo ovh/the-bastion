@@ -92,7 +92,7 @@ proc attempt_to_login args {
     }
 
     if { $stty_options != "" } {
-        # in that case, silence the "Password:" prompt, as our caller propably doesn't expect (sic) to see it
+        # in that case, silence the "Password:" prompt, as our caller probably doesn't expect (sic) to see it
         log_user 0
     }
 
@@ -131,7 +131,7 @@ proc attempt_to_login args {
     exit 5
 }
 
-# if no specific pasword was requested, try to login with the main password file, then try the fallbacks
+# if no specific password was requested, try to login with the main password file, then try the fallbacks
 set tryid 0
 if { $arg_password_id == -1 } {
     set last_attempt [attempt_to_login $tryid $arg_prog $arg_login $arg_file $arg_fallback_delay $spawn_args $arg_stty_options]

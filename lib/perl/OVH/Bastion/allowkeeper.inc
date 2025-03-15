@@ -718,7 +718,7 @@ sub is_valid_group {
     # gatekeeper: keymygroup-gatekeeper
     # aclkeeper: keymygroup-aclkeeper
     # owner: keymygroup-owner
-    # regular: no check appart from the length and forbidden prefixes/suffixes
+    # regular: no check apart from the length and forbidden prefixes/suffixes
 
     if (!$group) {
         return R('ERR_MISSING_PARAMETER', msg => "Missing parameter 'group'");

@@ -40,7 +40,7 @@ Immediate MFA
 
 This method implements MFA directly using PAM during the initial SSH authentication phase, on the ingress
 side, e.g. when accounts are connecting to the bastion. This entirely resides on SSH/PAM and doesn't even depend
-on The Bastion code (appart from the setup side of the additional factor for each account).
+on The Bastion code (apart from the setup side of the additional factor for each account).
 
 .. note::
 
@@ -81,7 +81,7 @@ MFA logic is implemented. We've left the comments that can be found in the templ
    #    AuthenticationMethods publickey,keyboard-interactive:pam
 
 As explained in the comments within the file, this section (commented by default) refers to the MFA that can be
-configured on the ``root`` account to protect The Bastion's own system. This is out of the scope of this documenation
+configured on the ``root`` account to protect The Bastion's own system. This is out of the scope of this documentation
 section, as we're focusing on the users MFA here, so refer to the :ref:`installation/advanced:2fa root authentication`
 section if that's what you want to achieve.
 
@@ -409,7 +409,7 @@ Here is how it looks like:
 
 As you seen, once ``mfa`` has been entered and the MFA validated, the prompt changes to ``[MFA-OK]`` implying that
 any command usually requiring MFA will not ask for it again (such as ``groupAddServer`` in the above example, as
-we've configured it to). We then explicitely exit the MFA elevated session by entering ``nomfa``.
+we've configured it to). We then explicitly exit the MFA elevated session by entering ``nomfa``.
 
 MFA and --osh batch
 *******************

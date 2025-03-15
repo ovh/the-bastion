@@ -654,7 +654,7 @@ sub is_valid_ip {
 
     if ($fast and index($ip, ':') == -1) {
         # We're being asked to be fast, and it's not an IPv6, just use a regex
-        # and don't instanciate a Net::IP. Also don't use named captures, as they're slower
+        # and don't instantiate a Net::IP. Also don't use named captures, as they're slower
         if (
             $ip =~ m{^
                 (?:
@@ -1162,7 +1162,7 @@ sub build_ttyrec_cmdline_part1of2 {
     # ensure there are no '/'
     $ttyrecFilenameFormat =~ tr{/}{_};
 
-    # preprend (and create) directory
+    # prepend (and create) directory
     my $saveDir = $params{'home'} . "/ttyrec";
     mkdir($saveDir);
     if ($params{'realm'} && $params{'remoteaccount'}) {
