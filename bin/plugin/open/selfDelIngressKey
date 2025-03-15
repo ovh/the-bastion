@@ -59,7 +59,7 @@ foreach my $key (@{$fnret->value || []}) {
 
 # Do we have anything to delete ?
 if (!%validKeys) {
-    warn_syslog("User $self has no valid keys, but somehow connected succcessfully, this shouldn't happen");
+    warn_syslog("User $self has no valid keys, but somehow connected successfully, this shouldn't happen");
     osh_exit 'ERR_NO_KEY', "You have no key to delete (wait, how did you connect in the first place?!)";
 }
 elsif (keys %validKeys == 1) {

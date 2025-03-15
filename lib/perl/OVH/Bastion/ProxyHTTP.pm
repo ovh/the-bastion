@@ -501,7 +501,7 @@ sub process_http_request {
 
     # if there's an egress-protocol header, get it
     my $egress_protocol = $req_headers->{'x-bastion-egress-protocol'} || 'https';
-    # protocol must be explicitely allowed per Bastion policy, by default only https is allowed
+    # protocol must be explicitly allowed per Bastion policy, by default only https is allowed
     if (!grep { $egress_protocol eq $_ } @{$self->{'proxy_config'}{'allowed_egress_protocols'} || []}) {
         return $self->log_and_exit(
             400,

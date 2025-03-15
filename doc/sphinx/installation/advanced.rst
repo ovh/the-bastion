@@ -12,7 +12,7 @@ Encryption & signature GPG keys
 
 .. note::
 
-   This section is a prequisite to both the :ref:`installadv_encryptrsync` and the
+   This section is a prerequisite to both the :ref:`installadv_encryptrsync` and the
    :ref:`installadv_backup` steps further down this documentation
 
 There are 2 pairs of GPG keys being used by the bastion:
