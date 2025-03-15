@@ -100,7 +100,7 @@ $PROBE_NAME [options]
         --debug         Increase verbosity of logs
         --host HOST     Host to connect to. Default: $host
         --port PORT     Port to connect to. Default: $port (tentatively
-                        autodected from the HTTPS Bastion proxy configuration)
+                        autodetected from the HTTPS Bastion proxy configuration)
         --disabled-ok   Return success even if Proxy is disabled (from config)
 
 EOF

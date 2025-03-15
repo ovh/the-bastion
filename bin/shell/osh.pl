@@ -193,7 +193,7 @@ if (-e '/home/allowkeeper/maintenance') {
 
 $fnret = OVH::Bastion::is_account_ttl_nonexpired(account => $self, sysaccount => $sysself);
 if (!$fnret) {
-    main_exit(OVH::Bastion::EXIT_TTL_EXPIRED, "ttl_expired", "Sorry $self, acccess denied (" . $fnret->msg . ")");
+    main_exit(OVH::Bastion::EXIT_TTL_EXPIRED, "ttl_expired", "Sorry $self, access denied (" . $fnret->msg . ")");
 }
 
 #

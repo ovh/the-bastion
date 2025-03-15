@@ -229,7 +229,7 @@ warn-info, die-info
 These logs are produced when some known portion of code (including libraries) called ``warn()`` or ``die()``
 but in a known case that can happen during nominal use.
 Don't use these logs to directly trigger an alert, but you can keep an eye on those, as e.g. an unusually
-high number of occurences in a short time may be a weak signal that somebody or something is misbehaving.
+high number of occurrences in a short time may be a weak signal that somebody or something is misbehaving.
 
 The fields are the same than the ones specified above for **warn** and **die**.
 

@@ -505,7 +505,7 @@ We now add all the details of the connection to the *close* logs, those that wer
 in the corresponding *open* log. This way, it is no longer required to correlate both logs with their uniqid
 to have all the data: the *close* log should suffice.
 The *open* log is still there if for some reason the *close* log can't be emitted (kill -9, system crash, etc.),
-or if the *open* and the *close* log are several hours, days or months appart.
+or if the *open* and the *close* log are several hours, days or months apart.
 
 An additional field **duration** has been added to the *close* logs,
 this represents the number of seconds (with millisecond precision) the connection lasted.

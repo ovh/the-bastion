@@ -90,7 +90,7 @@ to allow in the case of SCP.
 
 For SCP, you can allow both directions by using the command first with ``--protocol scpdownload``,
 then with ``--protocol scpupload``.
-Note that for SFTP and RYSNC, you can't specify a direction, due to how these protocols work: you either have
+Note that for SFTP and RSYNC, you can't specify a direction, due to how these protocols work: you either have
 SFTP/RSYNC access (hence being able to upload and download files), or you don't.
 
 For example, this is a valid command to add SFTP access to a machine which is part of a group:

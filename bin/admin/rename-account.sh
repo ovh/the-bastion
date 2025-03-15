@@ -60,7 +60,7 @@ else
     _run usermod -m -d /home/"$to" -l "$to" "$from"
 fi
 
-# then, rename all other groups linked to the account (appart from the main one already done)
+# then, rename all other groups linked to the account (apart from the main one already done)
 # shellcheck disable=SC2043
 for suffix in tty; do
     if getent group "$from-$suffix" >/dev/null ; then

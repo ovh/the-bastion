@@ -72,7 +72,7 @@ if (!defined $uid && !$uidAuto) {
     osh_exit 'ERR_MISSING_PARAMETER', "Missing mandatory parameter --uid or --uid-auto";
 }
 
-# quicky ensure these params are not pure bullshit (real check is done by helper script)
+# quickly ensure these params are not pure bullshit (real check is done by helper script)
 if ($account !~ /^[a-z0-9._-]+$/i) {
     osh_exit 'ERR_INVALID_PARAMETER', "Parameter 'account' seems invalid";
 }

@@ -96,7 +96,7 @@ my $shortGroup = $fnret->value->{'shortGroup'};
 
 # take a lock here, do it before checking for group existence,
 # because another parallel creation of the same group might be
-# occuring, in which case we'd still hit a race condition.
+# occurring, in which case we'd still hit a race condition.
 # additionally, the lock type "passwd" is used by all helpers
 # that may modify /etc/passwd or /etc/group.
 $fnret = OVH::Bastion::Helper::get_lock_fh(category => "passwd");

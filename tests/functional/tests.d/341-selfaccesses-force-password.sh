@@ -148,7 +148,7 @@ testsuite_selfaccesses_force_password()
         success ${mode}_del_a4_nofp $a0 --osh $del_access_plugin $target --host $remote_ip --user $account4 --port $remote_port
         json .error_code OK .command $del_access_plugin
 
-        # account1 => account4 with force-password but with a non existant hash: fail because --force-password aborts when the forced password cannot be found
+        # account1 => account4 with force-password but with a non existent hash: fail because --force-password aborts when the forced password cannot be found
         success ${mode}_add_a4_fp_hashnotfound $a0 --osh $add_access_plugin $target --host $remote_ip --user $account4 --port $remote_port --force-password "'${fake_hash}'"
         json .error_code OK .command $add_access_plugin
 

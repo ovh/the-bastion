@@ -94,7 +94,7 @@ elsif ($TOTPProvider eq 'google-authenticator') {
 }
 elsif ($TOTPProvider eq 'duo') {
 
-    # nothing to do locally, appart from marking the user as TOTP-active, which is done after this block.
+    # nothing to do locally, apart from marking the user as TOTP-active, which is done after this block.
 }
 else {
     # unknown provider, this shouldn't happen
