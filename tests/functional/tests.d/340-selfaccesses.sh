@@ -512,8 +512,19 @@ testsuite_selfaccesses()
     success   dupe   $a0 --osh selfForgetHostKey --host 127.0.0.2
     json .command selfForgetHostKey .error_code OK '.value."127.0.0.2".action'   OK_NO_MATCH
 
-    success nochange $a0 --osh accountUnexpire --account $account1
-    json .command accountUnexpire .error_code OK_NO_CHANGE
+    # --- accountUnexpire (non-realm account) ---
+    # with no expiration policy configured, the account isn't expirable, but its activity date is
+    # still refreshed and the command reports so (and the account name is echoed back in the value)
+    success no_expi_configured $a0 --osh accountUnexpire --account $account1
+    json .command accountUnexpire .error_code OK_EXPIRATION_NOT_CONFIGURED .value.account $account1
+
+    # same on a never-logged-in account (no lastlog file): this is internally OK_FIRST_LOGIN, reported
+    # the same way to the caller, and the lastlog file gets (re)created in the process
+    success removelastlog_noexpi $r0 "rm -f /home/$account1/lastlog"
+    success no_expi_firstlogin $a0 --osh accountUnexpire --account $account1
+    json .command accountUnexpire .error_code OK_EXPIRATION_NOT_CONFIGURED .value.account $account1
+    success lastlog_recreated $r0 "test -f /home/$account1/lastlog && echo PRESENT"
+    contain PRESENT
 
     # artificially expire account1
     configchg 's=^\\\\x22accountMaxInactiveDays\\\\x22.+=\\\\x22accountMaxInactiveDays\\\\x22:2,='
@@ -523,19 +534,23 @@ testsuite_selfaccesses()
     retvalshouldbe 113
 
     success works $a0 --osh accountUnexpire --account $account1
-    json .command accountUnexpire .error_code OK
+    json .command accountUnexpire .error_code OK .value.account $account1
+    json '.value.days > 1000' true
 
     success unexpired $a1 --osh info
     json .error_code OK
 
     success worksnochange $a0 --osh accountUnexpire --account $account1
-    json .command accountUnexpire .error_code OK_NO_CHANGE
+    json .command accountUnexpire .error_code OK_NOT_EXPIRED .value.account $account1
 
-    # try on never logged-in account (different code path)
+    # try on never logged-in account (different code path): remove lastlog while the policy is set
     success manuallyRemoveLastlog $r0 "rm -f /home/$account1/lastlog"
 
-    success worksnochange $a0 --osh accountUnexpire --account $account1
-    json .command accountUnexpire .error_code OK_NO_CHANGE
+    success worksnochange2 $a0 --osh accountUnexpire --account $account1
+    json .command accountUnexpire .error_code OK_NOT_EXPIRED .value.account $account1
+
+    # reset the expiration policy for the rest of this module
+    configchg 's=^\\\\x22accountMaxInactiveDays\\\\x22.+=\\\\x22accountMaxInactiveDays\\\\x22:0,='
 
     # delete account1
     script cleanup $a0 --osh accountDelete --account $account1 "<<< \"Yes, do as I say and delete $account1, kthxbye\""

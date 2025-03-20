@@ -55,6 +55,54 @@ testsuite_realm()
     success firstconnect2 $a2 realm_$realm_shared_account@127.0.0.1 --kbd-interactive -- $js --osh info
     json .value.account $account2 .value.realm $realm_shared_account
 
+    # --- accountUnexpire on a 'realm/user' account ---
+    # regression: this used to fail because the helper compared $ENV{USER} (the realm_* sysaccount)
+    # against the full 'realm/user' account name, and the plugin tried to sudo to the non-existent
+    # 'realm/user' system user instead of the realm_* sysaccount.
+    local realm_sys="realm_$realm_shared_account"
+    local realm_user="$realm_shared_account/$account1"
+
+    # the per-remote-user lastlog file must have been created by firstconnect1 above
+    success realm_lastlog_user_present $r0 "test -f /home/$realm_sys/lastlog_$account1 && echo PRESENT"
+    contain PRESENT
+
+    # with no expiration policy configured, unexpiring still refreshes the activity date and reports it
+    success realm_unexpire_noexpi $a0 --osh accountUnexpire --account $realm_user
+    json .command accountUnexpire .error_code OK_EXPIRATION_NOT_CONFIGURED .value.account $realm_user
+
+    # unexpiring the realm support account (the bare realm_* sysaccount) directly is forbidden:
+    # only the 'realm/user' form is a valid account to operate on, never the realm_* account itself
+    plgfail realm_unexpire_sysaccount $a0 --osh accountUnexpire --account $realm_sys
+    json .error_code KO_FORBIDDEN_PREFIX
+
+    # now configure an expiration policy and artificially expire *only* the realm user's per-user lastlog;
+    # the shared realm-account lastlog is left fresh, so a detected expiry can only come from the per-user file
+    configchg 's=^\\\\x22accountMaxInactiveDays\\\\x22.+=\\\\x22accountMaxInactiveDays\\\\x22:2,='
+    success realm_expire_user $r0 "touch -t 201501010101 /home/$realm_sys/lastlog_$account1"
+
+    # accountUnexpire detects the expiry (reading the per-user file, not the fresh shared one) and reactivates
+    success realm_unexpire_expired $a0 --osh accountUnexpire --account $realm_user
+    json .command accountUnexpire .error_code OK .value.account $realm_user
+    json '.value.days > 1000' true
+
+    # running it again proves the per-user file was the one refreshed: it now reads as not-expired
+    success realm_unexpire_again $a0 --osh accountUnexpire --account $realm_user
+    json .command accountUnexpire .error_code OK_NOT_EXPIRED .value.account $realm_user
+
+    # accountUnexpire must ALSO refresh the shared realm-account lastlog, not just the per-user file.
+    # age *only* the shared file (per-user is fresh now), drop a dated reference, then unexpire: even
+    # though the account isn't expired, the shared file's mtime must move past the reference, proving
+    # it was really touched (a plain existence check wouldn't catch a missing refresh).
+    success realm_age_shared $r0 "touch -t 201501010101 /home/$realm_sys/lastlog && touch -t 202001010101 /tmp/bastiontest_lastlog_ref"
+    success realm_unexpire_refresh_shared $a0 --osh accountUnexpire --account $realm_user
+    json .command accountUnexpire .error_code OK_NOT_EXPIRED .value.account $realm_user
+    success realm_lastlog_shared_touched $r0 "test /home/$realm_sys/lastlog -nt /tmp/bastiontest_lastlog_ref && echo TOUCHED"
+    contain TOUCHED
+    success realm_ref_cleanup $r0 "rm -f /tmp/bastiontest_lastlog_ref"
+
+    # reset the expiration policy for the rest of this module
+    configchg 's=^\\\\x22accountMaxInactiveDays\\\\x22.+=\\\\x22accountMaxInactiveDays\\\\x22:0,='
+
     # try forbidden plugins
     for plugin in selfAddPersonalAccess selfAddIngressKey selfDelIngressKey selfGenerateEgressKey selfAddPersonalAccess selfDelPersonalAccess selfPlaySession selfListSessions selfResetIngressKeys
     do

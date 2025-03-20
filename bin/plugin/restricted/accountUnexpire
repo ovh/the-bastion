@@ -41,9 +41,10 @@ if (not $account) {
 $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
 $fnret or osh_exit $fnret;
 $account = $fnret->value->{'account'};
+my $sysaccount = $fnret->value->{'sysaccount'};
 
 my @command = qw{ sudo -n -u };
-push @command, ($account, '--');
+push @command, ($sysaccount, '--');
 push @command, qw{ /usr/bin/env perl -T };
 push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountUnexpire';
 push @command, ('--account', $account);
@@ -51,16 +52,37 @@ push @command, ('--account', $account);
 $fnret = OVH::Bastion::helper(cmd => \@command);
 $fnret or osh_exit $fnret;
 
+# the helper only ever returns an error (already handled above) or one of the OK_* codes below.
+# build a consistent value across all cases: whatever the helper returned, plus the account name.
+my $value = {%{$fnret->value || {}}, account => $account};
+
 if ($fnret->err eq 'OK') {
-    my $days = $fnret->value->{'days'};
+    # the account was expired (or its last activity couldn't be determined) and has been reactivated
+    my $msg =
+      defined $value->{'days'}
+      ? "Account $account was expired ($value->{'days'} days without connection), it is now active again."
+      : "Account $account had no determinable last activity date, which has now been reset: it is active again.";
+    osh_ok R('OK', value => $value, msg => $msg);
+}
+elsif ($fnret->err eq 'OK_NOT_EXPIRED') {
+    # an expiration policy is configured but the account wasn't expired; its activity date was refreshed anyway
     osh_ok R(
-        'OK',
-        value => {account => $account, days => $days},
-        msg   => "Account $account was expired ($days days without connection), it is now active again."
+        'OK_NOT_EXPIRED',
+        value => $value,
+        msg   => "Account $account is not expired, but its last activity date has been refreshed nevertheless."
     );
 }
-elsif ($fnret->is_ok) {
-    osh_ok R('OK_NO_CHANGE', msg => "Account $account wasn't expiring, no change was needed or made.");
+elsif ($fnret->err eq 'OK_EXPIRATION_NOT_CONFIGURED' or $fnret->err eq 'OK_FIRST_LOGIN') {
+    # no expiration policy is configured on this bastion; the activity date was refreshed anyway.
+    # OK_FIRST_LOGIN (account had no recorded activity yet) is reported the same way: from the
+    # caller's point of view, the account is simply not expirable and its activity has been recorded.
+    osh_ok R(
+        'OK_EXPIRATION_NOT_CONFIGURED',
+        value => $value,
+        msg   => "Account $account is not expired and expiration is not configured on this bastion, "
+          . "but its last activity date has been refreshed nevertheless."
+    );
 }
 
-osh_exit $fnret;
+# defensive fallback: any other (unexpected) OK_* code returned by the helper
+osh_ok R('OK_NO_CHANGE', value => $value, msg => "Account $account wasn't expiring, no change was needed or made.");
