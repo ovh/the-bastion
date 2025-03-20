@@ -199,18 +199,21 @@ if (!$fnret) {
 #
 # Second check : has account logged-in recently enough to be allowed ?
 #
-$fnret = OVH::Bastion::is_account_nonexpired(sysaccount => $sysself, remoteaccount => $remoteself);
+$fnret = OVH::Bastion::is_account_nonexpired(
+    sysaccount     => $sysself,
+    remoteaccount  => $remoteself,
+    update_lastlog => 1,
+    ipfrom         => $ipfrom,
+    hostfrom       => $hostfrom
+);
 if ($fnret->is_err) {
-
     # internal error, warn and pass
     osh_warn($fnret);
 }
 elsif ($fnret->is_ko) {
-
     # expired
     main_exit OVH::Bastion::EXIT_ACCOUNT_EXPIRED, 'account_expired', $fnret->msg;
 }
-my $lastlog_filepath = $fnret->value->{'filepath'};
 
 my $lastlogmsg = sprintf("Welcome to $bastionName, $self, this is your first connection");
 if ($fnret && $fnret->value && $fnret->value->{'seconds'}) {
@@ -221,15 +224,6 @@ if ($fnret && $fnret->value && $fnret->value->{'seconds'}) {
         $fnret->value->{'duration'},
         $fnret->value->{'date'}, $lastloginfo
     );
-}
-
-# ok not expired, so we update lastlog
-if ($lastlog_filepath && open(my $lastlogfh, '>', $lastlog_filepath)) {
-    print $lastlogfh sprintf("%s(%s)", $ipfrom, $hostfrom);
-    close($lastlogfh);
-}
-else {
-    osh_warn "Couldn't update your lastlog ($lastlog_filepath: $!), contact a bastion admin";
 }
 
 #
