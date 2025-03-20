@@ -512,8 +512,8 @@ testsuite_selfaccesses()
     success   dupe   $a0 --osh selfForgetHostKey --host 127.0.0.2
     json .command selfForgetHostKey .error_code OK '.value."127.0.0.2".action'   OK_NO_MATCH
 
-    success nochange $a0 --osh accountUnexpire --account $account1
-    json .command accountUnexpire .error_code OK_NO_CHANGE
+    success no_expi_configured $a0 --osh accountUnexpire --account $account1
+    json .command accountUnexpire .error_code OK_EXPIRATION_NOT_CONFIGURED
 
     # artificially expire account1
     configchg 's=^\\\\x22accountMaxInactiveDays\\\\x22.+=\\\\x22accountMaxInactiveDays\\\\x22:2,='
@@ -529,13 +529,13 @@ testsuite_selfaccesses()
     json .error_code OK
 
     success worksnochange $a0 --osh accountUnexpire --account $account1
-    json .command accountUnexpire .error_code OK_NO_CHANGE
+    json .command accountUnexpire .error_code OK_NOT_EXPIRED
 
     # try on never logged-in account (different code path)
     success manuallyRemoveLastlog $r0 "rm -f /home/$account1/lastlog"
 
     success worksnochange $a0 --osh accountUnexpire --account $account1
-    json .command accountUnexpire .error_code OK_NO_CHANGE
+    json .command accountUnexpire .error_code OK_NOT_EXPIRED
 
     # delete account1
     script cleanup $a0 --osh accountDelete --account $account1 "<<< \"Yes, do as I say and delete $account1, kthxbye\""
