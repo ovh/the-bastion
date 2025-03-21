@@ -16,7 +16,8 @@ use MIME::Base64;
 use Net::Server::PreForkSimple;
 use Net::Server::PreFork;
 use Sys::Hostname;
-use base qw{Net::Server::HTTP};
+use Storable qw{ thaw };
+use base     qw{Net::Server::HTTP};
 
 ###########################
 # BE CAREFUL IN THIS CLASS: STDIN && STDOUT are bound to the server->client socket
@@ -241,11 +242,21 @@ sub _exec_worker_and_get_result {
       or return $self->log_and_exit(
         500,
         "Internal Error (worker returned an error)",
-        "Worker returned an error (" . $fnret->msg . ")",
+        "Worker returned an error ($fnret)",
         {comment => "worker_error"}
       );
 
-    return $fnret;
+    my $value_object = eval { thaw(decode_base64($fnret->value)); };
+    if ($@) {
+        return $self->log_and_exit(
+            500,
+            "Internal Error (can't decode worker data)",
+            "Error while decoding worker data ($@)\n",
+            {comment => "worker_decoding_error"}
+        );
+    }
+
+    return R($fnret->err, msg => $fnret->msg, value => $value_object);
 }
 
 # overrides parent func
