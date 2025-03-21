@@ -2,6 +2,7 @@
 # vim: set filetype=perl ts=4 sw=4 sts=4 et:
 # FILEMODE 0755
 # FILEOWN root root
+use 5.026;
 use common::sense;
 
 use File::Basename;
