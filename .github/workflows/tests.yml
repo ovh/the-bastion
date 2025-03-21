@@ -3,11 +3,22 @@ name: Linux distros tests
 on:
     pull_request:
         types: [labeled, synchronize]
+    workflow_dispatch:
+        inputs:
+            test_type:
+                type: choice
+                description: Which series of tests to launch
+                required: true
+                options:
+                - short
+                - long
+                - full
 
 jobs:
     tests_short:
         name: Short (deb12 only, w/o cc)
         runs-on: ubuntu-latest
+        if: ${{ github.event_name == 'pull_request' || inputs.test_type == 'short' }}
         timeout-minutes: 45
         steps:
         - uses: actions/checkout@v4
@@ -24,7 +35,7 @@ jobs:
             matrix:
                 platform: [rockylinux9, debian12, 'opensuse15@opensuse/leap:15.6', ubuntu2404]
         runs-on: ubuntu-latest
-        if: contains(github.event.pull_request.labels.*.name, 'tests:long')
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'tests:long') || inputs.test_type == 'long' }}
         timeout-minutes: 45
         steps:
         - uses: actions/checkout@v4
@@ -41,7 +52,7 @@ jobs:
             matrix:
                 platform: [rockylinux8, rockylinux9, debian10, debian11, debian12, 'opensuse15@opensuse/leap:15.6', ubuntu1804, ubuntu2004, ubuntu2204, ubuntu2404]
         runs-on: ubuntu-latest
-        if: contains(github.event.pull_request.labels.*.name, 'tests:full')
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'tests:full') || inputs.test_type == 'full' }}
         timeout-minutes: 45
         steps:
         - uses: actions/checkout@v4
