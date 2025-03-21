@@ -23,6 +23,7 @@ use POSIX    ();
 use Storable qw{ freeze thaw };
 use Sys::Hostname;
 use Time::HiRes ();
+use List::Util  qw{ pairkeys first };
 
 $ENV{'FORCE_STDERR'} = 1;
 $ENV{'PATH'}         = '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/pkg/bin';
@@ -56,7 +57,8 @@ sub log_and_exit {
     push @{$merged{'custom'}}, ['code' => $code], ['msg' => $msg];
     OVH::Bastion::log_access_insert(%merged);
 
-    push @headers, ["X-Bastion-Local-Status" => "$code $msg"] if not grep { "X-Bastion-Local-Status" eq $_ } @headers;
+    push @headers, ["X-Bastion-Local-Status" => "$code $msg"]
+      if !first { "X-Bastion-Local-Status" eq $_ } pairkeys(@headers);
     my %ret = (code => $code, msg => $msg, body => $body, headers => \@headers, allowed => $merged{'allowed'});
     OVH::Bastion::json_output(R('OK', value => encode_base64(freeze(\%ret))), no_delimiters => 1);
     exit 0;
@@ -422,6 +424,8 @@ if ($childpid == 0) {
         $ua->ssl_opts('SSL_version' => 'TLSv1');
         $res = $ua->request($req);
     }
+    # we can use freeze() instead of nfreeze() because the thaw() will be made by our parent,
+    # which guarantees that we're using the same endianness, obviously
     $pipe->print(freeze({res => $res, downgraded => $downgraded}));
     exit;
 }
