@@ -50,7 +50,7 @@ jobs:
         name: Full (exhaustive, w/ cc)
         strategy:
             matrix:
-                platform: [rockylinux8, rockylinux9, debian10, debian11, debian12, 'opensuse15@opensuse/leap:15.6', ubuntu1804, ubuntu2004, ubuntu2204, ubuntu2404]
+                platform: [rockylinux8, rockylinux9, debian10, debian11, debian12, 'opensuse15@opensuse/leap:15.6', ubuntu2004, ubuntu2204, ubuntu2404]
         runs-on: ubuntu-latest
         if: ${{ contains(github.event.pull_request.labels.*.name, 'tests:full') || inputs.test_type == 'full' }}
         timeout-minutes: 45

@@ -2,7 +2,7 @@
 # vim: set filetype=perl ts=4 sw=4 sts=4 et:
 use strict;
 use warnings;
-use 5.010;
+use 5.026;
 
 use Getopt::Long;
 

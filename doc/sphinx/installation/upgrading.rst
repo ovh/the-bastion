@@ -39,8 +39,8 @@ This release now supports IPv6, which is disabled by default unless you set ``IP
 
 Note that some OS versions have an ancient version of ``Net::Netmask`` that doesn't support IPv6, these will
 behave as if ``IPv6Allowed`` is always set to ``false``, even if you set it to ``true``. A message will be logged
-in the syslog if this happens on your system. Of the currently supported list of OS versions, the two following
-versions are affected: Ubuntu 18.04 and OpenSUSE Leap 15.6.
+in the syslog if this happens on your system. Of the currently supported list of OS versions,
+only OpenSUSE Leap 15.6 is affected.
 
 Two deprecated JSON fields have been removed from the ``groupInfo`` plugin response, these were never documented
 and were duplicates of current fields, but with ancient names dating back to a version before the first public release.
