@@ -442,10 +442,10 @@ sub json_output {    ## no critic (ArgUnpacking)
     my $command       = $params{'command'}    || $ENV{'PLUGIN_NAME'};
     my $filehandle    = $params{'filehandle'} || *STDOUT;
 
-    my $JsonObject = JSON->new->utf8;
-    $JsonObject = $JsonObject->convert_blessed(1);
+    ## no critic(ValuesAndExpressions::ProhibitLongChainsOfMethodCalls)
+    my $JsonObject = JSON->new->utf8->convert_blessed->ascii;
     if ($ENV{'PLUGIN_JSON'} eq 'PRETTY' and not $force_default) {
-        $JsonObject->pretty(1);
+        $JsonObject->pretty;
     }
     my $encoded_json =
       $JsonObject->encode({error_code => $R->err, error_message => $R->msg, command => $command, value => $R->value});
