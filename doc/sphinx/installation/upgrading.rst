@@ -27,6 +27,12 @@ See the ``--help`` for a more fine-grained upgrade path if needed.
 Version-specific upgrade instructions
 =====================================
 
+v3.20.00 - 2025/03/25
+*********************
+
+Support of Ubuntu 18.04 has been dropped. The minimum required Perl version is now v5.26,
+which has been released in 2017.
+
 v3.19.01 - 2025/03/04
 *********************
 
