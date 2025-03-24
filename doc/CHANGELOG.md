@@ -1,3 +1,11 @@
+## v3.20.00 - 2025/03/25
+- chg: deprecate Ubuntu 18.04, up required perl version to v5.26
+- enh: ensure JSON streams are purely us-ascii
+- fix: httpproxy: allow binary data to be passed through unmodified
+- chore: dockerhub: remove i386 build, no longer supported by yubico-piv-checker builds
+- chore: fix yubico-piv-checker package name since 1.0.2
+- chore: workflows: allow manual launch of distro tests
+
 ## v3.19.01 - 2025/03/04
 - feat: httpproxy: optional support for plain http on egress
 - fix: selfPlaySession: warn in syslog properly
