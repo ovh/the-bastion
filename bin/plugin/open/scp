@@ -68,38 +68,41 @@ REMOTE_PATH=""
 
 usage() {
     cat >&2 <<EOF
-usage: $0 [-i identity_file] [-P port] [-o ssh_option] source target
+Usage: $0 [-p] [-q] [-r] [-T] [-v] [-l limit] [-i identity_file] [-P port] [-o ssh_option] source target
+
+Please refer to the scp manpage for details about each command-line option above.
 EOF
     exit 1
 }
 
 while [ -n "${1:-}" ]; do
     case "$1" in
-        "-i")
+        "-i"|"-o")
             if [ -z "${2:-}" ]; then
-                echo "scpwrapper: missing argument after '-i'" >&2
+                echo "scpwrapper: missing argument after '$1'" >&2
                 exit 1
             fi
-            BASTION_SSH_EXTRA_ARGS="$BASTION_SSH_EXTRA_ARGS -i $2"
-            BASTION_SCP_EXTRA_ARGS="$BASTION_SCP_EXTRA_ARGS -i $2"
+            BASTION_SSH_EXTRA_ARGS="$BASTION_SSH_EXTRA_ARGS $1 $2"
+            BASTION_SCP_EXTRA_ARGS="$BASTION_SCP_EXTRA_ARGS $1 $2"
             shift 2;;
-        "-o")
+        "-P"|"-l")
             if [ -z "${2:-}" ]; then
-                echo "scpwrapper: missing argument after '-o'" >&2
+                echo "scpwrapper: missing argument after '$1'" >&2
+                exit 1
+            elif ! echo "$2" | grep -qE '^[0-9]+$'; then
+                echo "scpwrapper: argument after '$1' should be a number (got '$2')" >&2
+                exit 1
+            elif [ "$1" = "-P" ]; then
+                REMOTE_PORT="$2"
+            elif [ "$1" = "-l" ]; then
+                BASTION_SCP_EXTRA_ARGS="$BASTION_SCP_EXTRA_ARGS -l $2"
+            else
+                echo "scpwrapper: unmanaged case for '$1'" >&2
                 exit 1
             fi
-            BASTION_SSH_EXTRA_ARGS="$BASTION_SSH_EXTRA_ARGS -o $2"
-            BASTION_SCP_EXTRA_ARGS="$BASTION_SCP_EXTRA_ARGS -o $2"
             shift 2;;
-        "-P")
-            if [ -z "${2:-}" ]; then
-                echo "scpwrapper: missing argument after '-P'" >&2
-                exit 1
-            fi
-            REMOTE_PORT="$2"
-            shift 2;;
-        "-r")
-            BASTION_SCP_EXTRA_ARGS="$BASTION_SCP_EXTRA_ARGS -r"
+        "-r"|"-p"|"-q"|"-T"|"-v")
+            BASTION_SCP_EXTRA_ARGS="$BASTION_SCP_EXTRA_ARGS $1"
             shift;;
         "-*")
             echo "scpwrapper: unsupported option '$1'" >&2
