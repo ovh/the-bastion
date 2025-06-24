@@ -74,6 +74,7 @@ sub gpg_encrypt {
     my %params = @_;
     my @cmd    = qw{ gpg --batch --yes --trust-model always --encrypt };
     if ($params{'signkey'}) {
+        push @cmd, qw{ --sign };
         push @cmd, qw{ --passphrase-fd 0 };
         push @cmd, qw{ --pinentry-mode loopback } if is_new_gpg();
         push @cmd, '--local-user', $params{'signkey'};
