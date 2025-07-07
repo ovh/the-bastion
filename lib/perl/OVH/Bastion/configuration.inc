@@ -527,13 +527,13 @@ sub load_configuration {
     }
 
     # ... if kill timeout is lower than lock timeout, just unset lock timeout
-    if ($C->{'idleKillTimeout'} <= $C->{'idleLockTimeout'} && $C->{'idleLockTimeout'} != 0) {
+    if ($C->{'idleKillTimeout'} <= $C->{'idleLockTimeout'} && $C->{'idleKillTimeout'} != 0) {
         push @errors,
             "Configuration error: option 'idleKillTimeout' ("
           . $C->{'idleKillTimeout'}
           . ") is <= 'idleLockTimeout' ("
           . $C->{'idleLockTimeout'}
-          . "), setting 'idleKillTimeout' to 0";
+          . "), setting 'idleLockTimeout' to 0";
         $C->{'idleLockTimeout'} = 0;
     }
 
