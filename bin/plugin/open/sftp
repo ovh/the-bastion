@@ -46,7 +46,6 @@ sub help {
     my $script = <<'END_OF_SCRIPT';
 #! /usr/bin/env bash
 set -u
-shopt -s nocasematch
 # <custom-section>
 SELF="%SELF%"
 BASTION_CMD="%BASTION_CMD%"
@@ -111,7 +110,15 @@ dst="${1:-}"
 if [[ $dst =~ ^(sftp://)?(([^@:/]+)@)?([^@:/]+)(:([0-9]+))?(/(.+))?$ ]]; then
     REMOTE_USER="${BASH_REMATCH[3]:-$SELF}"
     REMOTE_HOST="${BASH_REMATCH[4]}"
-    REMOTE_PORT="${BASH_REMATCH[6]:-22}"
+    # if already set through -P, halt if we have a different port specified through sftp://
+    if [ -n "${REMOTE_PORT:-}" ]; then
+        if [ -n "${BASH_REMATCH[6]:-}" ] && [ "${BASH_REMATCH[6]:-}" != "$REMOTE_PORT" ]; then
+            echo "sftpwrapper: conflicting ports specified ($REMOTE_PORT and ${BASH_REMATCH[6]})" >&2
+            exit 1
+        fi
+    else
+        REMOTE_PORT="${BASH_REMATCH[6]:-22}"
+    fi
     REMOTE_PATH="${BASH_REMATCH[7]}"
     [ "$BASTION_SFTP_DEBUG" = 1 ] && echo "sftpwrapper: parsed user=$REMOTE_USER host=$REMOTE_HOST port=$REMOTE_PORT path=$REMOTE_PATH" >&2
 else
