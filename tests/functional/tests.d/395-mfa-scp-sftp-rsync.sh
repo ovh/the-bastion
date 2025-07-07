@@ -199,7 +199,17 @@ EOF
     contain 'sftp> exit'
     contain '>>> Done,'
 
-    success personal_sftp_use_newwrapper_ok /tmp/sftpwrapper -b /tmp/sftpcommands -i $account0key1file $shellaccount@127.0.0.2
+    run personal_sftp_use_newwrapper_badport /tmp/sftpwrapper -b /tmp/sftpcommands -i $account0key1file -P 9999 $shellaccount@127.0.0.2
+    retvalshouldbe 1
+    nocontain 'sftp>'
+    contain 'Access denied'
+
+    run personal_sftp_use_newwrapper_conflictingports /tmp/sftpwrapper -b /tmp/sftpcommands -i $account0key1file -P 9999 $shellaccount@127.0.0.2:7777
+    retvalshouldbe 1
+    nocontain 'sftp>'
+    contain 'conflicting'
+
+    success personal_sftp_use_newwrapper_ok /tmp/sftpwrapper -b /tmp/sftpcommands -i $account0key1file -P 22 $shellaccount@127.0.0.2:22
     contain 'sftp> ls'
     contain 'uptest'
     contain 'sftp> exit'
