@@ -134,7 +134,7 @@ elif [ "$OS_FAMILY" = FreeBSD ]; then
     wanted_list="base64 coreutils rsync bash sudo pamtester p5-JSON p5-JSON-XS gnupg \
             p5-common-sense p5-DateTime p5-Net-IP p5-DBD-SQLite p5-Net-Netmask lsof \
             p5-Term-ReadKey expect fping p5-Net-Server p5-CGI p5-LWP-Protocol-https \
-            p5-Test-Deep"
+            p5-Test-Deep p5-Term-ReadLine-Gnu"
     install_cmd="pkg add"
     installed=""
     for i in $wanted_list
