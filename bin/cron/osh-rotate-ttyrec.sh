@@ -32,7 +32,7 @@ if [ "$1" = "--big-only" ]; then
     fi
 else
     _log "Rotating all ttyrec files..."
-    if pkill --signal USR1 ttyrec; then
+    if pkill -USR1 ttyrec; then
         _log "Rotation done"
     else
         _log "No ttyrec files to rotate"

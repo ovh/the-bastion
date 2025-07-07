@@ -30,11 +30,6 @@ if [ -z "$LINUX_DISTRO" ] || [ -z "$DISTRO_VERSION" ]; then
     fi
 fi
 
-# special case while bookworm is not yet released
-if [ "$DISTRO_VERSION" = "bookworm/sid" ]; then
-    DISTRO_VERSION=12
-fi
-
 LINUX_DISTRO=$(echo "$LINUX_DISTRO" | tr '[:upper:]' '[:lower:]' | tr -d ' ')
 # shellcheck disable=SC2034
 DISTRO_VERSION_MAJOR=$(echo "$DISTRO_VERSION" | grep -Eo '^[0-9]+' || true)
@@ -90,6 +85,16 @@ fi
 CRON_DIR=$ETC_DIR/cron.d
 if [ ! -e "$CRON_DIR" ]; then
     CRON_DIR=/etc/cron.d
+fi
+
+# set proper `find' options for egrep-style regex matching
+# shellcheck disable=SC2034
+if [ "$OS_FAMILY" = FreeBSD ]; then
+    FIND_EGREP_POSITIONAL_BEFORE='-E'
+    FIND_EGREP_POSITIONAL_AFTER=''
+else
+    FIND_EGREP_POSITIONAL_BEFORE=''
+    FIND_EGREP_POSITIONAL_AFTER='-regextype egrep'
 fi
 
 action_doing()
