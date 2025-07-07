@@ -28,7 +28,7 @@ Usage: --osh SCRIPT_NAME [--host HOST] [-c COUNT] [-s PKTSZ] [-t TTL] [-w TIMEOU
   -c COUNT     Number of pings to send (default: infinite)
   -s SIZE      Specify the packet size to send
   -t TTL       TTL to set in the ICMP packet (default: OS dependent)
-  -w TIMEOUT   Exit unconditionally after this amount of seconds (default & max: 86400)
+  -w TIMEOUT   Exit unconditionally after this amount of seconds (default & max: 3600)
 EOF
 );
 
@@ -72,7 +72,8 @@ if ($ttl and $ttl > 0 and $ttl < 256) {
 # ensure there's always a deadline, to avoid having a plugin running for months,
 # especially because this one caches stdout to be able to compute stats at the
 # end, and return these in the JSON output
-$deadline = 86400 if (!$deadline || $deadline < 0 || $deadline > 86400);
+# The max allowed under FreeBSD is 3600, use it as the max
+$deadline = 3600 if (!$deadline || $deadline < 0 || $deadline > 3600);
 push @command, (OVH::Bastion::is_freebsd() ? '-t' : '-w', $deadline);
 
 push @command, $host;
