@@ -941,6 +941,8 @@ sub ssh_test_access_way {
     my $port = $params{'port'};
     my $ip   = $params{'ip'};
     my $user = $params{'user'};
+
+    my $forceKey = $params{'forceKey'};
     my $fnret;
 
     if (defined $account and defined $group) {
@@ -978,14 +980,14 @@ sub ssh_test_access_way {
         my $shortGroup = $fnret->value->{'shortGroup'};
         $group = $fnret->value->{'group'};
 
-        $fnret = OVH::Bastion::get_group_keys(group => $shortGroup);
+        $fnret = OVH::Bastion::get_group_keys(group => $shortGroup, forceKey => $forceKey);
     }
     elsif ($account) {
         $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
         $fnret or return $fnret;
         $account = $fnret->value->{'account'};
 
-        $fnret = OVH::Bastion::get_personal_account_keys(account => $account);
+        $fnret = OVH::Bastion::get_personal_account_keys(account => $account, forceKey => $forceKey);
     }
     else {
         return R('ERR_MISSING_PARAMETER', msg => "Missing 'group' or 'account' for ssh_test_access_way");
@@ -1001,10 +1003,15 @@ sub ssh_test_access_way {
     }
 
     if (not @keyList) {
-        return R('OK_NO_KEYS_TO_TEST',
-            msg =>
-              "Couldn't find any accessible SSH key to test connection with, you're probably adding access to an account or a group you don't have access to yourself, nevermind, will continue"
-        );
+        if ($forceKey) {
+            return R('KO_NO_MATCHING_KEY', msg => "Couldn't find any key with the fingerprint you specified");
+        }
+        else {
+            return R('OK_NO_KEYS_TO_TEST',
+                    msg => "Couldn't find any accessible SSH key to test connection with, "
+                  . "you're probably adding access to an account or a group you don't have access to yourself, "
+                  . "nevermind, will continue");
+        }
     }
 
     my $preferredAuthentications = 'publickey';

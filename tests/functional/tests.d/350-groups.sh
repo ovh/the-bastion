@@ -130,6 +130,9 @@ EOS
     plgfail a1_add_access_force_key_and_pwd_g1 $a1 --osh groupAddServer --host 127.0.0.5 --user-any --port-any --force --force-password '$1$2$3456' --force-key "$key1fp" --group $group1
     json .error_code ERR_INCOMPATIBLE_PARAMETERS
 
+    plgfail a1_add_access_force_key_g1_invalid $a1 --osh groupAddServer --host 127.0.0.5 --user 'ar@base' --port-any --force-key "SHA256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" --group $group1
+    json .error_code KO_NO_MATCHING_KEY
+
     success a1_add_access_force_key_g1 $a1 --osh groupAddServer --host 127.0.0.5 --user 'ar@base' --port-any --force --force-key "$key1fp" --group $group1
     json .value.user 'ar@base'
 
