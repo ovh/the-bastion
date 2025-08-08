@@ -45,7 +45,8 @@ Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.
 MACs umac-128-etm@openssh.com,umac-64-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128@openssh.com,umac-64@openssh.com,hmac-sha2-512,hmac-sha2-256
 
 # List of allowed key exchange algorithms.
-# we prefer curve25519-sha256 which is considered the most modern/secure,
+# we prefer PQC algos by default, mlkem768x25519-sha256 and sntrup761x25519-sha512@openssh.com
+# then curve25519-sha256 which is considered the non-QPC most modern/secure,
 # and still allow diffie hellman with group exchange using sha256 which is
 # the most secure dh-based kex.
 # we avoid algorithms based on the disputed NIST curves, and anything based
@@ -55,7 +56,7 @@ MACs umac-128-etm@openssh.com,umac-64-etm@openssh.com,hmac-sha2-512-etm@openssh.
 # - OmniOS 5.11 needs diffie-hellman-group1-sha1
 # - Old Cisco IOS (such as v12.2) only supports diffie-hellman-group1-sha1
 # - Ancient Debians (Sarge) and RedHats (7) only support diffie-hellman-group-exchange-sha1,diffie-hellman-group1-sha1
-KexAlgorithms curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256
+KexAlgorithms mlkem768x25519-sha256,sntrup761x25519-sha512@openssh.com,curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group18-sha512,diffie-hellman-group16-sha512,diffie-hellman-group14-sha256,diffie-hellman-group-exchange-sha256
 
 # === AUTHENTICATION ===
 
