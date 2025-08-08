@@ -123,7 +123,7 @@ if [ "$OS_FAMILY" = Linux ] ; then
         /usr/sbin/syslog-ng
     fi
 
-elif [ "$OS_FAMILY" = OpenBSD ] || [  "$OS_FAMILY" = FreeBSD ] || [ "$OS_FAMILY" = NetBSD ] ; then
+elif [ "$OS_FAMILY" = FreeBSD ]; then
     # setup some 127.0.0.x IPs (needed for our tests)
     # this is not required under Linux where all IPs of 127.0.0.0/8 implicitly work
     nic=$(ifconfig | perl -ne 'm{^([a-z._0-9]+): flags}i and $nic=$1; m{inet 127\.0\.0\.1} and print $nic and exit')

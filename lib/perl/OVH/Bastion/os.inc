@@ -45,10 +45,7 @@ sub _is_distro {
 sub is_debian { return _is_distro('debian'); }
 sub is_redhat { return _is_distro('rhel'); }
 
-sub is_bsd     { return R($^O =~ /bsd$/    ? 'OK' : 'KO'); }
 sub is_freebsd { return R($^O eq 'freebsd' ? 'OK' : 'KO'); }
-sub is_openbsd { return R($^O eq 'openbsd' ? 'OK' : 'KO'); }
-sub is_netbsd  { return R($^O eq 'netbsd'  ? 'OK' : 'KO'); }
 
 sub has_acls { return R((is_linux || is_freebsd) ? 'OK' : 'KO'); }
 
@@ -145,11 +142,6 @@ sub sys_useradd {
     if (is_freebsd()) {
         @cmd = ('pw', 'useradd', '-n', $user, '-m', @cmd);
     }
-    elsif (is_bsd()) {    # at least obsd and fbsd
-                          # to avoid this useradd msg:
-                          # useradd: Password `*' is invalid: setting it to `*************'
-        @cmd = ('useradd', '-p', '*************', '-m', @cmd, $user);
-    }
     else {
         @cmd = ('useradd', '-p', '*', '-m', @cmd, $user);
     }
@@ -196,30 +188,6 @@ sub sys_userdel {
     if (is_freebsd()) {
         @cmd = ('pw', 'userdel', '-n', $user,);
     }
-    elsif (is_netbsd() || is_openbsd()) {
-
-        # main user group is never auto-removed, so we'll do it but only
-        # if the name of the user is the same than the name of its primary group
-        my ($fnret, $maingroup);
-        $fnret = OVH::Bastion::execute(cmd => ['id', '-g', '-n', $user], %params);
-        if ($fnret->err eq 'OK' and $fnret->value and $fnret->value->{'stdout'}) {
-            $maingroup = $fnret->value->{'stdout'}->[0];
-        }
-
-        if (defined $maingroup && $user eq $maingroup) {
-
-            # okay, maingroup == user, so delete the user first, then the corresponding group
-            $fnret = OVH::Bastion::execute(cmd => ['userdel', $user], %params);
-            if ($fnret->err eq 'OK') {
-                @cmd = ('groupdel', $user);
-            }
-        }
-        else {
-            # hmm, either the main group is not the same as the user, or we can't tell,
-            # so just delete the user anyway
-            @cmd = ('userdel', $user);
-        }
-    }
     else {
         @cmd = ('userdel', $user);
     }
@@ -259,19 +227,9 @@ sub sys_addmembertogroup {
         return R('ERR_MISSING_PARAMETER', msg => "Missing mandatory parameter 'group' or 'user'");
     }
 
-    if (is_openbsd() || is_netbsd()) {
-        my $fnret  = OVH::Bastion::execute(cmd => ["groups", $user], must_succeed => 1);
-        my @stdout = @{$fnret->value->{'stdout'} || []};
-        my @cur    = split(/ /, $stdout[0]);
-        return R('ERR_SYSTEM_LIMIT_REACHED') if @cur >= 16;
-    }
-
     my @cmd;
     if (is_freebsd()) {
         @cmd = ('pw', 'groupmod', '-n', $group, '-m', $user);
-    }
-    elsif (is_bsd()) {    # openbsd and netbsd: ok
-        @cmd = ('usermod', '-G', $group, $user);
     }
     else {
         @cmd = ('usermod', '-a', '-G', $group, $user);
@@ -299,9 +257,7 @@ sub sys_delmemberfromgroup {
     elsif (is_debian()) {
         @cmd = ('deluser', $user, $group);
     }
-    elsif (is_openbsd() || is_linux()) {
-
-        # geez. those guys are complicated.
+    else {
         # first get the list of all groups user is a member of
         my $fnret = OVH::Bastion::execute(cmd => ['id', '-G', '-n', $user], %params);
         if ($fnret->err eq 'OK' and $fnret->value and $fnret->value->{'stdout'}) {
@@ -311,14 +267,14 @@ sub sys_delmemberfromgroup {
             delete $groups{$group};
 
             # we must also remove the primary group from the list
-            # because -S (openbsd) / -G (linux) is only for secondary groups
+            # because -G (linux) is only for secondary groups
             $fnret = OVH::Bastion::execute(cmd => ['id', '-g', '-n', $user], %params);
             if ($fnret->err eq 'OK' and $fnret->value and $fnret->value->{'stdout'}) {
                 my $primary = $fnret->value->{'stdout'}->[0];
                 delete $groups{$primary};
 
                 # now prepare the 3rd and last command
-                @cmd = ('usermod', is_openbsd() ? '-S' : '-G', join(',', keys %groups), $user);
+                @cmd = ('usermod', '-G', join(',', keys %groups), $user);
             }
             else {
                 return R('ERR_INTERNAL', msg => "Couldn't remove user from group (unknown primary group)");
@@ -327,34 +283,6 @@ sub sys_delmemberfromgroup {
         else {
             return R('ERR_INTERNAL', msg => "Couldn't remove user from group (couldn't get group list)");
         }
-    }
-    elsif (is_netbsd()) {
-
-        # NetBSD has no way of removing a user from a group without
-        # manually patching /etc/group... eew :(
-        my $contents;
-        if (open(my $fh, '<', '/etc/group')) {
-            local $_ = undef;
-            while (<$fh>) {
-                if (/^\Q$group\E:/) {
-                    s/([:,])\Q$user\E(?:,|$)/$1/;
-                    s/,$//;
-                }
-                $contents .= $_;
-            }
-            close($fh);
-            if (open(my $fh, '>', '/etc/group')) {
-                print $fh $contents;
-                close($fh);
-            }
-            else {
-                return R('ERR_INTERNAL', msg => "Couldn't open group file for writing ($!)");
-            }
-        }
-        else {
-            return R('ERR_INTERNAL', msg => "Couldn't open group file for reading ($!)");
-        }
-        return R('OK');    # we're done, we've no other command to execute
     }
 
     $params{'cmd'}          = \@cmd;
@@ -381,19 +309,6 @@ sub sys_changepassword {
     elsif (is_freebsd()) {
         @cmd       = ('pw', 'usermod', $user, '-h', '0');
         $stdin_str = $password;
-    }
-    elsif (is_openbsd() || is_netbsd()) {
-        my $fnret;
-        if (is_openbsd()) {
-            $fnret = OVH::Bastion::execute(cmd => ["encrypt"], stdin_str => $password, must_succeed => 1);
-        }
-        else {
-            # netbsd
-            $fnret = OVH::Bastion::execute(cmd => ["pwhash", $password], must_succeed => 1);
-        }
-        $fnret or return $fnret;
-        my ($encrypted) = $fnret->value->{'stdout'}->[0] =~ m{^([\$a-zA-Z0-9./]+)};
-        @cmd = ('usermod', '-p', $encrypted, $user);
     }
     else {
         return R('ERR_NOT_IMPLEMENTED');
@@ -424,9 +339,6 @@ sub sys_neutralizepassword {
     }
     elsif (is_freebsd()) {
         @cmd = ('chpass', '-p', '*', $user);
-    }
-    elsif (is_openbsd() || is_netbsd()) {
-        @cmd = ('usermod', '-p', '*' x 13, $user);
     }
     else {
         return R('ERR_NOT_IMPLEMENTED');
@@ -508,9 +420,9 @@ sub sys_getpasswordinfo {
         }
 
     }
-    elsif (is_bsd()) {
+    elsif (is_freebsd()) {
 
-        # bsd has nothing to get "shadow" info without reading it ourselves...
+        # FreeBSD has nothing to get "shadow" info without reading it ourselves...
         if (open(my $masterfd, '<', '/etc/master.passwd')) {
             my @lines = <$masterfd>;
             close($masterfd);
@@ -557,9 +469,6 @@ sub sys_getsudoersfolder {
     my $sudoers_dir = "/etc/sudoers.d";
     if (-d "/usr/local/etc/sudoers.d" && !-d "/etc/sudoers.d") {
         $sudoers_dir = "/usr/local/etc/sudoers.d";    # FreeBSD
-    }
-    if (-d "/usr/pkg/etc/sudoers.d" && !-d "/etc/sudoers.d") {
-        $sudoers_dir = "/usr/pkg/etc/sudoers.d";      # NetBSD
     }
     return $sudoers_dir;
 }
