@@ -54,7 +54,7 @@ eval {
 
 # As we're going to system() something passed to us via @ARGV,
 # we want to be sure we're being called by something we know.
-# Yes. I'm fucking paranoid.
+# Yes, we are paranoid.
 if (open(my $fh, '<', "/proc/" . getppid() . '/cmdline')) {
     my $cmdline = do { local $/ = undef; <$fh> };
     close($fh);
@@ -62,7 +62,7 @@ if (open(my $fh, '<', "/proc/" . getppid() . '/cmdline')) {
 
     # now check our parent infos.
     # regular case: ssh
-    if (@pargv == 1 and $pargv[0] =~ /^sshd: /) {
+    if (@pargv == 1 and $pargv[0] =~ /^sshd(-session)?: /) {
         ;    # ok, our parent is sshd, legitimate use
     }
 
@@ -76,6 +76,11 @@ if (open(my $fh, '<', "/proc/" . getppid() . '/cmdline')) {
         print STDERR "\n\nHmm, hijack of "
           . $pargv[2]
           . " by root detected... debug I guess... okay, but it's really because it's you.\n\n";
+        # at that point, we don't have required the proper libs yet, require them before using the log func
+        require File::Basename;
+        require ''    ## no critic (BarewordIncludes) ## I trust __FILE__, no worries
+          . File::Basename::dirname(__FILE__) . '/../../lib/perl/OVH/Bastion.pm';
+        OVH::Bastion::warn_syslog("Hijack of " . $pargv[2] . " detected, allowing because it's root");
     }
 
     # mosh
@@ -107,9 +112,14 @@ if (open(my $fh, '<', "/proc/" . getppid() . '/cmdline')) {
         ;    # we're being called by the interactive mode of osh.pl, ok
     }
 
-    # else: it sucks.
+    # else: unknown case, log and die
     else {
-        #foreach (@pargv) { print "<".$_.">\n" };
+        # at that point, we don't have required the proper libs yet, require them before using the log func
+        require File::Basename;
+        require ''    ## no critic (BarewordIncludes) ## I trust __FILE__, no worries
+          . File::Basename::dirname(__FILE__) . '/../../lib/perl/OVH/Bastion.pm';
+        OVH::Bastion::warn_syslog("connect.pl: unknown parent, aborting: " . @pargv);
+        # foreach (@pargv) { print "<" . $_ . ">\n" }
         die("SECURITY VIOLATION, ABORTING.");
     }
 }
