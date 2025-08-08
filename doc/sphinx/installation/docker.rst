@@ -19,8 +19,8 @@ The sandbox image is available for the following architectures: ``linux/386``, `
 
 .. code-block:: shell
 
-    docker build -f docker/Dockerfile.debian10 -t bastion:debian10 .
-    docker run -d -p 22 --name bastiontest bastion:debian10
+    docker build -f docker/Dockerfile.debian13 -t bastion:debian13 .
+    docker run -d -p 22 --name bastiontest bastion:debian13
 
 - Configure the first administrator account (get your public SSH key ready)
 

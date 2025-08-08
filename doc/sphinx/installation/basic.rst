@@ -32,7 +32,7 @@ some of the below steps will be done by Puppet. Hence, you might want to only co
 The following Linux distros are tested with each release, but as this is a security product,
 you are *warmly* advised to run it on the latest up-to-date stable version of your favorite OS:
 
-- Debian 12 (Bookworm), 11 (Bullseye), 10 (Buster)
+- Debian 13 (Trixie), 12 (Bookworm), 11 (Bullseye)
 - RockyLinux 8.x, 9.x
 - Ubuntu LTS 24.04, 22.04, 20.04
 - OpenSUSE Leap 15.6\*

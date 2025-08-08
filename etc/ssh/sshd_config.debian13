@@ -60,12 +60,13 @@ Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.
 MACs umac-128-etm@openssh.com,umac-64-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128@openssh.com,umac-64@openssh.com,hmac-sha2-512,hmac-sha2-256
 
 # List of allowed key exchange algorithms.
-# we prefer curve25519-sha256 which is considered the most modern/secure,
+# we prefer PQC algos by default, mlkem768x25519-sha256 and sntrup761x25519-sha512@openssh.com
+# then curve25519-sha256 which is considered the non-QPC most modern/secure,
 # and still allow diffie hellman with group exchange using sha256 which is
 # the most secure dh-based kex.
 # we avoid algorithms based on the disputed NIST curves, and anything based
 # on sha1.
-KexAlgorithms curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256
+KexAlgorithms mlkem768x25519-sha256,sntrup761x25519-sha512@openssh.com,curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group18-sha512,diffie-hellman-group16-sha512,diffie-hellman-group14-sha256,diffie-hellman-group-exchange-sha256
 
 # force rekey every 512M of data or 6 hours of connection, whichever comes first
 RekeyLimit 512M 6h
