@@ -19,7 +19,7 @@ jobs:
       uses: cross-platform-actions/action@master
       with:
         operating_system: freebsd
-        version: '14.2'
+        version: '14.3'
         shell: bash
         sync_files: runner-to-vm
         run: |

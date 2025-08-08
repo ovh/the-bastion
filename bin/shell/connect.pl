@@ -80,17 +80,17 @@ if (open(my $fh, '<', "/proc/" . getppid() . '/cmdline')) {
 
     # mosh
     elsif ($pargv[0] eq 'mosh-server') {
-        ;    # we're being called by mosh-server, alrighty
+        ;             # we're being called by mosh-server, alrighty
     }
 
     # clush plugin
     elsif ($pargv[1] =~ m{/bin/plugin/(open|restricted)/clush$}) {
-        ;    # we're being called by the clush plugin, ok
+        ;             # we're being called by the clush plugin, ok
     }
 
     # interactive mode: our parent is osh.pl
     elsif ($pargv[0] eq 'perl' and $pargv[1] =~ m{/bin/shell/osh\.pl$}) {
-        ;    # we're being called by the interactive mode of osh.pl, ok
+        ;             # we're being called by the interactive mode of osh.pl, ok
     }
 
     # --ssh-as

@@ -14,7 +14,7 @@
 ## v3.19.00 - 2025/02/25
 - feat: add agent forwarding support on egress side
 - feat: add undocumented rename-account.sh and modify osh-orphaned-homedir.sh accordingly
-- chg: upgrade tests from FreeBSD 13.2 to 14.2
+- chg: upgrade tests from FreeBSD 13.2 to 14.3
 - enh: ssh autologin: allow TERM env passthrough
 - enh: use only TL1 special chars when generating passwords
 - chore: github actions: add timeouts, always launch short tests
