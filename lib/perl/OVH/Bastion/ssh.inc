@@ -357,7 +357,6 @@ sub get_ssh_pub_key_info {
 =begin comment
 2048 01:c0:37:5e:b4:bf:00:b6:ef:d3:65:a7:5c:60:b1:81  john@doe (RSA)
 521 af:84:cd:70:34:64:ca:51:b2:17:1a:85:3b:53:2e:52  john@doe (ECDSA)
-1024 c0:4d:f7:bf:55:1f:95:59:be:7e:50:47:e4:81:c3:6a  john@doe (DSA)
 256 SHA256:Yggd7VRRbbivxkdVwrdt0HpqKNylMK91nNIU+RxndTI john@doe (ED25519)
 =end comment
 =cut
