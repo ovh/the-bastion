@@ -44,11 +44,11 @@ but should work with no or minor adjustments.
 
 The following OS are also tested with each release:
 
-- FreeBSD/HardenedBSD 14.2\*\*
+- FreeBSD/HardenedBSD 14.3\*\*
 
 \*\*: Note that these have partial MFA support, due to their reduced set of available ``pam`` plugins.
 Support for either an additional password or TOTP factor can be configured, but not both at the same time.
-The code is actually known to work on FreeBSD/HardenedBSD 10+, but it's only regularly tested under 14.2.
+The code is actually known to work on FreeBSD/HardenedBSD 10+, but it's only regularly tested under 14.3.
 
 Other BSD variants, such as OpenBSD and NetBSD, are unsupported as they have a severe limitation over the maximum
 number of supplementary groups, causing problems for group membership and restricted commands checks,
