@@ -3,6 +3,7 @@ package OVH::Bastion;
 
 use common::sense;
 
+use List::Util qw{ first };
 use File::Temp;
 use Fcntl qw{ :mode :DEFAULT };
 
@@ -621,26 +622,23 @@ sub get_supported_ssh_algorithms_list {
     $fnret or return $fnret;
     my @allowedList = @{$fnret->value};
 
-    # other vary, detect this by running openssh client -V
+    # then detect using ssh -Q key
     my @supportedList;
     if (@cached_runtime_list) {
         @supportedList = @cached_runtime_list;
     }
     else {
-        push @supportedList, 'rsa';    # rsa is always supported
-        $fnret = OVH::Bastion::execute(cmd => [qw{ ssh -V }]);
+        $fnret = OVH::Bastion::execute(cmd => [qw{ ssh -Q key }]);
         if ($fnret) {
-            foreach (@{$fnret->value->{'stdout'} || []}, @{$fnret->value->{'stderr'} || []}) {
-                if (/OpenSSH_(\d+\.\d+)/) {
-                    my $version = $1;
-                    push @supportedList, 'ecdsa'      if ($version gt "5.7");
-                    push @supportedList, 'ed25519'    if ($version gt "6.5");
-                    push @supportedList, 'ecdsa-sk'   if ($version gt "8.2");
-                    push @supportedList, 'ed25519-sk' if ($version gt "8.2");
-                    @cached_runtime_list = @supportedList;
-                    last;
-                }
-            }
+            my @algos = @{$fnret->value->{'stdout'} || []};
+            push @supportedList, 'rsa'     if first { $_ eq 'ssh-rsa' } @algos;
+            push @supportedList, 'ecdsa'   if first { /^ecdsa-sha2-nistp/ } @algos;
+            push @supportedList, 'ed25519' if first { $_ eq 'ssh-ed25519' } @algos;
+            @cached_runtime_list = @supportedList;
+        }
+        else {
+            warn_syslog("Couldn't determine the supported algorithms for pubkeys, using ssh -Q key");
+            return R('ERR_NO_ALGORITHMS', msg => "Couldn't determine the supported SSH algorithms");
         }
     }
 
