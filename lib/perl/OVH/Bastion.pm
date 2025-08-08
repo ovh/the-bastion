@@ -158,7 +158,7 @@ my %_autoload_files = (
         qw{ enable_mocking is_mocking set_mock_data mock_get_account_entry mock_get_account_accesses mock_get_account_personal_accesses mock_get_account_legacy_accesses mock_get_group_accesses mock_get_account_guest_accesses }
     ],
     os => [
-        qw{ sysinfo is_linux is_debian is_redhat is_bsd is_freebsd is_openbsd is_netbsd has_acls sys_useradd sys_groupadd sys_userdel sys_groupdel sys_addmembertogroup sys_delmemberfromgroup sys_changepassword sys_neutralizepassword sys_setpasswordpolicy sys_getpasswordinfo sys_getsudoersfolder sys_setfacl is_in_path sys_getpw_all sys_getpw_all_cached sys_getpw_name sys_getgr_all sys_getgr_all_cached sys_getgr_name sys_list_processes }
+        qw{ sysinfo is_linux is_debian is_debian_trixie is_redhat is_bsd is_freebsd is_openbsd is_netbsd has_acls sys_useradd sys_groupadd sys_userdel sys_groupdel sys_addmembertogroup sys_delmemberfromgroup sys_changepassword sys_neutralizepassword sys_setpasswordpolicy sys_getpasswordinfo sys_getsudoersfolder sys_setfacl is_in_path sys_getpw_all sys_getpw_all_cached sys_getpw_name sys_getgr_all sys_getgr_all_cached sys_getgr_name sys_list_processes }
     ],
     password => [qw{ get_hashes_from_password get_password_file get_hashes_list is_valid_hash }],
     ssh      => [
