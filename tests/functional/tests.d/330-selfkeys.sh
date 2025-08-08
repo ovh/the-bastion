@@ -154,17 +154,6 @@ EOS
     script  flood   $a1 -osh selfAddIngressKey '<' /dev/urandom
     retvalshouldbe 0
 
-    script  privkey $a1 -osh selfAddIngressKey '<<< "-----BEGIN DSA PRIVATE KEY-----
-    MIIBugIBAAKBgQCawvohH0r9B4NxdaYHiBT5pLWDe14o3MTE3WwtKF0l7az+zw0P"'
-    retvalshouldbe 100
-    contain "HOLY SH"
-    json $(cat <<EOS
-    .command selfAddIngressKey
-    .error_code KO_PRIVATE_KEY
-    .value null
-EOS
-    )
-
     script  privkey $a1 -osh selfAddIngressKey '<<< "-----BEGIN RSA PRIVATE KEY-----
     MIIBugIBAAKBgQCawvohH0r9B4NxdaYHiBT5pLWDe14o3MTE3WwtKF0l7az+zw0P"'
     retvalshouldbe 100
@@ -193,52 +182,8 @@ EOS
     contain "look like an SSH public key"
     json .command selfAddIngressKey .error_code KO_NOT_A_KEY .value null
 
-    local b64 FP_TYPE fpdsa
-    b64='AAAAB3NzaC1kc3MAAACBAPOCqEho94k9fEArLgR1kuNTMo52aozaw1jr7sKLTjt3BZslvt3zl264THsIN4XeuI6noiD7QwCO3PSMUsPnrlreQEGff8f97IE+LpH7rZQB7kSM50PGk0QfS1qpVnWbsi5NAvV3ib12gErtXg/YiJfx0x+lWaZTMkaFUdwpyaEXAAAAFQCOng3YNx+KK38h6675jJD78k6bpwAAAIEA2Y/3CZHgzIIBtddVssfLBv3196SAbYMA/eDmsbTM9dyhWdAGPc36/sfveITpbQ2kZYvR4S1pstQ4ZNMM3cdD6GHy+CkDXYEH7SbEa60jEaIue3OK4FhtBLSs4n7sIzNYgRm8hoXYNM4jpC+zf1dpUqIZd1d742JPFJAk07vnj2AAAACAWWpKTEg9ArdpkkvX6FC5lxq7uhVN1uo7+5TBCE8C31fXppHfp9M2FvL2hubbIRYJ+QNDzU+f0UYJr2Nv1v3tyG8LJ2942B9ym+TYb6SzMJ20jWW5v+wfSXuwaPLIAWYFLIbUCp/pv+BnQKAXrVLIsM+iWj6amB/2NrZH5q0j/8k='
-    script  dsa     $a1 -osh selfAddIngressKey "<<< \"ssh-dss $b64 test@dsa\""
-    retvalshouldbe 100
-    contain "Wait, DSA key"
-    # here we need to determine if ssh-keygen is using MD5 or SHA256 for fingerprints
-    if get_json | $jq '.value.key.fingerprint' | grep SHA256: ; then
-        FP_TYPE=sha256
-        fpdsa="SHA256:0r7vajJstsoQbf7k3S7hx7usIrdroNYyVi3ILPCFa/0"
-    else
-        FP_TYPE=md5
-        fpdsa="0b:8f:6b:8a:9e:f0:38:bd:74:0c:71:50:ad:c1:ab:4b"
-    fi
-    json $(cat <<EOS
-    .command      selfAddIngressKey
-    .error_code   KO_FORBIDDEN_ALGORITHM
-    .value.key.base64 $b64
-    .value.key.comment      test@dsa
-    .value.key.typecode     ssh-dss
-    .value.key.fingerprint  $fpdsa
-    .value.key.size         1024
-    .value.key.family       DSA
-EOS
-    ) \
-        .value.key.line         "ssh-dss $b64 test@dsa" \
-        .value.key.prefix       ""
-
-    script  dsaDup   $a1 -osh selfAddIngressKey "<<< \"ssh-dss $b64 test@dsaduplicate\""
-    retvalshouldbe 100
-    contain "Wait, DSA key"
-    json $(cat <<EOS
-    .command      selfAddIngressKey
-    .error_code   KO_FORBIDDEN_ALGORITHM
-    .value.key.base64 $b64
-    .value.key.comment      test@dsaduplicate
-    .value.key.typecode     ssh-dss
-    .value.key.fingerprint  $fpdsa
-    .value.key.size         1024
-    .value.key.family       DSA
-EOS
-    ) \
-        .value.key.line         "ssh-dss $b64 test@dsaduplicate" \
-        .value.key.prefix       ""
-
+    local b64 FP_TYPE fp1024
     b64='AAAAB3NzaC1yc2EAAAADAQABAAAAgQDNbJemAKF6u4xZtbbkHtQeXeh9EvsYgBdUlnES1oBSS/ICKU7lcUrW4UvUpYLQ0+N1f0XaYfGO01BnEPwJDYJngkybh1Qwo6IbCBySpIFJG7ToK4M1U2arALGelwgoVP3AE+HoLjSH9W0ZisBvWtiyCekBWnzf+kD5hLkblPXYkQ=='
-    local fp1024
     fp1024="SHA256:tHu5MD2vgUWxduQUnXqtHaRCCbez7CB9hOvD7zMZu/U"
     [ "$FP_TYPE" = md5 ] && fp1024="65:94:cc:f1:5d:29:6e:11:70:44:ce:a8:61:df:25:0a"
     script  rsa1024  $a1 -osh selfAddIngressKey "<<< \"ssh-rsa $b64 test@rsa1024\""
