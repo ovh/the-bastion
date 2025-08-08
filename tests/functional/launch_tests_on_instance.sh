@@ -164,6 +164,22 @@ else
     exit 1
 fi
 
+# when sourcing modules, if they exit or contain syntax error, check their stderr,
+# as they won't give us back execution control
+check_sourced_module_output()
+{
+    if [ -s "$source_stderr" ]; then
+        echo
+        echo "DEFINITION ERROR in module $module, aborting:"
+        echo "-----"
+        cat "$source_stderr"
+        echo "-----"
+        echo
+        return 1
+    fi
+    return 0
+}
+
 # those vars are also used in all our modules
 # shellcheck disable=SC2034
 {
@@ -185,7 +201,13 @@ fi
     tmp_a=$(mktemp -t bastiontest.XXXXXX)
     tmp_b=$(mktemp -t bastiontest.XXXXXX)
     source_stderr=$(mktemp -t bastiontest.XXXXXX)
-    trap 'echo CLEANING UP ; rm -rf "$mytmpdir" ; rm -f "$tmp_a" "$tmp_b" "$source_stderr"; exit 255' EXIT
+    trap '
+        check_sourced_module_output;
+        echo CLEANING UP;
+        rm -rf "$mytmpdir";
+        rm -f "$tmp_a" "$tmp_b" "$source_stderr";
+        exit 255
+    ' EXIT
     account0key1file="$mytmpdir/account0key1file"
     account1key1file="$mytmpdir/account1key1file"
     account1key2file="$mytmpdir/account1key2file"
@@ -726,15 +748,8 @@ runtests()
             # errors in the module we're sourcing by capturing 2>
             # shellcheck disable=SC1090
             source "$module" 2>"$source_stderr" || module_ret=$?
-            if [ -s "$source_stderr" ]; then
-                echo
-                echo "DEFINITION ERROR in module $module, aborting:"
-                echo "-----"
-                cat "$source_stderr"
-                echo "-----"
-                echo
-                exit 1
-            fi
+            check_sourced_module_output || exit 1
+            :>"$source_stderr"
         fi
         modulename=main
         # dump vars after module run
