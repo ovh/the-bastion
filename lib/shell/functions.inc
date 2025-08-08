@@ -9,7 +9,11 @@
 # shellcheck disable=SC2034
 AK_FILE=".ssh/authorized_keys2"
 
-OS_FAMILY=$(uname -s)
+if [ -e /bin/freebsd-version ]; then
+    OS_FAMILY=FreeBSD
+else
+    OS_FAMILY=Linux
+fi
 LINUX_DISTRO=unknown
 DISTRO_VERSION=''
 DISTRO_LIKE=''
