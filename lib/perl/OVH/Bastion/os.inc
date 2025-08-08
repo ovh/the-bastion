@@ -11,7 +11,7 @@ sub sysinfo {
             while (my $line = <$fh>) {
                 chomp $line;
                 # man 5 os-release
-                foreach my $key (qw{ NAME VERSION ID ID_LIKE PRETTY_NAME }) {
+                foreach my $key (qw{ NAME VERSION ID VERSION_ID ID_LIKE PRETTY_NAME }) {
                     $data{lc($key)} = $1 if $line =~ m{^${key}="?([^"]+)};
                 }
             }
@@ -42,8 +42,9 @@ sub _is_distro {
     }
     return R('KO');
 }
-sub is_debian { return _is_distro('debian'); }
-sub is_redhat { return _is_distro('rhel'); }
+sub is_debian        { return _is_distro('debian'); }
+sub is_debian_trixie { return R(_is_distro('debian') && sysinfo()->value->{'version_id'} eq "13" ? 'OK' : 'KO'); }
+sub is_redhat        { return _is_distro('rhel'); }
 
 sub is_bsd     { return R($^O =~ /bsd$/    ? 'OK' : 'KO'); }
 sub is_freebsd { return R($^O eq 'freebsd' ? 'OK' : 'KO'); }
@@ -296,7 +297,8 @@ sub sys_delmemberfromgroup {
     if (is_freebsd()) {
         @cmd = ('pw', 'groupmod', '-n', $group, '-d', $user);
     }
-    elsif (is_debian()) {
+    # remove the Trixie if when this is fixed https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1109329
+    elsif (is_debian() && !is_debian_trixie()) {
         @cmd = ('deluser', $user, $group);
     }
     elsif (is_openbsd() || is_linux()) {
