@@ -73,15 +73,6 @@ default_urls() {
         _${ver}_linux_ppc64le.tar.gz
         _${ver}_linux_s390x.tar.gz
         _${ver}_mips64el.deb
-        _${ver}_netbsd_386.tar.gz
-        _${ver}_netbsd_amd64.tar.gz
-        _${ver}_netbsd_armv5.tar.gz
-        _${ver}_netbsd_armv7.tar.gz
-        _${ver}_openbsd_386.tar.gz
-        _${ver}_openbsd_amd64.tar.gz
-        _${ver}_openbsd_arm64.tar.gz
-        _${ver}_openbsd_armv5.tar.gz
-        _${ver}_openbsd_armv7.tar.gz
         _${ver}_ppc64le.deb
         _${ver}_s390x.deb
         _${ver}_windows_amd64.tar.gz"

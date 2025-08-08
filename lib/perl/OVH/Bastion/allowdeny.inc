@@ -1024,9 +1024,7 @@ sub ssh_test_access_way {
     foreach (@keyList) {
         push @command, "-i", $_;
     }
-    if (!OVH::Bastion::is_openbsd()) {
-        unshift @command, qw{ timeout -k 1 6 };
-    }
+    unshift @command, qw{ timeout -k 1 6 };
 
     # add port when specified
     push @command, ("-p", $port) if $port;
@@ -1046,7 +1044,6 @@ sub ssh_test_access_way {
     my $hint;
 
     # 124 is the return code from the timeout system command when it times out
-    # tested on Linux, NetBSD
     if ($fnret->value->{'sysret'} == 124 || grep { /timed out/i } @{$fnret->value->{'stderr'} || []}) {
         $hint = "Hint: did you remotely allow this bastion to access the SSH port?";
     }

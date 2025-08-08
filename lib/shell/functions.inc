@@ -38,7 +38,6 @@ DISTRO_VERSION_MAJOR=$(echo "$DISTRO_VERSION" | grep -Eo '^[0-9]+' || true)
 # set ETC_DIR
 ETC_DIR=/etc
 [ "$OS_FAMILY" = FreeBSD ] && ETC_DIR=/usr/local/etc
-[ "$OS_FAMILY" = NetBSD  ] && ETC_DIR=/usr/pkg/etc
 # shellcheck disable=SC2034
 BASTION_ETC_DIR=$ETC_DIR/bastion
 
@@ -129,8 +128,8 @@ action_na()
 sed_compat()
 {
     local _sedcmd="$1" _file="$2"
-    if sed --version 2>/dev/null | grep -q GNU || [ "$OS_FAMILY" = NetBSD ] ; then
-        # GNU sed or NetBSD
+    if sed --version 2>/dev/null | grep -q GNU; then
+        # GNU sed
         sed -i -re "$_sedcmd" "$_file"
     else
         # other BSD-style sed
@@ -166,7 +165,7 @@ useradd_compat()
     if [ -n "$_gid" ]; then
         _extra="$_extra -g $_gid"
     elif command -v useradd >/dev/null ; then
-        [ "$OS_FAMILY" != OpenBSD ] && [ "$OS_FAMILY" != NetBSD ] && _extra="$_extra -U"
+        _extra="$_extra -U"
     fi
 
     # special case for /bin/false, it might be /usr/bin/false on some BSDs
@@ -176,13 +175,8 @@ useradd_compat()
     [ -n "$_shell" ] && _extra="$_extra -s $_shell"
 
     if command -v useradd >/dev/null ; then
-        if [ "$OS_FAMILY" = OpenBSD ] || [ "$OS_FAMILY" = NetBSD ]; then
-            # shellcheck disable=SC2086
-            useradd -r 400..499 -g =uid $_extra "$_user"
-        else
-            # shellcheck disable=SC2086
-            useradd -r -p '*' $_extra "$_user"
-        fi
+        # shellcheck disable=SC2086
+        useradd -r -p '*' $_extra "$_user"
     elif command -v pw >/dev/null ; then
         # shellcheck disable=SC2086
         pw useradd -n "$_user" $_extra
@@ -197,7 +191,6 @@ groupadd_compat()
     local _group="$1" _gid="$2"
     if command -v groupadd >/dev/null ; then
         if [ -n "$_gid" ] && [ "$_gid" != HIGH ]; then
-            # works for Linux, NetBSD and OpenBSD
             groupadd -g "$_gid" "$_group"
         elif [ "$OS_FAMILY" = Linux ] ; then
             if [ "$_gid" = HIGH ]; then
@@ -205,25 +198,6 @@ groupadd_compat()
             else
                 groupadd -r "$_group"
             fi
-        elif [ "$OS_FAMILY" = NetBSD ]; then
-            if [ "$_gid" = HIGH ]; then
-                groupadd "$_group"
-            else
-                groupadd -r 300..399 "$_group"
-            fi
-        elif [ "$OS_FAMILY" = OpenBSD ]; then
-            if [ -z "$_gid" ] ; then
-                # try to pick a groupid ourselves...
-                local _g=0
-                for _g in {300..399} ; do
-                    if ! groupinfo -e "$_g" ; then
-                        groupadd -g "$_g" "$_group"
-                        return 0
-                    fi
-                done
-            fi
-            # couldn't find any (or highid asked)... let the system decide
-            groupadd "$_group"
         else
             groupadd "$_group"
         fi
@@ -292,11 +266,7 @@ add_user_to_group_compat()
 {
     local _user="$1" _group="$2"
     if command -v usermod >/dev/null ; then
-        if [ "$OS_FAMILY" = OpenBSD ] || [ "$OS_FAMILY" = NetBSD ] ; then
-            usermod -G "$_group" "$_user"
-        else
-            usermod -a -G "$_group" "$_user"
-        fi
+        usermod -a -G "$_group" "$_user"
     elif command -v pw >/dev/null ; then
         pw groupmod -n "$_group" -m "$_user"
     else
