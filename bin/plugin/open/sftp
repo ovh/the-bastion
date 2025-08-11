@@ -138,7 +138,7 @@ trap 'rm -f $t' EXIT
 chmod +x "$t"
 if ! "$t" 2>/dev/null; then
     # oops, noexec => default to user's HOME directory instead
-    [ "$BASTION_SCP_DEBUG" = 1 ] && echo "scpwrapper: current TMPDIR is in noexec ($t), changing to user's home instead" >&2
+    [ "$BASTION_SFTP_DEBUG" = 1 ] && echo "sftpwrapper: current TMPDIR is in noexec ($t), changing to user's home instead" >&2
     rm -f "$t"
     t=$(TMPDIR="$HOME" mktemp)
 else
