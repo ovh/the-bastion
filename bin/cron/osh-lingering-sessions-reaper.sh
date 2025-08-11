@@ -18,13 +18,13 @@ _log "Terminating lingering sessions..."
 tokill=''
 nb=0
 # shellcheck disable=SC2162
-while read etimes pid tty
+while read etimes pid tty comm
 do
-    if [ "$tty" = "?" ] && [ "$etimes" -gt "$MAX_AGE" ]; then
+    if [ "$comm" = ttyrec ] && [ "$tty" = "?" ] && [ "$etimes" -gt "$MAX_AGE" ]; then
         tokill="$tokill $pid"
         (( ++nb ))
     fi
-done < <(ps -C ttyrec -o etimes,pid,tty --no-header)
+done < <(ps ax -o etimes,pid,tty,comm)
 if [ -n "$tokill" ]; then
     # add || true to avoid script termination due to TOCTTOU and set -e
     # shellcheck disable=SC2086
@@ -36,15 +36,16 @@ fi
 tokill=''
 nb=0
 # shellcheck disable=SC2162
-while read etimes pid tty user
+while read etimes pid tty user comm
 do
-    if [ "$tty" = "?" ] && [ "$user" != "root" ] && [ "$etimes" -gt "$MAX_AGE" ]; then
-        if [ "$(ps --no-header --ppid "$pid" | wc -l)" = 0 ]; then
+    if [ "$comm" = sshd ] && [ "$tty" = "?" ] && [ "$user" != "root" ] && [ "$etimes" -gt "$MAX_AGE" ]; then
+        # shellcheck disable=SC2009
+        if ! ps ax -o ppid | grep -Fxq "$pid"; then
             tokill="$tokill $pid"
             (( ++nb ))
         fi
     fi
-done < <(ps -C sshd --no-header -o etimes,pid,tty,user)
+done < <(ps ax -o etimes,pid,tty,user,comm)
 if [ -n "$tokill" ]; then
     # add || true to avoid script termination due to TOCTTOU and set -e
     # shellcheck disable=SC2086
@@ -64,7 +65,7 @@ if [ -n "$pidlist" ]; then
             tokill="$tokill $pid"
             (( ++nb ))
         fi
-    done < <(ps --no-header -o etimes,pid,tty,ppid -p "$pidlist")
+    done < <(ps -o etimes,pid,tty,ppid -p "$pidlist")
     if [ -n "$tokill" ]; then
         # add || true to avoid script termination due to TOCTTOU and set -e
         # shellcheck disable=SC2086
