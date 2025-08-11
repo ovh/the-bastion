@@ -132,8 +132,18 @@ if [ -z "${REMOTE_HOST:-}" ]; then
 fi
 
 t=$(mktemp)
-# shellcheck disable=SC2064
-trap "rm -f $t" EXIT
+# we don't expand $t here because it might change during the course of the script
+trap 'rm -f $t' EXIT
+# verify that the tmpfile was created in a spot that's NOT mounted in noexec
+chmod +x "$t"
+if ! "$t" 2>/dev/null; then
+    # oops, noexec => default to user's HOME directory instead
+    [ "$BASTION_SFTP_DEBUG" = 1 ] && echo "sftpwrapper: current TMPDIR is in noexec ($t), changing to user's home instead" >&2
+    rm -f "$t"
+    t=$(TMPDIR="$HOME" mktemp)
+else
+    chmod -x "$t"
+fi
 
 # shellcheck disable=SC2086
 [ "$BASTION_SFTP_DEBUG" = 1 ] && set -x
