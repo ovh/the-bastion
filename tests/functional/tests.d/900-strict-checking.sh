@@ -22,10 +22,14 @@ testsuite_strict_checking()
     retvalshouldbe 255
     contain "Permanently added"
 
-    # change the remote hostkeys, also send HUP to force sshd to take the change into account (Ubuntu 24+ at least),
-    # don't check return value as we'll kill our own session with pkill, as a collateral damage.
-    # FreeBSD: -a includes our process tree, otherwise this shadows sshd. it'll kill our current session so don't check for a return code
-    run change_host_keys $r0 "\"find /etc/ssh/ -type f -name 'ssh_host_*' -delete; ssh-keygen -A; test -e /bin/freebsd-version && pkill -HUP -a -f sshd: || pkill -HUP sshd\""
+    # change the remote hostkeys, and get the proper sshd PID so that we can force it to reload
+    success change_host_keys $r0 "\"find /etc/ssh/ -type f -name 'ssh_host_*key*' -print -delete; ssh-keygen -A; ps faxu; printf %s SSHD_PIDS=; ps ax -o pid,args | grep -E '^ *[0-9]+ +(sshd: .+listener|/usr/sbin/sshd)' | awk '{print \\\$1}' | tr '\\\n' ' '\""
+    contain 'generating new host keys'
+    get_stdout
+    local sshd_pids
+    sshd_pids=$(get_stdout | grep SSHD_PIDS= | cut -d= -f2-)
+
+    success reload_target_sshd $r0 "\"kill -HUP $sshd_pids\""
 
     # set bastion ssh_client config to StrictHostKeyChecking yes
     sshclientconfigchg 's=StrictHostKeyChecking.*=StrictHostKeyChecking\\\\x20yes=g'
