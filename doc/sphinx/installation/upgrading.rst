@@ -27,6 +27,11 @@ See the ``--help`` for a more fine-grained upgrade path if needed.
 Version-specific upgrade instructions
 =====================================
 
+v3.21.00 - 2025/08/12
+*********************
+
+Support of Debian 10 has been dropped, and Debian 13 (Trixie) is now officially supported.
+
 v3.20.00 - 2025/03/25
 *********************
 

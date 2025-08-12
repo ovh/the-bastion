@@ -1,3 +1,21 @@
+## v3.21.00 - 2025/08/12
+- chg: deprecate Debian 10, support Debian 13 (Trixie)
+- enh: scp: add more scp options to the wrapper
+- fix: FreeBSD: add missing package for interactive mode (close #548)
+- fix: better FreeBSD compatibility for cron scripts (#550)
+- fix: ``groupAddServer``: don't ignore --force-key (close #561)
+- fix: logic error validating idle(Lock|Kill)Timeout config values (close #549)
+- fix: ping max deadline is 3600 on FreeBSD (close #547)
+- fix: recent versions of sshd have a separate sshd-session $0
+- fix: remove tests for DSA keys, compiled out of recent OpenSSH versions
+- fix: scp/sftp: handle case where TMPDIR is mounted in noexec (#569)
+- fix: sftp wrapper: handle -P properly (close #553)
+- fix: supported key algorithms detection for OpenSSH >= 10
+- fix: tests: better detect faulty modules syntax
+- fix: tests: FreeBSD: proper reload of recent sshd
+- fix: tests: more robust sshd reloading across OSes
+- fix: tests: remove support for MD5 fingerprints
+
 ## v3.20.00 - 2025/03/25
 - chg: deprecate Ubuntu 18.04, up required perl version to v5.26
 - enh: ensure JSON streams are purely us-ascii
