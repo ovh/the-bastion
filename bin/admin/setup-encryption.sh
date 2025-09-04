@@ -177,6 +177,14 @@ rm -f "$newfstab"
 action_done
 
 action_doing "Remounting /home after encryption"
+if command -v systemctl >/dev/null 2>&1; then
+    if systemctl daemon-reload; then
+        action_done "systemd daemon-reload successful"
+    else
+        action_error "systemd daemon-reload failed"
+        exit 1
+    fi
+fi
 if mount /home; then
     action_done
 else
