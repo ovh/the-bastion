@@ -214,5 +214,7 @@ else
     action_error "Couldn't umount /home to run the test, ignoring"
 fi
 
-[ ! -e /root/unlock-home.sh ] && ln -s /opt/bastion/bin/admin/unlock-home.sh /root/
+if [ ! -e /root/unlock-home.sh ]; then
+    ln -s /opt/bastion/bin/admin/unlock-home.sh /root/
+fi
 
