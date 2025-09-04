@@ -20,7 +20,7 @@ if [ -z "$DEV_ENCRYPTED" ] || [ -z "$UNLOCKED_NAME" ] || [ -z "$MOUNTPOINT" ] ||
     exit 0
 fi
 
-if [ -e "$MOUNTPOINT/allowkeeper" ] ; then
+if [ -e "$MOUNTPOINT/allowkeeper" ] && mount -l | grep -q "/home" ; then
     echo "Already unlocked and mounted"
     exit 0
 fi
