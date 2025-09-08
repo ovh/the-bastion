@@ -28,7 +28,20 @@ configline=$(BASEDIR="$basedir" ACCOUNT="$1" perl -e '
     use OVH::Bastion;
     my $C = OVH::Bastion::load_configuration();
     if (!$C->value || ref $C->value->{adminAccounts} ne "ARRAY") { die "Could not add $ENV{ACCOUNT} in \"adminAccounts\" of bastion.conf, please do it manually!"; }
-    push @{ $C->value->{adminAccounts} }, $ENV{ACCOUNT};
+    my $account = $ENV{ACCOUNT};
+    my $adminAccounts = $C->value->{adminAccounts};
+    # Check if account is already in adminAccounts array
+    my $already_exists = 0;
+    foreach my $existing_account (@$adminAccounts) {
+        if ($existing_account eq $account) {
+            $already_exists = 1;
+            last;
+        }
+    }
+    # Only add if not already present
+    if (!$already_exists) {
+        push @{ $C->value->{adminAccounts} }, $account;
+    }
     print encode_json($C->value->{adminAccounts});
 ')
 
