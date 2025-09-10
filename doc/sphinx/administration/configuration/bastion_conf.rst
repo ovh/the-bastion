@@ -10,6 +10,14 @@ bastion.conf
    All the other options have sane defaults that can still be customized
    at a later time.
 
+ .. warning::
+
+   The changes in this file are immediately taken into account, because it is
+   read independently by each new successfully established ingress session.
+   Hence, please ensure the syntax of this file is valid at all times, or new
+   sessions may fail to establish, with a "JSON decode error" message.
+   A one-liner to test the syntax is available in the header of the file.
+
 Option List
 ===========
 
