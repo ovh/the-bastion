@@ -193,7 +193,7 @@ a lot of control codes are used to control what the console displays, and there 
 in the console, to know what is part of the preexisting file, and what is being typed by the person.
 In both cases, it just ends up on the screen.
 
-Now, some solutions exists. You might want to have a look at ``IPBT`` ("It's Playback Time"), which is an advanced
+Now, some solutions exist. You might want to have a look at ``IPBT`` ("It's Playback Time"), which is an advanced
 ttyrec player from the author of PuTTY: `IPBT <https://www.chiark.greenend.org.uk/~sgtatham/ipbt>`_.
 It has the option of actually grepping for a string inside a ttyrec, and it does this by rendering each "frame"
 in-memory, then actually looking for the output in the emulated console.
