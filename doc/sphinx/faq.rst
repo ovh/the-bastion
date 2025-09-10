@@ -170,3 +170,35 @@ which we override with our wrapper, but some other mechanism we can't hook into.
 This is for example the case of the `network_cli` module of Ansible, which underneath uses Paramiko,
 a Python library to handle SSH connections, which prevents our wrapper to be used (see
 `this GitHub issue <https://github.com/ovh/the-bastion/issues/254>`_ for more information).
+
+Can The Bastion record sessions with ``script`` or in plaintext format instead of ``ttyrec``?
+=============================================================================================
+
+The ttyrec program is actually a fork and a superset of script, and their output format is very similar.
+The main change is that for ttyrec, there is timing info added in the output file, so that it can be
+replayed "at the same pace" that the captured console.
+
+With both programs, the entire console output is captured, i.e. plaintext, but also control codes,
+such as "move the cursor here", "change the background color to this", etc. If you cat the output files
+of script or ttyrec, you'll see plaintext but also these non-printable control-codes.
+It is not trivial to convert these to "real" plaintext because you have to interpret all the control codes
+correctly to reproduce the actual output, which is an actual terminal does.
+
+For example, if I type "helk" then "backspace" then "lo", on my console, "hello" will be displayed when I'm done,
+but in the output files of both script and ttyrec, this is what will be written: ``helk^H^[[Klo``.
+So grepping for "hello" inside these files will not work, even if you would have expected it to work.
+
+This even gets more complicated for programs using curses such as vim, where you can navigate in a file:
+a lot of control codes are used to control what the console displays, and there is no way, from what is displayed
+in the console, to know what is part of the preexisting file, and what is being typed by the person.
+In both cases, it just ends up on the screen.
+
+Now, some solutions exists. You might want to have a look at ``IPBT`` ("It's Playback Time"), which is an advanced
+ttyrec player from the author of PuTTY: `IPBT <https://www.chiark.greenend.org.uk/~sgtatham/ipbt>`_.
+It has the option of actually grepping for a string inside a ttyrec, and it does this by rendering each "frame"
+in-memory, then actually looking for the output in the emulated console.
+This would work with the "hello" example above.
+It also has a tool named ``ipbt-dump`` that should help converting ttyrec files to something that you can better
+work with.
+
+(adapted from `this GitHub issue <https://github.com/ovh/the-bastion/issues/522>`_).
