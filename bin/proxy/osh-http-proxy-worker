@@ -23,7 +23,7 @@ use POSIX    ();
 use Storable qw{ freeze thaw };
 use Sys::Hostname;
 use Time::HiRes ();
-use List::Util  qw{ pairkeys first };
+use List::Util  qw{ first };
 
 $ENV{'FORCE_STDERR'} = 1;
 $ENV{'PATH'}         = '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/pkg/bin';
@@ -57,8 +57,9 @@ sub log_and_exit {
     push @{$merged{'custom'}}, ['code' => $code], ['msg' => $msg];
     OVH::Bastion::log_access_insert(%merged);
 
-    push @headers, ["X-Bastion-Local-Status" => "$code $msg"]
-      if !first { "X-Bastion-Local-Status" eq $_ } pairkeys(@headers);
+    if (!first { "X-Bastion-Local-Status" eq $_->[0] } @headers) {
+        push @headers, ["X-Bastion-Local-Status" => "$code $msg"];
+    }
     my %ret = (code => $code, msg => $msg, body => $body, headers => \@headers, allowed => $merged{'allowed'});
     OVH::Bastion::json_output(R('OK', value => encode_base64(freeze(\%ret))), no_delimiters => 1);
     exit 0;
