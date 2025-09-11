@@ -5,6 +5,23 @@
 # shellcheck source=tests/functional/launch_tests_on_instance.sh
 . "$(dirname "${BASH_SOURCE[0]}")"/dummy
 
+testsuite_proxy_check_headers()
+{
+    [ "$COUNTONLY" = 1 ] && return 0
+    # ensure there's no header duplicates
+    local dupes;
+    dupes="$(get_stdout | awk '{if (NF==0) { exit }}; /^[a-zA-Z0-9_-]+: / {print $1}' | tr "[:upper:]" "[:lower:]" | sort | uniq -c | grep -Ev '^ *1 ')"
+    if [ -n "$dupes" ]; then
+        fail "HEADER DUPES" "$dupes"
+    else
+        ok "HEADER DUPES" "(no duplicate headers)"
+    fi
+    # headers that should always be there
+    contain 'Server: The Bastion'
+    contain 'X-Bastion-Instance: '
+    contain 'X-Bastion-ReqID: '
+}
+
 testsuite_proxy()
 {
     # note: we use "curl | cat" to force curl to disable color output, to be grep friendly,
@@ -18,10 +35,8 @@ testsuite_proxy()
     # and let's go
     script noauth "curl -ski https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
+    testsuite_proxy_check_headers
     contain 'HTTP/1.0 401 Authorization required (no auth provided)'
-    contain 'Server: The Bastion'
-    contain 'X-Bastion-Instance: '
-    contain 'X-Bastion-ReqID: '
     contain 'WWW-Authenticate: Basic realm="bastion"'
     contain 'Content-Type: text/plain'
     contain 'No authentication provided, and authentication is mandatory'
@@ -29,9 +44,7 @@ testsuite_proxy()
     script bad_auth_format "curl -ski -u test:test https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 400 Bad Request (bad login format)'
-    contain 'Server: The Bastion'
-    contain 'X-Bastion-Instance: '
-    contain 'X-Bastion-ReqID: '
+    testsuite_proxy_check_headers
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
     contain 'Expected an Authorization line with credentials of the form'
@@ -56,12 +69,11 @@ testsuite_proxy()
     script good_auth_bad_host "curl -ski -u '$account0@test@test.invalid:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 400 Bad Request (ERR_HOST_NOT_FOUND)'
-    contain 'Server: The Bastion'
-    contain 'X-Bastion-Instance: '
-    contain 'X-Bastion-ReqID: '
+    testsuite_proxy_check_headers
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
-    contain 'X-Bastion-Remote-IP: test.invalid'
+    contain 'X-Bastion-Remote-Host: test.invalid'
+    nocontain 'X-Bastion-Remote-IP'
     contain 'X-Bastion-Request-Length: 0'
     contain 'X-Bastion-Local-Status: 400'
     contain 'Content-Type: text/plain'
@@ -76,10 +88,8 @@ testsuite_proxy()
     # attempt to use the previous credentials (and fail)
     script bad_auth2 "curl -ski -u test@test@test:test https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
+    testsuite_proxy_check_headers
     contain 'HTTP/1.0 403 Access Denied'
-    contain 'Server: The Bastion'
-    contain 'X-Bastion-Instance: '
-    contain 'X-Bastion-ReqID: '
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
     contain 'Incorrect username (test) or password (#REDACTED#, length='
@@ -89,9 +99,7 @@ testsuite_proxy()
     script good_auth_no_access "curl -ski -u '$account0@test@127.0.0.1:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 403 Access Denied (access denied to remote)'
-    contain 'Server: The Bastion'
-    contain 'X-Bastion-Instance: '
-    contain 'X-Bastion-ReqID: '
+    testsuite_proxy_check_headers
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
     contain 'X-Bastion-Remote-IP: 127.0.0.1'
@@ -104,9 +112,7 @@ testsuite_proxy()
     script good_auth_no_access_other_port "curl -ski -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 403 Access Denied (access denied to remote)'
-    contain 'Server: The Bastion'
-    contain 'X-Bastion-Instance: '
-    contain 'X-Bastion-ReqID: '
+    testsuite_proxy_check_headers
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
     contain 'X-Bastion-Remote-IP: 127.0.0.1'
@@ -123,9 +129,7 @@ testsuite_proxy()
     script missing_egress_pwd "curl -ski -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 412 Precondition Failed (egress password missing)'
-    contain 'Server: The Bastion'
-    contain 'X-Bastion-Instance: '
-    contain 'X-Bastion-ReqID: '
+    testsuite_proxy_check_headers
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
     contain 'X-Bastion-Remote-IP: 127.0.0.1'
@@ -144,9 +148,7 @@ testsuite_proxy()
     retvalshouldbe 0
     # not all versions of LWP add "(certificate verify failed)" at the end of the below error message, so omit it
     contain "HTTP/1.0 500 Can't connect to 127.0.0.1:9443"
-    contain 'Server: The Bastion'
-    contain 'X-Bastion-Instance: '
-    contain 'X-Bastion-ReqID: '
+    testsuite_proxy_check_headers
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
     contain 'X-Bastion-Remote-IP: 127.0.0.1'
@@ -159,9 +161,7 @@ testsuite_proxy()
     script insecure "curl -ski -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain "HTTP/1.0 200 OK"
-    contain 'Server: The Bastion'
-    contain 'X-Bastion-Instance: '
-    contain 'X-Bastion-ReqID: '
+    testsuite_proxy_check_headers
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
     contain 'X-Bastion-Remote-IP: 127.0.0.1'
@@ -180,9 +180,7 @@ testsuite_proxy()
     script one_megabyte "curl -ski -H 'X-Test-Add-Response-Header-Content-Type: application/json' -H 'X-Test-Wanted-Response-Size: 1000000' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain "HTTP/1.0 200 OK"
-    contain 'Server: The Bastion'
-    contain 'X-Bastion-Instance: '
-    contain 'X-Bastion-ReqID: '
+    testsuite_proxy_check_headers
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: application/json'
     contain 'X-Bastion-Remote-IP: 127.0.0.1'
@@ -212,9 +210,7 @@ testsuite_proxy()
     script post_data "curl -ski -d somedata -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain "HTTP/1.0 200 OK"
-    contain 'Server: The Bastion'
-    contain 'X-Bastion-Instance: '
-    contain 'X-Bastion-ReqID: '
+    testsuite_proxy_check_headers
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
     contain 'X-Bastion-Remote-IP: 127.0.0.1'
@@ -234,9 +230,7 @@ testsuite_proxy()
     script forbidden_egress_protocol "curl -ski -H 'X-Bastion-Egress-Protocol: http' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 400 Bad Request (forbidden egress protocol)'
-    contain 'Server: The Bastion'
-    contain 'X-Bastion-Instance: '
-    contain 'X-Bastion-ReqID: '
+    testsuite_proxy_check_headers
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
     contain 'not allowed by policy'
@@ -259,9 +253,21 @@ testsuite_proxy()
     script allowed_http_egress "curl -ski -H 'X-Bastion-Egress-Protocol: http' -u '$account0@test@127.0.0.1%22:$proxy_password' https://$remote_ip:$remote_proxy_port/test 2>&1 | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 200'
-    contain 'Server: The Bastion'
-    contain 'X-Bastion-Instance: '
-    contain 'X-Bastion-ReqID: '
+    testsuite_proxy_check_headers
+    contain 'X-Bastion-Remote-Host: 127.0.0.1'
+    contain 'X-Bastion-Remote-IP: 127.0.0.1'
+    contain 'X-Bastion-Local-Status: 200 OK'
+    nocontain 'WWW-Authenticate: '
+    nocontain "X-Bastion-Remote-Client-SSL"
+    contain 'SSH-2.0'
+
+    # take this opportunity to test the remote-host header (otherwise, call is the same as above)
+    script allowed_http_egress_test_host "curl -ski -H 'X-Bastion-Egress-Protocol: http' -u '$account0@test@localhost%22:$proxy_password' https://$remote_ip:$remote_proxy_port/test 2>&1 | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain 'HTTP/1.0 200'
+    testsuite_proxy_check_headers
+    contain 'X-Bastion-Remote-Host: localhost'
+    contain 'X-Bastion-Remote-IP: 127.0.0.1'
     contain 'X-Bastion-Local-Status: 200 OK'
     nocontain 'WWW-Authenticate: '
     nocontain "X-Bastion-Remote-Client-SSL"
@@ -271,9 +277,7 @@ testsuite_proxy()
     script forbidden_https_egress "curl -ski -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 400 Bad Request (forbidden egress protocol)'
-    contain 'Server: The Bastion'
-    contain 'X-Bastion-Instance: '
-    contain 'X-Bastion-ReqID: '
+    testsuite_proxy_check_headers
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
     contain 'not allowed by policy'
@@ -286,3 +290,4 @@ testsuite_proxy()
 
 [ "${remote_proxy_port:-0}" != 0 ] && testsuite_proxy
 unset -f testsuite_proxy
+unset -f testsuite_proxy_check_headers

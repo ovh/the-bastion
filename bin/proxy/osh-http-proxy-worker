@@ -87,7 +87,7 @@ GetOptions(
     "log-request-response-max-size=i" => \my $log_request_response_max_size,
     "egress-protocol=s"               => \my $egress_protocol,
 );
-push @headers, ["X-Bastion-Remote-IP" => $remotemachine];
+push @headers, ["X-Bastion-Remote-Host" => $remotemachine];
 
 if (!$postDataStdin) {
     $content = delete $ENV{'PROXY_POST_DATA'};
@@ -192,27 +192,29 @@ if (not $pass) {
 }
 
 # convert the remotemachine into an IP if needed
+my $remoteip;
 $fnret = OVH::Bastion::get_ip(host => $remotemachine);
 if ($fnret && $fnret->value->{'ip'} && $fnret->value->{'ip'} =~ /^([0-9a-f.:]+)$/) {
-    $remotemachine = $1;    # untaint
+    $remoteip = $1;    # untaint
 }
 else {
     my $comment = lc($fnret->err);
     $comment =~ tr/-/_/;
     log_and_exit(400, "Bad Request (" . $fnret->err . ")", "$fnret\n", {comment => $comment});
 }
+push @headers, ["X-Bastion-Remote-IP" => $remoteip];
 
 delete $log_params{'hostto'};
-$log_params{'ipto'} = $remotemachine;
+$log_params{'ipto'} = $remoteip;
 
-# if it's an IPv6, need to transform it for some use cases below
-my $remotemachine_uri       = $remotemachine;
-my $remotemachine_directory = $remotemachine;
+# if it's an IPv6, we need to add brackets around it as an URI, and adapt the name of the log subdirectory
+my $remotemachine_uri = $remoteip;
+my $logsubdir         = $remoteip;
 if (index($remotemachine, ':') != -1) {
     $remotemachine_uri = "[$remotemachine]";
     # as :'s might not be allowed on all filesystems, replace :'s by .'s and surround by v6[]
-    $remotemachine_directory =~ tr/:/./;
-    $remotemachine_directory = "v6[$remotemachine_directory]";
+    $logsubdir =~ tr/:/./;
+    $logsubdir = "v6[$logsubdir]";
 }
 
 # now check that the password we were given for account matches the hash we have stored for it
@@ -290,12 +292,12 @@ else {
 push @headers,                 ["X-Bastion-Auth-Mode" => $authmode];
 push @{$log_params{'custom'}}, ['auth_mode'           => $authmode];
 
-# check if account or group has the right to access $user@$remotemachine, time: 50ms (to re-compute)
+# check if account or group has the right to access $user@$remoteip, time: 50ms (to re-compute)
 $fnret = OVH::Bastion::is_access_granted(
     account  => $account,
     user     => $user,
     ipfrom   => $ENV{'REMOTE_ADDR'},
-    ip       => $remotemachine,
+    ip       => $remoteip,
     port     => $remoteport,
     listOnly => 1,
     sudo     => 1
@@ -384,6 +386,9 @@ foreach my $key (keys %passthrough_headers) {
     $req->header($key, $passthrough_headers{$key});
 }
 $req->header('Accept-Encoding' => scalar HTTP::Message::decodable());
+
+# the remote server might need to have the original hostname to serve the proper contents
+$req->header('Host' => $remotemachine);
 
 # set the header to auth ourselves to the remote device
 $req->header('Authorization', 'Basic ' . encode_base64($user . ':' . $device_password, ''));
@@ -493,7 +498,7 @@ my $delay = Time::HiRes::tv_interval($start_time, [Time::HiRes::gettimeofday()])
 my $basedir = "/home/$account/ttyrec";
 -d $basedir || mkdir $basedir;
 
-my $finaldir = "$basedir/$remotemachine_directory";
+my $finaldir = "$basedir/$logsubdir";
 -d $finaldir || mkdir $finaldir;
 
 # depending on whether we must log the body or not, and whether there is a max size specified,
