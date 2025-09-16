@@ -302,7 +302,12 @@ fi
 
 if [ "${opt[modify-banner]}" = 1 ] ; then
     action_doing "Install default sshd banner"
-    install -o "$UID0" -g "$GID0" -m 0644 "$basedir/etc/ssh/banner" $SSH_DIR/
+    install -o "$UID0" -g "$GID0" -m 0644 "$basedir/etc/ssh/banner.ok" $SSH_DIR/
+    install -o "$UID0" -g "$GID0" -m 0644 "$basedir/etc/ssh/banner.sealed" $SSH_DIR/
+    if [ -f $SSH_DIR/banner ] && [ ! -L $SSH_DIR/banner ] ; then
+        rm $SSH_DIR/banner
+    fi
+    ln -sf $SSH_DIR/banner.ok $SSH_DIR/banner
     action_done
 fi
 
