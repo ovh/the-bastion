@@ -199,6 +199,7 @@ Even with the most conservative, precautionous and paranoid coding process, code
 A non-exhaustive list of related tools that are maintained by the community:
 
 - [chef-cookbook](https://github.com/axl89/ovh_the_bastion) - a chef cookbook to install the-bastion and setup its default configuration
+- [ansible role](https://github.com/adfinis/ansible-role-the_bastion) - an ansible role to install and configure the-bastion
 
 ## :memo: License
 
