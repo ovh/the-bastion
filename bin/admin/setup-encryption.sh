@@ -226,3 +226,30 @@ if [ ! -e /root/unlock-home.sh ]; then
     ln -s /opt/bastion/bin/admin/unlock-home.sh /root/
 fi
 
+action_doing "Enabling SSH banner seal service"
+if command -v systemctl >/dev/null 2>&1; then
+    # SystemD system
+    if systemctl enable osh-seal-banner.service; then
+        action_done "systemd service enabled"
+        action_doing "Starting SSH banner seal service"
+        if systemctl start osh-seal-banner.service; then
+            action_done "systemd service started - banner now in sealed state"
+        else
+            action_error "Failed to start systemd service"
+        fi
+    else
+        action_error "Failed to enable systemd service, please enable manually"
+    fi
+else
+    if update-rc.d osh-seal-banner defaults; then
+        action_done "SysV service enabled (update-rc.d)"
+        action_doing "Starting SSH banner seal service"
+        if service osh-seal-banner start; then
+            action_done "SysV service started - banner now in sealed state"
+        else
+            action_error "Failed to start SysV service"
+        fi
+    else
+        action_error "Failed to enable SysV service with update-rc.d"
+    fi
+fi

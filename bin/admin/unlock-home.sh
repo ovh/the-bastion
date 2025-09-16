@@ -4,11 +4,30 @@ CONFIGFILE=/etc/bastion/luks-config.sh
 # shellcheck source=etc/bastion/luks-config.sh.dist
 . "$CONFIGFILE"
 
+update_banner()
+{
+    if command -v systemctl >/dev/null 2>&1; then
+        if systemctl restart osh-seal-banner.service; then
+            echo "SSH banner updated"
+        else
+            echo "Warning: Could not restart osh-seal-banner service"
+        fi
+    else
+        if service osh-seal-banner restart; then
+            echo "SSH banner updated"
+        else
+            echo "Warning: Could not restart osh-seal-banner service"
+        fi
+    fi
+}
+
 do_mount()
 {
     mount "$MOUNTPOINT"; ret=$?
     if [ $ret -eq 0 ] ; then
         echo "Success!"
+        # Stop the banner seal service to switch to unsealed state
+        update_banner
     else
         echo "Failure... is $MOUNTPOINT correctly specified in /etc/fstab?"
     fi
@@ -22,6 +41,8 @@ fi
 
 if [ -e "$MOUNTPOINT/allowkeeper" ] && mountpoint -q /home ; then
     echo "Already unlocked and mounted"
+    # Stop the banner seal service to ensure banner is in unsealed state
+    update_banner
     exit 0
 fi
 

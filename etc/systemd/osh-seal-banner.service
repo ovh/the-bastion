@@ -1,0 +1,13 @@
+[Unit]
+Description=OVH::Bastion SSH banner seal service
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/ln -sf /etc/ssh/banner.sealed /etc/ssh/banner
+RemainAfterExit=true
+ExecStop=/bin/ln -sf /etc/ssh/banner.ok /etc/ssh/banner
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target
