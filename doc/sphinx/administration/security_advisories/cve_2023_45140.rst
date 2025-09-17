@@ -4,8 +4,8 @@ CVE-2023-45140
 
 - ``Severity``: **4.8** (CVSS V3)
 - ``Vector: CVSS:3.1/AV:N/AC:L/PR:H/UI:R/S:C/C:L/I:L/A:N``
-- ``Affected versions``: from 3.0.0 included to 3.14.15 excluded
-- ``Patched versions``: 3.14.15 and up
+- ``Affected versions``: < 3.14.15
+- ``Patched versions``: >= 3.14.15
 
 `This advisory is also available online <https://github.com/ovh/the-bastion/security/advisories/GHSA-pr4q-w883-pf5x>`_.
 
