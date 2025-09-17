@@ -11,3 +11,4 @@ If you find any behavior or bug that you suspect might have a security impact, p
    :caption: CVE List
 
    security_advisories/cve_2023_45140.rst
+   security_advisories/cve_2025_59339.rst

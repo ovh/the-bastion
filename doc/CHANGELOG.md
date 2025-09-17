@@ -1,3 +1,11 @@
+## v3.22.00 - 2025/09/17
+- feat: httpproxy: craft the ``Host`` header on the egress request (#564)
+- fix: httpproxy: duplicate ``X-Bastion-Local-Status`` headers in some cases
+- fix: ``osh-encrypt-rsync``: sign files when encrypting (fixes CVE-2025-59339)
+- fix: docker sandbox: re-apply filesystem ACLs on start
+- fix: add checks and make setup helper scripts more idempotent
+- doc: added a few FAQ entries
+
 ## v3.21.00 - 2025/08/12
 - chg: deprecate Debian 10, support Debian 13 (Trixie)
 - enh: scp: add more scp options to the wrapper
