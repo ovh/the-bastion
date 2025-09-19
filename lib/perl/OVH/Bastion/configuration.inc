@@ -163,6 +163,7 @@ sub load_configuration {
         {name => 'fanciness', default => 'full', validre => qr/^((none|boomer)|(basic|millenial)|(full|genz))$/},
         {name => 'accountExternalValidationProgram', default => '', validre => qr'^([a-zA-Z0-9/$_.-]*)$', emptyok => 1},
         {name => 'ttyrecStealthStdoutPattern',       default => '', validre => qr'^(.{0,4096})$',         emptyok => 1},
+        {name => 'pivValidationCA',                  default => '', validre => qr'^([a-zA-Z0-9/$_.-]*)$', emptyok => 1},
       )
     {
         if (!$C->{$o->{'name'}} && !$o->{'emptyok'}) {
@@ -616,6 +617,22 @@ sub load_configuration {
         }
     }
     delete $unknownkeys{'ingressToEgressRules'};
+
+    # ... validate pivValidationCA file exists if specified
+    if ($C->{'pivValidationCA'} && $C->{'pivValidationCA'} ne '') {
+        if (!-f $C->{'pivValidationCA'}) {
+            push @errors,
+                "Configuration error: PIV validation CA file '"
+              . $C->{'pivValidationCA'}
+              . "' does not exist or is not a regular file";
+            $C->{'pivValidationCA'} = '';
+        }
+        elsif (!-r $C->{'pivValidationCA'}) {
+            push @errors,
+              "Configuration error: PIV validation CA file '" . $C->{'pivValidationCA'} . "' is not readable";
+            $C->{'pivValidationCA'} = '';
+        }
+    }
 
     # ... normalize fanciness
     $C->{'fanciness'} = 'none'  if $C->{'fanciness'} eq 'boomer';

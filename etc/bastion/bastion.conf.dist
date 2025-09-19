@@ -409,6 +409,11 @@
 #  DEFAULT: false
 "ingressRequirePIV": false,
 #
+# pivValidationCA (string)
+#     DESC: Path to a trusted certificate authority, which will be used to validate the PIV certificate. Users will have to paste their certificate in PEM format instead of SSH, when enrolling a new ingress key.
+#  DEFAULT: ""
+"pivValidationCA": "",
+#
 # accountMFAPolicy (string)
 #     DESC: Set a MFA policy for the bastion accounts, the supported values are:
 #
