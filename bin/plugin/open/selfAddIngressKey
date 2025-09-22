@@ -65,7 +65,7 @@ if (!OVH::Bastion::has_piv_helper()) {
 }
 
 my $pivValidationCAPath = OVH::Bastion::config('pivValidationCA')->value;
-my $allowedKeyFile = $HOME . '/' . OVH::Bastion::AK_FILE;
+my $allowedKeyFile      = $HOME . '/' . OVH::Bastion::AK_FILE;
 
 if (($pivExplicit || $pivEffectivePolicyEnabled) && $pivValidationCAPath ne "") {
     handle_piv_with_ca();
@@ -107,8 +107,11 @@ sub handle_without_ca {
     my $key = $fnret->value;
 
     if (checkExistKey($key->{'base64'})) {
-        osh_exit R('KO_DUPLICATE_KEY', msg => "This public key already exists on your account!",
-            value => {key => $key});
+        osh_exit R(
+            'KO_DUPLICATE_KEY',
+            msg   => "This public key already exists on your account!",
+            value => {key => $key}
+        );
     }
 
     if ($pivEffectivePolicyEnabled) {
@@ -137,6 +140,7 @@ sub handle_without_ca {
     }
 
     add_pubkey($key);
+    return;
 }
 
 sub handle_piv_with_ca {
@@ -183,8 +187,11 @@ sub handle_piv_with_ca {
     my $key = $fnret->value;
 
     if (checkExistKey($key->{'base64'})) {
-        osh_exit R('KO_DUPLICATE_KEY', msg => "This public key already exists on your account!",
-            value => {key => $key});
+        osh_exit R(
+            'KO_DUPLICATE_KEY',
+            msg   => "This public key already exists on your account!",
+            value => {key => $key}
+        );
     }
 
     $key->{'isPiv'}                     = 1;
@@ -206,6 +213,7 @@ sub handle_piv_with_ca {
     }
 
     add_pubkey($key);
+    return;
 }
 
 sub add_pubkey() {
@@ -257,7 +265,6 @@ sub get_attestation_material {
 sub checkExistKey {
     # only pass the base64 part of the key here (returned by get_ssh_pub_key_info->{'base64'})
     my $pubKeyB64      = shift;
-    my $allowedKeyFile = $HOME . '/' . OVH::Bastion::AK_FILE;
     open(my $fh_keys, '<', $allowedKeyFile) || die("can't read the $allowedKeyFile file!\n");
     while (my $currentLine = <$fh_keys>) {
         chomp $currentLine;
