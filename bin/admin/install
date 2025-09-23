@@ -1239,6 +1239,19 @@ if [ "${opt[modify-pam-lastlog]}" = 1 ]; then
     # don't do it for Ubuntu 24.04, as they removed pam_lastlog.so entirely
     if [ "$LINUX_DISTRO" = ubuntu ] && [ "$DISTRO_VERSION_MAJOR" -ge 24 ]; then
         action_na "Not supported under $LINUX_DISTRO $DISTRO_VERSION_MAJOR"
+    # debian 13 uses lastlog2 instead of lastlog
+    elif [ "$LINUX_DISTRO" = debian ] && [ "$DISTRO_VERSION_MAJOR" -ge 13 ] && [ -e "$PAM_SSHD" ]; then
+        if ! grep -Eq '^\s*session\s+optional\s+pam_lastlog2.so' "$PAM_SSHD" ; then
+            action_detail "missing lastlog2 config in file, adjusting"
+            # shellcheck disable=SC1004
+            sed_compat '/^[[:space:]]*@include[[:space:]]+common-session/a\
+# bastion config: lastlog needs to be updated on connection\
+session optional pam_lastlog2.so silent' "$PAM_SSHD"
+            action_done
+        else
+            action_na "lastlog2 config was already ok"
+        fi
+    # other distros use pam_lastlog.so
     elif [ -e "$PAM_SSHD" ] ; then
         if ! grep -Eq '^\s*session\s+optional\s+pam_lastlog.so' "$PAM_SSHD" ; then
             action_detail "missing lastlog config in file, adjusting"

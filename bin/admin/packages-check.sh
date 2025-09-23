@@ -39,6 +39,9 @@ if echo "$DISTRO_LIKE" | grep -q -w debian; then
                 liblinux-prctl-perl libpam-google-authenticator pamtester"
     # workaround for debian/armhf: curl fails to validate some SSL certificates,
     # whereas wget succeeds; this is needed for e.g. install-ttyrec.sh
+    if [ "$DISTRO_VERSION_MAJOR" -ge 13 ]; then
+        wanted_list="$wanted_list libpam-lastlog2"
+    fi
     if [ "$(uname -m)" = armv7l ]; then
         wanted_list="$wanted_list wget"
     fi
