@@ -21,6 +21,8 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
         "force"            => \my $force,
         "ttl=s"            => \my $ttl,
         "comment=s"        => \my $comment,
+        "proxy-host=s"     => \my $proxyHost,
+        "proxy-port=s"     => \my $proxyPort,
         # undocumented/compatibility:
         "user-any" => \my $userAny,
         "port-any" => \my $portAny,
@@ -54,6 +56,8 @@ Usage: --osh SCRIPT_NAME --host HOST --user USER --port PORT [OPTIONS]
   --force-password HASH    Only use the password with the specified hash to connect to the server (cf selfListPasswords)
   --ttl SECONDS|DURATION   Specify a number of seconds (or a duration string, such as "1d7h8m") after which the access will automatically expire
   --comment "'ANY TEXT'"   Add a comment alongside this server. Quote it twice as shown if you're under a shell.
+  --proxy-host HOST|IP     Use this host as a proxy/jump host to reach the target server
+  --proxy-port PORT        Proxy host port to connect to (mandatory when --proxy-host is specified)
 EOF
 );
 
@@ -90,15 +94,32 @@ if (!$ip) {
     osh_exit 'ERR_MISSING_PARAMETER', "Missing parameter 'host' or didn't resolve correctly";
 }
 
+my $proxyIp;
+if ($proxyHost) {
+    $fnret = OVH::Bastion::is_valid_ip(ip => $proxyHost, allowSubnets => 0);
+    if ($fnret) {
+        $proxyIp = $fnret->value->{'ip'};
+    } else {
+        $fnret = OVH::Bastion::get_ip(host => $proxyHost);
+        if ($fnret) {
+            $proxyIp = $fnret->value->{'ip'};
+        } else {
+            $proxyIp = $proxyHost;
+        }
+    }
+}
+
 $fnret = OVH::Bastion::Plugin::ACL::check(
-    user     => $user,
-    userAny  => $userAny,
-    port     => $port,
-    portAny  => $portAny,
-    scpUp    => $scpUp,
-    scpDown  => $scpDown,
-    sftp     => $sftp,
-    protocol => $protocol,
+    user      => $user,
+    userAny   => $userAny,
+    port      => $port,
+    portAny   => $portAny,
+    scpUp     => $scpUp,
+    scpDown   => $scpDown,
+    sftp      => $sftp,
+    protocol  => $protocol,
+    proxyIp   => $proxyIp,
+    proxyPort => $proxyPort,
 );
 if (!$fnret) {
     help();
@@ -162,6 +183,8 @@ $fnret = OVH::Bastion::access_modify(
     forceKey       => $forceKey,
     forcePassword  => $forcePassword,
     comment        => $comment,
+    proxyIp        => $proxyIp,
+    proxyPort      => $proxyPort,
     widestV4Prefix => ($pluginConfig ? $pluginConfig->{'widest_v4_prefix'} : undef),
 );
 $fnret or osh_exit($fnret);
@@ -173,7 +196,9 @@ if (not $force) {
         port          => $port,
         ip            => $ip,
         forceKey      => $forceKey,
-        forcePassword => $forcePassword
+        forcePassword => $forcePassword,
+        proxyIp       => $proxyIp,
+        proxyPort     => $proxyPort,
     );
     if ($fnret->is_ok and $fnret->err ne 'OK') {
         # we have something to say, say it
@@ -200,5 +225,7 @@ push @command, '--force-key',      $forceKey      if $forceKey;
 push @command, '--force-password', $forcePassword if $forcePassword;
 push @command, '--ttl',            $ttl           if $ttl;
 push @command, '--comment',        $comment       if $comment;
+push @command, '--proxy-ip',       $proxyIp       if $proxyIp;
+push @command, '--proxy-port',     $proxyPort     if $proxyPort;
 
 osh_exit OVH::Bastion::helper(cmd => \@command);
