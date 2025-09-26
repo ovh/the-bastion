@@ -9,8 +9,8 @@ use OVH::Bastion;
 
 sub check {
     my %params = @_;
-    my ($port, $portAny, $user, $userAny, $scpUp, $scpDown, $sftp, $protocol) =
-      @params{qw{ port portAny user userAny scpUp scpDown sftp protocol }};
+    my ($port, $portAny, $user, $userAny, $scpUp, $scpDown, $sftp, $protocol, $proxyIp, $proxyPort) =
+      @params{qw{ port portAny user userAny scpUp scpDown sftp protocol proxyIp proxyPort }};
 
     if ($user and $userAny) {
         return R('ERR_INCOMPATIBLE_PARAMETERS',
@@ -84,11 +84,37 @@ sub check {
         );
     }
 
+    # check proxy-host and proxy-port parameters
+    osh_debug("Checking proxy parameters: proxyIp='$proxyIp' proxyPort='$proxyPort'");
+    if ($proxyIp) {
+        if (!$proxyPort) {
+            return R('ERR_MISSING_PARAMETER', msg => "When --proxy-host is specified, --proxy-port becomes mandatory");
+        }
+
+        # validate proxy host format (same as regular host validation)
+        if ($proxyIp !~ m{^[a-zA-Z0-9._/:-]+$}) {
+            return R('ERR_INVALID_PARAMETER', msg => "Proxy host name '$proxyIp' seems invalid");
+        }
+    }
+
+    if ($proxyPort) {
+        if (!$proxyIp) {
+            return R('ERR_MISSING_PARAMETER', msg => "When --proxy-port is specified, --proxy-host becomes mandatory");
+        }
+
+        # validate proxy port
+        my $fnret = OVH::Bastion::is_valid_port(port => $proxyPort);
+        if (!$fnret) {
+            return R('ERR_INVALID_PARAMETER', msg => "Proxy port '$proxyPort' is invalid: " . $fnret->msg);
+        }
+    }
+
     # now, remap port and user '*' back to undef
     undef $user if $user eq '*';
     undef $port if $port eq '*';
 
-    return R('OK', value => {user => $user, port => $port, protocol => $protocol});
+    return R('OK',
+        value => {user => $user, port => $port, protocol => $protocol, proxyIp => $proxyIp, proxyPort => $proxyPort});
 }
 
 1;
