@@ -576,6 +576,7 @@ else {
     }
     else {
         $host = shift(@{$remainingOptions});
+        osh_debug("After shift, remainingOptions " . join('/', @$remainingOptions));
         if ($host eq '-osh' || $host eq '--osh') {
 
             # special case when using -osh without argument

@@ -19,7 +19,7 @@ use OVH::Bastion::Helper;
 # Fetch command options
 my $fnret;
 my ($result, @optwarns);
-my ($group, $user, $ip, $port, $action, $force, $forcePassword, $forceKey, $ttl, $comment);
+my ($group, $user, $ip, $port, $action, $force, $forcePassword, $forceKey, $ttl, $comment, $proxyIp, $proxyPort);
 eval {
     local $SIG{__WARN__} = sub { push @optwarns, shift };
     $result = GetOptions(
@@ -33,6 +33,8 @@ eval {
         "force-key=s"      => sub { $forceKey      //= $_[1] },
         "ttl=i"            => sub { $ttl           //= $_[1] },
         "comment=s"        => sub { $comment       //= $_[1] },
+        "proxy-host=s"     => sub { $proxyIp       //= $_[1] },
+        "proxy-port=i"     => sub { $proxyPort     //= $_[1] },
 
     );
 };
@@ -86,7 +88,9 @@ $fnret = OVH::Bastion::Helper::acquire_lock($lock_fh);
 $fnret or HEXIT($fnret);
 
 #>CODE
-my $machine = OVH::Bastion::machine_display(ip => $ip, port => $port, user => $user)->value;
+my $machine =
+  OVH::Bastion::machine_display(ip => $ip, port => $port, user => $user, proxyIp => $proxyIp, proxyPort => $proxyPort)
+  ->value;
 
 # access_modify validates all its parameters, don't do it ourselves here for clarity
 $fnret = OVH::Bastion::access_modify(
@@ -100,6 +104,8 @@ $fnret = OVH::Bastion::access_modify(
     forceKey      => $forceKey,
     ttl           => $ttl,
     comment       => $comment,
+    proxyIp       => $proxyIp,
+    proxyPort     => $proxyPort,
 );
 if ($fnret->err eq 'OK') {
     my $ttlmsg = $ttl ? ' (expires in ' . OVH::Bastion::duration2human(seconds => $ttl)->value->{'human'} . ')' : '';
@@ -114,7 +120,9 @@ if ($fnret->err eq 'OK') {
             forcePassword => $forcePassword,
             forceKey      => $forceKey,
             ttl           => $ttl,
-            comment       => $comment
+            comment       => $comment,
+            proxyIp       => $proxyIp,
+            proxyPort     => $proxyPort,
         },
         msg => $action eq 'add'
         ? "Entry $machine was added to group $shortGroup$ttlmsg"
