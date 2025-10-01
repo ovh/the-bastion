@@ -205,6 +205,11 @@ foreach my $groupData (@groups) {
         if ($fnret && defined $fnret->value && $fnret->value =~ /^-?\d+$/) {
             $ret{'idle_lock_timeout'} = $fnret->value;
         }
+
+        $fnret = OVH::Bastion::group_config(group => $group, %{OVH::Bastion::OPT_GROUP_TRY_PERSONAL_KEYS()});
+        if ($fnret && defined $fnret->value) {
+            $ret{'try_personal_keys'} = ($fnret->value eq '1' ? 'yes' : 'no');
+        }
     }
 
     # group egress keys if we've been asked those
@@ -300,6 +305,17 @@ sub print_group_info {
               . OVH::Bastion::duration2human(seconds => $ret{'idle_lock_timeout'})->value->{'duration'};
         }
         osh_warn "Specific idle kill timeout: idle sessions on servers of this group will $action";
+    }
+
+    if ($ret{'try_personal_keys'}) {
+        osh_info ' ';
+        if ($ret{'try_personal_keys'} eq 'yes') {
+            osh_info
+              "Personal keys: When group members access servers from this group, their personal egress keys will also be tried.";
+        }
+        else {
+            osh_info "Personal keys: No personal egress keys will be used.";
+        }
     }
 
     if ($withKeys) {
