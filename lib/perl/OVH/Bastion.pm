@@ -105,6 +105,7 @@ use constant {
     EXIT_DNS_DISABLED                => 132,
     EXIT_IP_VERSION_DISABLED         => 133,
     EXIT_INVALID_PORT                => 134,
+    EXIT_INVALID_PROXYJUMP           => 135,
 };
 
 use constant {

@@ -230,9 +230,6 @@ sub is_access_way_granted {
         if (defined $wantedProxyIp && !defined $wantedProxyPort) {
             return R('ERR_INVALID_PARAMETER', msg => "If proxyIp is given, proxyPort must be given too");
         }
-        if (defined $wantedProxyPort && !defined $wantedProxyIp) {
-            return R('ERR_INVALID_PARAMETER', msg => "If proxyPort is given, proxyIp must be given too");
-        }
 
         # if we want an exact match, it's a simple strcmp() for IPv4
         if ($exactIpMatch && !$isIPv6) {
@@ -336,7 +333,7 @@ sub is_access_way_granted {
                 my $proxyMatches = 1;
 
                 # Case 1: proxy parameters are requested
-                if (defined $wantedProxyIp || defined $wantedProxyPort) {
+                if (defined $wantedProxyIp) {
                     # if proxy parameters are requested, the entry must have proxy info
                     if (!defined $entry->{'proxyIp'} && !defined $entry->{'proxyPort'}) {
                         $proxyMatches = 0;
