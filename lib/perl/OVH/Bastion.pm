@@ -104,6 +104,7 @@ use constant {
     EXIT_ACCOUNT_FROZEN              => 131,
     EXIT_DNS_DISABLED                => 132,
     EXIT_IP_VERSION_DISABLED         => 133,
+    EXIT_INVALID_PROXYJUMP           => 134,
 };
 
 use constant {
