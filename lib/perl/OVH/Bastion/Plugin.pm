@@ -13,13 +13,9 @@ $| = 1;
 
 use Exporter 'import';
 ## no critic (ProhibitPackageVars)
-our (
-    $user, $ip,      $host,  $port,       $scriptName,
-    $self, $sysself, $realm, $remoteself, $HOME,      $savedArgs, $pluginConfig
-);
+our ($user, $ip, $host, $port, $scriptName, $self, $sysself, $realm, $remoteself, $HOME, $savedArgs, $pluginConfig);
 ## no critic (ProhibitAutomaticExportation)
-our @EXPORT =
-  qw( $user $ip $host $port $scriptName $self $sysself $realm $remoteself $HOME $savedArgs $pluginConfig );
+our @EXPORT = qw( $user $ip $host $port $scriptName $self $sysself $realm $remoteself $HOME $savedArgs $pluginConfig );
 our @EXPORT_OK = qw( help );
 
 my $_helptext;

@@ -209,7 +209,7 @@ sub act {
                     my $machine = OVH::Bastion::machine_display(
                         ip   => $access->{'ip'},
                         port => $access->{'port'},
-                        user => $access->{'user'}
+                        user => $access->{'user'},
                     )->value;
                     $fnret = OVH::Bastion::Plugin::groupSetRole::act(
                         account => $account,

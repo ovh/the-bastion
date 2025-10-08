@@ -1198,7 +1198,7 @@ sub ssh_test_access_way {
 
     # add proxyjump when specified
     if (defined $proxyIp) {
-        my @proxyCommand =  qw{ ssh -o ConnectTimeout=5 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no };
+        my @proxyCommand = qw{ ssh -o ConnectTimeout=5 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no };
         push @proxyCommand, '-o', 'PreferredAuthentications=' . $preferredAuthentications;
         foreach (@keyList) {
             push @proxyCommand, "-i", $_;
