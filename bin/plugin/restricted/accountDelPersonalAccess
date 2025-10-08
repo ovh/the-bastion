@@ -14,10 +14,10 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
     header             => "removing personal access to a server from an account",
     userAllowWildcards => 1,
     options            => {
-        "account=s"  => \my $account,
-        "protocol=s" => \my $protocol,
-        "proxy-host=s"     => \my $proxyHost,
-        "proxy-port=s"     => \my $proxyPort,
+        "account=s"    => \my $account,
+        "protocol=s"   => \my $protocol,
+        "proxy-host=s" => \my $proxyHost,
+        "proxy-port=s" => \my $proxyPort,
         # undocumented/compatibility:
         "user-any" => \my $userAny,
         "port-any" => \my $portAny,
@@ -63,11 +63,13 @@ if ($proxyHost) {
     $fnret = OVH::Bastion::is_valid_ip(ip => $proxyHost, allowSubnets => 0);
     if ($fnret) {
         $proxyIp = $fnret->value->{'ip'};
-    } else {
+    }
+    else {
         $fnret = OVH::Bastion::get_ip(host => $proxyHost);
         if ($fnret) {
             $proxyIp = $fnret->value->{'ip'};
-        } else {
+        }
+        else {
             $proxyIp = $proxyHost;
         }
     }
