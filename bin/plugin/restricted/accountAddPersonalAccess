@@ -103,11 +103,13 @@ if ($proxyHost) {
     $fnret = OVH::Bastion::is_valid_ip(ip => $proxyHost, allowSubnets => 0);
     if ($fnret) {
         $proxyIp = $fnret->value->{'ip'};
-    } else {
+    }
+    else {
         $fnret = OVH::Bastion::get_ip(host => $proxyHost);
         if ($fnret) {
             $proxyIp = $fnret->value->{'ip'};
-        } else {
+        }
+        else {
             $proxyIp = $proxyHost;
         }
     }
