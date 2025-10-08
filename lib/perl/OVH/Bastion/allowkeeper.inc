@@ -659,7 +659,13 @@ sub access_modify {
             else {
                 return R('ERR_CANNOT_OPEN_FILE', msg => "Error opening $file: $!");
             }
-            my $machine = OVH::Bastion::machine_display(ip => $ip, port => $port, user => $user)->value;
+            my $machine = OVH::Bastion::machine_display(
+                ip        => $ip,
+                port      => $port,
+                user      => $user,
+                proxyIp   => $proxyIp,
+                proxyPort => $proxyPort
+            )->value;
             my $ttlmsg =
               $ttl ? (' (expires in ' . OVH::Bastion::duration2human(seconds => $ttl)->value->{'human'} . ')') : '';
             $returnmsg = "Access to $machine successfully added$ttlmsg";
@@ -684,7 +690,13 @@ sub access_modify {
                     if (open(my $fh_file, '>', $file)) {
                         print $fh_file $newFile;
                         close($fh_file);
-                        my $machine = OVH::Bastion::machine_display(ip => $ip, port => $port, user => $user)->value;
+                        my $machine = OVH::Bastion::machine_display(
+                            ip        => $ip,
+                            port      => $port,
+                            user      => $user,
+                            proxyIp   => $proxyIp,
+                            proxyPort => $proxyPort
+                        )->value;
                         $returnmsg = "Access to $machine successfully removed";
                     }
                     else {

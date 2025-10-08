@@ -1236,10 +1236,18 @@ $user = $user || $config->{'defaultLogin'} || $remoteself || $sysself;
 # log request
 osh_debug("final request : " . "$user\@$ip -p $port -- $command'\n");
 
-my $displayLine = sprintf("%s => %s => %s",
+my $displayLine = sprintf(
+    "%s => %s => %s",
     OVH::Bastion::machine_display(ip => $hostfrom,    port => $portfrom)->value,
     OVH::Bastion::machine_display(ip => $bastionhost, port => $bastionport, user => $self)->value,
-    OVH::Bastion::machine_display(ip => $hostto,      port => $port,        user => $user)->value,
+    OVH::Bastion::machine_display(
+        ip        => $hostto,
+        port      => $port,
+        user      => $user,
+        proxyIp   => $proxyIp,
+        proxyPort => $proxyPort
+    )->value,
+
 );
 
 if (!$quiet) {
