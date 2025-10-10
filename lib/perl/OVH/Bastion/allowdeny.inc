@@ -235,11 +235,8 @@ sub is_access_way_granted {
         if ($exactIpMatch && !$isIPv6) {
             next if ($entry->{'ip'} ne $wantedIp);
 
-            # check proxy parameters
-            # If $wantedProxyIp is defined, we assume $wantedProxyPort is defined too
-
             # Case 1: proxy parameters are requested
-            if (defined $wantedProxyIp || defined $wantedProxyPort) {
+            if (defined $wantedProxyIp) {
                 # if proxy parameters are requested, the entry must have proxy info
                 if (!defined $entry->{'proxyIp'} && !defined $entry->{'proxyPort'}) {
                     next;
@@ -286,7 +283,7 @@ sub is_access_way_granted {
                 my $proxyMatches = 1;
 
                 # Case 1: proxy parameters are requested
-                if (defined $wantedProxyIp || defined $wantedProxyPort) {
+                if (defined $wantedProxyIp) {
                     # if proxy parameters are requested, the entry must have proxy info
                     if (!defined $entry->{'proxyIp'} && !defined $entry->{'proxyPort'}) {
                         $proxyMatches = 0;
