@@ -104,6 +104,7 @@ use constant {
     EXIT_ACCOUNT_FROZEN              => 131,
     EXIT_DNS_DISABLED                => 132,
     EXIT_IP_VERSION_DISABLED         => 133,
+    EXIT_INVALID_PROXYJUMP           => 134,
 };
 
 use constant {
@@ -762,14 +763,22 @@ sub is_valid_remote_user {
 }
 
 sub machine_display {
-    my %params = @_;
-    my $ip     = $params{'ip'};
-    my $port   = $params{'port'};
-    my $user   = $params{'user'};
+    my %params    = @_;
+    my $ip        = $params{'ip'};
+    my $port      = $params{'port'};
+    my $user      = $params{'user'};
+    my $proxyIp   = $params{'proxyIp'};
+    my $proxyPort = $params{'proxyPort'};
 
     my $machine = (index($ip, ':') >= 0 ? "[$ip]" : $ip);
     $machine .= ":$port"              if $port;
     $machine = $user . '@' . $machine if $user;
+
+    if ($proxyIp) {
+        my $proxy = (index($proxyIp, ':') >= 0 ? "[$proxyIp]" : $proxyIp);
+        $proxy .= ":$proxyPort" if $proxyPort;
+        $machine = "$machine via $proxy";
+    }
 
     return R('OK', value => $machine);
 }

@@ -4,11 +4,18 @@
         "groupDelServer +--group"               , {"ac" : ["<GROUP>"]},
         "groupDelServer +--group +\\S+"         , {"ac" : ["--host"]},
         "groupDelServer +--group +\\S+ +--host" , {"pr" : ["<HOST>", "<IP>", "<IP/MASK>"]},
-        "groupDelServer +--group +\\S+ +--host +\\S+"                                           , {"ac" : ["--port",  "--port-any"]},
+        "groupDelServer +--group +\\S+ +--host +\\S+"                                           , {"ac" : ["--port",  "--port-any", "--proxy-host", "--proxy-port"]},
         "groupDelServer +--group +\\S+ +--host +\\S+ +--port"                                   , {"pr" : ["<PORT>"]},
-        "groupDelServer +--group +\\S+ +--host +\\S+ +--port(-any| +\\d+)"                      , {"ac" : ["--user",  "--user-any"]},
+        "groupDelServer +--group +\\S+ +--host +\\S+ +--port(-any| +\\d+)"                      , {"ac" : ["--user",  "--user-any", "--proxy-host", "--proxy-port"]},
+        "groupDelServer +--group +\\S+ +--host +\\S+ +--proxy-host"                             , {"pr" : ["<PROXY_HOST>", "<PROXY_IP>"]},
+        "groupDelServer +--group +\\S+ +--host +\\S+ +--proxy-host +\\d+"                       , {"ac" : ["--port", "--port-any", "--user", "--user-any", "--proxy-port"]},
+        "groupDelServer +--group +\\S+ +--host +\\S+ +--proxy-port"                             , {"pr" : ["<PROXY_PORT>"]},
+        "groupDelServer +--group +\\S+ +--host +\\S+ +--proxy-port +\\d+"                       , {"ac" : ["--port", "--port-any", "--user", "--user-any", "--proxy-host"]},
         "groupDelServer +--group +\\S+ +--host +\\S+ +--port(-any| +\\d+) +--user"              , {"pr" : ["<USER>"]},
-        "groupDelServer +--group +\\S+ +--host +\\S+ +--port(-any| +\\d+) +--user(-any| +\\S+)" , {"pr" : ["<enter>", "--force"]}
+        "groupDelServer +--group +\\S+ +--host +\\S+ +--port(-any| +\\d+) +--user(-any| +\\S+)" , {"ac" : ["<enter>", "--force", "--proxy-host", "--proxy-port"]},
+        "groupDelServer +--group +\\S+ +--host +\\S+ +--(port(-any| +\\d+)|proxy-host +\\S+|proxy-port +\\d+) +--(user(-any| +\\S+)|proxy-host +\\S+|proxy-port +\\d+)" , {"ac" : ["<enter>", "--force", "--proxy-host", "--proxy-port", "--port", "--port-any", "--user", "--user-any"]},
+        "groupDelServer +--group +\\S+ +--host +\\S+ +--(port(-any| +\\d+)|proxy-host +\\S+|proxy-port +\\d+|user(-any| +\\S+)) +--(port(-any| +\\d+)|proxy-host +\\S+|proxy-port +\\d+|user(-any| +\\S+)) +--(port(-any| +\\d+)|proxy-host +\\S+|proxy-port +\\d+|user(-any| +\\S+))" , {"ac" : ["<enter>", "--force", "--proxy-host", "--proxy-port", "--port", "--port-any", "--user", "--user-any"]},
+        "groupDelServer +--group +\\S+ +--host +\\S+ +--(port(-any| +\\d+)|proxy-host +\\S+|proxy-port +\\d+|user(-any| +\\S+)) +--(port(-any| +\\d+)|proxy-host +\\S+|proxy-port +\\d+|user(-any| +\\S+)) +--(port(-any| +\\d+)|proxy-host +\\S+|proxy-port +\\d+|user(-any| +\\S+)) +--(port(-any| +\\d+)|proxy-host +\\S+|proxy-port +\\d+|user(-any| +\\S+))" , {"pr" : ["<enter>", "--force"]}
     ],
     "master_only": true
 }
