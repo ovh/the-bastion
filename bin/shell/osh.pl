@@ -239,6 +239,7 @@ my @saved_argv = @ARGV;
 
 # Check if this is a ProxyJump connection that should be executed directly
 if ($ENV{'OSH_PROXYJUMP_CONNECTION'}) {
+    $ENV{'OSH_PROXYJUMP_CONNECTION'} = 0;    # make sure nothing else gets interpreted as proxyjump
     osh_debug("Detected ProxyJump connection, executing command directly");
 
     # Extract the command from the realOptions or ARGV
