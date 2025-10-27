@@ -1200,11 +1200,17 @@ sub ssh_test_access_way {
         foreach (@keyList) {
             push @proxyCommand, "-i", $_;
         }
-        push @proxyCommand, "-p", $proxyPort if $proxyPort;
-        push @proxyCommand, "-W", "%h:%p";
-        push @proxyCommand, "-l", $user, $proxyIp;
+        push @proxyCommand, "-p", $proxyPort if $proxyPort && $proxyPort != 22;
+        push @proxyCommand, '-l', $user, '-W', '%h:%p', $proxyIp;
+
         my $proxyCommandStr = join(' ', map { /\s/ ? "'$_'" : $_ } @proxyCommand);
-        push @command, "-o", "ProxyCommand=\"$proxyCommandStr\"";
+        osh_debug("Testing with ProxyCommand: $proxyCommandStr");
+
+        push @command, '-o', "ProxyCommand=$proxyCommandStr";
+
+        $ENV{'OSH_PROXYJUMP_HOST'}       = $proxyIp;
+        $ENV{'OSH_PROXYJUMP_PORT'}       = $proxyPort;
+        $ENV{'OSH_PROXYJUMP_CONNECTION'} = 1;
     }
 
     push @command, '-T', '--', 'true';
