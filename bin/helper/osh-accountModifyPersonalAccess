@@ -127,13 +127,15 @@ if ($fnret->err eq 'OK') {
     HEXIT(
         'OK',
         value => {
-            action  => $action,
-            account => $account,
-            ip      => $ip,
-            user    => $user,
-            port    => $port,
-            ttl     => $ttl,
-            comment => $comment
+            action    => $action,
+            account   => $account,
+            ip        => $ip,
+            user      => $user,
+            port      => $port,
+            ttl       => $ttl,
+            comment   => $comment,
+            proxyIp   => $proxyIp,
+            proxyPort => $proxyPort,
         },
         msg => $action eq 'add'
         ? "Access to $machine was added to account $account$ttlmsg"
