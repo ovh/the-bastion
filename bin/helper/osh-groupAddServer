@@ -33,7 +33,7 @@ eval {
         "force-key=s"      => sub { $forceKey      //= $_[1] },
         "ttl=i"            => sub { $ttl           //= $_[1] },
         "comment=s"        => sub { $comment       //= $_[1] },
-        "proxy-host=s"     => sub { $proxyIp       //= $_[1] },
+        "proxy-ip=s"       => sub { $proxyIp       //= $_[1] },
         "proxy-port=i"     => sub { $proxyPort     //= $_[1] },
 
     );
