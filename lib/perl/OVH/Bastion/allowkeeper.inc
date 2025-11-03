@@ -366,6 +366,7 @@ sub access_modify {
 
     my $proxyIp   = $params{'proxyIp'};
     my $proxyPort = $params{'proxyPort'};
+    my $proxyUser = $params{'proxyUser'};
 
     my $dryrun = $params{'dryrun'};      # don't do anything, just check params and prereqs
     my $sudo   = $params{'sudo'};        # passed as-is to subs we use
@@ -395,8 +396,9 @@ sub access_modify {
 
     # normalize * into undef
     # also, due to how plugins work, sometimes user and port are just '', make them undef in those cases
-    undef $user if (defined $user && ($user eq '*' || $user eq ''));
-    undef $port if (defined $port && ($port eq '*' || $port eq ''));
+    undef $user      if (defined $user      && ($user eq '*'      || $user eq ''));
+    undef $port      if (defined $port      && ($port eq '*'      || $port eq ''));
+    undef $proxyUser if (defined $proxyUser && ($proxyUser eq '*' || $proxyUser eq ''));
 
     # check way
     if ($way eq 'personal') {
@@ -496,16 +498,25 @@ sub access_modify {
         }
     }
 
+    # check proxy host
     if (defined $proxyIp) {
         $fnret = OVH::Bastion::is_valid_ip(ip => $proxyIp, allowSubnets => 0);
         return $fnret unless $fnret;
         $proxyIp = $fnret->value->{'ip'};
     }
 
+    # check proxy port
     if (defined $proxyPort) {
         $fnret = OVH::Bastion::is_valid_port(port => $proxyPort);
         return $fnret unless $fnret;
         $proxyPort = $fnret->value;
+    }
+
+    # check proxy user
+    if (defined $proxyUser) {
+        $fnret = OVH::Bastion::is_valid_remote_user(user => $proxyUser, allowWildcards => 1);
+        return $fnret unless $fnret;
+        $proxyUser = $fnret->value;
     }
 
     # Validate proxy configuration: if PROXYHOST is specified, PROXYPORT must be too
@@ -598,6 +609,7 @@ sub access_modify {
             account    => $account,
             proxyIp    => $proxyIp,
             proxyPort  => $proxyPort,
+            proxyUser  => $proxyUser,
             exactMatch => 1,             # we're checking if the exact right we're asked to modify exists or not
         );
         osh_debug("... result is $fnret");
@@ -686,6 +698,9 @@ sub access_modify {
             if ($proxyPort) {
                 $entry .= " # PROXYPORT=" . $proxyPort;
             }
+            if ($proxyUser) {
+                $entry .= " # PROXYUSER=" . $proxyUser;
+            }
             if ($comment) {
                 $comment =~ s{[#<>\\"']}{_}g;
                 $entry .= " # COMMENT=<" . $comment . ">";
@@ -712,7 +727,8 @@ sub access_modify {
                 port      => $port,
                 user      => $user,
                 proxyIp   => $proxyIp,
-                proxyPort => $proxyPort
+                proxyPort => $proxyPort,
+                proxyUser => $proxyUser,
             )->value;
             my $ttlmsg =
               $ttl ? (' (expires in ' . OVH::Bastion::duration2human(seconds => $ttl)->value->{'human'} . ')') : '';
@@ -743,7 +759,8 @@ sub access_modify {
                             port      => $port,
                             user      => $user,
                             proxyIp   => $proxyIp,
-                            proxyPort => $proxyPort
+                            proxyPort => $proxyPort,
+                            proxyUser => $proxyUser,
                         )->value;
                         $returnmsg = "Access to $machine successfully removed";
                     }
@@ -771,8 +788,9 @@ sub access_modify {
                 ['force_key',      $params{'forceKey'}],
                 ['force_password', $params{'forcePassword'}],
                 ['comment',        $params{'comment'}],
-                ['proxy_ip',       $proxyIp],
-                ['proxy_port',     $proxyPort],
+                ['proxy_ip',       $params{'proxyIp'}],
+                ['proxy_port',     $params{'proxyPort'}],
+                ['proxy_user',     $params{'proxyUser'}],
             ]
         );
         return R('OK', msg => $returnmsg) if $returnmsg;

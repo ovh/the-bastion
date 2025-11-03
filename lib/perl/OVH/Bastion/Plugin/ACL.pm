@@ -9,8 +9,8 @@ use OVH::Bastion;
 
 sub check {
     my %params = @_;
-    my ($port, $portAny, $user, $userAny, $scpUp, $scpDown, $sftp, $protocol, $proxyIp, $proxyPort) =
-      @params{qw{ port portAny user userAny scpUp scpDown sftp protocol proxyIp proxyPort }};
+    my ($port, $portAny, $user, $userAny, $scpUp, $scpDown, $sftp, $protocol, $proxyIp, $proxyPort, $proxyUser) =
+      @params{qw{ port portAny user userAny scpUp scpDown sftp protocol proxyIp proxyPort proxyUser }};
 
     if ($user and $userAny) {
         return R('ERR_INCOMPATIBLE_PARAMETERS',
@@ -85,7 +85,7 @@ sub check {
     }
 
     # check proxy-host and proxy-port parameters
-    osh_debug("Checking proxy parameters: proxyIp='$proxyIp' proxyPort='$proxyPort'");
+    osh_debug("Checking proxy parameters: proxyIp='$proxyIp' proxyPort='$proxyPort' proxyUser='$proxyUser'");
     if ($proxyIp) {
         if (!$proxyPort) {
             return R('ERR_MISSING_PARAMETER', msg => "When --proxy-host is specified, --proxy-port becomes mandatory");
@@ -94,6 +94,10 @@ sub check {
         # validate proxy host format (same as regular host validation)
         if ($proxyIp !~ m{^[a-zA-Z0-9._/:-]+$}) {
             return R('ERR_INVALID_PARAMETER', msg => "Proxy host name '$proxyIp' seems invalid");
+        }
+
+        if (!$proxyUser) {
+            return R('ERR_MISSING_PARAMETER', msg => "When --proxy-host is specified, --proxy-user becomes mandatory");
         }
     }
 
@@ -110,11 +114,21 @@ sub check {
     }
 
     # now, remap port and user '*' back to undef
-    undef $user if $user eq '*';
-    undef $port if $port eq '*';
+    undef $user      if $user eq '*';
+    undef $port      if $port eq '*';
+    undef $proxyUser if $proxyUser eq '*';
 
-    return R('OK',
-        value => {user => $user, port => $port, protocol => $protocol, proxyIp => $proxyIp, proxyPort => $proxyPort});
+    return R(
+        'OK',
+        value => {
+            user      => $user,
+            port      => $port,
+            protocol  => $protocol,
+            proxyIp   => $proxyIp,
+            proxyPort => $proxyPort,
+            proxyUser => $proxyUser
+        }
+    );
 }
 
 1;
