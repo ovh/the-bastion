@@ -303,15 +303,17 @@ EOF
 my $fnret;
 my $proxyIp   = undef;
 my $proxyPort = 22;
+my $proxyUser = undef;
 # Parse proxyjump args if specified
 if ($proxyJump) {
-    if ($proxyJump =~ /^(\[?[a-zA-Z0-9._-]+\]?)(?::(\d+))?$/) {
-        $proxyIp   = $1;
-        $proxyPort = $2 if $2;
-        osh_debug("parsed proxyjump: host=$proxyIp port=$proxyPort");
+    if ($proxyJump =~ /^(?:([a-zA-Z0-9._@!-]{1,128})@)?(\[?[a-zA-Z0-9._-]+\]?)(?::(\d+))?$/) {
+        $proxyUser = $1 if $1;
+        $proxyIp   = $2;
+        $proxyPort = $3 if $3;
+        osh_debug("parsed proxyjump: host=$proxyIp port=$proxyPort user=$proxyUser");
     }
     else {
-        osh_exit 'ERR_INVALID_PARAMETER', "Invalid proxyjump specification '$proxyJump', should be host[:port]";
+        osh_exit 'ERR_INVALID_PARAMETER', "Invalid proxyjump specification '$proxyJump', should be [user@]host[:port]";
     }
 
     $fnret = OVH::Bastion::get_ip(host => $proxyIp, allowSubnets => 0);
@@ -328,6 +330,10 @@ if ($proxyJump) {
     }
     $proxyIp = $fnret->value->{'ip'};
     osh_debug("Proxyjump host resolved to IP: $proxyIp");
+
+    if ($proxyUser && !OVH::Bastion::is_valid_remote_user(user => $proxyUser, allowWildcards => 0)) {
+        osh_exit 'EXIT_INVALID_REMOTE_USER', 'invalid_proxy_user', "Proxy user name '$proxyUser' seems invalid";
+    }
 }
 
 if (not $host) {
@@ -359,6 +365,7 @@ if ($decoded =~ m{[\`\$\;><\|\&]}) {
 
 $port ||= 22;                                              # scp uses 22 if not specified, so we need to test access to that port and not any port (aka undef)
 $user ||= $self;                                           # same for user
+$proxyUser ||= $user;                                     # same for proxy user
 
 $fnret = OVH::Bastion::Plugin::otherProtocol::has_protocol_access(
     account   => $self,
@@ -395,7 +402,7 @@ if ($proxyIp) {
     }
 
     push @proxyCommand, '-p', $proxyPort if $proxyPort && $proxyPort != 22;
-    push @proxyCommand, '-l', $user, '-W', '%h:%p', $proxyIp;
+    push @proxyCommand, '-l', $proxyUser, '-W', '%h:%p', $proxyIp;
 
     # Quote arguments that contain spaces and build the command string
     my $proxyCommandStr = join(' ', map { /\s/ ? "'$_'" : $_ } @proxyCommand);

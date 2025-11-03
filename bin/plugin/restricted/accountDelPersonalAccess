@@ -18,6 +18,7 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
         "protocol=s"   => \my $protocol,
         "proxy-host=s" => \my $proxyHost,
         "proxy-port=s" => \my $proxyPort,
+        "proxy-user=s"     => \my $proxyUser,
         # undocumented/compatibility:
         "user-any" => \my $userAny,
         "port-any" => \my $portAny,
@@ -48,6 +49,8 @@ Usage: --osh SCRIPT_NAME --account ACCOUNT --host HOST --user USER --port PORT [
                               rsync        allow usage of rsync, through the bastion
   --proxy-host HOST|IP     Specify which host was used as a proxy/jump host to reach the target server
   --proxy-port PORT        Proxy port that was used to reach the target server
+  --proxy-user USER|PATTERN|*  Proxy user that was configured for this access (mandatory when --proxy-host is specified).
+                               Globbing characters '*' and '?' are supported for pattern matching.
 EOF
 );
 
@@ -75,6 +78,12 @@ if ($proxyHost) {
     }
 }
 
+if ($proxyUser) {
+    $fnret = OVH::Bastion::is_valid_remote_user(user => $proxyUser, allowWildcards => 1);
+    $fnret or osh_exit $fnret;
+    $proxyUser = $fnret->value;
+}
+
 $fnret = OVH::Bastion::Plugin::ACL::check(
     user      => $user,
     userAny   => $userAny,
@@ -86,13 +95,15 @@ $fnret = OVH::Bastion::Plugin::ACL::check(
     protocol  => $protocol,
     proxyIp   => $proxyIp,
     proxyPort => $proxyPort,
+    proxyUser => $proxyUser,
 );
 if (!$fnret) {
     help();
     osh_exit($fnret);
 }
-$user = $fnret->value->{'user'};
-$port = $fnret->value->{'port'};
+$user      = $fnret->value->{'user'};
+$port      = $fnret->value->{'port'};
+$proxyUser = $fnret->value->{'proxyUser'};
 
 if (not $account) {
     help();
@@ -113,5 +124,6 @@ push @command, '--user',       $user      if $user;
 push @command, '--port',       $port      if $port;
 push @command, '--proxy-ip',   $proxyIp   if $proxyIp;
 push @command, '--proxy-port', $proxyPort if $proxyPort;
+push @command, '--proxy-user', $proxyUser if $proxyUser;
 
 osh_exit OVH::Bastion::helper(cmd => \@command);

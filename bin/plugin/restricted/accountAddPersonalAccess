@@ -23,6 +23,7 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
         "comment=s"        => \my $comment,
         "proxy-host=s"     => \my $proxyHost,
         "proxy-port=s"     => \my $proxyPort,
+        "proxy-user=s"     => \my $proxyUser,
         # undocumented/compatibility:
         "user-any" => \my $userAny,
         "port-any" => \my $portAny,
@@ -58,6 +59,8 @@ Usage: --osh SCRIPT_NAME --account ACCOUNT --host HOST --user USER --port PORT [
   --comment "'ANY TEXT'"   Add a comment alongside this server. Quote it twice as shown if you're under a shell.
   --proxy-host HOST|IP     Use this host as a proxy/jump host to reach the target server
   --proxy-port PORT        Proxy host port to connect to (mandatory when --proxy-host is specified)
+  --proxy-user USER|PATTERN|*  Proxy user to connect as (mandatory when --proxy-host is specified).
+                               Globbing characters '*' and '?' are supported for pattern matching.
 
 The access will work only if one of the account's personal egress public key has been copied to the remote server.
 To get the list of an account's personal egress public keys, see ``accountListEgressKeyss`` and ``selfListEgressKeys``.
@@ -115,6 +118,12 @@ if ($proxyHost) {
     }
 }
 
+if ($proxyUser) {
+    $fnret = OVH::Bastion::is_valid_remote_user(user => $proxyUser, allowWildcards => 1);
+    $fnret or osh_exit $fnret;
+    $proxyUser = $fnret->value;
+}
+
 $fnret = OVH::Bastion::Plugin::ACL::check(
     user      => $user,
     userAny   => $userAny,
@@ -126,13 +135,15 @@ $fnret = OVH::Bastion::Plugin::ACL::check(
     protocol  => $protocol,
     proxyIp   => $proxyIp,
     proxyPort => $proxyPort,
+    proxyUser => $proxyUser,
 );
 if (!$fnret) {
     help();
     osh_exit($fnret);
 }
-$user = $fnret->value->{'user'};
-$port = $fnret->value->{'port'};
+$user      = $fnret->value->{'user'};
+$port      = $fnret->value->{'port'};
+$proxyUser = $fnret->value->{'proxyUser'};
 
 if (defined $ttl) {
     $fnret = OVH::Bastion::is_valid_ttl(ttl => $ttl);
@@ -178,6 +189,14 @@ if ($pluginConfig && $pluginConfig->{'self_remote_user_only'}) {
     }
 }
 
+if ($pluginConfig && $pluginConfig->{'self_remote_user_only'}) {
+    if ($proxyIp && (!$proxyUser || $proxyUser ne $account)) {
+        osh_exit('ERR_INVALID_PARAMETER',
+            msg => "This bastion policy forces the remote user of personal accesses to match\n"
+              . "the account name: you may retry with --proxy-user $account");
+    }
+}
+
 # if no comment is specified, but we're adding the server by hostname,
 # use it to craft a comment
 if (!$comment && $host ne $ip) {
@@ -201,6 +220,7 @@ $fnret = OVH::Bastion::access_modify(
     widestV4Prefix => ($pluginConfig ? $pluginConfig->{'widest_v4_prefix'} : undef),
     proxyIp        => $proxyIp,
     proxyPort      => $proxyPort,
+    proxyUser      => $proxyUser,
 );
 $fnret or osh_exit($fnret);
 
@@ -221,5 +241,6 @@ push @command, '--ttl',            $ttl           if $ttl;
 push @command, '--comment',        $comment       if $comment;
 push @command, '--proxy-ip',       $proxyIp       if $proxyIp;
 push @command, '--proxy-port',     $proxyPort     if $proxyPort;
+push @command, '--proxy-user',     $proxyUser     if $proxyUser;
 
 osh_exit OVH::Bastion::helper(cmd => \@command);

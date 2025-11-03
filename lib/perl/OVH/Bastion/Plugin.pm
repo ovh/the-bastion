@@ -95,38 +95,6 @@ sub validate_tuple {
         undef $host if $host eq '';
     }
 
-    # handle proxy host resolution
-    # if (exists $params{'proxyHost'}) {
-    #     $proxyHost = $params{'proxyHost'};
-    #     if ($proxyHost) {
-    #         if ($proxyHost !~ m{^[a-zA-Z0-9._/:-]+$}) {
-    #             # can be an IP (v4 or v6) or hostname
-    #             osh_exit('KO_INVALID_PROXY_HOST', msg => "Proxy host name '$proxyHost' seems invalid");
-    #         }
-    #         $fnret = OVH::Bastion::get_ip(host => $proxyHost);
-    #         if (!$fnret) {
-    #             osh_exit('KO_INVALID_PROXY_HOST', msg => "Proxy host name '$proxyHost' couldn't be resolved");
-    #         }
-    #         else {
-    #             $proxyIp = $fnret->value->{'ip'};
-    #         }
-    #     }
-    #     undef $proxyHost if $proxyHost eq '';
-    # }
-
-    # # handle proxy port validation
-    # if (exists $params{'proxyPort'}) {
-    #     $proxyPort = $params{'proxyPort'};
-    #     if (defined $proxyPort && $proxyPort ne '') {
-    #         $fnret = OVH::Bastion::is_valid_port(port => $proxyPort);
-    #         $fnret or osh_exit $fnret;
-    #         $proxyPort = $fnret->value;
-    #     }
-    #     else {
-    #         undef $proxyPort;
-    #     }
-    # }
-
     return R('OK');
 }
 

@@ -86,6 +86,7 @@ sub is_access_way_granted {
 
     my $wantedProxyIp   = $params{'proxyIp'};          # can be a single IP, no support for subnet
     my $wantedProxyPort = $params{'proxyPort'};        # must be exact if defined, no support for wildcard
+    my $wantedProxyUser = $params{'proxyUser'};        # if undef, means we look for a user-any allow
 
     my $way     = $params{'way'};                      # personal|group|groupguest|legacy
     my $group   = $params{'group'};                    # only meaningful and needed if type=group or type=groupguest
@@ -96,8 +97,9 @@ sub is_access_way_granted {
     $exactIpMatch = $exactPortMatch = $exactUserMatch = 1 if $exactMatch;
 
     # normalize '*' to undef
-    undef $wantedUser if (defined $wantedUser && $wantedUser eq '*');
-    undef $wantedPort if (defined $wantedPort && $wantedPort eq '*');
+    undef $wantedUser      if (defined $wantedUser      && $wantedUser eq '*');
+    undef $wantedPort      if (defined $wantedPort      && $wantedPort eq '*');
+    undef $wantedProxyUser if (defined $wantedProxyUser && $wantedProxyUser eq '*');
 
     # 'group', 'account', and 'way' parameters are only useful to, and checked by, get_acl_way()
     $fnret = OVH::Bastion::get_acl_way(way => $way, account => $account, group => $group);
@@ -106,9 +108,6 @@ sub is_access_way_granted {
 
     my $check_debug_msg =
       "checking way $way/$account/$group with ignorePort=$ignorePort ignoreUser=$ignoreUser exactIpMatch=$exactIpMatch exactPortMatch=$exactPortMatch exactUserMatch=$exactUserMatch";
-    if (defined $wantedProxyIp) {
-        $check_debug_msg .= " proxyIp=$wantedProxyIp proxyPort=$wantedProxyPort";
-    }
     osh_debug($check_debug_msg);
 
     my %match;
@@ -128,8 +127,17 @@ sub is_access_way_granted {
           . ($entry->{'port'} // '<u>');
 
         if (defined $entry->{'proxyIp'}) {
+            undef $entry->{'proxyUser'} if (defined $entry->{'proxyUser'} && $entry->{'proxyUser'} eq '*');
+
             $check_debug_msg .=
-              " proxyIp=" . ($entry->{'proxyIp'} // '<u>') . " proxyPort=" . ($entry->{'proxyPort'} // '<u>');
+                "with wanted proxy "
+              . ($wantedProxyUser // '<u>') . '@'
+              . ($wantedProxyIp   // '<u>') . ':'
+              . ($wantedProxyPort // '<u>')
+              . " against "
+              . ($entry->{'proxyUser'} // '<u>') . '@'
+              . ($entry->{'proxyIp'}   // '<u>') . ':'
+              . ($entry->{'proxyPort'} // '<u>');
         }
         osh_debug($check_debug_msg);
 
@@ -222,14 +230,62 @@ sub is_access_way_granted {
             }
         }
 
-        # then, check IP
-        my $isIPv6     = (index($entry->{'ip'}, ':') != -1);
-        my $isNetblock = (index($entry->{'ip'}, '/') != -1);
-
         # make sure both proxyIp and proxyPort are defined or undefined
         if (defined $wantedProxyIp && !defined $wantedProxyPort) {
             return R('ERR_INVALID_PARAMETER', msg => "If proxyIp is given, proxyPort must be given too");
         }
+
+        # check proxy user if we have a proxy ip
+        if (defined $wantedProxyIp) {
+            if ($exactUserMatch) {
+                # we want an exact match
+                if (not defined $entry->{'proxyUser'}) {
+                    if (not defined $wantedProxyUser) {
+                        ;    # both undefined ? ok
+                    }
+                    else {
+                        next;    # if only one of two is undef, it's not an exact match
+                    }
+                }
+                else {
+                    if (not defined $wantedProxyUser) {
+                        next;    # if only one of two is undef, it's not an exact match
+                    }
+                    else {
+                        next if ($wantedProxyUser ne $entry->{'proxyUser'});    # both defined but unequal, not a match
+                    }
+                }
+            }
+            else {
+                # we don't want an exact match (aka proxy-user-any allowed)
+                if (not defined $entry->{'proxyUser'}) {
+                    ;    # it's a wildcard, will always match
+                }
+                else {
+                    if (not defined $wantedProxyUser) {
+                        next;    # we want a wildcard, but we don't have it
+                    }
+                    else {
+                        # handle the case where $entry->{'proxyUser'} contains wildcards such as '?' or '*'
+                        if (index($entry->{'proxyUser'}, '*') >= 0 || index($entry->{'proxyUser'}, '?') >= 0) {
+                            # turn wildcards into a regexp
+                            my $entryUserRe = quotemeta($entry->{'proxyUser'});
+                            $entryUserRe =~ s{\\\?}{.}g;
+                            $entryUserRe =~ s{\\\*}{.*}g;
+                            next if ($wantedProxyUser !~ /^$entryUserRe$/);
+                        }
+                        else {
+                            # doesn't contain a wildcard, simple comparison
+                            next if ($wantedProxyUser ne $entry->{'proxyUser'});    # both defined but unequal, not a match
+                        }
+                    }
+                }
+            }
+        }
+
+        # then, check IP
+        my $isIPv6     = (index($entry->{'ip'}, ':') != -1);
+        my $isNetblock = (index($entry->{'ip'}, '/') != -1);
 
         # if we want an exact match, it's a simple strcmp() for IPv4
         if ($exactIpMatch && !$isIPv6) {
@@ -705,8 +761,12 @@ sub print_acls {
             $addedDate = substr($addedDate, 0, 10);
             my $forceKey      = $entry->{'forceKey'}      || '-';
             my $forcePassword = $entry->{'forcePassword'} || '-';
-            my $via           = ($entry->{'proxyIp'} ? $entry->{'proxyIp'} : '-')
-              . ($entry->{'proxyPort'} ? ":$entry->{'proxyPort'}" : '');
+            
+            my $via = '-';
+            if ($entry->{'proxyIp'}) {
+                $via = $entry->{'proxyUser'} ? $entry->{'proxyUser'} : '*' . "\@$entry->{'proxyIp'}:$entry->{'proxyPort'}";
+            }
+            
             my $expiry =
               $entry->{'expiry'} ? (duration2human(seconds => ($entry->{'expiry'} - time()))->value->{'human'}) : '-';
 
@@ -842,7 +902,7 @@ sub is_access_granted {
 
     my $proxyIp   = $params{'proxyIp'};         # if defined, means we look for a proxyIp match too
     my $proxyPort = $params{'proxyPort'};       # if defined, means we look for a proxyPort match too
-                                                # if proxyPort is defined, proxyIp must be defined too
+    my $proxyUser = $params{'proxyUser'};       # if undef, means we look for a proxy-user wildcard allow
 
     my $details = delete $params{'details'};    # if set, look for and return ssh keys + config data along with allowed accesses
 
@@ -1078,7 +1138,8 @@ sub is_access_granted {
         port      => $port,
         user      => $user,
         proxyIp   => $proxyIp,
-        proxyPort => $proxyPort
+        proxyPort => $proxyPort,
+        proxyUser => $proxyUser
     )->value;
     return R('KO_ACCESS_DENIED', msg => "Access denied for $account to $machine");
 }
@@ -1093,6 +1154,7 @@ sub ssh_test_access_way {
     my $user      = $params{'user'};
     my $proxyIp   = $params{'proxyIp'};
     my $proxyPort = $params{'proxyPort'};
+    my $proxyUser = $params{'proxyUser'};
 
     my $forceKey = $params{'forceKey'};
     my $fnret;
@@ -1122,6 +1184,11 @@ sub ssh_test_access_way {
         $fnret = OVH::Bastion::is_valid_port(port => $proxyPort);
         $fnret or return $fnret;
         $proxyPort = $fnret->value;
+
+        $proxyUser  = OVH::Bastion::get_user_from_env()->value    if not $proxyUser;    # no proxyUser or account ? get from env then
+        $fnret = OVH::Bastion::is_valid_remote_user(user => $proxyUser, allowWildcards => 1);
+        $fnret or return $fnret;
+        $proxyUser = $fnret->value;
     }
 
     $user  = OVH::Bastion::config("defaultLogin")->value if not $user;
@@ -1201,7 +1268,7 @@ sub ssh_test_access_way {
             push @proxyCommand, "-i", $_;
         }
         push @proxyCommand, "-p", $proxyPort if $proxyPort && $proxyPort != 22;
-        push @proxyCommand, '-l', $user, '-W', '%h:%p', $proxyIp;
+        push @proxyCommand, '-l', $proxyUser, '-W', '%h:%p', $proxyIp;
 
         my $proxyCommandStr = join(' ', map { /\s/ ? "'$_'" : $_ } @proxyCommand);
         osh_debug("Testing with ProxyCommand: $proxyCommandStr");
@@ -1210,6 +1277,7 @@ sub ssh_test_access_way {
 
         $ENV{'OSH_PROXYJUMP_HOST'}       = $proxyIp;
         $ENV{'OSH_PROXYJUMP_PORT'}       = $proxyPort;
+        $ENV{'OSH_PROXYJUMP_USER'}       = $proxyUser;
         $ENV{'OSH_PROXYJUMP_CONNECTION'} = 1;
     }
 
@@ -1481,8 +1549,9 @@ sub _get_acl_from_file {
     my @entries;
     foreach my $line (@lines) {
         my (
-            $ip,      $user,      $port,  $comment, $forceKey,    $forcePassword, $expiry,
-            $addedBy, $addedDate, $extra, $comment, $userComment, $proxyIp,       $proxyPort
+            $ip,            $user,        $port,    $comment,   $forceKey,
+            $forcePassword, $expiry,      $addedBy, $addedDate, $extra,
+            $comment,       $userComment, $proxyIp, $proxyPort, $proxyUser
         );
 
         # extract comment if any
@@ -1590,6 +1659,15 @@ sub _get_acl_from_file {
                 $proxyPort = $fnret->value;
                 osh_debug("found a valid proxy port <$proxyPort>");
             }
+            if ($comment =~ s/# PROXYUSER=(\S+)//) {
+                $fnret = OVH::Bastion::is_valid_remote_user(user => $1, allowWildcards => 1);
+                if (!$fnret) {
+                    osh_debug("skipping line <$line> because invalid proxy user ($1) found");
+                    next;
+                }
+                $proxyUser = $fnret->value;
+                osh_debug("found a valid proxy user <$proxyUser>");
+            }
             if ($comment =~ s/# COMMENT=<([^>]+)>//) {
                 $userComment = $1;
             }
@@ -1614,6 +1692,7 @@ sub _get_acl_from_file {
             comment       => $extra,
             proxyIp       => $proxyIp,
             proxyPort     => $proxyPort,
+            proxyUser     => $proxyUser
           };
     }
 

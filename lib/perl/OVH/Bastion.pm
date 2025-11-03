@@ -769,6 +769,7 @@ sub machine_display {
     my $user      = $params{'user'};
     my $proxyIp   = $params{'proxyIp'};
     my $proxyPort = $params{'proxyPort'};
+    my $proxyUser = $params{'proxyUser'};
 
     my $machine = (index($ip, ':') >= 0 ? "[$ip]" : $ip);
     $machine .= ":$port"              if $port;
@@ -777,6 +778,7 @@ sub machine_display {
     if ($proxyIp) {
         my $proxy = (index($proxyIp, ':') >= 0 ? "[$proxyIp]" : $proxyIp);
         $proxy .= ":$proxyPort" if $proxyPort;
+        $proxy   = $proxyUser . '@' . $proxy if $proxyUser;
         $machine = "$machine via $proxy";
     }
 

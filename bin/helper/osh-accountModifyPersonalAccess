@@ -32,7 +32,7 @@ use OVH::Bastion::Helper;
 # Fetch command options
 my $fnret;
 my ($result, @optwarns);
-my ($account, $ip, $user, $port, $action, $ttl, $forceKey, $forcePassword, $target, $comment, $proxyIp, $proxyPort);
+my ($account, $ip, $user, $port, $action, $ttl, $forceKey, $forcePassword, $target, $comment, $proxyIp, $proxyPort, $proxyUser);
 eval {
     local $SIG{__WARN__} = sub { push @optwarns, shift };
     $result = GetOptions(
@@ -48,6 +48,7 @@ eval {
         "comment=s"        => sub { $comment       //= $_[1] },
         "proxy-ip=s"       => sub { $proxyIp       //= $_[1] },
         "proxy-port=i"     => sub { $proxyPort     //= $_[1] },
+        "proxy-user=s"     => sub { $proxyUser     //= $_[1] },
     );
 };
 if ($@) { die $@ }
@@ -84,7 +85,7 @@ if (not grep { $action eq $_ } qw{ add del }) {
 
 #>CODE
 my $machine =
-  OVH::Bastion::machine_display(ip => $ip, port => $port, user => $user, proxyIp => $proxyIp, proxyPort => $proxyPort)
+  OVH::Bastion::machine_display(ip => $ip, port => $port, user => $user, proxyIp => $proxyIp, proxyPort => $proxyPort, proxyUser => $proxyUser)
   ->value;
 
 my $plugin = ($target eq 'self' ? 'self' : 'account') . 'AddPersonalAccess';
@@ -121,6 +122,7 @@ $fnret = OVH::Bastion::access_modify(
     widestV4Prefix => $widestV4Prefix,
     proxyIp        => $proxyIp,
     proxyPort      => $proxyPort,
+    proxyUser      => $proxyUser,
 );
 if ($fnret->err eq 'OK') {
     my $ttlmsg = $ttl ? ' (expires in ' . OVH::Bastion::duration2human(seconds => $ttl)->value->{'human'} . ')' : '';
@@ -136,6 +138,7 @@ if ($fnret->err eq 'OK') {
             comment   => $comment,
             proxyIp   => $proxyIp,
             proxyPort => $proxyPort,
+            proxyUser => $proxyUser,
         },
         msg => $action eq 'add'
         ? "Access to $machine was added to account $account$ttlmsg"
