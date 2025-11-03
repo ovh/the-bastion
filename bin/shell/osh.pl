@@ -652,16 +652,18 @@ else {
 
 my $proxyIp   = undef;
 my $proxyPort = 22;
+my $proxyUser = $user; # user might be undef. We'll handle that later
 # Parse proxyjump args if specified
 if ($proxyJump) {
-    if ($proxyJump =~ /^(\[?[a-zA-Z0-9._-]+\]?)(?::(\d+))?$/) {
-        $proxyIp   = $1;
-        $proxyPort = $2 if $2;
-        osh_debug("parsed proxyjump: host=$proxyIp port=$proxyPort");
+    if ($proxyJump =~ /^(?:([a-zA-Z0-9._@!-]{1,128})@)?(\[?[a-zA-Z0-9._-]+\]?)(?::(\d+))?$/) {
+        $proxyUser = $1 if $1;
+        $proxyIp   = $2;
+        $proxyPort = $3 if $3;
+        osh_debug("parsed proxyjump: host=$proxyIp port=$proxyPort user=$proxyUser");
     }
     else {
         main_exit OVH::Bastion::EXIT_INVALID_PROXYJUMP, 'invalid_proxyjump',
-          "Invalid proxyjump specification '$proxyJump', should be host[:port]";
+          "Invalid proxyjump specification '$proxyJump', should be [user@]host[:port]";
     }
 
     $fnret = OVH::Bastion::get_ip(host => $proxyIp, allowSubnets => 0);
@@ -679,8 +681,14 @@ if ($proxyJump) {
     osh_debug("Proxyjump host $proxyIp resolved to IP " . $fnret->value->{'ip'});
     $proxyIp = $fnret->value->{'ip'};
 
+
+    if ($proxyUser && !OVH::Bastion::is_valid_remote_user(user => $proxyUser, allowWildcards => 0)) {
+        main_exit OVH::Bastion::EXIT_INVALID_REMOTE_USER, 'invalid_proxy_user', "Proxy user name '$proxyUser' seems invalid";
+    }
+
     $ENV{'OSH_PROXYJUMP_HOST'}       = $proxyIp;
     $ENV{'OSH_PROXYJUMP_PORT'}       = $proxyPort;
+    $ENV{'OSH_PROXYJUMP_USER'}       = $proxyUser;
     $ENV{'OSH_PROXYJUMP_CONNECTION'} = 1;
 }
 
@@ -1167,6 +1175,7 @@ if ($osh_command) {
         }
 
         # build ttyrec command that'll prefix the real command
+        # TODO: support proxy info
         $fnret = OVH::Bastion::build_ttyrec_cmdline(
             ip             => $osh_command,
             port           => 0,
@@ -1242,6 +1251,9 @@ if (!$quiet) {
 # do that here, cause sometimes we do not want to pass user to osh
 $user = $user || $config->{'defaultLogin'} || $remoteself || $sysself;
 
+# if we have a proxyIp but no proxyUser, set it to $user
+$proxyUser = $user if ($proxyIp && !$proxyUser);
+
 # log request
 osh_debug("final request : " . "$user\@$ip -p $port -- $command'\n");
 
@@ -1254,7 +1266,8 @@ my $displayLine = sprintf(
         port      => $port,
         user      => $user,
         proxyIp   => $proxyIp,
-        proxyPort => $proxyPort
+        proxyPort => $proxyPort,
+        proxyUser => $proxyUser,
     )->value,
 
 );
@@ -1277,6 +1290,7 @@ else {
         port      => $port,
         proxyIp   => $proxyIp,
         proxyPort => $proxyPort,
+        proxyUser => $proxyUser,
         details   => 1
     );
 }
@@ -1594,7 +1608,7 @@ else {
         }
 
         push @proxyCommand, '-p', $proxyPort if $proxyPort && $proxyPort != 22;
-        push @proxyCommand, '-l', $user, '-W', '%h:%p', $proxyIp;
+        push @proxyCommand, '-l', $proxyUser, '-W', '%h:%p', $proxyIp;
 
         if ($verbose) {
             foreach (1 .. $verbose) {
