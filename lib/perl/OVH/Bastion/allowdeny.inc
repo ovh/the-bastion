@@ -1275,9 +1275,6 @@ sub ssh_test_access_way {
 
         push @command, '-o', "ProxyCommand=$proxyCommandStr";
 
-        $ENV{'OSH_PROXYJUMP_HOST'}       = $proxyIp;
-        $ENV{'OSH_PROXYJUMP_PORT'}       = $proxyPort;
-        $ENV{'OSH_PROXYJUMP_USER'}       = $proxyUser;
         $ENV{'OSH_PROXYJUMP_CONNECTION'} = 1;
     }
 

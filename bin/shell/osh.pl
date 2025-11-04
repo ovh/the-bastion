@@ -682,9 +682,6 @@ if ($proxyJump) {
         main_exit OVH::Bastion::EXIT_INVALID_REMOTE_USER, 'invalid_proxy_user', "Proxy user name '$proxyUser' seems invalid";
     }
 
-    $ENV{'OSH_PROXYJUMP_HOST'}       = $proxyIp;
-    $ENV{'OSH_PROXYJUMP_PORT'}       = $proxyPort;
-    $ENV{'OSH_PROXYJUMP_USER'}       = $proxyUser;
     $ENV{'OSH_PROXYJUMP_CONNECTION'} = 1;
 }
 
