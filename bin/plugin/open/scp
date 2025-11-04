@@ -365,7 +365,9 @@ if ($decoded =~ m{[\`\$\;><\|\&]}) {
 
 $port ||= 22;                                              # scp uses 22 if not specified, so we need to test access to that port and not any port (aka undef)
 $user ||= $self;                                           # same for user
-$proxyUser ||= $user;                                     # same for proxy user
+if ($proxyIp) {
+    $proxyUser ||= $user;
+}
 
 $fnret = OVH::Bastion::Plugin::otherProtocol::has_protocol_access(
     account   => $self,
@@ -375,6 +377,7 @@ $fnret = OVH::Bastion::Plugin::otherProtocol::has_protocol_access(
     protocol  => $protocol,
     proxyIp   => $proxyIp,
     proxyPort => $proxyPort,
+    proxyUser => $proxyUser,
 );
 $fnret or osh_exit($fnret);
 

@@ -23,6 +23,7 @@ sub has_protocol_access {
     my $port      = $params{'port'};
     my $proxyIp   = $params{'proxyIp'};
     my $proxyPort = $params{'proxyPort'};
+    my $proxyUser = $params{'proxyUser'};
     my $protocol  = $params{'protocol'};
 
     if (!$account || !$ipfrom || !$ip || !$protocol || !$user || !$port) {
@@ -34,7 +35,8 @@ sub has_protocol_access {
         port      => $port,
         user      => $user,
         proxyIp   => $proxyIp,
-        proxyPort => $proxyPort
+        proxyPort => $proxyPort,
+        proxyUser => $proxyUser
     )->value;
 
     my %keys;
@@ -47,6 +49,7 @@ sub has_protocol_access {
         port      => $port,
         proxyIp   => $proxyIp,
         proxyPort => $proxyPort,
+        proxyUser => $proxyUser,
         details   => 1
     );
 
@@ -72,6 +75,7 @@ sub has_protocol_access {
         port           => $port,
         proxyIp        => $proxyIp,
         proxyPort      => $proxyPort,
+        proxyUser      => $proxyUser,
         exactUserMatch => 1,
         details        => 1
     );
