@@ -162,6 +162,15 @@ if (not grep { $egress_protocol eq $_ } @{$config->{'allowed_egress_protocols'}}
     );
 }
 
+if (not grep { $method eq $_ } @{$config->{'allowed_methods'} || []}) {
+    log_and_exit(
+        400,
+        "Bad Request (method forbidden)",
+        "The $method method is forbidden by policy",
+        {comment => 'method_forbidden'}
+    );
+}
+
 my $shortGroup;
 if ($group) {
     $fnret = OVH::Bastion::is_valid_group_and_existing(group => $group, groupType => 'key');

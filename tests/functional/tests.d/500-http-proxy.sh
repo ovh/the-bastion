@@ -195,8 +195,8 @@ testsuite_proxy()
     contain "X-Bastion-Egress-Timing: "
     contain "Content-Length: 1000000"
 
-    # use a disallowed verb
-    script forbidden_verb "curl -ski -X OPTIONS -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    # use a disallowed method
+    script forbidden_method "curl -ski -X PUT -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 400 Bad Request (method forbidden)'
     contain 'Server: The Bastion'
@@ -204,10 +204,22 @@ testsuite_proxy()
     contain 'X-Bastion-ReqID: '
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
-    contain 'Only GET and POST methods are allowed'
+    contain 'is forbidden by policy'
+
+    # use alternate config to only allow more methods
+    success config_swap $r0 "\"cp /etc/bastion/osh-http-proxy-methods.conf /etc/bastion/osh-http-proxy.conf\""
+
+    # when daemon will restart, it'll log stuff, ignore it
+    ignorecodewarn 'osh-http-proxy-daemon'
+    # pkill doesn't work well under FreeBSD, so do it ourselves for all OSes
+    success force_restart $r0 "\"ps -U proxyhttp -o pid,command | grep -v PID | awk '{print \\\$1}' | xargs -r kill; true\""
+    if [ "$COUNTONLY" != 1 ]; then
+        # wait for target_role.sh to restart the daemon
+        sleep 4
+    fi
 
     # post some data
-    script post_data "curl -ski -d somedata -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    script post_data "curl -ski -X POST -d somedata -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain "HTTP/1.0 200 OK"
     testsuite_proxy_check_headers
@@ -226,6 +238,45 @@ testsuite_proxy()
     contain "Content-Length: 8"
     contain "somedata"
 
+    # put some data
+    script patch_data "curl -ski -X PUT -d somedata -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 200 OK"
+    testsuite_proxy_check_headers
+    nocontain 'WWW-Authenticate: '
+    contain 'Content-Type: text/plain'
+    contain 'X-Bastion-Remote-IP: 127.0.0.1'
+    contain 'X-Bastion-Request-Length: 8'
+    contain 'X-Bastion-Auth-Mode: self/default'
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain "X-Bastion-Remote-Client-SSL-Cert-Subject: "
+    contain "X-Bastion-Remote-Client-SSL-Cipher: "
+    contain "X-Bastion-Remote-Client-SSL-Warning: Peer certificate not verified"
+    contain "X-Bastion-Remote-Status: 200"
+    contain "X-Bastion-Remote-Server: Net::Server::HTTP/"
+    contain "X-Bastion-Egress-Timing: "
+    contain "Content-Length: 8"
+    contain "somedata"
+
+    # put some data with no body
+    script patch_data_no_body "curl -ski -X PUT -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 200 OK"
+    testsuite_proxy_check_headers
+    nocontain 'WWW-Authenticate: '
+    contain 'Content-Type: text/plain'
+    contain 'X-Bastion-Remote-IP: 127.0.0.1'
+    contain 'X-Bastion-Request-Length: 0'
+    contain 'X-Bastion-Auth-Mode: self/default'
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain "X-Bastion-Remote-Client-SSL-Cert-Subject: "
+    contain "X-Bastion-Remote-Client-SSL-Cipher: "
+    contain "X-Bastion-Remote-Client-SSL-Warning: Peer certificate not verified"
+    contain "X-Bastion-Remote-Status: 200"
+    contain "X-Bastion-Remote-Server: Net::Server::HTTP/"
+    contain "X-Bastion-Egress-Timing: "
+    contain "Content-Length: 64"
+
     # use a disallowed egress method
     script forbidden_egress_protocol "curl -ski -H 'X-Bastion-Egress-Protocol: http' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
@@ -236,7 +287,7 @@ testsuite_proxy()
     contain 'not allowed by policy'
 
     # use alternate config to only allow http egress
-    success config_swap $r0 "\"mv /etc/bastion/osh-http-proxy.conf /etc/bastion/osh-http-proxy-normal.conf; mv /etc/bastion/osh-http-proxy-httponly.conf /etc/bastion/osh-http-proxy.conf\""
+    success config_swap $r0 "\"cp /etc/bastion/osh-http-proxy-httponly.conf /etc/bastion/osh-http-proxy.conf\""
 
     # when daemon will restart, it'll log stuff, ignore it
     ignorecodewarn 'osh-http-proxy-daemon'

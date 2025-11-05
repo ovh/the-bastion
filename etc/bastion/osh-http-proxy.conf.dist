@@ -104,6 +104,13 @@
 #  DEFAULT: 65536
 "log_request_response_max_size": 65536,
 #
+# allowed_methods (array of strings)
+#     DESC: This array lists the allowed HTTP methods. By default, only GET and POST are allowed.
+#           If required, other methods can be added such as PUT, PATCH, DELETE, etc.
+#  EXAMPLE: ["GET","POST","PUT","PATCH","DELETE"]
+#  DEFAULT: ["GET","POST"]
+"allowed_methods": ["GET","POST"],
+#
 # allowed_egress_protocols (array of strings)
 #     DESC: This array lists the allowed egress protocols. By default, only https is allowed.
 #           If required, plain http egress can be enabled here, which is of course strongly discouraged,

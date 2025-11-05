@@ -281,12 +281,15 @@ sub process_http_request {
         );
     }
 
-    # only GET or POST are allowed
-    if (not grep { uc($self->{'request_info'}{'request_method'}) eq $_ } qw{ GET POST }) {
+    # default set by the daemon and adjusted by the config, just ensure it's not undef
+    $self->{'proxy_config'}{'allowed_methods'} ||= [];
+    # only some methods are allowed
+    if (not grep { uc($self->{'request_info'}{'request_method'}) eq $_ } @{$self->{'proxy_config'}{'allowed_methods'}})
+    {
         return $self->log_and_exit(
             400,
             "Bad Request (method forbidden)",
-            "Only GET and POST methods are allowed",
+            "The " . uc($self->{'request_info'}{'request_method'}) . " method is forbidden by policy",
             {comment => 'method_forbidden'}
         );
     }
@@ -583,10 +586,16 @@ sub process_http_request {
     # fake an application/xml content, this has the effect in the CGI module code
     # to not mess at all with the data, which is what we want. This way we can get the
     # raw unparsed/unmodified data through the special 'XForms:Model' param. Once done,
-    # we simply restore the real content-type
+    # we simply restore the real content-type.
+    # For PUT and PATCH, this is easier,
+    # cf https://metacpan.org/dist/CGI/view/lib/CGI.pod#Handling-non-urlencoded-arguments
+    my $content;
     my $real_content_type = $ENV{'CONTENT_TYPE'};
     $ENV{'CONTENT_TYPE'} = 'application/xml';
-    my $content = CGI->new->param('XForms:Model');
+    my %verb2param = (POST => 'XForms:Model', PUT => 'PUTDATA', PATCH => 'PATCHDATA');
+    if (my $param = $verb2param{$self->{'request_info'}{'request_method'}}) {
+        $content = CGI->new->param($param);
+    }
     $ENV{'CONTENT_TYPE'}    = $real_content_type;
     $ENV{'PROXY_POST_DATA'} = encode_base64($content);
 

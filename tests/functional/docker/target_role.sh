@@ -162,6 +162,8 @@ if [ "$WANT_HTTP_PROXY" = 1 ]; then
     sed -i -re 's="insecure":.+="insecure":true,=' /etc/bastion/osh-http-proxy.conf
     # also build a config with disallowed https egress and allowed http egress
     sed -re 's="allowed_egress_protocols":.+="allowed_egress_protocols":["http"]=' /etc/bastion/osh-http-proxy.conf > /etc/bastion/osh-http-proxy-httponly.conf
+    # and another one with more allowed methods
+    sed -re 's="allowed_methods":.+="allowed_methods":["GET","POST","PUT","PATCH","DELETE"],=' /etc/bastion/osh-http-proxy.conf > /etc/bastion/osh-http-proxy-methods.conf
 
     # ensure the remote daemon is executable
     chmod 0755 "$basedir"/tests/functional/proxy/remote-daemon

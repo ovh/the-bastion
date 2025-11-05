@@ -29,6 +29,7 @@ These options modify the behavior of the HTTP Proxy, an optional module of The B
 - `timeout`_
 - `log_request_response`_
 - `log_request_response_max_size`_
+- `allowed_methods`_
 - `allowed_egress_protocols`_
 
 Option Reference
@@ -176,6 +177,18 @@ the query response will only be partially logged, with full status and headers b
 to the specified size. This is a way to avoid turning off request response logging completely on
 very busy bastions, by ensuring logs growth don't get out of hand, as some responses to queries can
 take megabytes, with possibly limited added value to traceability.
+
+allowed_methods
+***************
+
+:Type: ``array of strings``
+
+:Default: ``["GET","POST"]``
+
+:Example: ``["GET","POST","PUT","PATCH","DELETE"]``
+
+This array lists the allowed HTTP methods. By default, only GET and POST are allowed.
+If required, other methods can be added such as PUT, PATCH, DELETE, etc.
 
 allowed_egress_protocols
 ************************
