@@ -159,6 +159,68 @@ cmp_deeply(
     "build_ttyrec_cmdline_part2of2 cmd"
 );
 
+# Test ttyrec with proxy parameters
+$fnret = OVH::Bastion::build_ttyrec_cmdline_part1of2(
+    ip        => "192.168.1.100",
+    port      => 22,
+    user      => "targetuser",
+    account   => "bastionuser",
+    uniqid    => 'cafed00dcafe',
+    home      => "/home/randomuser",
+    proxyIp   => "10.0.0.1",
+    proxyPort => 2222,
+    proxyUser => "jumpi",
+);
+cmp_deeply(
+    $fnret->value->{'saveFile'},
+    re(
+        qr{^\Q/home/randomuser/ttyrec/via-10.0.0.1-192.168.1.100/20\E\d\d-\d\d-\d\d.\d\d\-\d\d\-\d\d\.\d{6}\Q.cafed00dcafe.bastionuser.targetuser.192.168.1.100.22.via.jumpi.10.0.0.1.2222.ttyrec\E$}
+    ),
+    "build_ttyrec_cmdline_part1of2 with proxy saveFile"
+);
+cmp_deeply(
+    $fnret->value->{'cmd'},
+    [
+        'ttyrec',
+        '-f',
+        $fnret->value->{'saveFile'},
+        '-F',
+        '/home/randomuser/ttyrec/via-10.0.0.1-192.168.1.100/%Y-%m-%d.%H-%M-%S.#usec#.cafed00dcafe.bastionuser.targetuser.192.168.1.100.22.via.jumpi.10.0.0.1.2222.ttyrec'
+    ],
+    "build_ttyrec_cmdline_part1of2 with proxy cmd"
+);
+
+# Test ttyrec with IPv6 proxy
+$fnret = OVH::Bastion::build_ttyrec_cmdline_part1of2(
+    ip        => "192.168.1.200",
+    port      => 22,
+    user      => "targetuser",
+    account   => "bastionuser",
+    uniqid    => 'cafed00dcafe',
+    home      => "/home/randomuser",
+    proxyIp   => "2001:db8::1",
+    proxyPort => 22,
+    proxyUser => "jumpi",
+);
+cmp_deeply(
+    $fnret->value->{'saveFile'},
+    re(
+        qr{^\Q/home/randomuser/ttyrec/via-v6[2001.db8..1]-192.168.1.200/20\E\d\d-\d\d-\d\d.\d\d\-\d\d\-\d\d\.\d{6}\Q.cafed00dcafe.bastionuser.targetuser.192.168.1.200.22.via.jumpi.v6[2001.db8..1].22.ttyrec\E$}
+    ),
+    "build_ttyrec_cmdline_part1of2 with IPv6 proxy saveFile"
+);
+cmp_deeply(
+    $fnret->value->{'cmd'},
+    [
+        'ttyrec',
+        '-f',
+        $fnret->value->{'saveFile'},
+        '-F',
+        '/home/randomuser/ttyrec/via-v6[2001.db8..1]-192.168.1.200/%Y-%m-%d.%H-%M-%S.#usec#.cafed00dcafe.bastionuser.targetuser.192.168.1.200.22.via.jumpi.v6[2001.db8..1].22.ttyrec'
+    ],
+    "build_ttyrec_cmdline_part1of2 with IPv6 proxy cmd"
+);
+
 is(OVH::Bastion::config("bastionName")->value, "mock", "bastion name is mocked");
 
 ok(OVH::Bastion::is_account_valid(account => "azerty")->is_ok, "is_account_valid('azerty')");
