@@ -341,6 +341,118 @@ testsuite_proxyjump()
     success cleanup_group_list_test_with_proxy_user $a1 --osh groupDelServer --group $group1 --host 192.168.3.200 --user testuser --port 22 --proxy-host 10.0.0.3 --proxy-port 22 --proxy-user proxyuser
     json .command groupDelServer .error_code OK
 
+    #
+    # Test groupAddGuestAccess with proxy parameters
+    #
+
+    # Add a server to the group first so we can test guest access
+    success a1_add_server_to_g1 $a1 --osh groupAddServer --group $group1 --host 192.168.4.100 --user testuser --port 22 --proxy-host 10.0.0.4 --proxy-port 22 --proxy-user testuser --force
+    json .command groupAddServer .error_code OK
+
+    # Test basic proxy parameter with groupAddGuestAccess
+    success groupAddGuestAccess_with_proxy_host $a1 --osh groupAddGuestAccess --group $group1 --account $account2 --host 192.168.4.100 --user testuser --port 22 --proxy-host 10.0.0.4 --proxy-port 22 --proxy-user testuser
+    json .command groupAddGuestAccess .error_code OK
+
+    # Test with hostname as proxy-host
+    success a1_add_server_with_proxy_hostname $a1 --osh groupAddServer --group $group1 --host 192.168.4.101 --user testuser --port 22 --proxy-host localhost --proxy-port 2222 --proxy-user testuser --force
+    json .command groupAddServer .error_code OK
+
+    success groupAddGuestAccess_with_proxy_hostname $a1 --osh groupAddGuestAccess --group $group1 --account $account2 --host 192.168.4.101 --user testuser --port 22 --proxy-host localhost --proxy-port 2222 --proxy-user testuser
+    json .command groupAddGuestAccess .error_code OK 
+
+    # Test proxy-port without proxy-host
+    plgfail groupAddGuestAccess_proxy_port_without_host $a1 --osh groupAddGuestAccess --group $group1 --account $account2 --host 192.168.4.102 --user testuser --port 22 --proxy-port 2222
+    json .command groupAddGuestAccess .error_code ERR_MISSING_PARAMETER
+
+    # Test proxy-host without proxy-port
+    plgfail groupAddGuestAccess_proxy_host_without_port $a1 --osh groupAddGuestAccess --group $group1 --account $account2 --host 192.168.4.103 --user testuser --port 22 --proxy-host 10.0.0.4 --proxy-user testuser
+    json .command groupAddGuestAccess .error_code ERR_MISSING_PARAMETER
+
+    # Test proxy-host and proxy-port without proxy-user
+    plgfail groupAddGuestAccess_proxy_without_user $a1 --osh groupAddGuestAccess --group $group1 --account $account2 --host 192.168.4.104 --user testuser --port 22 --proxy-host 10.0.0.4 --proxy-port 22
+    json .command groupAddGuestAccess .error_code ERR_MISSING_PARAMETER
+
+    # Test invalid proxy-host
+    plgfail groupAddGuestAccess_invalid_proxy_host $a1 --osh groupAddGuestAccess --group $group1 --account $account2 --host 192.168.4.105 --user testuser --port 22 --proxy-host "badhostnäim" --proxy-port 22 --proxy-user testuser
+    json .command groupAddGuestAccess .error_code ERR_INVALID_PARAMETER
+
+    # Test guest access that requires group to have access to proxy params
+    success a1_add_server_no_proxy $a1 --osh groupAddServer --group $group1 --host 192.168.4.110 --user testuser --port 22 --force
+    json .command groupAddServer .error_code OK
+
+    plgfail groupAddGuestAccess_group_no_access_to_proxy $a1 --osh groupAddGuestAccess --group $group1 --account $account2 --host 192.168.4.110 --user testuser --port 22 --proxy-host 10.0.0.4 --proxy-port 22 --proxy-user testuser
+    json .command groupAddGuestAccess .error_code ERR_GROUP_HAS_NO_ACCESS
+
+    #
+    # Test groupDelGuestAccess with proxy parameters
+    #
+
+    # Delete with missing proxy-port
+    plgfail groupDelGuestAccess_without_proxy_port $a1 --osh groupDelGuestAccess --group $group1 --account $account2 --host 192.168.4.100 --user testuser --port 22 --proxy-host 10.0.0.4 --proxy-user testuser
+    json .command groupDelGuestAccess .error_code ERR_MISSING_PARAMETER
+
+    # Delete with missing proxy-host
+    plgfail groupDelGuestAccess_without_proxy_host $a1 --osh groupDelGuestAccess --group $group1 --account $account2 --host 192.168.4.100 --user testuser --port 22 --proxy-port 22
+    json .command groupDelGuestAccess .error_code ERR_MISSING_PARAMETER
+
+    # Delete with missing proxy-user
+    plgfail groupDelGuestAccess_without_proxy_user $a1 --osh groupDelGuestAccess --group $group1 --account $account2 --host 192.168.4.100 --user testuser --port 22 --proxy-host 10.0.0.4 --proxy-port 22
+    json .command groupDelGuestAccess .error_code ERR_MISSING_PARAMETER
+    contain "When --proxy-host is specified, --proxy-user becomes mandatory"
+
+    # Delete guest access with proxy
+    success groupDelGuestAccess_with_proxy $a1 --osh groupDelGuestAccess --group $group1 --account $account2 --host 192.168.4.100 --user testuser --port 22 --proxy-host 10.0.0.4 --proxy-port 22 --proxy-user testuser
+    json .command groupDelGuestAccess .error_code OK
+
+    success groupDelGuestAccess_with_proxy_hostname $a1 --osh groupDelGuestAccess --group $group1 --account $account2 --host 192.168.4.101 --user testuser --port 22 --proxy-host localhost --proxy-port 2222 --proxy-user testuser
+    json .command groupDelGuestAccess .error_code OK
+
+    #
+    # Test that proxy information is displayed in groupListGuestAccesses
+    #
+
+    # Add guest access with proxy for list check
+    success a1_add_server_for_guest_list_check $a1 --osh groupAddServer --group $group1 --host 192.168.4.200 --user listtest --port 2222 --proxy-host 10.0.0.6 --proxy-port 6666 --proxy-user listtest --force
+    json .command groupAddServer .error_code OK
+
+    success add_guest_access_for_list_check $a1 --osh groupAddGuestAccess --group $group1 --account $account2 --host 192.168.4.200 --user listtest --port 2222 --proxy-host 10.0.0.6 --proxy-port 6666 --proxy-user listtest
+    json .command groupAddGuestAccess .error_code OK
+
+    # Check that groupListGuestAccesses shows the proxy information
+    success groupListGuestAccesses_shows_proxy $a1 --osh groupListGuestAccesses --group $group1 --account $account2
+    json .command groupListGuestAccesses .error_code OK .value[0].ip 192.168.4.200 .value[0].port 2222 .value[0].user listtest .value[0].proxyIp 10.0.0.6 .value[0].proxyPort 6666 .value[0].proxyUser listtest
+
+    # Clean up
+    success cleanup_guest_list_test $a1 --osh groupDelGuestAccess --group $group1 --account $account2 --host 192.168.4.200 --user listtest --port 2222 --proxy-host 10.0.0.6 --proxy-port 6666 --proxy-user listtest
+    json .command groupDelGuestAccess .error_code OK
+
+    # Add guest access with proxy-user for list check
+    success a1_add_server_with_proxy_user_for_guest_list $a1 --osh groupAddServer --group $group1 --host 192.168.4.201 --user listtest --port 2222 --proxy-host 10.0.0.6 --proxy-port 6666 --proxy-user proxyuser --force
+    json .command groupAddServer .error_code OK
+
+    success add_guest_access_with_proxy_user_for_list_check $a1 --osh groupAddGuestAccess --group $group1 --account $account2 --host 192.168.4.201 --user listtest --port 2222 --proxy-host 10.0.0.6 --proxy-port 6666 --proxy-user proxyuser
+    json .command groupAddGuestAccess .error_code OK
+
+    # Clean up
+    success cleanup_guest_list_test_with_proxy_user $a1 --osh groupDelGuestAccess --group $group1 --account $account2 --host 192.168.4.201 --user listtest --port 2222 --proxy-host 10.0.0.6 --proxy-port 6666 --proxy-user proxyuser
+    json .command groupDelGuestAccess .error_code OK
+
+    # Clean up servers added for testing
+    success cleanup_server_192_168_4_100 $a1 --osh groupDelServer --group $group1 --host 192.168.4.100 --user testuser --port 22 --proxy-host 10.0.0.4 --proxy-port 22 --proxy-user testuser
+    json .command groupDelServer .error_code OK
+
+    success cleanup_server_192_168_4_101 $a1 --osh groupDelServer --group $group1 --host 192.168.4.101 --user testuser --port 22 --proxy-host localhost --proxy-port 2222 --proxy-user testuser
+    json .command groupDelServer .error_code OK
+
+    success cleanup_server_192_168_4_110 $a1 --osh groupDelServer --group $group1 --host 192.168.4.110 --user testuser --port 22
+    json .command groupDelServer .error_code OK
+
+    success cleanup_server_192_168_4_200 $a1 --osh groupDelServer --group $group1 --host 192.168.4.200 --user listtest --port 2222 --proxy-host 10.0.0.6 --proxy-port 6666 --proxy-user listtest
+    json .command groupDelServer .error_code OK
+
+    success cleanup_server_192_168_4_201 $a1 --osh groupDelServer --group $group1 --host 192.168.4.201 --user listtest --port 2222 --proxy-host 10.0.0.6 --proxy-port 6666 --proxy-user proxyuser
+    json .command groupDelServer .error_code OK
+
     success a0_delete_group1 $a0 --osh groupDelete --group $group1 --no-confirm
     json .error_code OK .command groupDelete
 
