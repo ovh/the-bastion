@@ -546,7 +546,6 @@ if ($interactive and not $ENV{'OSH_IN_INTERACTIVE_SESSION'}) {
 
         # hmm, we are under mosh, mosh needs something to exec, so let's
         # re-exec ourselves in interactive mode
-        # TODO: does this work with proxyjump?
         exec(@toExecute, $0, '-c', $realOptions);
     }
 
@@ -1168,7 +1167,6 @@ if ($osh_command) {
         }
 
         # build ttyrec command that'll prefix the real command
-        # TODO: support proxy info
         $fnret = OVH::Bastion::build_ttyrec_cmdline(
             ip             => $osh_command,
             port           => 0,
@@ -1181,6 +1179,9 @@ if ($osh_command) {
             debug          => $osh_debug,
             tty            => $tty,
             notty          => $notty,
+            proxyIp        => $proxyIp,
+            proxyPort      => $proxyPort,
+            proxyUser      => $proxyUser,
             stealth_stdout => OVH::Bastion::plugin_config(
                 plugin => $osh_command,
                 key    => "stealth_stdout"
@@ -1333,7 +1334,6 @@ if ($osh_debug) {
 }
 
 # build ttyrec command that'll prefix the real command
-# TODO: support proxyjump properly here
 my $ttyrec_fnret = OVH::Bastion::build_ttyrec_cmdline_part1of2(
     ip            => $ip,
     port          => $port,
@@ -1345,7 +1345,10 @@ my $ttyrec_fnret = OVH::Bastion::build_ttyrec_cmdline_part1of2(
     remoteaccount => $remoteself,
     debug         => $osh_debug,
     tty           => $tty,
-    notty         => $notty
+    notty         => $notty,
+    proxyIp       => $proxyIp,
+    proxyPort     => $proxyPort,
+    proxyUser     => $proxyUser
 );
 main_exit(OVH::Bastion::EXIT_TTYREC_CMDLINE_FAILED, "ttyrec_failed", $ttyrec_fnret->msg) if !$ttyrec_fnret;
 

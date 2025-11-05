@@ -1153,21 +1153,38 @@ sub build_ttyrec_cmdline_part1of2 {
         $params{'ip'} = 'v6[' . $params{'ip'} . ']';
     }
 
+    # handle ipv6 for proxyIp
+    if ($params{'proxyIp'} && index($params{'proxyIp'}, ':') >= 0) {
+        $params{'proxyIp'} =~ tr/:/./;
+        $params{'proxyIp'} = 'v6[' . $params{'proxyIp'} . ']';
+    }
+
     # build ttyrec filename format
     my $bastionName          = OVH::Bastion::config('bastionName')->value;
     my $ttyrecFilenameFormat = OVH::Bastion::config('ttyrecFilenameFormat')->value;
     $ttyrecFilenameFormat =~ s/&bastionname/$bastionName/g;
-    $ttyrecFilenameFormat =~ s/&uniqid/$params{'uniqid'}/g   if $params{'uniqid'};
-    $ttyrecFilenameFormat =~ s/&ip/$params{'ip'}/g           if $params{'ip'};
-    $ttyrecFilenameFormat =~ s/&port/$params{'port'}/g       if defined $params{'port'};
-    $ttyrecFilenameFormat =~ s/&user/$params{'user'}/g       if defined $params{'user'};
-    $ttyrecFilenameFormat =~ s/&account/$params{'account'}/g if $params{'account'};
+    $ttyrecFilenameFormat =~ s/&uniqid/$params{'uniqid'}/g       if $params{'uniqid'};
+    $ttyrecFilenameFormat =~ s/&ip/$params{'ip'}/g               if $params{'ip'};
+    $ttyrecFilenameFormat =~ s/&port/$params{'port'}/g           if defined $params{'port'};
+    $ttyrecFilenameFormat =~ s/&user/$params{'user'}/g           if defined $params{'user'};
+    $ttyrecFilenameFormat =~ s/&account/$params{'account'}/g     if $params{'account'};
+    $ttyrecFilenameFormat =~ s/&proxyip/$params{'proxyIp'}/g     if defined $params{'proxyIp'};
+    $ttyrecFilenameFormat =~ s/&proxyport/$params{'proxyPort'}/g if defined $params{'proxyPort'};
+    $ttyrecFilenameFormat =~ s/&proxyuser/$params{'proxyUser'}/g if defined $params{'proxyUser'};
 
     if ($ttyrecFilenameFormat =~ /&(bastionname|uniqid|ip|port|user|account)/) {
 
         # if we still have a placeholder here, then we were missing parameters
         return R('ERR_MISSING_PARAMETER',
             msg => "Missing bastionname, uniqid, ip, port, user or account in ttyrec cmdline building");
+    }
+
+    # if there is no proxyIp, remove the via part and all proxy placeholders
+    if (!defined $params{'proxyIp'}) {
+        $ttyrecFilenameFormat =~ s/\.via//g;
+        $ttyrecFilenameFormat =~ s/\.&proxyuser//g;
+        $ttyrecFilenameFormat =~ s/\.&proxyip//g;
+        $ttyrecFilenameFormat =~ s/\.&proxyport//g;
     }
 
     # ensure there are no '/'
@@ -1180,7 +1197,14 @@ sub build_ttyrec_cmdline_part1of2 {
         $saveDir .= "/" . $params{'remoteaccount'};
         mkdir($saveDir);
     }
-    $saveDir .= "/" . $params{'ip'};
+
+    # format it like via-$proxyIp-$ip so that it's sorted by proxyIp first, then by ip if you list the directory
+    if ($params{'proxyIp'}) {
+        $saveDir .= "/via-" . $params{'proxyIp'} . "-" . $params{'ip'};
+    }
+    else {
+        $saveDir .= "/" . $params{'ip'};
+    }
     mkdir($saveDir);
 
     my $saveFileFormat = "$saveDir/$ttyrecFilenameFormat";
