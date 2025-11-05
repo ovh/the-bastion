@@ -130,7 +130,7 @@ sub is_access_way_granted {
             undef $entry->{'proxyUser'} if (defined $entry->{'proxyUser'} && $entry->{'proxyUser'} eq '*');
 
             $check_debug_msg .=
-                "with wanted proxy "
+                " with wanted proxy "
               . ($wantedProxyUser // '<u>') . '@'
               . ($wantedProxyIp   // '<u>') . ':'
               . ($wantedProxyPort // '<u>')
