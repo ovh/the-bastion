@@ -177,7 +177,7 @@ fi
 # shellcheck disable=SC2086
 [ "$BASTION_SCP_DEBUG" = 1 ] && set -x
 if [ -n "$PROXY_JUMP" ]; then
-    $BASTION_CMD -t $BASTION_SSH_EXTRA_ARGS -- --osh scp --host "$REMOTE_HOST" --port "$REMOTE_PORT" --user "$REMOTE_USER" --proxy-jump "$PROXY_JUMP" --generate-mfa-token | tee "$t"
+    $BASTION_CMD -t $BASTION_SSH_EXTRA_ARGS -- --osh scp --host "$REMOTE_HOST" --port "$REMOTE_PORT" --user "$REMOTE_USER" -J "$PROXY_JUMP" --generate-mfa-token | tee "$t"
 else
     $BASTION_CMD -t $BASTION_SSH_EXTRA_ARGS -- --osh scp --host "$REMOTE_HOST" --port "$REMOTE_PORT" --user "$REMOTE_USER" --generate-mfa-token | tee "$t"
 fi
@@ -237,7 +237,7 @@ scpcmd=$(echo "$3" | sed -e 's/#/##/g;s/ /#/g')
 [ "$BASTION_SCP_DEBUG" = 1 ] && set -x
 EOF
 if [ -n "$PROXY_JUMP" ]; then
-    echo "exec $BASTION_CMD -T \$sshcmdline $BASTION_SSH_EXTRA_ARGS -- --user \"\$REMOTE_USER\" --port \"\$REMOTE_PORT\" --host \"\$REMOTE_HOST\" --osh scp --proxy-jump \"$PROXY_JUMP\" --scp-cmd \"\$scpcmd\" --mfa-token $token" >> "$t"
+    echo "exec $BASTION_CMD -T \$sshcmdline $BASTION_SSH_EXTRA_ARGS -- --user \"\$REMOTE_USER\" --port \"\$REMOTE_PORT\" --host \"\$REMOTE_HOST\" -J \"$PROXY_JUMP\" --osh scp --proxy-jump \"$PROXY_JUMP\" --scp-cmd \"\$scpcmd\" --mfa-token $token" >> "$t"
 else
     echo "exec $BASTION_CMD -T \$sshcmdline $BASTION_SSH_EXTRA_ARGS -- --user \"\$REMOTE_USER\" --port \"\$REMOTE_PORT\" --host \"\$REMOTE_HOST\" --osh scp --scp-cmd \"\$scpcmd\" --mfa-token $token" >> "$t"
 fi
