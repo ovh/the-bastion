@@ -648,7 +648,7 @@ else {
 
 my $proxyIp   = undef;
 my $proxyPort = 22;
-my $proxyUser = $user; # user might be undef. We'll handle that later
+my $proxyUser = $user;    # user might be undef. We'll handle that later
 # Parse proxyjump args if specified
 if ($proxyJump) {
     if ($proxyJump =~ /^(?:([a-zA-Z0-9._@!-]{1,128})@)?(\[?[a-zA-Z0-9._-]+\]?)(?::(\d+))?$/) {
@@ -677,9 +677,9 @@ if ($proxyJump) {
     osh_debug("Proxyjump host $proxyIp resolved to IP " . $fnret->value->{'ip'});
     $proxyIp = $fnret->value->{'ip'};
 
-
     if ($proxyUser && !OVH::Bastion::is_valid_remote_user(user => $proxyUser, allowWildcards => 0)) {
-        main_exit OVH::Bastion::EXIT_INVALID_REMOTE_USER, 'invalid_proxy_user', "Proxy user name '$proxyUser' seems invalid";
+        main_exit OVH::Bastion::EXIT_INVALID_REMOTE_USER, 'invalid_proxy_user',
+          "Proxy user name '$proxyUser' seems invalid";
     }
 
     $ENV{'OSH_PROXYJUMP_CONNECTION'} = 1;

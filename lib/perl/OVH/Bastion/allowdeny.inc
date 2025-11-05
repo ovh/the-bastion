@@ -761,12 +761,13 @@ sub print_acls {
             $addedDate = substr($addedDate, 0, 10);
             my $forceKey      = $entry->{'forceKey'}      || '-';
             my $forcePassword = $entry->{'forcePassword'} || '-';
-            
+
             my $via = '-';
             if ($entry->{'proxyIp'}) {
-                $via = ($entry->{'proxyUser'} ? $entry->{'proxyUser'} : '*' ) . "\@$entry->{'proxyIp'}:$entry->{'proxyPort'}";
+                $via =
+                  ($entry->{'proxyUser'} ? $entry->{'proxyUser'} : '*') . "\@$entry->{'proxyIp'}:$entry->{'proxyPort'}";
             }
-            
+
             my $expiry =
               $entry->{'expiry'} ? (duration2human(seconds => ($entry->{'expiry'} - time()))->value->{'human'}) : '-';
 
@@ -1185,8 +1186,8 @@ sub ssh_test_access_way {
         $fnret or return $fnret;
         $proxyPort = $fnret->value;
 
-        $proxyUser  = OVH::Bastion::get_user_from_env()->value    if not $proxyUser;    # no proxyUser or account ? get from env then
-        $fnret = OVH::Bastion::is_valid_remote_user(user => $proxyUser, allowWildcards => 1);
+        $proxyUser = OVH::Bastion::get_user_from_env()->value if not $proxyUser;                    # no proxyUser or account ? get from env then
+        $fnret     = OVH::Bastion::is_valid_remote_user(user => $proxyUser, allowWildcards => 1);
         $fnret or return $fnret;
         $proxyUser = $fnret->value;
     }
