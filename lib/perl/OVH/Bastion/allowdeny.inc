@@ -764,7 +764,7 @@ sub print_acls {
             
             my $via = '-';
             if ($entry->{'proxyIp'}) {
-                $via = $entry->{'proxyUser'} ? $entry->{'proxyUser'} : '*' . "\@$entry->{'proxyIp'}:$entry->{'proxyPort'}";
+                $via = ($entry->{'proxyUser'} ? $entry->{'proxyUser'} : '*' ) . "\@$entry->{'proxyIp'}:$entry->{'proxyPort'}";
             }
             
             my $expiry =
