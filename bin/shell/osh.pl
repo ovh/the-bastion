@@ -70,7 +70,11 @@ sub main_exit {
         plugin      => undef,
         params      => join('^', @ARGV),
         comment     => $comment,
-        uniqid      => $log_uniq_id
+        uniqid      => $log_uniq_id,
+        proxyuser   => undef,
+        proxyip     => undef,
+        proxyhost   => undef,
+        proxyport   => undef
     ) if (not defined $log_db_name or not defined $log_insert_id);
 
     my $R = R($retcode eq OVH::Bastion::EXIT_OK ? 'OK' : 'KO_' . uc($comment), msg => $msg);
@@ -552,7 +556,6 @@ if ($interactive and not $ENV{'OSH_IN_INTERACTIVE_SESSION'}) {
         exec(@toExecute, $0, '-c', $realOptions);
     }
 
-    # TODO: log proxy info
     my $logret = OVH::Bastion::log_access_insert(
         account     => $self,
         cmdtype     => 'interactive',
@@ -570,7 +573,11 @@ if ($interactive and not $ENV{'OSH_IN_INTERACTIVE_SESSION'}) {
         plugin      => undef,
         params      => undef,
         comment     => undef,
-        uniqid      => $log_uniq_id
+        uniqid      => $log_uniq_id,
+        proxyuser   => undef,
+        proxyip     => undef,
+        proxyhost   => undef,
+        proxyport   => undef
     );
     if ($logret) {
 
@@ -842,7 +849,6 @@ my %ingressRealm = (
 my $pivEffectivePolicyEnabled = OVH::Bastion::is_effective_piv_account_policy_enabled(account => $self);
 
 # if we're coming from a realm, we're receiving a connection from another bastion, keep all the traces:
-# TODO: do we need to do something here regarding proxyjump?
 my @previous_bastion_details;
 if ($realm && $ENV{'LC_BASTION_DETAILS'}) {
     my $decoded_details;
@@ -921,11 +927,14 @@ osh_debug("self     : "
       . "\n");
 
 my $hostto = OVH::Bastion::ip2host($host)->value || $host;
+my $proxyhost;
+if (defined $proxyIp) {
+    $proxyhost = OVH::Bastion::ip2host($proxyIp)->value || $proxyIp;
+}
 
 # Special case: adminSudo for ssh connection as another user
 if ($sshAs) {
     $fnret = OVH::Bastion::is_admin(account => $self);
-    # TODO: log proxyjump info
     my $logret = OVH::Bastion::log_access_insert(
         account     => $self,
         cmdtype     => 'sshas',
@@ -943,7 +952,11 @@ if ($sshAs) {
         plugin      => undef,
         params      => join(' ', @$remainingOptions),
         comment     => undef,
-        uniqid      => $log_uniq_id
+        uniqid      => $log_uniq_id,
+        proxyuser   => $proxyUser,
+        proxyip     => $proxyIp,
+        proxyhost   => $proxyhost,
+        proxyport   => $proxyPort
     );
     if (!$fnret) {
         main_exit OVH::Bastion::EXIT_RESTRICTED_COMMAND, "sshas_denied",
@@ -1047,7 +1060,6 @@ if ($osh_command) {
     # Then test for rights
     $fnret = OVH::Bastion::can_account_execute_plugin(account => $self, plugin => $osh_command);
 
-    # TODO: log proxyjump info
     my $logret = OVH::Bastion::log_access_insert(
         account     => $self,
         cmdtype     => 'osh',
@@ -1065,7 +1077,11 @@ if ($osh_command) {
         plugin      => $osh_command,
         params      => join(' ', @$remainingOptions),
         comment     => 'plugin-' . ($fnret->value ? $fnret->value->{'type'} : 'UNDEF'),
-        uniqid      => $log_uniq_id
+        uniqid      => $log_uniq_id,
+        proxyuser   => $proxyUser,
+        proxyip     => $proxyIp,
+        proxyhost   => $proxyhost,
+        proxyport   => $proxyPort
     );
     if ($logret) {
 
@@ -1308,7 +1324,6 @@ if (!$fnret) {
         $message .= " (tried with remote user '$user')";    # "root is not the default login anymore"
     }
 
-    # TODO: log proxyjump info
     my $logret = OVH::Bastion::log_access_insert(
         account     => $self,
         cmdtype     => $telnet ? 'telnet' : 'ssh',
@@ -1324,7 +1339,11 @@ if (!$fnret) {
         portto      => $port,
         user        => $user,
         params      => $command,
-        uniqid      => $log_uniq_id
+        uniqid      => $log_uniq_id,
+        proxyuser   => $proxyUser,
+        proxyip     => $proxyIp,
+        proxyhost   => $proxyhost,
+        proxyport   => $proxyPort
     );
     if (!$logret) {
         osh_warn($logret);
@@ -1751,7 +1770,11 @@ my $logret = OVH::Bastion::log_access_insert(
     user        => $user,
     params      => join(' ', @ttyrec),
     ttyrecfile  => $saveFile,
-    uniqid      => $log_uniq_id
+    uniqid      => $log_uniq_id,
+    proxyuser   => $proxyUser,
+    proxyip     => $proxyIp,
+    proxyhost   => $proxyhost,
+    proxyport   => $proxyPort
 );
 if (!$logret) {
     osh_warn($logret);
