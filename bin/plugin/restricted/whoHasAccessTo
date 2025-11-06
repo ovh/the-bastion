@@ -96,17 +96,18 @@ sub process_account {
     my $account = $params{'account'};
 
     $fnret = OVH::Bastion::is_access_granted(
-        account    => $account,
-        user       => $user,
-        ip         => $ip,
-        ipfrom     => $ENV{'OSH_IP_FROM'},
-        port       => $port,
-        proxyUser  => $proxyUser,
-        proxyIp    => $proxyIp,
-        proxyPort  => $proxyPort,
-        cache      => 1,
-        ignorePort => ($port ? 0 : 1),    # return accesses without checking for the specified port
-        ignoreUser => ($user ? 0 : 1),    # return accesses without checking for the specified remote user
+        account         => $account,
+        user            => $user,
+        ip              => $ip,
+        ipfrom          => $ENV{'OSH_IP_FROM'},
+        port            => $port,
+        proxyUser       => $proxyUser,
+        proxyIp         => $proxyIp,
+        proxyPort       => $proxyPort,
+        cache           => 1,
+        ignorePort      => ($port      ? 0 : 1),    # return accesses without checking for the specified port
+        ignoreUser      => ($user      ? 0 : 1),    # return accesses without checking for the specified remote user
+        ignoreProxyUser => ($proxyUser ? 0 : 1),    # return accesses without checking for the specified proxy user
     );
     if ($fnret) {
         my $byPersonal = 0;
