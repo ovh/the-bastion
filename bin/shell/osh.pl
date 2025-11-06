@@ -653,14 +653,14 @@ else {
 }
 
 my $proxyIp   = undef;
-my $proxyPort = 22;
+my $proxyPort = undef;
 my $proxyUser = $user;    # user might be undef. We'll handle that later
 # Parse proxyjump args if specified
 if ($proxyJump) {
     if ($proxyJump =~ /^(?:([a-zA-Z0-9._@!-]{1,128})@)?(\[?[a-zA-Z0-9._-]+\]?)(?::(\d+))?$/) {
         $proxyUser = $1 if $1;
         $proxyIp   = $2;
-        $proxyPort = $3 if $3;
+        $proxyPort = $3 ? $3 : 22;
         osh_debug("parsed proxyjump: host=$proxyIp port=$proxyPort user=$proxyUser");
     }
     else {
