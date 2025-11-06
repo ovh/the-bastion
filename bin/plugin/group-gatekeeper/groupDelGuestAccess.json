@@ -11,7 +11,13 @@
         "groupDelGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +.*--port" , {"pr" : ["<PORT>"]},
         "groupDelGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +--user +\\S+"                             , {"ac" : ["<enter>", "--port"]},
         "groupDelGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +--port +\\S+"                             , {"ac" : ["<enter>", "--user"]},
-        "groupDelGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +--(port|user) +\\S+ +--(port|user) +\\S+" , {"pr" : ["<enter>"]}
+        "groupDelGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +--(port|user) +\\S+ +--(port|user) +\\S+" , {"ac" : ["--proxy-host", "<enter>"]},
+        "groupDelGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +--(port|user) +\\S+ +--(port|user) +\\S+ +.*--proxy-host" , {"pr" : ["<PROXY_HOST>", "<PROXY_IP>"]},
+        "groupDelGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +--(port|user) +\\S+ +--(port|user) +\\S+ +.*--proxy-host +\\S+"    , {"ac" : ["--proxy-port"]},
+        "groupDelGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +--(port|user) +\\S+ +--(port|user) +\\S+ +.*--proxy-host +\\S+ +.*--proxy-port" , {"pr" : ["<PROXY_PORT>"]},
+        "groupDelGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +--(port|user) +\\S+ +--(port|user) +\\S+ +.*--proxy-host +\\S+ +.*--proxy-port +\\S+"    , {"ac" : ["--proxy-user"]},
+        "groupDelGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +--(port|user) +\\S+ +--(port|user) +\\S+ +.*--proxy-host +\\S+ +.*--proxy-port +\\S+ +.*--proxy-user" , {"pr" : ["<PROXY_USER>"]},
+        "groupDelGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +--(port|user) +\\S+ +--(port|user) +\\S+ +.*--proxy-host +\\S+ +.*--proxy-port +\\S+ +.*--proxy-user +\\S+"    , {"pr" : ["<enter>"]}
     ],
     "master_only": true
 }
