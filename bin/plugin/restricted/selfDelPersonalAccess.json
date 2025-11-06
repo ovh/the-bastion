@@ -2,18 +2,18 @@
     "interactive": [
         "selfDelPersonalAccess"                         , {"ac" : ["--host"]},
         "selfDelPersonalAccess +--host"                 , {"pr" : ["<HOST>", "<IP>", "<IP/MASK>"]},
-        "selfDelPersonalAccess +--host +\\S+"           , {"ac" : ["<enter>", "--user", "--port", "--proxy-host", "--proxy-port"]},
+        "selfDelPersonalAccess +--host +\\S+"           , {"ac" : ["<enter>", "--user", "--port"]},
         "selfDelPersonalAccess +--host +\\S+ +.*--user" , {"pr" : ["<USER>"]},
         "selfDelPersonalAccess +--host +\\S+ +.*--port" , {"pr" : ["<PORT>"]},
-        "selfDelPersonalAccess +--host +\\S+ +.*--proxy-host" , {"pr" : ["<PROXY_HOST>", "<PROXY_IP>"]},
-        "selfDelPersonalAccess +--host +\\S+ +.*--proxy-port" , {"pr" : ["<PROXY_PORT>"]},
-        "selfDelPersonalAccess +--host +\\S+ +--user +\\S+"                             , {"ac" : ["<enter>", "--port", "--proxy-host", "--proxy-port"]},
-        "selfDelPersonalAccess +--host +\\S+ +--port +\\S+"                             , {"ac" : ["<enter>", "--user", "--proxy-host", "--proxy-port"]},
-        "selfDelPersonalAccess +--host +\\S+ +--proxy-host +\\S+"                       , {"ac" : ["<enter>", "--user", "--port", "--proxy-port"]},
-        "selfDelPersonalAccess +--host +\\S+ +--proxy-port +\\d+"                       , {"ac" : ["<enter>", "--user", "--port", "--proxy-host"]},
-        "selfDelPersonalAccess +--host +\\S+ +--(port|user) +\\S+ +--(port|user) +\\S+" , {"ac" : ["<enter>", "--proxy-host", "--proxy-port"]},
-        "selfDelPersonalAccess +--host +\\S+ +--(port|user|proxy-host|proxy-port) +\\S+ +--(port|user|proxy-host|proxy-port) +\\S+ +--(port|user|proxy-host|proxy-port) +\\S+" , {"ac" : ["<enter>", "--proxy-host", "--proxy-port", "--port", "--user"]},
-        "selfDelPersonalAccess +--host +\\S+ +--(port|user|proxy-host|proxy-port) +\\S+ +--(port|user|proxy-host|proxy-port) +\\S+ +--(port|user|proxy-host|proxy-port) +\\S+ +--(port|user|proxy-host|proxy-port) +\\S+" , {"pr" : ["<enter>"]}
+        "selfDelPersonalAccess +--host +\\S+ +--user +\\S+"                             , {"ac" : ["<enter>", "--port"]},
+        "selfDelPersonalAccess +--host +\\S+ +--port +\\S+"                             , {"ac" : ["<enter>", "--user"]},
+        "selfDelPersonalAccess +--host +\\S+ +--(port|user) +\\S+ +--(port|user) +\\S+" , {"ac" : ["--proxy-host", "<enter>"]},
+        "selfDelPersonalAccess +--host +\\S+ +--(port|user) +\\S+ +--(port|user) +\\S+ +.*--proxy-host" , {"pr" : ["<PROXY_HOST>", "<PROXY_IP>"]},
+        "selfDelPersonalAccess +--host +\\S+ +--(port|user) +\\S+ +--(port|user) +\\S+ +.*--proxy-host +\\S+"    , {"ac" : ["--proxy-port"]},
+        "selfDelPersonalAccess +--host +\\S+ +--(port|user) +\\S+ +--(port|user) +\\S+ +.*--proxy-host +\\S+ +.*--proxy-port" , {"pr" : ["<PROXY_PORT>"]},
+        "selfDelPersonalAccess +--host +\\S+ +--(port|user) +\\S+ +--(port|user) +\\S+ +.*--proxy-host +\\S+ +.*--proxy-port +\\S+"    , {"ac" : ["--proxy-user"]},
+        "selfDelPersonalAccess +--host +\\S+ +--(port|user) +\\S+ +--(port|user) +\\S+ +.*--proxy-host +\\S+ +.*--proxy-port +\\S+ +.*--proxy-user" , {"pr" : ["<PROXY_USER>"]},
+        "selfDelPersonalAccess +--host +\\S+ +--(port|user) +\\S+ +--(port|user) +\\S+ +.*--proxy-host +\\S+ +.*--proxy-port +\\S+ +.*--proxy-user +\\S+"    , {"pr" : ["<enter>"]}
     ],
     "master_only": true
 }
