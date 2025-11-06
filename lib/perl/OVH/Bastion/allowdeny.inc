@@ -77,8 +77,9 @@ sub is_access_way_granted {
     my $exactUserMatch = $params{'exactUserMatch'};    # $user must be explicitly allowed (user wildcards in grantfile will be ignored)
     my $exactMatch     = $params{'exactMatch'};        # sets exactIpMatch exactPortMatch and exactUserMatch
 
-    my $ignoreUser = $params{'ignoreUser'};            # ignore remote user COMPLETELY (plop@, or root@, or <nil>@ will all match)
-    my $ignorePort = $params{'ignorePort'};            # ignore port COMPLETELY (port 22, 2345, or port-wildcard will all match)
+    my $ignoreUser      = $params{'ignoreUser'};       # ignore remote user COMPLETELY (plop@, or root@, or <nil>@ will all match)
+    my $ignorePort      = $params{'ignorePort'};       # ignore port COMPLETELY (port 22, 2345, or port-wildcard will all match)
+    my $ignoreProxyUser = $params{'ignoreProxyUser'};  # ignore proxy user COMPLETELY (if egress connection goes through a proxyjump)
 
     my $wantedUser = $params{'user'};                  # if undef, means we look for a user-any allow
     my $wantedIp   = $params{'ip'};                    # can be a single IP or a subnet
@@ -107,7 +108,7 @@ sub is_access_way_granted {
     my @acl = @{$fnret->value || []};
 
     my $check_debug_msg =
-      "checking way $way/$account/$group with ignorePort=$ignorePort ignoreUser=$ignoreUser exactIpMatch=$exactIpMatch exactPortMatch=$exactPortMatch exactUserMatch=$exactUserMatch";
+      "checking way $way/$account/$group with ignorePort=$ignorePort ignoreUser=$ignoreUser ignoreProxyUser=$ignoreProxyUser exactIpMatch=$exactIpMatch exactPortMatch=$exactPortMatch exactUserMatch=$exactUserMatch";
     osh_debug($check_debug_msg);
 
     my %match;
@@ -236,7 +237,7 @@ sub is_access_way_granted {
         }
 
         # check proxy user if we have a proxy ip
-        if (defined $wantedProxyIp) {
+        if (defined $wantedProxyIp && not $ignoreProxyUser) {
             if ($exactUserMatch) {
                 # we want an exact match
                 if (not defined $entry->{'proxyUser'}) {
