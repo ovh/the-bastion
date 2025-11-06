@@ -61,25 +61,12 @@ if (!$ip) {
 
 my $proxyIp;
 if ($proxyHost) {
-    $fnret = OVH::Bastion::is_valid_ip(ip => $proxyHost, allowSubnets => 0);
-    if ($fnret) {
-        $proxyIp = $fnret->value->{'ip'};
-    }
-    else {
-        $fnret = OVH::Bastion::get_ip(host => $proxyHost);
-        if ($fnret) {
-            $proxyIp = $fnret->value->{'ip'};
-        }
-        else {
-            $proxyIp = $proxyHost;
-        }
-    }
-}
-
-if ($proxyUser) {
-    $fnret = OVH::Bastion::is_valid_remote_user(user => $proxyUser, allowWildcards => 1);
+    $fnret =
+      OVH::Bastion::validate_proxy_params(proxyHost => $proxyHost, proxyPort => $proxyPort, proxyUser => $proxyUser);
     $fnret or osh_exit $fnret;
-    $proxyUser = $fnret->value;
+    $proxyIp   = $fnret->value->{'proxyIp'};
+    $proxyPort = $fnret->value->{'proxyPort'};
+    $proxyUser = $fnret->value->{'proxyUser'};
 }
 
 $fnret = OVH::Bastion::Plugin::ACL::check(

@@ -762,6 +762,49 @@ sub is_valid_remote_user {
     return R('ERR_INVALID_PARAMETER', msg => "Specified user doesn't seem to be valid");
 }
 
+sub validate_proxy_params {
+    my %params         = @_;
+    my $proxyHost      = $params{'proxyHost'};
+    my $proxyPort      = $params{'proxyPort'};
+    my $proxyUser      = $params{'proxyUser'};
+    my $allowWildcards = $params{'allowWildcards'} // 1;
+
+    my $proxyIp;
+    my $fnret;
+
+    if ($proxyHost) {
+        $fnret = OVH::Bastion::is_valid_ip(ip => $proxyHost, allowSubnets => 0);
+        if ($fnret) {
+            $proxyIp = $fnret->value->{'ip'};
+        }
+        else {
+            $fnret = OVH::Bastion::get_ip(host => $proxyHost);
+            if ($fnret) {
+                $proxyIp = $fnret->value->{'ip'};
+            }
+            else {
+                $proxyIp = $proxyHost;
+            }
+        }
+    }
+
+    if ($proxyPort) {
+        $fnret = OVH::Bastion::is_valid_port(port => $proxyPort);
+        if (!$fnret) {
+            return R('ERR_INVALID_PARAMETER', msg => "Proxy port '$proxyPort' is invalid: " . $fnret->msg);
+        }
+        $proxyPort = $fnret->value;
+    }
+
+    if ($proxyUser) {
+        $fnret = OVH::Bastion::is_valid_remote_user(user => $proxyUser, allowWildcards => $allowWildcards);
+        $fnret or return $fnret;
+        $proxyUser = $fnret->value;
+    }
+
+    return R('OK', value => {proxyIp => $proxyIp, proxyPort => $proxyPort, proxyUser => $proxyUser});
+}
+
 sub machine_display {
     my %params    = @_;
     my $ip        = $params{'ip'};
