@@ -24,6 +24,7 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
         "proxy-host=s"     => \my $proxyHost,
         "proxy-port=s"     => \my $proxyPort,
         "proxy-user=s"     => \my $proxyUser,
+        "forward-port=i"   => \my $forwardPort,
         # undocumented/compatibility:
         "user-any" => \my $userAny,
         "port-any" => \my $portAny,
@@ -61,6 +62,7 @@ Usage: --osh SCRIPT_NAME --account ACCOUNT --host HOST --user USER --port PORT [
   --proxy-port PORT        Proxy host port to connect to (mandatory when --proxy-host is specified)
   --proxy-user USER|PATTERN|*  Proxy user to connect as (mandatory when --proxy-host is specified).
                                Globbing characters '*' and '?' are supported for pattern matching.
+  --forward-port PORT      Allow port forwarding to the specified remote port on the target server.
 
 The access will work only if one of the account's personal egress public key has been copied to the remote server.
 To get the list of an account's personal egress public keys, see ``accountListEgressKeyss`` and ``selfListEgressKeys``.
@@ -112,17 +114,18 @@ if ($proxyHost) {
 }
 
 $fnret = OVH::Bastion::Plugin::ACL::check(
-    user      => $user,
-    userAny   => $userAny,
-    port      => $port,
-    portAny   => $portAny,
-    scpUp     => $scpUp,
-    scpDown   => $scpDown,
-    sftp      => $sftp,
-    protocol  => $protocol,
-    proxyIp   => $proxyIp,
-    proxyPort => $proxyPort,
-    proxyUser => $proxyUser,
+    user        => $user,
+    userAny     => $userAny,
+    port        => $port,
+    portAny     => $portAny,
+    scpUp       => $scpUp,
+    scpDown     => $scpDown,
+    sftp        => $sftp,
+    protocol    => $protocol,
+    proxyIp     => $proxyIp,
+    proxyPort   => $proxyPort,
+    proxyUser   => $proxyUser,
+    forwardPort => $forwardPort,
 );
 if (!$fnret) {
     help();
@@ -208,6 +211,7 @@ $fnret = OVH::Bastion::access_modify(
     proxyIp        => $proxyIp,
     proxyPort      => $proxyPort,
     proxyUser      => $proxyUser,
+    forwardPort    => $forwardPort,
 );
 $fnret or osh_exit($fnret);
 
@@ -229,5 +233,6 @@ push @command, '--comment',        $comment       if $comment;
 push @command, '--proxy-ip',       $proxyIp       if $proxyIp;
 push @command, '--proxy-port',     $proxyPort     if $proxyPort;
 push @command, '--proxy-user',     $proxyUser     if $proxyUser;
+push @command, '--forward-port',   $forwardPort   if $forwardPort;
 
 osh_exit OVH::Bastion::helper(cmd => \@command);

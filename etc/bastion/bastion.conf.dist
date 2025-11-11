@@ -459,6 +459,40 @@
 "TOTPProvider": "google-authenticator",
 #
 #################
+# > Port-forwarding options
+# >> Options to customize the port forwarding feature
+#
+# portForwardingEnabled (boolean)
+#     DESC: If set to ``true``, will enable port forwarding features
+#  DEFAULT: false
+"portForwardingEnabled": false,
+#
+# portForwardingLocalPortMin (int >= 1024 and <= 65535)
+#     DESC: Minimum allowed local port for local port forwarding.
+#  DEFAULT: 20000
+"portForwardingLocalPortMin": 20000,
+#
+# portForwardingLocalPortMax (int >= 1024 and <= 65535)
+#     DESC: Maximum allowed local port for local port forwarding.
+#  DEFAULT: 65535
+"portForwardingLocalPortMax": 65535,
+#
+# portForwardingMaxPerUser (int >= 0)
+#     DESC: Maximum number of allowed port forwardings per user. A value of 0 means unlimited.
+#  DEFAULT: 20
+"portForwardingMaxPerUser": 20,
+#
+# portForwardingMaxPerGroup (int >= 0)
+#     DESC: Maximum number of allowed port forwardings per group. A value of 0 means unlimited.
+#  DEFAULT: 50
+"portForwardingMaxPerGroup": 50,
+#
+# portForwardingSSHConfigEnabled (boolean)
+#     DESC: If set to ``true``, will generate SSH PermitOpen configurations per user to restrict port forwarding access to only authorized destinations. This is the recommended secure approach.
+#  DEFAULT: true
+"portForwardingSSHConfigEnabled": true,
+#
+#################
 # > Other options
 # >> These options are either discouraged (in which case this is explained in the description) or rarely need to be modified.
 #

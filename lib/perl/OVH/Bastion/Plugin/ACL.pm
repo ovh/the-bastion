@@ -9,8 +9,10 @@ use OVH::Bastion;
 
 sub check {
     my %params = @_;
-    my ($port, $portAny, $user, $userAny, $scpUp, $scpDown, $sftp, $protocol, $proxyIp, $proxyPort, $proxyUser) =
-      @params{qw{ port portAny user userAny scpUp scpDown sftp protocol proxyIp proxyPort proxyUser }};
+    my (
+        $port, $portAny,  $user,    $userAny,   $scpUp,     $scpDown,
+        $sftp, $protocol, $proxyIp, $proxyPort, $proxyUser, $forwardPort
+    ) = @params{qw{ port portAny user userAny scpUp scpDown sftp protocol proxyIp proxyPort proxyUser forwardPort }};
 
     if ($user and $userAny) {
         return R('ERR_INCOMPATIBLE_PARAMETERS',
@@ -44,11 +46,23 @@ sub check {
               . "if you want to grant several of those protocols, please do it in separate commands");
     }
 
+    if ($forwardPort and ($scpUp or $scpDown)) {
+        return R('ERR_INCOMPATIBLE_PARAMETERS', msg => "--forward-port cannot be used with --scpup or --scpdown");
+    }
+
+    if ($forwardPort and $protocol) {
+        return R('ERR_INCOMPATIBLE_PARAMETERS', msg => "--forward-port cannot be used with --protocol");
+    }
+
     # legacy options mapping
     if (!$protocol) {
         $protocol = 'sftp'        if $sftp;
         $protocol = 'scpupload'   if $scpUp;
         $protocol = 'scpdownload' if $scpDown;
+    }
+
+    if ($forwardPort) {
+        $protocol = 'portforward';
     }
 
     if ($protocol and $user) {
@@ -121,12 +135,13 @@ sub check {
     return R(
         'OK',
         value => {
-            user      => $user,
-            port      => $port,
-            protocol  => $protocol,
-            proxyIp   => $proxyIp,
-            proxyPort => $proxyPort,
-            proxyUser => $proxyUser
+            user        => $user,
+            port        => $port,
+            protocol    => $protocol,
+            proxyIp     => $proxyIp,
+            proxyPort   => $proxyPort,
+            proxyUser   => $proxyUser,
+            forwardPort => $forwardPort,
         }
     );
 }

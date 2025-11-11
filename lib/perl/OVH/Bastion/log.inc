@@ -246,6 +246,23 @@ EOS
     # endof version==1
 
     if ($user_version == 2) {
+        # add portforwarding information
+        my $table = ($sqltype eq 'local' ? "connections" : "connections_summary");
+        $dbh->do("ALTER TABLE $table ADD COLUMN remoteport INTEGER")
+          or return R('KO', msg => "adding remoteport column to $table");
+
+        $dbh->do("ALTER TABLE $table ADD COLUMN localport INTEGER")
+          or return R('KO', msg => "adding localport column to $table");
+
+        $dbh->do("PRAGMA user_version=3")
+          or return R('KO', msg => "setting user_version to 3");
+
+        $user_version = 3;
+    }
+
+    # endof version==2
+
+    if ($user_version == 3) {
         ;    # insert here future schema modifications
     }
 
@@ -281,6 +298,8 @@ sub _sql_log_insert_file {
     my $proxyip       = $params{'proxyip'};
     my $proxyhost     = $params{'proxyhost'};
     my $proxyport     = $params{'proxyport'};
+    my $remoteport    = $params{'remoteport'};
+    my $localport     = $params{'localport'};
 
     if ($sqltype ne 'local' and $sqltype ne 'global') {
         return R('ERR_INVALID_PARAMETER', msg => "Invalid parameter sqltype");
@@ -331,24 +350,24 @@ sub _sql_log_insert_file {
         my @execute;
         if ($sqltype eq 'local') {
             @execute = (
-                $uniqid,     $timestamp, $timestampusec, $account,   $cmdtype,     $allowed,
-                $hostfrom,   $ipfrom,    $portfrom,      $bastionip, $bastionport, $hostto,
-                $ipto,       $portto,    $user,          $plugin,    $params,      $comment,
-                $ttyrecfile, $proxyuser, $proxyip,       $proxyhost, $proxyport
+                $uniqid,    $timestamp, $timestampusec, $account,     $cmdtype,    $allowed,   $hostfrom,
+                $ipfrom,    $portfrom,  $bastionip,     $bastionport, $hostto,     $ipto,      $portto,
+                $user,      $plugin,    $params,        $comment,     $ttyrecfile, $proxyuser, $proxyip,
+                $proxyhost, $proxyport, $remoteport,    $localport
             );
             $prepare =
                 "INSERT INTO connections"
-              . "(uniqid,timestamp,timestampusec,account,cmdtype,allowed,hostfrom,ipfrom,portfrom,bastionip,bastionport,hostto,ipto,portto,user,plugin,params,comment,ttyrecfile,proxyuser,proxyip,proxyhost,proxyport)"
+              . "(uniqid,timestamp,timestampusec,account,cmdtype,allowed,hostfrom,ipfrom,portfrom,bastionip,bastionport,hostto,ipto,portto,user,plugin,params,comment,ttyrecfile,proxyuser,proxyip,proxyhost,proxyport,remoteport,localport)"
               . 'VALUES ('
               . ('?,' x (@execute - 1)) . '?)';
         }
         elsif ($sqltype eq 'global') {
             @execute = (
-                $uniqid, $timestamp, $account, $cmdtype,   $allowed,   $ipfrom,  $ipto,
-                $portto, $user,      $plugin,  $proxyuser, $proxyhost, $proxyip, $proxyport
+                $uniqid, $timestamp, $account,   $cmdtype,   $allowed, $ipfrom,    $ipto,       $portto,
+                $user,   $plugin,    $proxyuser, $proxyhost, $proxyip, $proxyport, $remoteport, $localport
             );
             $prepare =
-              "INSERT INTO connections_summary (uniqid,timestamp,account,cmdtype,allowed,ipfrom,ipto,portto,user,plugin,proxyuser,proxyip,proxyhost,proxyport)"
+              "INSERT INTO connections_summary (uniqid,timestamp,account,cmdtype,allowed,ipfrom,ipto,portto,user,plugin,proxyuser,proxyip,proxyhost,proxyport,remoteport,localport)"
               . 'VALUES ('
               . ('?,' x (@execute - 1)) . '?)';
         }
@@ -513,6 +532,8 @@ sub log_access_insert {
         ['proxyip',      $params{'proxyip'}],
         ['proxyhost',    $params{'proxyhost'}],
         ['proxyport',    $params{'proxyport'}],
+        ['remoteport',   $params{'remoteport'}],
+        ['localport',    $params{'localport'}],
     );
     if (ref $custom eq 'ARRAY') {
         foreach my $item (@$custom) {
@@ -812,6 +833,8 @@ sub _sql_log_fetch_from_file {
     my $proxyuser   = $params{'proxyuser'};
     my $proxyip     = $params{'proxyip'};
     my $proxyport   = $params{'proxyport'};
+    my $remoteport  = $params{'remoteport'};
+    my $localport   = $params{'localport'};
     my $user        = $params{'user'};
     my $plugin      = $params{'plugin'};
     my $before      = $params{'before'};
@@ -880,6 +903,14 @@ sub _sql_log_fetch_from_file {
     if ($proxyport) {
         push @conditions, "proxyport = ?";
         push @execvalues, $proxyport;
+    }
+    if ($remoteport) {
+        push @conditions, "remoteport = ?";
+        push @execvalues, $remoteport;
+    }
+    if ($localport) {
+        push @conditions, "localport = ?";
+        push @execvalues, $localport;
     }
     if ($before) {
         push @conditions, "timestamp <= ?";

@@ -89,6 +89,8 @@ sub is_access_way_granted {
     my $wantedProxyPort = $params{'proxyPort'};        # must be exact if defined, no support for wildcard
     my $wantedProxyUser = $params{'proxyUser'};        # if undef, means we look for a user-any allow
 
+    my $wantedForwardPort = $params{'forwardPort'};    # remote port for port forwarding
+
     my $way     = $params{'way'};                      # personal|group|groupguest|legacy
     my $group   = $params{'group'};                    # only meaningful and needed if type=group or type=groupguest
     my $account = $params{'account'};                  # only meaningful and needed if type=personal or type=groupguest
@@ -140,6 +142,11 @@ sub is_access_way_granted {
               . ($entry->{'proxyIp'}   // '<u>') . ':'
               . ($entry->{'proxyPort'} // '<u>');
         }
+
+        if (defined $wantedForwardPort) {
+            $check_debug_msg .= " and forwardPort $wantedForwardPort against " . ($entry->{'remotePort'} // '<p>');
+        }
+
         osh_debug($check_debug_msg);
 
         $entry->{'ip'} or next;    # can't be empty
@@ -284,9 +291,26 @@ sub is_access_way_granted {
             }
         }
 
+        # check port forwarding
+        if (defined $wantedForwardPort) {
+            if (not defined $entry->{'remotePort'}) {
+                next;    # we want a remotePort, but entry doesn't have it
+            }
+            else {
+                next if ($wantedForwardPort ne $entry->{'remotePort'});    # both defined
+            }
+        }
+        else {
+            if (defined $entry->{'remotePort'}) {
+                next;                                                      # we don't want a remotePort, but entry has it
+            }
+        }
+
         # then, check IP
         my $isIPv6     = (index($entry->{'ip'}, ':') != -1);
         my $isNetblock = (index($entry->{'ip'}, '/') != -1);
+
+        # should we block portforwarding access for subnets?
 
         # if we want an exact match, it's a simple strcmp() for IPv4
         if ($exactIpMatch && !$isIPv6) {
@@ -322,6 +346,7 @@ sub is_access_way_granted {
                 comment       => $entry->{'userComment'},
                 proxyIp       => $entry->{'proxyIp'},
                 proxyPort     => $entry->{'proxyPort'},
+                forwardPort   => $entry->{'forwardPort'},
                 size          => undef,                       # not needed
             );
             last;                                             # perfect match, don't search further
@@ -372,6 +397,7 @@ sub is_access_way_granted {
                         comment       => $entry->{'userComment'},
                         proxyIp       => $entry->{'proxyIp'},
                         proxyPort     => $entry->{'proxyPort'},
+                        forwardPort   => $entry->{'forwardPort'},
                         size          => $ipCheck->size(),
                     );
                     last if $match{'size'} == 1;    # we won't get better than this
@@ -419,6 +445,7 @@ sub is_access_way_granted {
                         comment       => $entry->{'userComment'},
                         proxyIp       => $entry->{'proxyIp'},
                         proxyPort     => $entry->{'proxyPort'},
+                        forwardPort   => $entry->{'forwardPort'},
                         size          => 1,
                     );
                     last;
@@ -438,6 +465,7 @@ sub is_access_way_granted {
                 comment       => $match{'comment'},
                 proxyIp       => $match{'proxyIp'},
                 proxyPort     => $match{'proxyPort'},
+                forwardPort   => $match{'forwardPort'},
             }
         );
     }
@@ -1584,9 +1612,9 @@ sub _get_acl_from_file {
     my @entries;
     foreach my $line (@lines) {
         my (
-            $ip,            $user,        $port,    $comment,   $forceKey,
-            $forcePassword, $expiry,      $addedBy, $addedDate, $extra,
-            $comment,       $userComment, $proxyIp, $proxyPort, $proxyUser
+            $ip,      $user,      $port,      $comment,    $forceKey, $forcePassword,
+            $expiry,  $addedBy,   $addedDate, $extra,      $comment,  $userComment,
+            $proxyIp, $proxyPort, $proxyUser, $remotePort, $localPort
         );
 
         # extract comment if any
@@ -1703,6 +1731,24 @@ sub _get_acl_from_file {
                 $proxyUser = $fnret->value;
                 osh_debug("found a valid proxy user <$proxyUser>");
             }
+            if ($comment =~ s/# REMOTEPORT=(\d+)//) {
+                $fnret = OVH::Bastion::is_valid_port(port => $1);
+                if (!$fnret) {
+                    osh_debug("skipping line <$line> because invalid remote port ($1) found");
+                    next;
+                }
+                $remotePort = $fnret->value;
+                osh_debug("found a valid remote port <$remotePort>");
+            }
+            if ($comment =~ s/# LOCALPORT=(\d+)//) {
+                $fnret = OVH::Bastion::is_valid_port(port => $1);
+                if (!$fnret) {
+                    osh_debug("skipping line <$line> because invalid local port ($1) found");
+                    next;
+                }
+                $localPort = $fnret->value;
+                osh_debug("found a valid local port <$localPort>");
+            }
             if ($comment =~ s/# COMMENT=<([^>]+)>//) {
                 $userComment = $1;
             }
@@ -1727,7 +1773,9 @@ sub _get_acl_from_file {
             comment       => $extra,
             proxyIp       => $proxyIp,
             proxyPort     => $proxyPort,
-            proxyUser     => $proxyUser
+            proxyUser     => $proxyUser,
+            remotePort    => $remotePort,
+            localPort     => $localPort,
           };
     }
 

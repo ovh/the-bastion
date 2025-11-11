@@ -96,6 +96,12 @@ sub get_lock_fh {
         # we use the .db suffix because it's already excluded from the cluster sync:
         $lockfile = "$lockdir/lock.db";
     }
+    elsif ($category eq 'portallocation') {
+        # Global lock for local port allocations used by the port forwarding feature
+        $lockdir       = "/tmp/bastion.lock.portallocation";
+        $lockfile      = "$lockdir/lock";
+        $lockdircreate = 1;
+    }
     else {
         return R('ERR_INVALID_PARAMETER', msg => "Unknown category '$category' in get_lock_fh");
     }

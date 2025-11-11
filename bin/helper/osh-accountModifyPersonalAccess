@@ -33,8 +33,8 @@ use OVH::Bastion::Helper;
 my $fnret;
 my ($result, @optwarns);
 my (
-    $account,       $ip,     $user,    $port,    $action,    $ttl, $forceKey,
-    $forcePassword, $target, $comment, $proxyIp, $proxyPort, $proxyUser
+    $account,       $ip,     $user,    $port,    $action,    $ttl,       $forceKey,
+    $forcePassword, $target, $comment, $proxyIp, $proxyPort, $proxyUser, $forwardPort
 );
 eval {
     local $SIG{__WARN__} = sub { push @optwarns, shift };
@@ -52,6 +52,7 @@ eval {
         "proxy-ip=s"       => sub { $proxyIp       //= $_[1] },
         "proxy-port=i"     => sub { $proxyPort     //= $_[1] },
         "proxy-user=s"     => sub { $proxyUser     //= $_[1] },
+        "forward-port=i"   => sub { $forwardPort   //= $_[1] },
     );
 };
 if ($@) { die $@ }
@@ -88,12 +89,13 @@ if (not grep { $action eq $_ } qw{ add del }) {
 
 #>CODE
 my $machine = OVH::Bastion::machine_display(
-    ip        => $ip,
-    port      => $port,
-    user      => $user,
-    proxyIp   => $proxyIp,
-    proxyPort => $proxyPort,
-    proxyUser => $proxyUser
+    ip          => $ip,
+    port        => $port,
+    user        => $user,
+    proxyIp     => $proxyIp,
+    proxyPort   => $proxyPort,
+    proxyUser   => $proxyUser,
+    forwardPort => $forwardPort,
 )->value;
 
 my $plugin = ($target eq 'self' ? 'self' : 'account') . 'AddPersonalAccess';
@@ -131,22 +133,24 @@ $fnret = OVH::Bastion::access_modify(
     proxyIp        => $proxyIp,
     proxyPort      => $proxyPort,
     proxyUser      => $proxyUser,
+    forwardPort    => $forwardPort,
 );
 if ($fnret->err eq 'OK') {
     my $ttlmsg = $ttl ? ' (expires in ' . OVH::Bastion::duration2human(seconds => $ttl)->value->{'human'} . ')' : '';
     HEXIT(
         'OK',
         value => {
-            action    => $action,
-            account   => $account,
-            ip        => $ip,
-            user      => $user,
-            port      => $port,
-            ttl       => $ttl,
-            comment   => $comment,
-            proxyIp   => $proxyIp,
-            proxyPort => $proxyPort,
-            proxyUser => $proxyUser,
+            action      => $action,
+            account     => $account,
+            ip          => $ip,
+            user        => $user,
+            port        => $port,
+            ttl         => $ttl,
+            comment     => $comment,
+            proxyIp     => $proxyIp,
+            proxyPort   => $proxyPort,
+            proxyUser   => $proxyUser,
+            forwardPort => $forwardPort,
         },
         msg => $action eq 'add'
         ? "Access to $machine was added to account $account$ttlmsg"
