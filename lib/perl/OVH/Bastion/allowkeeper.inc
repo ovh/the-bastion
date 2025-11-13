@@ -692,9 +692,35 @@ sub access_modify {
                 my $found = 0;
                 while (my $line = <$fh_file>) {
                     if ($line =~ m{^\Q$entry\E(\s|$)}) {
-                        chomp $line;
-                        $line = "# $line # $comment\n";
-                        $found++;
+                        # now verify that proxy options match too
+                        my $shouldDelete = 1;
+
+                        if (defined $proxyIp) {
+                            $shouldDelete = 0 unless $line =~ m{\# PROXYHOST=\Q$proxyIp\E(\s|$)};
+                        }
+                        elsif ($line =~ m{\# PROXYHOST=}) {
+                            $shouldDelete = 0;
+                        }
+
+                        if ($shouldDelete && defined $proxyPort) {
+                            $shouldDelete = 0 unless $line =~ m{\# PROXYPORT=\Q$proxyPort\E(\s|$)};
+                        }
+                        elsif ($shouldDelete && $line =~ m{\# PROXYPORT=}) {
+                            $shouldDelete = 0;
+                        }
+
+                        if ($shouldDelete && defined $proxyUser) {
+                            $shouldDelete = 0 unless $line =~ m{\# PROXYUSER=\Q$proxyUser\E(\s|$)};
+                        }
+                        elsif ($shouldDelete && $line =~ m{\# PROXYUSER=}) {
+                            $shouldDelete = 0;
+                        }
+
+                        if ($shouldDelete) {
+                            chomp $line;
+                            $line = "# $line # $comment\n";
+                            $found++;
+                        }
                     }
                     $newFile .= $line;
                 }
