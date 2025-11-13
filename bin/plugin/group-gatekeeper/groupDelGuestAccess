@@ -15,12 +15,13 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
     header             => "remove access from one server of a group from an account",
     userAllowWildcards => 1,
     options            => {
-        "group=s"      => \my $group,
-        "protocol=s"   => \my $protocol,
-        "account=s"    => \my $account,
-        "proxy-host=s" => \my $proxyHost,
-        "proxy-port=s" => \my $proxyPort,
-        "proxy-user=s" => \my $proxyUser,
+        "group=s"       => \my $group,
+        "protocol=s"    => \my $protocol,
+        "account=s"     => \my $account,
+        "proxy-host=s"  => \my $proxyHost,
+        "proxy-port=s"  => \my $proxyPort,
+        "proxy-user=s"  => \my $proxyUser,
+        "remote-port=i" => \my $remotePort,
         # undocumented/compatibility:
         "user-any" => \my $userAny,
         "port-any" => \my $portAny,
@@ -55,6 +56,7 @@ Usage: --osh SCRIPT_NAME --group GROUP --account ACCOUNT [OPTIONS]
   --proxy-port PORT            Proxy host port to connect to (mandatory when --proxy-host is specified)
   --proxy-user USER|PATTERN|*  Proxy user to connect as (mandatory when --proxy-host is specified).
                                    Globbing characters '*' and '?' are supported for pattern matching.
+  --remote-port PORT          Remove port forwarding access to the specified remote port on the target server.
 
 This command removes, from an existing bastion account, access to a given server, using the
 egress keys of the group. The list of such servers is given by ``groupListGuestAccesses``
@@ -86,18 +88,25 @@ if ($proxyHost) {
     $proxyUser = $fnret->value->{'proxyUser'};
 }
 
+if ($remotePort) {
+    $fnret = OVH::Bastion::is_valid_port(port => $remotePort);
+    $fnret or osh_exit $fnret;
+    $remotePort = $fnret->value;
+}
+
 $fnret = OVH::Bastion::Plugin::ACL::check(
-    user      => $user,
-    userAny   => $userAny,
-    port      => $port,
-    portAny   => $portAny,
-    scpUp     => $scpUp,
-    scpDown   => $scpDown,
-    sftp      => $sftp,
-    protocol  => $protocol,
-    proxyIp   => $proxyIp,
-    proxyPort => $proxyPort,
-    proxyUser => $proxyUser,
+    user       => $user,
+    userAny    => $userAny,
+    port       => $port,
+    portAny    => $portAny,
+    scpUp      => $scpUp,
+    scpDown    => $scpDown,
+    sftp       => $sftp,
+    protocol   => $protocol,
+    proxyIp    => $proxyIp,
+    proxyPort  => $proxyPort,
+    proxyUser  => $proxyUser,
+    remotePort => $remotePort,
 );
 if (!$fnret) {
     help();
@@ -118,6 +127,7 @@ $fnret = OVH::Bastion::Plugin::groupSetRole::act(
     proxyIp        => $proxyIp,
     proxyPort      => $proxyPort,
     proxyUser      => $proxyUser,
+    remotePort     => $remotePort,
     sudo           => 0,
     silentoverride => 0,
     self           => $self,

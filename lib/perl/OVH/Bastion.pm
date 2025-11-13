@@ -105,6 +105,7 @@ use constant {
     EXIT_DNS_DISABLED                => 132,
     EXIT_IP_VERSION_DISABLED         => 133,
     EXIT_INVALID_PROXYJUMP           => 134,
+    EXIT_INVALID_PORTFORWARDING      => 135,
 };
 
 use constant {
@@ -808,14 +809,14 @@ sub validate_proxy_params {
 }
 
 sub machine_display {
-    my %params      = @_;
-    my $ip          = $params{'ip'};
-    my $port        = $params{'port'};
-    my $user        = $params{'user'};
-    my $proxyIp     = $params{'proxyIp'};
-    my $proxyPort   = $params{'proxyPort'};
-    my $proxyUser   = $params{'proxyUser'};
-    my $forwardPort = $params{'forwardPort'};
+    my %params     = @_;
+    my $ip         = $params{'ip'};
+    my $port       = $params{'port'};
+    my $user       = $params{'user'};
+    my $proxyIp    = $params{'proxyIp'};
+    my $proxyPort  = $params{'proxyPort'};
+    my $proxyUser  = $params{'proxyUser'};
+    my $remotePort = $params{'remotePort'};
 
     my $machine = (index($ip, ':') >= 0 ? "[$ip]" : $ip);
     $machine .= ":$port"              if $port;
@@ -828,8 +829,8 @@ sub machine_display {
         $machine = "$machine via $proxy";
     }
 
-    if ($forwardPort) {
-        $machine .= " (remote port forwarding: $forwardPort)";
+    if ($remotePort) {
+        $machine .= " (remote port forwarding: $remotePort)";
     }
 
     return R('OK', value => $machine);

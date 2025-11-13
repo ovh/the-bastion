@@ -20,7 +20,7 @@ sub allocate_local_port {
     $fnret or return $fnret;
     my %allocated_ports = %{$fnret->value->{'ports'}};
 
-    for (my $port = $min_port; $port <= $max_port; $port++) {
+    for my $port ($min_port .. $max_port) {
         if (!exists $allocated_ports{$port}) {
             return R('OK', value => {localPort => $port});
         }

@@ -24,6 +24,7 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
         "proxy-host=s"     => \my $proxyHost,
         "proxy-port=s"     => \my $proxyPort,
         "proxy-user=s"     => \my $proxyUser,
+        "remote-port=i"    => \my $remotePort,
         # undocumented/compatibility:
         "user-any" => \my $userAny,
         "port-any" => \my $portAny,
@@ -62,6 +63,7 @@ Usage: --osh SCRIPT_NAME --group GROUP --host HOST --user USER|* --port PORT|* [
   --proxy-port PORT            Proxy host port to connect to (mandatory when --proxy-host is specified)
   --proxy-user USER|PATTERN|*  Proxy user to connect as (mandatory when --proxy-host is specified).
                                    Globbing characters '*' and '?' are supported for pattern matching.
+  --remote-port PORT          Allow port forwarding to the specified remote port on the target server.
 
 Examples::
 
@@ -93,18 +95,25 @@ if ($proxyHost) {
     $proxyUser = $fnret->value->{'proxyUser'};
 }
 
+if ($remotePort) {
+    $fnret = OVH::Bastion::is_valid_port(port => $remotePort);
+    $fnret or osh_exit $fnret;
+    $remotePort = $fnret->value;
+}
+
 $fnret = OVH::Bastion::Plugin::ACL::check(
-    user      => $user,
-    userAny   => $userAny,
-    port      => $port,
-    portAny   => $portAny,
-    scpUp     => $scpUp,
-    scpDown   => $scpDown,
-    sftp      => $sftp,
-    protocol  => $protocol,
-    proxyIp   => $proxyIp,
-    proxyPort => $proxyPort,
-    proxyUser => $proxyUser,
+    user       => $user,
+    userAny    => $userAny,
+    port       => $port,
+    portAny    => $portAny,
+    scpUp      => $scpUp,
+    scpDown    => $scpDown,
+    sftp       => $sftp,
+    protocol   => $protocol,
+    proxyIp    => $proxyIp,
+    proxyPort  => $proxyPort,
+    proxyUser  => $proxyUser,
+    remotePort => $remotePort,
 );
 if (!$fnret) {
     help();
@@ -197,5 +206,6 @@ push @command, '--comment',        $comment       if $comment;
 push @command, '--proxy-ip',       $proxyIp       if $proxyIp;
 push @command, '--proxy-port',     $proxyPort     if $proxyPort;
 push @command, '--proxy-user',     $proxyUser     if $proxyUser;
+push @command, '--remote-port',    $remotePort    if $remotePort;
 
 osh_exit OVH::Bastion::helper(cmd => \@command);

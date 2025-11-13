@@ -320,10 +320,10 @@ sub access_modify {
     my $proxyPort = $params{'proxyPort'};
     my $proxyUser = $params{'proxyUser'};
 
-    my $forwardPort = $params{'forwardPort'};    # remote port for port forwarding
+    my $remotePort = $params{'remotePort'};    # remote port for port forwarding
 
-    my $dryrun = $params{'dryrun'};              # don't do anything, just check params and prereqs
-    my $sudo   = $params{'sudo'};                # passed as-is to subs we use
+    my $dryrun = $params{'dryrun'};            # don't do anything, just check params and prereqs
+    my $sudo   = $params{'sudo'};              # passed as-is to subs we use
 
     # deny accesses wider than these prefixes
     my %widestVxPrefix = (
@@ -482,10 +482,10 @@ sub access_modify {
     }
 
     # check port forwarding
-    if ($forwardPort) {
-        $fnret = OVH::Bastion::is_valid_portforwarding(remotePort => $forwardPort);
+    if ($remotePort) {
+        $fnret = OVH::Bastion::is_valid_portforwarding(remotePort => $remotePort);
         $fnret or return $fnret;
-        $forwardPort = $fnret->value->{"remotePort"};
+        $remotePort = $fnret->value->{"remotePort"};
     }
 
     # check if the caller has the right to make the change they're asking
@@ -562,17 +562,17 @@ sub access_modify {
             "for action $action of $user\@$ip:$port of way $way with account=$account and group=$group, checking if already granted"
         );
         $fnret = OVH::Bastion::is_access_way_granted(
-            user        => $user,
-            ip          => $ip,
-            port        => $port,
-            way         => $way,
-            group       => $shortGroup,
-            account     => $account,
-            proxyIp     => $proxyIp,
-            proxyPort   => $proxyPort,
-            proxyUser   => $proxyUser,
-            forwardPort => $forwardPort,
-            exactMatch  => 1,              # we're checking if the exact right we're asked to modify exists or not
+            user       => $user,
+            ip         => $ip,
+            port       => $port,
+            way        => $way,
+            group      => $shortGroup,
+            account    => $account,
+            proxyIp    => $proxyIp,
+            proxyPort  => $proxyPort,
+            proxyUser  => $proxyUser,
+            remotePort => $remotePort,
+            exactMatch => 1,             # we're checking if the exact right we're asked to modify exists or not
         );
         osh_debug("... result is $fnret");
 
@@ -589,7 +589,7 @@ sub access_modify {
     my $lock_fh;
     my $allocatedLocalPort;
     if ($action eq 'add') {
-        osh_debug("Acquiring port allocation lock for forwardPort=$forwardPort");
+        osh_debug("Acquiring port allocation lock for remotePort=$remotePort");
         $fnret = OVH::Bastion::Helper::get_lock_fh(category => "portallocation");
         $fnret or return $fnret;
         $lock_fh = $fnret->value;
@@ -689,12 +689,12 @@ sub access_modify {
             if ($proxyUser) {
                 $entry .= " # PROXYUSER=" . $proxyUser;
             }
-            if ($forwardPort) {
+            if ($remotePort) {
                 if (!defined $allocatedLocalPort) {
                     # This should never happen but just in case something went horribly wrong, we abort
                     return R('ERR_INTERNAL', msg => "Port forwarding requested but no local port allocated");
                 }
-                $entry .= " # REMOTEPORT=" . $forwardPort;
+                $entry .= " # REMOTEPORT=" . $remotePort;
                 $entry .= " # LOCALPORT=" . $allocatedLocalPort;
             }
             if ($comment) {
@@ -719,13 +719,13 @@ sub access_modify {
                 return R('ERR_CANNOT_OPEN_FILE', msg => "Error opening $file: $!");
             }
             my $machine = OVH::Bastion::machine_display(
-                ip          => $ip,
-                port        => $port,
-                user        => $user,
-                proxyIp     => $proxyIp,
-                proxyPort   => $proxyPort,
-                proxyUser   => $proxyUser,
-                forwardPort => $forwardPort,
+                ip         => $ip,
+                port       => $port,
+                user       => $user,
+                proxyIp    => $proxyIp,
+                proxyPort  => $proxyPort,
+                proxyUser  => $proxyUser,
+                remotePort => $remotePort,
             )->value;
             my $ttlmsg =
               $ttl ? (' (expires in ' . OVH::Bastion::duration2human(seconds => $ttl)->value->{'human'} . ')') : '';
@@ -778,13 +778,13 @@ sub access_modify {
                         print $fh_file $newFile;
                         close($fh_file);
                         my $machine = OVH::Bastion::machine_display(
-                            ip          => $ip,
-                            port        => $port,
-                            user        => $user,
-                            proxyIp     => $proxyIp,
-                            proxyPort   => $proxyPort,
-                            proxyUser   => $proxyUser,
-                            forwardPort => $forwardPort,
+                            ip         => $ip,
+                            port       => $port,
+                            user       => $user,
+                            proxyIp    => $proxyIp,
+                            proxyPort  => $proxyPort,
+                            proxyUser  => $proxyUser,
+                            remotePort => $remotePort,
                         )->value;
                         $returnmsg = "Access to $machine successfully removed";
                     }
@@ -815,7 +815,7 @@ sub access_modify {
                 ['proxy_ip',       $params{'proxyIp'}],
                 ['proxy_port',     $params{'proxyPort'}],
                 ['proxy_user',     $params{'proxyUser'}],
-                ['remote_port',    $params{'forwardPort'}],
+                ['remote_port',    $params{'remotePort'}],
                 ['local_port',     $allocatedLocalPort],
             ]
         );

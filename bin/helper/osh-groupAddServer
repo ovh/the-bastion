@@ -20,8 +20,8 @@ use OVH::Bastion::Helper;
 my $fnret;
 my ($result, @optwarns);
 my (
-    $group,    $user, $ip,      $port,    $action,    $force, $forcePassword,
-    $forceKey, $ttl,  $comment, $proxyIp, $proxyPort, $proxyUser
+    $group,    $user, $ip,      $port,    $action,    $force,     $forcePassword,
+    $forceKey, $ttl,  $comment, $proxyIp, $proxyPort, $proxyUser, $remotePort
 );
 eval {
     local $SIG{__WARN__} = sub { push @optwarns, shift };
@@ -39,7 +39,7 @@ eval {
         "proxy-ip=s"       => sub { $proxyIp       //= $_[1] },
         "proxy-port=i"     => sub { $proxyPort     //= $_[1] },
         "proxy-user=s"     => sub { $proxyUser     //= $_[1] },
-
+        "remote-port=i"    => sub { $remotePort    //= $_[1] },
     );
 };
 if ($@) { die $@ }
@@ -93,12 +93,13 @@ $fnret or HEXIT($fnret);
 
 #>CODE
 my $machine = OVH::Bastion::machine_display(
-    ip        => $ip,
-    port      => $port,
-    user      => $user,
-    proxyIp   => $proxyIp,
-    proxyPort => $proxyPort,
-    proxyUser => $proxyUser
+    ip         => $ip,
+    port       => $port,
+    user       => $user,
+    proxyIp    => $proxyIp,
+    proxyPort  => $proxyPort,
+    proxyUser  => $proxyUser,
+    remotePort => $remotePort,
 )->value;
 
 # access_modify validates all its parameters, don't do it ourselves here for clarity
@@ -116,6 +117,7 @@ $fnret = OVH::Bastion::access_modify(
     proxyIp       => $proxyIp,
     proxyPort     => $proxyPort,
     proxyUser     => $proxyUser,
+    remotePort    => $remotePort,
 );
 if ($fnret->err eq 'OK') {
     my $ttlmsg = $ttl ? ' (expires in ' . OVH::Bastion::duration2human(seconds => $ttl)->value->{'human'} . ')' : '';
@@ -134,6 +136,7 @@ if ($fnret->err eq 'OK') {
             proxyIp       => $proxyIp,
             proxyPort     => $proxyPort,
             proxyUser     => $proxyUser,
+            remotePort    => $remotePort,
         },
         msg => $action eq 'add'
         ? "Entry $machine was added to group $shortGroup$ttlmsg"

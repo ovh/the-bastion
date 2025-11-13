@@ -7,6 +7,7 @@ use File::Basename;
 use lib dirname(__FILE__) . '/../../lib/perl';
 use OVH::Result;
 use OVH::Bastion;
+use OVH::Bastion::Plugin::otherProtocol;
 
 use Getopt::Long qw(GetOptionsFromString :config pass_through no_ignore_case no_auto_abbrev);
 use Sys::Hostname;
@@ -74,7 +75,10 @@ sub main_exit {
         proxyuser   => undef,
         proxyip     => undef,
         proxyhost   => undef,
-        proxyport   => undef
+        proxyport   => undef,
+        localports  => undef,
+        remoteports => undef,
+
     ) if (not defined $log_db_name or not defined $log_insert_id);
 
     my $R = R($retcode eq OVH::Bastion::EXIT_OK ? 'OK' : 'KO_' . uc($comment), msg => $msg);
@@ -430,6 +434,7 @@ my $remainingOptions;
     "mfa-token=s"               => \my $mfaToken,
     "term-passthrough"          => \my $termPassthrough,
     "J=s"                       => \my $proxyJump,
+    "L=s@"                      => \my $portForwards,
 );
 if (not defined $realOptions) {
     help();
@@ -574,7 +579,9 @@ if ($interactive and not $ENV{'OSH_IN_INTERACTIVE_SESSION'}) {
         proxyuser   => undef,
         proxyip     => undef,
         proxyhost   => undef,
-        proxyport   => undef
+        proxyport   => undef,
+        localports  => undef,
+        remoteports => undef,
     );
     if ($logret) {
 
@@ -806,6 +813,103 @@ if ($telnet && !$config->{'telnetAllowed'}) {
       "Sorry $self, the telnet protocol has been disabled by policy";
 }
 
+my @validPortForwards;
+if ($portForwards && @$portForwards && !$telnet) {
+    # Check if port forwarding feature is enabled
+    if (!$config->{'portForwardingEnabled'}) {
+        main_exit(OVH::Bastion::EXIT_ACCESS_DENIED,
+            'port_forwarding_disabled', "Port forwarding feature is disabled on this bastion");
+    }
+
+    # parse all the the requested port forwards
+    # The expected format is local_port:remote_host:remote_port
+    # remote_host must be the allowed IP of the the target server or localhost
+    # If the target IP is an IPv6 address, the remote_host must be IPv6 as well.
+    foreach my $pf (@$portForwards) {
+        my ($localPort, $remoteHost, $remotePort);
+        # IPv6: port:[ipv6]:port
+        if ($pf =~ /^(\d+):\[([^\]]+)\]:(\d+)$/) {
+            $localPort  = $1;
+            $remoteHost = $2;
+            $remotePort = $3;
+        }
+        elsif ($pf =~ /^(\d+):([^:]+):(\d+)$/) {
+            $localPort  = $1;
+            $remoteHost = $2;
+            $remotePort = $3;
+        }
+        else {
+            main_exit(OVH::Bastion::EXIT_INVALID_PORTFORWARDING,
+                'invalid_port_forward',
+                "Invalid port forward specification '$pf', expected format: local_port:remote_host:remote_port");
+        }
+
+        # Validate local port
+        $fnret = OVH::Bastion::is_valid_port(port => $localPort);
+        if (!$fnret) {
+            main_exit(OVH::Bastion::EXIT_INVALID_PORTFORWARDING, 'invalid_local_port', $fnret->msg);
+        }
+        $localPort = $fnret->value;
+
+        # Validate remote port
+        $fnret = OVH::Bastion::is_valid_port(port => $remotePort);
+        if (!$fnret) {
+            main_exit(OVH::Bastion::EXIT_INVALID_PORTFORWARDING, 'invalid_remote_port', $fnret->msg);
+        }
+        $remotePort = $fnret->value;
+
+        # Validate remote host
+        # remote_host can be: the target IP, 'localhost', '127.0.0.1', or '::1'
+        my $remoteHostIp;
+        my $remoteIpVersion;
+        if ($remoteHost eq '127.0.0.1' || $remoteHost eq '::1') {
+            # localhost is always allowed
+            $remoteHostIp    = $remoteHost;
+            $remoteIpVersion = ($remoteHost eq '::1') ? 6 : 4;
+        }
+        else {
+            # Check if remote_host is a valid IP
+            $fnret = OVH::Bastion::is_valid_ip(ip => $remoteHost, allowSubnets => 0);
+            if (!$fnret) {
+                main_exit(OVH::Bastion::EXIT_INVALID_PORTFORWARDING, 'invalid_remote_host',
+                    "Invalid remote host '$remoteHost' in port forward '$pf': must be a valid IP address, '127.0.0.1', or '::1'"
+                );
+            }
+            $remoteHostIp    = $fnret->value->{'ip'};
+            $remoteIpVersion = $fnret->value->{'version'};
+
+            if ($ip ne $remoteHostIp) {
+                main_exit(
+                    OVH::Bastion::EXIT_INVALID_PORTFORWARDING,
+                    'invalid_remote_host',
+                    "Remote host '$remoteHostIp' in port forward must match the target IP '$ip'"
+                );
+            }
+        }
+
+        # Check if target IP is IPv4 or IPv6
+        $fnret = OVH::Bastion::is_valid_ip(ip => $ip, allowSubnets => 0);
+        my $targetIpVersion = $fnret->value->{'version'} if $fnret;
+
+        # If not the exact target IP, at least ensure IP versions match
+        if ($targetIpVersion != $remoteIpVersion) {
+            main_exit(OVH::Bastion::EXIT_INVALID_PORTFORWARDING, 'invalid_remote_host_version',
+                "Remote host '$remoteHostIp' in port forward must be the target IP '$ip' or match its IP version (IPv$targetIpVersion)"
+            );
+        }
+
+        push @validPortForwards,
+          {
+            localHost  => $remoteIpVersion == 6 ? '[::1]' : '127.0.0.1',
+            localPort  => $localPort,
+            remoteHost => $remoteIpVersion == 6 ? "[$remoteHostIp]" : $remoteHostIp,
+            remotePort => $remotePort,
+          };
+
+        osh_debug("Valid port forward: local=$localPort -> remote=$remoteHostIp:$remotePort");
+    }
+}
+
 if ($userKbdInteractive && !$config->{'keyboardInteractiveAllowed'}) {
     main_exit OVH::Bastion::EXIT_CONFLICTING_OPTIONS, 'kbd_interactive_denied',
       "Sorry $self, the keyboard-interactive egress authentication scheme has been disabled by policy";
@@ -897,6 +1001,7 @@ if ($mfaPolicy ne 'disabled'
 
 # /MFA enforcing
 
+# TODO: portforward: debug print all port forwards
 osh_debug("self     : "
       . (defined $self ? $self : '<undef>') . "\n"
       . "user       : "
@@ -947,7 +1052,9 @@ if ($sshAs) {
         proxyuser   => $proxyUser,
         proxyip     => $proxyIp,
         proxyhost   => $proxyhost,
-        proxyport   => $proxyPort
+        proxyport   => $proxyPort,
+        localports  => join(',', map { $_->{'localPort'} } @validPortForwards),
+        remoteports => join(',', map { $_->{'remotePort'} } @validPortForwards),
     );
     if (!$fnret) {
         main_exit OVH::Bastion::EXIT_RESTRICTED_COMMAND, "sshas_denied",
@@ -1051,6 +1158,8 @@ if ($osh_command) {
     # Then test for rights
     $fnret = OVH::Bastion::can_account_execute_plugin(account => $self, plugin => $osh_command);
 
+    # we dont log localPort or remotePort for plugins.
+    # portforwarding options will be part of the remainingOptions
     my $logret = OVH::Bastion::log_access_insert(
         account     => $self,
         cmdtype     => 'osh',
@@ -1072,7 +1181,9 @@ if ($osh_command) {
         proxyuser   => $proxyUser,
         proxyip     => $proxyIp,
         proxyhost   => $proxyhost,
-        proxyport   => $proxyPort
+        proxyport   => $proxyPort,
+        localports  => undef,
+        remoteports => undef,
     );
     if ($logret) {
 
@@ -1282,6 +1393,14 @@ my $displayLine = sprintf(
 
 );
 
+if (@validPortForwards) {
+    $displayLine .= " (with port forwards: "
+      . join(', ',
+        map { sprintf("%s:%d->%s:%d", $_->{'localHost'}, $_->{'localPort'}, $_->{'remoteHost'}, $_->{'remotePort'}) }
+          @validPortForwards)
+      . ")";
+}
+
 if (!$quiet) {
     osh_print("$displayLine ...");
 }
@@ -1334,7 +1453,9 @@ if (!$fnret) {
         proxyuser   => $proxyUser,
         proxyip     => $proxyIp,
         proxyhost   => $proxyhost,
-        proxyport   => $proxyPort
+        proxyport   => $proxyPort,
+        localports  => join(',', map { $_->{'localPort'} } @validPortForwards),
+        remoteports => join(',', map { $_->{'remotePort'} } @validPortForwards),
     );
     if (!$logret) {
         osh_warn($logret);
@@ -1475,6 +1596,38 @@ if ($telnet) {
 
 # if we want ssh (not telnet)
 else {
+
+    # if we have port forwards, check if protocol access is allowed for every requested portforwarding
+    foreach my $pf (@validPortForwards) {
+        $fnret = OVH::Bastion::Plugin::otherProtocol::has_protocol_access(
+            account    => $self,
+            ipfrom     => $ipfrom,
+            ip         => $ip,
+            port       => $port,
+            user       => $user,
+            protocol   => 'portforward',
+            proxyIp    => $proxyIp,
+            proxyPort  => $proxyPort,
+            proxyUser  => $proxyUser,
+            remotePort => $pf->{'remotePort'},
+            localPort  => $pf->{'localPort'},
+        );
+        if (!$fnret) {
+            osh_debug("port forwarding denied: " . $fnret->msg);
+            main_exit OVH::Bastion::EXIT_ACCESS_DENIED, 'port_forwarding_denied',
+                "Sorry $self, you don't have the right to forward port "
+              . $pf->{'remotePort'} . " on "
+              . OVH::Bastion::machine_display(
+                ip        => $hostto,
+                port      => $port,
+                user      => $user,
+                proxyIp   => $proxyIp,
+                proxyPort => $proxyPort,
+                proxyUser => $proxyUser,
+            )->value;
+        }
+    }
+
     my @preferredAuths;
 
     # Now gather all the timeouts overrides that may be defined for the matching groups
@@ -1629,6 +1782,11 @@ else {
         osh_debug("ProxyCommand: $proxyCommandStr");
     }
 
+    foreach my $pf (@validPortForwards) {
+        push @command, '-L',
+          $pf->{'localHost'} . ':' . $pf->{'localPort'} . ':' . $pf->{'remoteHost'} . ':' . $pf->{'remotePort'};
+    }
+
     if (not $quiet) {
         $fnret =
           OVH::Bastion::account_config(account => $self, key => OVH::Bastion::OPT_ACCOUNT_IDLE_IGNORE, public => 1);
@@ -1754,7 +1912,9 @@ my $logret = OVH::Bastion::log_access_insert(
     proxyuser   => $proxyUser,
     proxyip     => $proxyIp,
     proxyhost   => $proxyhost,
-    proxyport   => $proxyPort
+    proxyport   => $proxyPort,
+    localports  => join(',', map { $_->{'localPort'} } @validPortForwards),
+    remoteports => join(',', map { $_->{'remotePort'} } @validPortForwards),
 );
 if (!$logret) {
     osh_warn($logret);

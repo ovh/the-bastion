@@ -89,7 +89,8 @@ sub is_access_way_granted {
     my $wantedProxyPort = $params{'proxyPort'};        # must be exact if defined, no support for wildcard
     my $wantedProxyUser = $params{'proxyUser'};        # if undef, means we look for a user-any allow
 
-    my $wantedForwardPort = $params{'forwardPort'};    # remote port for port forwarding
+    my $wantedRemotePort = $params{'remotePort'};      # remote port for port forwarding, must be defined if we check for a portforwarding entry
+    my $wantedLocalPort  = $params{'localPort'};       # local port for port forwarding, if undef, we'll only validate remotePort
 
     my $way     = $params{'way'};                      # personal|group|groupguest|legacy
     my $group   = $params{'group'};                    # only meaningful and needed if type=group or type=groupguest
@@ -143,8 +144,11 @@ sub is_access_way_granted {
               . ($entry->{'proxyPort'} // '<u>');
         }
 
-        if (defined $wantedForwardPort) {
-            $check_debug_msg .= " and forwardPort $wantedForwardPort against " . ($entry->{'remotePort'} // '<p>');
+        if (defined $wantedRemotePort) {
+            $check_debug_msg .= " and remotePort $wantedRemotePort against " . ($entry->{'remotePort'} // '<p>');
+        }
+        if (defined $wantedLocalPort) {
+            $check_debug_msg .= " and localPort $wantedLocalPort against " . ($entry->{'localPort'} // '<p>');
         }
 
         osh_debug($check_debug_msg);
@@ -292,17 +296,29 @@ sub is_access_way_granted {
         }
 
         # check port forwarding
-        if (defined $wantedForwardPort) {
+        if (defined $wantedRemotePort) {
             if (not defined $entry->{'remotePort'}) {
                 next;    # we want a remotePort, but entry doesn't have it
             }
             else {
-                next if ($wantedForwardPort ne $entry->{'remotePort'});    # both defined
+                next if ($wantedRemotePort ne $entry->{'remotePort'});    # both defined
             }
         }
         else {
             if (defined $entry->{'remotePort'}) {
-                next;                                                      # we don't want a remotePort, but entry has it
+                next;                                                     # we don't want a remotePort, but entry has it
+            }
+        }
+
+        # also check for local port if requested.
+        # we'll only validate the local port when validating connection attempts.
+        # When adding a new port forward, localPort can be undefined, because we'll automatically allocate the port later.
+        if (defined $wantedLocalPort) {
+            if (not defined $entry->{'localPort'}) {
+                next;    # we want a localPort, but entry doesn't have it
+            }
+            else {
+                next if ($wantedLocalPort ne $entry->{'localPort'});    # both defined
             }
         }
 
@@ -346,7 +362,7 @@ sub is_access_way_granted {
                 comment       => $entry->{'userComment'},
                 proxyIp       => $entry->{'proxyIp'},
                 proxyPort     => $entry->{'proxyPort'},
-                forwardPort   => $entry->{'forwardPort'},
+                remotePort    => $entry->{'remotePort'},
                 size          => undef,                       # not needed
             );
             last;                                             # perfect match, don't search further
@@ -397,7 +413,7 @@ sub is_access_way_granted {
                         comment       => $entry->{'userComment'},
                         proxyIp       => $entry->{'proxyIp'},
                         proxyPort     => $entry->{'proxyPort'},
-                        forwardPort   => $entry->{'forwardPort'},
+                        remotePort    => $entry->{'remotePort'},
                         size          => $ipCheck->size(),
                     );
                     last if $match{'size'} == 1;    # we won't get better than this
@@ -445,7 +461,7 @@ sub is_access_way_granted {
                         comment       => $entry->{'userComment'},
                         proxyIp       => $entry->{'proxyIp'},
                         proxyPort     => $entry->{'proxyPort'},
-                        forwardPort   => $entry->{'forwardPort'},
+                        remotePort    => $entry->{'remotePort'},
                         size          => 1,
                     );
                     last;
@@ -465,7 +481,7 @@ sub is_access_way_granted {
                 comment       => $match{'comment'},
                 proxyIp       => $match{'proxyIp'},
                 proxyPort     => $match{'proxyPort'},
-                forwardPort   => $match{'forwardPort'},
+                remotePort    => $match{'remotePort'},
             }
         );
     }
@@ -774,7 +790,8 @@ sub print_acls {
     # also take this opportunity to remember the longest field for each column
     my @printRows;
     my @jsonRows;
-    my @columnNames = qw( IP PORT USER ACCESS-BY ADDED-BY ADDED-AT EXPIRY? COMMENT FORCED-KEY FORCED-PASSWORD VIA);
+    my @columnNames =
+      qw( IP PORT USER ACCESS-BY ADDED-BY ADDED-AT EXPIRY? COMMENT FORCED-KEY FORCED-PASSWORD VIA PORT-FORWARDING );
     my @printColumnLength = map { length } @columnNames;
     foreach my $contextAcl (@$acls) {
         my $type  = $contextAcl->{'type'};
@@ -797,6 +814,11 @@ sub print_acls {
                   ($entry->{'proxyUser'} ? $entry->{'proxyUser'} : '*') . "\@$entry->{'proxyIp'}:$entry->{'proxyPort'}";
             }
 
+            my $portForwarding = '-';
+            if ($entry->{'localPort'} && $entry->{'remotePort'}) {
+                $portForwarding = "$entry->{'localPort'}->$entry->{'remotePort'}";
+            }
+
             my $expiry =
               $entry->{'expiry'} ? (duration2human(seconds => ($entry->{'expiry'} - time()))->value->{'human'}) : '-';
 
@@ -811,7 +833,7 @@ sub print_acls {
                 $addedBy,  $addedDate,
                 $expiry,   $entry->{'userComment'} || '-',
                 $forceKey, $forcePassword,
-                $via
+                $via,      $portForwarding
             );
 
             # if we have includes or excludes, match fields against the built regex

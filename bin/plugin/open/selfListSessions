@@ -14,21 +14,23 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,
     header  => "your past sessions list",
     options => {
-        "detailed"    => \my $detailed,
-        "id=s"        => \my $id,
-        "type=s"      => \my $type,
-        "allowed"     => \my $allowed,
-        "denied"      => \my $denied,
-        "after=s"     => \my $after,
-        "before=s"    => \my $before,
-        "from=s"      => \my $from,
-        "via=s"       => \my $via,
-        "via-port=i"  => \my $viaPort,
-        "to-port=i"   => \my $toPort,
-        "limit=i"     => \my $limit,
-        "proxyuser=s" => \my $proxyUser,
-        "proxyip=s"   => \my $proxyIp,
-        "proxyport=i" => \my $proxyPort,
+        "detailed"      => \my $detailed,
+        "id=s"          => \my $id,
+        "type=s"        => \my $type,
+        "allowed"       => \my $allowed,
+        "denied"        => \my $denied,
+        "after=s"       => \my $after,
+        "before=s"      => \my $before,
+        "from=s"        => \my $from,
+        "via=s"         => \my $via,
+        "via-port=i"    => \my $viaPort,
+        "to-port=i"     => \my $toPort,
+        "limit=i"       => \my $limit,
+        "proxyuser=s"   => \my $proxyUser,
+        "proxyip=s"     => \my $proxyIp,
+        "proxyport=i"   => \my $proxyPort,
+        "remoteports=s" => \my $remotePorts,
+        "localports=s"  => \my $localPorts,
     },
     helptext => <<'EOF',
 List the few past sessions of your account
@@ -53,6 +55,8 @@ Usage: --osh SCRIPT_NAME [OPTIONS]
   --proxyuser USER       Only sessions that used proxy USER
   --proxyip HOST         Only sessions that used proxy IP
   --proxyport PORT       Only sessions that used proxy PORT
+  --remoteports PORTS    Only sessions that used remote ports PORTS (comma-separated list)
+  --localports PORTS     Only sessions that used local ports PORTS (comma-separated list)
 
 Note that only the sessions that happened on this precise bastion instance will be shown,
 not the sessions from its possible cluster siblings.
@@ -105,6 +109,8 @@ $fnret = OVH::Bastion::log_access_get(
     proxyuser   => $proxyUser,
     proxyip     => $proxyIp,
     proxyport   => $proxyPort,
+    remoteports => $remotePorts,
+    localports  => $localPorts,
 );
 $fnret or osh_exit $fnret;
 
@@ -163,6 +169,22 @@ else {
                 $r->{'proxyuser'}, $r->{'proxyip'}, $r->{'proxyport'}, $r->{'proxyhost'});
         }
 
+        if ($r->{remoteports} && $r->{localports}) {
+            # split remoteports and localports by comma
+            my @remotePorts = split /,/, $r->{remoteports};
+            my @localPorts  = split /,/, $r->{localports};
+
+            # abort if lengths don't match
+            if (scalar(@remotePorts) != scalar(@localPorts)) {
+                osh_exit R('ERR_INTERNAL', msg => "Mismatched number of remote and local ports in log entry");
+            }
+            $to .= ' forwarding ports ';
+            for (my $i = 0; $i < scalar(@remotePorts); $i++) {
+                $to .= sprintf('%s->%s', $localPorts[$i], $remotePorts[$i]);
+                $to .= ', ' if $i < scalar(@remotePorts) - 1;
+            }
+        }
+
         $r->{params}      = undef         if ($r->{cmdtype} ne 'osh');
         $r->{returnvalue} = $r->{comment} if $r->{returnvalue} < 0;
 
@@ -189,10 +211,11 @@ else {
         push @result,
           {
             id                => $r->{uniqid},
-            from              => {ip => $r->{ipfrom},    host => $r->{hostfrom},    port => $r->{portfrom}},
-            via               => {ip => $r->{bastionip}, port => $r->{bastionport}, user => $r->{account}},
-            to                => {ip => $r->{ipto},      port => $r->{portto},      host => $r->{hostto}},
-            proxy             => {ip => $r->{proxyip},   port => $r->{proxyport},   host => $r->{proxyhost}},
+            from              => {ip     => $r->{ipfrom},      host  => $r->{hostfrom},    port => $r->{portfrom}},
+            via               => {ip     => $r->{bastionip},   port  => $r->{bastionport}, user => $r->{account}},
+            to                => {ip     => $r->{ipto},        port  => $r->{portto},      host => $r->{hostto}},
+            proxy             => {ip     => $r->{proxyip},     port  => $r->{proxyport},   host => $r->{proxyhost}},
+            ports_forwarded   => {remote => $r->{remotePorts}, local => $r->{localPorts}},
             timestamp_started => $r->{timestamp} + $r->{timestampusec} / 1_000_000,
             timestamp_ended   => $r->{timestampend} + $r->{timestampendusec} / 1_000_000,
             type              => $r->{cmdtype},

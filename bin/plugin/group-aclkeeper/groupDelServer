@@ -14,12 +14,13 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
     header             => "removing a server from a group",
     userAllowWildcards => 1,
     options            => {
-        "group=s"      => \my $group,
-        "protocol=s"   => \my $protocol,
-        "force"        => \my $force,
-        "proxy-host=s" => \my $proxyHost,
-        "proxy-port=s" => \my $proxyPort,
-        "proxy-user=s" => \my $proxyUser,
+        "group=s"       => \my $group,
+        "protocol=s"    => \my $protocol,
+        "force"         => \my $force,
+        "proxy-host=s"  => \my $proxyHost,
+        "proxy-port=s"  => \my $proxyPort,
+        "proxy-user=s"  => \my $proxyUser,
+        "remote-port=i" => \my $remotePort,
         # undocumented/compatibility:
         "user-any" => \my $userAny,
         "port-any" => \my $portAny,
@@ -52,6 +53,7 @@ Usage: --osh SCRIPT_NAME --group GROUP --host HOST --user USER --port PORT [OPTI
   --proxy-port PORT        Proxy port that was used to reach the target server
   --proxy-user USER|PATTERN|*  Proxy user that was configured for this access (mandatory when --proxy-host is specified).
                                Globbing characters '*' and '?' are supported for pattern matching.
+  --remote-port PORT      Remove port forwarding access to the specified remote port on the target server.
 
 This command adds, to an existing bastion account, access to a given server, using the
 egress keys of the group. The list of eligible servers for a given group is given by ``groupListServers``
@@ -82,18 +84,25 @@ if ($proxyHost) {
     $proxyUser = $fnret->value->{'proxyUser'};
 }
 
+if ($remotePort) {
+    $fnret = OVH::Bastion::is_valid_port(port => $remotePort);
+    $fnret or osh_exit $fnret;
+    $remotePort = $fnret->value;
+}
+
 $fnret = OVH::Bastion::Plugin::ACL::check(
-    user      => $user,
-    userAny   => $userAny,
-    port      => $port,
-    portAny   => $portAny,
-    scpUp     => $scpUp,
-    scpDown   => $scpDown,
-    sftp      => $sftp,
-    protocol  => $protocol,
-    proxyIp   => $proxyIp,
-    proxyPort => $proxyPort,
-    proxyUser => $proxyUser,
+    user       => $user,
+    userAny    => $userAny,
+    port       => $port,
+    portAny    => $portAny,
+    scpUp      => $scpUp,
+    scpDown    => $scpDown,
+    sftp       => $sftp,
+    protocol   => $protocol,
+    proxyIp    => $proxyIp,
+    proxyPort  => $proxyPort,
+    proxyUser  => $proxyUser,
+    remotePort => $remotePort,
 );
 if (!$fnret) {
     help();
@@ -121,13 +130,14 @@ $fnret
 
 my @command = qw{ sudo -n -u };
 push @command, ($group, '--', '/usr/bin/env', 'perl', '-T', $OVH::Bastion::BASEPATH . '/bin/helper/osh-groupAddServer');
-push @command, '--group',      $group;
-push @command, '--action',     'del';
-push @command, '--ip',         $ip;
-push @command, '--user',       $user      if $user;
-push @command, '--port',       $port      if $port;
-push @command, '--proxy-ip',   $proxyIp   if $proxyIp;
-push @command, '--proxy-port', $proxyPort if $proxyPort;
-push @command, '--proxy-user', $proxyUser if $proxyUser;
+push @command, '--group',       $group;
+push @command, '--action',      'del';
+push @command, '--ip',          $ip;
+push @command, '--user',        $user       if $user;
+push @command, '--port',        $port       if $port;
+push @command, '--proxy-ip',    $proxyIp    if $proxyIp;
+push @command, '--proxy-port',  $proxyPort  if $proxyPort;
+push @command, '--proxy-user',  $proxyUser  if $proxyUser;
+push @command, '--remote-port', $remotePort if $remotePort;
 
 osh_exit OVH::Bastion::helper(cmd => \@command);
