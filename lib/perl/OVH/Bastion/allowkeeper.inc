@@ -588,7 +588,7 @@ sub access_modify {
     # This port must be unique across all accesses, so we acquire a global lock to prevent any race condition
     my $lock_fh;
     my $allocatedLocalPort;
-    if ($action eq 'add') {
+    if ($action eq 'add' && defined $remotePort) {
         osh_debug("Acquiring port allocation lock for remotePort=$remotePort");
         $fnret = OVH::Bastion::Helper::get_lock_fh(category => "portallocation");
         $fnret or return $fnret;
