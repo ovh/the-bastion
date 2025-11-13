@@ -761,6 +761,14 @@ sub access_modify {
                             $shouldDelete = 0;
                         }
 
+                        # validate portforwarding if defined
+                        if ($shouldDelete && defined $remotePort) {
+                            $shouldDelete = 0 unless $line =~ m{\# REMOTEPORT=\Q$remotePort\E(\s|$)};
+                        }
+                        elsif ($shouldDelete && $line =~ m{\# REMOTEPORT=}) {
+                            $shouldDelete = 0;
+                        }
+
                         if ($shouldDelete) {
                             chomp $line;
                             $line = "# $line # $comment\n";
