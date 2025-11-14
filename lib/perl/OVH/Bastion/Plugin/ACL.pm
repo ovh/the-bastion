@@ -47,15 +47,6 @@ sub check {
               . "if you want to grant several of those protocols, please do it in separate commands");
     }
 
-    if ($remotePort and ($scpUp or $scpDown)) {
-        return R('ERR_INCOMPATIBLE_PARAMETERS', msg => "--remote-port cannot be used with --scpup or --scpdown");
-    }
-
-    if ($remotePort and $protocol ne 'portforward') {
-        return R('ERR_INCOMPATIBLE_PARAMETERS',
-            msg => "--remote-port cannot be used with any protocol other than portforward");
-    }
-
     # legacy options mapping
     if (!$protocol) {
         $protocol = 'sftp'        if $sftp;
@@ -64,8 +55,13 @@ sub check {
     }
 
     # implicitly set protocol to portforward if remotePort is specified
-    if ($remotePort) {
+    if ($remotePort && !$protocol) {
         $protocol = 'portforward';
+    }
+
+    if ($remotePort and $protocol ne 'portforward') {
+        return R('ERR_INCOMPATIBLE_PARAMETERS',
+            msg => "--remote-port cannot be used with any protocol other than portforward");
     }
 
     if ($protocol and $user) {
