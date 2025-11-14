@@ -64,6 +64,11 @@ sub check {
             msg => "--remote-port cannot be used with any protocol other than portforward");
     }
 
+    if ($remotePort && $remotePort eq $port) {
+        return R('ERR_INCOMPATIBLE_PARAMETERS',
+            msg => "forwarding the ssh port is now allowed, please choose a different port");
+    }
+
     if ($protocol and $user) {
         return R('ERR_INCOMPATIBLE_PARAMETERS',
                 msg => "To grant access using the $protocol protocol, first ensure SSH access "
