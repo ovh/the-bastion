@@ -80,6 +80,8 @@ sub get_lock_fh {
 
     return R('ERR_MISSING_PARAMETER', msg => "Missing category in get_lock_fh") if !$category;
 
+    my $lockdirPerm = 0700;
+    my $lockfileSharedAll = 0;
     my ($lockdir, $lockfile, $lockdircreate);
     if ($category eq 'passwd') {
         $lockdir       = "/tmp/bastion.lock.passwd";
@@ -101,6 +103,8 @@ sub get_lock_fh {
         $lockdir       = "/tmp/bastion.lock.portallocation";
         $lockfile      = "$lockdir/lock";
         $lockdircreate = 1;
+        $lockdirPerm   = 0755; # allowkeeper and group-aclkeeper must be able to read it
+        $lockfileSharedAll = 1;
     }
     else {
         return R('ERR_INVALID_PARAMETER', msg => "Unknown category '$category' in get_lock_fh");
@@ -113,7 +117,7 @@ sub get_lock_fh {
         unlink $lockdir;    # will silently fail if doesn't exist or is not a file
         mkdir $lockdir;     # will silently fail if we lost the race
         chown 0, 0, $lockdir;
-        chmod 0700, $lockdir;
+        chmod $lockdirPerm, $lockdir;
 
         # now, check if we do have a directory, or if we lost the race
         if (!-d $lockdir) {
@@ -122,10 +126,22 @@ sub get_lock_fh {
         }
         # here, $lockdir is guaranteed to be a directory, check its perms
         my @perms = stat($lockdir);
-        if ($perms[4] != $< || $perms[5] != $( || S_IMODE($perms[2]) != oct(700)) {
-            warn_syslog("The $lockdir directory has invalid perms: are we being raced against? mode="
-                  . sprintf("%04o", S_IMODE($perms[2])));
-            return R('ERR_CANNOT_LOCK', msg => "Couldn't create lock file, please retry");
+        
+        if ($lockfileSharedAll) {
+            # For shared locks, only check the file mode, not ownership
+            if (S_IMODE($perms[2]) != $lockdirPerm) {
+                warn_syslog("The $lockdir directory has invalid perms: are we being raced against? mode="
+                      . sprintf("%04o", S_IMODE($perms[2])));
+                return R('ERR_CANNOT_LOCK', msg => "Couldn't create lock file, please retry");
+            }
+        }
+        else {
+            # For non-shared locks, check ownership and mode
+            if ($perms[4] != $< || $perms[5] != $( || S_IMODE($perms[2]) != $lockdirPerm) {
+                warn_syslog("The $lockdir directory has invalid perms: are we being raced against? mode="
+                      . sprintf("%04o", S_IMODE($perms[2])));
+                return R('ERR_CANNOT_LOCK', msg => "Couldn't create lock file, please retry");
+            }
         }
     }
 
@@ -145,6 +161,11 @@ sub get_lock_fh {
     if (!open($fh, '>>', $lockfile)) {
         return R('ERR_CANNOT_LOCK', msg => "Couldn't create lock file, please retry");
     }
+
+    if ($lockfileSharedAll) {
+        chmod 0777, $lockfile;
+    }
+
     return R('OK', value => $fh);
 }
 
