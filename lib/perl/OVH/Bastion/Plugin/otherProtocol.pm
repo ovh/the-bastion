@@ -8,7 +8,7 @@ use lib dirname(__FILE__) . '/../../../../../lib/perl';
 use OVH::Result;
 use OVH::Bastion;
 
-# used by scp, sftp, rsync
+# used by scp, sftp, rsync and portforward
 # we need to verify that the account has access to the tuple (user@host:port),
 # and also that, using the same access way (the same egress ssh keys), that they are granted
 # for this host:port using another protocol than ssh (scp, sftp, rsync)

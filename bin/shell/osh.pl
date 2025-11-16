@@ -889,10 +889,11 @@ if ($portForwards && @$portForwards && !$telnet) {
 
         # Check if target IP is IPv4 or IPv6
         $fnret = OVH::Bastion::is_valid_ip(ip => $ip, allowSubnets => 0);
-        my $targetIpVersion = $fnret->value->{'version'} if $fnret;
+        my $targetIpVersion;
+        $targetIpVersion = $fnret->value->{'version'} if $fnret;
 
         # If not the exact target IP, at least ensure IP versions match
-        if ($targetIpVersion != $remoteIpVersion) {
+        if (defined $targetIpVersion && $targetIpVersion != $remoteIpVersion) {
             main_exit(OVH::Bastion::EXIT_INVALID_PORTFORWARDING, 'invalid_remote_host_version',
                 "Remote host '$remoteHostIp' in port forward must be the target IP '$ip' or match its IP version (IPv$targetIpVersion)"
             );

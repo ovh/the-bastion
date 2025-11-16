@@ -140,4 +140,19 @@ push @command, '--proxy-port',  $proxyPort  if $proxyPort;
 push @command, '--proxy-user',  $proxyUser  if $proxyUser;
 push @command, '--remote-port', $remotePort if $remotePort;
 
-osh_exit OVH::Bastion::helper(cmd => \@command);
+my $fnretresult = OVH::Bastion::helper(cmd => \@command);
+if (!$fnretresult || $fnretresult->err eq 'OK_NO_CHANGE') {
+    osh_exit $fnretresult;
+}
+
+# Now regenerate the sshd config for all members of this group
+my @sshd_command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
+push @sshd_command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-groupGenerateSshdConfig';
+push @sshd_command, '--group', $group;
+
+my $sshd_fnret = OVH::Bastion::helper(cmd => \@sshd_command);
+if (!$sshd_fnret) {
+    osh_warn "Failed to regenerate sshd config for group members: " . $sshd_fnret->msg;
+}
+
+osh_exit $fnretresult;

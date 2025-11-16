@@ -179,9 +179,9 @@ else {
                 osh_exit R('ERR_INTERNAL', msg => "Mismatched number of remote and local ports in log entry");
             }
             $to .= ' forwarding ports ';
-            for (my $i = 0; $i < scalar(@remotePorts); $i++) {
+            foreach my $i (0 .. $#remotePorts) {
                 $to .= sprintf('%s->%s', $localPorts[$i], $remotePorts[$i]);
-                $to .= ', ' if $i < scalar(@remotePorts) - 1;
+                $to .= ', ' if $i < $#remotePorts;
             }
         }
 

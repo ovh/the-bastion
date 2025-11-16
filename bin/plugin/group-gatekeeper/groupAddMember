@@ -43,4 +43,18 @@ my $fnret = OVH::Bastion::Plugin::groupSetRole::act(
     savedArgs      => $savedArgs
 );
 help() if not $fnret;
+
+if ($fnret && $fnret->err ne 'OK_NO_CHANGE') {
+    # Regenerate sshd config for the account after member add
+    my @sshd_command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
+    push @sshd_command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountGenerateSshdConfig';
+    push @sshd_command, '--target',  'any';
+    push @sshd_command, '--account', $account;
+
+    my $sshd_fnret = OVH::Bastion::helper(cmd => \@sshd_command);
+    if (!$sshd_fnret) {
+        osh_warn "Failed to regenerate sshd config: " . $sshd_fnret->msg;
+    }
+}
+
 osh_exit($fnret);

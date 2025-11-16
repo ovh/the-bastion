@@ -363,6 +363,7 @@ sub is_access_way_granted {
                 proxyIp       => $entry->{'proxyIp'},
                 proxyPort     => $entry->{'proxyPort'},
                 remotePort    => $entry->{'remotePort'},
+                localPort     => $entry->{'localPort'},
                 size          => undef,                       # not needed
             );
             last;                                             # perfect match, don't search further
@@ -414,6 +415,7 @@ sub is_access_way_granted {
                         proxyIp       => $entry->{'proxyIp'},
                         proxyPort     => $entry->{'proxyPort'},
                         remotePort    => $entry->{'remotePort'},
+                        localPort     => $entry->{'localPort'},
                         size          => $ipCheck->size(),
                     );
                     last if $match{'size'} == 1;    # we won't get better than this
@@ -462,6 +464,7 @@ sub is_access_way_granted {
                         proxyIp       => $entry->{'proxyIp'},
                         proxyPort     => $entry->{'proxyPort'},
                         remotePort    => $entry->{'remotePort'},
+                        localPort     => $entry->{'localPort'},
                         size          => 1,
                     );
                     last;
@@ -482,6 +485,7 @@ sub is_access_way_granted {
                 proxyIp       => $match{'proxyIp'},
                 proxyPort     => $match{'proxyPort'},
                 remotePort    => $match{'remotePort'},
+                localPort     => $match{'localPort'},
             }
         );
     }
@@ -1449,14 +1453,16 @@ sub get_acls {
         next if not $grantedGroup;            # if group doesn't have access, don't even check legacy either
 
         # now we have to cases, if the group has access: either the account is member or guest
-        if (OVH::Bastion::is_group_member(group => $shortGroup, account => $account)) {
+        my $is_member =
+          OVH::Bastion::is_group_member(group => $shortGroup, account => $account, sudo => $params{'sudo'});
+        if ($is_member) {
 
             # normal member case, just reuse $grantedGroup
             osh_debug("get_acls: adding grantedGroup to grants because is member");
             push @acls, {type => 'group-member', group => $shortGroup, acl => $grantedGroup->value}
               if ($grantedGroup && @{$grantedGroup->value});
         }
-        elsif (OVH::Bastion::is_group_guest(group => $shortGroup, account => $account)) {
+        elsif (OVH::Bastion::is_group_guest(group => $shortGroup, account => $account, sudo => $params{'sudo'})) {
 
             # normal guest case
             my $grantedGuest =
@@ -1480,6 +1486,7 @@ sub get_acls {
         else {
             # should not happen
             osh_debug("get_acls: $account is in group $shortGroup but is neither member or guest !!?");
+            osh_debug("get_acls: error: " . $is_member->msg);
         }
     }
     return R('OK', value => \@acls);

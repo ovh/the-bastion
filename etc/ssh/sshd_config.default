@@ -130,3 +130,6 @@ Match Group mfa-totp-configd,mfa-password-configd
 # by default, always ask the publickey (no PAM)
 Match All
     AuthenticationMethods publickey
+
+# Include port forwarding configurations per user
+Include /etc/ssh/sshd_config.forward.d/*.conf

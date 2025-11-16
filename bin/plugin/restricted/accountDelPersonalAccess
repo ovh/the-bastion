@@ -123,4 +123,20 @@ push @command, '--proxy-port',  $proxyPort  if $proxyPort;
 push @command, '--proxy-user',  $proxyUser  if $proxyUser;
 push @command, '--remote-port', $remotePort if $remotePort;
 
-osh_exit OVH::Bastion::helper(cmd => \@command);
+my $fnretresult = OVH::Bastion::helper(cmd => \@command);
+if (!$fnretresult || $fnretresult->err eq 'OK_NO_CHANGE') {
+    osh_exit $fnretresult;
+}
+
+# Now regenerate the sshd config for this account
+my @sshd_command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
+push @sshd_command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountGenerateSshdConfig';
+push @sshd_command, '--target',  'any';
+push @sshd_command, '--account', $account;
+
+$fnret = OVH::Bastion::helper(cmd => \@sshd_command);
+if (!$fnret) {
+    osh_warn "Failed to regenerate sshd config: " . $fnret->msg;
+}
+
+osh_exit $fnretresult;

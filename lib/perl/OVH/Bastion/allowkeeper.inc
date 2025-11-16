@@ -321,6 +321,7 @@ sub access_modify {
     my $proxyUser = $params{'proxyUser'};
 
     my $remotePort = $params{'remotePort'};    # remote port for port forwarding
+    my $localPort  = $params{'localPort'};     # local port for port forwarding, only used for groupguest access. Otherwise it will be allocated automatically.
 
     my $dryrun = $params{'dryrun'};            # don't do anything, just check params and prereqs
     my $sudo   = $params{'sudo'};              # passed as-is to subs we use
@@ -486,6 +487,18 @@ sub access_modify {
         $fnret = OVH::Bastion::is_valid_portforwarding(remotePort => $remotePort);
         $fnret or return $fnret;
         $remotePort = $fnret->value->{"remotePort"};
+
+        # if we add a groupguest, we can check the local port, too, because it was already allocated.
+        if ($way eq 'groupguest' && defined $localPort) {
+            $fnret = OVH::Bastion::is_valid_port(port => $localPort);
+            $fnret or return $fnret;
+            $localPort = $fnret->value;
+        }
+        else {
+            if (defined $localPort) {
+                return R('ERR_INVALID_PARAMETER', msg => "Local port can only be specified for way=groupguest");
+            }
+        }
     }
 
     # check if the caller has the right to make the change they're asking
@@ -585,12 +598,11 @@ sub access_modify {
     }
 
     # If we're adding an access with port forwarding, we need to allocate a local port
-    # This port must be unique across all accesses, so we acquire a global lock to prevent any race condition
+    # This port must be unique across all account and group accesses, so we acquire a global lock to prevent any race condition
     my $lock_fh;
-    my $allocatedLocalPort;
-    if ($action eq 'add' && defined $remotePort) {
+    if ($action eq 'add' && defined $remotePort && !defined $localPort) {
         osh_debug("Acquiring port allocation lock for remotePort=$remotePort");
-        $fnret = OVH::Bastion::Helper::get_lock_fh(category => "portallocation");
+        $fnret = OVH::Bastion::Helper::get_lock_fh(category => "portforwarding");
         $fnret or return $fnret;
         $lock_fh = $fnret->value;
 
@@ -604,8 +616,8 @@ sub access_modify {
             close($lock_fh) if $lock_fh;
             return $fnret;
         }
-        $allocatedLocalPort = $fnret->value->{'localPort'};
-        osh_debug("Allocated new local port for forwarding: $allocatedLocalPort");
+        $localPort = $fnret->value->{'localPort'};
+        osh_debug("Allocated new local port for forwarding: $localPort");
 
         # We will release the lock after the access modification is done
     }
@@ -690,12 +702,12 @@ sub access_modify {
                 $entry .= " # PROXYUSER=" . $proxyUser;
             }
             if ($remotePort) {
-                if (!defined $allocatedLocalPort) {
+                if (!defined $localPort) {
                     # This should never happen but just in case something went horribly wrong, we abort
                     return R('ERR_INTERNAL', msg => "Port forwarding requested but no local port allocated");
                 }
                 $entry .= " # REMOTEPORT=" . $remotePort;
-                $entry .= " # LOCALPORT=" . $allocatedLocalPort;
+                $entry .= " # LOCALPORT=" . $localPort;
             }
             if ($comment) {
                 $comment =~ s{[#<>\\"']}{_}g;
@@ -805,6 +817,7 @@ sub access_modify {
                 }
             }
         }
+
         OVH::Bastion::syslogFormatted(
             severity => 'info',
             type     => 'acl',
@@ -824,7 +837,7 @@ sub access_modify {
                 ['proxy_port',     $params{'proxyPort'}],
                 ['proxy_user',     $params{'proxyUser'}],
                 ['remote_port',    $params{'remotePort'}],
-                ['local_port',     $allocatedLocalPort],
+                ['local_port',     $localPort],
             ]
         );
         return R('OK', msg => $returnmsg) if $returnmsg;

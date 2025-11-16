@@ -80,7 +80,7 @@ sub get_lock_fh {
 
     return R('ERR_MISSING_PARAMETER', msg => "Missing category in get_lock_fh") if !$category;
 
-    my $lockdirPerm = 0700;
+    my $lockdirPerm       = oct(700);
     my $lockfileSharedAll = 0;
     my ($lockdir, $lockfile, $lockdircreate);
     if ($category eq 'passwd') {
@@ -98,12 +98,12 @@ sub get_lock_fh {
         # we use the .db suffix because it's already excluded from the cluster sync:
         $lockfile = "$lockdir/lock.db";
     }
-    elsif ($category eq 'portallocation') {
-        # Global lock for local port allocations used by the port forwarding feature
-        $lockdir       = "/tmp/bastion.lock.portallocation";
-        $lockfile      = "$lockdir/lock";
-        $lockdircreate = 1;
-        $lockdirPerm   = 0755; # allowkeeper and group-aclkeeper must be able to read it
+    elsif ($category eq 'portforwarding') {
+        # Global lock for the  port forwarding feature
+        $lockdir           = "/tmp/bastion.lock.portforwarding";
+        $lockfile          = "$lockdir/lock";
+        $lockdircreate     = 1;
+        $lockdirPerm       = oct(755);                             # allowkeeper and group-aclkeeper must be able to read it
         $lockfileSharedAll = 1;
     }
     else {
@@ -114,8 +114,8 @@ sub get_lock_fh {
 
     if ($lockdircreate) {
         # to avoid symlink attacks, we first create a subdir only accessible by root
-        unlink $lockdir;    # will silently fail if doesn't exist or is not a file
-        mkdir $lockdir;     # will silently fail if we lost the race
+        unlink $lockdir;                                           # will silently fail if doesn't exist or is not a file
+        mkdir $lockdir;                                            # will silently fail if we lost the race
         chown 0, 0, $lockdir;
         chmod $lockdirPerm, $lockdir;
 
@@ -126,7 +126,7 @@ sub get_lock_fh {
         }
         # here, $lockdir is guaranteed to be a directory, check its perms
         my @perms = stat($lockdir);
-        
+
         if ($lockfileSharedAll) {
             # For shared locks, only check the file mode, not ownership
             if (S_IMODE($perms[2]) != $lockdirPerm) {

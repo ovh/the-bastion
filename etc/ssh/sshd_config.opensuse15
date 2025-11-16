@@ -121,3 +121,6 @@ UseDNS no
 
 # use PAM facility
 UsePAM yes
+
+# Include port forwarding configurations per user
+Include /etc/ssh/sshd_config.forward.d/*.conf

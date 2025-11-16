@@ -18,8 +18,8 @@ use OVH::Bastion::Helper;
 my $fnret;
 my ($result, @optwarns);
 my (
-    $account,   $group,      $ip,     $user, $port,    $proxyIp, $proxyPort,
-    $proxyUser, $remotePort, $action, $ttl,  $comment, $forceKey
+    $account,   $group,      $ip,        $user,   $port, $proxyIp, $proxyPort,
+    $proxyUser, $remotePort, $localPort, $action, $ttl,  $comment, $forceKey
 );
 eval {
     local $SIG{__WARN__} = sub { push @optwarns, shift };
@@ -37,6 +37,7 @@ eval {
         "proxy-port=i"  => sub { $proxyPort  //= $_[1] },
         "proxy-user=s"  => sub { $proxyUser  //= $_[1] },
         "remote-port=i" => sub { $remotePort //= $_[1] },
+        "local-port=i"  => sub { $localPort  //= $_[1] },
     );
 };
 if ($@) { die $@ }
@@ -80,5 +81,6 @@ $fnret = OVH::Bastion::access_modify(
     comment    => $comment,
     forceKey   => $forceKey,
     remotePort => $remotePort,
+    localPort  => $localPort,
 );
 HEXIT($fnret);
