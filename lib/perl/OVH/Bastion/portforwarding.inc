@@ -9,6 +9,34 @@ use OVH::Bastion::Plugin::otherProtocol;
 
 use Time::Piece;    # $t->strftime
 
+# Check if a port is in use by any process on the system
+sub _is_port_in_use {
+    my %params = @_;
+    my $port   = $params{'port'};
+
+    # try ss first
+    my ($ss_test, $ss_exit_code) = OVH::Bastion::execute(cmd => ['ss', '-ln'], noisy_stderr => 0);
+    if ($ss_exit_code == 0 && $ss_test && $ss_test =~ /:$port /) {
+        return 1;
+    }
+    if ($ss_exit_code == 0) {
+        return 0;
+    }
+
+    # fallback to netstat if ss failed for some reason
+    my ($netstat_test, $netstat_exit_code) = OVH::Bastion::execute(cmd => ['netstat', '-ln'], noisy_stderr => 0);
+    if ($netstat_exit_code == 0 && $netstat_test && $netstat_test =~ /:$port /) {
+        return 1;
+    }
+    if ($netstat_exit_code == 0) {
+        return 0;
+    }
+
+    # If both commands fail, assume port is free 
+    warn_syslog("Warning: Both 'ss' and 'netstat' commands failed, assuming port $port is free");
+    return 0;
+}
+
 # Allocate a free local port for port forwarding
 # This function MUST be called while holding the portforwarding lock
 # to prevent race conditions between concurrent allocations
@@ -24,8 +52,22 @@ sub allocate_local_port {
     $fnret or return $fnret;
     my %allocated_ports = %{$fnret->value->{'ports'}};
 
+    my @tried_ports;
     for my $port ($min_port .. $max_port) {
         if (!exists $allocated_ports{$port}) {
+            # Check if the port is actually in use by another process
+            if (_is_port_in_use(port => $port)) {
+                push @tried_ports, $port;
+                osh_warn("Port $port is in use by another process, trying next port...");
+                next;
+            }
+            
+            # Port is free and not in use
+            if (@tried_ports) {
+                osh_info("Successfully allocated port $port after finding "
+                       . scalar(@tried_ports) . " port(s) in use: " 
+                       . join(", ", @tried_ports));
+            }
             return R('OK', value => {localPort => $port});
         }
     }
