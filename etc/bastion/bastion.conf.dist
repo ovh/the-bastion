@@ -474,8 +474,10 @@
 #
 # portForwardingLocalPortMax (int >= 1024 and <= 65535)
 #     DESC: Maximum allowed local port for local port forwarding.
-#  DEFAULT: 65535
-"portForwardingLocalPortMax": 65535,
+#           Make sure that ``portForwardingLocalPortMax`` is higher than ``portForwardingLocalPortMin``.
+#           The local port range must not use high ports used by outgoing connections. Check ``/proc/sys/net/ipv4/ip_local_port_range``
+#  DEFAULT: 30000
+"portForwardingLocalPortMax": 30000,
 #
 # portForwardingMaxPerUser (int >= 0)
 #     DESC: Maximum number of allowed port forwardings per user. A value of 0 means unlimited.
@@ -486,11 +488,6 @@
 #     DESC: Maximum number of allowed port forwardings per group. A value of 0 means unlimited.
 #  DEFAULT: 50
 "portForwardingMaxPerGroup": 50,
-#
-# portForwardingSSHConfigEnabled (boolean)
-#     DESC: If set to ``true``, will generate SSH PermitOpen configurations per user to restrict port forwarding access to only authorized destinations. This is the recommended secure approach.
-#  DEFAULT: true
-"portForwardingSSHConfigEnabled": true,
 #
 #################
 # > Other options
