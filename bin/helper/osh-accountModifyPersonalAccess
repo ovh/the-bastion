@@ -88,6 +88,14 @@ if (not grep { $action eq $_ } qw{ add del }) {
 #<PARAMS:ACTION
 
 #>CODE
+$fnret = OVH::Bastion::load_configuration();
+$fnret or main_exit(OVH::Bastion::EXIT_CONFIGURATION_FAILURE, "configuration_failure", $fnret->msg);
+my $config = $fnret->value;
+
+if ($remotePort && !$config->{'portForwardingEnabled'}) {
+    HEXIT('ERR_INVALID_PARAMETER', msg => "Port forwarding is disabled on this bastion, cannot use --remote-port");
+}
+
 my $machine = OVH::Bastion::machine_display(
     ip         => $ip,
     port       => $port,

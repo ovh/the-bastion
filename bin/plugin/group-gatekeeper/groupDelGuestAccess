@@ -136,7 +136,7 @@ $fnret = OVH::Bastion::Plugin::groupSetRole::act(
 );
 help() if not $fnret;
 
-if ($fnret && $fnret->err ne 'OK_NO_CHANGE') {
+if ($fnret && $fnret->err ne 'OK_NO_CHANGE' && $remotePort) {
     # Regenerate sshd config for the account after guest access del
     my @sshd_command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
     push @sshd_command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountGenerateSshdConfig';

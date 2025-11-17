@@ -251,20 +251,18 @@ push @command, '--proxy-port',     $proxyPort     if $proxyPort;
 push @command, '--proxy-user',     $proxyUser     if $proxyUser;
 push @command, '--remote-port',    $remotePort    if $remotePort;
 
-my $fnretresult = OVH::Bastion::helper(cmd => \@command);
-if (!$fnretresult || $fnretresult->err eq 'OK_NO_CHANGE') {
-    osh_exit $fnretresult;
+$fnret = OVH::Bastion::helper(cmd => \@command);
+if ($fnret && $fnret->err ne 'OK_NO_CHANGE' && $remotePort) {
+    # Now regenerate the sshd config for this account
+    my @sshd_command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
+    push @sshd_command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountGenerateSshdConfig';
+    push @sshd_command, '--target',  'self';
+    push @sshd_command, '--account', $self;
+
+    my $sshd_fnret = OVH::Bastion::helper(cmd => \@sshd_command);
+    if (!$sshd_fnret) {
+        osh_warn "Failed to regenerate sshd config: " . $sshd_fnret->msg;
+    }
 }
 
-# Now regenerate the sshd config for this account
-my @sshd_command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
-push @sshd_command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountGenerateSshdConfig';
-push @sshd_command, '--target',  'self';
-push @sshd_command, '--account', $self;
-
-$fnret = OVH::Bastion::helper(cmd => \@sshd_command);
-if (!$fnret) {
-    osh_warn "Failed to regenerate sshd config: " . $fnret->msg;
-}
-
-osh_exit $fnretresult;
+osh_exit $fnret;

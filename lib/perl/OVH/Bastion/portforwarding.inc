@@ -32,7 +32,7 @@ sub _is_port_in_use {
         return 0;
     }
 
-    # If both commands fail, assume port is free 
+    # If both commands fail, assume port is free
     warn_syslog("Warning: Both 'ss' and 'netstat' commands failed, assuming port $port is free");
     return 0;
 }
@@ -61,12 +61,13 @@ sub allocate_local_port {
                 osh_warn("Port $port is in use by another process, trying next port...");
                 next;
             }
-            
+
             # Port is free and not in use
             if (@tried_ports) {
                 osh_info("Successfully allocated port $port after finding "
-                       . scalar(@tried_ports) . " port(s) in use: " 
-                       . join(", ", @tried_ports));
+                      . scalar(@tried_ports)
+                      . " port(s) in use: "
+                      . join(", ", @tried_ports));
             }
             return R('OK', value => {localPort => $port});
         }

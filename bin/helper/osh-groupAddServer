@@ -92,6 +92,14 @@ $fnret = OVH::Bastion::Helper::acquire_lock($lock_fh);
 $fnret or HEXIT($fnret);
 
 #>CODE
+$fnret = OVH::Bastion::load_configuration();
+$fnret or main_exit(OVH::Bastion::EXIT_CONFIGURATION_FAILURE, "configuration_failure", $fnret->msg);
+my $config = $fnret->value;
+
+if ($remotePort && !$config->{'portForwardingEnabled'}) {
+    HEXIT('ERR_INVALID_PARAMETER', msg => "Port forwarding is disabled on this bastion, cannot use --remote-port");
+}
+
 my $machine = OVH::Bastion::machine_display(
     ip         => $ip,
     port       => $port,

@@ -270,7 +270,7 @@ sub load_configuration {
             options => [
                 qw{
                   enableSyslog enableGlobalAccessLog enableAccountAccessLog enableGlobalSqlLog enableAccountSqlLog displayLastLogin
-                  interactiveModeByDefault interactiveModeProactiveMFAenabled IPv4Allowed portForwardingSSHConfigEnabled
+                  interactiveModeByDefault interactiveModeProactiveMFAenabled IPv4Allowed
                 }
             ],
         },
