@@ -22,6 +22,8 @@
 + /etc/ssh/
 + /etc/ssh/ssh_host_*_key
 + /etc/ssh/ssh_host_*_key.pub
++ /etc/ssh/sshd_config.forward.d/
++ /etc/ssh/sshd_config.forward.d/*.conf
 - /etc/**
 
 + /home/

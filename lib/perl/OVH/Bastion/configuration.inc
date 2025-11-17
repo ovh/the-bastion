@@ -164,6 +164,7 @@ sub load_configuration {
         {name => 'fanciness', default => 'full', validre => qr/^((none|boomer)|(basic|millenial)|(full|genz))$/},
         {name => 'accountExternalValidationProgram', default => '', validre => qr'^([a-zA-Z0-9/$_.-]*)$', emptyok => 1},
         {name => 'ttyrecStealthStdoutPattern',       default => '', validre => qr'^(.{0,4096})$',         emptyok => 1},
+        {name => 'sshdReloadCommand',                default => 'systemctl reload sshd', validre => qr/^(.{1,1024})$/},
       )
     {
         if (!$C->{$o->{'name'}} && !$o->{'emptyok'}) {

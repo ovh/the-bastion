@@ -56,3 +56,11 @@ remoteuser="bastionsync"
 # DEFAULT: ""
 # EXAMPLE: "192.0.2.17 192.0.2.12:2244"
 remotehostlist=""
+#
+# > Portforwarding options
+# >> These options are required if the portforwarding feature is enabled on the bastion
+#
+# reload_sshd_command
+#    DESC: The command to use to reload the SSH daemon on secondary bastions, when configuration changes are detected.
+# DEFAULT: "/usr/bin/systemctl reload sshd"
+reload_sshd_command="/usr/bin/systemctl reload sshd"

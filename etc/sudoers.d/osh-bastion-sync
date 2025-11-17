@@ -1,1 +1,9 @@
 bastionsync ALL=(root) NOPASSWD: /usr/bin/rsync --server *
+bastionsync ALL=(root) NOPASSWD: /bin/systemctl reload sshd
+bastionsync ALL=(root) NOPASSWD: /usr/bin/systemctl reload sshd
+bastionsync ALL=(root) NOPASSWD: /bin/systemctl reload ssh
+bastionsync ALL=(root) NOPASSWD: /usr/bin/systemctl reload ssh
+bastionsync ALL=(root) NOPASSWD: /usr/sbin/service ssh reload
+bastionsync ALL=(root) NOPASSWD: /usr/sbin/service sshd reload
+bastionsync ALL=(root) NOPASSWD: /etc/init.d/ssh reload
+bastionsync ALL=(root) NOPASSWD: /etc/init.d/sshd reload

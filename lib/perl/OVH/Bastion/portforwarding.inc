@@ -15,20 +15,20 @@ sub _is_port_in_use {
     my $port   = $params{'port'};
 
     # try ss first
-    my ($ss_test, $ss_exit_code) = OVH::Bastion::execute(cmd => ['ss', '-ln'], noisy_stderr => 0);
-    if ($ss_exit_code == 0 && $ss_test && $ss_test =~ /:$port /) {
+    my $fnret = OVH::Bastion::execute(cmd => ['ss', '-ln'], noisy_stderr => 0);
+    if ($fnret && $fnret->value->{'sysret'} == 0 && $fnret->value->{'output'} =~ /:$port /) {
         return 1;
     }
-    if ($ss_exit_code == 0) {
+    if ($fnret && $fnret->value->{'sysret'} == 0) {
         return 0;
     }
 
     # fallback to netstat if ss failed for some reason
-    my ($netstat_test, $netstat_exit_code) = OVH::Bastion::execute(cmd => ['netstat', '-ln'], noisy_stderr => 0);
-    if ($netstat_exit_code == 0 && $netstat_test && $netstat_test =~ /:$port /) {
+    $fnret = OVH::Bastion::execute(cmd => ['netstat', '-ln'], noisy_stderr => 0);
+    if ($fnret && $fnret->value->{'sysret'} == 0 && $fnret->value->{'output'} =~ /:$port /) {
         return 1;
     }
-    if ($netstat_exit_code == 0) {
+    if ($fnret && $fnret->value->{'sysret'} == 0) {
         return 0;
     }
 
@@ -52,25 +52,40 @@ sub allocate_local_port {
     $fnret or return $fnret;
     my %allocated_ports = %{$fnret->value->{'ports'}};
 
-    my @tried_ports;
+    # Build list of available ports
+    my @available_ports;
     for my $port ($min_port .. $max_port) {
         if (!exists $allocated_ports{$port}) {
-            # Check if the port is actually in use by another process
-            if (_is_port_in_use(port => $port)) {
-                push @tried_ports, $port;
-                osh_warn("Port $port is in use by another process, trying next port...");
-                next;
-            }
-
-            # Port is free and not in use
-            if (@tried_ports) {
-                osh_info("Successfully allocated port $port after finding "
-                      . scalar(@tried_ports)
-                      . " port(s) in use: "
-                      . join(", ", @tried_ports));
-            }
-            return R('OK', value => {localPort => $port});
+            push @available_ports, $port;
         }
+    }
+
+    if (!@available_ports) {
+        return R('ERR_NO_FREE_PORTS',
+            msg => "No free local ports available in range $min_port-$max_port. "
+              . "Please contact your bastion administrator ASAP!");
+    }
+
+    # Shuffle available ports to randomly select one
+    my @shuffled_ports = sort { rand() <=> rand() } @available_ports;
+
+    my @tried_ports;
+    for my $port (@shuffled_ports) {
+        # Check if the port is actually in use by another process
+        if (_is_port_in_use(port => $port)) {
+            push @tried_ports, $port;
+            osh_warn("Port $port is in use by another process, trying next port...");
+            next;
+        }
+
+        # Port is free and not in use
+        if (@tried_ports) {
+            osh_info("Successfully allocated port $port after finding "
+                  . scalar(@tried_ports)
+                  . " port(s) in use: "
+                  . join(", ", @tried_ports));
+        }
+        return R('OK', value => {localPort => $port});
     }
 
     return R('ERR_NO_FREE_PORTS',
@@ -95,7 +110,7 @@ sub is_valid_portforwarding {
     return R('OK', value => {remotePort => $remotePort});
 }
 
-# TODO: maybe cache this to make it faster?
+# Get all allocated local ports from all groups and accounts
 sub _get_allocated_local_ports {
     my $fnret = OVH::Bastion::get_group_list();
     $fnret or return $fnret;
@@ -219,6 +234,9 @@ sub _write_sshd_forwarding_config {
                 return R('ERR_UNLINK_FAILED', msg => "Failed to remove config file $config_file: $!");
             }
             osh_debug("Removed empty config file $config_file");
+
+            $fnret = _test_and_reload_sshd();
+            $fnret or return $fnret;
         }
         return R('OK', msg => "No port forwarding entries, config file removed");
     }
@@ -252,7 +270,53 @@ sub _write_sshd_forwarding_config {
     chmod 0644, $config_file;
 
     osh_debug("Wrote sshd forwarding config to $config_file with " . scalar(@permit_opens) . " PermitOpen entries");
+
+    $fnret = _test_and_reload_sshd();
+    $fnret or return $fnret;
+
     return R('OK', msg => "Successfully wrote sshd forwarding config for $account");
+}
+
+# Test sshd configuration and reload the sshd daemon
+sub _test_and_reload_sshd {
+    osh_debug("Testing sshd configuration...");
+    my $fnret = OVH::Bastion::execute(cmd => ['sshd', '-t'], noisy_stderr => 1);
+
+    if (!$fnret || $fnret->value->{'sysret'} != 0) {
+        osh_warn("sshd configuration test failed!");
+        return R('ERR_SSHD_CONFIG_TEST_FAILED',
+                msg => "sshd configuration test failed with exit code "
+              . ($fnret ? $fnret->value->{'sysret'} : 'unknown')
+              . ". Output: "
+              . ($fnret ? $fnret->value->{'output'} : 'unknown') . "\n"
+              . "Tell your administrator about this ASAP!");
+    }
+
+    osh_debug("sshd configuration test passed");
+
+    my $fnret = OVH::Bastion::load_configuration();
+    $fnret or main_exit(OVH::Bastion::EXIT_CONFIGURATION_FAILURE, "configuration_failure", $fnret->msg);
+    my $config     = $fnret->value;
+    my $reload_cmd = $config->{'sshdReloadCommand'};
+
+    # Split the command into executable and arguments
+    my @cmd_parts = split(/\s+/, $reload_cmd);
+
+    osh_debug("Reloading sshd with command: $reload_cmd");
+    $fnret = OVH::Bastion::execute(cmd => \@cmd_parts, noisy_stderr => 1);
+
+    if (!$fnret || $fnret->value->{'sysret'} != 0) {
+        osh_warn("Failed to reload sshd!");
+        return R('ERR_SSHD_RELOAD_FAILED',
+                msg => "Failed to reload sshd with exit code "
+              . ($fnret ? $fnret->value->{'sysret'} : 'unknown')
+              . ". Output: "
+              . ($fnret ? $fnret->value->{'output'} : 'unknown') . "\n"
+              . "Tell your administrator about this ASAP!");
+    }
+
+    osh_debug("sshd reloaded successfully");
+    return R('OK', msg => "sshd configuration tested and daemon reloaded successfully");
 }
 
 1;
