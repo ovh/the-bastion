@@ -17,11 +17,12 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
         "idle-lock-timeout=s" => \my $idleLockTimeout,
         "idle-kill-timeout=s" => \my $idleKillTimeout,
         "guest-ttl-limit=s"   => \my $ttl,
+        "try-personal-keys=s" => \my $tryPersonalKeys,
     },
     helptext => <<'EOF',
 Modify the configuration of a group
 
-Usage: --osh SCRIPT_NAME --group GROUP [--mfa-required password|totp|any|none] [--guest-ttl-limit DURATION]
+Usage: --osh SCRIPT_NAME --group GROUP [--mfa-required password|totp|any|none] [--guest-ttl-limit DURATION] [--try-personal-keys yes|no]
 
   --group             GROUP                    Name of the group to modify
   --mfa-required      password|totp|any|none   Enforce UNIX password requirement, or TOTP requirement, or any MFA requirement, when connecting to a server of the group
@@ -31,6 +32,8 @@ Usage: --osh SCRIPT_NAME --group GROUP [--mfa-required password|totp|any|none] [
                                                  this group. If set to -1, remove this group override and use the global setting instead.
   --guest-ttl-limit   DURATION                 This group will enforce TTL setting, on guest access creation, to be set, and not to a higher value than DURATION,
                                                  set to zero to allow guest accesses creation without any TTL set (default)
+  --try-personal-keys yes|no                   When a user accesses a server through his group permission, his personal access keys will also be added
+                                                 to the connection attempt (default: no)
 
 Note that `--idle-lock-timeout` and `--idle-kill-timeout` will NOT be applied for catch-all groups (having 0.0.0.0/0 in their server list).
 
@@ -48,7 +51,12 @@ if (!$group) {
     help();
     osh_exit 'ERR_MISSING_PARAMETER', "Missing mandatory parameter 'group'";
 }
-if (!$mfaRequired && !defined $ttl && !defined $idleLockTimeout && !defined $idleKillTimeout) {
+if (   !$mfaRequired
+    && !defined $ttl
+    && !defined $idleLockTimeout
+    && !defined $idleKillTimeout
+    && !defined $tryPersonalKeys)
+{
     help();
     osh_exit 'ERR_MISSING_PARAMETER', "Nothing to modify";
 }
@@ -81,6 +89,11 @@ if (defined $mfaRequired && !grep { $mfaRequired eq $_ } qw{ password totp any n
     osh_exit 'ERR_INVALID_PARAMETER', "Expected 'password', 'totp', 'any' or 'none' as parameter to --mfa-required";
 }
 
+if (defined $tryPersonalKeys && !grep { $tryPersonalKeys eq $_ } qw{ yes no }) {
+    help();
+    osh_exit 'ERR_INVALID_PARAMETER', "Expected 'yes' or 'no' as parameter to --try-personal-keys";
+}
+
 my @command = qw{ sudo -n -u };
 push @command, $group;
 push @command, qw{ -- /usr/bin/env perl -T };
@@ -90,5 +103,6 @@ push @command, '--mfa-required',      $mfaRequired     if $mfaRequired;
 push @command, '--guest-ttl-limit',   $ttl             if defined $ttl;
 push @command, '--idle-lock-timeout', $idleLockTimeout if defined $idleLockTimeout;
 push @command, '--idle-kill-timeout', $idleKillTimeout if defined $idleKillTimeout;
+push @command, '--try-personal-keys', $tryPersonalKeys if defined $tryPersonalKeys;
 
 osh_exit OVH::Bastion::helper(cmd => \@command);
