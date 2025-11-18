@@ -18,7 +18,7 @@ use OVH::Result;
 # Fetch command options
 my $fnret;
 my ($result, @optwarns);
-my ($group, $mfaRequired, $ttl, $idleLockTimeout, $idleKillTimeout);
+my ($group, $mfaRequired, $ttl, $idleLockTimeout, $idleKillTimeout, $tryPersonalKeys);
 eval {
     local $SIG{__WARN__} = sub { push @optwarns, shift };
     $result = GetOptions(
@@ -27,6 +27,7 @@ eval {
         "guest-ttl-limit=i"   => \$ttl,
         "idle-lock-timeout=i" => \$idleLockTimeout,
         "idle-kill-timeout=i" => \$idleKillTimeout,
+        "try-personal-keys=s" => \$tryPersonalKeys,
     );
 };
 if ($@) { die $@ }
@@ -42,9 +43,11 @@ if (!$group) {
     HEXIT('ERR_MISSING_PARAMETER', msg => "Missing argument 'group'");
 }
 
-if (!$mfaRequired && !defined $ttl && !defined $idleLockTimeout && !defined $idleKillTimeout) {
+if (!$mfaRequired && !defined $ttl && !defined $idleLockTimeout && !defined $idleKillTimeout && !$tryPersonalKeys) {
     HEXIT('ERR_MISSING_PARAMETER',
-        msg => "Missing argument 'mfa-required', 'guest-ttl-limit', 'idle-lock-timeout' or 'idle-kill-timeout'");
+        msg =>
+          "Missing argument 'mfa-required', 'guest-ttl-limit', 'idle-lock-timeout', 'idle-kill-timeout' or 'try-personal-keys'"
+    );
 }
 
 #<HEADER
@@ -88,6 +91,28 @@ if (defined $mfaRequired) {
     else {
         osh_warn "... invalid option '$mfaRequired'";
         $result{'mfa_required'} = R('ERR_INVALID_PARAMETER');
+    }
+}
+
+if (defined $tryPersonalKeys) {
+    osh_info "Modifying try-personal-keys policy of group...";
+    if (grep { $tryPersonalKeys eq $_ } qw{ yes no }) {
+        $fnret = OVH::Bastion::group_config(
+            group => $group,
+            %{OVH::Bastion::OPT_GROUP_TRY_PERSONAL_KEYS()},
+            value => ($tryPersonalKeys eq 'yes' ? 1 : 0)
+        );
+        if ($fnret) {
+            osh_info "... done, policy is now: $tryPersonalKeys";
+        }
+        else {
+            osh_warn "... error while changing try-personal-keys policy (" . $fnret->msg . ")";
+        }
+        $result{'try_personal_keys'} = $fnret;
+    }
+    else {
+        osh_warn "... invalid option '$tryPersonalKeys'";
+        $result{'try_personal_keys'} = R('ERR_INVALID_PARAMETER');
     }
 }
 
