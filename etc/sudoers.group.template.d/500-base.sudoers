@@ -33,6 +33,7 @@ SUPEROWNERS, %%GROUP%-gatekeeper ALL=(allowkeeper) NOPASSWD: /usr/bin/env perl -
 
 # as a gatekeeper, we can regenerate sshd config for accounts after membership changes
 SUPEROWNERS, %%GROUP%-gatekeeper ALL=(root)        NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-accountGenerateSshdConfig --target any --account *
+SUPEROWNERS, %%GROUP%-gatekeeper ALL=(root)        NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-accountGenerateSshdConfig --target any --account * --deleted-local-port *
 
 # as an aclkeeper, we can add/del a server from the group server list in /home/%GROUP%/allowed.ip
 SUPEROWNERS, %%GROUP%-aclkeeper  ALL=(%GROUP%)     NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupAddServer --group %GROUP% *
@@ -42,6 +43,7 @@ SUPEROWNERS, %%GROUP%-aclkeeper  ALL=(%GROUP%)     NOPASSWD: /usr/bin/env perl -
 
 # as an aclkeeper, we can regenerate sshd configs for all group members after group server changes
 SUPEROWNERS, %%GROUP%-aclkeeper  ALL=(root)        NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupGenerateSshdConfig --group %GROUP%
+SUPEROWNERS, %%GROUP%-aclkeeper  ALL=(root)        NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupGenerateSshdConfig --group %GROUP% --deleted-local-port *
 
 # as an owner, we can delete our own group
 SUPEROWNERS, %%GROUP%-owner      ALL=(root)        NOPASSWD: /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupDelete --group %GROUP%

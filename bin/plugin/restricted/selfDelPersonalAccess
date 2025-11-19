@@ -119,6 +119,7 @@ if ($fnret && $fnret->err ne 'OK_NO_CHANGE' && $remotePort) {
     push @sshd_command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountGenerateSshdConfig';
     push @sshd_command, '--target',  'self';
     push @sshd_command, '--account', $self;
+    push @sshd_command, '--deleted-local-port', $fnret->value->{'localPort'} if defined $fnret->value->{'localPort'};
 
     my $sshd_fnret = OVH::Bastion::helper(cmd => \@sshd_command);
     if (!$sshd_fnret) {

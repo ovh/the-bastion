@@ -100,16 +100,6 @@ if ($remotePort && !$config->{'portForwardingEnabled'}) {
     HEXIT('ERR_INVALID_PARAMETER', msg => "Port forwarding is disabled on this bastion, cannot use --remote-port");
 }
 
-my $machine = OVH::Bastion::machine_display(
-    ip         => $ip,
-    port       => $port,
-    user       => $user,
-    proxyIp    => $proxyIp,
-    proxyPort  => $proxyPort,
-    proxyUser  => $proxyUser,
-    remotePort => $remotePort,
-)->value;
-
 # access_modify validates all its parameters, don't do it ourselves here for clarity
 $fnret = OVH::Bastion::access_modify(
     way           => 'group',
@@ -127,6 +117,23 @@ $fnret = OVH::Bastion::access_modify(
     proxyUser     => $proxyUser,
     remotePort    => $remotePort,
 );
+
+my $localPort;
+if ($fnret && defined $fnret->value && defined $fnret->value->{'localPort'}) {
+    $localPort = $fnret->value->{'localPort'};
+}
+
+my $machine = OVH::Bastion::machine_display(
+    ip         => $ip,
+    port       => $port,
+    user       => $user,
+    proxyIp    => $proxyIp,
+    proxyPort  => $proxyPort,
+    proxyUser  => $proxyUser,
+    remotePort => $remotePort,
+    localPort  => $localPort,
+)->value;
+
 if ($fnret->err eq 'OK') {
     my $ttlmsg = $ttl ? ' (expires in ' . OVH::Bastion::duration2human(seconds => $ttl)->value->{'human'} . ')' : '';
     HEXIT(
@@ -145,6 +152,7 @@ if ($fnret->err eq 'OK') {
             proxyPort     => $proxyPort,
             proxyUser     => $proxyUser,
             remotePort    => $remotePort,
+            localPort     => $localPort,
         },
         msg => $action eq 'add'
         ? "Entry $machine was added to group $shortGroup$ttlmsg"

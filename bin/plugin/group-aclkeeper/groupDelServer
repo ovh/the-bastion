@@ -146,6 +146,7 @@ if ($fnret && $fnret->err ne 'OK_NO_CHANGE' && $remotePort) {
     my @sshd_command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
     push @sshd_command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-groupGenerateSshdConfig';
     push @sshd_command, '--group', $group;
+    push @sshd_command, '--deleted-local-port', $fnret->value->{'localPort'} if defined $fnret->value->{'localPort'};
 
     my $sshd_fnret = OVH::Bastion::helper(cmd => \@sshd_command);
     if (!$sshd_fnret) {

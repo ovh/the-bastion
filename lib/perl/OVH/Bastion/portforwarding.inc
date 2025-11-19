@@ -8,6 +8,30 @@ use lib dirname(__FILE__) . '/../../../../lib/perl';
 use OVH::Bastion::Plugin::otherProtocol;
 
 use Time::Piece;    # $t->strftime
+use POSIX qw(strftime);
+
+# Here lies the code that manages the portforwarding capabilities of The Bastion.
+#
+# Instead of just granting access to a target, you can now also grant access to a specific remote port on that target.
+# For every remote port, we will allocate a unique local port from a configured port range.
+# We then generate a sshd config for every user containing a list of PermitOpen entries for every available portforwarding rule.
+# This ensures that we not only control the forwarding from the bastion to the target, but also who can access which local port on the bastion itself.
+#
+# In practise, a portforwarding will then look like this:
+# $ ssh bastion -l myuser -L 8080:localhost:20000 -- 192.168.1.10 -L 20000:127.0.0.1:80
+#
+# This will forward port 80 from the target to local port 20000 on the bastion,
+# and port 20000 on the bastion to local port 8080 on the user's machine.
+#
+# The approach isn't perfect, but I found no better way to manage this with all the quirks of sshd if it comes to port forwarding.
+# Also, this feature could be abused to bypass The Bastion by forwarding the ssh port back to the users machine.
+# If you are not willing to accept this risk, you should not enable portforwarding at all.
+#
+# The following limitations apply:
+#    - there is a limited amount of available forwards, since the local port range is limited.
+#      So this feature might not be what you need if you require a large amount of remote port accesses.
+#    - port forwarding only works on a bastion master
+#    - when performing a HA failover, an additional step to handle the sshd config is required
 
 # Check if a port is in use by any process on the system
 sub _is_port_in_use {
@@ -52,10 +76,13 @@ sub allocate_local_port {
     $fnret or return $fnret;
     my %allocated_ports = %{$fnret->value->{'ports'}};
 
-    # Build list of available ports
+    $fnret = _get_unavailable_ports();
+    $fnret or return $fnret;
+    my %unavailable_ports = %{$fnret->value};
+
     my @available_ports;
     for my $port ($min_port .. $max_port) {
-        if (!exists $allocated_ports{$port}) {
+        if (!exists $allocated_ports{$port} && !exists $unavailable_ports{$port}) {
             push @available_ports, $port;
         }
     }
@@ -161,8 +188,9 @@ sub _get_local_port_range {
 # generate an sshd portforwarding configuration for a given account
 # this function MUST be called while holding the portforwarding lock to prevent any race conditions.
 sub generate_account_sshd_forwarding_config {
-    my %params  = @_;
-    my $account = $params{'account'};
+    my %params           = @_;
+    my $account          = $params{'account'};
+    my $deletedLocalPort = $params{'deletedLocalPort'};    # optional: local port that was just deleted
 
     my $fnret = OVH::Bastion::get_acls(account => $account, sudo => 1);
     $fnret or return $fnret;
@@ -202,7 +230,27 @@ sub generate_account_sshd_forwarding_config {
     osh_debug("Found " . scalar(@allowed_ports) . " allowed local ports for account $account");
 
     # Now write the sshd config file
-    $fnret = _write_sshd_forwarding_config(account => $account, ports => \@allowed_ports);
+    $fnret = _write_sshd_forwarding_config(
+        account          => $account,
+        ports            => \@allowed_ports,
+        deletedLocalPort => $deletedLocalPort
+    );
+    $fnret or return $fnret;
+
+    # reload sshd to apply changes
+    $fnret = _test_and_reload_sshd();
+    $fnret or return $fnret;
+
+    $fnret = cleanup_unavailable_ports();
+    if ($fnret && $fnret->value->{'cleaned'} > 0) {
+        osh_debug("Cleaned up " . $fnret->value->{'cleaned'} . " unavailable ports");
+    }
+
+    if (defined $deletedLocalPort) {
+        $fnret = mark_port_unavailable(port => $deletedLocalPort);
+        $fnret or return $fnret;
+    }
+
     return $fnret;
 }
 
@@ -271,9 +319,6 @@ sub _write_sshd_forwarding_config {
 
     osh_debug("Wrote sshd forwarding config to $config_file with " . scalar(@permit_opens) . " PermitOpen entries");
 
-    $fnret = _test_and_reload_sshd();
-    $fnret or return $fnret;
-
     return R('OK', msg => "Successfully wrote sshd forwarding config for $account");
 }
 
@@ -294,7 +339,7 @@ sub _test_and_reload_sshd {
 
     osh_debug("sshd configuration test passed");
 
-    my $fnret = OVH::Bastion::load_configuration();
+    $fnret = OVH::Bastion::load_configuration();
     $fnret or main_exit(OVH::Bastion::EXIT_CONFIGURATION_FAILURE, "configuration_failure", $fnret->msg);
     my $config     = $fnret->value;
     my $reload_cmd = $config->{'sshdReloadCommand'};
@@ -317,6 +362,221 @@ sub _test_and_reload_sshd {
 
     osh_debug("sshd reloaded successfully");
     return R('OK', msg => "sshd configuration tested and daemon reloaded successfully");
+}
+
+# With have this unfortunate situation, where a user could accidentally get access to an unallowed portforward.
+# Lets say userA has access to the local port 20000 and has an open ssh session using the -N flag. Sshd will allow forwarding to this port.
+# If that access gets removed and the session is still open, the access to the port 20000 remains, because an sshd reload doesnt affect existing sessions.
+# If another portforwarding is added, and the random function has a bad day (or the local port pool is running out), the port 20000 could be reused.
+# This would allow userA to use his existing session to access whatever userB is now forwarding from a different remote target to port 20000.
+# To avoid this, we temporarily mark ports as unavailable when they are removed from an account/group.
+# The port remains unavailable until there are no ssh sessions that started before the port was marked unavailable
+
+sub _unavailable_ports_file_modify {
+    my %params = @_;
+    my $action = $params{'action'};    # 'read', 'write', 'delete'
+    my $ports  = $params{'ports'};     # ports mapped to timestamp
+
+    my $file = "/home/allowkeeper/.portforwarding_unavailable_ports";
+
+    if ($action eq 'read') {
+        my %unavailable;
+        if (-e $file) {
+            if (open(my $fh, '<', $file)) {
+                while (my $line = <$fh>) {
+                    chomp $line;
+                    if ($line =~ /^(\d+):(\d+)$/) {
+                        $unavailable{$1} = $2;
+                    }
+                }
+                close($fh);
+            }
+        }
+        return R('OK', value => \%unavailable);
+    }
+    elsif ($action eq 'write') {
+        if (!$ports || ref($ports) ne 'HASH') {
+            return R('ERR_MISSING_PARAMETER', msg => "ports parameter is required for write action");
+        }
+
+        my $temp_file = "$file.tmp.$$";
+        if (!open(my $fh, '>', $temp_file)) {
+            return R('ERR_CANNOT_OPEN_FILE', msg => "Failed to open temp file for unavailable ports: $!");
+        }
+        else {
+            foreach my $p (sort { $a <=> $b } keys %$ports) {
+                print $fh "$p:$ports->{$p}\n";
+            }
+            close($fh);
+        }
+
+        if (!rename($temp_file, $file)) {
+            unlink($temp_file);
+            return R('ERR_RENAME_FAILED', msg => "Failed to update unavailable ports file: $!");
+        }
+
+        chmod 0644, $file;
+        return R('OK');
+    }
+    elsif ($action eq 'delete') {
+        if (-e $file) {
+            if (!unlink($file)) {
+                return R('ERR_UNLINK_FAILED', msg => "Failed to remove unavailable ports file: $!");
+            }
+        }
+        return R('OK');
+    }
+    else {
+        return R('ERR_INVALID_PARAMETER', msg => "Invalid action: $action");
+    }
+}
+
+# This function MUST be called while holding the portforwarding lock.
+sub mark_port_unavailable {
+    my %params = @_;
+    my $port   = $params{'port'};
+
+    if (!$port) {
+        return R('ERR_MISSING_PARAMETER', msg => "Port parameter is required");
+    }
+
+    # use current time as timestamp when sshd was reloaded. This is safe, since we call this after doing the actual reload.
+    my $timestamp = time();
+
+    # Read current unavailable ports
+    my $fnret = _unavailable_ports_file_modify(action => 'read');
+    $fnret or return $fnret;
+    my %unavailable = %{$fnret->value};
+
+    # Add the new port with timestamp
+    $unavailable{$port} = $timestamp;
+
+    # Write back
+    $fnret = _unavailable_ports_file_modify(action => 'write', ports => \%unavailable);
+    $fnret or return $fnret;
+
+    osh_debug("Marked port $port as unavailable at timestamp $timestamp");
+    return R('OK', value => {port => $port, timestamp => $timestamp});
+}
+
+# Get list of temporarily unavailable ports
+sub _get_unavailable_ports {
+    return _unavailable_ports_file_modify(action => 'read');
+}
+
+# Check if there are any SSH sessions that started before a given timestamp
+sub _has_sessions_before_timestamp {
+    my %params    = @_;
+    my $timestamp = $params{'timestamp'};
+
+    # We'll use 'who -u' which shows the PID and login time from active sessions.
+    # Unfortunately, the timestamp from 'who' is not very precise, so we will check 'ps' for the session start time
+    my $fnret = OVH::Bastion::execute(cmd => ['who', '-u'], noisy_stderr => 0);
+    if (!$fnret || $fnret->value->{'sysret'} != 0) {
+        osh_warn("Failed to run 'who -u' command, assuming old sessions exist for safety");
+        return 1;
+    }
+
+    my $output = $fnret->value->{'output'};
+    my @lines  = split /\n/, $output;
+
+    foreach my $line (@lines) {
+        # Parse 'who -u' output to get PID
+        # Format: user pts/0 2024-11-18 10:30 old 12345 (192.168.1.1)
+        if ($line =~ /\s+(\d+)\s+\(/) {
+            my $pid = $1;
+
+            my $ps_fnret = OVH::Bastion::execute(
+                cmd          => ['ps', '-o', 'lstart=', '-p', $pid],
+                noisy_stderr => 0
+            );
+
+            if ($ps_fnret && $ps_fnret->value->{'sysret'} == 0) {
+                my $lstart = $ps_fnret->value->{'output'};
+                chomp $lstart;
+
+                # Parse the timestamp
+                # Format: "Fri Nov 18 10:30:45 2024"
+                my $session_time = eval {
+                    my $t = Time::Piece->strptime($lstart, "%a %b %d %H:%M:%S %Y");
+                    return $t->epoch;
+                };
+
+                if ($@ || !defined $session_time) {
+                    # If we can't parse it, we assume something went wrong and abort
+                    osh_debug("Could not parse session time for PID $pid: $lstart");
+                    return 1;
+                }
+
+                if ($session_time < $timestamp) {
+                    osh_debug("Found session (PID $pid) started before timestamp $timestamp");
+                    return 1;
+                }
+            }
+        }
+    }
+
+    # No old sessions found
+    return 0;
+}
+
+# cleanup ports that are safe to use again
+# This function MUST be called while holding the portforwarding lock
+sub cleanup_unavailable_ports {
+    my %params = @_;
+
+    my $fnret = _get_unavailable_ports();
+    $fnret or return $fnret;
+    my %unavailable = %{$fnret->value};
+
+    if (!%unavailable) {
+        osh_debug("No unavailable ports to clean up");
+        return R('OK', value => {cleaned => 0});
+    }
+
+    my @to_remove;
+    my $oldest_timestamp = time();    # find the oldest timestamp
+
+    foreach my $port (keys %unavailable) {
+        my $timestamp = $unavailable{$port};
+        if ($timestamp < $oldest_timestamp) {
+            $oldest_timestamp = $timestamp;
+        }
+    }
+
+    # Check if there are any sessions older than the oldest unavailable port timestamp
+    if (!_has_sessions_before_timestamp(timestamp => $oldest_timestamp)) {
+        # No old sessions, we can clear all unavailable ports
+        @to_remove = keys %unavailable;
+        osh_debug("No sessions before timestamp $oldest_timestamp, clearing all unavailable ports");
+    }
+    else {
+        osh_debug("Still have sessions before timestamp $oldest_timestamp, keeping ports unavailable");
+        return R('OK', value => {cleaned => 0});
+    }
+
+    if (@to_remove) {
+        foreach my $port (@to_remove) {
+            delete $unavailable{$port};
+        }
+
+        if (!%unavailable) {
+            # All ports cleaned up, delete the file
+            $fnret = _unavailable_ports_file_modify(action => 'delete');
+            $fnret or return $fnret;
+            osh_debug("Removed " . scalar(@to_remove) . " ports from unavailable list, file removed");
+        }
+        else {
+            # Some ports remain, write back the updated list
+            $fnret = _unavailable_ports_file_modify(action => 'write', ports => \%unavailable);
+            $fnret or return $fnret;
+            osh_debug("Removed " . scalar(@to_remove) . " ports from unavailable list");
+        }
+
+        return R('OK', value => {cleaned => scalar(@to_remove), ports => \@to_remove});
+    }
+
+    return R('OK', value => {cleaned => 0});
 }
 
 1;

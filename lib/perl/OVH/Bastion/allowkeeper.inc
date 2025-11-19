@@ -721,6 +721,7 @@ sub access_modify {
 
         # now, do the change
         my $returnmsg;
+        my $returnval = {};
         if ($action eq 'add') {
             osh_debug("going to add entry '$entry'");
             if (open(my $fh_file, '>>', $file)) {
@@ -742,6 +743,7 @@ sub access_modify {
             my $ttlmsg =
               $ttl ? (' (expires in ' . OVH::Bastion::duration2human(seconds => $ttl)->value->{'human'} . ')') : '';
             $returnmsg = "Access to $machine successfully added$ttlmsg";
+            $returnval->{'localPort'} = $localPort if defined $localPort;
         }
         elsif ($action eq 'del') {
             if (open(my $fh_file, '<', $file)) {
@@ -779,6 +781,13 @@ sub access_modify {
                         }
                         elsif ($shouldDelete && $line =~ m{\# REMOTEPORT=}) {
                             $shouldDelete = 0;
+                        }
+
+                        if ($shouldDelete && defined $remotePort) {
+                            # parse the local port so we can return it to the caller
+                            if ($line =~ s/# LOCALPORT=(\d+)//) {
+                                $returnval->{'localPort'} = $1;
+                            }
                         }
 
                         if ($shouldDelete) {
@@ -840,7 +849,7 @@ sub access_modify {
                 ['local_port',     $localPort],
             ]
         );
-        return R('OK', msg => $returnmsg) if $returnmsg;
+        return R('OK', msg => $returnmsg, value => $returnval) if $returnmsg;
         return R('ERR_INTERNAL');
     };    # end of sub definition
 

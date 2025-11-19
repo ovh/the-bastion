@@ -2,4 +2,7 @@
 %osh-accountAddPersonalAccess ALL=(root) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountGenerateSshdConfig --target any --account *
 %osh-selfDelPersonalAccess    ALL=(root) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountGenerateSshdConfig --target self --account *
 %osh-accountDelPersonalAccess ALL=(root) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountGenerateSshdConfig --target any --account *
-
+%osh-selfAddPersonalAccess    ALL=(root) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountGenerateSshdConfig --target self --account * --deleted-local-port *
+%osh-accountAddPersonalAccess ALL=(root) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountGenerateSshdConfig --target any --account * --deleted-local-port *
+%osh-selfDelPersonalAccess    ALL=(root) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountGenerateSshdConfig --target self --account * --deleted-local-port *
+%osh-accountDelPersonalAccess ALL=(root) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountGenerateSshdConfig --target any --account * --deleted-local-port *

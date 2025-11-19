@@ -20,7 +20,10 @@ my ($result, @optwarns);
 my $group;
 eval {
     local $SIG{__WARN__} = sub { push @optwarns, shift };
-    $result = GetOptions("group=s" => sub { $group //= $_[1] },);
+    $result = GetOptions(
+        "group=s" => sub { $group //= $_[1] },
+        "deleted-local-port=i" => sub { $deletedLocalPort //= $_[1] },
+    );
 };
 if ($@) { die $@ }
 
@@ -79,7 +82,7 @@ foreach my $member (@$members) {
 my @errors;
 my @success;
 foreach my $account (@accounts_to_update) {
-    $fnret = OVH::Bastion::generate_account_sshd_forwarding_config(account => $account);
+    $fnret = OVH::Bastion::generate_account_sshd_forwarding_config(account => $account, deletedLocalPort => $deletedLocalPort);
     if ($fnret) {
         push @success, $account;
     }
