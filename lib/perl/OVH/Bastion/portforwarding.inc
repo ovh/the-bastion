@@ -32,6 +32,8 @@ use POSIX qw(strftime);
 #      So this feature might not be what you need if you require a large amount of remote port accesses.
 #    - port forwarding only works on a bastion master
 #    - when performing a HA failover, an additional step to handle the sshd config is required
+#    - If the debug option is enabled in the config, a user could potentially read ACLs of other users and groups.
+#      This is caused by the fact that finding a new local ports requires reading all existing ACLs to find already allocated ports.
 
 # Check if a port is in use by any process on the system
 sub _is_port_in_use {
