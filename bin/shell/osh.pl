@@ -1788,6 +1788,11 @@ else {
           $pf->{'localHost'} . ':' . $pf->{'localPort'} . ':' . $pf->{'remoteHost'} . ':' . $pf->{'remotePort'};
     }
 
+    # make sure we dont use ControlMasters for portforwarding sessions
+    if (@validPortForwards) {
+        push @command, '-o', 'ControlMaster=no', '-o', 'ControlPath=none';
+    }
+
     if (not $quiet) {
         $fnret =
           OVH::Bastion::account_config(account => $self, key => OVH::Bastion::OPT_ACCOUNT_IDLE_IGNORE, public => 1);
