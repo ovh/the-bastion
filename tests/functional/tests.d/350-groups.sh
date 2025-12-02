@@ -1100,7 +1100,7 @@ EOS
     # verify the setting is applied in groupInfo
     success check_try_personal_keys_enabled $a1 --osh groupInfo --group $group1
     contain "personal egress keys will also be tried"
-    json .error_code OK .command groupInfo .value.try_personal_keys yes
+    json .error_code OK .command groupInfo .value.try_personal_keys 1
 
     # disable try-personal-keys
     success disable_try_personal_keys $a1 --osh groupModify --group $group1 --try-personal-keys no
@@ -1109,7 +1109,7 @@ EOS
     # verify the setting is applied in groupInfo
     success check_try_personal_keys_disabled $a1 --osh groupInfo --group $group1
     contain "No personal egress keys will be used"
-    json .error_code OK .command groupInfo .value.try_personal_keys no
+    json .error_code OK .command groupInfo .value.try_personal_keys 0
 
     # non-owner cannot modify try-personal-keys
     run non_owner_modify_try_personal_keys $a2 --osh groupModify --group $group1 --try-personal-keys yes
