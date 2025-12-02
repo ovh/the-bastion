@@ -208,7 +208,7 @@ foreach my $groupData (@groups) {
 
         $fnret = OVH::Bastion::group_config(group => $group, %{OVH::Bastion::OPT_GROUP_TRY_PERSONAL_KEYS()});
         if ($fnret && defined $fnret->value) {
-            $ret{'try_personal_keys'} = ($fnret->value eq '1' ? 'yes' : 'no');
+            $ret{'try_personal_keys'} = ($fnret->value eq '1' ? 1 : 0);
         }
     }
 
@@ -309,13 +309,13 @@ sub print_group_info {
 
     if ($ret{'try_personal_keys'}) {
         osh_info ' ';
-        if ($ret{'try_personal_keys'} eq 'yes') {
+        if ($ret{'try_personal_keys'} == 1) {
             osh_info
               "Personal keys: When group members access servers from this group, their personal egress keys will also be tried.";
         }
-        else {
-            osh_info "Personal keys: No personal egress keys will be used.";
-        }
+    }
+    else {
+        osh_info "Personal keys: No personal egress keys will be used.";
     }
 
     if ($withKeys) {
