@@ -521,53 +521,62 @@ sub _has_sessions_before_timestamp {
 
     # We'll use 'who -u' which shows the PID and login time from active sessions.
     # Unfortunately, the timestamp from 'who' is not very precise, so we will check 'ps' for the session start time
-    my $fnret = OVH::Bastion::execute(cmd => ['who', '-u'], noisy_stderr => 0);
+    my $fnret = OVH::Bastion::execute(cmd => ['who', '-u'], must_succeed => 1, noisy_stdout => 0, noisy_stderr => 0);
     if (!$fnret || $fnret->value->{'sysret'} != 0) {
         osh_warn("Failed to run 'who -u' command, assuming old sessions exist for safety");
-        return 1;
+        return R('OK', value => 1);
     }
+    my $output = $fnret->value->{'stdout'};
 
-    my $output = $fnret->value->{'output'};
-    my @lines  = split /\n/, $output;
+    osh_debug("Output of 'who -u': " . scalar(@$output) . " lines");
+    osh_debug("Checking for sessions started before timestamp $timestamp");
 
-    foreach my $line (@lines) {
+    foreach my $line (@$output) {
+        # Skip empty lines
+        next if !defined $line || $line !~ /\S/;
+
+        osh_debug("Processing line from 'who -u': $line");
         # Parse 'who -u' output to get PID
         # Format: user pts/0 2024-11-18 10:30 old 12345 (192.168.1.1)
-        if ($line =~ /\s+(\d+)\s+\(/) {
-            my $pid = $1;
+        if ($line !~ /\s+(\d+)\s+\(/) {
+            osh_debug("Skipping unparseable line from 'who -u': $line");
+            next;
+        }
 
-            my $ps_fnret = OVH::Bastion::execute(
-                cmd          => ['ps', '-o', 'lstart=', '-p', $pid],
-                noisy_stderr => 0
-            );
+        my $pid = $1;
+        osh_debug("Checking session with PID $pid");
 
-            if ($ps_fnret && $ps_fnret->value->{'sysret'} == 0) {
-                my $lstart = $ps_fnret->value->{'output'};
-                chomp $lstart;
+        $fnret = OVH::Bastion::execute_simple(
+            cmd          => ['ps', '-o', 'lstart=', '-D', '%s', '-p', $pid],
+            must_succeed => 1
+        );
+        $fnret or return $fnret;
 
-                # Parse the timestamp
-                # Format: "Fri Nov 18 10:30:45 2024"
-                my $session_time = eval {
-                    my $t = Time::Piece->strptime($lstart, "%a %b %d %H:%M:%S %Y");
-                    return $t->epoch;
-                };
+        if ($fnret && $fnret->value->{'sysret'} == 0) {
+            my $lstart = $fnret->value->{'output'};
+            chomp $lstart;
+            $lstart =~ s/^\s+|\s+$//g;    # Trim whitespace
 
-                if ($@ || !defined $session_time) {
-                    # If we can't parse it, we assume something went wrong and abort
-                    osh_debug("Could not parse session time for PID $pid: $lstart");
-                    return 1;
-                }
+            # Parse the timestamp (Unix epoch format from ps -D %s)
+            my $session_time;
+            if ($lstart =~ /^(\d+)$/) {
+                $session_time = $1;
+            }
+            else {
+                # If we can't parse it, we assume something went wrong and abort
+                osh_debug("Could not parse session time for PID $pid: $lstart");
+                return R('OK', value => 1);
+            }
 
-                if ($session_time < $timestamp) {
-                    osh_debug("Found session (PID $pid) started before timestamp $timestamp");
-                    return 1;
-                }
+            if ($session_time < $timestamp) {
+                osh_debug("Found session (PID $pid) started before timestamp $timestamp at $session_time");
+                return R('OK', value => 1);
             }
         }
     }
 
     # No old sessions found
-    return 0;
+    return R('OK', value => 0);
 }
 
 # cleanup ports that are safe to use again
@@ -595,7 +604,9 @@ sub cleanup_unavailable_ports {
     }
 
     # Check if there are any sessions older than the oldest unavailable port timestamp
-    if (!_has_sessions_before_timestamp(timestamp => $oldest_timestamp)) {
+    $fnret = _has_sessions_before_timestamp(timestamp => $oldest_timestamp);
+    $fnret or return $fnret;
+    if (!$fnret->value) {
         # No old sessions, we can clear all unavailable ports
         @to_remove = keys %unavailable;
         osh_debug("No sessions before timestamp $oldest_timestamp, clearing all unavailable ports");
