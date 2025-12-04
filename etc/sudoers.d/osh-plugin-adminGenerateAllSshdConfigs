@@ -1,0 +1,2 @@
+# regenerate all sshd configs after master/slave promote/demote
+%osh-admin ALL=(root) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-adminGenerateAllSshdConfigs

@@ -246,7 +246,7 @@ sub generate_account_sshd_forwarding_config {
     $fnret or return $fnret;
 
     if (not @{$fnret->value}) {
-        osh_ok R('OK_EMPTY', msg => "$account has no accesses, no port forwarding config to generate");
+        return R('OK_EMPTY', msg => "$account has no accesses, no port forwarding config to generate");
     }
 
     my @allowed_ports;
@@ -538,13 +538,15 @@ sub _has_sessions_before_timestamp {
         osh_debug("Processing line from 'who -u': $line");
         # Parse 'who -u' output to get PID
         # Format: user pts/0 2024-11-18 10:30 old 12345 (192.168.1.1)
+        my $pid;
         if ($line !~ /\s+(\d+)\s+\(/) {
             osh_debug("Skipping unparseable line from 'who -u': $line");
             next;
         }
-
-        my $pid = $1;
-        osh_debug("Checking session with PID $pid");
+        else {
+            $pid = $1;
+            osh_debug("Checking session with PID $pid");
+        }
 
         $fnret = OVH::Bastion::execute_simple(
             cmd          => ['ps', '-o', 'lstart=', '-D', '%s', '-p', $pid],

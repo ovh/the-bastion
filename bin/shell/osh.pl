@@ -821,6 +821,15 @@ if ($portForwards && @$portForwards && !$telnet) {
             'port_forwarding_disabled', "Port forwarding feature is disabled on this bastion");
     }
 
+    # check if bastion is a master instance
+    if ($config->{'readOnlySlaveMode'}) {
+        main_exit(
+            OVH::Bastion::EXIT_ACCESS_DENIED,
+            'port_forwarding_disabled_slave',
+            "Port forwarding feature is disabled on read-only slave bastions"
+        );
+    }
+
     # parse all the the requested port forwards
     # The expected format is local_port:remote_host:remote_port
     # remote_host must be the allowed IP of the the target server or localhost
