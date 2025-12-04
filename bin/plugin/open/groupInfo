@@ -313,7 +313,8 @@ sub print_group_info {
             osh_info
               "Personal keys: When group members access servers from this group, their personal egress keys will also be tried.";
         }
-    } else {
+    }
+    else {
         osh_info "Personal keys: No personal egress keys will be used.";
     }
 
