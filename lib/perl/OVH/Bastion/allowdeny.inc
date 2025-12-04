@@ -237,7 +237,7 @@ sub is_access_way_granted {
         }
 
         # check proxy user if we have a proxy ip
-        if (defined $wantedProxyIp && not $ignoreProxyUser) {
+        if (defined $wantedProxyIp && !$ignoreProxyUser) {
             if ($exactUserMatch) {
                 # we want an exact match
                 if (not defined $entry->{'proxyUser'}) {
