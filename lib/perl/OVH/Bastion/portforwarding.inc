@@ -67,16 +67,16 @@ sub _is_port_in_use {
 # This function MUST be called while holding the portforwarding lock
 # to prevent race conditions between concurrent allocations
 sub allocate_local_port {
+    my $fnret = _get_allocated_local_ports();
+    $fnret or return $fnret;
+    my %allocated_ports = keys %{$fnret->value};
+
     # Get the port range configuration
-    my $fnret = _get_local_port_range();
+    $fnret = _get_local_port_range();
     $fnret or return $fnret;
     my $port_range = $fnret->value;
     my $min_port   = $port_range->{'min'};
     my $max_port   = $port_range->{'max'};
-
-    $fnret = _get_allocated_local_ports();
-    $fnret or return $fnret;
-    my %allocated_ports = %{$fnret->value->{'ports'}};
 
     $fnret = _get_unavailable_ports();
     $fnret or return $fnret;
@@ -125,16 +125,64 @@ sub allocate_local_port {
 # Validate if a remote port is valid and port count is within allowed limits
 sub is_valid_portforwarding {
     my %params     = @_;
-    my $remotePort = $params{'remotePort'};
+    my $action     = $params{'action'};       # add or del
     my $way        = $params{'way'};          # personal, group
+    my $account    = $params{'account'};
+    my $group      = $params{'group'};
+    my $remotePort = $params{'remotePort'};
 
     my $fnret = OVH::Bastion::is_valid_port(port => $remotePort);
     $fnret or osh_exit $fnret;
     $remotePort = $fnret->value;
 
-    # TODO: check limits based on user/group
+    if ($action eq 'del') {
+        return R('OK', value => {remotePort => $remotePort});
+    }
+
     $fnret = _get_allocated_local_ports();
     $fnret or return $fnret;
+    my $allocatedPorts = $fnret->value;
+
+    $fnret = OVH::Bastion::load_configuration();
+    $fnret or return $fnret;
+    my $config = $fnret->value;
+
+    my $groupMaxForwards   = $config->{'portForwardingMaxPerGroup'};
+    my $accountMaxForwards = $config->{'portForwardingMaxPerUser'};
+
+    if ($way eq 'personal') {
+        my $count = 0;
+        foreach my $port_info (values %{$allocatedPorts}) {
+            if ($port_info->{'way'} eq 'personal' && $port_info->{'account'} eq $account) {
+                $count++;
+            }
+        }
+        if ($count >= $accountMaxForwards) {
+            return R('ERR_PORTFORWARDING_LIMIT_EXCEEDED',
+                msg =>
+                  "Account $account has reached the maximum number of allowed port forwardings ($accountMaxForwards)");
+        }
+        osh_debug("Account $account has $count/$accountMaxForwards port forwardings");
+    }
+    elsif ($way eq 'group') {
+        my $count = 0;
+        foreach my $port_info (values %{$allocatedPorts}) {
+            if ($port_info->{'way'} eq 'group' && $port_info->{'group'} eq $group) {
+                $count++;
+            }
+        }
+        if ($count >= $groupMaxForwards) {
+            return R('ERR_PORTFORWARDING_LIMIT_EXCEEDED',
+                msg => "Group $group has reached the maximum number of allowed port forwardings ($groupMaxForwards)");
+        }
+        osh_debug("Group $group has $count/$groupMaxForwards port forwardings");
+    }
+    elsif ($way eq 'groupguest') {
+        return R('OK', value => {remotePort => $remotePort});
+    }
+    else {
+        return R('ERR_INVALID_PARAMETER', msg => "Invalid way parameter: $way");
+    }
 
     return R('OK', value => {remotePort => $remotePort});
 }
@@ -156,7 +204,7 @@ sub _get_allocated_local_ports {
         next if not $grantedGroup;
         foreach my $entry (@{$grantedGroup->value || []}) {
             if (defined $entry->{'localPort'}) {
-                $allocated_local_ports{$entry->{'localPort'}} = 1;
+                $allocated_local_ports{$entry->{'localPort'}} = {way => 'group', group => $group};
             }
         }
     }
@@ -166,13 +214,13 @@ sub _get_allocated_local_ports {
         next if not $grantedPersonal;
         foreach my $entry (@{$grantedPersonal->value || []}) {
             if (defined $entry->{'localPort'}) {
-                $allocated_local_ports{$entry->{'localPort'}} = 1;
+                $allocated_local_ports{$entry->{'localPort'}} = {way => 'personal', account => $account};
             }
         }
     }
 
     osh_debug("Allocated local ports: " . join(", ", keys %allocated_local_ports));
-    return R('OK', value => {ports => \%allocated_local_ports});
+    return R('OK', value => \%allocated_local_ports);
 }
 
 # Get the configured port range free for port allocations used to allocate local ports

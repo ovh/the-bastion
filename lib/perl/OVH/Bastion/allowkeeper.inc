@@ -484,7 +484,13 @@ sub access_modify {
 
     # check port forwarding
     if ($remotePort) {
-        $fnret = OVH::Bastion::is_valid_portforwarding(remotePort => $remotePort);
+        $fnret = OVH::Bastion::is_valid_portforwarding(
+            action     => $action,
+            way        => $way,
+            account    => $account,
+            group      => $shortGroup,
+            remotePort => $remotePort
+        );
         $fnret or return $fnret;
         $remotePort = $fnret->value->{"remotePort"};
 
