@@ -17,11 +17,11 @@ use OVH::Bastion::Helper;
 # Fetch command options
 my $fnret;
 my ($result, @optwarns);
-my $group;
+my ($group,  $deletedLocalPort);
 eval {
     local $SIG{__WARN__} = sub { push @optwarns, shift };
     $result = GetOptions(
-        "group=s" => sub { $group //= $_[1] },
+        "group=s"              => sub { $group            //= $_[1] },
         "deleted-local-port=i" => sub { $deletedLocalPort //= $_[1] },
     );
 };
@@ -82,7 +82,8 @@ foreach my $member (@$members) {
 my @errors;
 my @success;
 foreach my $account (@accounts_to_update) {
-    $fnret = OVH::Bastion::generate_account_sshd_forwarding_config(account => $account, deletedLocalPort => $deletedLocalPort);
+    $fnret =
+      OVH::Bastion::generate_account_sshd_forwarding_config(account => $account, deletedLocalPort => $deletedLocalPort);
     if ($fnret) {
         push @success, $account;
     }
