@@ -245,13 +245,13 @@ foreach my $ip (
                         );
 
                         # Add proxy parameters if they are defined
-                        if (defined $proxyIp && $proxyIp ne $undef) {
+                        if (defined $proxyIp && $proxyIp ne $undef) {    ## no critic (ProhibitDeepNests)
                             $params{proxyIp} = $proxyIp;
                         }
-                        if (defined $proxyPort && $proxyPort ne $undef) {
+                        if (defined $proxyPort && $proxyPort ne $undef) {    ## no critic (ProhibitDeepNests)
                             $params{proxyPort} = $proxyPort;
                         }
-                        if (defined $proxyUser && $proxyUser ne $undef) {
+                        if (defined $proxyUser && $proxyUser ne $undef) {    ## no critic (ProhibitDeepNests)
                             $params{proxyUser} = $proxyUser;
                         }
 
@@ -276,7 +276,7 @@ foreach my $ip (
     }
 }
 
-sub _verify_proxy_information {
+sub _verify_proxy_information {    ## no critic (ProhibitManyArgs)
     my ($expected, $proxyIp, $proxyPort, $proxyUser, $result, $test_desc) = @_;
 
     # Early return if access is not granted or no proxy expected
