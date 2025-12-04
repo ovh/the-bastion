@@ -68,6 +68,18 @@ List the few past sessions of your account
 
    Only sessions that connected through bastion PORT
 
+.. option:: --proxyuser USER
+
+   Only sessions that used proxy USER
+
+.. option:: --proxyip HOST
+
+   Only sessions that used proxy IP
+
+.. option:: --proxyport PORT
+
+   Only sessions that used proxy PORT
+
 
 Note that only the sessions that happened on this precise bastion instance will be shown,
 not the sessions from its possible cluster siblings.

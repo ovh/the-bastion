@@ -9,7 +9,7 @@ Modify the configuration of a group
 .. admonition:: usage
    :class: cmdusage
 
-   --osh groupModify --group GROUP [--mfa-required password|totp|any|none] [--guest-ttl-limit DURATION]
+   --osh groupModify --group GROUP [--mfa-required password|totp|any|none] [--guest-ttl-limit DURATION] [--try-personal-keys yes|no]
 
 .. program:: groupModify
 
@@ -31,6 +31,11 @@ Modify the configuration of a group
    This group will enforce TTL setting, on guest access creation, to be set, and not to a higher value than DURATION,
 
                                                  set to zero to allow guest accesses creation without any TTL set (default)
+.. option:: --try-personal-keys yes|no
+
+   When a user accesses a server through his group permission, his personal access keys will also be added
+
+                                                 to the connection attempt (default: no)
 
 Note that `--idle-lock-timeout` and `--idle-kill-timeout` will NOT be applied for catch-all groups (having 0.0.0.0/0 in their server list).
 

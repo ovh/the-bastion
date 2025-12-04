@@ -56,6 +56,17 @@ Add a personal server access to your account
 
    Add a comment alongside this server. Quote it twice as shown if you're under a shell.
 
+.. option:: --proxy-host HOST|IP
+
+   Use this host as a proxy/jump host to reach the target server
+
+.. option:: --proxy-port PORT
+
+   Proxy host port to connect to (mandatory when --proxy-host is specified)
+
+  --proxy-user USER|PATTERN|*  Proxy user to connect as (mandatory when --proxy-host is specified).
+                               Globbing characters '*' and '?' are supported for pattern matching.
+                               When connecting via SSH (not plugins), defaults to --user value for convenience.
 
 Plugin configuration
 ====================

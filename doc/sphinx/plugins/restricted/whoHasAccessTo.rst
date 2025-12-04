@@ -26,6 +26,18 @@ List the accounts that have access to a given server
 
    Remote port allowed (if not specified, ignore port specifications)
 
+.. option:: --proxy-user USER
+
+   Proxy user allowed (if egress connection goes through a proxyjump)
+
+.. option:: --proxy-host HOST
+
+   Proxy host allowed (if egress connection goes through a proxyjump
+
+.. option:: --proxy-port PORT
+
+   Proxy port allowed (if egress connection goes through a proxyjump)
+
 .. option:: --ignore-personal
 
    Don't check accounts' personal accesses (i.e. only check groups)
