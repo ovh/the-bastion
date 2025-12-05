@@ -173,6 +173,7 @@ sub load_configuration {
         {name => 'fanciness', default => 'full', validre => qr/^((none|boomer)|(basic|millenial)|(full|genz))$/},
         {name => 'accountExternalValidationProgram', default => '', validre => qr'^([a-zA-Z0-9/$_.-]*)$', emptyok => 1},
         {name => 'ttyrecStealthStdoutPattern',       default => '', validre => qr'^(.{0,4096})$',         emptyok => 1},
+        {name => 'sshdReloadCommand',                default => 'systemctl reload sshd', validre => qr/^(.{1,1024})$/},
       )
     {
         if (!$C->{$o->{'name'}} && !$o->{'emptyok'}) {
@@ -223,6 +224,10 @@ sub load_configuration {
         {name => 'interactiveModeTimeout',                min => 0,     max => 86400 * 365, default => 15},
         {name => 'interactiveModeProactiveMFAexpiration', min => 0,     max => 86400,       default => 900},
         {name => 'dnsSupportLevel',                       min => 0,     max => 2,           default => 2},
+        {name => 'portForwardingLocalPortMin',            min => 1024, max => 65535,       default => 20000},
+        {name => 'portForwardingLocalPortMax',            min => 1024, max => 65535,       default => 30000},
+        {name => 'portForwardingMaxPerUser',              min => 0,    max => 1000,        default => 10},
+        {name => 'portForwardingMaxPerGroup',             min => 0,    max => 1000,        default => 50},
       )
     {
         if (not defined $C->{$o->{'name'}}) {
@@ -288,6 +293,7 @@ sub load_configuration {
                   moshAllowed debug keyboardInteractiveAllowed passwordAllowed telnetAllowed remoteCommandEscapeByDefault
                   accountExternalValidationDenyOnFailure ingressRequirePIV IPv6Allowed sshAddKeysToAgentAllowed
                   egressProxyJumpAllowed
+                  portForwardingEnabled
                 }
             ],
         }

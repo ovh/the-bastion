@@ -15,12 +15,13 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
     header             => "remove access from one server of a group from an account",
     userAllowWildcards => 1,
     options            => {
-        "group=s"      => \my $group,
-        "protocol=s"   => \my $protocol,
-        "account=s"    => \my $account,
-        "proxy-host=s" => \my $proxyHost,
-        "proxy-port=s" => \my $proxyPort,
-        "proxy-user=s" => \my $proxyUser,
+        "group=s"       => \my $group,
+        "protocol=s"    => \my $protocol,
+        "account=s"     => \my $account,
+        "proxy-host=s"  => \my $proxyHost,
+        "proxy-port=s"  => \my $proxyPort,
+        "proxy-user=s"  => \my $proxyUser,
+        "remote-port=i" => \my $remotePort,
         # undocumented/compatibility:
         "user-any" => \my $userAny,
         "port-any" => \my $portAny,
@@ -50,10 +51,12 @@ Usage: --osh SCRIPT_NAME --group GROUP --account ACCOUNT [OPTIONS]
                                   scpdownload  allow SCP download, you<--bastion--server
                                   sftp         allow usage of the SFTP subsystem, through the bastion
                                   rsync        allow usage of rsync, through the bastion
+                                  portforward  allow forwarding a remote port on the target server to a local port on the bastion
   --proxy-host HOST|IP         Specify which host was used as a proxy/jump host to reach the target server
   --proxy-port PORT            Proxy port that was used to reach the target server (mandatory when --proxy-host is specified)
   --proxy-user USER|PATTERN|*  Proxy user that was configured for this access (mandatory when --proxy-host is specified).
                                    Globbing characters '*' and '?' are supported for pattern matching.
+  --remote-port PORT           Remove port forwarding access to the specified remote port on the target server.
 
 This command removes, from an existing bastion account, access to a given server, using the
 egress keys of the group. The list of such servers is given by ``groupListGuestAccesses``
@@ -85,18 +88,25 @@ if ($proxyHost) {
     $proxyUser = $fnret->value->{'proxyUser'};
 }
 
+if ($remotePort) {
+    $fnret = OVH::Bastion::is_valid_port(port => $remotePort);
+    $fnret or osh_exit $fnret;
+    $remotePort = $fnret->value;
+}
+
 $fnret = OVH::Bastion::Plugin::ACL::check(
-    user      => $user,
-    userAny   => $userAny,
-    port      => $port,
-    portAny   => $portAny,
-    scpUp     => $scpUp,
-    scpDown   => $scpDown,
-    sftp      => $sftp,
-    protocol  => $protocol,
-    proxyIp   => $proxyIp,
-    proxyPort => $proxyPort,
-    proxyUser => $proxyUser,
+    user       => $user,
+    userAny    => $userAny,
+    port       => $port,
+    portAny    => $portAny,
+    scpUp      => $scpUp,
+    scpDown    => $scpDown,
+    sftp       => $sftp,
+    protocol   => $protocol,
+    proxyIp    => $proxyIp,
+    proxyPort  => $proxyPort,
+    proxyUser  => $proxyUser,
+    remotePort => $remotePort,
 );
 if (!$fnret) {
     help();
@@ -117,6 +127,7 @@ $fnret = OVH::Bastion::Plugin::groupSetRole::act(
     proxyIp        => $proxyIp,
     proxyPort      => $proxyPort,
     proxyUser      => $proxyUser,
+    remotePort     => $remotePort,
     sudo           => 0,
     silentoverride => 0,
     self           => $self,
@@ -124,4 +135,18 @@ $fnret = OVH::Bastion::Plugin::groupSetRole::act(
     savedArgs      => $savedArgs
 );
 help() if not $fnret;
+
+if ($fnret && $fnret->err ne 'OK_NO_CHANGE' && $remotePort) {
+    # Regenerate sshd config for the account after guest access del
+    my @sshd_command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
+    push @sshd_command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountGenerateSshdConfig';
+    push @sshd_command, '--target',  'any';
+    push @sshd_command, '--account', $account;
+
+    my $sshd_fnret = OVH::Bastion::helper(cmd => \@sshd_command);
+    if (!$sshd_fnret) {
+        osh_warn "Failed to regenerate sshd config: " . $sshd_fnret->msg;
+    }
+}
+
 osh_exit($fnret);

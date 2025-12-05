@@ -8,35 +8,46 @@ use lib dirname(__FILE__) . '/../../../../../lib/perl';
 use OVH::Result;
 use OVH::Bastion;
 
-# used by scp, sftp, rsync
+# used by scp, sftp, rsync and portforward
 # we need to verify that the account has access to the tuple (user@host:port),
 # and also that, using the same access way (the same egress ssh keys), that they are granted
 # for this host:port using another protocol than ssh (scp, sftp, rsync)
 # this requirement will be lifted once we add the "protocol type" to the whole access tuple data model
 # while we're at it, return whether we found that this access requires MFA
 sub has_protocol_access {
-    my %params    = @_;
-    my $account   = $params{'account'};
-    my $user      = $params{'user'};
-    my $ipfrom    = $params{'ipfrom'} || $ENV{'OSH_IP_FROM'};
-    my $ip        = $params{'ip'};
-    my $port      = $params{'port'};
-    my $proxyIp   = $params{'proxyIp'};
-    my $proxyPort = $params{'proxyPort'};
-    my $proxyUser = $params{'proxyUser'};
-    my $protocol  = $params{'protocol'};
+    my %params     = @_;
+    my $account    = $params{'account'};
+    my $user       = $params{'user'};
+    my $ipfrom     = $params{'ipfrom'} || $ENV{'OSH_IP_FROM'};
+    my $ip         = $params{'ip'};
+    my $port       = $params{'port'};
+    my $proxyIp    = $params{'proxyIp'};
+    my $proxyPort  = $params{'proxyPort'};
+    my $proxyUser  = $params{'proxyUser'};
+    my $remotePort = $params{'remotePort'};
+    my $localPort  = $params{'localPort'};
+    my $protocol   = $params{'protocol'};
 
     if (!$account || !$ipfrom || !$ip || !$protocol || !$user || !$port) {
         return R('ERR_MISSING_PARAMETERS', msg => "Missing mandatory parameters for has_protocol_access");
     }
 
+    if ($protocol eq 'portforward') {
+        if (!defined $remotePort || !defined $localPort) {
+            return R('ERR_MISSING_PARAMETERS',
+                msg => "Missing mandatory parameters remotePort and localPort for portforward protocol");
+        }
+
+    }
+
     my $machine = OVH::Bastion::machine_display(
-        ip        => $ip,
-        port      => $port,
-        user      => $user,
-        proxyIp   => $proxyIp,
-        proxyPort => $proxyPort,
-        proxyUser => $proxyUser
+        ip         => $ip,
+        port       => $port,
+        user       => $user,
+        proxyIp    => $proxyIp,
+        proxyPort  => $proxyPort,
+        proxyUser  => $proxyUser,
+        remotePort => $remotePort,
     )->value;
 
     my %keys;
@@ -76,6 +87,8 @@ sub has_protocol_access {
         proxyIp        => $proxyIp,
         proxyPort      => $proxyPort,
         proxyUser      => $proxyUser,
+        remotePort     => $remotePort,
+        localPort      => $localPort,
         exactUserMatch => 1,
         details        => 1
     );

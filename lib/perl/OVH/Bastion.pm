@@ -107,6 +107,7 @@ use constant {
     EXIT_IP_VERSION_DISABLED         => 133,
     EXIT_INVALID_PORT                => 134,
     EXIT_INVALID_PROXYJUMP           => 135,
+    EXIT_INVALID_PORTFORWARDING      => 136,
 };
 
 use constant {
@@ -164,8 +165,9 @@ my %_autoload_files = (
     os => [
         qw{ sysinfo is_linux is_debian is_ubuntu has_broken_deluser is_redhat is_freebsd has_acls sys_useradd sys_groupadd sys_userdel sys_groupdel sys_addmembertogroup sys_delmemberfromgroup sys_changepassword sys_neutralizepassword sys_setpasswordpolicy sys_getpasswordinfo sys_getsudoersfolder sys_setfacl is_in_path sys_getpw_all sys_getpw_all_cached sys_getpw_name sys_getgr_all sys_getgr_all_cached sys_getgr_all_byuser sys_invalidate_pw_gr_cache sys_getgr_name sys_list_processes }
     ],
-    password => [qw{ get_hashes_from_password get_password_file get_hashes_list is_valid_hash }],
-    ssh      => [
+    password       => [qw{ get_hashes_from_password get_password_file get_hashes_list is_valid_hash }],
+    portforwarding => [qw{ is_valid_portforwarding allocate_local_port generate_account_sshd_forwarding_config }],
+    ssh            => [
         qw{ has_piv_helper verify_piv get_authorized_keys_from_file add_key_to_authorized_keys_file put_authorized_keys_to_file get_ssh_pub_key_info is_valid_public_key get_from_for_user_key generate_ssh_key get_bastion_ips get_supported_ssh_algorithms_list is_allowed_algo_and_size is_valid_fingerprint print_public_key account_ssh_config_get account_ssh_config_set ssh_ingress_keys_piv_apply is_effective_piv_account_policy_enabled print_accepted_key_algorithms ssh_ingress_keys_from_apply_account }
     ],
 );
@@ -916,13 +918,15 @@ sub validate_proxy_params {
 }
 
 sub machine_display {
-    my %params    = @_;
-    my $ip        = $params{'ip'};
-    my $port      = $params{'port'};
-    my $user      = $params{'user'};
-    my $proxyIp   = $params{'proxyIp'};
-    my $proxyPort = $params{'proxyPort'};
-    my $proxyUser = $params{'proxyUser'};
+    my %params     = @_;
+    my $ip         = $params{'ip'};
+    my $port       = $params{'port'};
+    my $user       = $params{'user'};
+    my $proxyIp    = $params{'proxyIp'};
+    my $proxyPort  = $params{'proxyPort'};
+    my $proxyUser  = $params{'proxyUser'};
+    my $remotePort = $params{'remotePort'};
+    my $localPort  = $params{'localPort'};
 
     my $machine = (index($ip, ':') >= 0 ? "[$ip]" : $ip);
     $machine .= ":$port"              if $port;
@@ -933,6 +937,13 @@ sub machine_display {
         $proxy .= ":$proxyPort" if $proxyPort;
         $proxy   = $proxyUser . '@' . $proxy if $proxyUser;
         $machine = "$machine via $proxy";
+    }
+
+    if ($remotePort && !$localPort) {
+        $machine .= " (port forwarding: $remotePort)";
+    }
+    elsif ($localPort) {
+        $machine .= " (port forwarding: $localPort->$remotePort)";
     }
 
     return R('OK', value => $machine);

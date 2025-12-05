@@ -94,6 +94,12 @@ fi
 # finally, regenerate the account's sudoers
 _run "$basedir"/bin/sudogen/generate-sudoers.sh create account "$to"
 _run "$basedir"/bin/sudogen/generate-sudoers.sh delete account "$from"
+
+# if account had port forwardings, rename the sshd config file
+if [ -f "/etc/ssh/sshd_config.forward.d/$from.conf" ]; then
+    _run mv "/etc/ssh/sshd_config.forward.d/$from.conf" "/etc/ssh/sshd_config.forward.d/$to.conf"
+fi
+
 }
 
 

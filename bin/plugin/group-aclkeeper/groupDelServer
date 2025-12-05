@@ -14,12 +14,13 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
     header             => "removing a server from a group",
     userAllowWildcards => 1,
     options            => {
-        "group=s"      => \my $group,
-        "protocol=s"   => \my $protocol,
-        "force"        => \my $force,
-        "proxy-host=s" => \my $proxyHost,
-        "proxy-port=s" => \my $proxyPort,
-        "proxy-user=s" => \my $proxyUser,
+        "group=s"       => \my $group,
+        "protocol=s"    => \my $protocol,
+        "force"         => \my $force,
+        "proxy-host=s"  => \my $proxyHost,
+        "proxy-port=s"  => \my $proxyPort,
+        "proxy-user=s"  => \my $proxyUser,
+        "remote-port=i" => \my $remotePort,
         # undocumented/compatibility:
         "user-any" => \my $userAny,
         "port-any" => \my $portAny,
@@ -32,26 +33,28 @@ Remove an IP or IP block from a group's server list
 
 Usage: --osh SCRIPT_NAME --group GROUP --host HOST --user USER --port PORT [OPTIONS]
 
-  --group GROUP            Specify which group this machine should be removed from
-  --host HOST|IP|SUBNET    Host(s) to remove access from, either a HOST which will be resolved to an IP immediately,
-                             or an IP, or a whole subnet using the PREFIX/SIZE notation
-  --user USER|PATTERN|*    Specify which remote user was allowed to connect as.
-                             Globbing characters '*' and '?' are supported, so you can specify a pattern
-                             that will be matched against the actual remote user name.
-                             If any user was allowed, use '--user *' (you might need to escape '*' from your shell)
-  --port PORT|*            Remote port that was allowed to connect to
-                             If any port was allowed, use '--port *' (you might need to escape '*' from your shell)
-  --protocol PROTO         Specify that a special protocol allowance should be removed from this HOST:PORT tuple, note that you
-                              must not specify --user in that case.
-                              PROTO must be one of:
-                              scpupload    allow SCP upload, you--bastion-->server
-                              scpdownload  allow SCP download, you<--bastion--server
-                              sftp         allow usage of the SFTP subsystem, through the bastion
-                              rsync        allow usage of rsync, through the bastion
-  --proxy-host HOST|IP     Specify which host was used as a proxy/jump host to reach the target server
-  --proxy-port PORT        Proxy port that was used to reach the target server (mandatory when --proxy-host is specified)
+  --group GROUP                Specify which group this machine should be removed from
+  --host HOST|IP|SUBNET        Host(s) to remove access from, either a HOST which will be resolved to an IP immediately,
+                                 or an IP, or a whole subnet using the PREFIX/SIZE notation
+  --user USER|PATTERN|*        Specify which remote user was allowed to connect as.
+                                 Globbing characters '*' and '?' are supported, so you can specify a pattern
+                                 that will be matched against the actual remote user name.
+                                 If any user was allowed, use '--user *' (you might need to escape '*' from your shell)
+  --port PORT|*                Remote port that was allowed to connect to
+                                 If any port was allowed, use '--port *' (you might need to escape '*' from your shell)
+  --protocol PROTO             Specify that a special protocol allowance should be removed from this HOST:PORT tuple, note that you
+                                  must not specify --user in that case.
+                                  PROTO must be one of:
+                                  scpupload    allow SCP upload, you--bastion-->server
+                                  scpdownload  allow SCP download, you<--bastion--server
+                                  sftp         allow usage of the SFTP subsystem, through the bastion
+                                  rsync        allow usage of rsync, through the bastion
+                                  portforward  allow forwarding a remote port on the target server to a local port on the bastion
+  --proxy-host HOST|IP         Specify which host was used as a proxy/jump host to reach the target server
+  --proxy-port PORT            Proxy port that was used to reach the target server (mandatory when --proxy-host is specified)
   --proxy-user USER|PATTERN|*  Proxy user that was configured for this access (mandatory when --proxy-host is specified).
-                               Globbing characters '*' and '?' are supported for pattern matching.
+                                 Globbing characters '*' and '?' are supported for pattern matching.
+  --remote-port PORT           Remove port forwarding access to the specified remote port on the target server.
 EOF
 );
 
@@ -73,18 +76,25 @@ if ($proxyHost) {
     $proxyUser = $fnret->value->{'proxyUser'};
 }
 
+if ($remotePort) {
+    $fnret = OVH::Bastion::is_valid_port(port => $remotePort);
+    $fnret or osh_exit $fnret;
+    $remotePort = $fnret->value;
+}
+
 $fnret = OVH::Bastion::Plugin::ACL::check(
-    user      => $user,
-    userAny   => $userAny,
-    port      => $port,
-    portAny   => $portAny,
-    scpUp     => $scpUp,
-    scpDown   => $scpDown,
-    sftp      => $sftp,
-    protocol  => $protocol,
-    proxyIp   => $proxyIp,
-    proxyPort => $proxyPort,
-    proxyUser => $proxyUser,
+    user       => $user,
+    userAny    => $userAny,
+    port       => $port,
+    portAny    => $portAny,
+    scpUp      => $scpUp,
+    scpDown    => $scpDown,
+    sftp       => $sftp,
+    protocol   => $protocol,
+    proxyIp    => $proxyIp,
+    proxyPort  => $proxyPort,
+    proxyUser  => $proxyUser,
+    remotePort => $remotePort,
 );
 if (!$fnret) {
     help();
@@ -112,13 +122,28 @@ $fnret
 
 my @command = qw{ sudo -n -u };
 push @command, ($group, '--', '/usr/bin/env', 'perl', '-T', $OVH::Bastion::BASEPATH . '/bin/helper/osh-groupAddServer');
-push @command, '--group',      $group;
-push @command, '--action',     'del';
-push @command, '--ip',         $ip;
-push @command, '--user',       $user      if $user;
-push @command, '--port',       $port      if $port;
-push @command, '--proxy-ip',   $proxyIp   if $proxyIp;
-push @command, '--proxy-port', $proxyPort if $proxyPort;
-push @command, '--proxy-user', $proxyUser if $proxyUser;
+push @command, '--group',       $group;
+push @command, '--action',      'del';
+push @command, '--ip',          $ip;
+push @command, '--user',        $user       if $user;
+push @command, '--port',        $port       if $port;
+push @command, '--proxy-ip',    $proxyIp    if $proxyIp;
+push @command, '--proxy-port',  $proxyPort  if $proxyPort;
+push @command, '--proxy-user',  $proxyUser  if $proxyUser;
+push @command, '--remote-port', $remotePort if $remotePort;
 
-osh_exit OVH::Bastion::helper(cmd => \@command);
+$fnret = OVH::Bastion::helper(cmd => \@command);
+if ($fnret && $fnret->err ne 'OK_NO_CHANGE' && $remotePort) {
+    # Now regenerate the sshd config for all members of this group
+    my @sshd_command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
+    push @sshd_command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-groupGenerateSshdConfig';
+    push @sshd_command, '--group',              $group;
+    push @sshd_command, '--deleted-local-port', $fnret->value->{'localPort'} if defined $fnret->value->{'localPort'};
+
+    my $sshd_fnret = OVH::Bastion::helper(cmd => \@sshd_command);
+    if (!$sshd_fnret) {
+        osh_warn "Failed to regenerate sshd config for group members: " . $sshd_fnret->msg;
+    }
+}
+
+osh_exit $fnret;

@@ -90,6 +90,9 @@ sub is_access_way_granted {
     my $wantedProxyPort = $params{'proxyPort'};        # must be exact if defined, no support for wildcard
     my $wantedProxyUser = $params{'proxyUser'};        # if undef, means we look for a user-any allow
 
+    my $wantedRemotePort = $params{'remotePort'};      # remote port for port forwarding, must be defined if we check for a portforwarding entry
+    my $wantedLocalPort  = $params{'localPort'};       # local port for port forwarding, if undef, we'll only validate remotePort
+
     my $way     = $params{'way'};                      # personal|group|groupguest|legacy
     my $group   = $params{'group'};                    # only meaningful and needed if type=group or type=groupguest
     my $account = $params{'account'};                  # only meaningful and needed if type=personal or type=groupguest
@@ -146,6 +149,14 @@ sub is_access_way_granted {
               . ($entry->{'proxyIp'}   // '<u>') . ':'
               . ($entry->{'proxyPort'} // '<u>');
         }
+
+        if (defined $wantedRemotePort) {
+            $check_debug_msg .= " and remotePort $wantedRemotePort against " . ($entry->{'remotePort'} // '<p>');
+        }
+        if (defined $wantedLocalPort) {
+            $check_debug_msg .= " and localPort $wantedLocalPort against " . ($entry->{'localPort'} // '<p>');
+        }
+
         osh_debug($check_debug_msg);
 
         $entry->{'ip'} or next;    # can't be empty
@@ -285,9 +296,38 @@ sub is_access_way_granted {
             }
         }
 
+        # check port forwarding
+        if (defined $wantedRemotePort) {
+            if (not defined $entry->{'remotePort'}) {
+                next;    # we want a remotePort, but entry doesn't have it
+            }
+            else {
+                next if ($wantedRemotePort ne $entry->{'remotePort'});    # both defined
+            }
+        }
+        else {
+            if (defined $entry->{'remotePort'}) {
+                next;                                                     # we don't want a remotePort, but entry has it
+            }
+        }
+
+        # also check for local port if requested.
+        # we'll only validate the local port when validating connection attempts.
+        # When adding a new port forward, localPort can be undefined, because we'll automatically allocate the port later.
+        if (defined $wantedLocalPort) {
+            if (not defined $entry->{'localPort'}) {
+                next;    # we want a localPort, but entry doesn't have it
+            }
+            else {
+                next if ($wantedLocalPort ne $entry->{'localPort'});    # both defined
+            }
+        }
+
         # then, check IP
         my $isIPv6     = (index($entry->{'ip'}, ':') != -1);
         my $isNetblock = (index($entry->{'ip'}, '/') != -1);
+
+        # should we block portforwarding access for subnets?
 
         # if we want an exact match, it's a simple strcmp() for IPv4
         if ($exactIpMatch && !$isIPv6) {
@@ -319,6 +359,8 @@ sub is_access_way_granted {
                 comment       => $entry->{'userComment'},
                 proxyIp       => $entry->{'proxyIp'},
                 proxyPort     => $entry->{'proxyPort'},
+                remotePort    => $entry->{'remotePort'},
+                localPort     => $entry->{'localPort'},
                 size          => undef,                       # not needed
             );
             last;                                             # perfect match, don't search further
@@ -363,6 +405,8 @@ sub is_access_way_granted {
                         comment       => $entry->{'userComment'},
                         proxyIp       => $entry->{'proxyIp'},
                         proxyPort     => $entry->{'proxyPort'},
+                        remotePort    => $entry->{'remotePort'},
+                        localPort     => $entry->{'localPort'},
                         size          => $ipCheck->size(),
                     );
                     last if $match{'size'} == 1;    # we won't get better than this
@@ -404,6 +448,8 @@ sub is_access_way_granted {
                         comment       => $entry->{'userComment'},
                         proxyIp       => $entry->{'proxyIp'},
                         proxyPort     => $entry->{'proxyPort'},
+                        remotePort    => $entry->{'remotePort'},
+                        localPort     => $entry->{'localPort'},
                         size          => 1,
                     );
                     last;
@@ -423,6 +469,8 @@ sub is_access_way_granted {
                 comment       => $match{'comment'},
                 proxyIp       => $match{'proxyIp'},
                 proxyPort     => $match{'proxyPort'},
+                remotePort    => $match{'remotePort'},
+                localPort     => $match{'localPort'},
             }
         );
     }
@@ -725,7 +773,8 @@ sub print_acls {
     # also take this opportunity to remember the longest field for each column
     my @printRows;
     my @jsonRows;
-    my @columnNames = qw( IP PORT USER ACCESS-BY ADDED-BY ADDED-AT EXPIRY? COMMENT FORCED-KEY FORCED-PASSWORD VIA);
+    my @columnNames =
+      qw( IP PORT USER ACCESS-BY ADDED-BY ADDED-AT EXPIRY? COMMENT FORCED-KEY FORCED-PASSWORD VIA PORT-FORWARDING );
     my @printColumnLength = map { length } @columnNames;
     foreach my $contextAcl (@$acls) {
         my $type  = $contextAcl->{'type'};
@@ -748,6 +797,11 @@ sub print_acls {
                   ($entry->{'proxyUser'} ? $entry->{'proxyUser'} : '*') . "\@$entry->{'proxyIp'}:$entry->{'proxyPort'}";
             }
 
+            my $portForwarding = '-';
+            if ($entry->{'localPort'} && $entry->{'remotePort'}) {
+                $portForwarding = "$entry->{'localPort'}->$entry->{'remotePort'}";
+            }
+
             my $expiry =
               $entry->{'expiry'} ? (duration2human(seconds => ($entry->{'expiry'} - time()))->value->{'human'}) : '-';
 
@@ -762,7 +816,7 @@ sub print_acls {
                 $addedBy,  $addedDate,
                 $expiry,   $entry->{'userComment'} || '-',
                 $forceKey, $forcePassword,
-                $via
+                $via,      $portForwarding
             );
 
             # if we have includes or excludes, match fields against the built regex
@@ -1464,14 +1518,16 @@ sub get_acls {
         next if not $grantedGroup;            # if group doesn't have access, don't even check legacy either
 
         # now we have to cases, if the group has access: either the account is member or guest
-        if (OVH::Bastion::is_group_member(group => $shortGroup, account => $account)) {
+        my $is_member =
+          OVH::Bastion::is_group_member(group => $shortGroup, account => $account, sudo => $params{'sudo'});
+        if ($is_member) {
 
             # normal member case, just reuse $grantedGroup
             osh_debug("get_acls: adding grantedGroup to grants because is member");
             push @acls, {type => 'group-member', group => $shortGroup, acl => $grantedGroup->value}
               if ($grantedGroup && @{$grantedGroup->value});
         }
-        elsif (OVH::Bastion::is_group_guest(group => $shortGroup, account => $account)) {
+        elsif (OVH::Bastion::is_group_guest(group => $shortGroup, account => $account, sudo => $params{'sudo'})) {
 
             # normal guest case
             my $grantedGuest =
@@ -1495,6 +1551,7 @@ sub get_acls {
         else {
             # should not happen
             osh_debug("get_acls: $account is in group $shortGroup but is neither member or guest !!?");
+            osh_debug("get_acls: error: " . $is_member->msg);
         }
     }
     return R('OK', value => \@acls);
@@ -1649,9 +1706,9 @@ sub _get_acl_from_file {
     my @entries;
     foreach my $line (@lines) {
         my (
-            $ip,            $user,        $port,    $comment,   $forceKey,
-            $forcePassword, $expiry,      $addedBy, $addedDate, $extra,
-            $comment,       $userComment, $proxyIp, $proxyPort, $proxyUser
+            $ip,      $user,      $port,      $comment,    $forceKey, $forcePassword,
+            $expiry,  $addedBy,   $addedDate, $extra,      $comment,  $userComment,
+            $proxyIp, $proxyPort, $proxyUser, $remotePort, $localPort
         );
 
         # extract comment if any
@@ -1768,6 +1825,24 @@ sub _get_acl_from_file {
                 $proxyUser = $fnret->value;
                 osh_debug("found a valid proxy user <$proxyUser>");
             }
+            if ($comment =~ s/# REMOTEPORT=(\d+)//) {
+                $fnret = OVH::Bastion::is_valid_port(port => $1);
+                if (!$fnret) {
+                    osh_debug("skipping line <$line> because invalid remote port ($1) found");
+                    next;
+                }
+                $remotePort = $fnret->value;
+                osh_debug("found a valid remote port <$remotePort>");
+            }
+            if ($comment =~ s/# LOCALPORT=(\d+)//) {
+                $fnret = OVH::Bastion::is_valid_port(port => $1);
+                if (!$fnret) {
+                    osh_debug("skipping line <$line> because invalid local port ($1) found");
+                    next;
+                }
+                $localPort = $fnret->value;
+                osh_debug("found a valid local port <$localPort>");
+            }
             if ($comment =~ s/# COMMENT=<([^>]+)>//) {
                 $userComment = $1;
             }
@@ -1792,7 +1867,9 @@ sub _get_acl_from_file {
             comment       => $extra,
             proxyIp       => $proxyIp,
             proxyPort     => $proxyPort,
-            proxyUser     => $proxyUser
+            proxyUser     => $proxyUser,
+            remotePort    => $remotePort,
+            localPort     => $localPort,
           };
     }
 

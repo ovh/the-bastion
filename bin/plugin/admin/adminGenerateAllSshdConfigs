@@ -1,0 +1,73 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+use Term::ANSIColor;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Result;
+use OVH::Bastion;
+use OVH::Bastion::Plugin qw( :DEFAULT help );
+
+my $remainingOptions = OVH::Bastion::Plugin::begin(
+    argv     => \@ARGV,
+    header   => "generate sshd configs for all accounts",
+    options  => {},
+    helptext => <<'EOF',
+Generate sshd port forwarding configs for all accounts
+
+Usage: --osh SCRIPT_NAME
+
+This command will regenerate the sshd port forwarding configuration for all accounts.
+If this bastion is a slave (readOnlySlaveMode), all port forwarding entries will be removed.
+EOF
+);
+
+# Call helper to process all accounts (acquires lock once)
+my @command = qw{ sudo -n -u root -- /usr/bin/env perl -T };
+push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-adminGenerateAllSshdConfigs';
+
+my $fnret = OVH::Bastion::helper(cmd => \@command);
+$fnret or osh_exit $fnret;
+
+# Extract results from helper
+my $result        = $fnret->value;
+my @success       = @{$result->{'successful'} || []};
+my @errors        = @{$result->{'failed'}     || []};
+my @skipped       = @{$result->{'skipped'}    || []};
+my $totalAccounts = $result->{'total'} || 0;
+
+# Print summary
+osh_info "";
+osh_info "=" x 60;
+osh_info "Summary:";
+osh_info "  Total accounts: $totalAccounts";
+osh_info "  Successful: " . colored(scalar(@success), 'green');
+osh_info "  Failed: " . colored(scalar(@errors), @errors    ? 'red'    : 'green');
+osh_info "  Skipped: " . colored(scalar(@skipped), @skipped ? 'yellow' : 'green');
+
+if (@errors) {
+    osh_info "";
+    osh_info "Failed accounts:";
+    foreach my $error (@errors) {
+        osh_info "  - $error";
+    }
+}
+
+if (@skipped) {
+    osh_info "";
+    osh_info "Skipped accounts:";
+    foreach my $skip (@skipped) {
+        osh_info "  - $skip";
+    }
+}
+
+if (@errors) {
+    osh_exit R(
+        'ERR_PARTIAL_FAILURE',
+        msg   => "Processed " . scalar(@success) . " accounts successfully, but " . scalar(@errors) . " failed",
+        value => $result
+    );
+}
+
+osh_ok($result);

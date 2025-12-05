@@ -9,8 +9,10 @@ use OVH::Bastion;
 
 sub check {
     my %params = @_;
-    my ($port, $portAny, $user, $userAny, $scpUp, $scpDown, $sftp, $protocol, $proxyIp, $proxyPort, $proxyUser) =
-      @params{qw{ port portAny user userAny scpUp scpDown sftp protocol proxyIp proxyPort proxyUser }};
+    my (
+        $port, $portAny,  $user,    $userAny,   $scpUp,     $scpDown,
+        $sftp, $protocol, $proxyIp, $proxyPort, $proxyUser, $remotePort
+    ) = @params{qw{ port portAny user userAny scpUp scpDown sftp protocol proxyIp proxyPort proxyUser remotePort }};
 
     if ($user and $userAny) {
         return R('ERR_INCOMPATIBLE_PARAMETERS',
@@ -25,10 +27,11 @@ sub check {
         if ($scpUp or $scpDown or $sftp) {
             return R('ERR_INCOMPATIBLE_PARAMETERS', msg => "Can't use --protocol with --scpup, --scpdown or --sftp");
         }
-        if (!grep { $protocol eq $_ } qw{ scpupload scpdownload sftp rsync }) {
+        if (!grep { $protocol eq $_ } qw{ scpupload scpdownload sftp rsync portforward }) {
             return R('ERR_INVALID_PARAMETER',
                 msg =>
-                  "The protocol '$protocol' is not supported, expected either scpupload, scpdownload, sftp or rsync");
+                  "The protocol '$protocol' is not supported, expected either scpupload, scpdownload, sftp, rsync or portforward"
+            );
         }
     }
 
@@ -49,6 +52,21 @@ sub check {
         $protocol = 'sftp'        if $sftp;
         $protocol = 'scpupload'   if $scpUp;
         $protocol = 'scpdownload' if $scpDown;
+    }
+
+    # implicitly set protocol to portforward if remotePort is specified
+    if ($remotePort && !$protocol) {
+        $protocol = 'portforward';
+    }
+
+    if ($remotePort and $protocol ne 'portforward') {
+        return R('ERR_INCOMPATIBLE_PARAMETERS',
+            msg => "--remote-port cannot be used with any protocol other than portforward");
+    }
+
+    if ($remotePort && $remotePort eq $port) {
+        return R('ERR_INCOMPATIBLE_PARAMETERS',
+            msg => "forwarding the ssh port is now allowed, please choose a different port");
     }
 
     if ($protocol and $user) {
@@ -134,12 +152,13 @@ sub check {
     return R(
         'OK',
         value => {
-            user      => $user,
-            port      => $port,
-            protocol  => $protocol,
-            proxyIp   => $proxyIp,
-            proxyPort => $proxyPort,
-            proxyUser => $proxyUser
+            user       => $user,
+            port       => $port,
+            protocol   => $protocol,
+            proxyIp    => $proxyIp,
+            proxyPort  => $proxyPort,
+            proxyUser  => $proxyUser,
+            remotePort => $remotePort,
         }
     );
 }

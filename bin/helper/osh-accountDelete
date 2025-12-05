@@ -193,6 +193,18 @@ if (!$fnret) {
     $nbErrors++;
 }
 
+# regenerate the sshd config to remove allowed portforwardings
+$fnret = OVH::Bastion::execute(
+    cmd =>
+      [$OVH::Bastion::BASEPATH . '/bin/helper/osh-accountGenerateSshdConfig', '--target', 'any', '--account', $account],
+    must_succeed => 1,
+    noisy_stdout => 1
+);
+if (!$fnret) {
+    warn_syslog("Error during account deletion of '$account', couldn't regenerate sshd config: " . $fnret->msg);
+    $nbErrors++;
+}
+
 # add a text file with all the groups the user was a member of
 $fnret = OVH::Bastion::get_user_groups(account => $account, extra => 1);
 if ($fnret) {

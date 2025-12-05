@@ -11,10 +11,15 @@ SUPEROWNERS, %%GROUP%-owner      ALL=(keykeeper)   NOPASSWD: \
     /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupDelEgressKey --group %GROUP% *
 SUPEROWNERS, %%GROUP%-gatekeeper ALL=(root)        NOPASSWD: \
     /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupSetRole --type member --group %GROUP% *, \
-    /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupSetRole --type guest --group %GROUP% *
+    /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupSetRole --type guest --group %GROUP% *, \
+    /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-accountGenerateSshdConfig --target any --account *, \
+    /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-accountGenerateSshdConfig --target any --account * --deleted-local-port *
 SUPEROWNERS, %%GROUP%-gatekeeper ALL=(allowkeeper) NOPASSWD: \
     /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupAddSymlinkToAccount --group %GROUP% *, \
     /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-accountAddGroupServer --group %GROUP% *
 SUPEROWNERS, %%GROUP%-aclkeeper  ALL=(%GROUP%)     NOPASSWD: \
     /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupAddServer --group %GROUP% *, \
     /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupSetServers --group %GROUP%
+SUPEROWNERS, %%GROUP%-aclkeeper  ALL=(root)        NOPASSWD: \
+    /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupGenerateSshdConfig --group %GROUP%, \
+    /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-groupGenerateSshdConfig --group %GROUP% --deleted-local-port *

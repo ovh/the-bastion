@@ -48,6 +48,7 @@ Remove a specific group server access from an account
    scpdownload  allow SCP download, you<--bastion--server
    sftp         allow usage of the SFTP subsystem, through the bastion
    rsync        allow usage of rsync, through the bastion
+   portforward  allow forwarding a remote port on the target server to a local port on the bastion
 
 .. option:: --proxy-host HOST|IP
 
@@ -61,6 +62,10 @@ Remove a specific group server access from an account
 
    Proxy user that was configured for this access (mandatory when --proxy-host is specified).
    Globbing characters '*' and '?' are supported for pattern matching.
+
+.. option:: --remote-port PORT
+
+   Remove port forwarding access to the specified remote port on the target server.
 
 
 This command removes, from an existing bastion account, access to a given server, using the

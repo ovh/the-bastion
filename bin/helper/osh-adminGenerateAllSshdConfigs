@@ -1,0 +1,146 @@
+#! /usr/bin/perl -T
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+# SUDOERS %osh-admin ALL=(root) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-adminGenerateAllSshdConfigs
+# SUDOERS %osh-admin ALL=(root) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-adminGenerateAllSshdConfigs --slave-mode
+# FILEMODE 0700
+# FILEOWN 0 0
+
+#>HEADER
+use common::sense;
+use Getopt::Long qw(:config no_auto_abbrev no_ignore_case);
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../lib/perl';
+use OVH::Bastion;
+use OVH::Bastion::Helper;
+
+# Fetch command options
+my $fnret;
+my ($result, @optwarns);
+eval {
+    local $SIG{__WARN__} = sub { push @optwarns, shift };
+    $result = GetOptions();
+};
+if ($@) { die $@ }
+
+OVH::Bastion::Helper::check_spurious_args();
+
+if (!$result) {
+    local $" = ", ";
+    HEXIT('ERR_BAD_OPTIONS', msg => "Error parsing options: @optwarns");
+}
+
+#<HEADER
+
+#>RIGHTSCHECK
+# Only admins can run this
+if ($self eq 'root') {
+    osh_debug "Real root, skipping checks of permissions";
+}
+else {
+    # need to perform another security check
+    $fnret = OVH::Bastion::is_user_in_group(user => $self, group => "osh-admin");
+    if (!$fnret) {
+        HEXIT('ERR_SECURITY_VIOLATION', msg => "You're not allowed to run this, dear $self");
+    }
+}
+
+#<RIGHTSCHECK
+
+#>CODE
+$fnret = OVH::Bastion::load_configuration();
+$fnret or main_exit(OVH::Bastion::EXIT_CONFIGURATION_FAILURE, "configuration_failure", $fnret->msg);
+my $config    = $fnret->value;
+my $slaveMode = $config->{'readOnlySlaveMode'};
+
+if ($slaveMode) {
+    osh_warn "This bastion is in slave mode (readOnlySlaveMode).";
+    osh_warn "All port forwarding configurations will be REMOVED for all accounts.";
+}
+else {
+    osh_info "This bastion is in master mode.";
+    osh_info "Port forwarding configurations will be regenerated for all accounts.";
+}
+
+# Get all accounts
+$fnret = OVH::Bastion::get_account_list();
+$fnret or HEXIT($fnret);
+
+my @accounts      = sort keys %{$fnret->value};
+my $totalAccounts = scalar(@accounts);
+
+osh_info("Found $totalAccounts accounts to process");
+
+# Acquire lock ONCE for all accounts to ensure thread-safe config generation
+$fnret = OVH::Bastion::Helper::get_lock_fh(category => 'portforwarding');
+$fnret or HEXIT($fnret);
+my $lock_fh = $fnret->value;
+
+$fnret = OVH::Bastion::Helper::acquire_lock($lock_fh);
+$fnret or HEXIT($fnret);
+
+my @success;
+my @errors;
+my @skipped;
+
+foreach my $account (@accounts) {
+    osh_info("Processing account: $account");
+
+    # Validate account exists
+    $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
+    if (!$fnret) {
+        push @skipped, "$account: " . $fnret->msg;
+        osh_warn("  Skipped: " . $fnret->msg);
+        next;
+    }
+    $account = $fnret->value->{'account'};    # untainted
+
+    if ($slaveMode) {
+        # In slave mode, we remove all port forwards by removing the config file
+        my $config_dir  = "/etc/ssh/sshd_config.forward.d";
+        my $config_file = "$config_dir/$account.conf";
+
+        # Remove the config file if it exists
+        if (-e $config_file) {
+            if (!unlink($config_file)) {
+                push @errors, "$account: Failed to remove config file: $!";
+                osh_warn("  Failed to remove config file: $!");
+                next;
+            }
+            osh_info("  Removed port forwarding config file (slave mode)");
+        }
+        else {
+            osh_info("  No port forwarding config file to remove (slave mode)");
+        }
+
+        push @success, $account;
+    }
+    else {
+        # In master mode, regenerate normally
+        $fnret = OVH::Bastion::generate_account_sshd_forwarding_config(account => $account);
+        if ($fnret) {
+            push @success, $account;
+            osh_info("  Success");
+        }
+        else {
+            push @errors, "$account: " . $fnret->msg;
+            osh_warn("  Failed: " . $fnret->msg);
+        }
+    }
+}
+
+HEXIT(
+    'OK',
+    msg => "Processed "
+      . scalar(@success)
+      . " accounts successfully"
+      . (@errors  ? ", " . scalar(@errors) . " failed"   : "")
+      . (@skipped ? ", " . scalar(@skipped) . " skipped" : ""),
+    value => {
+        successful => \@success,
+        failed     => \@errors,
+        skipped    => \@skipped,
+        total      => $totalAccounts,
+        slave_mode => $slaveMode,
+    }
+);

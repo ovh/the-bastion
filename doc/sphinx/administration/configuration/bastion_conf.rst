@@ -138,6 +138,17 @@ Policies applying to the bastion accounts themselves
 - `MFAPostCommand`_
 - `TOTPProvider`_
 
+Port-forwarding options options
+-------------------------------
+
+Options to customize the port forwarding feature
+
+- `portForwardingEnabled`_
+- `portForwardingLocalPortMin`_
+- `portForwardingLocalPortMax`_
+- `portForwardingMaxPerUser`_
+- `portForwardingMaxPerGroup`_
+
 Other options options
 ---------------------
 
@@ -1022,6 +1033,66 @@ Defines which is the provider of the TOTP MFA, that will be used for the ``(self
 - none: no TOTP providers are defined, the corresponding setup commands won't be available.
 - google-authenticator: the pam_google_authenticator.so module will be used, along with its corresponding setup binary. This is the default, for backward compatibility reasons. This is also what is configured in the provided pam templates.
 - duo: enable the use of the Duo PAM module (pam_duo.so), of course you need to set it up correctly in your `/etc/pam.d/sshd` file.
+
+Port-forwarding options
+-----------------------
+
+.. _portForwardingEnabled:
+
+portForwardingEnabled
+*********************
+
+:Type: ``boolean``
+
+:Default: ``false``
+
+If set to ``true``, will enable port forwarding features
+
+.. _portForwardingLocalPortMin:
+
+portForwardingLocalPortMin
+**************************
+
+:Type: ``int >= 1024 and <= 65535``
+
+:Default: ``20000``
+
+Minimum allowed local port for local port forwarding.
+
+.. _portForwardingLocalPortMax:
+
+portForwardingLocalPortMax
+**************************
+
+:Type: ``int >= 1024 and <= 65535``
+
+:Default: ``30000``
+
+Maximum allowed local port for local port forwarding.
+Make sure that ``portForwardingLocalPortMax`` is higher than ``portForwardingLocalPortMin``.
+The local port range must not use high ports used by outgoing connections. Check ``/proc/sys/net/ipv4/ip_local_port_range``
+
+.. _portForwardingMaxPerUser:
+
+portForwardingMaxPerUser
+************************
+
+:Type: ``int >= 0``
+
+:Default: ``20``
+
+Maximum number of allowed port forwardings per user. A value of 0 means unlimited.
+
+.. _portForwardingMaxPerGroup:
+
+portForwardingMaxPerGroup
+*************************
+
+:Type: ``int >= 0``
+
+:Default: ``50``
+
+Maximum number of allowed port forwardings per group. A value of 0 means unlimited.
 
 Other options
 -------------

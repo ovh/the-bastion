@@ -80,6 +80,14 @@ List the few past sessions of your account
 
    Only sessions that used proxy PORT
 
+.. option:: --remoteports PORTS
+
+   Only sessions that used remote ports PORTS (comma-separated list)
+
+.. option:: --localports PORTS
+
+   Only sessions that used local ports PORTS (comma-separated list)
+
 
 Note that only the sessions that happened on this precise bastion instance will be shown,
 not the sessions from its possible cluster siblings.

@@ -21,8 +21,8 @@ use OVH::Bastion::Helper;
 my $fnret;
 my ($result, @optwarns);
 my (
-    $group,    $user, $ip,      $port,    $action,    $force, $forcePassword,
-    $forceKey, $ttl,  $comment, $proxyIp, $proxyPort, $proxyUser
+    $group,    $user, $ip,      $port,    $action,    $force,     $forcePassword,
+    $forceKey, $ttl,  $comment, $proxyIp, $proxyPort, $proxyUser, $remotePort
 );
 eval {
     local $SIG{__WARN__} = sub { push @optwarns, shift };
@@ -40,7 +40,7 @@ eval {
         "proxy-ip=s"       => sub { $proxyIp       //= $_[1] },
         "proxy-port=i"     => sub { $proxyPort     //= $_[1] },
         "proxy-user=s"     => sub { $proxyUser     //= $_[1] },
-
+        "remote-port=i"    => sub { $remotePort    //= $_[1] },
     );
 };
 if ($@) { die $@ }
@@ -101,14 +101,9 @@ if ($action eq 'add' && ($proxyIp || $proxyPort || $proxyUser) && !$config->{'eg
     HEXIT('ERR_INVALID_PARAMETER', msg => "ProxyJump egress connections are disabled by policy");
 }
 
-my $machine = OVH::Bastion::machine_display(
-    ip        => $ip,
-    port      => $port,
-    user      => $user,
-    proxyIp   => $proxyIp,
-    proxyPort => $proxyPort,
-    proxyUser => $proxyUser
-)->value;
+if ($remotePort && !$config->{'portForwardingEnabled'}) {
+    HEXIT('ERR_INVALID_PARAMETER', msg => "Port forwarding is disabled on this bastion, cannot use --remote-port");
+}
 
 # access_modify validates all its parameters, don't do it ourselves here for clarity
 $fnret = OVH::Bastion::access_modify(
@@ -125,7 +120,25 @@ $fnret = OVH::Bastion::access_modify(
     proxyIp       => $proxyIp,
     proxyPort     => $proxyPort,
     proxyUser     => $proxyUser,
+    remotePort    => $remotePort,
 );
+
+my $localPort;
+if ($fnret && defined $fnret->value && defined $fnret->value->{'localPort'}) {
+    $localPort = $fnret->value->{'localPort'};
+}
+
+my $machine = OVH::Bastion::machine_display(
+    ip         => $ip,
+    port       => $port,
+    user       => $user,
+    proxyIp    => $proxyIp,
+    proxyPort  => $proxyPort,
+    proxyUser  => $proxyUser,
+    remotePort => $remotePort,
+    localPort  => $localPort,
+)->value;
+
 if ($fnret->err eq 'OK') {
     my $ttlmsg = $ttl ? ' (expires in ' . OVH::Bastion::duration2human(seconds => $ttl)->value->{'human'} . ')' : '';
     HEXIT(
@@ -143,6 +156,8 @@ if ($fnret->err eq 'OK') {
             proxyIp       => $proxyIp,
             proxyPort     => $proxyPort,
             proxyUser     => $proxyUser,
+            remotePort    => $remotePort,
+            localPort     => $localPort,
         },
         msg => $action eq 'add'
         ? "Entry $machine was added to group $shortGroup$ttlmsg"
