@@ -546,7 +546,7 @@ sub print_account_info {
             osh_info("- PIV grace period for this account is "
                   . colored('set', 'green')
                   . " and expires in "
-                  . $fnret->value->{'human'});
+                  . $fnret->{'human'});
         }
         else {
             osh_info "- PIV grace period for this account is " . colored('inactive', 'blue');
