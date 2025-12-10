@@ -481,7 +481,7 @@ if ($tty && $notty) {
 # if proactive MFA has been requested, do it here, before the code diverts to either
 # handling interactive session, plugins/osh commands, or a connection request
 if ($proactiveMfa) {
-    osh_print "As proactive MFA has been requested, entering MFA phase for $self.";
+    osh_print("As proactive MFA has been requested, entering MFA phase for $self.") unless $quiet;
     $fnret = OVH::Bastion::do_pamtester(self => $self, sysself => $sysself);
     $fnret or main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', $fnret->msg);
 
@@ -1775,7 +1775,7 @@ sub may_skip_mfa {
     my $realmMFA = 0;
     my $localfnret;
 
-    osh_print("As this is required for this $actionType, entering MFA phase for $self.");
+    osh_print("As this is required for this $actionType, entering MFA phase for $self.") unless $quiet;
 
     if ($mfaType eq 'totp' && !$isMfaTOTPConfigured) {
         if ($hasMfaTOTPBypass) {
@@ -1822,15 +1822,15 @@ sub may_skip_mfa {
     }
 
     if ($skipMFA) {
-        osh_print("... skipping as your account is exempt from MFA.");
+        osh_print("... skipping as your account is exempt from MFA.") unless $quiet;
         return R('OK_ACCOUNT_HAS_MFA_BYPASS');
     }
     elsif ($realmMFA) {
-        osh_print("... you already validated MFA on the bastion you're coming from.");
+        osh_print("... you already validated MFA on the bastion you're coming from.") unless $quiet;
         return R('OK_ACCOUNT_HAS_VALIDATED_MFA_REALM');
     }
     elsif ($ENV{'OSH_PROACTIVE_MFA'}) {
-        osh_print("... you already validated MFA proactively.");
+        osh_print("... you already validated MFA proactively.") unless $quiet;
         return R('OK_ACCOUNT_HAS_VALIDATED_MFA_PROACTIVELY');
     }
 
@@ -1994,7 +1994,7 @@ sub do_plugin_jit_mfa {
             main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed_invalid_token', "Provided MFA token is invalid");
         }
 
-        osh_print("... MFA token is valid, proceeding");
+        osh_print("... MFA token is valid, proceeding") unless $quiet;
         return R('OK_JIT_MFA_VALIDATED');
     }
     elsif ($generateMfaToken) {
