@@ -23,15 +23,18 @@ The supported tools are as follows:
      COMMAND may be one of the following:
 
      tidy       [FILES..] runs perltidy on several or all the Perl source files, modifying them if needed
-     tidycheck  [FILES..] runs perltidy in dry-run mode, and returns an error if files are not tidy
+     checktidy  [FILES..] runs perltidy in dry-run mode, and returns an error if files are not tidy
      perlcritic           runs perlcritic on all the Perl source files
      shellcheck [FILES..] runs shellcheck on all the shell source files
      lint                 runs tidy, perlcritic and shellcheck on all files in one command
+
      doc                  generates the documentation
      sphinx-view-objects  shows the named objects of the Sphinx documentation that can be referenced
-     rebuild              forces the rebuild of the devenv docker image that is needed to run all the above commands
-     run <COMMAND>        spawn an interactive shell to run any arbitrary command in the devenv docker
      doc-serve <PORT>     starts a local HTTP python server on PORT to view generated documentation
+
+     bash                 spawns an interactive shell to run any arbitrary command in the devenv docker
+     run <COMMAND>        runs an arbitrary command in the devenv docker
+     rebuild              forces the rebuild of the devenv docker image that is needed to run all the above commands
 
 Before submitting a pull request, you'll need at minimum to run ``lint``. It might be a good idea to setup a
 git pre-commit hook to do this on modified files, see below.
