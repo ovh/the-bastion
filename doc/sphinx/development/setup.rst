@@ -65,28 +65,29 @@ To verify that it works checkout a new test branch and add two dummy files like 
    :emphasize-lines: 1-5
 
    git checkout -B mybranch
-   printf "%b" "#! /usr/bin/env bash\nunused=1\n" > bin/shell/dummy.sh
-   printf "%b" "#! /usr/bin/env perl\nsub dummy { 1; };\n" > lib/perl/dummy.pm
+   printf "%b" "#! /usr/bin/env bash\n# vim: set filetype=sh\nunused=1\n" > bin/shell/dummy.sh
+   printf "%b" "#! /usr/bin/env perl\n# vim: set filetype=perl\nsub dummy { 1; };\n" > lib/perl/dummy.pm
    git add bin/shell/dummy.sh lib/perl/dummy.pm
    git commit -m dummy
 
    *** Checking shell files syntax using system shellcheck
    `-> bin/shell/dummy.sh
 
-   In bin/shell/dummy.sh line 2:
+   In bin/shell/dummy.sh line 3:
    unused=1
    ^----^ SC2034: unused appears unused. Verify use (or export if used externally).
 
-   `-> [ERR.] 
+   `-> [ERR.] Got 1 errors
 
    ERROR: shell-check failed on bin/shell/dummy.sh
    *** Checking perl tidiness
    `-> lib/perl/dummy.pm
-   ./lib/perl/dummy.pm ./lib/perl/dummy.pm.tdy differ: char 38, line 2
+   ./lib/perl/dummy.pm ./lib/perl/dummy.pm.tdy differ: char 63, line 3
    --- ./lib/perl/dummy.pm 2023-10-03 08:19:55.605950307 +0000
    +++ ./lib/perl/dummy.pm.tdy     2023-10-03 08:20:43.618577295 +0000
-   @@ -1,2 +1,2 @@
+   @@ -1,3 +1,3 @@
     #! /usr/bin/env perl
+    # vim: set filetype=perl
    -sub dummy { 1; };
    +sub dummy { 1; }
 
