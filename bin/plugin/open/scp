@@ -63,7 +63,7 @@ LOCAL_PATH=""
 
 REMOTE_HOST=""
 REMOTE_PORT=22
-REMOTE_USER="$SELF"
+REMOTE_USER=""
 REMOTE_PATH=""
 
 usage() {
@@ -82,8 +82,13 @@ while [ -n "${1:-}" ]; do
                 echo "scpwrapper: missing argument after '$1'" >&2
                 exit 1
             fi
-            BASTION_SSH_EXTRA_ARGS="$BASTION_SSH_EXTRA_ARGS $1 $2"
-            BASTION_SCP_EXTRA_ARGS="$BASTION_SCP_EXTRA_ARGS $1 $2"
+            if [ "$1" = "-o" ] && [[ $2 =~ ^[Uu][Ss][Ee][Rr]=(.+) ]]; then
+                REMOTE_USER="${BASH_REMATCH[1]}"
+                [ "$BASTION_SCP_DEBUG" = 1 ] && echo "scpwrapper: using '$REMOTE_USER' as remote user found through -o" >&2
+            else
+                BASTION_SSH_EXTRA_ARGS="$BASTION_SSH_EXTRA_ARGS $1 $2"
+                BASTION_SCP_EXTRA_ARGS="$BASTION_SCP_EXTRA_ARGS $1 $2"
+            fi
             shift 2;;
         "-P"|"-l")
             if [ -z "${2:-}" ]; then
@@ -121,7 +126,7 @@ way=""
 if [[ $src =~ : ]]; then
     # it's a download
     if [[ $src =~ ^(([^@:]*)@)?([^@:]+):(.*)?$ ]]; then
-        REMOTE_USER="${BASH_REMATCH[2]:-$SELF}"
+        [ -z "$REMOTE_USER" ] && REMOTE_USER="${BASH_REMATCH[2]:-$SELF}"
         REMOTE_HOST="${BASH_REMATCH[3]}"
         REMOTE_PATH="${BASH_REMATCH[4]}"
     else
@@ -130,11 +135,11 @@ if [[ $src =~ : ]]; then
     fi
     LOCAL_PATH="$dst"
     way=download
-    [ "$BASTION_SCP_DEBUG" = 1 ] && echo "scpwrapper: will download '$REMOTE_PATH' from $REMOTE_USER@$REMOTE_HOST:$REMOTE_PORT to '$LOCAL_PATH'" >&2
+    [ "$BASTION_SCP_DEBUG" = 1 ] && echo "scpwrapper: will download '$REMOTE_PATH' to local path '$LOCAL_PATH' from '$REMOTE_HOST' port '$REMOTE_PORT' as account '$REMOTE_USER'" >&2
 elif [[ $dst =~ : ]]; then
     # it's an upload
     if [[ $dst =~ ^(([^@:]*)@)?([^@:]+):(.*)?$ ]]; then
-        REMOTE_USER="${BASH_REMATCH[2]:-$SELF}"
+        [ -z "$REMOTE_USER" ] && REMOTE_USER="${BASH_REMATCH[2]:-$SELF}"
         REMOTE_HOST="${BASH_REMATCH[3]}"
         REMOTE_PATH="${BASH_REMATCH[4]}"
     else
@@ -143,7 +148,7 @@ elif [[ $dst =~ : ]]; then
     fi
     LOCAL_PATH="$src"
     way=upload
-    [ "$BASTION_SCP_DEBUG" = 1 ] && echo "scpwrapper: will upload '$LOCAL_PATH' to $REMOTE_USER@$REMOTE_HOST:$REMOTE_PORT as '$REMOTE_PATH'" >&2
+    [ "$BASTION_SCP_DEBUG" = 1 ] && echo "scpwrapper: will upload '$LOCAL_PATH' to remote path '$REMOTE_PATH' on '$REMOTE_HOST' port '$REMOTE_PORT' as account '$REMOTE_USER'" >&2
 else
     echo "scpwrapper: no remote host found in your command '$src $dst'" >&2
     exit 1
@@ -195,6 +200,9 @@ while ! [ "${1:-}" = "--" ] ; do
     if [ "${1:-}" = "-l" ] ; then
         REMOTE_USER="${2:-}"
         shift 2
+    elif [ "${1:-}" = "-o" ] && [[ "${2:-}" =~ ^[Uu][Ss][Ee][Rr]=(.+) ]]; then
+        REMOTE_USER="${BASH_REMATCH[1]}"
+        shift 2
     elif [ "${1:-}" = "-p" ] ; then
         REMOTE_PORT="${2:-}"
         shift 2
@@ -228,8 +236,8 @@ chmod +x "$t"
 export BASTION_SCP_DEBUG
 [ "$BASTION_SCP_DEBUG" = 1 ] && set -x
 case "$way" in
-    upload)   scp $BASTION_SCP_EXTRA_ARGS -S "$t" -P "$REMOTE_PORT" "$LOCAL_PATH" "$REMOTE_USER"@"$REMOTE_HOST":"$REMOTE_PATH";;
-    download) scp $BASTION_SCP_EXTRA_ARGS -S "$t" -P "$REMOTE_PORT" "$REMOTE_USER"@"$REMOTE_HOST":"$REMOTE_PATH" "$LOCAL_PATH";;
+    upload)   scp $BASTION_SCP_EXTRA_ARGS -S "$t" -P "$REMOTE_PORT" -o User="$REMOTE_USER" "$LOCAL_PATH" "$REMOTE_HOST":"$REMOTE_PATH";;
+    download) scp $BASTION_SCP_EXTRA_ARGS -S "$t" -P "$REMOTE_PORT" -o User="$REMOTE_USER" "$REMOTE_HOST":"$REMOTE_PATH" "$LOCAL_PATH";;
 esac
 END_OF_SCRIPT
 
