@@ -478,7 +478,14 @@ run()
         [ "$case" = "sshd_reload" ] && sleep 1
         flock "$outdir/$basename.retval" $screen "$outdir/$basename.cc" -D -m -fn -ln $r0 '
                 /opt/bastion/bin/admin/check-consistency.pl ; echo _RETVAL_CC=$?= ;
-                grep -Fw -e warn -e die -e code-warning /var/log/bastion/bastion.log | grep -Fv -e "'"${code_warn_exclude:-__none__}"'" -e "System does not support IPv6" | sed "s/^/_SYSLOG=/" ;
+                grep -Fw -e warn -e die -e code-warning /var/log/bastion/bastion.log
+                | grep -Fv
+                  -e "'"${code_warn_exclude:-__none__}"'"
+                  -e "System does not support IPv6"
+                  -e "Defaulting to E[UG]ID"
+                  -e "starting!"
+                  -e "Binding to SSL port"
+                | sed "s/^/_SYSLOG=/" ;
                 : > /var/log/bastion/bastion.log
             '
         flock "$outdir/$basename.retval" true

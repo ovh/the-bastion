@@ -19,10 +19,15 @@ sub process_http_request {
     my $hasContentType;
     my $wantedResponseSize = 64;
 
+    # this is to get the unparsed body of the request, portion of code
+    # taken from lib/perl/OVH/Bastion/ProxyHTTP.pm, more context available over there
+    my $content;
     my $real_content_type = $ENV{'CONTENT_TYPE'};
     $ENV{'CONTENT_TYPE'} = 'application/xml';
-    my $content = CGI->new->param('XForms:Model');
-    $ENV{'CONTENT_TYPE'} = $real_content_type;
+    my %verb2param = (POST=>'XForms:Model', PUT=>'PUTDATA', PATCH=>'PATCHDATA');
+    if (my $param = $verb2param{$self->{'request_info'}{'request_method'}}) {
+       $content =  CGI->new->param($param);
+    }
 
     foreach my $headerTuple (@{ $self->{'request_info'}{'request_headers'} }) {
         if ($headerTuple->[0] =~ /^x-test-add-response-header-(.+)/i) {
@@ -35,11 +40,13 @@ sub process_http_request {
     }
     print "Content-type: text/plain\n" if !$hasContentType;
 
+    # if the request had a body, include it verbatim in our answer
     if ($content) {
         print "Content-Length: ".length($content)."\n\n";
         print $content;
     }
     else {
+        # otherwise, generate some data in our answer
         print "Content-Length: ".$wantedResponseSize."\n\n";
         my @chars = ('0'..'9', 'a'..'z', 'A'..'Z', "\n");
 
