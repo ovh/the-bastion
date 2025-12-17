@@ -156,7 +156,8 @@ sub load_configuration {
         {name => 'syslogDescription', default => 'bastion', validre => qr/^([a-zA-Z0-9_.-]+)$/},
         {
             name    => 'ttyrecFilenameFormat',
-            default => '%Y-%m-%d.%H-%M-%S.#usec#.&uniqid.&account.&user.&ip.&port.ttyrec',
+            default =>
+              '%Y-%m-%d.%H-%M-%S.#usec#.&uniqid.&account.&user.&ip.&port.via.&proxyuser.&proxyip.&proxyport.ttyrec',
             validre => qr/^([a-zA-Z0-9%&#_.-]+)$/
         },
         {name => 'accountExpiredMessage', default => '', validre => qr/^(.*)$/, emptyok => 1},

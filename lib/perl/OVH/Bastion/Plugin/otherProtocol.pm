@@ -15,29 +15,42 @@ use OVH::Bastion;
 # this requirement will be lifted once we add the "protocol type" to the whole access tuple data model
 # while we're at it, return whether we found that this access requires MFA
 sub has_protocol_access {
-    my %params   = @_;
-    my $account  = $params{'account'};
-    my $user     = $params{'user'};
-    my $ipfrom   = $params{'ipfrom'} || $ENV{'OSH_IP_FROM'};
-    my $ip       = $params{'ip'};
-    my $port     = $params{'port'};
-    my $protocol = $params{'protocol'};
+    my %params    = @_;
+    my $account   = $params{'account'};
+    my $user      = $params{'user'};
+    my $ipfrom    = $params{'ipfrom'} || $ENV{'OSH_IP_FROM'};
+    my $ip        = $params{'ip'};
+    my $port      = $params{'port'};
+    my $proxyIp   = $params{'proxyIp'};
+    my $proxyPort = $params{'proxyPort'};
+    my $proxyUser = $params{'proxyUser'};
+    my $protocol  = $params{'protocol'};
 
     if (!$account || !$ipfrom || !$ip || !$protocol || !$user || !$port) {
         return R('ERR_MISSING_PARAMETERS', msg => "Missing mandatory parameters for has_protocol_access");
     }
 
-    my $machine = OVH::Bastion::machine_display(ip => $ip, port => $port, user => $user)->value;
+    my $machine = OVH::Bastion::machine_display(
+        ip        => $ip,
+        port      => $port,
+        user      => $user,
+        proxyIp   => $proxyIp,
+        proxyPort => $proxyPort,
+        proxyUser => $proxyUser
+    )->value;
 
     my %keys;
     osh_debug("Checking access 1/2 of $account to $machine...");
     my $fnret = OVH::Bastion::is_access_granted(
-        account => $account,
-        user    => $user,
-        ipfrom  => $ipfrom,
-        ip      => $ip,
-        port    => $port,
-        details => 1
+        account   => $account,
+        user      => $user,
+        ipfrom    => $ipfrom,
+        ip        => $ip,
+        port      => $port,
+        proxyIp   => $proxyIp,
+        proxyPort => $proxyPort,
+        proxyUser => $proxyUser,
+        details   => 1
     );
 
     if (not $fnret) {
@@ -60,6 +73,9 @@ sub has_protocol_access {
         ipfrom         => $ipfrom,
         ip             => $ip,
         port           => $port,
+        proxyIp        => $proxyIp,
+        proxyPort      => $proxyPort,
+        proxyUser      => $proxyUser,
         exactUserMatch => 1,
         details        => 1
     );

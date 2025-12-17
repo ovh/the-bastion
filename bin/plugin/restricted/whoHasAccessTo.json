@@ -2,9 +2,12 @@
     "interactive": [
         "whoHasAccessTo"                                                       , {"ac" : ["--host"]},
         "whoHasAccessTo +--host"                                               , {"pr" : ["<IP/HOST>"]},
-        "whoHasAccessTo +--host +\\S+ +(.*--(user|port|ignore-group) +\\S+| +.*--(ignore-wildcard|ignore-private))?$"    , {"ac" : ["--user","--port","--ignore-wildcard","--ignore-private","--ignore-group","<enter>"]},
-        "whoHasAccessTo +--host +\\S+ +.*--user" , {"pr" : ["<USER>"]},
-        "whoHasAccessTo +--host +\\S+ +.*--port" , {"pr" : ["<PORT>"]},
-        "whoHasAccessTo +--host +\\S+ +.*--ignore-group" , {"ac" : ["<GROUP>"]}
+        "whoHasAccessTo +--host +\\S+"                                         , {"ac" : ["--user", "--port", "--proxy-host", "--proxy-port", "--proxy-user", "--ignore-group", "--ignore-personal", "--show-wildcards", "<enter>"]},
+        "whoHasAccessTo +--host +\\S+ +.*--user"                               , {"pr" : ["<USER>"]},
+        "whoHasAccessTo +--host +\\S+ +.*--port"                               , {"pr" : ["<PORT>"]},
+        "whoHasAccessTo +--host +\\S+ +.*--proxy-host"                         , {"pr" : ["<PROXY_HOST>", "<PROXY_IP>"]},
+        "whoHasAccessTo +--host +\\S+ +.*--proxy-port"                         , {"pr" : ["<PROXY_PORT>"]},
+        "whoHasAccessTo +--host +\\S+ +.*--proxy-user"                         , {"pr" : ["<PROXY_USER>"]},
+        "whoHasAccessTo +--host +\\S+ +.*--ignore-group"                       , {"ac" : ["<GROUP>"]}
     ]
 }

@@ -23,8 +23,11 @@ my ($scpCmd);
 my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,
     header  => undef,
-    options => {'scp-cmd=s' => \$scpCmd},
-    help    => \&help,
+    options => {
+        'scp-cmd=s'    => \$scpCmd,
+        'proxy-jump=s' => \my $proxyJump,
+    },
+    help => \&help,
 );
 
 sub help {
@@ -65,10 +68,11 @@ REMOTE_HOST=""
 REMOTE_PORT=22
 REMOTE_USER=""
 REMOTE_PATH=""
+PROXY_JUMP=""
 
 usage() {
     cat >&2 <<EOF
-Usage: $0 [-p] [-q] [-r] [-T] [-v] [-l limit] [-i identity_file] [-P port] [-o ssh_option] source target
+Usage: $0 [-p] [-q] [-r] [-T] [-v] [-l limit] [-i identity_file] [-P port] [-J jumphost] [-o ssh_option] source target
 
 Please refer to the scp manpage for details about each command-line option above.
 EOF
@@ -89,6 +93,13 @@ while [ -n "${1:-}" ]; do
                 BASTION_SSH_EXTRA_ARGS="$BASTION_SSH_EXTRA_ARGS $1 $2"
                 BASTION_SCP_EXTRA_ARGS="$BASTION_SCP_EXTRA_ARGS $1 $2"
             fi
+            shift 2;;
+        "-J")
+            if [ -z "${2:-}" ]; then
+                echo "scpwrapper: missing argument after '$1'" >&2
+                exit 1
+            fi
+            PROXY_JUMP="$2"
             shift 2;;
         "-P"|"-l")
             if [ -z "${2:-}" ]; then
@@ -170,7 +181,11 @@ fi
 
 # shellcheck disable=SC2086
 [ "$BASTION_SCP_DEBUG" = 1 ] && set -x
-$BASTION_CMD -t $BASTION_SSH_EXTRA_ARGS -- --osh scp --host "$REMOTE_HOST" --port "$REMOTE_PORT" --user "$REMOTE_USER" --generate-mfa-token | tee "$t"
+if [ -n "$PROXY_JUMP" ]; then
+    $BASTION_CMD -t $BASTION_SSH_EXTRA_ARGS -- --osh scp --host "$REMOTE_HOST" --port "$REMOTE_PORT" --user "$REMOTE_USER" -J "$PROXY_JUMP" --generate-mfa-token | tee "$t"
+else
+    $BASTION_CMD -t $BASTION_SSH_EXTRA_ARGS -- --osh scp --host "$REMOTE_HOST" --port "$REMOTE_PORT" --user "$REMOTE_USER" --generate-mfa-token | tee "$t"
+fi
 [ "$BASTION_SCP_DEBUG" = 1 ] && set +x
 token=$(grep -Eo '^MFA_TOKEN=[a-zA-Z0-9,]+' "$t" | tail -n 1 | cut -d= -f2)
 
@@ -229,7 +244,11 @@ scpcmd=$(echo "$3" | sed -e 's/#/##/g;s/ /#/g')
 # and go
 [ "$BASTION_SCP_DEBUG" = 1 ] && set -x
 EOF
-echo "exec $BASTION_CMD -T \$sshcmdline $BASTION_SSH_EXTRA_ARGS -- --user \"\$REMOTE_USER\" --port \"\$REMOTE_PORT\" --host \"\$REMOTE_HOST\" --osh scp --scp-cmd \"\$scpcmd\" --mfa-token $token" >> "$t"
+if [ -n "$PROXY_JUMP" ]; then
+    echo "exec $BASTION_CMD -T \$sshcmdline $BASTION_SSH_EXTRA_ARGS -- --user \"\$REMOTE_USER\" --port \"\$REMOTE_PORT\" --host \"\$REMOTE_HOST\" -J \"$PROXY_JUMP\" --osh scp --proxy-jump \"$PROXY_JUMP\" --scp-cmd \"\$scpcmd\" --mfa-token $token" >> "$t"
+else
+    echo "exec $BASTION_CMD -T \$sshcmdline $BASTION_SSH_EXTRA_ARGS -- --user \"\$REMOTE_USER\" --port \"\$REMOTE_PORT\" --host \"\$REMOTE_HOST\" --osh scp --scp-cmd \"\$scpcmd\" --mfa-token $token" >> "$t"
+fi
 chmod +x "$t"
 
 # don't use exec below, because we need the trap to be executed on exit
@@ -290,6 +309,40 @@ EOF
 # code
 #
 my $fnret;
+my $proxyIp   = undef;
+my $proxyPort = 22;
+my $proxyUser = undef;
+# Parse proxyjump args if specified
+if ($proxyJump) {
+    if ($proxyJump =~ /^(?:([a-zA-Z0-9._@!-]{1,128})@)?(\[?[a-zA-Z0-9._-]+\]?)(?::(\d+))?$/) {
+        $proxyUser = $1 if $1;
+        $proxyIp   = $2;
+        $proxyPort = $3 if $3;
+        osh_debug("parsed proxyjump: host=$proxyIp port=$proxyPort user=$proxyUser");
+    }
+    else {
+        osh_exit 'ERR_INVALID_PARAMETER', "Invalid proxyjump specification '$proxyJump', should be [user@]host[:port]";
+    }
+
+    $fnret = OVH::Bastion::get_ip(host => $proxyIp, allowSubnets => 0);
+    if (!$fnret) {
+        if ($fnret->err eq 'ERR_DNS_DISABLED') {
+            osh_exit 'ERR_DNS_DISABLED', $fnret->msg;
+        }
+        elsif ($fnret->err eq 'ERR_IP_VERSION_DISABLED') {
+            osh_exit 'ERR_IP_VERSION_DISABLED', $fnret->msg;
+        }
+        else {
+            osh_exit 'ERR_HOST_NOT_FOUND', $fnret->msg;
+        }
+    }
+    $proxyIp = $fnret->value->{'ip'};
+    osh_debug("Proxyjump host resolved to IP: $proxyIp");
+
+    if ($proxyUser && !OVH::Bastion::is_valid_remote_user(user => $proxyUser, allowWildcards => 0)) {
+        osh_exit 'EXIT_INVALID_REMOTE_USER', 'invalid_proxy_user', "Proxy user name '$proxyUser' seems invalid";
+    }
+}
 
 if (not $host) {
     help();
@@ -320,13 +373,19 @@ if ($decoded =~ m{[\`\$\;><\|\&]}) {
 
 $port ||= 22;                                              # scp uses 22 if not specified, so we need to test access to that port and not any port (aka undef)
 $user ||= $self;                                           # same for user
+if ($proxyIp) {
+    $proxyUser ||= $user;
+}
 
 $fnret = OVH::Bastion::Plugin::otherProtocol::has_protocol_access(
-    account  => $self,
-    user     => $user,
-    ip       => $ip,
-    port     => $port,
-    protocol => $protocol,
+    account   => $self,
+    user      => $user,
+    ip        => $ip,
+    port      => $port,
+    protocol  => $protocol,
+    proxyIp   => $proxyIp,
+    proxyPort => $proxyPort,
+    proxyUser => $proxyUser,
 );
 $fnret or osh_exit($fnret);
 
@@ -340,6 +399,27 @@ push @cmd, ('-l', $user) if $user;
 
 foreach my $key (@keys) {
     push @cmd, ('-i', $key);
+}
+
+# Add ProxyCommand if proxy is specified
+if ($proxyIp) {
+    # Build ProxyCommand similar to how osh.pl does it
+    my @proxyCommand = ('ssh');
+    push @proxyCommand, '-o', 'ForwardAgent=no', '-o', 'PermitLocalCommand=no', '-o', 'ClearAllForwardings=yes';
+
+    # Add the same SSH keys to the proxy command
+    foreach my $key (@keys) {
+        push @proxyCommand, ('-i', $key);
+    }
+
+    push @proxyCommand, '-p', $proxyPort if $proxyPort && $proxyPort != 22;
+    push @proxyCommand, '-l', $proxyUser, '-W', '%h:%p', $proxyIp;
+
+    # Quote arguments that contain spaces and build the command string
+    my $proxyCommandStr = join(' ', map { /\s/ ? "'$_'" : $_ } @proxyCommand);
+    push @cmd, '-o', "ProxyCommand=$proxyCommandStr";
+
+    osh_debug("ProxyCommand: $proxyCommandStr");
 }
 
 push @cmd, "--", $ip, $decoded;
