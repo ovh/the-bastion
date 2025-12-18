@@ -162,7 +162,7 @@ my %_autoload_files = (
     ],
     password => [qw{ get_hashes_from_password get_password_file get_hashes_list is_valid_hash }],
     ssh      => [
-        qw{ has_piv_helper verify_piv get_authorized_keys_from_file add_key_to_authorized_keys_file put_authorized_keys_to_file get_ssh_pub_key_info is_valid_public_key get_from_for_user_key generate_ssh_key get_bastion_ips get_supported_ssh_algorithms_list is_allowed_algo_and_size is_valid_fingerprint print_public_key account_ssh_config_get account_ssh_config_set ssh_ingress_keys_piv_apply is_effective_piv_account_policy_enabled print_accepted_key_algorithms }
+        qw{ has_piv_helper verify_piv get_authorized_keys_from_file add_key_to_authorized_keys_file put_authorized_keys_to_file get_ssh_pub_key_info is_valid_public_key get_from_for_user_key generate_ssh_key get_bastion_ips get_supported_ssh_algorithms_list is_allowed_algo_and_size is_valid_fingerprint print_public_key account_ssh_config_get account_ssh_config_set ssh_ingress_keys_piv_apply is_effective_piv_account_policy_enabled print_accepted_key_algorithms ssh_ingress_keys_from_apply_account }
     ],
 );
 

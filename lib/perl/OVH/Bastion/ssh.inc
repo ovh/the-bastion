@@ -1117,4 +1117,67 @@ sub print_accepted_key_algorithms {
     return;
 }
 
+# apply the ingressKeysFrom configuration to all existing ingress keys of this account,
+# overriding all their previous "from" configuration, if any
+sub ssh_ingress_keys_from_apply_account {
+    my %params  = @_;
+    my $account = $params{'account'};
+    my $dryRun  = $params{'dryRun'};
+
+    my $fnret;
+
+    $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
+    $fnret or return $fnret;
+    $account = $fnret->value->{'account'};
+
+    my $dir = $fnret->value->{'dir'};
+
+    $fnret = OVH::Bastion::get_authorized_keys_from_file(
+        account            => $account,
+        file               => $dir . '/' . OVH::Bastion::AK_FILE(),
+        includePivDisabled => 1
+    );
+    $fnret or return $fnret;
+
+    my $keys    = $fnret->value();
+    my $changed = 0;
+
+    foreach my $key (@{$keys || []}) {
+        my @previousFromList = sort @{$key->{'fromList'} || []};
+        $fnret = get_from_for_user_key(key => $key);
+        $fnret or return $fnret;
+
+        if ($fnret->value && $fnret->value->{'key'}) {
+            $key = $fnret->value->{'key'};    # replace our key by the one with the proper 'from'
+            my @newFromList = sort @{$key->{'fromList'} || []};
+
+            # did we have a change?
+            $changed++ if (join('', @previousFromList) ne join('', @newFromList));
+        }
+    }
+
+    if ($changed) {
+        if ($dryRun) {
+            return R('OK_DRY_RUN', value => {nbchanged => $changed, nbkeys => scalar(@{$keys || []})});
+        }
+
+        $fnret = OVH::Bastion::put_authorized_keys_to_file(
+            account => $account,
+            file    => $dir . '/' . OVH::Bastion::AK_FILE(),
+            data    => $keys
+        );
+        $fnret or return $fnret;
+
+        OVH::Bastion::syslogFormatted(
+            severity => 'info',
+            type     => 'account',
+            fields   => [[action => 'modify'], [account => $account], [item => 'ingress_keys_from_apply'],]
+        );
+
+        return R('OK', value => {nbchanged => $changed, nbkeys => scalar(@{$keys || []})});
+    }
+
+    return R('OK_NO_CHANGE', value => {nbchanged => 0, nbkeys => scalar(@{$keys || []})});
+}
+
 1;
