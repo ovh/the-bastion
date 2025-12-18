@@ -7,16 +7,16 @@ CONFIGFILE=/etc/bastion/luks-config.sh
 update_banner()
 {
     if command -v systemctl >/dev/null 2>&1; then
-        if systemctl restart osh-seal-banner.service; then
+        if systemctl stop osh-seal-banner.service; then
             echo "SSH banner updated"
         else
-            echo "Warning: Could not restart osh-seal-banner service"
+            echo "Warning: Could not stop osh-seal-banner service"
         fi
     else
-        if service osh-seal-banner restart; then
+        if service osh-seal-banner stop; then
             echo "SSH banner updated"
         else
-            echo "Warning: Could not restart osh-seal-banner service"
+            echo "Warning: Could not stop osh-seal-banner service"
         fi
     fi
 }
