@@ -1,3 +1,15 @@
+## v3.23.00 - 2025/12/22
+- feat: switch banner if node is sealed
+- feat: httpproxy: add support for more HTTP methods (#601)
+- feat: add admin script apply-ingress-keys-from-globally.pl (#604)
+- enh: allow colon in remote user names (#602)
+- fix: scp: more robust parsing for remote users with special chars (#600)
+- fix: debian 13 uses lastlog2 (#590)
+- fix: hide mfa info msg in quiet mode (#598)
+- fix: ``accountInfo``: correctly return info when PIV grace period is set (#594)
+- docs: add link to ansible role
+- docs(dev,setup): fix the pre-commit example and script helper (#599)
+
 ## v3.22.00 - 2025/09/17
 - feat: httpproxy: craft the ``Host`` header on the egress request (#564)
 - fix: httpproxy: duplicate ``X-Bastion-Local-Status`` headers in some cases

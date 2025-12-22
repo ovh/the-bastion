@@ -27,6 +27,21 @@ See the ``--help`` for a more fine-grained upgrade path if needed.
 Version-specific upgrade instructions
 =====================================
 
+v3.23.00 - 2025/12/22
+*********************
+
+A new optional ``systemd`` service has appeared: ``osh-seal-banner.service``. It is disabled by default and will
+automatically be enabled by the encryption setup script on new installs, if you use it to encrypt your :file:`/home`.
+
+It is responsible for swapping between the "this system is sealed" and the standard sshd banner, so that users
+connecting to a sealed node know that they won't be able to login before an administrator has unsealed it.
+
+If you're upgrading and would like to use this feature, you'll have to manually enable this service: run
+``systemctl enable osh-seal-banner.service`` and review the :file:`banner.sealed` and :file:`banner.ok` files in
+the :file:`/etc/ssh` system folder. You can copy them manually from your bastion install folder, or run:
+``./bin/admin/install --nothing --modify-banner`` to get them copied over. Of course, feel free to modify them as
+you see fit.
+
 v3.22.00 - 2025/09/17
 *********************
 
