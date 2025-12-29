@@ -14,13 +14,16 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
     header             => "removing personal access to a server from an account",
     userAllowWildcards => 1,
     options            => {
-        "protocol=s" => \my $protocol,
+        "protocol=s"   => \my $protocol,
+        "proxy-host=s" => \my $proxyHost,
+        "proxy-port=s" => \my $proxyPort,
         # undocumented/compatibility:
-        "user-any" => \my $userAny,
-        "port-any" => \my $portAny,
-        "scpup"    => \my $scpUp,
-        "scpdown"  => \my $scpDown,
-        "sftp"     => \my $sftp,
+        "user-any"     => \my $userAny,
+        "port-any"     => \my $portAny,
+        "scpup"        => \my $scpUp,
+        "scpdown"      => \my $scpDown,
+        "sftp"         => \my $sftp,
+        "proxy-user=s" => \my $proxyUser,
     },
     helptext => <<'EOF',
 Remove a personal server access from your account
@@ -42,6 +45,10 @@ Usage: --osh SCRIPT_NAME --host HOST --user USER --port PORT [OPTIONS]
                               scpdownload  allow SCP download, you<--bastion--server
                               sftp         allow usage of the SFTP subsystem, through the bastion
                               rsync        allow usage of rsync, through the bastion
+  --proxy-host HOST|IP     Specify which host was used as a proxy/jump host to reach the target server
+  --proxy-port PORT        Proxy port that was used to reach the target server
+  --proxy-user USER|PATTERN|*  Proxy user that was configured for this access (mandatory when --proxy-host is specified).
+                               Globbing characters '*' and '?' are supported for pattern matching.
 EOF
 );
 
@@ -52,30 +59,47 @@ if (!$ip) {
     osh_exit 'ERR_MISSING_PARAMETER', "Missing parameter 'host' or didn't resolve correctly";
 }
 
+my $proxyIp;
+if ($proxyHost) {
+    $fnret =
+      OVH::Bastion::validate_proxy_params(proxyHost => $proxyHost, proxyPort => $proxyPort, proxyUser => $proxyUser);
+    $fnret or osh_exit $fnret;
+    $proxyIp   = $fnret->value->{'proxyIp'};
+    $proxyPort = $fnret->value->{'proxyPort'};
+    $proxyUser = $fnret->value->{'proxyUser'};
+}
+
 $fnret = OVH::Bastion::Plugin::ACL::check(
-    user     => $user,
-    userAny  => $userAny,
-    port     => $port,
-    portAny  => $portAny,
-    scpUp    => $scpUp,
-    scpDown  => $scpDown,
-    sftp     => $sftp,
-    protocol => $protocol,
+    user      => $user,
+    userAny   => $userAny,
+    port      => $port,
+    portAny   => $portAny,
+    scpUp     => $scpUp,
+    scpDown   => $scpDown,
+    sftp      => $sftp,
+    protocol  => $protocol,
+    proxyIp   => $proxyIp,
+    proxyPort => $proxyPort,
+    proxyUser => $proxyUser,
 );
 if (!$fnret) {
     help();
     osh_exit($fnret);
 }
-$user = $fnret->value->{'user'};
-$port = $fnret->value->{'port'};
+$user      = $fnret->value->{'user'};
+$port      = $fnret->value->{'port'};
+$proxyUser = $fnret->value->{'proxyUser'};
 
 my @command = qw{ sudo -n -u allowkeeper -- /usr/bin/env perl -T };
 push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountModifyPersonalAccess';
-push @command, '--target',  'self';
-push @command, '--action',  'del';
-push @command, '--account', $self;
-push @command, '--ip',      $ip;
-push @command, '--user',    $user if $user;
-push @command, '--port',    $port if $port;
+push @command, '--target',     'self';
+push @command, '--action',     'del';
+push @command, '--account',    $self;
+push @command, '--ip',         $ip;
+push @command, '--user',       $user      if $user;
+push @command, '--port',       $port      if $port;
+push @command, '--proxy-ip',   $proxyIp   if $proxyIp;
+push @command, '--proxy-port', $proxyPort if $proxyPort;
+push @command, '--proxy-user', $proxyUser if $proxyUser;
 
 osh_exit OVH::Bastion::helper(cmd => \@command);

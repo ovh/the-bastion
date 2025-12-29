@@ -17,19 +17,22 @@ use OVH::Bastion::Helper;
 # Fetch command options
 my $fnret;
 my ($result, @optwarns);
-my ($account, $group, $ip, $user, $port, $action, $ttl, $comment, $forceKey);
+my ($account, $group, $ip, $user, $port, $proxyIp, $proxyPort, $proxyUser, $action, $ttl, $comment, $forceKey);
 eval {
     local $SIG{__WARN__} = sub { push @optwarns, shift };
     $result = GetOptions(
-        "account=s"   => sub { $account  //= $_[1] },
-        "group=s"     => sub { $group    //= $_[1] },
-        "ip=s"        => sub { $ip       //= $_[1] },
-        "user=s"      => sub { $user     //= $_[1] },
-        "port=i"      => sub { $port     //= $_[1] },
-        "action=s"    => sub { $action   //= $_[1] },
-        "ttl=i"       => sub { $ttl      //= $_[1] },
-        "comment=s"   => sub { $comment  //= $_[1] },
-        "force-key=s" => sub { $forceKey //= $_[1] },
+        "account=s"    => sub { $account   //= $_[1] },
+        "group=s"      => sub { $group     //= $_[1] },
+        "ip=s"         => sub { $ip        //= $_[1] },
+        "user=s"       => sub { $user      //= $_[1] },
+        "port=i"       => sub { $port      //= $_[1] },
+        "action=s"     => sub { $action    //= $_[1] },
+        "ttl=i"        => sub { $ttl       //= $_[1] },
+        "comment=s"    => sub { $comment   //= $_[1] },
+        "force-key=s"  => sub { $forceKey  //= $_[1] },
+        "proxy-ip=s"   => sub { $proxyIp   //= $_[1] },
+        "proxy-port=i" => sub { $proxyPort //= $_[1] },
+        "proxy-user=s" => sub { $proxyUser //= $_[1] },
     );
 };
 if ($@) { die $@ }
@@ -59,15 +62,18 @@ if (not grep { $action eq $_ } qw{ add del }) {
 #>CODE
 # access_modify validates all its parameters, don't do it ourselves here for clarity
 $fnret = OVH::Bastion::access_modify(
-    way      => 'groupguest',
-    account  => $account,
-    group    => $group,
-    action   => $action,
-    user     => $user,
-    ip       => $ip,
-    port     => $port,
-    ttl      => $ttl,
-    comment  => $comment,
-    forceKey => $forceKey
+    way       => 'groupguest',
+    account   => $account,
+    group     => $group,
+    action    => $action,
+    user      => $user,
+    ip        => $ip,
+    port      => $port,
+    proxyIp   => $proxyIp,
+    proxyPort => $proxyPort,
+    proxyUser => $proxyUser,
+    ttl       => $ttl,
+    comment   => $comment,
+    forceKey  => $forceKey
 );
 HEXIT($fnret);
