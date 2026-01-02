@@ -21,17 +21,46 @@ update_banner()
     fi
 }
 
+# helper to start a service
+startsvc()
+{
+    local unit="$1"
+    if command -v systemctl >/dev/null 2>&1; then
+        local is_enabled
+        is_enabled="$(systemctl is-enabled "$unit.service")"
+        if [ "$is_enabled" = "enabled" ]; then
+            if systemctl start "$unit.service"; then
+                echo "Service $unit started"
+            else
+                echo "Warning: service $unit start failed, you might want to start it manually if needed"
+            fi
+        else
+            echo "Service $unit is-enabled returned '$is_enabled', not starting it"
+        fi
+    else
+        echo "No systemctl found, not attempting to start $unit"
+    fi
+}
+
 do_mount()
 {
     mount "$MOUNTPOINT"; ret=$?
     if [ $ret -eq 0 ] ; then
         echo "Success!"
-        # Stop the banner seal service to switch to unsealed state
-        update_banner
+        do_mount_post
     else
         echo "Failure... is $MOUNTPOINT correctly specified in /etc/fstab?"
     fi
     exit $ret
+}
+
+do_mount_post()
+{
+    # Stop the banner seal service to ensure banner is in unsealed state
+    update_banner
+    # Start other services (will only do something if they're enabled)
+    startsvc osh-sync-watcher
+    startsvc osh-http-proxy
 }
 
 if [ -z "$DEV_ENCRYPTED" ] || [ -z "$UNLOCKED_NAME" ] || [ -z "$MOUNTPOINT" ] || [ ! -d "$MOUNTPOINT" ] || [ ! -b "$DEV_ENCRYPTED" ] ; then
@@ -41,8 +70,7 @@ fi
 
 if [ -e "$MOUNTPOINT/allowkeeper" ] && mountpoint -q /home ; then
     echo "Already unlocked and mounted"
-    # Stop the banner seal service to ensure banner is in unsealed state
-    update_banner
+    do_mount_post
     exit 0
 fi
 
