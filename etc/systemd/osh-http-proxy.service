@@ -1,5 +1,12 @@
 [Unit]
 Description=OVH::Bastion HTTP Proxy daemon
+After=local-fs.target
+# A few safeguards to ensure that, if /home is encrypted,
+# it's properly unlocked before we attempt to start
+ConditionPathIsDirectory=/home/allowkeeper
+ConditionPathIsDirectory=/home/keykeeper
+ConditionPathIsDirectory=/home/logkeeper
+ConditionPathExists=/home/allowkeeper/healthcheck/allowed.ip
 
 [Service]
 ExecStart=/opt/bastion/bin/proxy/osh-http-proxy-daemon

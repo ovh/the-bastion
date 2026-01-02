@@ -1,6 +1,9 @@
 [Unit]
 Description=OVH::Bastion SSH banner seal service
 After=local-fs.target
+# Don't attempt to symlink if our sources don't exist
+ConditionPathExists=/etc/ssh/banner.sealed
+ConditionPathExists=/etc/ssh/banner.ok
 
 [Service]
 Type=oneshot
