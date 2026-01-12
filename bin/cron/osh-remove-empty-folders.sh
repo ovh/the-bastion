@@ -22,7 +22,7 @@ script_init osh-remove-empty-folders config_optional check_secure_lax
 _log "Counting the number of directories before the cleanup..."
 # shellcheck disable=SC2086
 nbdirs_before=$(find $FIND_EGREP_POSITIONAL_BEFORE /home/ -mindepth 3 -maxdepth 3 -type d \
-    $FIND_EGREP_POSITIONAL_AFTER '^/home/[^/]+/ttyrec/[0-9.]+$' -print | wc -l)
+    $FIND_EGREP_POSITIONAL_AFTER -regex '^/home/[^/]+/ttyrec/[0-9.]+$' -print | wc -l)
 
 _log "We have $nbdirs_before directories, removing empty ones..."
 # then we pass them all through rmdir, it'll just fail on non-empty ones.
