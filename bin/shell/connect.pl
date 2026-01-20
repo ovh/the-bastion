@@ -220,7 +220,8 @@ if ($header) {
     1) Check the remote account's authorized_keys on $ip, did you add the proper key there? (personal key or group key)
     2) Did you tell the bastion you added a key to the remote server, so it knows it has to use it? See the actually used keys just above.  If you didn't, do it with selfAddPersonalAccess or groupAddServer.
     3) Check the from="" part of the remote account's authorized_keys' keyline.  Are all the bastion IPs present? Master and slave(s)? See groupInfo or selfListEgressKeys to get the proper keyline to copy/paste.
-    4) Did you check the 3 above points carefully? Really? Because if you did, you wouldn't be reading this 4th bullet point, as your problem would already be fixed ;)
+    4) Are you trying to access a remote server through a group permission but the remote server expects your personal access key? Ask your group owner to enable the 'try-personal-keys' policy.
+    5) Did you check the 4 above points carefully? Really? Because if you did, you wouldn't be reading this 5th bullet point, as your problem would already be fixed ;)
 EOS
             );
         }
