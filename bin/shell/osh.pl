@@ -1611,7 +1611,7 @@ else {
         push @proxyCommand, '-o', "ConnectTimeout=$timeout" if $timeout;
 
         # Quote arguments that contain spaces and build the command string
-        my $proxyCommandStr = join(' ', map { quotemeta } @proxyCommand);
+        my $proxyCommandStr = join(' ', map { /\s/ ? "'$_'" : $_ } @proxyCommand);
         push @command, '-o', "ProxyCommand=$proxyCommandStr";
 
         osh_debug("ProxyCommand: $proxyCommandStr");
