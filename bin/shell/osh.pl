@@ -275,6 +275,13 @@ osh_debug("user-passed options : $realOptions");
 # special case: check if this is a ProxyJump connection that should be executed directly
 if ($ENV{'OSH_PROXYJUMP_CONNECTION'}) {
     delete $ENV{'OSH_PROXYJUMP_CONNECTION'};    # make sure nothing else gets interpreted as proxyjump
+    
+    # check if poxyJump connections are allowed
+    # This condition should never be true if proxyJump isn't allowed, but let's double check
+    if (!$config->{'egressProxyJumpAllowed'}) {
+        main_exit OVH::Bastion::EXIT_ACCESS_DENIED, "proxyjump_not_allowed",
+            "Sorry $self, egress proxy-jump connections have been disabled by policy";
+    }
     osh_debug("Detected ProxyJump connection, executing command directly");
 
     # Execute the proxy command directly without further validation
@@ -1591,6 +1598,12 @@ else {
     push @command, '-o', "ConnectTimeout=$timeout" if $timeout;
 
     if ($proxyJump) {
+        # check if poxyJump connections are allowed
+        if (!$config->{'egressProxyJumpAllowed'}) {
+            main_exit OVH::Bastion::EXIT_ACCESS_DENIED, "proxyjump_not_allowed",
+                "Sorry $self, egress proxy-jump connections have been disabled by policy";
+        }
+
         # Build ProxyCommand with same options as main SSH command
         my @proxyCommand = ('ssh');
         push @proxyCommand, '-o', 'PreferredAuthentications=' . (join(',', @preferredAuths));
