@@ -260,7 +260,7 @@ testsuite_proxyjump()
     # Check that selfListAccesses shows the proxy-user information
     success selfListAccesses_shows_proxy_user $a0 --osh selfListAccesses
     json .command selfListAccesses .error_code OK
-    contain '"ip":"192.168.1.201"'
+    json .value[0].ip 192.168.1.201
     contain '"port":"2222"'
     contain '"user":"listtest"'
     contain '"proxyIp":"10.0.0.5"'
