@@ -19,11 +19,11 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
         "proxy-port=s" => \my $proxyPort,
         "proxy-user=s" => \my $proxyUser,
         # undocumented/compatibility:
-        "user-any"     => \my $userAny,
-        "port-any"     => \my $portAny,
-        "scpup"        => \my $scpUp,
-        "scpdown"      => \my $scpDown,
-        "sftp"         => \my $sftp,
+        "user-any" => \my $userAny,
+        "port-any" => \my $portAny,
+        "scpup"    => \my $scpUp,
+        "scpdown"  => \my $scpDown,
+        "sftp"     => \my $sftp,
     },
     helptext => <<'EOF',
 Remove a personal server access from your account
