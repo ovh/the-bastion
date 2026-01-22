@@ -26,9 +26,9 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
         "via-port=i"  => \my $viaPort,
         "to-port=i"   => \my $toPort,
         "limit=i"     => \my $limit,
-        "proxyuser=s" => \my $proxyUser,
-        "proxyip=s"   => \my $proxyIp,
-        "proxyport=i" => \my $proxyPort,
+        "proxy-user=s" => \my $proxyUser,
+        "proxy-ip=s"   => \my $proxyIp,
+        "proxy-port=i" => \my $proxyPort,
     },
     helptext => <<'EOF',
 List the few past sessions of your account
@@ -50,9 +50,9 @@ Usage: --osh SCRIPT_NAME [OPTIONS]
   --user USER            Only sessions connecting using remote USER
   --via HOST             Only sessions that connected through bastion IP HOST
   --via-port PORT        Only sessions that connected through bastion PORT
-  --proxyuser USER       Only sessions that used proxy USER
-  --proxyip HOST         Only sessions that used proxy IP
-  --proxyport PORT       Only sessions that used proxy PORT
+  --proxy-user USER       Only sessions that used proxy USER
+  --proxy-ip HOST         Only sessions that used proxy IP
+  --proxy-port PORT       Only sessions that used proxy PORT
 
 Note that only the sessions that happened on this precise bastion instance will be shown,
 not the sessions from its possible cluster siblings.
