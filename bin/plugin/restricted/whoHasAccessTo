@@ -34,7 +34,7 @@ Usage: --osh SCRIPT_NAME --host SERVER [OPTIONS]
   --user USER           Remote user allowed (if not specified, ignore user specifications)
   --port PORT           Remote port allowed (if not specified, ignore port specifications)
   --proxy-user USER     Proxy user allowed (if egress connection goes through a proxyjump)
-  --proxy-host HOST     Proxy host allowed (if egress connection goes through a proxyjump
+  --proxy-host HOST     Proxy host allowed (if egress connection goes through a proxyjump)
   --proxy-port PORT     Proxy port allowed (if egress connection goes through a proxyjump)
   --ignore-personal     Don't check accounts' personal accesses (i.e. only check groups)
   --ignore-group GROUP  Ignore accesses by this group, if you know GROUP public key is in fact
