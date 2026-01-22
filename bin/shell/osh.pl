@@ -657,7 +657,7 @@ if ($proxyJump) {
     }
 
     $fnret = OVH::Bastion::get_ip(host => $proxyIp, allowSubnets => 0);
-    if (!$fnret && (($osh_command && $host) || !$osh_command)) {
+    if (!$fnret) {
         if ($fnret->err eq 'ERR_DNS_DISABLED') {
             main_exit OVH::Bastion::EXIT_DNS_DISABLED, 'dns_disabled', $fnret->msg;
         }
