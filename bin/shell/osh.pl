@@ -241,49 +241,6 @@ else {
 #
 my @saved_argv = @ARGV;
 
-# Check if this is a ProxyJump connection that should be executed directly
-if ($ENV{'OSH_PROXYJUMP_CONNECTION'}) {
-    delete $ENV{'OSH_PROXYJUMP_CONNECTION'};    # make sure nothing else gets interpreted as proxyjump
-    osh_debug("Detected ProxyJump connection, executing command directly");
-
-    # Extract the command from the realOptions or ARGV
-    my $proxy_command;
-    if (@ARGV && $ARGV[0] eq '-c' && $ARGV[1]) {
-        $proxy_command = $ARGV[1];
-    }
-    else {
-        $proxy_command = join(' ', @ARGV);
-    }
-
-    osh_debug("ProxyJump command: $proxy_command");
-
-    # Execute the proxy command directly without further validation
-    if ($proxy_command) {
-        # Parse the command to extract program and arguments
-        my @cmd_parts = split(/\s+/, $proxy_command);
-        if (!@cmd_parts) {
-            main_exit(OVH::Bastion::EXIT_EXEC_FAILED, "exec_failed", "Failed to parse proxy command");
-        }
-
-        # Remove "exec" if it's the first argument (the ssh subprocess puts that there)
-        if ($cmd_parts[0] eq 'exec') {
-            shift @cmd_parts;
-        }
-
-        # this should never happen, but just in case...
-        if ($cmd_parts[0] ne 'ssh') {
-            main_exit(OVH::Bastion::EXIT_EXEC_FAILED, "exec_failed", "Proxy command must start with 'ssh'");
-        }
-
-        osh_debug("Executing proxy command parts: " . join(' ', @cmd_parts));
-        exec(@cmd_parts)
-          or main_exit(OVH::Bastion::EXIT_EXEC_FAILED, "exec_failed", "Failed to execute proxy command: $!");
-    }
-    else {
-        main_exit(OVH::Bastion::EXIT_EXEC_FAILED, "exec_failed", "No proxy command provided");
-    }
-}
-
 # these options are the ones on shell definition of user calling osh.pl,
 # the user-passed commands are stringified after "-c" (as in sh -c)
 # it's possible to define the shell as osh.pl --debug, to force debug
@@ -315,9 +272,40 @@ osh_debug("user-passed options : $realOptions");
 #   Command params
 #
 
+# special case: check if this is a ProxyJump connection that should be executed directly
+if ($ENV{'OSH_PROXYJUMP_CONNECTION'}) {
+    delete $ENV{'OSH_PROXYJUMP_CONNECTION'};    # make sure nothing else gets interpreted as proxyjump
+    osh_debug("Detected ProxyJump connection, executing command directly");
+
+    # Execute the proxy command directly without further validation
+    if ($realOptions) {
+        # Parse the command to extract program and arguments
+        my @cmd_parts = split(/\s+/, $realOptions);
+        if (!@cmd_parts) {
+            main_exit(OVH::Bastion::EXIT_EXEC_FAILED, "proxy_parsing_failed", "Failed to parse proxy command");
+        }
+
+        # Remove "exec" if it's the first argument (the ssh subprocess puts that there)
+        if ($cmd_parts[0] eq 'exec') {
+            shift @cmd_parts;
+        }
+
+        # this should never happen, but just in case...
+        if ($cmd_parts[0] ne 'ssh') {
+            main_exit(OVH::Bastion::EXIT_EXEC_FAILED, "proxy_no_ssh_cmd", "Proxy command must start with 'ssh'");
+        }
+
+        osh_debug("Executing proxy command parts: " . join(' ', @cmd_parts));
+        exec(@cmd_parts)
+          or main_exit(OVH::Bastion::EXIT_EXEC_FAILED, "proxy_exec_failed", "Failed to execute proxy command: $!");
+    }
+    else {
+        main_exit(OVH::Bastion::EXIT_EXEC_FAILED, "proxy_no_cmd", "No proxy command provided");
+    }
+}
+
 my $port = 22;    # can be override by special port
 my @toExecute;
-
 # special case: mosh, in that case we have something like this in $realOptions
 # mosh-server 'new' '-s' '-c' '256' '-l' 'LANG=en_US.UTF-8' '-l' 'LANGUAGE=en_US' '--' '--osh' 'info'
 if (defined $realOptions && $realOptions =~ /^mosh-server (.+?) '--' (.*)/) {
