@@ -92,7 +92,7 @@ sub check {
         }
 
         # validate proxy host format (same as regular host validation)
-        if ($proxyIp !~ m{^[a-zA-Z0-9._/:-]+$}) {
+        if ($proxyIp !~ m{^[a-zA-Z0-9._:-]+$}) {
             return R('ERR_INVALID_PARAMETER', msg => "Proxy host name '$proxyIp' seems invalid");
         }
 
