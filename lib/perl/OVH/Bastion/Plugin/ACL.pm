@@ -91,9 +91,10 @@ sub check {
             return R('ERR_MISSING_PARAMETER', msg => "When --proxy-host is specified, --proxy-port becomes mandatory");
         }
 
-        # validate proxy host format (same as regular host validation)
-        if ($proxyIp !~ m{^[a-zA-Z0-9._:-]+$}) {
-            return R('ERR_INVALID_PARAMETER', msg => "Proxy host name '$proxyIp' seems invalid");
+        # validate proxy ip
+        my $fntret = OVH::Bastion::is_valid_ip(ip => $proxyIp, allowSubnets => 0);
+        if (!$fntret) {
+            return R('ERR_INVALID_PARAMETER', msg => "Proxy host IP '$proxyIp' is invalid: " . $fntret->msg);
         }
 
         if (!$proxyUser) {
