@@ -92,6 +92,15 @@ $fnret = OVH::Bastion::Helper::acquire_lock($lock_fh);
 $fnret or HEXIT($fnret);
 
 #>CODE
+$fnret = OVH::Bastion::load_configuration();
+$fnret or main_exit(OVH::Bastion::EXIT_CONFIGURATION_FAILURE, "configuration_failure", $fnret->msg);
+my $config = $fnret->value;
+
+if ($action eq 'add' && $proxyIp && !$config->{'egressProxyJumpAllowed'}) {
+    HEXIT('ERR_INVALID_PARAMETER',
+        msg => "ProxyJump egress connections are disabled by policy");
+}
+
 my $machine = OVH::Bastion::machine_display(
     ip        => $ip,
     port      => $port,
