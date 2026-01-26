@@ -153,6 +153,30 @@ sub get_next_available_uid {
     return R('ERR_UID_COLLISION', msg   => "No available UID in the allowed range");
 }
 
+sub get_next_available_gid {
+    my %params = @_;
+
+    # Get the minimum GID from configuration (should be >> accountUidMax to avoid collisions)
+    my $groupGidMin = OVH::Bastion::config('groupGidMin')->value();
+
+    # Start from groupGidMin and find the next available GID
+    my $next        = $groupGidMin;
+    my $maxAttempts = 100_000;        # safety limit
+    my $attempts    = 0;
+
+    while ($attempts < $maxAttempts) {
+        # Check if this GID is available
+        if (!scalar(getgrgid($next))) {
+            # Found an available GID
+            return R('OK', value => $next);
+        }
+        $next++;
+        $attempts++;
+    }
+
+    return R('ERR_GID_COLLISION', msg => "No available GID found in the allowed range starting from $groupGidMin");
+}
+
 sub is_bastion_account_valid_and_existing {
     my %params = @_;
     my $fnret  = OVH::Bastion::is_account_valid(%params);

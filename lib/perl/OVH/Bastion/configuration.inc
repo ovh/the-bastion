@@ -190,28 +190,29 @@ sub load_configuration {
 
     # 2/6) Options that must be numbers, between min and max.
     foreach my $o (
-        {name => 'accountUidMin',                         min => 100,  max => 999_999_999, default => 2000},
-        {name => 'accountUidMax',                         min => 100,  max => 999_999_999, default => 99999},
-        {name => 'ttyrecGroupIdOffset',                   min => 1,    max => 999_999_999, default => 100_000},
-        {name => 'minimumIngressRsaKeySize',              min => 1024, max => 16384,       default => 2048},
-        {name => 'minimumEgressRsaKeySize',               min => 1024, max => 16384,       default => 2048},
-        {name => 'maximumIngressRsaKeySize',              min => 1024, max => 32768,       default => 8192},
-        {name => 'maximumEgressRsaKeySize',               min => 1024, max => 32768,       default => 8192},
-        {name => 'moshTimeoutNetwork',                    min => 0,    max => 86400 * 365, default => 86400},
-        {name => 'moshTimeoutSignal',                     min => 0,    max => 86400 * 365, default => 30},
-        {name => 'idleLockTimeout',                       min => 0,    max => 86400 * 365, default => 0},
-        {name => 'idleKillTimeout',                       min => 0,    max => 86400 * 365, default => 0},
-        {name => 'warnBeforeLockSeconds',                 min => 0,    max => 86400 * 365, default => 0},
-        {name => 'warnBeforeKillSeconds',                 min => 0,    max => 86400 * 365, default => 0},
-        {name => 'MFAPasswordInactiveDays',               min => -1,   max => 365 * 5,     default => -1},
-        {name => 'MFAPasswordMinDays',                    min => 0,    max => 365 * 5,     default => 0},
-        {name => 'MFAPasswordMaxDays',                    min => 0,    max => 365 * 5,     default => 90},
-        {name => 'MFAPasswordWarnDays',                   min => 0,    max => 365 * 5,     default => 15},
-        {name => 'sshClientDebugLevel',                   min => 0,    max => 3,           default => 0},
-        {name => 'accountMaxInactiveDays',                min => 0,    max => 365 * 5,     default => 0},
-        {name => 'interactiveModeTimeout',                min => 0,    max => 86400 * 365, default => 15},
-        {name => 'interactiveModeProactiveMFAexpiration', min => 0,    max => 86400,       default => 900},
-        {name => 'dnsSupportLevel',                       min => 0,    max => 2,           default => 2},
+        {name => 'accountUidMin',                         min => 100,   max => 999_999_999, default => 2000},
+        {name => 'accountUidMax',                         min => 100,   max => 999_999_999, default => 99999},
+        {name => 'groupGidMin',                           min => 10000, max => 999_999_999, default => 500_000},
+        {name => 'ttyrecGroupIdOffset',                   min => 1,     max => 999_999_999, default => 100_000},
+        {name => 'minimumIngressRsaKeySize',              min => 1024,  max => 16384,       default => 2048},
+        {name => 'minimumEgressRsaKeySize',               min => 1024,  max => 16384,       default => 2048},
+        {name => 'maximumIngressRsaKeySize',              min => 1024,  max => 32768,       default => 8192},
+        {name => 'maximumEgressRsaKeySize',               min => 1024,  max => 32768,       default => 8192},
+        {name => 'moshTimeoutNetwork',                    min => 0,     max => 86400 * 365, default => 86400},
+        {name => 'moshTimeoutSignal',                     min => 0,     max => 86400 * 365, default => 30},
+        {name => 'idleLockTimeout',                       min => 0,     max => 86400 * 365, default => 0},
+        {name => 'idleKillTimeout',                       min => 0,     max => 86400 * 365, default => 0},
+        {name => 'warnBeforeLockSeconds',                 min => 0,     max => 86400 * 365, default => 0},
+        {name => 'warnBeforeKillSeconds',                 min => 0,     max => 86400 * 365, default => 0},
+        {name => 'MFAPasswordInactiveDays',               min => -1,    max => 365 * 5,     default => -1},
+        {name => 'MFAPasswordMinDays',                    min => 0,     max => 365 * 5,     default => 0},
+        {name => 'MFAPasswordMaxDays',                    min => 0,     max => 365 * 5,     default => 90},
+        {name => 'MFAPasswordWarnDays',                   min => 0,     max => 365 * 5,     default => 15},
+        {name => 'sshClientDebugLevel',                   min => 0,     max => 3,           default => 0},
+        {name => 'accountMaxInactiveDays',                min => 0,     max => 365 * 5,     default => 0},
+        {name => 'interactiveModeTimeout',                min => 0,     max => 86400 * 365, default => 15},
+        {name => 'interactiveModeProactiveMFAexpiration', min => 0,     max => 86400,       default => 900},
+        {name => 'dnsSupportLevel',                       min => 0,     max => 2,           default => 2},
       )
     {
         if (not defined $C->{$o->{'name'}}) {
@@ -454,6 +455,19 @@ sub load_configuration {
           . $C->{'ttyrecGroupIdOffset'}
           . ") would overlap with account UIDs, setting it to $fixed";
         $C->{'ttyrecGroupIdOffset'} = $fixed;
+    }
+
+    # ... groupGidMin must be high enough to avoid overlap with account UIDs and ttyrec groups
+    my $minRequiredGroupGid = $C->{'accountUidMax'} + $C->{'ttyrecGroupIdOffset'} + 1;
+    if ($C->{'groupGidMin'} < $minRequiredGroupGid) {
+        my $fixed = $minRequiredGroupGid;
+        push @errors,
+            "Configuration error: the configured 'groupGidMin' ("
+          . $C->{'groupGidMin'}
+          . ") would overlap with account UIDs and/or ttyrec GIDs (max ttyrec GID would be "
+          . ($C->{'accountUidMax'} + $C->{'ttyrecGroupIdOffset'})
+          . "), setting it to $fixed";
+        $C->{'groupGidMin'} = $fixed;
     }
 
     # ... ensure min <= max

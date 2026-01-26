@@ -142,6 +142,7 @@ These options are either discouraged (in which case this is explained in the des
 
 - `accountUidMin`_
 - `accountUidMax`_
+- `groupGidMin`_
 - `ttyrecGroupIdOffset`_
 - `documentationURL`_
 - `debug`_
@@ -1006,6 +1007,17 @@ accountUidMax
 :Default: ``99999``
 
 Maximum allowed UID for accounts on this bastion.
+
+.. _groupGidMin:
+
+groupGidMin
+***********
+
+:Type: ``int >= 10000``
+
+:Default: ``500000``
+
+Minimum GID for bastion groups. Should be set high enough (>> accountUidMax) to avoid collision with account UIDs/GIDs.
 
 .. _ttyrecGroupIdOffset:
 

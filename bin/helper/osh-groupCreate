@@ -153,11 +153,19 @@ if ($encrypted) {
 
 # First create group
 osh_info("Creating groups");
-foreach my $tocreate ($group, "$group-aclkeeper", "$group-gatekeeper", "$group-owner") {
-    $fnret = OVH::Bastion::sys_groupadd(group => $tocreate, noisy_stderr => 1);
+
+# Create all 4 groups with allocated GIDs to avoid collisions with account UIDs
+my @groups_to_create = ($group, "$group-aclkeeper", "$group-gatekeeper", "$group-owner");
+foreach my $tocreate (@groups_to_create) {
+    $fnret = OVH::Bastion::get_next_available_gid();
+    $fnret or HEXIT('ERR_GID_ALLOCATION_FAILED', msg => "Failed to allocate GID for group $tocreate: " . $fnret->msg);
+    my $gid = $fnret->value;
+
+    $fnret = OVH::Bastion::sys_groupadd(group => $tocreate, gid => $gid, noisy_stderr => 1);
     $fnret->err eq 'OK'
-      or
-      HEXIT('ERR_GROUPADD_FAILED', msg => "Error while running groupadd command for $tocreate (" . $fnret->msg . ")");
+      or HEXIT('ERR_GROUPADD_FAILED',
+        msg => "Error while running groupadd command for $tocreate with GID $gid (" . $fnret->msg . ")");
+    osh_debug("Created group $tocreate with GID $gid");
 }
 
 osh_debug("Creating directory");
