@@ -4,12 +4,15 @@ use common::sense;
 use Data::Dumper;
 use Term::ANSIColor;
 use Digest::MD5 ();
-
 use File::Basename;
+
+use lib dirname(__FILE__) . '/../../lib/perl';
+use OVH::Bastion;
+
 my $BASEDIR = dirname(__FILE__) . '/../..';
 
-my $MIN_KEYGROUP_GID       = 2000;
-my $MAX_KEYGROUP_GID       = 99999;
+my $MIN_KEYGROUP_GID       = OVH::Bastion::config("groupGidMin")->value;
+my $MAX_KEYGROUP_GID       = $MIN_KEYGROUP_GID + 99999;
 my @KEY_GROUPS_IGNORE      = qw{ keeper reader };
 my $HOME_SUBDIRS_IGNORE_RE = qr{^^};
 

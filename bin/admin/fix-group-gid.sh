@@ -1,12 +1,16 @@
 #! /usr/bin/env bash
 # vim: set filetype=sh ts=4 sw=4 sts=4 et:
+# This script ensures that GIDs of bastion groups (including their group system
+# roles) are higher than the configured groupGidMin value.
+# It shifts group GIDs from the low range (where they may collide with reserved
+# account UIDs) to the high range defined by groupGidMin.
 set -e
 
 basedir=$(readlink -f "$(dirname "$0")"/../..)
 # shellcheck source=lib/shell/functions.inc
 . "$basedir"/lib/shell/functions.inc
 
-MINGID=10000
+MINGID=$(perl -I"$basedir/lib/perl" -MOVH::Bastion -e 'print OVH::Bastion::config("groupGidMin")->value')
 
 if [ -n "$2" ] || [ -z "$1" ] ; then
     echo "Usage: $0 <groupname|ALL>"
@@ -34,13 +38,12 @@ _run()
     fi
 }
 
+next_available_gid=$((MINGID + 1))
 find_next_available_gid()
 {
-    nextgid=$((MINGID + 1))
-    while getent group "$nextgid" >/dev/null; do
-        nextgid=$((nextgid + 1))
+    while getent group "$next_available_gid" >/dev/null; do
+        next_available_gid=$((next_available_gid + 1))
     done
-    echo $nextgid
 }
 
 change_gid()
@@ -63,7 +66,8 @@ change_gid()
 
     [ "$oldgid" -ge "$MINGID" ] && return
 
-    newgid=$(find_next_available_gid)
+    find_next_available_gid
+    newgid=$next_available_gid
 
     _run group_change_gid_compat "$group" "$newgid"
     tocheck=""
@@ -106,13 +110,15 @@ main()
         return
     fi
 
-    echo
-    echo "$group: OK to proceed? (CTRL+C to abort). You'll still have to validate each commands I'm going to run"
-    # shellcheck disable=SC2034
-    read -r ___
-    really_run_commands=1
-    batchrun
-    echo "$group: done."
+    if [ -z "${DRY_RUN:-}" ] || [ "$DRY_RUN" = 0 ]; then
+        echo
+        echo "$group: OK to proceed? (CTRL+C to abort). You'll still have to validate each commands I'm going to run"
+        # shellcheck disable=SC2034
+        read -r ___
+        really_run_commands=1
+        batchrun
+        echo "$group: done."
+    fi
 }
 
 if [ "$1" = "ALL" ]; then
