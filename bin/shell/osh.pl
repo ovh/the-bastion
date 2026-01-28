@@ -353,7 +353,7 @@ my $remainingOptions;
     "verbose+"                  => \my $verbose,
     "tty|t"                     => \my $tty,
     "no-tty|T"                  => \my $notty,
-    "user|u=s"                  => \my $user,
+    "user|u|l=s"                => \my $user,
     "osh=s"                     => \my $osh_command,
     "telnet|e"                  => \my $telnet,
     "password=s"                => \my $passwordFile,
