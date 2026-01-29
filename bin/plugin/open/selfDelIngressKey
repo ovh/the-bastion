@@ -13,17 +13,17 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,
     header  => "Here are the public keys that allow you to connect to the bastion",
     options => {
-        "line-number-to-delete=i"   => \$indexToDelete,            # legacy name, keep for compatibility
-        "id-to-delete|l=i"          => \$indexToDelete,
-        "fingerprint-to-delete|f=s" => \my $fingerprintToDelete,
+        "line-number-to-delete=i"   => \$indexToDelete,             # compat, no longer documented since v3.02.00
+        "id-to-delete|l=i"          => \$indexToDelete,             # -l is no longer documented since v3.23.01
+        "fingerprint-to-delete|f=s" => \my $fingerprintToDelete,    # -f is no longer documented since v3.23.01
     },
     helptext => <<"EOF",
 Remove an ingress public key from your account
 
-Usage: --osh SCRIPT_NAME [--id-to-delete|-l ID] [--fingerprint-to-delete|-f FP]
+Usage: --osh SCRIPT_NAME [--id-to-delete ID] [--fingerprint-to-delete FP]
 
-  -l, --id-to-delete ID           Directly specify key id to delete (CAUTION!), you can get id with selfListIngressKeys
-  -f, --fingerprint-to-delete FP  Directly specify the fingerprint of the key to delete (CAUTION!)
+  --id-to-delete ID           Directly specify key id to delete (CAUTION!), you can get id with selfListIngressKeys
+  --fingerprint-to-delete FP  Directly specify the fingerprint of the key to delete (CAUTION!)
 
 If none of these options are specified, you'll be prompted interactively.
 EOF
