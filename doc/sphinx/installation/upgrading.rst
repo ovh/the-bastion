@@ -27,6 +27,33 @@ See the ``--help`` for a more fine-grained upgrade path if needed.
 Version-specific upgrade instructions
 =====================================
 
+v3.23.01 - 2026/01/29
+*********************
+
+The ``-l`` alias to ``--user`` has been added, to mimick ``ssh``'s ``-l`` option.
+The ``selfDelIngressKey`` plugin had also this alias for its ``--id-to-delete`` option, and still does,
+but the main routine's option parsing will take precedence if you don't use ``--`` to separate options.
+For this reason, the use of the short options ``-l`` and ``-f`` have been deprecated
+in ``selfDelIngressKey`` to avoid confusion.
+
+Another change is the introduction of the ``groupGidMin`` option in :file:`/etc/bastion/bastion.conf`,
+to fix an issue that could arise if you use fixed UIDs for your accounts (using ``--uid `` in ``accountCreate``
+instead of ``--uid-auto``).
+
+This minor release mainly fixes an issue where a preexisting bastion group would have reserved a GID that you
+expected to allow to a future account.
+This is only of importance if you're using fixed UIDs to create accounts, and can't let the system pick
+the UIDs itself, for example because these UIDs are referenced in some other system of your company.
+
+This change applies a GID shifting to all the bastion groups to ensure they can never take a GID that would
+pertain to a later-to-be-created account with a fixed UID/GID.
+This shift amount is configurable in bastion.conf as ``groupGidMin`` (``500000`` by default).
+
+If you use fixed UIDs for your accounts and you want to ensure any preexisting group's GID won't get in the way,
+you may use the updated :file:`bin/admin/fix-group-gid.sh` script to shift any preexisting group GID that would be
+out of the new ``groupGidMin`` range. This is optional.
+
+
 v3.23.00 - 2025/12/22
 *********************
 

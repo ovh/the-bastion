@@ -1,3 +1,10 @@
+## v3.23.01 - 2026/01/29
+- feat: accept ``-l`` as an additional alias to specify the username (mimicking ``ssh``'s option)
+- enh: better interaction between systemd units and /home encryption
+- fix: add ``groupGidMin`` configuration option to avoid stealing an account's GID
+- fix: missing ``-regex`` following @cdbd6c7 from #550
+- chore: deprecate the use of -f and -l in selfListIngressKeys
+
 ## v3.23.00 - 2025/12/22
 - feat: switch banner if node is sealed
 - feat: httpproxy: add support for more HTTP methods (#601)
