@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>osh-sync-watcher.sh &mdash; The Bastion 3.23.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="../../_static/jquery.js?v=8dae8fb0"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=eb75f0bc"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="osh-http-proxy.conf" href="osh-http-proxy_conf.html" />
+    <link rel="prev" title="osh-encrypt-rsync.conf" href="osh-encrypt-rsync_conf.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.23.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using/basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Configuration files</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#main-configuration-files">Main configuration files</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="bastion_conf.html">bastion.conf</a></li>
+<li class="toctree-l3"><a class="reference internal" href="osh-backup-acl-keys_conf.html">osh-backup-acl-keys.conf</a></li>
+<li class="toctree-l3"><a class="reference internal" href="osh-encrypt-rsync_conf.html">osh-encrypt-rsync.conf</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">osh-sync-watcher.sh</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#option-list">Option List</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#option-reference">Option Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="osh-http-proxy_conf.html">osh-http-proxy.conf</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#configuration-files-for-satellite-scripts">Configuration files for satellite scripts</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/open/index.html">open plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Configuration files</a></li>
+      <li class="breadcrumb-item active">osh-sync-watcher.sh</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/administration/configuration/osh-sync-watcher_sh.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="osh-sync-watcher-sh">
+<h1>osh-sync-watcher.sh<a class="headerlink" href="#osh-sync-watcher-sh" title="Link to this heading"></a></h1>
+<blockquote>
+<div><div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This daemon is responsible for ensuring secondary bastions
+are synced up to their primary at all times.
+If you don't have such HA setup, you can ignore this config file.
+For more information, refer to
+<a class="reference internal" href="../../installation/advanced.html#clustering-high-availability"><span class="std std-ref">Clustering (High Availability)</span></a>.</p>
+</div>
+</div></blockquote>
+<section id="option-list">
+<h2>Option List<a class="headerlink" href="#option-list" title="Link to this heading"></a></h2>
+<section id="logging-options">
+<h3>Logging options<a class="headerlink" href="#logging-options" title="Link to this heading"></a></h3>
+<p>These options configure the way the script logs its actions</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#logdir">logdir</a></p></li>
+<li><p><a class="reference internal" href="#syslog">syslog</a></p></li>
+</ul>
+</section>
+<section id="daemon-setup-options">
+<h3>Daemon setup options<a class="headerlink" href="#daemon-setup-options" title="Link to this heading"></a></h3>
+<p>These options configure whether the synchronization daemon is enabled</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#enabled">enabled</a></p></li>
+<li><p><a class="reference internal" href="#timeout">timeout</a></p></li>
+</ul>
+</section>
+<section id="remote-synchronization-options">
+<h3>Remote synchronization options<a class="headerlink" href="#remote-synchronization-options" title="Link to this heading"></a></h3>
+<p>These options configure how the primary bastion should push its configuration to the secondaries</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#rshcmd">rshcmd</a></p></li>
+<li><p><a class="reference internal" href="#remoteuser">remoteuser</a></p></li>
+<li><p><a class="reference internal" href="#remotehostlist">remotehostlist</a></p></li>
+</ul>
+</section>
+</section>
+<section id="option-reference">
+<h2>Option Reference<a class="headerlink" href="#option-reference" title="Link to this heading"></a></h2>
+<section id="logging">
+<h3>Logging<a class="headerlink" href="#logging" title="Link to this heading"></a></h3>
+<section id="logdir">
+<h4>logdir<a class="headerlink" href="#logdir" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code></p>
+</dd>
+</dl>
+<p>Directory where the logs will be written to. Note that using this configuration option, the script will directly write to a file, without using syslog. If empty, won't log directly to a file.</p>
+</section>
+<section id="syslog">
+<h4>syslog<a class="headerlink" href="#syslog" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;local6&quot;</span></code></p>
+</dd>
+</dl>
+<p>The syslog facility to use for logging the script output. If set to the empty string, we'll not log through syslog at all. If this configuration option is missing from your config file altogether, the default value will be used (local6), which means that we'll log to syslog.</p>
+</section>
+</section>
+<section id="daemon-setup">
+<h3>Daemon setup<a class="headerlink" href="#daemon-setup" title="Link to this heading"></a></h3>
+<section id="enabled">
+<h4>enabled<a class="headerlink" href="#enabled" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">0</span></code></p>
+</dd>
+</dl>
+<p>If set to anything else than <code class="docutils literal notranslate"><span class="pre">1</span></code>, the daemon will refuse to start (e.g. you don't have secondary bastions). You can set this to <code class="docutils literal notranslate"><span class="pre">1</span></code> when you've configured and tested the primary/secondaries setup.</p>
+</section>
+<section id="timeout">
+<h4>timeout<a class="headerlink" href="#timeout" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;</span> <span class="pre">0</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">120</span></code></p>
+</dd>
+</dl>
+<p>The maximum delay, in seconds, after which we'll forcefully synchronize our data to the secondaries, even if no change was detected.</p>
+</section>
+</section>
+<section id="remote-synchronization">
+<h3>Remote synchronization<a class="headerlink" href="#remote-synchronization" title="Link to this heading"></a></h3>
+<section id="rshcmd">
+<h4>rshcmd<a class="headerlink" href="#rshcmd" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code></p>
+</dd>
+<dt class="field-odd">Example<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">&quot;ssh</span> <span class="pre">-q</span> <span class="pre">-i</span> <span class="pre">/root/.ssh/id_master2slave</span> <span class="pre">-o</span> <span class="pre">StrictHostKeyChecking=accept-new&quot;</span></code></p>
+</dd>
+</dl>
+<p>This value will be passed as the <code class="docutils literal notranslate"><span class="pre">--rsh</span></code> parameter of <code class="docutils literal notranslate"><span class="pre">rsync</span></code> (don't use <code class="docutils literal notranslate"><span class="pre">-p</span></code> to specify the port here, use the <code class="docutils literal notranslate"><span class="pre">remotehostlist</span></code> config below instead), this can be used to specify which SSH key to use, for example. NOTE THAT THIS OPTION IS MANDATORY (if you don't have anything to specify here, you can just say <code class="docutils literal notranslate"><span class="pre">ssh</span></code>). If you followed the standard installation procedure, the &quot;example&quot; value specified below will work.</p>
+</section>
+<section id="remoteuser">
+<h4>remoteuser<a class="headerlink" href="#remoteuser" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;bastionsync&quot;</span></code></p>
+</dd>
+</dl>
+<p>The remote user to connect as, using <code class="docutils literal notranslate"><span class="pre">ssh</span></code> while rsyncing to secondaries. You probably don't need to change this.</p>
+</section>
+<section id="remotehostlist">
+<h4>remotehostlist<a class="headerlink" href="#remotehostlist" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">space-separated</span> <span class="pre">list</span> <span class="pre">of</span> <span class="pre">strings,</span> <span class="pre">each</span> <span class="pre">string</span> <span class="pre">being</span> <span class="pre">either</span> <span class="pre">'ip'</span> <span class="pre">or</span> <span class="pre">'ip:port'</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code></p>
+</dd>
+<dt class="field-odd">Example<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">&quot;192.0.2.17</span> <span class="pre">192.0.2.12:2244&quot;</span></code></p>
+</dd>
+</dl>
+<p>The list of the secondary bastions to push our data to. If this list is empty, the daemon won't do anything.</p>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="osh-encrypt-rsync_conf.html" class="btn btn-neutral float-left" title="osh-encrypt-rsync.conf" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="osh-http-proxy_conf.html" class="btn btn-neutral float-right" title="osh-http-proxy.conf" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

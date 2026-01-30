@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Access management &mdash; The Bastion 3.23.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="../../_static/jquery.js?v=8dae8fb0"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=eb75f0bc"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="PIV keys support" href="../piv.html" />
+    <link rel="prev" title="First steps" href="first_steps.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.23.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">The basics</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="first_steps.html">First steps</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Access management</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#personal-accesses">Personal Accesses</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#decentralized-help-yourself">Decentralized (help yourself)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#centralized-ask-the-it-crowd">Centralized (ask the IT crowd)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#group-accesses">Group Accesses</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#servers-list">Servers list</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#members-list">Members list</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#and-some-more">And some more</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#global-roles">Global roles</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/configuration/index.html">Configuration files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/open/index.html">open plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">The basics</a></li>
+      <li class="breadcrumb-item active">Access management</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/using/basics/access_management.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="access-management">
+<h1>Access management<a class="headerlink" href="#access-management" title="Link to this heading"></a></h1>
+<p>There are two ways of managing authorizations on The Bastion, it is extremely important
+to understand those two ways because they're complementary.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This section is largely inspired from the <a class="reference external" href="https://blog.ovhcloud.com/the-ovhcloud-ssh-bastion-part-2-delegation-dizziness/">blog post about the subject</a></p>
+</div>
+<p>The main idea is that delegation is at the core of the system: everybody has their own set of responsibilities,
+and potential actions, without having to ask the bastion admin.</p>
+<section id="personal-accesses">
+<span id="accessmanagementpersonalaccesses"></span><h2>Personal Accesses<a class="headerlink" href="#personal-accesses" title="Link to this heading"></a></h2>
+<p>On the bastion, each account has (at least) one set of <strong>personal egress keys</strong>.
+These beasts are generated when the account is first created.
+The personal egress <strong>private key</strong> sits in the bastion account home.
+The account user has no way to see it, or export it out of the bastion,
+but they can use it through the bastion's code logic.
+The user can retrieve the corresponding <strong>public key</strong> at any time, using the <a class="reference internal" href="../../plugins/open/selfListEgressKeys.html"><span class="doc">selfListEgressKeys</span></a>
+command, and install it – or get it installed – on the remote servers they needs to access.
+Depending on your use case – and the level of autonomy you want to give to the teams – there are
+two ways of managing these personal accesses.</p>
+<section id="decentralized-help-yourself">
+<h3>Decentralized (help yourself)<a class="headerlink" href="#decentralized-help-yourself" title="Link to this heading"></a></h3>
+<p>The first way mimics how you would manage accesses if you weren't using an SSH bastion at all.
+This is a perfectly valid way to handle accesses on a simple level, without too many users and a limited
+number of machines. This allows anyone to grant themselves personal accesses on the bastion,
+without having to ask anyone else to do it. It sounds like a security hole, but it's not.
+If someone adds themself a personal access to the remote server, it will only work if their
+personal egress public key has already been installed on the remote server.
+In other words, they either already had access to the remote server to do this – using means other than the bastion –
+or somebody who had access to the remote server accepted the addition of their key.
+Either way, they cannot magically grant themselves personal access without
+the admins of the remote server first permitting their key.</p>
+</section>
+<section id="centralized-ask-the-it-crowd">
+<h3>Centralized (ask the IT crowd)<a class="headerlink" href="#centralized-ask-the-it-crowd" title="Link to this heading"></a></h3>
+<p>Another way to handle this can be to grant a limited number of people, such as security teams,
+the right to add personal accesses to others. This way people are less autonomous, but it might be useful
+if adding accesses has to be enacted via normalized processes. It also has some nice effects: as a sysadmin,
+one of the pros is that you can create 3 separate accounts on the remote machine, and map them to each bastion account
+you're adding. This is a good method for achieving <strong>end-to-end traceability</strong>; including on the remote server;
+where you might want to install <strong>auditd</strong> or similar tools.
+It's also doable in the help yourself mode, but it may be harder to enforce.</p>
+<p>To be clear, this access model doesn't scale so efficiently when we're dealing with whole teams,
+or big infrastructures – this is where group-based access comes handy.</p>
+</section>
+</section>
+<section id="group-accesses">
+<span id="accessmanagementgroupaccesses"></span><h2>Group Accesses<a class="headerlink" href="#group-accesses" title="Link to this heading"></a></h2>
+<a class="reference internal image-reference" href="../../_images/groups.png"><img alt="../../_images/groups.png" src="../../_images/groups.png" style="width: 400px;" /></a>
+<p>A group has three components:</p>
+<ul class="simple">
+<li><p>A list of members (accounts, representing individual people)</p></li>
+<li><p>At least one set of group egress keys</p></li>
+<li><p>A list of servers (or more precisely IPs)</p></li>
+</ul>
+<section id="servers-list">
+<h3>Servers list<a class="headerlink" href="#servers-list" title="Link to this heading"></a></h3>
+<p>The servers list is actually a list of IPs, or IP blocks. They map to your servers, network devices,
+or anything else with SSH capability that has an IP (on which the egress group key has been installed).
+Technically, this list is actually composed of 3-tuple items: remote user, remote IP (or IP block), remote port.
+That which applies to the personal accesses, also applies here: adding a server to the list doesn't magically
+give access to it, it is first necessary to install the <strong>egress group public key</strong>.
+Of course, managing the installation of these keys manually quickly becomes impractical,
+but you can consider these part of the configuration of the servers, hence they should be managed with whichever
+centralized configuration system you already use (Puppet, Chef, Ansible, /bin/cp… wait, no, strike this last one).</p>
+</section>
+<section id="members-list">
+<h3>Members list<a class="headerlink" href="#members-list" title="Link to this heading"></a></h3>
+<p>The members are people who can connect to any server listed in the group server list.
+They'll be using the <strong>private egress group key</strong> they have access to, as members of said group.
+Of course, they have no way to extract this private key for their own use outside of the bastion,
+they can only use it through the bastion's code logic.</p>
+<p>Got a new team member? Just add them as a member of your group, and they instantly get access to all the group servers.
+Somebody leaves the company? Just delete their account on the bastion, and all the accesses are instantly gone.
+This is the case because all your servers should have incoming SSH sessions limited to your bastions.
+This way, any rogue SSH key that would have been added, is no longer of any use.</p>
+</section>
+<section id="and-some-more">
+<span id="accessmanagementgrouproles"></span><h3>And some more<a class="headerlink" href="#and-some-more" title="Link to this heading"></a></h3>
+<p>We've covered the basics of the group-based approach, but as we need a lot of flexibility and delegation,
+there is a little more to cover. Remember when I said a group had 3 components? Well, I lied.
+A group has more than just members. Additional group roles include:</p>
+<ul class="simple">
+<li><p>Guests</p></li>
+<li><p>Gatekeepers</p></li>
+<li><p>Aclkeepers</p></li>
+<li><p>Owners</p></li>
+</ul>
+<p>All of these are lists of accounts that have a specific role in the group.</p>
+<img alt="../../_images/group_roles.png" src="../../_images/group_roles.png" />
+<p>First, <strong>guests</strong>. These are a bit like members, but with less privileges: they can connect to remote machines
+using the group key, but not to all the machines of the group, only to a subset.
+This is useful when somebody outside of the team needs a specific access to a specific server,
+potentially for a limited amount of time (as such accesses can be set to expire).</p>
+<p>Then, <strong>gatekeepers</strong>. Those guys manage the list of members and guests of the group.
+In other terms, they have the right to give the right to get access. Nothing too complicated here.
+Then, there are the <strong>aclkeepers</strong>. As you may have guessed, they manage the list of servers that are
+part of the group. If you happen to have some automation managing the provisioning of servers of your infrastructure,
+this role could be granted to a robot account whose sole purpose would be to update the servers list on the bastion,
+in a completely integrated way with your provisioning.
+You can even tag such accounts so that they'll never be able to use SSH through the bastion,
+even if somebody grants them by mistake!</p>
+<p>Last but not least, the <strong>owners</strong> have the highest privilege level on the group, which means they can manage
+the gatekeepers, aclkeepers and owners lists. They are permitted to give the right to give the right to get access.
+Moreover, users can accumulate these roles, which means some accounts may be a member
+and a gatekeeper at the same time, for example.</p>
+</section>
+</section>
+<section id="global-roles">
+<h2>Global roles<a class="headerlink" href="#global-roles" title="Link to this heading"></a></h2>
+<p>Beyond the roles we have just described – which are all scoped to a group – there are two additional roles,
+which are scoped to the whole bastion: the <strong>superowner</strong> and the <strong>bastion admin</strong>.</p>
+<p>In a nutshell, a <strong>superowner</strong> is the implicit owner of all groups present on the bastion.
+This comes in handy if the group becomes ownerless, as superowners are able to nominate a brand new owner.</p>
+<p>The most powerful role is the <strong>bastion admin</strong>. This role should only be given to a few individuals,
+as they can impersonate anyone, and in practice should not be given to somebody who is not already root
+on the bastion's operating system itself. Among other things, they manage the configuration of the bastion,
+where the superowners are declared.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="first_steps.html" class="btn btn-neutral float-left" title="First steps" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../piv.html" class="btn btn-neutral float-right" title="PIV keys support" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

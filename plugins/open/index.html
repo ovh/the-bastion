@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>open plugins &mdash; The Bastion 3.23.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="../../_static/jquery.js?v=8dae8fb0"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=eb75f0bc"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="alive" href="alive.html" />
+    <link rel="prev" title="groupTransmitOwnership" href="../group-owner/groupTransmitOwnership.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.23.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using/basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/configuration/index.html">Configuration files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">open plugins</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="alive.html">alive</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batch.html">batch</a></li>
+<li class="toctree-l2"><a class="reference internal" href="clush.html">clush</a></li>
+<li class="toctree-l2"><a class="reference internal" href="groupInfo.html">groupInfo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="groupList.html">groupList</a></li>
+<li class="toctree-l2"><a class="reference internal" href="groupListPasswords.html">groupListPasswords</a></li>
+<li class="toctree-l2"><a class="reference internal" href="groupListServers.html">groupListServers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="help.html">help</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info.html">info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lock.html">lock</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mtr.html">mtr</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nc.html">nc</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ping.html">ping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rsync.html">rsync</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scp.html">scp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfAddIngressKey.html">selfAddIngressKey</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfDelIngressKey.html">selfDelIngressKey</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfForgetHostKey.html">selfForgetHostKey</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfGenerateEgressKey.html">selfGenerateEgressKey</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfGeneratePassword.html">selfGeneratePassword</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfGenerateProxyPassword.html">selfGenerateProxyPassword</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfListAccesses.html">selfListAccesses</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfListEgressKeys.html">selfListEgressKeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfListIngressKeys.html">selfListIngressKeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfListPasswords.html">selfListPasswords</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfListSessions.html">selfListSessions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfMFAResetPassword.html">selfMFAResetPassword</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfMFAResetTOTP.html">selfMFAResetTOTP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfMFASetupPassword.html">selfMFASetupPassword</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfMFASetupTOTP.html">selfMFASetupTOTP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfPlaySession.html">selfPlaySession</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sftp.html">sftp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="unlock.html">unlock</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">open plugins</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/plugins/open/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="open-plugins">
+<h1>open plugins<a class="headerlink" href="#open-plugins" title="Link to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="alive.html">alive</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="alive.html#ping-a-host-and-exit-as-soon-as-it-answers">Ping a host and exit as soon as it answers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="batch.html">batch</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="batch.html#run-a-batch-of-osh-commands-fed-through-stdin">Run a batch of osh commands fed through STDIN</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="clush.html">clush</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="clush.html#launch-a-remote-command-on-several-machines-sequentially-clush-like">Launch a remote command on several machines sequentially (clush-like)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="groupInfo.html">groupInfo</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="groupInfo.html#print-some-basic-information-about-a-group">Print some basic information about a group</a></li>
+<li class="toctree-l2"><a class="reference internal" href="groupInfo.html#usage-examples">Usage examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="groupInfo.html#output-example">Output example</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="groupList.html">groupList</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="groupList.html#list-the-groups-available-on-this-bastion">List the groups available on this bastion</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="groupListPasswords.html">groupListPasswords</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="groupListPasswords.html#list-the-hashes-and-metadata-of-egress-passwords-of-a-group">List the hashes and metadata of egress passwords of a group</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="groupListServers.html">groupListServers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="groupListServers.html#list-the-servers-ips-and-ip-blocks-pertaining-to-a-group">List the servers (IPs and IP blocks) pertaining to a group</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="help.html">help</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="help.html#i-m-so-meta-even-this-acronym">I'm So Meta, Even This Acronym</a></li>
+<li class="toctree-l2"><a class="reference internal" href="help.html#colors">Colors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="info.html">info</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="info.html#displays-some-information-about-this-bastion-instance">Displays some information about this bastion instance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info.html#output-example">Output example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info.html#plugin-configuration">Plugin configuration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="info.html#options">Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="info.html#example">Example</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lock.html">lock</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lock.html#manually-lock-all-your-current-sessions">Manually lock all your current sessions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="mtr.html">mtr</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mtr.html#runs-the-mtr-tool-to-traceroute-a-host">Runs the mtr tool to traceroute a host</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="nc.html">nc</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="nc.html#check-whether-a-remote-tcp-port-is-open">Check whether a remote TCP port is open</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ping.html">ping</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ping.html#ping-a-remote-host-from-the-bastion">Ping a remote host from the bastion</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="rsync.html">rsync</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="rsync.html#transfer-files-from-to-remote-servers-using-rsync-through-the-bastion">Transfer files from/to remote servers using rsync through the bastion</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="rsync.html#usage-examples">Usage examples</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="scp.html">scp</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="scp.html#transfer-files-from-to-remote-servers-using-scp-through-the-bastion">Transfer files from/to remote servers using scp through the bastion</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="selfAddIngressKey.html">selfAddIngressKey</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="selfAddIngressKey.html#add-a-new-ingress-public-key-to-your-account">Add a new ingress public key to your account</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="selfDelIngressKey.html">selfDelIngressKey</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="selfDelIngressKey.html#remove-an-ingress-public-key-from-your-account">Remove an ingress public key from your account</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="selfForgetHostKey.html">selfForgetHostKey</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="selfForgetHostKey.html#forget-a-known-host-key-from-your-bastion-account">Forget a known host key from your bastion account</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="selfGenerateEgressKey.html">selfGenerateEgressKey</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="selfGenerateEgressKey.html#create-a-new-public-private-key-pair-on-your-bastion-account">Create a new public + private key pair on your bastion account</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="selfGeneratePassword.html">selfGeneratePassword</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="selfGeneratePassword.html#generate-a-new-egress-password-for-your-account">Generate a new egress password for your account</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="selfGenerateProxyPassword.html">selfGenerateProxyPassword</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="selfGenerateProxyPassword.html#generate-a-new-ingress-password-to-use-the-bastion-https-proxy">Generate a new ingress password to use the bastion HTTPS proxy</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="selfListAccesses.html">selfListAccesses</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="selfListAccesses.html#show-the-list-of-servers-you-have-access-to">Show the list of servers you have access to</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="selfListEgressKeys.html">selfListEgressKeys</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="selfListEgressKeys.html#list-the-public-egress-keys-of-your-account">List the public egress keys of your account</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="selfListIngressKeys.html">selfListIngressKeys</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="selfListIngressKeys.html#list-the-public-ingress-keys-of-your-account">List the public ingress keys of your account</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="selfListPasswords.html">selfListPasswords</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="selfListPasswords.html#list-the-hashes-and-metadata-of-the-egress-passwords-associated-to-your-account">List the hashes and metadata of the egress passwords associated to your account</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="selfListSessions.html">selfListSessions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="selfListSessions.html#list-the-few-past-sessions-of-your-account">List the few past sessions of your account</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="selfMFAResetPassword.html">selfMFAResetPassword</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="selfMFAResetPassword.html#remove-the-unix-password-of-your-account">Remove the UNIX password of your account</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="selfMFAResetTOTP.html">selfMFAResetTOTP</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="selfMFAResetTOTP.html#remove-the-totp-configuration-of-your-account">Remove the TOTP configuration of your account</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="selfMFASetupPassword.html">selfMFASetupPassword</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="selfMFASetupPassword.html#setup-an-additional-credential-unix-password-to-access-your-account">Setup an additional credential (UNIX password) to access your account</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="selfMFASetupTOTP.html">selfMFASetupTOTP</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="selfMFASetupTOTP.html#setup-an-additional-credential-totp-to-access-your-account">Setup an additional credential (TOTP) to access your account</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="selfPlaySession.html">selfPlaySession</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="selfPlaySession.html#replay-the-ttyrec-of-a-past-session">Replay the ttyrec of a past session</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="sftp.html">sftp</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="sftp.html#transfer-files-from-to-remote-servers-using-sftp-through-the-bastion">Transfer files from/to remote servers using sftp through the bastion</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="unlock.html">unlock</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="unlock.html#unlock-all-your-current-sessions">Unlock all your current sessions</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../group-owner/groupTransmitOwnership.html" class="btn btn-neutral float-left" title="groupTransmitOwnership" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="alive.html" class="btn btn-neutral float-right" title="alive" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

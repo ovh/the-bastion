@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SFTP, SCP &amp; RSYNC support &mdash; The Bastion 3.23.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="../_static/jquery.js?v=8dae8fb0"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=eb75f0bc"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="HTTPS Proxy" href="http_proxy.html" />
+    <link rel="prev" title="PIV keys support" href="piv.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.23.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="piv.html">PIV keys support</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">SFTP, SCP &amp; RSYNC support</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#sftp-scp">SFTP &amp; SCP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rsync">RSYNC</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#basic-usage">Basic usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#access-model">Access model</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#error-message-1">Error message 1</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#error-message-2">Error message 2</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../administration/configuration/index.html">Configuration files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/open/index.html">open plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">SFTP, SCP &amp; RSYNC support</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/using/sftp_scp_rsync.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="sftp-scp-rsync-support">
+<h1><a class="toc-backref" href="#id1" role="doc-backlink">SFTP, SCP &amp; RSYNC support</a><a class="headerlink" href="#sftp-scp-rsync-support" title="Link to this heading"></a></h1>
+<nav class="contents" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#sftp-scp-rsync-support" id="id1">SFTP, SCP &amp; RSYNC support</a></p>
+<ul>
+<li><p><a class="reference internal" href="#introduction" id="id2">Introduction</a></p></li>
+<li><p><a class="reference internal" href="#prerequisites" id="id3">Prerequisites</a></p>
+<ul>
+<li><p><a class="reference internal" href="#sftp-scp" id="id4">SFTP &amp; SCP</a></p></li>
+<li><p><a class="reference internal" href="#rsync" id="id5">RSYNC</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#basic-usage" id="id6">Basic usage</a></p></li>
+<li><p><a class="reference internal" href="#access-model" id="id7">Access model</a></p>
+<ul>
+<li><p><a class="reference internal" href="#error-message-1" id="id8">Error message 1</a></p></li>
+<li><p><a class="reference internal" href="#error-message-2" id="id9">Error message 2</a></p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+<section id="introduction">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">Introduction</a><a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>The Bastion's main goal is to secure <code class="docutils literal notranslate"><span class="pre">ssh</span></code> connections.
+However, one might also want to use <code class="docutils literal notranslate"><span class="pre">sftp</span></code>, <code class="docutils literal notranslate"><span class="pre">scp</span></code> or <code class="docutils literal notranslate"><span class="pre">rsync</span></code> through it.</p>
+<p>Its use is supported through the <a class="reference internal" href="../plugins/open/scp.html"><span class="doc">scp</span></a>, <a class="reference internal" href="../plugins/open/sftp.html"><span class="doc">sftp</span></a> and
+<a class="reference internal" href="../plugins/open/rsync.html"><span class="doc">rsync</span></a> bastion plugins, and documented as part of all the plugins.
+This additional documentation section gives some examples and outlines some common configuration errors.</p>
+</section>
+<section id="prerequisites">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">Prerequisites</a><a class="headerlink" href="#prerequisites" title="Link to this heading"></a></h2>
+<section id="sftp-scp">
+<h3><a class="toc-backref" href="#id4" role="doc-backlink">SFTP &amp; SCP</a><a class="headerlink" href="#sftp-scp" title="Link to this heading"></a></h3>
+<p>The use of SFTP or SCP through the bastion requires an SFTP or SCP program that supports the <strong>-S</strong> option,
+and a shell to run the wrapper. This is the case on all operating systems using OpenSSH such as Linux or *BSD.</p>
+<p>If you're running under Microsoft Windows, you might want to setup either a Linux VM, or a WSL (Windows Subsystem
+for Linux) environment, to have the OpenSSH version of <code class="docutils literal notranslate"><span class="pre">scp</span></code> or <code class="docutils literal notranslate"><span class="pre">sftp</span></code> and a working POSIX-style shell.</p>
+<p>Note that it won't work with Windows GUI apps, because there's no way to specify a wrapper (through <strong>-S</strong>),
+and no shell. For example, it won't work under WinSCP.</p>
+</section>
+<section id="rsync">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">RSYNC</a><a class="headerlink" href="#rsync" title="Link to this heading"></a></h3>
+<p>The use of RSYNC through the bastion only requires rsync to be installed locally and remotely, as is the
+case for usage without the bastion.</p>
+</section>
+</section>
+<section id="basic-usage">
+<h2><a class="toc-backref" href="#id6" role="doc-backlink">Basic usage</a><a class="headerlink" href="#basic-usage" title="Link to this heading"></a></h2>
+<p>Please check the <a class="reference internal" href="../plugins/open/scp.html"><span class="doc">scp</span></a>, <a class="reference internal" href="../plugins/open/sftp.html"><span class="doc">sftp</span></a> and <a class="reference internal" href="../plugins/open/rsync.html"><span class="doc">rsync</span></a>
+documentation to see how to use these.</p>
+</section>
+<section id="access-model">
+<h2><a class="toc-backref" href="#id7" role="doc-backlink">Access model</a><a class="headerlink" href="#access-model" title="Link to this heading"></a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Currently, to be able to use SFTP, SCP or RSYNC with a remote server,
+you first need to have a declared SSH access to it.
+This might change in a future version.</p>
+</div>
+<section id="error-message-1">
+<h3><a class="toc-backref" href="#id8" role="doc-backlink">Error message 1</a><a class="headerlink" href="#error-message-1" title="Link to this heading"></a></h3>
+<p>This is briefly explained in the <a class="reference internal" href="../plugins/open/scp.html"><span class="doc">scp</span></a>/doc:<cite>/plugins/open/sftp</cite>/<a class="reference internal" href="../plugins/open/rsync.html"><span class="doc">rsync</span></a>
+documentation, but having access rights to SSH to a machine is not enough to have the right to SCP to or from it,
+or use SFTP/RSYNC on it.
+If you have the following error, then this is the problem you're having:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>Sorry,<span class="w"> </span>you<span class="w"> </span>seem<span class="w"> </span>to<span class="w"> </span>have<span class="w"> </span>access<span class="w"> </span>through<span class="w"> </span>ssh<span class="w"> </span>and<span class="w"> </span>through<span class="w"> </span>scp<span class="w"> </span>but<span class="w"> </span>by<span class="w"> </span>different<span class="w"> </span>and<span class="w"> </span>distinct<span class="w"> </span>means<span class="w"> </span><span class="o">(</span>distinct<span class="w"> </span>keys<span class="o">)</span>.
+The<span class="w"> </span>intersection<span class="w"> </span>between<span class="w"> </span>your<span class="w"> </span>rights<span class="w"> </span><span class="k">for</span><span class="w"> </span>ssh<span class="w"> </span>and<span class="w"> </span><span class="k">for</span><span class="w"> </span>scp<span class="w"> </span>needs<span class="w"> </span>to<span class="w"> </span>be<span class="w"> </span>at<span class="w"> </span>least<span class="w"> </span>one.
+</pre></div>
+</div>
+<p>When this happens, it means that you have at least one declared SSH access to this machine (through one or
+several groups, or through personal accesses). You also have at least one declared SCP/SFTP/RSYNC access to it.
+However <strong>both accesses are declared through different means</strong>, and more precisely different SSH keys. For example:</p>
+<ul class="simple">
+<li><p>You are a member of a group having this machine on one hand, and you have a declared SCP/SFTP/RSYNC access to this machine
+using a personal access on the other hand. For SSH, the group key would be used, but for SCP/SFTP, your personal key
+would be used. However, for technical reasons (that might be lifted in a future version), your SSH and SCP/SFTP/RSYNC access
+must be declared with the same key, so in other words, using the same access mean (same group, or personal access).</p></li>
+<li><p>You are a member of group <strong>A</strong> having this machine, but SCP/SFTP/RSYNC access is declared in group <strong>B</strong>.
+In that case, as previously, as two different keys are used, this won't work.</p></li>
+</ul>
+<p>To declare an SCP/SFTP/RSYNC access, in addition to a preexisting SSH access, you should use either:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../plugins/group-aclkeeper/groupAddServer.html"><span class="doc">groupAddServer</span></a>, if the SSH access is part of a group</p></li>
+<li><p><a class="reference internal" href="../plugins/restricted/selfAddPersonalAccess.html"><span class="doc">selfAddPersonalAccess</span></a> or <a class="reference internal" href="../plugins/restricted/accountAddPersonalAccess.html"><span class="doc">accountAddPersonalAccess</span></a>,
+if the SSH access is personal (tied to an account)</p></li>
+</ul>
+<p>In both cases, where you would use the <code class="docutils literal notranslate"><span class="pre">--user</span></code> option to the command, to specify the remote user to use for
+the SSH access being declared, you should replace it by either <code class="docutils literal notranslate"><span class="pre">--protocol</span> <span class="pre">scpdownload</span></code>, <code class="docutils literal notranslate"><span class="pre">--protocol</span> <span class="pre">scpupload</span></code>,
+<code class="docutils literal notranslate"><span class="pre">--protocol</span> <span class="pre">sftp</span></code> or <code class="docutils literal notranslate"><span class="pre">--protocol</span> <span class="pre">rsync</span></code>,
+to specify that you're about to add an SCP/SFTP/RSYNC access (and not a bare SSH one), and which direction you want
+to allow in the case of SCP.</p>
+<p>For SCP, you can allow both directions by using the command first with <code class="docutils literal notranslate"><span class="pre">--protocol</span> <span class="pre">scpdownload</span></code>,
+then with <code class="docutils literal notranslate"><span class="pre">--protocol</span> <span class="pre">scpupload</span></code>.
+Note that for SFTP and RSYNC, you can't specify a direction, due to how these protocols work: you either have
+SFTP/RSYNC access (hence being able to upload and download files), or you don't.</p>
+<p>For example, this is a valid command to add SFTP access to a machine which is part of a group:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>bssh<span class="w"> </span>--osh<span class="w"> </span>groupAddServer<span class="w"> </span>--group<span class="w"> </span>mygroup<span class="w"> </span>--host<span class="w"> </span>scpserver.example.org<span class="w"> </span>--port<span class="w"> </span><span class="m">22</span><span class="w"> </span>--protocol<span class="w"> </span>sftp
+</pre></div>
+</div>
+</section>
+<section id="error-message-2">
+<h3><a class="toc-backref" href="#id9" role="doc-backlink">Error message 2</a><a class="headerlink" href="#error-message-2" title="Link to this heading"></a></h3>
+<p>If you have the following message:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>Sorry,<span class="w"> </span>but<span class="w"> </span>you<span class="w"> </span>don<span class="err">&#39;</span>t<span class="w"> </span>seem<span class="w"> </span>to<span class="w"> </span>have<span class="w"> </span>access<span class="w"> </span>to<span class="w"> </span>HOST:IP
+</pre></div>
+</div>
+<p>Then it means that you don't even have SSH access to this machine. In that case, somebody should grant you access,
+either by adding you to a group having this machine (<a class="reference internal" href="../plugins/group-gatekeeper/groupAddMember.html"><span class="doc">groupAddMember</span></a>) or by adding
+this machine to your personal accesses (<a class="reference internal" href="../plugins/restricted/accountAddPersonalAccess.html"><span class="doc">accountAddPersonalAccess</span></a> or
+<a class="reference internal" href="../plugins/restricted/selfAddPersonalAccess.html"><span class="doc">selfAddPersonalAccess</span></a>).</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="piv.html" class="btn btn-neutral float-left" title="PIV keys support" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="http_proxy.html" class="btn btn-neutral float-right" title="HTTPS Proxy" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

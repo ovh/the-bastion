@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Using PuTTY with The Bastion &mdash; The Bastion 3.23.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="../../_static/jquery.js?v=8dae8fb0"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=eb75f0bc"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Configuration files" href="../../administration/configuration/index.html" />
+    <link rel="prev" title="Specific SSH clients tutorials" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.23.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">JSON API</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Specific SSH clients tutorials</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Using PuTTY with The Bastion</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/configuration/index.html">Configuration files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/open/index.html">open plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Specific SSH clients tutorials</a></li>
+      <li class="breadcrumb-item active">Using PuTTY with The Bastion</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/using/specific_ssh_clients_tutorials/putty.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="using-putty-with-the-bastion">
+<h1>Using PuTTY with The Bastion<a class="headerlink" href="#using-putty-with-the-bastion" title="Link to this heading"></a></h1>
+<p>First, you'll need to generate a pair of SSH keys. To this end, use the <code class="docutils literal notranslate"><span class="pre">PuTTY</span></code> companion tool: <code class="docutils literal notranslate"><span class="pre">PuTTYgen</span></code>.</p>
+<p>Before hitting <em>Generate</em> to generate a new key pair, ensure that EdDSA is selected, with the Ed25519 curve.
+You'll have to move your mouse a bit to feed the pseudo-random number generator.</p>
+<img alt="Main window of PuTTYgen" src="../../_images/putty1.png" />
+<p>Once the key has been generated, you'll have to input a passphrase that will protect your key.
+Ensure this passphrase is sufficiently hard to guess, but ensure you'll not forget it!
+Once you've entered your passphrase twice, it should look like this:</p>
+<img alt="Main window of PuTTYgen once a key has been generated" src="../../_images/putty2.png" />
+<p>You can now hit <em>Save private key</em> and choose a file name.
+Also save the corresponding public key next to it by hitting <em>Save public key</em>,
+but don't close <code class="docutils literal notranslate"><span class="pre">PuTTYgen</span></code> yet.</p>
+<p>The public key you've just saved, which is also displayed at the top of the <code class="docutils literal notranslate"><span class="pre">PuTTYgen</span></code> window,
+starting by <code class="docutils literal notranslate"><span class="pre">ssd-ed25519</span> <span class="pre">AAAA...</span></code> is the public key you'll need to give to The Bastion when
+creating your account there, so you can copy/paste it when The Bastion asks you for a key:</p>
+<img alt="Creating an account on The Bastion" src="../../_images/putty3.png" />
+<p>Now, you can close <code class="docutils literal notranslate"><span class="pre">PuTTYgen</span></code> (as you've saved the private and public keys in their respective
+files, you'll be able to use them later), and open <code class="docutils literal notranslate"><span class="pre">PuTTY</span></code> itself:</p>
+<img alt="Main window of PuTTY" src="../../_images/putty4.png" />
+<p>To create the proper connection settings, set your bastion host name (or IP) and port in the
+window above, and leave the connection type to SSH.</p>
+<p>Then, navigate to <em>Connection &gt; SSH &gt; Auth &gt; Credentials</em>, and use <em>Browse...</em> to set the
+location of the private key you've generated with <code class="docutils literal notranslate"><span class="pre">PuTTYgen</span></code>. Ensure you use the private
+key, not the public key: the private key usually ends in <code class="file docutils literal notranslate"><span class="pre">.ppk</span></code>, as shown below:</p>
+<img alt="Credentials options section of PuTTY window" src="../../_images/putty5.png" />
+<p>Then, navigate back to <em>Session</em>, and save the session settings under any name you wish,
+so that the next time you open <code class="docutils literal notranslate"><span class="pre">PuTTY</span></code>, you'll be able to load these settings back:</p>
+<img alt="Saving the settings in PuTTY" src="../../_images/putty6.png" />
+<p>Then, you can click <em>Open</em> to establish the connection. On the first connection attempt, you'll
+be prompted with this dialog box:</p>
+<img alt="Unknown hostkey dialog box" src="../../_images/putty7.png" />
+<p>This is because <code class="docutils literal notranslate"><span class="pre">PuTTY</span></code> never connected to the bastion before, and asks you to verify the
+bastion's host public key. This is expected on the first connection, so you can click <em>Accept</em>.</p>
+<p>You'll then be prompted for your login, which is the account name you've created on the bastion,
+associated with your public key:</p>
+<img alt="Waiting for the user login" src="../../_images/putty8.png" />
+<p>You'll then need to type the passphrase protecting your private key, so <code class="docutils literal notranslate"><span class="pre">PuTTY</span></code> can use it:</p>
+<img alt="Waiting for the private key passphrase" src="../../_images/putty9.png" />
+<p>Once done, the bastion should authenticate you, and drop you in interactive mode:</p>
+<img alt="" src="../../_images/putty10.png" />
+<p>You can now use The Bastion!</p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Specific SSH clients tutorials" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../administration/configuration/index.html" class="btn btn-neutral float-right" title="Configuration files" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

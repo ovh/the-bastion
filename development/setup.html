@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Environment setup &mdash; The Bastion 3.23.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="../_static/jquery.js?v=8dae8fb0"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=eb75f0bc"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Writing tests" href="tests.html" />
+    <link rel="prev" title="CVE-2025-59339" href="../administration/security_advisories/cve_2025_59339.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.23.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../using/basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../administration/configuration/index.html">Configuration files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Environment setup</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#available-tools">Available tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#git-pre-commit-hook">Git pre-commit hook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#running-integration-tests">Running integration tests</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#using-docker">Using Docker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#without-docker">Without Docker</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/open/index.html">open plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Environment setup</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/development/setup.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="environment-setup">
+<h1><a class="toc-backref" href="#id1" role="doc-backlink">Environment setup</a><a class="headerlink" href="#environment-setup" title="Link to this heading"></a></h1>
+<nav class="contents" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#environment-setup" id="id1">Environment setup</a></p>
+<ul>
+<li><p><a class="reference internal" href="#available-tools" id="id2">Available tools</a></p></li>
+<li><p><a class="reference internal" href="#git-pre-commit-hook" id="id3">Git pre-commit hook</a></p></li>
+<li><p><a class="reference internal" href="#running-integration-tests" id="id4">Running integration tests</a></p>
+<ul>
+<li><p><a class="reference internal" href="#using-docker" id="id5">Using Docker</a></p></li>
+<li><p><a class="reference internal" href="#without-docker" id="id6">Without Docker</a></p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+<p>This documentation section outlines the few steps needed to build a development environment for The Bastion,
+easing code modification, tests, checks, and ultimately, pull requests.</p>
+<section id="available-tools">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">Available tools</a><a class="headerlink" href="#available-tools" title="Link to this heading"></a></h2>
+<p>The provided <code class="file docutils literal notranslate"><span class="pre">docker/devenv/run-tool.sh</span></code> script will build a development docker for you, under which it'll
+run several tools. Your local git folder will be mounted as a volume inside this docker so that it can
+access the files, and potentially modify them (such as for <code class="docutils literal notranslate"><span class="pre">perltidy</span></code>).</p>
+<p>The supported tools are as follows:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="hll">Usage: ./docker/devenv/run-tool.sh COMMAND [OPTIONS]
+</span>
+  COMMAND may be one of the following:
+
+  tidy       [FILES..] runs perltidy on several or all the Perl source files, modifying them if needed
+  checktidy  [FILES..] runs perltidy in dry-run mode, and returns an error if files are not tidy
+  perlcritic           runs perlcritic on all the Perl source files
+  shellcheck [FILES..] runs shellcheck on all the shell source files
+  lint                 runs tidy, perlcritic and shellcheck on all files in one command
+
+  doc                  generates the documentation
+  sphinx-view-objects  shows the named objects of the Sphinx documentation that can be referenced
+  doc-serve &lt;PORT&gt;     starts a local HTTP python server on PORT to view generated documentation
+
+  bash                 spawns an interactive shell to run any arbitrary command in the devenv docker
+  run &lt;COMMAND&gt;        runs an arbitrary command in the devenv docker
+  rebuild              forces the rebuild of the devenv docker image that is needed to run all the above commands
+</pre></div>
+</div>
+<p>Before submitting a pull request, you'll need at minimum to run <code class="docutils literal notranslate"><span class="pre">lint</span></code>. It might be a good idea to setup a
+git pre-commit hook to do this on modified files, see below.</p>
+</section>
+<section id="git-pre-commit-hook">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">Git pre-commit hook</a><a class="headerlink" href="#git-pre-commit-hook" title="Link to this heading"></a></h2>
+<p>Some lint checks are enforced through GitHub Actions, but it'll save you a lot of back-and-forth if you ensure that
+these checks are passing locally on your development environment.</p>
+<p>To this effect, you'll need to setup pre-commit hooks on your local copy of the git repository, so that your code
+is automatically checked by <code class="docutils literal notranslate"><span class="pre">perlcritic</span></code>, <code class="docutils literal notranslate"><span class="pre">perltidy</span></code> and <code class="docutils literal notranslate"><span class="pre">shellcheck</span></code> each time you commit.</p>
+<p>If you previously cloned the repository with such a command:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="hll">git clone https://github.com/ovh/the-bastion
+</span></pre></div>
+</div>
+<p>Then you can copy the provided <code class="file docutils literal notranslate"><span class="pre">pre-commit</span></code> script into your local <code class="file docutils literal notranslate"><span class="pre">.git</span></code> folder:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="hll">cp contrib/git/pre-commit .git/hooks/pre-commit
+</span></pre></div>
+</div>
+<p>To verify that it works checkout a new test branch and add two dummy files like this:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="hll">git checkout -B mybranch
+</span><span class="hll">printf &quot;%b&quot; &quot;#! /usr/bin/env bash\n# vim: set filetype=sh\nunused=1\n&quot; &gt; bin/shell/dummy.sh
+</span><span class="hll">printf &quot;%b&quot; &quot;#! /usr/bin/env perl\n# vim: set filetype=perl\nsub dummy { 1; };\n&quot; &gt; lib/perl/dummy.pm
+</span><span class="hll">git add bin/shell/dummy.sh lib/perl/dummy.pm
+</span><span class="hll">git commit -m dummy
+</span>
+*** Checking shell files syntax using system shellcheck
+`-&gt; bin/shell/dummy.sh
+
+In bin/shell/dummy.sh line 3:
+unused=1
+^----^ SC2034: unused appears unused. Verify use (or export if used externally).
+
+`-&gt; [ERR.] Got 1 errors
+
+ERROR: shell-check failed on bin/shell/dummy.sh
+*** Checking perl tidiness
+`-&gt; lib/perl/dummy.pm
+./lib/perl/dummy.pm ./lib/perl/dummy.pm.tdy differ: char 63, line 3
+--- ./lib/perl/dummy.pm 2023-10-03 08:19:55.605950307 +0000
++++ ./lib/perl/dummy.pm.tdy     2023-10-03 08:20:43.618577295 +0000
+@@ -1,3 +1,3 @@
+ #! /usr/bin/env perl
+ # vim: set filetype=perl
+-sub dummy { 1; };
++sub dummy { 1; }
+
+ERROR: perl tidy failed on lib/perl/dummy.pm
+
+!!! COMMIT ABORTED !!!
+If you want to commit nevertheless, use -n.
+</pre></div>
+</div>
+<p>As you see, the checks are running before the commit is validated and abort it should any check fail.</p>
+</section>
+<section id="running-integration-tests">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">Running integration tests</a><a class="headerlink" href="#running-integration-tests" title="Link to this heading"></a></h2>
+<section id="using-docker">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">Using Docker</a><a class="headerlink" href="#using-docker" title="Link to this heading"></a></h3>
+<p>Functional tests use <code class="docutils literal notranslate"><span class="pre">Docker</span></code> to spawn an environment matching a bastion install.
+One of the docker instances will be used as client, which will connect to the other instance
+which is used as the bastion server. The client instance sends commands to the server instance
+and tests the return values against expected output.</p>
+<p>To test the current code, use the following script, which will run <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">build</span></code> and launch the tests:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="hll">tests/functional/docker/docker_build_and_run_tests.sh &lt;TARGET&gt;
+</span></pre></div>
+</div>
+<p>Where target is one of the supported OSes. Currently only Linux targets are supported.
+You'll get a list of the supported targets by calling the command without argument.</p>
+<p>For example, if you want to test it under Debian (which is a good default OS if you don't have any preference):</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="hll">tests/functional/docker/docker_build_and_run_tests.sh debian12
+</span></pre></div>
+</div>
+<p>The full tests usually take 25 to 50 minutes to run, depending on your hardware specs.
+If you want to launch only a subset of the integration tests, you may specify it:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="hll">tests/functional/docker/docker_build_and_run_tests.sh debian12 --module=320-base.sh
+</span></pre></div>
+</div>
+<p>Other options are supported, and passed through as-is to the underlying test script, use <code class="docutils literal notranslate"><span class="pre">--help</span></code> as below to
+get the list (the output in this documentation might not be up to date, please actually launch it yourself
+to get up-to-date information):</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="hll">tests/functional/launch_tests_on_instance.sh --help
+</span>
+Usage: /home/user/bastion/tests/functional/launch_tests_on_instance.sh [OPTIONS] &lt;IP&gt; &lt;SSH_Port&gt; &lt;HTTP_Proxy_Port_or_Zero&gt; &lt;Remote_Admin_User_Name&gt; &lt;Admin_User_SSH_Key_Path&gt; &lt;Root_SSH_Key_Path&gt;
+
+Test Options:
+    --consistency-check        Check system consistency between every test
+    --no-pause-on-fail         Don&#39;t pause when a test fails
+    --log-prefix=X             Prefix all logs by this name
+    --module=X                 Only test this module (specify a filename found in `functional/tests.d/`), can be specified multiple times
+
+Remote OS directory locations:
+    --remote-etc-bastion=X     Override the default remote bastion configuration directory (default: /etc/bastion)
+    --remote-basedir=X         Override the default remote basedir location (default: /home/user/bastion)
+
+Specifying features support of the underlying OS of the tested bastion:
+    --has-ed25519=[0|1]        Ed25519 keys are supported (default: 1)
+    --has-mfa=[0|1]            PAM is usable to check passwords and TOTP (default: 1)
+    --has-mfa-password=[0|1]   PAM is usable to check passwords (default: 0)
+    --has-pamtester=[0|1]      The `pamtester` binary is available, and PAM is usable (default: 1)
+    --has-piv=[0|1]            The `yubico-piv-tool` binary is available (default: 1)
+    --has-sk=[0|1]             The openssh-server supports Secure Keys (FIDO2) (default: 0)
+</pre></div>
+</div>
+</section>
+<section id="without-docker">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">Without Docker</a><a class="headerlink" href="#without-docker" title="Link to this heading"></a></h3>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method is discouraged, prefer using the Docker method above when possible</p>
+</div>
+<p>You can test the code against a BSD (or any other OS) without using Docker, by spawning a server
+under the target OS (for example, on a VM), and installing the bastion on it.</p>
+<p>Then, from another machine, run:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="hll">test/functional/launch_tests_on_instance.sh &lt;IP&gt; &lt;port&gt; &lt;remote_user_name&gt; &lt;ssh_key_path&gt; [outdir]
+</span></pre></div>
+</div>
+<p>Where <code class="docutils literal notranslate"><span class="pre">IP</span></code> and <code class="docutils literal notranslate"><span class="pre">port</span></code> are the information needed to connect to the remote server to test,
+<code class="docutils literal notranslate"><span class="pre">remote_user_name</span></code> is the name of the account created on the remote bastion to use for the tests,
+and <code class="docutils literal notranslate"><span class="pre">ssh_key_path</span></code> is the private SSH key path used to connect to the account.
+The <code class="docutils literal notranslate"><span class="pre">outdir</span></code> parameter is optional, if you want to keep the raw output of each test.</p>
+<p>This script is also the script used by the Docker client instance,
+so you're sure to get the proper results even without using Docker.</p>
+<p>Please do <strong>NOT</strong> run any of those tests on a production bastion!</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../administration/security_advisories/cve_2025_59339.html" class="btn btn-neutral float-left" title="CVE-2025-59339" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tests.html" class="btn btn-neutral float-right" title="Writing tests" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

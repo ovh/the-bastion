@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to The Bastion documentation! &mdash; The Bastion 3.23.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="_static/jquery.js?v=8dae8fb0"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=eb75f0bc"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Principles" href="presentation/principles.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.23.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="using/basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using/piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using/sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using/http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using/api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using/specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="administration/configuration/index.html">Configuration files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="administration/logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="administration/mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="administration/security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="plugins/admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plugins/group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plugins/group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plugins/group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plugins/open/index.html">open plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plugins/restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Welcome to The Bastion documentation!</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="welcome-to-the-bastion-documentation">
+<h1>Welcome to The Bastion documentation!<a class="headerlink" href="#welcome-to-the-bastion-documentation" title="Link to this heading"></a></h1>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This documentation is in a WIP status, some edges might be rough!</p>
+</div>
+<section id="wait-what-s-a-bastion-exactly-in-140-ish-characters">
+<h2>Wait, what's a bastion exactly? (in 140-ish characters)<a class="headerlink" href="#wait-what-s-a-bastion-exactly-in-140-ish-characters" title="Link to this heading"></a></h2>
+<p>A so-called <strong>bastion</strong> is a machine used as a single entry point by operational teams (such as sysadmins, developers, devops, database admins, etc.) to securely connect to other machines of an infrastructure, usually using <cite>ssh</cite>.</p>
+<p>The bastion provides mechanisms for <em>authentication</em>, <em>authorization</em>, <em>traceability</em> and <em>auditability</em> for the whole infrastructure.</p>
+<section id="just-yet-another-ssh-relayhost-jumphost-gateway">
+<h3>Just yet another SSH relayhost/jumphost/gateway?<a class="headerlink" href="#just-yet-another-ssh-relayhost-jumphost-gateway" title="Link to this heading"></a></h3>
+<p>No, The Bastion is an entirely different beast.</p>
+<p>The key technical difference between those and The Bastion is that it strictly stands between you and the remote server, operating a protocol break in the process, which enables unique features such as tty recording, proper access auditability, builtin access and groups management commands, delegation of responsibilities all the way through, etc.</p>
+<p>Advanced uses even include doing other things than just SSHing to a remote server.</p>
+<p>Those wouldn't be possible with a &quot;simple&quot; jumphost. More technical details on the difference <a class="reference internal" href="faq.html#faq-jumphost"><span class="std std-ref">here</span></a>.</p>
+</section>
+</section>
+<section id="ok-tell-me-more">
+<h2>OK, tell me more!<a class="headerlink" href="#ok-tell-me-more" title="Link to this heading"></a></h2>
+<p>This documentation is organized in several sections. The first one is a <strong>PRESENTATION</strong> of the main functionalities, principles, and use cases of the bastion.</p>
+<p>The second section explains the <strong>INSTALLATION</strong> procedure, including how to set up a quick playground using Docker if you want to get your hands dirty quickly.</p>
+<p>The third section focuses on the <strong>USAGE</strong> of the bastion, from the perspective of the different roles, such as bastion users, group owners, bastion admins, etc.</p>
+<p>The fourth section is about the proper <strong>ADMINISTRATION</strong> of the bastion itself. If you're about to be the person in charge of managing the bastion for your company, you want to read that one carefully!</p>
+<p>The fifth section is about <strong>DEVELOPMENT</strong> and how to write code for the bastion. If you'd like to contribute, this is the section to read!</p>
+<p>The sixth section is the complete reference of all the <strong>PLUGINS</strong> that are the commands used to interact with the bastion accounts, groups, accesses, credentials, and more.</p>
+<p>The unavoidable and iconic FAQ is also available under the <strong>PRESENTATION</strong> section.</p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="presentation/security.html">Security</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="presentation/security.html#security-principles-at-the-core">Security principles at the core</a></li>
+<li class="toctree-l2"><a class="reference internal" href="presentation/security.html#auditability">Auditability</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#the-bastion-really">&quot;The Bastion&quot;, really?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#why-using-common-sense">Why using common::sense?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#why-perl">Why Perl?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#why-not-using-a-pki">Why not using a PKI?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#what-does-osh-mean-in-osh">What does <cite>osh</cite> mean in <code class="docutils literal notranslate"><span class="pre">--osh</span></code>?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#what-are-the-recommended-hardware-specifications">What are the recommended hardware specifications?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#can-i-run-it-under-docker-in-production">Can I run it under Docker in production?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#can-i-install-it-on-my-already-existing-server">Can I install it on my already existing server?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#how-to-use-the-bastion-with-the-ssh-proxycommand-option">How to use The Bastion with the SSH <code class="docutils literal notranslate"><span class="pre">ProxyCommand</span></code> option?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#what-is-session-locking">What is <em>session locking</em>?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#can-i-use-ansible-over-the-bastion">Can I use Ansible over The Bastion?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#can-the-bastion-record-sessions-with-script-or-in-plaintext-format-instead-of-ttyrec">Can The Bastion record sessions with <code class="docutils literal notranslate"><span class="pre">script</span></code> or in plaintext format instead of <code class="docutils literal notranslate"><span class="pre">ttyrec</span></code>?</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation/basic.html">Basic Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation/basic.html#got-puppet">0. Got Puppet?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation/basic.html#operating-system">1. Operating system</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation/basic.html#connect-to-your-server-as-root">2. Connect to your server as root</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation/basic.html#get-the-code">3. Get the code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation/basic.html#install-the-needed-packages">4. Install the needed packages</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation/basic.html#encrypt-home">5. Encrypt /home</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation/basic.html#setup-bastion-and-system-configuration">6. Setup bastion and system configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation/basic.html#review-the-configuration">7. Review the configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation/basic.html#check-that-the-code-works-on-your-machine">8. Check that the code works on your machine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation/basic.html#manually-create-our-first-bastion-account">9. Manually create our first bastion account</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="installation/advanced.html">Advanced Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation/advanced.html#encryption-signature-gpg-keys">Encryption &amp; signature GPG keys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation/advanced.html#rotation-encryption-backup-of-ttyrec-files">Rotation, encryption &amp; backup of ttyrec files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation/advanced.html#configuring-keys-accounts-groups-remote-backup">Configuring keys, accounts &amp; groups remote backup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation/advanced.html#logs-syslog">Logs/Syslog</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation/advanced.html#clustering-high-availability">Clustering (High Availability)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation/advanced.html#creating-sshfp-dns-records">Creating SSHFP DNS records</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation/advanced.html#hardening-the-ssh-configuration">Hardening the SSH configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation/advanced.html#fa-root-authentication">2FA root authentication</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="installation/upgrading.html">Upgrading</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation/upgrading.html#general-upgrade-instructions">General upgrade instructions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation/upgrading.html#version-specific-upgrade-instructions">Version-specific upgrade instructions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation/restoring_from_backup.html">Restoring from backup</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation/restoring_from_backup.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation/restoring_from_backup.html#steps">Steps</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="using/basics/index.html">The basics</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="using/basics/first_steps.html">First steps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using/basics/access_management.html">Access management</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="using/piv.html">PIV keys support</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="using/piv.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using/piv.html#without-a-policy">Without a policy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using/piv.html#per-account-policy">Per-account policy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using/piv.html#global-policy">Global policy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using/piv.html#temporary-grace-period">Temporary grace period</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="using/sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="using/sftp_scp_rsync.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using/sftp_scp_rsync.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using/sftp_scp_rsync.html#basic-usage">Basic usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using/sftp_scp_rsync.html#access-model">Access model</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="using/http_proxy.html">HTTPS Proxy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="using/http_proxy.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using/http_proxy.html#query-workflow">Query workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using/http_proxy.html#setting-up-the-https-proxy">Setting up the HTTPS Proxy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using/http_proxy.html#running-a-query-through-the-proxy">Running a query through the proxy</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="using/api.html">JSON API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="using/api.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using/api.html#examples">Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using/api.html#json-payload-format">JSON payload format</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using/api.html#good-practices">Good practices</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="using/specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="using/specific_ssh_clients_tutorials/putty.html">Using PuTTY with The Bastion</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="administration/configuration/index.html">Configuration files</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="administration/configuration/index.html#main-configuration-files">Main configuration files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="administration/configuration/index.html#configuration-files-for-satellite-scripts">Configuration files for satellite scripts</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="administration/logs.html">Logs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="administration/logs.html#message-types">Message types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="administration/logs.html#syslog">Syslog</a></li>
+<li class="toctree-l2"><a class="reference internal" href="administration/logs.html#access-logs">Access logs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="administration/logs.html#sqlite-logs">SQLite logs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="administration/logs.html#terminal-recordings-ttyrec">Terminal recordings (<em>ttyrec</em>)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="administration/mfa.html">Multi-Factor Authentication</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="administration/mfa.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="administration/mfa.html#immediate-mfa">Immediate MFA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="administration/mfa.html#jit-mfa">JIT MFA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="administration/mfa.html#additional-information">Additional information</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="administration/security_advisories.html">Security Advisories</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="administration/security_advisories/cve_2023_45140.html">CVE-2023-45140</a></li>
+<li class="toctree-l2"><a class="reference internal" href="administration/security_advisories/cve_2025_59339.html">CVE-2025-59339</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="development/setup.html">Environment setup</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="development/setup.html#available-tools">Available tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development/setup.html#git-pre-commit-hook">Git pre-commit hook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development/setup.html#running-integration-tests">Running integration tests</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="development/tests.html">Writing tests</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="development/tests.html#example">Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development/tests.html#reference">Reference</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound" id="plugins">
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="plugins/admin/index.html">admin plugins</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="plugins/admin/adminMaintenance.html">adminMaintenance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/admin/adminSudo.html">adminSudo</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="plugins/group-aclkeeper/index.html">group-aclkeeper plugins</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="plugins/group-aclkeeper/groupAddServer.html">groupAddServer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/group-aclkeeper/groupDelServer.html">groupDelServer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/group-aclkeeper/groupSetServers.html">groupSetServers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="plugins/group-gatekeeper/index.html">group-gatekeeper plugins</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="plugins/group-gatekeeper/groupAddGuestAccess.html">groupAddGuestAccess</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/group-gatekeeper/groupAddMember.html">groupAddMember</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/group-gatekeeper/groupDelGuestAccess.html">groupDelGuestAccess</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/group-gatekeeper/groupDelMember.html">groupDelMember</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/group-gatekeeper/groupListGuestAccesses.html">groupListGuestAccesses</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="plugins/group-owner/index.html">group-owner plugins</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="plugins/group-owner/groupAddAclkeeper.html">groupAddAclkeeper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/group-owner/groupAddGatekeeper.html">groupAddGatekeeper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/group-owner/groupAddOwner.html">groupAddOwner</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/group-owner/groupDelAclkeeper.html">groupDelAclkeeper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/group-owner/groupDelEgressKey.html">groupDelEgressKey</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/group-owner/groupDelGatekeeper.html">groupDelGatekeeper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/group-owner/groupDelOwner.html">groupDelOwner</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/group-owner/groupDestroy.html">groupDestroy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/group-owner/groupGenerateEgressKey.html">groupGenerateEgressKey</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/group-owner/groupGeneratePassword.html">groupGeneratePassword</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/group-owner/groupModify.html">groupModify</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/group-owner/groupTransmitOwnership.html">groupTransmitOwnership</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="plugins/open/index.html">open plugins</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/alive.html">alive</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/batch.html">batch</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/clush.html">clush</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/groupInfo.html">groupInfo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/groupList.html">groupList</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/groupListPasswords.html">groupListPasswords</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/groupListServers.html">groupListServers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/help.html">help</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/info.html">info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/lock.html">lock</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/mtr.html">mtr</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/nc.html">nc</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/ping.html">ping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/rsync.html">rsync</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/scp.html">scp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/selfAddIngressKey.html">selfAddIngressKey</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/selfDelIngressKey.html">selfDelIngressKey</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/selfForgetHostKey.html">selfForgetHostKey</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/selfGenerateEgressKey.html">selfGenerateEgressKey</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/selfGeneratePassword.html">selfGeneratePassword</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/selfGenerateProxyPassword.html">selfGenerateProxyPassword</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/selfListAccesses.html">selfListAccesses</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/selfListEgressKeys.html">selfListEgressKeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/selfListIngressKeys.html">selfListIngressKeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/selfListPasswords.html">selfListPasswords</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/selfListSessions.html">selfListSessions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/selfMFAResetPassword.html">selfMFAResetPassword</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/selfMFAResetTOTP.html">selfMFAResetTOTP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/selfMFASetupPassword.html">selfMFASetupPassword</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/selfMFASetupTOTP.html">selfMFASetupTOTP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/selfPlaySession.html">selfPlaySession</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/sftp.html">sftp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/open/unlock.html">unlock</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="plugins/restricted/index.html">restricted plugins</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/accountAddPersonalAccess.html">accountAddPersonalAccess</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/accountCreate.html">accountCreate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/accountDelPersonalAccess.html">accountDelPersonalAccess</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/accountDelete.html">accountDelete</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/accountFreeze.html">accountFreeze</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/accountGeneratePassword.html">accountGeneratePassword</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/accountGrantCommand.html">accountGrantCommand</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/accountInfo.html">accountInfo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/accountList.html">accountList</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/accountListAccesses.html">accountListAccesses</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/accountListEgressKeys.html">accountListEgressKeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/accountListIngressKeys.html">accountListIngressKeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/accountListPasswords.html">accountListPasswords</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/accountMFAResetPassword.html">accountMFAResetPassword</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/accountMFAResetTOTP.html">accountMFAResetTOTP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/accountModify.html">accountModify</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/accountPIV.html">accountPIV</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/accountRevokeCommand.html">accountRevokeCommand</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/accountUnexpire.html">accountUnexpire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/accountUnfreeze.html">accountUnfreeze</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/accountUnlock.html">accountUnlock</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/assetForgetHostKey.html">assetForgetHostKey</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/groupCreate.html">groupCreate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/groupDelete.html">groupDelete</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/realmCreate.html">realmCreate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/realmDelete.html">realmDelete</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/realmInfo.html">realmInfo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/realmList.html">realmList</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/rootListIngressKeys.html">rootListIngressKeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/selfAddPersonalAccess.html">selfAddPersonalAccess</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/selfDelPersonalAccess.html">selfDelPersonalAccess</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/restricted/whoHasAccessTo.html">whoHasAccessTo</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="indices-and-tables">
+<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="presentation/principles.html" class="btn btn-neutral float-right" title="Principles" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Logs &mdash; The Bastion 3.23.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="../_static/jquery.js?v=8dae8fb0"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=eb75f0bc"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Multi-Factor Authentication" href="mfa.html" />
+    <link rel="prev" title="osh-orphaned-homedir.conf" href="configuration/osh-orphaned-homedir_conf.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.23.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../using/basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="configuration/index.html">Configuration files</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Logs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#message-types">Message types</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#open">open</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#close">close</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#warn-die">warn, die</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#warn-info-die-info">warn-info, die-info</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#code-info">code-info</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#code-warning">code-warning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#acl">acl</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#membership">membership</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#security">security</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#group">group</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#account">account</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#syslog">Syslog</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#files-location">Files location</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#log-format">Log format</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#access-logs">Access logs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sqlite-logs">SQLite logs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#terminal-recordings-ttyrec">Terminal recordings (<em>ttyrec</em>)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/open/index.html">open plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Logs</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/administration/logs.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="logs">
+<h1><a class="toc-backref" href="#id2" role="doc-backlink">Logs</a><a class="headerlink" href="#logs" title="Link to this heading"></a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The Bastion comes with a lot of traceability features, you have to ensure that you've done your configuration
+correctly so that those logs are kept in a safe place when you need them. It is warmly advised to enable at least
+the syslog option, and push your logs to a remote syslog server.</p>
+</div>
+<nav class="contents" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#logs" id="id2">Logs</a></p>
+<ul>
+<li><p><a class="reference internal" href="#message-types" id="id3">Message types</a></p>
+<ul>
+<li><p><a class="reference internal" href="#open" id="id4">open</a></p></li>
+<li><p><a class="reference internal" href="#close" id="id5">close</a></p></li>
+<li><p><a class="reference internal" href="#warn-die" id="id6">warn, die</a></p></li>
+<li><p><a class="reference internal" href="#warn-info-die-info" id="id7">warn-info, die-info</a></p></li>
+<li><p><a class="reference internal" href="#code-info" id="id8">code-info</a></p></li>
+<li><p><a class="reference internal" href="#code-warning" id="id9">code-warning</a></p></li>
+<li><p><a class="reference internal" href="#acl" id="id10">acl</a></p></li>
+<li><p><a class="reference internal" href="#membership" id="id11">membership</a></p></li>
+<li><p><a class="reference internal" href="#security" id="id12">security</a></p></li>
+<li><p><a class="reference internal" href="#group" id="id13">group</a></p></li>
+<li><p><a class="reference internal" href="#account" id="id14">account</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#syslog" id="id15">Syslog</a></p>
+<ul>
+<li><p><a class="reference internal" href="#files-location" id="id16">Files location</a></p></li>
+<li><p><a class="reference internal" href="#log-format" id="id17">Log format</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#access-logs" id="id18">Access logs</a></p></li>
+<li><p><a class="reference internal" href="#sqlite-logs" id="id19">SQLite logs</a></p></li>
+<li><p><a class="reference internal" href="#terminal-recordings-ttyrec" id="id20">Terminal recordings (<em>ttyrec</em>)</a></p></li>
+</ul>
+</li>
+</ul>
+</nav>
+<section id="message-types">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">Message types</a><a class="headerlink" href="#message-types" title="Link to this heading"></a></h2>
+<p>The Bastion has several configurable ways of logging events, but before detailing those,
+let's see the different message types that can be logged.
+The Bastion currently has 12 different message types, listed below:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#log-open"><span class="std std-ref">open</span></a></p></li>
+<li><p><a class="reference internal" href="#log-close"><span class="std std-ref">close</span></a></p></li>
+<li><p><a class="reference internal" href="#log-warn"><span class="std std-ref">warn, die</span></a></p></li>
+<li><p><a class="reference internal" href="#log-warninfo"><span class="std std-ref">warn-info, die-info</span></a></p></li>
+<li><p><a class="reference internal" href="#log-codewarn"><span class="std std-ref">code-warning</span></a></p></li>
+<li><p><a class="reference internal" href="#log-acl"><span class="std std-ref">acl</span></a></p></li>
+<li><p><a class="reference internal" href="#log-membership"><span class="std std-ref">membership</span></a></p></li>
+<li><p><a class="reference internal" href="#log-security"><span class="std std-ref">security</span></a></p></li>
+<li><p><a class="reference internal" href="#log-group"><span class="std std-ref">group</span></a></p></li>
+<li><p><a class="reference internal" href="#log-account"><span class="std std-ref">account</span></a></p></li>
+</ul>
+<p>First, let's list the fields that are common to all the message types:</p>
+<dl class="simple">
+<dt>uniqid</dt><dd><p>This is the unique connection ID, you can find all the logs relevant to the same connection
+by filtering on the <code class="docutils literal notranslate"><span class="pre">uniqid</span></code>. This ID is also, by default, part of the filename given to the <code class="docutils literal notranslate"><span class="pre">ttyrec</span></code> files,
+for easier correlation. The same ID is also used in the sqlite logs, if you enabled those. In some rare cases,
+the value can be &quot;-&quot;, for example if a satellite script has something to log,
+not linked to an actual connection or session.</p>
+</dd>
+<dt>version</dt><dd><p>This indicates the version of The Bastion software that is writing the log</p>
+</dd>
+<dt>pid, ppid</dt><dd><p>This is the system PID (resp. system parent PID) of the process writing the log,
+for easier correlation with system audit logs if you have them</p>
+</dd>
+<dt>sysuser</dt><dd><p>This is the system user under which the process writing the log is currently running on,
+can be useful to detect abnormalities</p>
+</dd>
+<dt>sudo_user</dt><dd><p>When the value is present, it contains the system user name that has launched the <code class="docutils literal notranslate"><span class="pre">sudo</span></code> command the code is
+currently running under (this will be the case if a so-called &quot;bastion helper&quot; is pushing a log, for example).
+However this field will often have an empty value, it means that the code that is writing the log
+is not running under <code class="docutils literal notranslate"><span class="pre">sudo</span></code></p>
+</dd>
+<dt>uid, gid</dt><dd><p>This is the system user ID aka UID (resp. group ID aka GID) under which
+the process writing the log is currently running</p>
+</dd>
+<dt>account</dt><dd><p>This is the name of the bastion account that launched the command that produced the log</p>
+</dd>
+</dl>
+<p>The other fields depend on the message type, as detailed in the next sections.</p>
+<section id="open">
+<span id="log-open"></span><h3><a class="toc-backref" href="#id4" role="doc-backlink">open</a><a class="headerlink" href="#open" title="Link to this heading"></a></h3>
+<p>This log is produced when a user established a session with the bastion.</p>
+<p>Example:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>Dec<span class="w"> </span><span class="m">28</span><span class="w"> </span><span class="m">11</span>:12:26<span class="w"> </span>myhostname<span class="w"> </span>bastion:<span class="w"> </span>open<span class="w"> </span><span class="nv">uniqid</span><span class="o">=</span><span class="s2">&quot;e9e4baf6873b&quot;</span><span class="w"> </span><span class="nv">version</span><span class="o">=</span><span class="s2">&quot;3.01.03&quot;</span><span class="w"> </span><span class="nv">pid</span><span class="o">=</span><span class="s2">&quot;18721&quot;</span><span class="w"> </span><span class="nv">ppid</span><span class="o">=</span><span class="s2">&quot;18720&quot;</span>
+<span class="nv">sysuser</span><span class="o">=</span><span class="s2">&quot;gthreepw&quot;</span><span class="w"> </span><span class="nv">sudo_user</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="nv">uid</span><span class="o">=</span><span class="s2">&quot;99998&quot;</span><span class="w"> </span><span class="nv">gid</span><span class="o">=</span><span class="s2">&quot;99998&quot;</span><span class="w"> </span><span class="nv">account</span><span class="o">=</span><span class="s2">&quot;gthreepw&quot;</span><span class="w"> </span><span class="nv">cmdtype</span><span class="o">=</span><span class="s2">&quot;ssh&quot;</span><span class="w"> </span><span class="nv">allowed</span><span class="o">=</span><span class="s2">&quot;true&quot;</span>
+<span class="nv">ip_from</span><span class="o">=</span><span class="s2">&quot;172.17.0.1&quot;</span><span class="w"> </span><span class="nv">port_from</span><span class="o">=</span><span class="s2">&quot;39696&quot;</span><span class="w"> </span><span class="nv">host_from</span><span class="o">=</span><span class="s2">&quot;172.17.0.1&quot;</span><span class="w"> </span><span class="nv">ip_bastion</span><span class="o">=</span><span class="s2">&quot;172.17.0.2&quot;</span><span class="w"> </span><span class="nv">port_bastion</span><span class="o">=</span><span class="s2">&quot;22&quot;</span>
+<span class="nv">host_bastion</span><span class="o">=</span><span class="s2">&quot;myhostname.example.org&quot;</span><span class="w"> </span><span class="nv">user</span><span class="o">=</span><span class="s2">&quot;foo&quot;</span><span class="w"> </span><span class="nv">ip_to</span><span class="o">=</span><span class="s2">&quot;172.17.0.123&quot;</span><span class="w"> </span><span class="nv">port_to</span><span class="o">=</span><span class="s2">&quot;22&quot;</span><span class="w"> </span><span class="nv">host_to</span><span class="o">=</span><span class="s2">&quot;srv123.example.org&quot;</span>
+<span class="nv">plugin</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="nv">globalsql</span><span class="o">=</span><span class="s2">&quot;ok&quot;</span><span class="w"> </span><span class="nv">accountsql</span><span class="o">=</span><span class="s2">&quot;ok&quot;</span><span class="w"> </span><span class="nv">comment</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="nv">params</span><span class="o">=</span><span class="s2">&quot;ttyrec -f</span>
+<span class="s2">/home/gthreepw/ttyrec/172.17.0.123/2020-12-28.11-12-26.074894.e9e4baf6873b.gthreepw.foo.172.17.0.123.22.ttyrec -F</span>
+<span class="s2">/home/gthreepw/ttyrec/172.17.0.123/%Y--%d.%H-%M-%S.#usec#.e9e4baf6873b.gthreepw.foo.172.17.0.123.22.ttyrec --</span>
+<span class="s2">/usr/bin/ssh 172.17.0.123 -l foo -p 22 -i /home/gthreepw/.ssh/id_rsa4096_private.1594384739 -i</span>
+<span class="s2">/home/keykeeper/keyagroup/id_ed25519_agroup.1607524914 -o PreferredAuthentications=publickey&quot;</span>
+</pre></div>
+</div>
+<p>Fields:</p>
+<dl class="simple">
+<dt>cmdtype</dt><dd><p>Indicates which category of command has been requested by the user:</p>
+<ul class="simple">
+<li><p>ssh: the user is trying to establish an SSH egress connection to a remote server</p></li>
+<li><p>telnet: the user is trying to establish a telnet egress connection to a remote server</p></li>
+<li><p>abort: the action requested by the user has been aborted early, possibly because of permission issues
+or impossibility to understand the request, more information is available in the <strong>bastion_comment</strong> field</p></li>
+<li><p>osh: the user is trying to execute a bastion plugin with the <code class="docutils literal notranslate"><span class="pre">--osh</span></code> command</p></li>
+<li><p>interactive: the user just entered interactive mode. Note that all the commands launched through
+the interactive mode will still have their own log.</p></li>
+<li><p>sshas: an administrator is currently establishing a connection on behalf of another user.
+This connection will also have its own log.</p></li>
+<li><p>proxyhttp_daemon: the HTTPS proxy daemon received a request</p></li>
+<li><p>proxyhttp_worker: the HTTPS proxy worker specifically spawned for the user by the daemon is handling the request</p></li>
+</ul>
+</dd>
+<dt>allowed</dt><dd><p>Indicates whether the requested action was allowed or not by the bastion, after executing the authorization phase.
+Will be either &quot;true&quot; or &quot;false&quot;.</p>
+</dd>
+<dt>ip_from, port_from, host_from</dt><dd><p>These are the IP and source port as seen by the bastion, from which the ingress connection originates.
+If the bastion can resolve the reverse of the IP to a hostname, it'll be indicated in host_from,
+otherwise the IP will be repeated there.</p>
+</dd>
+<dt>ip_bastion, port_bastion, host_bastion</dt><dd><p>These are the IP and port of the bastion to which the ingress connection terminates.
+If your bastion has several IPs and/or interfaces, this can be useful.
+If the bastion can resolve the reverse of the IP to a hostname, it'll be indicated in host_bastion,
+otherwise the IP will be repeated there.</p>
+</dd>
+<dt>ip_to, port_to, host_to</dt><dd><p>These are the IP and destination port to which the bastion will connect on the egress side,
+on behalf of the requesting user. If the bastion can resolve the reverse of the IP to a hostname,
+it'll be indicated in host_to, otherwise the IP will be repeated there.</p>
+</dd>
+<dt>plugin</dt><dd><p>When <code class="docutils literal notranslate"><span class="pre">cmdtype</span></code> is <code class="docutils literal notranslate"><span class="pre">osh</span></code>, the name of the command (or <em>plugin</em>) will appear in this field.
+Otherwise it'll be blank.</p>
+</dd>
+<dt>accountsql</dt><dd><p>This field will contain either:</p>
+<ul class="simple">
+<li><p>ok: when <a class="reference internal" href="configuration/bastion_conf.html#enableaccountsqllog"><span class="std std-ref">enableAccountSqlLog</span></a> is enabled, and we successfully inserted a new row for the log</p></li>
+<li><p>no: when <a class="reference internal" href="configuration/bastion_conf.html#enableaccountsqllog"><span class="std std-ref">enableAccountSqlLog</span></a> is disabled</p></li>
+<li><p>error: when we couldn't insert a new row, <strong>error</strong> followed by a detailed error message,
+for example &quot;error SQL error [global] err 8 while doing [inserting data (execute)]:
+attempt to write a readonly database&quot;.</p></li>
+</ul>
+</dd>
+<dt>globalsql</dt><dd><p>This field can contain the same values than <strong>accountsql</strong> above,
+but for <code class="docutils literal notranslate"><span class="pre">enableGlobalSqlLog</span></code> instead of <code class="docutils literal notranslate"><span class="pre">enableAccountSqlLog</span></code></p>
+</dd>
+<dt>comment</dt><dd><p>Some more information about the current event, depending on the <code class="docutils literal notranslate"><span class="pre">cmdtype</span></code> value.</p>
+</dd>
+<dt>params</dt><dd><p>This is the fully expanded command line that will be launched under the currently running user rights,
+to establish the egress connection, if applicable.</p>
+</dd>
+</dl>
+</section>
+<section id="close">
+<span id="log-close"></span><h3><a class="toc-backref" href="#id5" role="doc-backlink">close</a><a class="headerlink" href="#close" title="Link to this heading"></a></h3>
+<p>This log is produced when a user terminates a currently running session with The Bastion.
+It is always matched (through the <code class="docutils literal notranslate"><span class="pre">uniqid</span></code>) to another log with the <code class="docutils literal notranslate"><span class="pre">open</span></code> message type.</p>
+<p>Example:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>Dec<span class="w"> </span><span class="m">28</span><span class="w"> </span><span class="m">11</span>:12:26<span class="w"> </span>myhostname<span class="w"> </span>bastion:<span class="w"> </span>open<span class="w"> </span><span class="nv">uniqid</span><span class="o">=</span><span class="s2">&quot;e9e4baf6873b&quot;</span><span class="w"> </span><span class="nv">version</span><span class="o">=</span><span class="s2">&quot;3.01.03&quot;</span><span class="w"> </span><span class="nv">pid</span><span class="o">=</span><span class="s2">&quot;18721&quot;</span><span class="w"> </span><span class="nv">ppid</span><span class="o">=</span><span class="s2">&quot;18720&quot;</span>
+<span class="nv">sysuser</span><span class="o">=</span><span class="s2">&quot;gthreepw&quot;</span><span class="w"> </span><span class="nv">sudo_user</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="nv">uid</span><span class="o">=</span><span class="s2">&quot;99998&quot;</span><span class="w"> </span><span class="nv">gid</span><span class="o">=</span><span class="s2">&quot;99998&quot;</span><span class="w"> </span><span class="nv">account</span><span class="o">=</span><span class="s2">&quot;gthreepw&quot;</span><span class="w"> </span><span class="nv">cmdtype</span><span class="o">=</span><span class="s2">&quot;ssh&quot;</span><span class="w"> </span><span class="nv">allowed</span><span class="o">=</span><span class="s2">&quot;true&quot;</span>
+<span class="nv">ip_from</span><span class="o">=</span><span class="s2">&quot;172.17.0.1&quot;</span><span class="w"> </span><span class="nv">port_from</span><span class="o">=</span><span class="s2">&quot;39696&quot;</span><span class="w"> </span><span class="nv">host_from</span><span class="o">=</span><span class="s2">&quot;172.17.0.1&quot;</span><span class="w"> </span><span class="nv">ip_bastion</span><span class="o">=</span><span class="s2">&quot;172.17.0.2&quot;</span><span class="w"> </span><span class="nv">port_bastion</span><span class="o">=</span><span class="s2">&quot;22&quot;</span>
+<span class="nv">host_bastion</span><span class="o">=</span><span class="s2">&quot;myhostname.example.org&quot;</span><span class="w"> </span><span class="nv">user</span><span class="o">=</span><span class="s2">&quot;foo&quot;</span><span class="w"> </span><span class="nv">ip_to</span><span class="o">=</span><span class="s2">&quot;172.17.0.123&quot;</span><span class="w"> </span><span class="nv">port_to</span><span class="o">=</span><span class="s2">&quot;22&quot;</span>
+<span class="nv">host_to</span><span class="o">=</span><span class="s2">&quot;srv123.example.org&quot;</span><span class="w"> </span><span class="nv">plugin</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="nv">globalsql</span><span class="o">=</span><span class="s2">&quot;ok&quot;</span><span class="w"> </span><span class="nv">accountsql</span><span class="o">=</span><span class="s2">&quot;ok&quot;</span><span class="w"> </span><span class="nv">comment</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="nv">params</span><span class="o">=</span><span class="s2">&quot;ttyrec -f</span>
+<span class="s2">/home/gthreepw/ttyrec/172.17.0.123/2020-12-28.11-12-26.074894.e9e4baf6873b.gthreepw.foo.172.17.0.123.22.ttyrec -F</span>
+<span class="s2">/home/gthreepw/ttyrec/172.17.0.123/%Y--%d.%H-%M-%S.#usec#.e9e4baf6873b.gthreepw.foo.172.17.0.123.22.ttyrec --</span>
+<span class="s2">/usr/bin/ssh 172.17.0.123 -l foo -p 22 -i /home/gthreepw/.ssh/id_rsa4096_private.1594384739 -i</span>
+<span class="s2">/home/keykeeper/keyagroup/id_ed25519_agroup.1607524914 -o PreferredAuthentications=publickey&quot;</span><span class="w"> </span><span class="nv">sysret</span><span class="o">=</span><span class="s2">&quot;0&quot;</span>
+<span class="nv">signal</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="nv">comment_close</span><span class="o">=</span><span class="s2">&quot;hostkey_changed passauth_disabled&quot;</span><span class="w"> </span><span class="nv">duration</span><span class="o">=</span><span class="s2">&quot;43.692&quot;</span>
+</pre></div>
+</div>
+<p>All the fields from the corresponding <code class="docutils literal notranslate"><span class="pre">open</span></code> log are repeated in this log line, in addition to the following fields:</p>
+<dl class="simple">
+<dt>sysret</dt><dd><p>Return code of the launched system command (that established the egress connection)
+or the plugin (if an <code class="docutils literal notranslate"><span class="pre">--osh</span></code> command was passed).
+If we don't have a return code, for example because we were interrupted by a signal, the value will be empty.</p>
+</dd>
+<dt>signal</dt><dd><p>Name of the UNIX signal that terminated the command, if any. For example &quot;HUP&quot; or &quot;SEGV&quot;.
+If we got no signal, the value will be empty.</p>
+</dd>
+<dt>comment_close</dt><dd><p>A space-separated list of messages giving some hints gathered at the end of a session.
+For example <cite>hostkey_changed passauth_disabled</cite> means that we detected that our egress ssh client
+emitted a warning telling us that the remote keys changed, and also that password authentication has been disabled.</p>
+</dd>
+<dt>duration</dt><dd><p>Amount of seconds (with a millisecond precision) between the session open and the session close.</p>
+</dd>
+</dl>
+</section>
+<section id="warn-die">
+<span id="log-warn"></span><h3><a class="toc-backref" href="#id6" role="doc-backlink">warn, die</a><a class="headerlink" href="#warn-die" title="Link to this heading"></a></h3>
+<p>These logs are produced when Perl emits a warning (using the <code class="docutils literal notranslate"><span class="pre">warn()</span></code> call),
+or respectively when Perl halts abruptly due to a <code class="docutils literal notranslate"><span class="pre">die()</span></code> call.
+This should not happen during nominal use. You might want to keep a look on those messages if they're produced.</p>
+<p>Example:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>Dec<span class="w"> </span><span class="m">28</span><span class="w"> </span><span class="m">11</span>:12:26<span class="w"> </span>myhostname<span class="w"> </span>bastion:<span class="w"> </span>warn<span class="w"> </span><span class="nv">uniqid</span><span class="o">=</span><span class="s2">&quot;a46e51b5dce4&quot;</span><span class="w"> </span><span class="nv">version</span><span class="o">=</span><span class="s2">&quot;3.01.02&quot;</span><span class="w"> </span><span class="nv">pid</span><span class="o">=</span><span class="s2">&quot;3308212&quot;</span><span class="w"> </span><span class="nv">ppid</span><span class="o">=</span><span class="s2">&quot;3308206&quot;</span>
+<span class="nv">sysuser</span><span class="o">=</span><span class="s2">&quot;lechuck&quot;</span><span class="w"> </span><span class="nv">sudo_user</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="nv">uid</span><span class="o">=</span><span class="s2">&quot;99994&quot;</span><span class="w"> </span><span class="nv">gid</span><span class="o">=</span><span class="s2">&quot;99994&quot;</span><span class="w"> </span><span class="nv">msg</span><span class="o">=</span><span class="s2">&quot;Cannot find termcap: TERM not set at</span>
+<span class="s2">/usr/share/perl/5.28/Term/ReadLine.pm line 379.  &quot;</span><span class="w"> </span><span class="nv">program</span><span class="o">=</span><span class="s2">&quot;/opt/bastion/bin/shell/osh.pl&quot;</span><span class="w"> </span><span class="nv">cmdline</span><span class="o">=</span><span class="s2">&quot;-c^-i ssh</span>
+<span class="s2">root@172.17.0.222 id&quot;</span><span class="w"> </span><span class="nv">trace</span><span class="o">=</span><span class="s2">&quot; at /opt/bastion/bin/shell/../../lib/perl/OVH/Bastion.pm</span>
+<span class="s2">line 41.   OVH::Bastion::__ANON__(\&quot;Cannot find termcap: TERM not set at /usr/share/perl/5.28/Ter\&quot;...)</span>
+<span class="s2">called at /usr/share/perl/5.28/Term/ReadLine.pm line</span>
+<span class="s2">391     Term::ReadLine::TermCap::ornaments(Term::ReadLine::Stub=ARRAY(0x5575da36b690), 1) called at</span>
+<span class="s2">/opt/bastion/lib/perl/OVH/Bastion/interactive.inc line 77   OVH::Bastion::interactive(\&quot;realOptions\&quot;, \&quot;-i ssh</span>
+<span class="s2">root\\@172.17.0.222 id\&quot;..., \&quot;timeoutHandler\&quot;, CODE(0x5575da15aa78), \&quot;self\&quot;, \&quot;lechuck\&quot;)</span>
+<span class="s2">called at /opt/bastion/bin/shell/osh.pl line 485 &quot;</span>
+</pre></div>
+</div>
+<p>Fields:</p>
+<dl class="simple">
+<dt>msg</dt><dd><p>This is the message used as a parameter to the <code class="docutils literal notranslate"><span class="pre">warn()</span></code> or <code class="docutils literal notranslate"><span class="pre">die()</span></code> call</p>
+</dd>
+<dt>program</dt><dd><p>Contains the name of the currently running program (first parameter of <code class="docutils literal notranslate"><span class="pre">execve()</span></code>)</p>
+</dd>
+<dt>cmdline</dt><dd><p>Contains the full command line passed to the currently running program (remaining parameters of <code class="docutils literal notranslate"><span class="pre">execve()</span></code>).
+The command-line fields are separated by <code class="docutils literal notranslate"><span class="pre">^</span></code>'s.</p>
+</dd>
+<dt>trace</dt><dd><p>The call trace leading to this <code class="docutils literal notranslate"><span class="pre">warn()</span></code> or <code class="docutils literal notranslate"><span class="pre">die()</span></code></p>
+</dd>
+</dl>
+</section>
+<section id="warn-info-die-info">
+<span id="log-warninfo"></span><h3><a class="toc-backref" href="#id7" role="doc-backlink">warn-info, die-info</a><a class="headerlink" href="#warn-info-die-info" title="Link to this heading"></a></h3>
+<p>These logs are produced when some known portion of code (including libraries) called <code class="docutils literal notranslate"><span class="pre">warn()</span></code> or <code class="docutils literal notranslate"><span class="pre">die()</span></code>
+but in a known case that can happen during nominal use.
+Don't use these logs to directly trigger an alert, but you can keep an eye on those, as e.g. an unusually
+high number of occurrences in a short time may be a weak signal that somebody or something is misbehaving.</p>
+<p>The fields are the same than the ones specified above for <strong>warn</strong> and <strong>die</strong>.</p>
+</section>
+<section id="code-info">
+<span id="log-codeinfo"></span><h3><a class="toc-backref" href="#id8" role="doc-backlink">code-info</a><a class="headerlink" href="#code-info" title="Link to this heading"></a></h3>
+<p>These logs are produced when some portion of the code encounters an minor issue that is worth logging,
+to e.g. help debugging an issue or understanding what happened in a specific use-case,
+for example if a user-session ended abruptly.
+These logs are not the result of an error on the bastion configuration and don't mandate immediate admin attention.</p>
+<p>Example:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>Dec<span class="w"> </span><span class="m">25</span><span class="w"> </span><span class="m">14</span>:56:11<span class="w"> </span>myhostname<span class="w"> </span>bastion:<span class="w"> </span>code-info<span class="w"> </span><span class="nv">uniqid</span><span class="o">=</span><span class="s2">&quot;98d2f32b1a2d&quot;</span><span class="w"> </span><span class="nv">version</span><span class="o">=</span><span class="s2">&quot;3.07.00&quot;</span><span class="w"> </span><span class="nv">pid</span><span class="o">=</span><span class="s2">&quot;3708843&quot;</span>
+<span class="nv">ppid</span><span class="o">=</span><span class="s2">&quot;3708842&quot;</span><span class="w"> </span><span class="nv">sysuser</span><span class="o">=</span><span class="s2">&quot;lechuck&quot;</span><span class="w"> </span><span class="nv">sudo_user</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="nv">uid</span><span class="o">=</span><span class="s2">&quot;8423&quot;</span><span class="w"> </span><span class="nv">gid</span><span class="o">=</span><span class="s2">&quot;8423&quot;</span><span class="w"> </span><span class="nv">msg</span><span class="o">=</span><span class="s2">&quot;execute():</span>
+<span class="s2">error while syswriting(Broken pipe) on stderr, aborting this cycle&quot;</span>
+</pre></div>
+</div>
+<p>Fields:</p>
+<dl class="simple">
+<dt>msg</dt><dd><p>A human-readable text describing the error</p>
+</dd>
+</dl>
+</section>
+<section id="code-warning">
+<span id="log-codewarn"></span><h3><a class="toc-backref" href="#id9" role="doc-backlink">code-warning</a><a class="headerlink" href="#code-warning" title="Link to this heading"></a></h3>
+<p>These logs are produced when some portion of the code encounters an unexpected issue or abnormality
+that is worth logging. They'll usually not be emitted due to a bad user interaction, but rather if the bastion
+is misconfigured, or for anything that might need some attention or fixing from the admins.</p>
+<p>Example:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>Dec<span class="w"> </span><span class="m">28</span><span class="w"> </span><span class="m">11</span>:12:26<span class="w"> </span>myhostname<span class="w"> </span>bastion:<span class="w"> </span>code-warning<span class="w"> </span><span class="nv">uniqid</span><span class="o">=</span><span class="s2">&quot;ffee33abd1ba&quot;</span><span class="w"> </span><span class="nv">version</span><span class="o">=</span><span class="s2">&quot;3.01.03&quot;</span><span class="w"> </span><span class="nv">pid</span><span class="o">=</span><span class="s2">&quot;3709643&quot;</span>
+<span class="nv">ppid</span><span class="o">=</span><span class="s2">&quot;3709642&quot;</span><span class="w"> </span><span class="nv">sysuser</span><span class="o">=</span><span class="s2">&quot;lechuck&quot;</span><span class="w"> </span><span class="nv">sudo_user</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="nv">uid</span><span class="o">=</span><span class="s2">&quot;8423&quot;</span><span class="w"> </span><span class="nv">gid</span><span class="o">=</span><span class="s2">&quot;8423&quot;</span><span class="w"> </span><span class="nv">msg</span><span class="o">=</span><span class="s2">&quot;Configuration error</span>
+<span class="s2">for plugin selfGenerateEgressKey on the &#39;disabled&#39; key: expected a boolean, casted &#39;no&#39; into false&quot;</span>
+</pre></div>
+</div>
+<p>Fields:</p>
+<dl class="simple">
+<dt>msg</dt><dd><p>A human-readable text describing the error</p>
+</dd>
+</dl>
+</section>
+<section id="acl">
+<span id="log-acl"></span><h3><a class="toc-backref" href="#id10" role="doc-backlink">acl</a><a class="headerlink" href="#acl" title="Link to this heading"></a></h3>
+<p>This log is produced when an access control list is modified,
+either personal accesses of an account, or a group servers list.</p>
+<p>Example:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>Dec<span class="w"> </span><span class="m">28</span><span class="w"> </span><span class="m">11</span>:12:26<span class="w"> </span>myhostname<span class="w"> </span>bastion:<span class="w"> </span>acl<span class="w"> </span><span class="nv">uniqid</span><span class="o">=</span><span class="s2">&quot;f25fe71c6635&quot;</span><span class="w"> </span><span class="nv">version</span><span class="o">=</span><span class="s2">&quot;3.01.02&quot;</span><span class="w"> </span><span class="nv">pid</span><span class="o">=</span><span class="s2">&quot;3116604&quot;</span>
+<span class="nv">ppid</span><span class="o">=</span><span class="s2">&quot;3116603&quot;</span><span class="w"> </span><span class="nv">sysuser</span><span class="o">=</span><span class="s2">&quot;keysomegroup&quot;</span><span class="w"> </span><span class="nv">sudo_user</span><span class="o">=</span><span class="s2">&quot;lechuck&quot;</span><span class="w"> </span><span class="nv">uid</span><span class="o">=</span><span class="s2">&quot;10006&quot;</span><span class="w"> </span><span class="nv">gid</span><span class="o">=</span><span class="s2">&quot;10057&quot;</span><span class="w"> </span><span class="nv">action</span><span class="o">=</span><span class="s2">&quot;add&quot;</span>
+<span class="nv">type</span><span class="o">=</span><span class="s2">&quot;group&quot;</span><span class="w"> </span><span class="nv">group</span><span class="o">=</span><span class="s2">&quot;somegroup&quot;</span><span class="w"> </span><span class="nv">account</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="nv">user</span><span class="o">=</span><span class="s2">&quot;root&quot;</span><span class="w"> </span><span class="nv">ip</span><span class="o">=</span><span class="s2">&quot;172.16.2.2&quot;</span><span class="w"> </span><span class="nv">port</span><span class="o">=</span><span class="s2">&quot;22&quot;</span><span class="w"> </span><span class="nv">ttl</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="nv">force_key</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="nv">comment</span><span class="o">=</span><span class="s2">&quot;&quot;</span>
+</pre></div>
+</div>
+<p>Fields:</p>
+<dl class="simple">
+<dt>action</dt><dd><p>Will be either <em>add</em> if an access is added, or <em>del</em> if an access is removed</p>
+</dd>
+<dt>type</dt><dd><p>Will be either <em>group</em> if we're modifying a group server list, in which case the <em>group</em> field will be filled,
+or <em>account</em> if we're modifying personal accesses of an account, in which case the <em>account</em> field will be filled</p>
+</dd>
+<dt>group</dt><dd><p>If <strong>type</strong> is <em>group</em>, indicates which group servers list has been modified</p>
+</dd>
+<dt>account</dt><dd><p>If <strong>type</strong> is <em>account</em>, indicates which account personal accesses have been modified</p>
+</dd>
+<dt>user</dt><dd><p>The remote user part of the access we're adding/removing</p>
+</dd>
+<dt>ip</dt><dd><p>The IP or IP block of the access we're adding/removing</p>
+</dd>
+<dt>port</dt><dd><p>The port of the access we're adding/removing</p>
+</dd>
+<dt>ttl</dt><dd><p>If set, represents the TTL after which the access will automatically be removed</p>
+</dd>
+<dt>force_key</dt><dd><p>If set, this contains the fingerprint of the key that'll be used for this access</p>
+</dd>
+<dt>comment</dt><dd><p>Any comment set by the user adding/removing the access</p>
+</dd>
+</dl>
+</section>
+<section id="membership">
+<span id="log-membership"></span><h3><a class="toc-backref" href="#id11" role="doc-backlink">membership</a><a class="headerlink" href="#membership" title="Link to this heading"></a></h3>
+<p>This log is produced when one of a group's role list is modified:
+either an owner, member, guest, aclkeeper or gatekeeper.</p>
+<p>Example:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>Dec<span class="w"> </span><span class="m">28</span><span class="w"> </span><span class="m">11</span>:12:26<span class="w"> </span>myhostname<span class="w"> </span>bastion:<span class="w"> </span>membership<span class="w"> </span><span class="nv">uniqid</span><span class="o">=</span><span class="s2">&quot;a00993ec6767&quot;</span><span class="w"> </span><span class="nv">version</span><span class="o">=</span><span class="s2">&quot;3.01.02&quot;</span>
+<span class="nv">pid</span><span class="o">=</span><span class="s2">&quot;1072528&quot;</span><span class="w"> </span><span class="nv">ppid</span><span class="o">=</span><span class="s2">&quot;1072497&quot;</span><span class="w"> </span><span class="nv">sysuser</span><span class="o">=</span><span class="s2">&quot;lechuck&quot;</span><span class="w"> </span><span class="nv">sudo_user</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="nv">uid</span><span class="o">=</span><span class="s2">&quot;2070&quot;</span><span class="w"> </span><span class="nv">gid</span><span class="o">=</span><span class="s2">&quot;2070&quot;</span><span class="w"> </span><span class="nv">action</span><span class="o">=</span><span class="s2">&quot;add&quot;</span>
+<span class="nv">type</span><span class="o">=</span><span class="s2">&quot;member&quot;</span><span class="w"> </span><span class="nv">group</span><span class="o">=</span><span class="s2">&quot;monkeys&quot;</span><span class="w"> </span><span class="nv">account</span><span class="o">=</span><span class="s2">&quot;stan&quot;</span><span class="w"> </span><span class="nv">self</span><span class="o">=</span><span class="s2">&quot;lechuck&quot;</span><span class="w"> </span><span class="nv">user</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="nv">host</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="nv">port</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="nv">ttl</span><span class="o">=</span><span class="s2">&quot;&quot;</span>
+</pre></div>
+</div>
+<p>Fields:</p>
+<dl class="simple">
+<dt>action</dt><dd><p>Either <em>add</em> when an account is added to a group role list, or <em>del</em> when an account is removed</p>
+</dd>
+<dt>type</dt><dd><p>Type of the role list we're modifying, either <em>member</em>, <em>aclkeeper</em>, <em>gatekeeper</em>, <em>guest</em> or <em>owner</em></p>
+</dd>
+<dt>group</dt><dd><p>Group whose one of the role list is being modified</p>
+</dd>
+<dt>account</dt><dd><p>Account being added/removed to/from the group role list</p>
+</dd>
+<dt>self</dt><dd><p>Account performing the change</p>
+</dd>
+<dt>user</dt><dd><p>When <strong>type</strong> is <em>guest</em>, the remote user part of the access we're adding/removing</p>
+</dd>
+<dt>host</dt><dd><p>When <strong>type</strong> is <em>guest</em>, the IP or IP block part of the access we're adding/removing</p>
+</dd>
+<dt>port</dt><dd><p>When <strong>type</strong> is <em>guest</em>, the port of the access we're adding/removing</p>
+</dd>
+<dt>ttl</dt><dd><p>When <strong>type</strong> is <em>guest</em> and <strong>action</strong> is <em>add</em>, if a TTL has been specified for the access, it appears here</p>
+</dd>
+</dl>
+</section>
+<section id="security">
+<span id="log-security"></span><h3><a class="toc-backref" href="#id12" role="doc-backlink">security</a><a class="headerlink" href="#security" title="Link to this heading"></a></h3>
+<p>This log is produced when an important security event has occurred, such as when an admin impersonates another user,
+or when a super owner uses his implicit global ownership to modify a group. You might want to watch those closely.</p>
+<p>Example:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>Dec<span class="w"> </span><span class="m">28</span><span class="w"> </span><span class="m">11</span>:12:26<span class="w"> </span>myhostname<span class="w"> </span>bastion:<span class="w"> </span>security<span class="w"> </span><span class="nv">uniqid</span><span class="o">=</span><span class="s2">&quot;601a17b5e5ba&quot;</span><span class="w"> </span><span class="nv">version</span><span class="o">=</span><span class="s2">&quot;3.01.03&quot;</span><span class="w"> </span><span class="nv">pid</span><span class="o">=</span><span class="s2">&quot;20519&quot;</span>
+<span class="nv">ppid</span><span class="o">=</span><span class="s2">&quot;20518&quot;</span><span class="w"> </span><span class="nv">sysuser</span><span class="o">=</span><span class="s2">&quot;lechuck&quot;</span><span class="w"> </span><span class="nv">sudo_user</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="nv">uid</span><span class="o">=</span><span class="s2">&quot;2604&quot;</span><span class="w"> </span><span class="nv">gid</span><span class="o">=</span><span class="s2">&quot;2604&quot;</span><span class="w"> </span><span class="nv">type</span><span class="o">=</span><span class="s2">&quot;admin-ssh-as&quot;</span><span class="w"> </span><span class="nv">account</span><span class="o">=</span><span class="s2">&quot;lechuck&quot;</span>
+sudo-as<span class="o">=</span><span class="s2">&quot;gthreepw&quot;</span><span class="w"> </span><span class="nv">plugin</span><span class="o">=</span><span class="s2">&quot;ssh&quot;</span><span class="w"> </span><span class="nv">params</span><span class="o">=</span><span class="s2">&quot;--user root --host supersecretserver.example.org --port 22&quot;</span>
+</pre></div>
+</div>
+<p>Fields:</p>
+<dl class="simple">
+<dt>type</dt><dd><p>Type of the security event that occurred. Can be:</p>
+<ul class="simple">
+<li><p>admin-ssh-as: an admin impersonated another user to establish an egress connection</p></li>
+<li><p>admin-sudo: an admin impersonated another user and launched an osh plugin on their behalf</p></li>
+<li><p>superowner-override: a super owner used his implicit ownership on all groups to modify a group</p></li>
+</ul>
+</dd>
+<dt>account</dt><dd><p>Account that emitted the security event</p>
+</dd>
+<dt>sudo-as</dt><dd><p>When <strong>type</strong> is <em>admin-ssh-as</em> or <em>admin-sudo</em>, name of the account that was impersonated</p>
+</dd>
+<dt>plugin</dt><dd><p>Name of the osh plugin that was launched</p>
+</dd>
+<dt>params</dt><dd><p>Parameters passed to the plugin, or command line used to establish the egress connection</p>
+</dd>
+</dl>
+</section>
+<section id="group">
+<span id="log-group"></span><h3><a class="toc-backref" href="#id13" role="doc-backlink">group</a><a class="headerlink" href="#group" title="Link to this heading"></a></h3>
+<p>This log is produced when a group is created or deleted.
+Note that membership modifications are referenced with the <strong>membership</strong> type instead, see above.</p>
+<p>Example:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>Dec<span class="w"> </span><span class="m">28</span><span class="w"> </span><span class="m">11</span>:12:26<span class="w"> </span>myhostname<span class="w"> </span>bastion:<span class="w"> </span>group<span class="w"> </span><span class="nv">uniqid</span><span class="o">=</span><span class="s2">&quot;56f321fb3e58&quot;</span><span class="w"> </span><span class="nv">version</span><span class="o">=</span><span class="s2">&quot;3.01.03&quot;</span><span class="w"> </span><span class="nv">pid</span><span class="o">=</span><span class="s2">&quot;1325901&quot;</span>
+<span class="nv">ppid</span><span class="o">=</span><span class="s2">&quot;1325900&quot;</span><span class="w"> </span><span class="nv">sysuser</span><span class="o">=</span><span class="s2">&quot;root&quot;</span><span class="w"> </span><span class="nv">sudo_user</span><span class="o">=</span><span class="s2">&quot;lechuck&quot;</span><span class="w"> </span><span class="nv">uid</span><span class="o">=</span><span class="s2">&quot;0&quot;</span><span class="w"> </span><span class="nv">gid</span><span class="o">=</span><span class="s2">&quot;0&quot;</span><span class="w"> </span><span class="nv">action</span><span class="o">=</span><span class="s2">&quot;create&quot;</span><span class="w"> </span><span class="nv">group</span><span class="o">=</span><span class="s2">&quot;themonkeys&quot;</span>
+<span class="nv">owner</span><span class="o">=</span><span class="s2">&quot;stan&quot;</span><span class="w"> </span><span class="nv">egress_ssh_key_algorithm</span><span class="o">=</span><span class="s2">&quot;ed25519&quot;</span><span class="w"> </span><span class="nv">egress_ssh_key_size</span><span class="o">=</span><span class="s2">&quot;256&quot;</span><span class="w"> </span><span class="nv">egress_ssh_key_encrypted</span><span class="o">=</span><span class="s2">&quot;false&quot;</span>
+</pre></div>
+</div>
+<p>Fields:</p>
+<dl class="simple">
+<dt>action</dt><dd><p>Either <em>create</em> or <em>delete</em>, indicating whether the group has just been created or deleted</p>
+</dd>
+<dt>group</dt><dd><p>The group name being created or deleted</p>
+</dd>
+<dt>owner</dt><dd><p>When <strong>action</strong> is <em>create</em>, the name of the owner of the new group we're creating</p>
+</dd>
+<dt>egress_ssh_key_algorithm, egress_ssh_key_size</dt><dd><p>When <strong>action</strong> is <em>create</em>, the algorithm (and size) used to generate the first pair of SSH keys,
+can be empty if <code class="docutils literal notranslate"><span class="pre">--no-key</span></code> was specified</p>
+</dd>
+<dt>egress_ssh_key_encrypted</dt><dd><p>When <strong>action</strong> is <em>create</em>, if a key was generated,
+will be <em>true</em> if <code class="docutils literal notranslate"><span class="pre">--encrypted</span></code> has been used, <em>false</em> otherwise</p>
+</dd>
+</dl>
+</section>
+<section id="account">
+<span id="log-account"></span><h3><a class="toc-backref" href="#id14" role="doc-backlink">account</a><a class="headerlink" href="#account" title="Link to this heading"></a></h3>
+<p>This log is produced when an account is created or deleted.</p>
+<p>Example:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>Dec<span class="w"> </span><span class="m">21</span><span class="w"> </span><span class="m">14</span>:30:26<span class="w"> </span>myhostname<span class="w"> </span>bastion:<span class="w"> </span>account<span class="w"> </span><span class="nv">uniqid</span><span class="o">=</span><span class="s2">&quot;ee4c91000b75&quot;</span><span class="w"> </span><span class="nv">version</span><span class="o">=</span><span class="s2">&quot;3.01.02&quot;</span><span class="w"> </span><span class="nv">pid</span><span class="o">=</span><span class="s2">&quot;537253&quot;</span><span class="w"> </span><span class="nv">ppid</span><span class="o">=</span><span class="s2">&quot;537252&quot;</span>
+<span class="nv">sysuser</span><span class="o">=</span><span class="s2">&quot;root&quot;</span><span class="w"> </span><span class="nv">sudo_user</span><span class="o">=</span><span class="s2">&quot;lechuck&quot;</span><span class="w"> </span><span class="nv">uid</span><span class="o">=</span><span class="s2">&quot;0&quot;</span><span class="w"> </span><span class="nv">gid</span><span class="o">=</span><span class="s2">&quot;0&quot;</span><span class="w"> </span><span class="nv">action</span><span class="o">=</span><span class="s2">&quot;create&quot;</span><span class="w"> </span><span class="nv">account</span><span class="o">=</span><span class="s2">&quot;stan&quot;</span><span class="w"> </span><span class="nv">account_uid</span><span class="o">=</span><span class="s2">&quot;8431&quot;</span>
+<span class="nv">public_key</span><span class="o">=</span><span class="s2">&quot;ssh-rsa AAAAB[...]&quot;</span><span class="w"> </span><span class="nv">always_active</span><span class="o">=</span><span class="s2">&quot;false&quot;</span><span class="w"> </span><span class="nv">uid_auto</span><span class="o">=</span><span class="s2">&quot;false&quot;</span><span class="w"> </span><span class="nv">osh_only</span><span class="o">=</span><span class="s2">&quot;false&quot;</span><span class="w"> </span><span class="nv">immutable_key</span><span class="o">=</span><span class="s2">&quot;false&quot;</span>
+<span class="nv">comment</span><span class="o">=</span><span class="s2">&quot;CREATED_BY=lechuck BASTION_VERSION=3.01.02 CREATION_TIME=Mon Dec 21 14:30:26 2020</span>
+<span class="s2">CREATION_TIMESTAMP=1608561026 COMMENT=requested_by_the_sword_master_of_melee_island_see_ticket_no_1337&quot;</span>
+</pre></div>
+</div>
+<p>Fields:</p>
+<dl class="simple">
+<dt>action</dt><dd><p>Either <em>create</em> or <em>delete</em>, indicating whether the account has just been created or deleted</p>
+</dd>
+<dt>account</dt><dd><p>The account name being created or deleted</p>
+</dd>
+<dt>account_uid</dt><dd><p>When <strong>action</strong> is <em>create</em>, the UID associated corresponding to the account we're creating</p>
+</dd>
+<dt>public_key</dt><dd><p>When <strong>action</strong> is <em>create</em>, the public key we've generated for the new account</p>
+</dd>
+<dt>always_active, uid_auto, osh_only, immutable_key</dt><dd><p>When <strong>action</strong> is <em>create</em>, <em>true</em> if the corresponding option was specified (<code class="docutils literal notranslate"><span class="pre">--always-active</span></code>,
+<code class="docutils literal notranslate"><span class="pre">--uid-auto</span></code>, <code class="docutils literal notranslate"><span class="pre">--osh-only</span></code> or <code class="docutils literal notranslate"><span class="pre">--immutable-key</span></code>), <em>false</em> otherwise</p>
+</dd>
+<dt>comment</dt><dd><p>When <strong>action</strong> is <em>create</em>, the comment specified at creation if any, with some metadata that'll be stored in
+the account properties (<em>created_by</em>, <em>bastion_version</em>, <em>creation_time</em>, <em>creation_timestamp</em>)</p>
+</dd>
+<dt>tty_group</dt><dd><p>When <strong>action</strong> is <em>delete</em>, the name of the tty group specific to this account that was deleted at the same time</p>
+</dd>
+</dl>
+</section>
+</section>
+<section id="syslog">
+<span id="id1"></span><h2><a class="toc-backref" href="#id15" role="doc-backlink">Syslog</a><a class="headerlink" href="#syslog" title="Link to this heading"></a></h2>
+<section id="files-location">
+<h3><a class="toc-backref" href="#id16" role="doc-backlink">Files location</a><a class="headerlink" href="#files-location" title="Link to this heading"></a></h3>
+<p>If you use <code class="docutils literal notranslate"><span class="pre">syslog-ng</span></code> and installed the provided templates (which is the default if you used
+the <code class="docutils literal notranslate"><span class="pre">--new-install</span></code> option to the install script), you'll have 4 files in your system log directory:</p>
+<dl class="simple">
+<dt>/var/log/bastion/bastion.log</dt><dd><p>This is where all the bastion usage logs will be written. All the above message types can be found in this file.</p>
+</dd>
+<dt>/var/log/bastion/bastion-die.log</dt><dd><p>This is where Perl crashes will be logged, with the message type <code class="docutils literal notranslate"><span class="pre">die</span></code>.
+On a production bastion, this file should normally be empty.</p>
+</dd>
+<dt>/var/log/bastion/bastion-warn.log</dt><dd><p>This is where Perl warnings will be logged, with the message type <code class="docutils literal notranslate"><span class="pre">warning</span></code>.
+On a production bastion, this file should mostly be empty.</p>
+</dd>
+<dt>/var/log/bastion/bastion-scripts.log</dt><dd><p>This is where all the satellite scripts (mostly found in the <code class="docutils literal notranslate"><span class="pre">bin/cron/</span></code> directory) will log their output.</p>
+</dd>
+</dl>
+</section>
+<section id="log-format">
+<h3><a class="toc-backref" href="#id17" role="doc-backlink">Log format</a><a class="headerlink" href="#log-format" title="Link to this heading"></a></h3>
+<p>A syslog message will always match the following generic format:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>SYSLOG_TIME<span class="w"> </span>SYSLOG_HOST<span class="w"> </span>bastion:<span class="w"> </span>MSGTYPE<span class="w"> </span><span class="nv">field1</span><span class="o">=</span><span class="s2">&quot;value1&quot;</span><span class="w"> </span><span class="nv">field2</span><span class="o">=</span><span class="s2">&quot;second value&quot;</span><span class="w"> </span>...
+</pre></div>
+</div>
+<p>Where SYSLOG_TIME is the usual datetime field added by your local syslog daemon,
+and SYSLOG_HOST the hostname of the local machine.
+The MSGTYPE indicates the message type of the log line (the list of types is further below).
+Then, a possibly long list of fields with quoted values, depending on the MSGTYPE.</p>
+<p>An example follows:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>Dec<span class="w"> </span><span class="m">28</span><span class="w"> </span><span class="m">11</span>:14:23<span class="w"> </span>myhostname<span class="w"> </span>bastion:<span class="w"> </span>code-warning<span class="w"> </span><span class="nv">uniqid</span><span class="o">=</span><span class="s2">&quot;e192fce7553a&quot;</span><span class="w"> </span><span class="nv">version</span><span class="o">=</span><span class="s2">&quot;3.01.03&quot;</span>
+<span class="nv">pid</span><span class="o">=</span><span class="s2">&quot;18803&quot;</span><span class="w"> </span><span class="nv">ppid</span><span class="o">=</span><span class="s2">&quot;18802&quot;</span><span class="w"> </span><span class="nv">sysuser</span><span class="o">=</span><span class="s2">&quot;gthreepw&quot;</span><span class="w"> </span><span class="nv">sudo_user</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="nv">uid</span><span class="o">=</span><span class="s2">&quot;99998&quot;</span><span class="w"> </span><span class="nv">gid</span><span class="o">=</span><span class="s2">&quot;99998&quot;</span>
+<span class="nv">msg</span><span class="o">=</span><span class="s2">&quot;Configuration error: specified adminAccounts &#39;joe&#39; is not a valid account, ignoring&quot;</span>
+</pre></div>
+</div>
+<p>In that case, the MSGTYPE is <code class="docutils literal notranslate"><span class="pre">code-warning</span></code>, and we have a few field/value couples with some metadata of interest,
+followed by a human-readable message, indicated by the <code class="docutils literal notranslate"><span class="pre">msg</span></code> field.</p>
+<p>Only satellite scripts will miss the field/value construction, which will just be replaced by a plain text message.
+These logs are stored in <code class="file docutils literal notranslate"><span class="pre">/var/log/bastion/bastion-scripts.log</span></code> by default.</p>
+</section>
+</section>
+<section id="access-logs">
+<h2><a class="toc-backref" href="#id18" role="doc-backlink">Access logs</a><a class="headerlink" href="#access-logs" title="Link to this heading"></a></h2>
+<p>If you don't or can't use <a class="reference internal" href="#syslog"><span class="std std-ref">Syslog</span></a>, the bastion can create and use access log files on its own,
+without relying on a syslog daemon. Note that you can enable both syslog and these access logs, if you want.</p>
+<p>These access logs will only contain <a class="reference internal" href="#log-open"><span class="std std-ref">open</span></a> and <a class="reference internal" href="#log-close"><span class="std std-ref">close</span></a> log types, which can be seen as &quot;access logs&quot;.
+All the other log types, such as <a class="reference internal" href="#log-warn"><span class="std std-ref">warn, die</span></a>, <a class="reference internal" href="#log-membership"><span class="std std-ref">membership</span></a>, etc. are only logged through syslog.</p>
+<p>These logs are enabled through the <a class="reference internal" href="configuration/bastion_conf.html#enableglobalaccesslog"><span class="std std-ref">enableGlobalAccessLog</span></a> and <a class="reference internal" href="configuration/bastion_conf.html#enableaccountaccesslog"><span class="std std-ref">enableAccountAccessLog</span></a> options.</p>
+<dl class="simple">
+<dt>enableGlobalAccessLog</dt><dd><p>When enabled, a single log file will be used, located in <code class="file docutils literal notranslate"><span class="pre">/home/logkeeper/global-log-YYYYMM.log</span></code>.
+There will be one file per month. Note that it can grow quite large if you have a busy bastion.</p>
+</dd>
+<dt>enableAccountAccessLog</dt><dd><p>When enabled, one log file per account will be used, located in <code class="file docutils literal notranslate"><span class="pre">/home/USER/USER-log-YYYYMM.log</span></code>.
+There will be one file per month.</p>
+</dd>
+</dl>
+<p>If both options are enabled, it means that every access log will be logged twice, to two different locations.
+If you also enabled syslog, it's even three times!</p>
+</section>
+<section id="sqlite-logs">
+<h2><a class="toc-backref" href="#id19" role="doc-backlink">SQLite logs</a><a class="headerlink" href="#sqlite-logs" title="Link to this heading"></a></h2>
+<p>If you want to store access logs into local sqlite databases, you can enable either <a class="reference internal" href="configuration/bastion_conf.html#enableglobalsqllog"><span class="std std-ref">enableGlobalSqlLog</span></a>,
+<a class="reference internal" href="configuration/bastion_conf.html#enableaccountsqllog"><span class="std std-ref">enableAccountSqlLog</span></a>, or both.</p>
+<dl class="simple">
+<dt>enableGlobalSqlLog</dt><dd><p>When enabled, a global sqlite database will be created in <code class="file docutils literal notranslate"><span class="pre">/home/logkeeper/global-log-YYYYMM.sqlite</span></code>.
+It'll contain one row per access (created at the same time the <a class="reference internal" href="#log-open"><span class="std std-ref">open</span></a> log is emitted).
+The following columns exist: id, timestamp, account, cmdtype, allowed, ipfrom, ipto, portto, user, plugin, uniqid.
+Refer to the <a class="reference internal" href="#log-open"><span class="std std-ref">open</span></a> log description to get the meaning of each column.</p>
+</dd>
+<dt>enableAccountSqlLog</dt><dd><p>When enabled, an sqlite database per account will be created in <code class="file docutils literal notranslate"><span class="pre">/home/USER/USER-log-YYYYMM.sqlite</span></code>.
+It'll contain one row per access (created at the same time the <a class="reference internal" href="#log-open"><span class="std std-ref">open</span></a> log is emitted),
+and the same row will be updated by the <a class="reference internal" href="#log-close"><span class="std std-ref">close</span></a> event when it is emitted. The following columns exist:
+id, timestamp, timestampusec, account, cmdtype, allowed, hostfrom, ipfrom, bastionip, bastionport, hostto,
+ipto, portto, user, plugin, ttyrecfilee, params, timestampend, timestampendusec, returnvalue, comment, uniqid.
+Refer to the <a class="reference internal" href="#log-open"><span class="std std-ref">open</span></a> log and <a class="reference internal" href="#log-close"><span class="std std-ref">close</span></a> log descriptions to get the meaning of each column.
+Note that the <a class="reference internal" href="configuration/bastion_conf.html#enableaccountsqllog"><span class="std std-ref">enableAccountSqlLog</span></a> option is required if you want the <a class="reference internal" href="../plugins/open/selfListSessions.html"><span class="doc">selfListSessions</span></a>
+and <a class="reference internal" href="../plugins/open/selfPlaySession.html"><span class="doc">selfPlaySession</span></a> plugins to work, as they use this database.</p>
+</dd>
+</dl>
+<p>Note that enabling these on a very busy bastion (several new connections per second) can create lock contention,
+especially on the global log: ensure you have a fast storage. In any case, if a connection can't get the lock after
+a few seconds, it'll proceed anyway, and skip writing the sql log. In that case, if you enabled syslog or
+local access logs, the <strong>globalsql</strong> and/or the <strong>accountsql</strong> field will contain the error detail.</p>
+</section>
+<section id="terminal-recordings-ttyrec">
+<h2><a class="toc-backref" href="#id20" role="doc-backlink">Terminal recordings (<em>ttyrec</em>)</a><a class="headerlink" href="#terminal-recordings-ttyrec" title="Link to this heading"></a></h2>
+<p>Every egress connection is started under <code class="docutils literal notranslate"><span class="pre">ttyrec</span></code>, which means that everything appearing on the console is recorded.
+If a password is asked by some program, for example, and typing the password prints '*' or doesn't print
+anything at all, this won't be recorded. This is by design. In other words, the keystrokes are not recorded,
+except if they produce something on the screen.</p>
+<p>The ttyrec files location is always <code class="file docutils literal notranslate"><span class="pre">/home/USER/ttyrec/REMOTEIP/file.ttyrec</span></code>, where the actual <cite>file.ttyrec</cite>
+name can be configured by the <a class="reference internal" href="configuration/bastion_conf.html#ttyrecfilenameformat"><span class="std std-ref">ttyrecFilenameFormat</span></a> option.
+By default, it'll contain the date, time, account, remote ip, port and user used to start the egress connection,
+as well as the uniqid, for easier correlation between all the logs produced by the same connection.
+Note that for long connections, or connections producing a lot of output, ttyrec files will be transparently rotated,
+without interrupting the connection.
+This is to avoid ending up with ttyrec files of several gigabytes that would still be opened, written to,
+hence impossible to compress, encrypt, and push to an escrow filer.
+The uniqid will be the same for all the ttyrec files corresponding to the same connection.</p>
+<p>To play ttyrec files, you can either use <a class="reference internal" href="../plugins/open/selfPlaySession.html"><span class="doc">selfPlaySession</span></a> for yourself, or,
+for admins having local access to the bastion machine, the <code class="docutils literal notranslate"><span class="pre">ttyplay</span></code> program can be used.
+Another software, perhaps more powerful than ttyplay, can also be used:
+<a class="reference external" href="https://www.chiark.greenend.org.uk/~sgtatham/ipbt/">IPBT</a> (<a class="reference external" href="https://nethackwiki.com/wiki/IPBT">wiki</a>),
+aka &quot;It's PlayBack Time&quot;, by the PuTTY author.
+It can do more advanced things such as look for words appearing on any frame recorded in the ttyrec file,
+play files using a logarithmic speed, or display an OSD with the exact time output you're seeing has appeared.
+As ttyrec is a well-known format that has been around for a while,
+there are a bunch of other programs you can use to read or convert these files.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="configuration/osh-orphaned-homedir_conf.html" class="btn btn-neutral float-left" title="osh-orphaned-homedir.conf" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mfa.html" class="btn btn-neutral float-right" title="Multi-Factor Authentication" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

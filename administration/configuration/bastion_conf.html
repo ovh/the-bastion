@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bastion.conf &mdash; The Bastion 3.23.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="../../_static/jquery.js?v=8dae8fb0"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=eb75f0bc"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="osh-backup-acl-keys.conf" href="osh-backup-acl-keys_conf.html" />
+    <link rel="prev" title="Configuration files" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.23.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using/basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Configuration files</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#main-configuration-files">Main configuration files</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">bastion.conf</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#option-list">Option List</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#option-reference">Option Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="osh-backup-acl-keys_conf.html">osh-backup-acl-keys.conf</a></li>
+<li class="toctree-l3"><a class="reference internal" href="osh-encrypt-rsync_conf.html">osh-encrypt-rsync.conf</a></li>
+<li class="toctree-l3"><a class="reference internal" href="osh-sync-watcher_sh.html">osh-sync-watcher.sh</a></li>
+<li class="toctree-l3"><a class="reference internal" href="osh-http-proxy_conf.html">osh-http-proxy.conf</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#configuration-files-for-satellite-scripts">Configuration files for satellite scripts</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/open/index.html">open plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Configuration files</a></li>
+      <li class="breadcrumb-item active">bastion.conf</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/administration/configuration/bastion_conf.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="bastion-conf">
+<h1>bastion.conf<a class="headerlink" href="#bastion-conf" title="Link to this heading"></a></h1>
+<blockquote>
+<div><div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The Bastion has a lot of configuration options so that you can tailor it
+to your needs. However, if you're just beginning and would like to get
+started quickly, just configure the <code class="docutils literal notranslate"><span class="pre">Main</span> <span class="pre">Options</span></code>.
+All the other options have sane defaults that can still be customized
+at a later time.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The changes in this file are immediately taken into account, because it is
+read independently by each new successfully established ingress session.
+Hence, please ensure the syntax of this file is valid at all times, or new
+sessions may fail to establish, with a &quot;JSON decode error&quot; message.
+A one-liner to test the syntax is available in the header of the file.</p>
+</div>
+</div></blockquote>
+<section id="option-list">
+<h2>Option List<a class="headerlink" href="#option-list" title="Link to this heading"></a></h2>
+<section id="main-options-options">
+<h3>Main Options options<a class="headerlink" href="#main-options-options" title="Link to this heading"></a></h3>
+<p>Those are the options you should customize when first setting up a bastion. All the other options have sane defaults and can be customized later if needed.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#bastionname">bastionName</a></p></li>
+<li><p><a class="reference internal" href="#bastioncommand">bastionCommand</a></p></li>
+<li><p><a class="reference internal" href="#readonlyslavemode">readOnlySlaveMode</a></p></li>
+<li><p><a class="reference internal" href="#adminaccounts">adminAccounts</a></p></li>
+<li><p><a class="reference internal" href="#superowneraccounts">superOwnerAccounts</a></p></li>
+</ul>
+</section>
+<section id="ssh-policies-options">
+<h3>SSH Policies options<a class="headerlink" href="#ssh-policies-options" title="Link to this heading"></a></h3>
+<p>All the options related to the SSH configuration and policies, both for ingress and egress connections.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#allowedingresssshalgorithms">allowedIngressSshAlgorithms</a></p></li>
+<li><p><a class="reference internal" href="#allowedegresssshalgorithms">allowedEgressSshAlgorithms</a></p></li>
+<li><p><a class="reference internal" href="#minimumingressrsakeysize">minimumIngressRsaKeySize</a></p></li>
+<li><p><a class="reference internal" href="#maximumingressrsakeysize">maximumIngressRsaKeySize</a></p></li>
+<li><p><a class="reference internal" href="#minimumegressrsakeysize">minimumEgressRsaKeySize</a></p></li>
+<li><p><a class="reference internal" href="#maximumegressrsakeysize">maximumEgressRsaKeySize</a></p></li>
+<li><p><a class="reference internal" href="#defaultaccountegresskeyalgorithm">defaultAccountEgressKeyAlgorithm</a></p></li>
+<li><p><a class="reference internal" href="#defaultaccountegresskeysize">defaultAccountEgressKeySize</a></p></li>
+<li><p><a class="reference internal" href="#moshallowed">moshAllowed</a></p></li>
+<li><p><a class="reference internal" href="#moshtimeoutnetwork">moshTimeoutNetwork</a></p></li>
+<li><p><a class="reference internal" href="#moshtimeoutsignal">moshTimeoutSignal</a></p></li>
+<li><p><a class="reference internal" href="#moshcommandline">moshCommandLine</a></p></li>
+</ul>
+</section>
+<section id="global-network-policies-options">
+<h3>Global network policies options<a class="headerlink" href="#global-network-policies-options" title="Link to this heading"></a></h3>
+<p>Those options can set a few global network policies to be applied bastion-wide.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#dnssupportlevel">dnsSupportLevel</a></p></li>
+<li><p><a class="reference internal" href="#allowednetworks">allowedNetworks</a></p></li>
+<li><p><a class="reference internal" href="#forbiddennetworks">forbiddenNetworks</a></p></li>
+<li><p><a class="reference internal" href="#ingresstoegressrules">ingressToEgressRules</a></p></li>
+<li><p><a class="reference internal" href="#ipv4allowed">IPv4Allowed</a></p></li>
+<li><p><a class="reference internal" href="#ipv6allowed">IPv6Allowed</a></p></li>
+</ul>
+</section>
+<section id="logging-options">
+<h3>Logging options<a class="headerlink" href="#logging-options" title="Link to this heading"></a></h3>
+<p>Options to customize how logs should be produced.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#enablesyslog">enableSyslog</a></p></li>
+<li><p><a class="reference internal" href="#syslogfacility">syslogFacility</a></p></li>
+<li><p><a class="reference internal" href="#syslogdescription">syslogDescription</a></p></li>
+<li><p><a class="reference internal" href="#enableglobalaccesslog">enableGlobalAccessLog</a></p></li>
+<li><p><a class="reference internal" href="#enableaccountaccesslog">enableAccountAccessLog</a></p></li>
+<li><p><a class="reference internal" href="#enableglobalsqllog">enableGlobalSqlLog</a></p></li>
+<li><p><a class="reference internal" href="#enableaccountsqllog">enableAccountSqlLog</a></p></li>
+<li><p><a class="reference internal" href="#ttyrecfilenameformat">ttyrecFilenameFormat</a></p></li>
+<li><p><a class="reference internal" href="#ttyrecadditionalparameters">ttyrecAdditionalParameters</a></p></li>
+<li><p><a class="reference internal" href="#ttyrecstealthstdoutpattern">ttyrecStealthStdoutPattern</a></p></li>
+</ul>
+</section>
+<section id="other-ingress-policies-options">
+<h3>Other ingress policies options<a class="headerlink" href="#other-ingress-policies-options" title="Link to this heading"></a></h3>
+<p>Policies applying to the ingress connections</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#ingresskeysfrom">ingressKeysFrom</a></p></li>
+<li><p><a class="reference internal" href="#ingresskeysfromallowoverride">ingressKeysFromAllowOverride</a></p></li>
+</ul>
+</section>
+<section id="other-egress-policies-options">
+<h3>Other egress policies options<a class="headerlink" href="#other-egress-policies-options" title="Link to this heading"></a></h3>
+<p>Policies applying to the egress connections</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#defaultlogin">defaultLogin</a></p></li>
+<li><p><a class="reference internal" href="#egresskeysfrom">egressKeysFrom</a></p></li>
+<li><p><a class="reference internal" href="#keyboardinteractiveallowed">keyboardInteractiveAllowed</a></p></li>
+<li><p><a class="reference internal" href="#passwordallowed">passwordAllowed</a></p></li>
+<li><p><a class="reference internal" href="#telnetallowed">telnetAllowed</a></p></li>
+</ul>
+</section>
+<section id="session-policies-options">
+<h3>Session policies options<a class="headerlink" href="#session-policies-options" title="Link to this heading"></a></h3>
+<p>Options to customize the established sessions behaviour</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#displaylastlogin">displayLastLogin</a></p></li>
+<li><p><a class="reference internal" href="#fanciness">fanciness</a></p></li>
+<li><p><a class="reference internal" href="#interactivemodeallowed">interactiveModeAllowed</a></p></li>
+<li><p><a class="reference internal" href="#interactivemodetimeout">interactiveModeTimeout</a></p></li>
+<li><p><a class="reference internal" href="#interactivemodebydefault">interactiveModeByDefault</a></p></li>
+<li><p><a class="reference internal" href="#interactivemodeproactivemfaenabled">interactiveModeProactiveMFAenabled</a></p></li>
+<li><p><a class="reference internal" href="#interactivemodeproactivemfaexpiration">interactiveModeProactiveMFAexpiration</a></p></li>
+<li><p><a class="reference internal" href="#idlelocktimeout">idleLockTimeout</a></p></li>
+<li><p><a class="reference internal" href="#idlekilltimeout">idleKillTimeout</a></p></li>
+<li><p><a class="reference internal" href="#warnbeforelockseconds">warnBeforeLockSeconds</a></p></li>
+<li><p><a class="reference internal" href="#warnbeforekillseconds">warnBeforeKillSeconds</a></p></li>
+<li><p><a class="reference internal" href="#accountexternalvalidationprogram">accountExternalValidationProgram</a></p></li>
+<li><p><a class="reference internal" href="#accountexternalvalidationdenyonfailure">accountExternalValidationDenyOnFailure</a></p></li>
+<li><p><a class="reference internal" href="#alwaysactiveaccounts">alwaysActiveAccounts</a></p></li>
+</ul>
+</section>
+<section id="account-policies-options">
+<h3>Account policies options<a class="headerlink" href="#account-policies-options" title="Link to this heading"></a></h3>
+<p>Policies applying to the bastion accounts themselves</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#accountmaxinactivedays">accountMaxInactiveDays</a></p></li>
+<li><p><a class="reference internal" href="#accountexpiredmessage">accountExpiredMessage</a></p></li>
+<li><p><a class="reference internal" href="#accountcreatesupplementarygroups">accountCreateSupplementaryGroups</a></p></li>
+<li><p><a class="reference internal" href="#accountcreatedefaultpersonalaccesses">accountCreateDefaultPersonalAccesses</a></p></li>
+<li><p><a class="reference internal" href="#ingressrequirepiv">ingressRequirePIV</a></p></li>
+<li><p><a class="reference internal" href="#accountmfapolicy">accountMFAPolicy</a></p></li>
+<li><p><a class="reference internal" href="#mfapasswordmindays">MFAPasswordMinDays</a></p></li>
+<li><p><a class="reference internal" href="#mfapasswordmaxdays">MFAPasswordMaxDays</a></p></li>
+<li><p><a class="reference internal" href="#mfapasswordwarndays">MFAPasswordWarnDays</a></p></li>
+<li><p><a class="reference internal" href="#mfapasswordinactivedays">MFAPasswordInactiveDays</a></p></li>
+<li><p><a class="reference internal" href="#mfapostcommand">MFAPostCommand</a></p></li>
+<li><p><a class="reference internal" href="#totpprovider">TOTPProvider</a></p></li>
+</ul>
+</section>
+<section id="other-options-options">
+<h3>Other options options<a class="headerlink" href="#other-options-options" title="Link to this heading"></a></h3>
+<p>These options are either discouraged (in which case this is explained in the description) or rarely need to be modified.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#accountuidmin">accountUidMin</a></p></li>
+<li><p><a class="reference internal" href="#accountuidmax">accountUidMax</a></p></li>
+<li><p><a class="reference internal" href="#groupgidmin">groupGidMin</a></p></li>
+<li><p><a class="reference internal" href="#ttyrecgroupidoffset">ttyrecGroupIdOffset</a></p></li>
+<li><p><a class="reference internal" href="#documentationurl">documentationURL</a></p></li>
+<li><p><a class="reference internal" href="#debug">debug</a></p></li>
+<li><p><a class="reference internal" href="#remotecommandescapebydefault">remoteCommandEscapeByDefault</a></p></li>
+<li><p><a class="reference internal" href="#sshclientdebuglevel">sshClientDebugLevel</a></p></li>
+<li><p><a class="reference internal" href="#sshclienthasoptione">sshClientHasOptionE</a></p></li>
+<li><p><a class="reference internal" href="#sshaddkeystoagentallowed">sshAddKeysToAgentAllowed</a></p></li>
+</ul>
+</section>
+</section>
+<section id="option-reference">
+<h2>Option Reference<a class="headerlink" href="#option-reference" title="Link to this heading"></a></h2>
+<section id="main-options">
+<h3>Main Options<a class="headerlink" href="#main-options" title="Link to this heading"></a></h3>
+<section id="bastionname">
+<span id="id1"></span><h4>bastionName<a class="headerlink" href="#bastionname" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;fix-my-config-please-missing-bastion-name&quot;</span></code></p>
+</dd>
+</dl>
+<p>This will be the name advertised in the aliases admins will give to bastion users, and also in the banner of the plugins output. You can see it as a friendly name everybody will use to refer to this machine: something more friendly than just its full hostname.</p>
+</section>
+<section id="bastioncommand">
+<span id="id2"></span><h4>bastionCommand<a class="headerlink" href="#bastioncommand" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;ssh</span> <span class="pre">USER&#64;HOSTNAME</span> <span class="pre">-t</span> <span class="pre">--&quot;</span></code></p>
+</dd>
+</dl>
+<p>The <code class="docutils literal notranslate"><span class="pre">ssh</span></code> command to launch to connect to this bastion as a user. This will be printed on <code class="docutils literal notranslate"><span class="pre">accountCreate</span></code>, so that the new user knows how to connect. Magic tokens are:</p>
+<ul class="simple">
+<li><p>ACCOUNT or USER: replaced at runtime by the account name</p></li>
+<li><p>BASTIONNAME: replaced at runtime by the name defined in <code class="docutils literal notranslate"><span class="pre">bastionName</span></code></p></li>
+<li><p>HOSTNAME: replaced at runtime by the hostname of the system</p></li>
+</ul>
+<p>So, for example if your specify <code class="docutils literal notranslate"><span class="pre">ssh</span> <span class="pre">USER&#64;HOSTNAME</span> <span class="pre">-t</span> <span class="pre">--</span></code>, it'll give <code class="docutils literal notranslate"><span class="pre">johndoe&#64;bastion1.example.org</span> <span class="pre">-t</span> <span class="pre">--</span></code> as a bastion alias to <em>johndoe</em></p>
+</section>
+<section id="readonlyslavemode">
+<span id="id3"></span><h4>readOnlySlaveMode<a class="headerlink" href="#readonlyslavemode" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">boolean</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">false</span></code></p>
+</dd>
+</dl>
+<p>If set to <code class="docutils literal notranslate"><span class="pre">false</span></code>, this bastion will work in standalone mode, or will be the master in a master/slave mode. If set to <code class="docutils literal notranslate"><span class="pre">true</span></code>, this'll be the slave which means all plugins that modify groups, accounts, or access rights will be disabled, and the master bastion will push its modifications using inotify/rsync, please refer do the documentation to set this up.</p>
+</section>
+<section id="adminaccounts">
+<span id="id4"></span><h4>adminAccounts<a class="headerlink" href="#adminaccounts" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">array</span> <span class="pre">of</span> <span class="pre">strings</span> <span class="pre">(account</span> <span class="pre">names)</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">[]</span></code></p>
+</dd>
+</dl>
+<p>The list of accounts that are Admins of the bastion. Admins can't be deleted or otherwise modified by non-admins. They also gain access to special dangerous/sensitive <code class="docutils literal notranslate"><span class="pre">--osh</span></code> commands, such as being able to impersonate anybody else. Note that an Admin is also always considered as a Super Owner, which means they also override all checks of group administrative commands. Don't forget to add them to the <code class="docutils literal notranslate"><span class="pre">osh-admin</span></code> group too (system-wise), or they won't really be considered as Admins: this is an additional security measure against privilege escalation. Rule of thumb: it's probably a good idea to only add here people that have <code class="docutils literal notranslate"><span class="pre">root</span></code> access to the bastion machine itself.</p>
+</section>
+<section id="superowneraccounts">
+<span id="id5"></span><h4>superOwnerAccounts<a class="headerlink" href="#superowneraccounts" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">array</span> <span class="pre">of</span> <span class="pre">strings</span> <span class="pre">(account</span> <span class="pre">names)</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">[]</span></code></p>
+</dd>
+</dl>
+<p>The list of accounts that are &quot;Super Owners&quot;. They can run all group administrative commands, exactly as if they were implicitly owners of all the groups. Super Owners are only here as a last resort when the owners/gatekeepers/aclkeepers of a group are not available. Every command run by a Super Owner that would have failed if the account was not a Super Owner is logged explicitly as &quot;Super Owner Override&quot;, you might want to add a rule for those in your SIEM. You can consider than the Super Owners have an implicit <em>sudo</em> for group management. Don't add here accounts that are bastion Admins, as they already inherit the Super Owner role. Don't forget to add them to the <code class="docutils literal notranslate"><span class="pre">osh-superowner</span></code> group too (system-wise), or they won't really be considered as &quot;Super Owners&quot;: this is an additional security measure against privilege escalation.</p>
+</section>
+</section>
+<section id="ssh-policies">
+<h3>SSH Policies<a class="headerlink" href="#ssh-policies" title="Link to this heading"></a></h3>
+<section id="allowedingresssshalgorithms">
+<span id="id6"></span><h4>allowedIngressSshAlgorithms<a class="headerlink" href="#allowedingresssshalgorithms" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">array</span> <span class="pre">of</span> <span class="pre">strings</span> <span class="pre">(algorithm</span> <span class="pre">names)</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">[</span> <span class="pre">&quot;rsa&quot;,</span> <span class="pre">&quot;ecdsa&quot;,</span> <span class="pre">&quot;ed25519&quot;</span> <span class="pre">]</span></code></p>
+</dd>
+</dl>
+<p>The algorithms authorized for ingress ssh public keys added to this bastion. Possible values: <code class="docutils literal notranslate"><span class="pre">rsa</span></code>, <code class="docutils literal notranslate"><span class="pre">ecdsa</span></code>, <code class="docutils literal notranslate"><span class="pre">ed25519</span></code>, <code class="docutils literal notranslate"><span class="pre">ecdsa-sk</span></code>, <code class="docutils literal notranslate"><span class="pre">ed25519-sk</span></code>, note that some of those might not be supported by your current version of <code class="docutils literal notranslate"><span class="pre">OpenSSH</span></code>: unsupported algorithms are automatically omitted at runtime.</p>
+</section>
+<section id="allowedegresssshalgorithms">
+<span id="id7"></span><h4>allowedEgressSshAlgorithms<a class="headerlink" href="#allowedegresssshalgorithms" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">array</span> <span class="pre">of</span> <span class="pre">strings</span> <span class="pre">(algorithm</span> <span class="pre">names)</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">[</span> <span class="pre">&quot;rsa&quot;,</span> <span class="pre">&quot;ecdsa&quot;,</span> <span class="pre">&quot;ed25519&quot;</span> <span class="pre">]</span></code></p>
+</dd>
+</dl>
+<p>The algorithms authorized for egress ssh public keys generated on this bastion. Possible values: <code class="docutils literal notranslate"><span class="pre">rsa</span></code>, <code class="docutils literal notranslate"><span class="pre">ecdsa</span></code>, <code class="docutils literal notranslate"><span class="pre">ed25519</span></code>, note that some of those might not be supported by your current version of <code class="docutils literal notranslate"><span class="pre">OpenSSH</span></code>, unsupported algorithms are automatically omitted at runtime.</p>
+</section>
+<section id="minimumingressrsakeysize">
+<span id="id8"></span><h4>minimumIngressRsaKeySize<a class="headerlink" href="#minimumingressrsakeysize" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;</span> <span class="pre">0</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">2048</span></code></p>
+</dd>
+</dl>
+<p>The minimum allowed size for ingress RSA keys (user-&gt;bastion). Sane values range from 2048 to 4096.</p>
+</section>
+<section id="maximumingressrsakeysize">
+<span id="id9"></span><h4>maximumIngressRsaKeySize<a class="headerlink" href="#maximumingressrsakeysize" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;</span> <span class="pre">0</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">8192</span></code></p>
+</dd>
+</dl>
+<p>The maximum allowed size for ingress RSA keys (user-&gt;bastion). Too big values (&gt;8192) are extremely CPU intensive and don't really add that much security.</p>
+</section>
+<section id="minimumegressrsakeysize">
+<span id="id10"></span><h4>minimumEgressRsaKeySize<a class="headerlink" href="#minimumegressrsakeysize" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;</span> <span class="pre">0</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">2048</span></code></p>
+</dd>
+</dl>
+<p>The minimum allowed size for egress RSA keys (bastion-&gt;server). Sane values range from 2048 to 4096.</p>
+</section>
+<section id="maximumegressrsakeysize">
+<span id="id11"></span><h4>maximumEgressRsaKeySize<a class="headerlink" href="#maximumegressrsakeysize" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;</span> <span class="pre">0</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">8192</span></code></p>
+</dd>
+</dl>
+<p>The maximum allowed size for ingress RSA keys (bastion-&gt;server). Too big values (&gt;8192) are extremely CPU intensive and don't really add that much security.</p>
+</section>
+<section id="defaultaccountegresskeyalgorithm">
+<span id="id12"></span><h4>defaultAccountEgressKeyAlgorithm<a class="headerlink" href="#defaultaccountegresskeyalgorithm" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;ecdsa&quot;</span></code></p>
+</dd>
+</dl>
+<p>The default algorithm to use to create the egress key of a newly created account</p>
+</section>
+<section id="defaultaccountegresskeysize">
+<span id="id13"></span><h4>defaultAccountEgressKeySize<a class="headerlink" href="#defaultaccountegresskeysize" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;</span> <span class="pre">0</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">521</span></code></p>
+</dd>
+</dl>
+<p>The default size to use to create the egress key of a newly created account (also see <code class="docutils literal notranslate"><span class="pre">defaultAccountEgressKeyAlgorithm</span></code>)</p>
+</section>
+<section id="moshallowed">
+<span id="id14"></span><h4>moshAllowed<a class="headerlink" href="#moshallowed" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">boolean</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">false</span></code></p>
+</dd>
+</dl>
+<p>If set to <code class="docutils literal notranslate"><span class="pre">true</span></code>, mosh usage is allowed (mosh needs to be installed on serverside, obviously). Otherwise, this feature is disabled.</p>
+</section>
+<section id="moshtimeoutnetwork">
+<span id="id15"></span><h4>moshTimeoutNetwork<a class="headerlink" href="#moshtimeoutnetwork" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;</span> <span class="pre">0</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">86400</span></code></p>
+</dd>
+</dl>
+<p>Number of seconds of inactivity (network-wise) after a mosh-server will exit. By design even if the client is disconnected &quot;for good&quot;, mosh-server would wait forever. If mosh is meant to handle shaky connections but not mobility, you can set this to a low value. It sets the <code class="docutils literal notranslate"><span class="pre">MOSH_SERVER_NETWORK_TMOUT</span></code> envvar for mosh, see <code class="docutils literal notranslate"><span class="pre">man</span> <span class="pre">mosh-server</span></code> for more information (mosh 1.2.6+).</p>
+</section>
+<section id="moshtimeoutsignal">
+<span id="id16"></span><h4>moshTimeoutSignal<a class="headerlink" href="#moshtimeoutsignal" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;</span> <span class="pre">0</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">30</span></code></p>
+</dd>
+</dl>
+<p>Number of seconds of inactivity (network-wise) a mosh-server will wait after receiving a <code class="docutils literal notranslate"><span class="pre">SIGUSR1</span></code> before exiting. It sets the <code class="docutils literal notranslate"><span class="pre">MOSH_SERVER_SIGNAL_TMOUT</span></code> envvar for mosh, see <code class="docutils literal notranslate"><span class="pre">man</span> <span class="pre">mosh-server</span></code> for more information (mosh 1.2.6+).</p>
+</section>
+<section id="moshcommandline">
+<span id="id17"></span><h4>moshCommandLine<a class="headerlink" href="#moshcommandline" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code></p>
+</dd>
+<dt class="field-odd">Example<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">&quot;-s</span> <span class="pre">-p</span> <span class="pre">40000:49999&quot;</span></code></p>
+</dd>
+</dl>
+<p>Additional parameters that will be passed as-is to mosh-server. See <code class="docutils literal notranslate"><span class="pre">man</span> <span class="pre">mosh-server</span></code>, you should at least add the <code class="docutils literal notranslate"><span class="pre">-p</span></code> option to specify a fixed number of ports (easier for firewall configuration).</p>
+</section>
+</section>
+<section id="global-network-policies">
+<h3>Global network policies<a class="headerlink" href="#global-network-policies" title="Link to this heading"></a></h3>
+<section id="dnssupportlevel">
+<span id="id18"></span><h4>dnsSupportLevel<a class="headerlink" href="#dnssupportlevel" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">integer</span> <span class="pre">between</span> <span class="pre">0</span> <span class="pre">and</span> <span class="pre">2</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">2</span></code></p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>If set to 0, The Bastion will never attempt to do DNS or reverse-DNS resolutions, and return an error if you request connection to a hostname instead of an IP. Use this if you know there's no working DNS in your environment and only use IPs everywhere.</dt><dd><p>If set to 1, The Bastion will not attempt to do DNS or reverse-DNS resolutions unless you force it to (i.e. by requesting connection to a hostname instead of an IP). You may use this if for example you have well-known hostnames in /etc/hosts, but don't have a working DNS (which would imply that reverse-DNS resolutions will always fail).
+If set to 2, The Bastion will make the assumption that you have a working DNS setup, and will do DNS and reverse-DNS resolutions normally.</p>
+</dd>
+</dl>
+</section>
+<section id="allowednetworks">
+<span id="id19"></span><h4>allowedNetworks<a class="headerlink" href="#allowednetworks" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">array</span> <span class="pre">of</span> <span class="pre">strings</span> <span class="pre">(IPs</span> <span class="pre">and/or</span> <span class="pre">subnets)</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">[]</span></code></p>
+</dd>
+<dt class="field-odd">Example<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">[&quot;10.42.0.0/16&quot;,&quot;192.168.111.0/24&quot;,&quot;203.0.113.42&quot;]</span></code></p>
+</dd>
+</dl>
+<p>Restricts egress connection attempts to those listed networks only. This is enforced at all times and can NOT be overridden by users. If you are lucky enough to have you own IP blocks, it's probably a good idea to list them here. An empty array means no restriction is applied.</p>
+</section>
+<section id="forbiddennetworks">
+<span id="id20"></span><h4>forbiddenNetworks<a class="headerlink" href="#forbiddennetworks" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">array</span> <span class="pre">of</span> <span class="pre">strings</span> <span class="pre">(IPs</span> <span class="pre">and/or</span> <span class="pre">subnets)</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">[]</span></code></p>
+</dd>
+<dt class="field-odd">Example<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">[&quot;10.42.42.0/24&quot;]</span></code></p>
+</dd>
+</dl>
+<p>Prevents egress connection to the listed networks, this takes precedence over <code class="docutils literal notranslate"><span class="pre">allowedNetworks</span></code>. This can be used to prevent connection to some hosts or subnets in a broadly allowed subnet. This is enforced at all times and can NOT be overridden by users.</p>
+</section>
+<section id="ingresstoegressrules">
+<span id="id21"></span><h4>ingressToEgressRules<a class="headerlink" href="#ingresstoegressrules" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">array</span> <span class="pre">of</span> <span class="pre">rules,</span> <span class="pre">a</span> <span class="pre">rule</span> <span class="pre">being</span> <span class="pre">a</span> <span class="pre">3-uple</span> <span class="pre">of</span> <span class="pre">[array,</span> <span class="pre">array,</span> <span class="pre">string]</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">[]</span></code></p>
+</dd>
+</dl>
+<p>Fine-grained rules (a la <em>netfilter</em>) to apply global restrictions to possible egress destinations given ingress IPs. This is similar to <code class="docutils literal notranslate"><span class="pre">allowedNetworks</span></code> and <code class="docutils literal notranslate"><span class="pre">forbiddenNetworks</span></code>, but way more powerful (in fact, those two previous options can be expressed exclusively using <code class="docutils literal notranslate"><span class="pre">ingressToEgressRules</span></code>). Those rules here are enforced at all times and can <strong>NOT</strong> be overridden by users or admins.
+Each rule will be processed <strong>IN ORDER</strong>. The first rule to match will be applied and no other rule will be checked.
+If no rule matches, the default is to apply no restriction.
+A rule is a 3-uple of [<code class="docutils literal notranslate"><span class="pre">array</span> <span class="pre">of</span> <span class="pre">ingress</span> <span class="pre">networks</span></code>, <code class="docutils literal notranslate"><span class="pre">array</span> <span class="pre">of</span> <span class="pre">egress</span> <span class="pre">networks</span></code>, <code class="docutils literal notranslate"><span class="pre">policy</span> <span class="pre">to</span> <span class="pre">apply</span></code>].</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">array</span> <span class="pre">of</span> <span class="pre">ingress</span> <span class="pre">networks</span></code>: if the IP of the ingress connection matches a network or IP in this list, the rule <em>may</em> apply: we proceed to check the egress network IP</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">array</span> <span class="pre">of</span> <span class="pre">egress</span> <span class="pre">networks</span></code>: if the IP of the egress connection matches a network or IP in this list, the rule <em>does</em> apply and we'll enforce the policy defined in the third item of the rule</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">policy</span> <span class="pre">to</span> <span class="pre">apply</span></code>: this is what to enforce when the ingress and egress network match</p></li>
+</ul>
+<p>The &quot;policy to apply&quot; item can have 3 values:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ALLOW</span></code>, no restriction will be applied (all rights-check of groups and personal accesses still apply)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DENY</span></code>, access will be denied regardless of any group or personal accesses</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ALLOW-EXCLUSIVE</span></code>, access will be allowed <strong>if and only if</strong> the egress network match, given the ingress network. In other words, if the ingress IP matches one of the ingress networks specified in the rule, but the egress IP <strong>DOES NOT</strong> match any of the egress network specified, access will be denied. This is an easy way to ensure that a given list of ingress networks can only access a precise list of egress networks and nothing else.</p></li>
+</ul>
+<p>For example, take the following configuration:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="o">[</span>
+<span class="w">   </span><span class="o">[[</span><span class="s2">&quot;10.19.0.0/16&quot;</span>,<span class="s2">&quot;10.15.15.0/24&quot;</span><span class="o">]</span>,<span class="w"> </span><span class="o">[</span><span class="s2">&quot;10.20.0.0/16&quot;</span><span class="o">]</span>,<span class="w">    </span><span class="s2">&quot;ALLOW-EXCLUSIVE&quot;</span><span class="o">]</span>,
+<span class="w">   </span><span class="o">[[</span><span class="s2">&quot;192.168.42.0/24&quot;</span><span class="o">]</span>,<span class="w">              </span><span class="o">[</span><span class="s2">&quot;192.168.42.0/24&quot;</span><span class="o">]</span>,<span class="w"> </span><span class="s2">&quot;ALLOW&quot;</span><span class="o">]</span>,
+<span class="w">   </span><span class="o">[[</span><span class="s2">&quot;192.168.0.0/16&quot;</span><span class="o">]</span>,<span class="w">               </span><span class="o">[</span><span class="s2">&quot;192.168.0.0/16&quot;</span><span class="o">]</span>,<span class="w">  </span><span class="s2">&quot;DENY&quot;</span><span class="o">]</span>
+<span class="o">]</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>The <code class="docutils literal notranslate"><span class="pre">10.19.0.0/16</span></code> and <code class="docutils literal notranslate"><span class="pre">10.15.15.0/24</span></code> networks can only access the <code class="docutils literal notranslate"><span class="pre">10.20.0.0/16</span></code> network (rule <code class="docutils literal notranslate"><span class="pre">#1</span></code>)</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">192.168.42.0/24</span></code> network can access any machine from its own /24 network (rule <code class="docutils literal notranslate"><span class="pre">#2</span></code>), but not any other machine from the wider <code class="docutils literal notranslate"><span class="pre">192.168.0.0/16</span></code> network (rule <code class="docutils literal notranslate"><span class="pre">#3</span></code>). It can however access any other machine outside of this block (implicit allow catch-all rule, as there is no corresponding <code class="docutils literal notranslate"><span class="pre">DENY</span></code> rule, and rule <code class="docutils literal notranslate"><span class="pre">#2</span></code> is <code class="docutils literal notranslate"><span class="pre">ALLOW</span></code> and not <code class="docutils literal notranslate"><span class="pre">ALLOW-EXCLUSIVE</span></code>)</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">192.168.0.0/16</span></code> network (except <code class="docutils literal notranslate"><span class="pre">192.168.42.0/16</span></code>) can access any machine except one from its own network (rule <code class="docutils literal notranslate"><span class="pre">#3</span></code>)</p></li>
+<li><p>All the other networks can access any other network (including egress <code class="docutils literal notranslate"><span class="pre">10.20.0.0/16</span></code> or egress <code class="docutils literal notranslate"><span class="pre">192.168.0.0/16</span></code>)</p></li>
+</ul>
+<p>In any case, all the personal and group accesses still apply in addition to these global rules.</p>
+</section>
+<section id="ipv4allowed">
+<span id="id22"></span><h4>IPv4Allowed<a class="headerlink" href="#ipv4allowed" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">boolean</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">true</span></code></p>
+</dd>
+</dl>
+<p>If enabled, IPv4 egress connections will be allowed, and IPv4 will be enabled in the DNS queries. This is the default. Do NOT disable this unless you enable IPv6Allowed, if you need to have an IPv6-only bastion.</p>
+</section>
+<section id="ipv6allowed">
+<span id="id23"></span><h4>IPv6Allowed<a class="headerlink" href="#ipv6allowed" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">boolean</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">false</span></code></p>
+</dd>
+</dl>
+<p>If enabled, IPv6 egress connections will be allowed, and IPv6 will be enabled in the DNS queries. By default, only IPv4 is allowed.</p>
+</section>
+</section>
+<section id="logging">
+<h3>Logging<a class="headerlink" href="#logging" title="Link to this heading"></a></h3>
+<section id="enablesyslog">
+<span id="id24"></span><h4>enableSyslog<a class="headerlink" href="#enablesyslog" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">boolean</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">true</span></code></p>
+</dd>
+</dl>
+<p>If enabled, we'll send logs through syslog, don't forget to setup your syslog daemon!. You can also adjust <code class="docutils literal notranslate"><span class="pre">syslogFacility</span></code> and <code class="docutils literal notranslate"><span class="pre">syslogDescription</span></code> below, to match your syslog configuration. Note that the provided <code class="docutils literal notranslate"><span class="pre">syslog-ng</span></code> templates work with the default values left as-is.</p>
+</section>
+<section id="syslogfacility">
+<span id="id25"></span><h4>syslogFacility<a class="headerlink" href="#syslogfacility" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;local7&quot;</span></code></p>
+</dd>
+</dl>
+<p>Sets the facility that will be used for syslog.</p>
+</section>
+<section id="syslogdescription">
+<span id="id26"></span><h4>syslogDescription<a class="headerlink" href="#syslogdescription" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;bastion&quot;</span></code></p>
+</dd>
+</dl>
+<p>Sets the description that will be used for syslog.</p>
+</section>
+<section id="enableglobalaccesslog">
+<span id="id27"></span><h4>enableGlobalAccessLog<a class="headerlink" href="#enableglobalaccesslog" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">boolean</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">true</span></code></p>
+</dd>
+</dl>
+<p>If enabled, all <em>open</em> and <em>close</em> logs will be written to <code class="docutils literal notranslate"><span class="pre">/home/logkeeper/global-log-YYYYMM.log</span></code>. Those are also logged through syslog if <em>enableSyslog</em> is set.</p>
+</section>
+<section id="enableaccountaccesslog">
+<span id="id28"></span><h4>enableAccountAccessLog<a class="headerlink" href="#enableaccountaccesslog" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">boolean</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">true</span></code></p>
+</dd>
+</dl>
+<p>If enabled, all <em>open</em> and <em>close</em> logs will be written to the corresponding user's home in <code class="docutils literal notranslate"><span class="pre">/home/USER/USER-log-YYYYMM.log</span></code>. Those are also logged through syslog if <em>enableSyslog</em> is set.</p>
+</section>
+<section id="enableglobalsqllog">
+<span id="id29"></span><h4>enableGlobalSqlLog<a class="headerlink" href="#enableglobalsqllog" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">boolean</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">true</span></code></p>
+</dd>
+</dl>
+<p>If enabled, all access logs (corresponding to the <em>open</em> and <em>close</em> events) will be written in a short SQL format, as one row per access, to <code class="docutils literal notranslate"><span class="pre">/home/logkeeper/global-log-YYYYMM.sqlite</span></code>.</p>
+</section>
+<section id="enableaccountsqllog">
+<span id="id30"></span><h4>enableAccountSqlLog<a class="headerlink" href="#enableaccountsqllog" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">boolean</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">true</span></code></p>
+</dd>
+</dl>
+<p>If enabled, all access logs (corresponding to the <em>open</em> and <em>close</em> events) will be written in a detailed SQL format, as one row per access, in the corresponding user's home to <code class="docutils literal notranslate"><span class="pre">/home/USER/USER-log-YYYYMM.sqlite</span></code>. If you want to use <code class="docutils literal notranslate"><span class="pre">selfListSessions</span></code> and/or <code class="docutils literal notranslate"><span class="pre">selfPlaySession</span></code>, this is required.</p>
+</section>
+<section id="ttyrecfilenameformat">
+<span id="id31"></span><h4>ttyrecFilenameFormat<a class="headerlink" href="#ttyrecfilenameformat" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;%Y-%m-%d.%H-%M-%S.#usec#.&amp;uniqid.&amp;account.&amp;user.&amp;ip.&amp;port.ttyrec&quot;</span></code></p>
+</dd>
+</dl>
+<p>Sets the filename format of the output files of ttyrec for a given session. Magic tokens are: <code class="docutils literal notranslate"><span class="pre">&amp;bastionname</span></code>, <code class="docutils literal notranslate"><span class="pre">&amp;uniqid</span></code>, <code class="docutils literal notranslate"><span class="pre">&amp;account</span></code>, <code class="docutils literal notranslate"><span class="pre">&amp;ip</span></code>, <code class="docutils literal notranslate"><span class="pre">&amp;port</span></code>, <code class="docutils literal notranslate"><span class="pre">&amp;user</span></code> (they'll be replaced by the corresponding values of the current session). Then, this string (automatically prepended with the correct folder) will be passed to ttyrec's <code class="docutils literal notranslate"><span class="pre">-F</span></code> parameter, which uses <code class="docutils literal notranslate"><span class="pre">strftime()</span></code> to expand it, so the usual character conversions will be done (<code class="docutils literal notranslate"><span class="pre">%Y</span></code> for the year, <code class="docutils literal notranslate"><span class="pre">%H</span></code> for the hour, etc., see <code class="docutils literal notranslate"><span class="pre">man</span> <span class="pre">strftime</span></code>). Note that in a addition to the usual <code class="docutils literal notranslate"><span class="pre">strftime()</span></code> conversion specifications, ttyrec also supports <code class="docutils literal notranslate"><span class="pre">#usec#</span></code>, to be replaced by the current microsecond value of the time.</p>
+</section>
+<section id="ttyrecadditionalparameters">
+<span id="id32"></span><h4>ttyrecAdditionalParameters<a class="headerlink" href="#ttyrecadditionalparameters" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">array</span> <span class="pre">of</span> <span class="pre">strings</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">[]</span></code></p>
+</dd>
+<dt class="field-odd">Example<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">[&quot;-s&quot;,</span> <span class="pre">&quot;This</span> <span class="pre">is</span> <span class="pre">a</span> <span class="pre">message</span> <span class="pre">with</span> <span class="pre">spaces&quot;,</span> <span class="pre">&quot;--zstd&quot;]</span></code></p>
+</dd>
+</dl>
+<p>Additional parameters you want to pass to <code class="docutils literal notranslate"><span class="pre">ttyrec</span></code> invocation. Useful, for example, to enable on-the-fly compression, disable cheatcodes, or set/unset any other <code class="docutils literal notranslate"><span class="pre">ttyrec</span></code> option. This is an ARRAY, not a string.</p>
+</section>
+<section id="ttyrecstealthstdoutpattern">
+<span id="id33"></span><h4>ttyrecStealthStdoutPattern<a class="headerlink" href="#ttyrecstealthstdoutpattern" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">regex</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code></p>
+</dd>
+<dt class="field-odd">Example<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">&quot;^rsync</span> <span class="pre">--server</span> <span class="pre">.+&quot;</span></code></p>
+</dd>
+</dl>
+<p>When this is set to a non-falsy value, this is expected to be a string that will be converted to a regex which will be matched against a potential remote command specified when connecting through SSH to a remote server. If the regex matches, then we'll instruct ttyrec to NOT record stdout for this session.</p>
+</section>
+</section>
+<section id="other-ingress-policies">
+<h3>Other ingress policies<a class="headerlink" href="#other-ingress-policies" title="Link to this heading"></a></h3>
+<section id="ingresskeysfrom">
+<span id="id34"></span><h4>ingressKeysFrom<a class="headerlink" href="#ingresskeysfrom" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">array</span> <span class="pre">of</span> <span class="pre">strings</span> <span class="pre">(list</span> <span class="pre">of</span> <span class="pre">IPs</span> <span class="pre">and/or</span> <span class="pre">subnets)</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">[]</span></code></p>
+</dd>
+</dl>
+<p>This array of IPs (or subnets, such as <code class="docutils literal notranslate"><span class="pre">10.20.30.0/24</span></code>) will be used to build the <code class="docutils literal notranslate"><span class="pre">from=&quot;...&quot;</span></code> in front of the ingress account public keys used to connect to the bastion (in <code class="docutils literal notranslate"><span class="pre">accountCreate</span></code> or <code class="docutils literal notranslate"><span class="pre">selfAddIngressKey</span></code>). If the array is empty, then <strong>NO</strong> <code class="docutils literal notranslate"><span class="pre">from=&quot;...&quot;</span></code> is added (this lowers the security).</p>
+</section>
+<section id="ingresskeysfromallowoverride">
+<span id="id35"></span><h4>ingressKeysFromAllowOverride<a class="headerlink" href="#ingresskeysfromallowoverride" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">boolean</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">false</span></code></p>
+</dd>
+</dl>
+<p>If set to <code class="docutils literal notranslate"><span class="pre">false</span></code>, any user-specified <code class="docutils literal notranslate"><span class="pre">from=&quot;...&quot;</span></code> prefix on keys in commands such as <code class="docutils literal notranslate"><span class="pre">selfAddIngressKey</span></code> or <code class="docutils literal notranslate"><span class="pre">accountCreate</span></code> are silently ignored and replaced by the IPs in the <code class="docutils literal notranslate"><span class="pre">ingressKeysFrom</span></code> configuration option (if any).
+If set to <code class="docutils literal notranslate"><span class="pre">true</span></code>, any user-specified <code class="docutils literal notranslate"><span class="pre">from=&quot;...&quot;</span></code> will override the value set in <code class="docutils literal notranslate"><span class="pre">ingressKeysFrom</span></code> (if any).
+Note that when no user-specified <code class="docutils literal notranslate"><span class="pre">from=&quot;...&quot;</span></code> appears, the value of <code class="docutils literal notranslate"><span class="pre">ingressKeysFrom</span></code> is still used, regardless of this option.</p>
+</section>
+</section>
+<section id="other-egress-policies">
+<h3>Other egress policies<a class="headerlink" href="#other-egress-policies" title="Link to this heading"></a></h3>
+<section id="defaultlogin">
+<span id="id36"></span><h4>defaultLogin<a class="headerlink" href="#defaultlogin" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code></p>
+</dd>
+</dl>
+<p>The default remote user to use for egress ssh connections where no user has been specified by our caller. If set to the empty string (<code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>), will default to the account name of the caller. If your bastion is mainly used to connect as <code class="docutils literal notranslate"><span class="pre">root</span></code> on remote systems, you might want to set this to <code class="docutils literal notranslate"><span class="pre">root</span></code> for example, to spare a few keystrokes to your users. This is only used when no user is specified on the connection line. For example if your bastion alias is <code class="docutils literal notranslate"><span class="pre">bssh</span></code>, and you say <code class="docutils literal notranslate"><span class="pre">bssh</span> <span class="pre">srv1.example.net</span></code>, the value of the <code class="docutils literal notranslate"><span class="pre">defaultLogin</span></code> value will be used as the user to login as remotely.</p>
+</section>
+<section id="egresskeysfrom">
+<span id="id37"></span><h4>egressKeysFrom<a class="headerlink" href="#egresskeysfrom" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">array</span> <span class="pre">of</span> <span class="pre">strings</span> <span class="pre">(IPs</span> <span class="pre">and/or</span> <span class="pre">subnets)</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">[]</span></code></p>
+</dd>
+</dl>
+<p>These IPs will be added to the <code class="docutils literal notranslate"><span class="pre">from=&quot;...&quot;</span></code> of the personal account keys and the group keys. Typically you want to specify only the bastions IP here (including all the slaves). Note that if this option is NOT set at all or set to the empty array, it will default to autodetection at runtime (using <code class="docutils literal notranslate"><span class="pre">hostname</span> <span class="pre">--all-ip-addresses</span></code> under the hood). This is dependent from your system configuration and is therefore discouraged.</p>
+</section>
+<section id="keyboardinteractiveallowed">
+<span id="id38"></span><h4>keyboardInteractiveAllowed<a class="headerlink" href="#keyboardinteractiveallowed" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">boolean</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">true</span></code></p>
+</dd>
+</dl>
+<p>If set to <code class="docutils literal notranslate"><span class="pre">true</span></code>, will allow keyboard-interactive authentication when publickey auth is requested for egress connections, this is needed e.g. for 2FA.</p>
+</section>
+<section id="passwordallowed">
+<span id="id39"></span><h4>passwordAllowed<a class="headerlink" href="#passwordallowed" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">boolean</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">false</span></code></p>
+</dd>
+</dl>
+<p>If set to <code class="docutils literal notranslate"><span class="pre">true</span></code>, will allow password authentication for egress ssh, so that user can type his remote password interactively.</p>
+</section>
+<section id="telnetallowed">
+<span id="id40"></span><h4>telnetAllowed<a class="headerlink" href="#telnetallowed" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">boolean</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">false</span></code></p>
+</dd>
+</dl>
+<p>If set to <code class="docutils literal notranslate"><span class="pre">true</span></code>, will allow telnet egress connections (<code class="docutils literal notranslate"><span class="pre">-e</span></code> / <code class="docutils literal notranslate"><span class="pre">--telnet</span></code>).</p>
+</section>
+</section>
+<section id="session-policies">
+<h3>Session policies<a class="headerlink" href="#session-policies" title="Link to this heading"></a></h3>
+<section id="displaylastlogin">
+<span id="id41"></span><h4>displayLastLogin<a class="headerlink" href="#displaylastlogin" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">boolean</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">true</span></code></p>
+</dd>
+</dl>
+<p>If <code class="docutils literal notranslate"><span class="pre">true</span></code>, display their last login information on connection to your users.</p>
+</section>
+<section id="fanciness">
+<span id="id42"></span><h4>fanciness<a class="headerlink" href="#fanciness" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">full</span></code></p>
+</dd>
+</dl>
+<p>Customize to which extent the text output by the program will use decorations to enhance human-friendliness and highlight warnings or critical messages. Note that if a given session's terminal doesn't advertise UTF-8 support, UTF-8 will not be used, regardless of what is set here.</p>
+<ul class="simple">
+<li><p>&quot;none&quot;: Text will only consist of us-ascii characters</p></li>
+<li><p>&quot;basic&quot;: UTF-8 characters will be used to draw tables, instead of ---'s, among other things</p></li>
+<li><p>&quot;full&quot;: Some emoticons may appear to highlight important messages</p></li>
+</ul>
+</section>
+<section id="interactivemodeallowed">
+<span id="id43"></span><h4>interactiveModeAllowed<a class="headerlink" href="#interactivemodeallowed" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">boolean</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">true</span></code></p>
+</dd>
+</dl>
+<p>If set to <code class="docutils literal notranslate"><span class="pre">true</span></code>, <code class="docutils literal notranslate"><span class="pre">--interactive</span></code> mode is allowed. Otherwise, this feature is disabled.</p>
+</section>
+<section id="interactivemodetimeout">
+<span id="id44"></span><h4>interactiveModeTimeout<a class="headerlink" href="#interactivemodetimeout" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;=</span> <span class="pre">0</span> <span class="pre">(seconds)</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">60</span></code></p>
+</dd>
+</dl>
+<p>The number of idle seconds after which the user is disconnected from the bastion when in interactive mode. A value of 0 will disable this feature (user will never be disconnected for idle timeout).</p>
+</section>
+<section id="interactivemodebydefault">
+<span id="id45"></span><h4>interactiveModeByDefault<a class="headerlink" href="#interactivemodebydefault" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">boolean</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">true</span></code></p>
+</dd>
+</dl>
+<p>If <code class="docutils literal notranslate"><span class="pre">true</span></code>, drops the user to interactive mode if nothing is specified on the command line. If <code class="docutils literal notranslate"><span class="pre">false</span></code>, displays the help and exits with an error. Note that for <code class="docutils literal notranslate"><span class="pre">true</span></code> to have the expected effect, interactive mode must be enabled (see the <code class="docutils literal notranslate"><span class="pre">interactiveModeAllowed</span></code> option above).</p>
+</section>
+<section id="interactivemodeproactivemfaenabled">
+<span id="id46"></span><h4>interactiveModeProactiveMFAenabled<a class="headerlink" href="#interactivemodeproactivemfaenabled" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">boolean</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">true</span></code></p>
+</dd>
+</dl>
+<p>If enabled, the <code class="docutils literal notranslate"><span class="pre">mfa</span></code> command is allowed in interactive mode, to trigger a proactive MFA challenge, so that subsequent commands normally requiring MFA won't ask for it again.</p>
+</section>
+<section id="interactivemodeproactivemfaexpiration">
+<span id="id47"></span><h4>interactiveModeProactiveMFAexpiration<a class="headerlink" href="#interactivemodeproactivemfaexpiration" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;=</span> <span class="pre">0</span> <span class="pre">(seconds)</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">900</span></code></p>
+</dd>
+</dl>
+<p>If the above <code class="docutils literal notranslate"><span class="pre">interactiveModeProactiveMFAenabled</span></code> option is <code class="docutils literal notranslate"><span class="pre">true</span></code>, then this is the amount of seconds after which the proactive MFA mode is automatically disengaged.</p>
+</section>
+<section id="idlelocktimeout">
+<span id="id48"></span><h4>idleLockTimeout<a class="headerlink" href="#idlelocktimeout" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;=</span> <span class="pre">0</span> <span class="pre">(seconds)</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">0</span></code></p>
+</dd>
+</dl>
+<p>If set to a positive value &gt;0, the number of seconds of input idle time after which the session is locked. If <code class="docutils literal notranslate"><span class="pre">false</span></code>, disabled.</p>
+</section>
+<section id="idlekilltimeout">
+<span id="id49"></span><h4>idleKillTimeout<a class="headerlink" href="#idlekilltimeout" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;=</span> <span class="pre">0</span> <span class="pre">(seconds)</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">0</span></code></p>
+</dd>
+</dl>
+<p>If set to a positive value &gt;0, the number of seconds of input idle time after which the session is killed. If <code class="docutils literal notranslate"><span class="pre">false</span></code>, disabled. If <code class="docutils literal notranslate"><span class="pre">idleLockTimeout</span></code> is set, this value must be higher (obviously).</p>
+</section>
+<section id="warnbeforelockseconds">
+<span id="id50"></span><h4>warnBeforeLockSeconds<a class="headerlink" href="#warnbeforelockseconds" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;=</span> <span class="pre">0</span> <span class="pre">(seconds)</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">0</span></code></p>
+</dd>
+</dl>
+<p>If set to a positive value &gt;0, the number of seconds before <code class="docutils literal notranslate"><span class="pre">idleLockTimeout</span></code> where the user will receive a warning message telling them about the upcoming lock of his session. Don't enable this (by setting a non-zero value) if <cite>idleLockTimeout</cite> is disabled (set to zero).</p>
+</section>
+<section id="warnbeforekillseconds">
+<span id="id51"></span><h4>warnBeforeKillSeconds<a class="headerlink" href="#warnbeforekillseconds" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;=</span> <span class="pre">0</span> <span class="pre">(seconds)</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">0</span></code></p>
+</dd>
+</dl>
+<p>If set to a positive value &gt;0, the number of seconds before <code class="docutils literal notranslate"><span class="pre">idleKillTimeout</span></code> where the user will receive a warning message telling them about the upcoming kill of his session. Don't enable this (by setting a non-zero value) if <cite>idleKillTimeout</cite> is disabled (set to zero).</p>
+</section>
+<section id="accountexternalvalidationprogram">
+<span id="id52"></span><h4>accountExternalValidationProgram<a class="headerlink" href="#accountexternalvalidationprogram" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span> <span class="pre">(path</span> <span class="pre">to</span> <span class="pre">a</span> <span class="pre">binary)</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code></p>
+</dd>
+<dt class="field-odd">Example<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">&quot;$BASEDIR/bin/other/check-active-account-simple.pl&quot;</span></code></p>
+</dd>
+</dl>
+<p>Binary or script that will be called by the bastion, with the account name in parameter, to check whether this account should be allowed to connect to the bastion. If empty, this check is skipped. <code class="docutils literal notranslate"><span class="pre">$BASEDIR</span></code> is a magic token that is replaced by where the bastion code lives (usually, <code class="docutils literal notranslate"><span class="pre">/opt/bastion</span></code>).</p>
+<p>You can use this configuration parameter to counter-verify all accounts against an external system, for example an <em>LDAP</em>, an <em>Active Directory</em>, or any system having a list of identities, right when they're connecting to the bastion (on the ingress side). However, it is advised to avoid calling an external system in the flow of an incoming connection, as this violates the &quot;the bastion must be working at all times, regardless of the status of the other components of the company's infrastructure&quot; rule. Instead, you should have a cronjob to periodically fetch all the allowed accounts from said external system, and store this list somewhere on the bastion, then write a simple script that will be called by the bastion to verify whether the connecting account is present on this locally cached list.</p>
+<p>An account present in this list is called an <em>active account</em>, in the bastion's jargon. An <em>inactive</em> account is an account existing on the bastion, but not in this list, and won't be able to connect. Note that for security reasons, inactive bastions administrators would be denied as any other account.</p>
+<p>The result is interpreted from the program's exit code. If the program return 0, the account is deemed active. If the program returns 1, the account is deemed inactive. A return code of 2, 3 or 4 indicates a failure of the program in determining the activeness of the account. In this case, the decision to allow or deny the access is determined by the <code class="docutils literal notranslate"><span class="pre">accountExternalValidationDenyOnFailure</span></code> option below. Status code 3 additionally logs the <code class="docutils literal notranslate"><span class="pre">stderr</span></code> of the program <em>silently</em> to the syslog: this can be used to warn admins of a problem without leaking information to the user. Status code 4 does the same, but the <code class="docutils literal notranslate"><span class="pre">stderr</span></code> is also shown directly to the user. Any other return code deems the account inactive (same behavior that return code 1).</p>
+</section>
+<section id="accountexternalvalidationdenyonfailure">
+<span id="id53"></span><h4>accountExternalValidationDenyOnFailure<a class="headerlink" href="#accountexternalvalidationdenyonfailure" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">boolean</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">true</span></code></p>
+</dd>
+</dl>
+<p>If we can't validate an account using the program configured in <code class="docutils literal notranslate"><span class="pre">accountExternalValidationProgram</span></code>, for example because the path doesn't exist, the file is not executable, or because the program returns the exit code 4 (see above for more information), this configuration option indicates whether we should deny or allow access.</p>
+<p>Note that the bastion admins will always be allowed if the <code class="docutils literal notranslate"><span class="pre">accountExternalValidationProgram</span></code> doesn't work correctly, because they're expected to be able to fix it. They would be denied, as any other account, if <code class="docutils literal notranslate"><span class="pre">accountExternalValidationProgram</span></code> works correctly and denies them access, however. If you're still testing your account validation procedure, and don't want to break your users workflow while you're not 100% sure it works correctly, you can say <code class="docutils literal notranslate"><span class="pre">false</span></code> here, and return 4 instead of 1 in your <code class="docutils literal notranslate"><span class="pre">accountExternalValidationProgram</span></code> when you would want to deny access.</p>
+</section>
+<section id="alwaysactiveaccounts">
+<span id="id54"></span><h4>alwaysActiveAccounts<a class="headerlink" href="#alwaysactiveaccounts" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">array</span> <span class="pre">of</span> <span class="pre">strings</span> <span class="pre">(account</span> <span class="pre">names)</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">[]</span></code></p>
+</dd>
+</dl>
+<p>List of accounts which should NOT be checked against the <code class="docutils literal notranslate"><span class="pre">accountExternalValidationProgram</span></code> mechanism above (for example bot accounts). This can also be set per-account at account creation time or later with the <code class="docutils literal notranslate"><span class="pre">accountModify</span></code> plugin's <code class="docutils literal notranslate"><span class="pre">--always-active</span></code> flag.</p>
+</section>
+</section>
+<section id="account-policies">
+<h3>Account policies<a class="headerlink" href="#account-policies" title="Link to this heading"></a></h3>
+<section id="accountmaxinactivedays">
+<span id="id55"></span><h4>accountMaxInactiveDays<a class="headerlink" href="#accountmaxinactivedays" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;=</span> <span class="pre">0</span> <span class="pre">(days)</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">0</span></code></p>
+</dd>
+</dl>
+<p>If &gt; 0, deny access to accounts that didn't log in since at least that many days. A value of 0 means that this functionality is disabled (we will never deny access for inactivity reasons).</p>
+</section>
+<section id="accountexpiredmessage">
+<span id="id56"></span><h4>accountExpiredMessage<a class="headerlink" href="#accountexpiredmessage" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code></p>
+</dd>
+</dl>
+<p>If non-empty, customizes the message that will be printed to a user attempting to connect with an expired account (see <code class="docutils literal notranslate"><span class="pre">accountMaxInactiveDays</span></code> above). When empty, defaults to the standard message &quot;Sorry, but your account has expired (#DAYS# days), access denied by policy.&quot;. The special token <code class="docutils literal notranslate"><span class="pre">#DAYS#</span></code> is replaced by the number of days since we've last seen this user.</p>
+</section>
+<section id="accountcreatesupplementarygroups">
+<span id="id57"></span><h4>accountCreateSupplementaryGroups<a class="headerlink" href="#accountcreatesupplementarygroups" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">array</span> <span class="pre">of</span> <span class="pre">strings</span> <span class="pre">(system</span> <span class="pre">group</span> <span class="pre">names)</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">[]</span></code></p>
+</dd>
+</dl>
+<p>List of system groups to add a new account to when its created (see <code class="docutils literal notranslate"><span class="pre">accountCreate</span></code>). Can be useful to grant some restricted commands by default to new accounts. For example <code class="docutils literal notranslate"><span class="pre">osh-selfAddPersonalAccess</span></code>, <code class="docutils literal notranslate"><span class="pre">osh-selfDelPersonalAccess</span></code>, etc. Note that the group here are <strong>NOT</strong> <em>bastion groups</em>, but system groups.</p>
+</section>
+<section id="accountcreatedefaultpersonalaccesses">
+<span id="id58"></span><h4>accountCreateDefaultPersonalAccesses<a class="headerlink" href="#accountcreatedefaultpersonalaccesses" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">array</span> <span class="pre">of</span> <span class="pre">strings</span> <span class="pre">(list</span> <span class="pre">of</span> <span class="pre">IPs</span> <span class="pre">and/or</span> <span class="pre">subnets)</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">[]</span></code></p>
+</dd>
+</dl>
+<p>List of strings of the form <a class="reference external" href="mailto:USER&#37;&#52;&#48;IP">USER<span>&#64;</span>IP</a> or <a class="reference external" href="mailto:USER&#37;&#52;&#48;IP">USER<span>&#64;</span>IP</a>:PORT or IP or IP:PORT, with IP being IP or prefix (such as 1.2.3.0/24). This is the list of accesses to add to the personal access list of newly created accounts. The special value ACCOUNT is replaced by the name of the account being created. This can be useful to grant some accesses by default to new accounts (for example ACCOUNT&#64;0.0.0.0/0)</p>
+</section>
+<section id="ingressrequirepiv">
+<span id="id59"></span><h4>ingressRequirePIV<a class="headerlink" href="#ingressrequirepiv" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">boolean</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">false</span></code></p>
+</dd>
+</dl>
+<p>When set to true, only PIV-enabled SSH keys will be able to be added with selfAddIngressKey, hence ensuring that an SSH key generated on a computer, and not within a PIV-compatible hardware token, can't be used to access The Bastion. If you only want to enable this on a per-account basis, leave this to false and set the flag on said accounts using accountPIV instead. When set to false, will not require PIV-enabled SSH keys to be added by selfAddIngressKey. If you have no idea what PIV keys are, leave this to false, this is what you want.</p>
+</section>
+<section id="accountmfapolicy">
+<span id="id60"></span><h4>accountMFAPolicy<a class="headerlink" href="#accountmfapolicy" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;enabled&quot;</span></code></p>
+</dd>
+</dl>
+<p>Set a MFA policy for the bastion accounts, the supported values are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">disabled</span></code>: the commands to setup TOTP and UNIX account password are disabled, nobody can setup MFA for themselves or others. Already configured MFA still applies, unless the sshd configuration is modified to no longer call PAM on the authentication phase</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">password-required</span></code>: for all accounts, a UNIX account password is required in addition to the ingress SSH public key. On first connection with his SSH key, the user is forced to setup a password for his account, and can't disable it afterwards</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">totp-required</span></code>: for all accounts, a TOTP is required in addition to the ingress SSH public key. On first connection with his SSH key, the user is forced to setup a TOTP for his account, and can't disable it afterwards</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">any-required</span></code>: for all accounts, either a TOTP or an UNIX account password is required in addition to the ingress SSH public key. On first connection with his SSH key, the user is forced to setup either of those, as he sees fit, and can't disable it afterwards</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">enabled</span></code>: for all accounts, TOTP and UNIX account password are available as opt-in features as the users see fit. Some accounts can be forced to setup either TOTP or password-based MFA if they're flagged accordingly (with the accountModify command)</p></li>
+</ul>
+</section>
+<section id="mfapasswordmindays">
+<span id="id61"></span><h4>MFAPasswordMinDays<a class="headerlink" href="#mfapasswordmindays" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;=</span> <span class="pre">0</span> <span class="pre">(days)</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">0</span></code></p>
+</dd>
+</dl>
+<p>For the PAM UNIX password MFA, sets the min amount of days between two password changes (see <code class="docutils literal notranslate"><span class="pre">chage</span> <span class="pre">-m</span></code>)</p>
+</section>
+<section id="mfapasswordmaxdays">
+<span id="id62"></span><h4>MFAPasswordMaxDays<a class="headerlink" href="#mfapasswordmaxdays" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;=</span> <span class="pre">0</span> <span class="pre">(days)</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">90</span></code></p>
+</dd>
+</dl>
+<p>For the PAM UNIX password MFA, sets the max amount of days after which the password must be changed (see <code class="docutils literal notranslate"><span class="pre">chage</span> <span class="pre">-M</span></code>)</p>
+</section>
+<section id="mfapasswordwarndays">
+<span id="id63"></span><h4>MFAPasswordWarnDays<a class="headerlink" href="#mfapasswordwarndays" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;=</span> <span class="pre">0</span> <span class="pre">(days)</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">15</span></code></p>
+</dd>
+</dl>
+<p>For the PAM UNIX password MFA, sets the number of days before expiration on which the user will be warned to change his password (see <code class="docutils literal notranslate"><span class="pre">chage</span> <span class="pre">-W</span></code>)</p>
+</section>
+<section id="mfapasswordinactivedays">
+<span id="id64"></span><h4>MFAPasswordInactiveDays<a class="headerlink" href="#mfapasswordinactivedays" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;=</span> <span class="pre">-1</span> <span class="pre">(days)</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">-1</span></code></p>
+</dd>
+</dl>
+<p>For the PAM UNIX password MFA, the account will be blocked after the password is expired (and not renewed) for this amount of days (see <code class="docutils literal notranslate"><span class="pre">chage</span> <span class="pre">-E</span></code>). -1 disables this feature. Note that this is different from the <code class="docutils literal notranslate"><span class="pre">accountMaxInactiveDays</span></code> option above, that is handled by the bastion software itself instead of PAM</p>
+</section>
+<section id="mfapostcommand">
+<span id="id65"></span><h4>MFAPostCommand<a class="headerlink" href="#mfapostcommand" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">array</span> <span class="pre">of</span> <span class="pre">strings</span> <span class="pre">(a</span> <span class="pre">valid</span> <span class="pre">system</span> <span class="pre">command)</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">[]</span></code></p>
+</dd>
+<dt class="field-odd">Example<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">[&quot;sudo&quot;,&quot;-n&quot;,&quot;-u&quot;,&quot;root&quot;,&quot;--&quot;,&quot;/sbin/pam_tally2&quot;,&quot;-u&quot;,&quot;%ACCOUNT%&quot;,&quot;-r&quot;]</span> <span class="pre">or</span> <span class="pre">[&quot;/usr/sbin/faillock&quot;,&quot;--reset&quot;]</span></code></p>
+</dd>
+</dl>
+<p>When using JIT MFA (i.e. not directly by calling PAM from SSHD's configuration, but using <code class="docutils literal notranslate"><span class="pre">pamtester</span></code> from within the code), execute this command on success.
+This can be used for example if you're using <code class="docutils literal notranslate"><span class="pre">pam_tally2</span></code> or <code class="docutils literal notranslate"><span class="pre">pam_faillock</span></code> in your PAM MFA configuration, <code class="docutils literal notranslate"><span class="pre">pamtester</span></code> can't reset the counter to zero because this is usually done in the <code class="docutils literal notranslate"><span class="pre">account_mgmt</span></code> PAM phase. You can use a script to reset it here.
+The magic token <code class="docutils literal notranslate"><span class="pre">%ACCOUNT%</span></code> will be replaced by the account name.
+Note that usually, <code class="docutils literal notranslate"><span class="pre">pam_tally2</span></code> can only be used by root (hence might require the proper sudoers configuration), while <code class="docutils literal notranslate"><span class="pre">faillock</span></code> can directly be used by unprivileged users to reset their counter.</p>
+</section>
+<section id="totpprovider">
+<span id="id66"></span><h4>TOTPProvider<a class="headerlink" href="#totpprovider" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">'google-authenticator'</span></code></p>
+</dd>
+</dl>
+<p>Defines which is the provider of the TOTP MFA, that will be used for the <code class="docutils literal notranslate"><span class="pre">(self|account)MFA(Setup|Reset)TOTP</span></code> commands. Allowed values are:
+- none: no TOTP providers are defined, the corresponding setup commands won't be available.
+- google-authenticator: the pam_google_authenticator.so module will be used, along with its corresponding setup binary. This is the default, for backward compatibility reasons. This is also what is configured in the provided pam templates.
+- duo: enable the use of the Duo PAM module (pam_duo.so), of course you need to set it up correctly in your <cite>/etc/pam.d/sshd</cite> file.</p>
+</section>
+</section>
+<section id="other-options">
+<h3>Other options<a class="headerlink" href="#other-options" title="Link to this heading"></a></h3>
+<section id="accountuidmin">
+<span id="id67"></span><h4>accountUidMin<a class="headerlink" href="#accountuidmin" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;=</span> <span class="pre">100</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">2000</span></code></p>
+</dd>
+</dl>
+<p>Minimum allowed UID for accounts on this bastion. Hardcoded &gt; 100 even if configured for less.</p>
+</section>
+<section id="accountuidmax">
+<span id="id68"></span><h4>accountUidMax<a class="headerlink" href="#accountuidmax" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;</span> <span class="pre">0</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">99999</span></code></p>
+</dd>
+</dl>
+<p>Maximum allowed UID for accounts on this bastion.</p>
+</section>
+<section id="groupgidmin">
+<span id="id69"></span><h4>groupGidMin<a class="headerlink" href="#groupgidmin" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;=</span> <span class="pre">10000</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">500000</span></code></p>
+</dd>
+</dl>
+<p>Minimum GID for bastion groups. Should be set high enough (&gt;&gt; accountUidMax) to avoid collision with account UIDs/GIDs.</p>
+</section>
+<section id="ttyrecgroupidoffset">
+<span id="id70"></span><h4>ttyrecGroupIdOffset<a class="headerlink" href="#ttyrecgroupidoffset" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;</span> <span class="pre">0</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">100000</span></code></p>
+</dd>
+</dl>
+<p>Offset to apply on user group uid to create its <code class="docutils literal notranslate"><span class="pre">-tty</span></code> group, should be &gt; <code class="docutils literal notranslate"><span class="pre">accountUidMax</span> <span class="pre">-</span> <span class="pre">accountUidMin</span></code> to ensure there is no overlap.</p>
+</section>
+<section id="documentationurl">
+<span id="id71"></span><h4>documentationURL<a class="headerlink" href="#documentationurl" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;https://ovh.github.io/the-bastion/&quot;</span></code></p>
+</dd>
+</dl>
+<p>The URL of the documentation where users will be pointed to, for example when displaying help. If you have some internal documentation about the bastion, you might want to advertise it here.</p>
+</section>
+<section id="debug">
+<span id="id72"></span><h4>debug<a class="headerlink" href="#debug" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">boolean</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">false</span></code></p>
+</dd>
+</dl>
+<p>Enables or disables debug <em>GLOBALLY</em>, printing a lot of information to anyone using the bastion. Don't enable this unless you're chasing a bug in the code and are familiar with it.</p>
+</section>
+<section id="remotecommandescapebydefault">
+<span id="id73"></span><h4>remoteCommandEscapeByDefault<a class="headerlink" href="#remotecommandescapebydefault" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">boolean</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">false</span></code></p>
+</dd>
+</dl>
+<p>If set to <code class="docutils literal notranslate"><span class="pre">false</span></code>, will not escape simple quotes in remote commands by default. Don't enable this, this is to keep compatibility with an ancient broken behavior. Will be removed in the future. Can be overridden at runtime with <code class="docutils literal notranslate"><span class="pre">--never-escape</span></code> and <code class="docutils literal notranslate"><span class="pre">--always-escape</span></code>.</p>
+</section>
+<section id="sshclientdebuglevel">
+<span id="id74"></span><h4>sshClientDebugLevel<a class="headerlink" href="#sshclientdebuglevel" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">(0-3)</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">0</span></code></p>
+</dd>
+</dl>
+<p>Indicates the number of <code class="docutils literal notranslate"><span class="pre">-v</span></code>'s that will be added to the ssh client command line when starting a session. Probably a bad idea unless you want to annoy your users.</p>
+</section>
+<section id="sshclienthasoptione">
+<span id="id75"></span><h4>sshClientHasOptionE<a class="headerlink" href="#sshclienthasoptione" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">boolean</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">false</span></code></p>
+</dd>
+</dl>
+<p>Set to <code class="docutils literal notranslate"><span class="pre">true</span></code> if your ssh client supports the <code class="docutils literal notranslate"><span class="pre">-E</span></code> option and you want to use it to log debug info on opened sessions. <strong>Discouraged</strong> because it has some annoying side effects (some ssh errors then go silent from the user perspective).</p>
+</section>
+<section id="sshaddkeystoagentallowed">
+<span id="id76"></span><h4>sshAddKeysToAgentAllowed<a class="headerlink" href="#sshaddkeystoagentallowed" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">boolean</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">false</span></code></p>
+</dd>
+</dl>
+<p>Set to <code class="docutils literal notranslate"><span class="pre">true</span></code> if you want to allow to spawn an ssh-agent and forward it over the egress session when specifically requested with the '--forward-agent' or '-x' flag, with the egress key added to the agent. Useful if you need the ssh-key for authentication on other systems (another jumpserver for example).</p>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Configuration files" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="osh-backup-acl-keys_conf.html" class="btn btn-neutral float-right" title="osh-backup-acl-keys.conf" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

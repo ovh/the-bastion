@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upgrading &mdash; The Bastion 3.23.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="../_static/jquery.js?v=8dae8fb0"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=eb75f0bc"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Sandbox using Docker" href="docker.html" />
+    <link rel="prev" title="Advanced Installation" href="advanced.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.23.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Upgrading</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#general-upgrade-instructions">General upgrade instructions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#version-specific-upgrade-instructions">Version-specific upgrade instructions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#v3-23-01-2026-01-29">v3.23.01 - 2026/01/29</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-23-00-2025-12-22">v3.23.00 - 2025/12/22</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-22-00-2025-09-17">v3.22.00 - 2025/09/17</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-21-00-2025-08-12">v3.21.00 - 2025/08/12</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-20-00-2025-03-25">v3.20.00 - 2025/03/25</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-19-01-2025-03-04">v3.19.01 - 2025/03/04</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-19-00-2025-02-25">v3.19.00 - 2025/02/25</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-18-00-2024-12-10">v3.18.00 - 2024/12/10</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-17-01-2024-10-23">v3.17.01 - 2024/10/23</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-17-00-2024-10-14">v3.17.00 - 2024/10/14</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-16-01-2024-04-17">v3.16.01 - 2024/04/17</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-16-00-2024-04-10">v3.16.00 - 2024/04/10</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-15-00-2024-03-22">v3.15.00 - 2024/03/22</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-14-16-2024-02-20">v3.14.16 - 2024/02/20</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-14-15-2023-11-08">v3.14.15 - 2023/11/08</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-14-00-2023-09-19">v3.14.00 - 2023/09/19</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-13-01-2023-08-22">v3.13.01 - 2023/08/22</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-13-00-2023-07-28">v3.13.00 - 2023/07/28</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-12-00-2023-06-27">v3.12.00 - 2023/06/27</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-11-02-2023-04-18">v3.11.02 - 2023/04/18</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-11-01-2023-03-27">v3.11.01 - 2023/03/27</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-11-00-2023-03-23">v3.11.00 - 2023/03/23</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-10-00-2023-02-17">v3.10.00 - 2023/02/17</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-09-02-2022-11-15">v3.09.02 - 2022/11/15</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-09-01-2022-10-10">v3.09.01 - 2022/10/10</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-09-00-2022-09-21">v3.09.00 - 2022/09/21</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-08-01-2022-01-19">v3.08.01 - 2022/01/19</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-08-00-2022-01-04">v3.08.00 - 2022/01/04</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#ed25519">Ed25519</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-07-00-2021-12-13">v3.07.00 - 2021/12/13</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-06-00-2021-10-15">v3.06.00 - 2021/10/15</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-05-01-2021-09-22">v3.05.01 - 2021/09/22</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-05-00-2021-09-14">v3.05.00 - 2021/09/14</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-04-00-2021-07-02">v3.04.00 - 2021/07/02</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-03-01-2021-03-25">v3.03.01 - 2021/03/25</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-03-00-2021-02-22">v3.03.00 - 2021/02/22</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-02-00-2021-02-01">v3.02.00 - 2021/02/01</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#the-main-configuration-file-now-supports-proper-booleans">The main configuration file now supports proper booleans</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#logs-have-been-enhanced">Logs have been enhanced</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-01-03-2020-12-15">v3.01.03 - 2020/12/15</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-01-02-2020-12-08">v3.01.02 - 2020/12/08</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-01-01-2020-12-04">v3.01.01 - 2020/12/04</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-01-00-2020-11-20">v3.01.00 - 2020/11/20</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-00-02-2020-11-16">v3.00.02 - 2020/11/16</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-00-01-2020-11-06">v3.00.01 - 2020/11/06</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#v3-00-00-2020-10-30">v3.00.00 - 2020/10/30</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../using/basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../administration/configuration/index.html">Configuration files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/open/index.html">open plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Upgrading</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/installation/upgrading.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="upgrading">
+<h1>Upgrading<a class="headerlink" href="#upgrading" title="Link to this heading"></a></h1>
+<section id="general-upgrade-instructions">
+<h2>General upgrade instructions<a class="headerlink" href="#general-upgrade-instructions" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>First, check below if there are specific upgrade instructions for your version.</p></li>
+<li><p>When you're ready, update the code, if you're using <code class="docutils literal notranslate"><span class="pre">git</span></code>, you can checkout the latest tag:</p></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="o">(</span><span class="w"> </span><span class="nb">umask</span><span class="w"> </span><span class="m">0022</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>/opt/bastion<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>fetch<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>checkout<span class="w"> </span><span class="k">$(</span>git<span class="w"> </span>tag<span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-1<span class="k">)</span><span class="w"> </span><span class="o">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Run the install script in upgrade mode, so it can make adjustments to the system needed for the new version:</p></li>
+</ul>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>/opt/bastion/bin/admin/install<span class="w"> </span>--upgrade
+</pre></div>
+</div>
+<p>Note that if you're using an infrastructure automation tool such as Puppet, Ansible, Chef,
+and don't want the update script to touch some files that you manage yourself,
+you can use <code class="docutils literal notranslate"><span class="pre">--managed-upgrade</span></code> instead of <code class="docutils literal notranslate"><span class="pre">--upgrade</span></code>.
+See the <code class="docutils literal notranslate"><span class="pre">--help</span></code> for a more fine-grained upgrade path if needed.</p>
+</section>
+<section id="version-specific-upgrade-instructions">
+<h2>Version-specific upgrade instructions<a class="headerlink" href="#version-specific-upgrade-instructions" title="Link to this heading"></a></h2>
+<section id="v3-23-01-2026-01-29">
+<h3>v3.23.01 - 2026/01/29<a class="headerlink" href="#v3-23-01-2026-01-29" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">-l</span></code> alias to <code class="docutils literal notranslate"><span class="pre">--user</span></code> has been added, to mimick <code class="docutils literal notranslate"><span class="pre">ssh</span></code>'s <code class="docutils literal notranslate"><span class="pre">-l</span></code> option.
+The <code class="docutils literal notranslate"><span class="pre">selfDelIngressKey</span></code> plugin had also this alias for its <code class="docutils literal notranslate"><span class="pre">--id-to-delete</span></code> option, and still does,
+but the main routine's option parsing will take precedence if you don't use <code class="docutils literal notranslate"><span class="pre">--</span></code> to separate options.
+For this reason, the use of the short options <code class="docutils literal notranslate"><span class="pre">-l</span></code> and <code class="docutils literal notranslate"><span class="pre">-f</span></code> have been deprecated
+in <code class="docutils literal notranslate"><span class="pre">selfDelIngressKey</span></code> to avoid confusion.</p>
+<p>Another change is the introduction of the <code class="docutils literal notranslate"><span class="pre">groupGidMin</span></code> option in <code class="file docutils literal notranslate"><span class="pre">/etc/bastion/bastion.conf</span></code>,
+to fix an issue that could arise if you use fixed UIDs for your accounts (using <code class="docutils literal notranslate"><span class="pre">--uid</span> <span class="pre">``</span> <span class="pre">in</span> <span class="pre">``accountCreate</span></code>
+instead of <code class="docutils literal notranslate"><span class="pre">--uid-auto</span></code>).</p>
+<p>This minor release mainly fixes an issue where a preexisting bastion group would have reserved a GID that you
+expected to allow to a future account.
+This is only of importance if you're using fixed UIDs to create accounts, and can't let the system pick
+the UIDs itself, for example because these UIDs are referenced in some other system of your company.</p>
+<p>This change applies a GID shifting to all the bastion groups to ensure they can never take a GID that would
+pertain to a later-to-be-created account with a fixed UID/GID.
+This shift amount is configurable in bastion.conf as <code class="docutils literal notranslate"><span class="pre">groupGidMin</span></code> (<code class="docutils literal notranslate"><span class="pre">500000</span></code> by default).</p>
+<p>If you use fixed UIDs for your accounts and you want to ensure any preexisting group's GID won't get in the way,
+you may use the updated <code class="file docutils literal notranslate"><span class="pre">bin/admin/fix-group-gid.sh</span></code> script to shift any preexisting group GID that would be
+out of the new <code class="docutils literal notranslate"><span class="pre">groupGidMin</span></code> range. This is optional.</p>
+</section>
+<section id="v3-23-00-2025-12-22">
+<h3>v3.23.00 - 2025/12/22<a class="headerlink" href="#v3-23-00-2025-12-22" title="Link to this heading"></a></h3>
+<p>A new optional <code class="docutils literal notranslate"><span class="pre">systemd</span></code> service has appeared: <code class="docutils literal notranslate"><span class="pre">osh-seal-banner.service</span></code>. It is disabled by default and will
+automatically be enabled by the encryption setup script on new installs, if you use it to encrypt your <code class="file docutils literal notranslate"><span class="pre">/home</span></code>.</p>
+<p>It is responsible for swapping between the &quot;this system is sealed&quot; and the standard sshd banner, so that users
+connecting to a sealed node know that they won't be able to login before an administrator has unsealed it.</p>
+<p>If you're upgrading and would like to use this feature, you'll have to manually enable this service: run
+<code class="docutils literal notranslate"><span class="pre">systemctl</span> <span class="pre">enable</span> <span class="pre">osh-seal-banner.service</span></code> and review the <code class="file docutils literal notranslate"><span class="pre">banner.sealed</span></code> and <code class="file docutils literal notranslate"><span class="pre">banner.ok</span></code> files in
+the <code class="file docutils literal notranslate"><span class="pre">/etc/ssh</span></code> system folder. You can copy them manually from your bastion install folder, or run:
+<code class="docutils literal notranslate"><span class="pre">./bin/admin/install</span> <span class="pre">--nothing</span> <span class="pre">--modify-banner</span></code> to get them copied over. Of course, feel free to modify them as
+you see fit.</p>
+</section>
+<section id="v3-22-00-2025-09-17">
+<h3>v3.22.00 - 2025/09/17<a class="headerlink" href="#v3-22-00-2025-09-17" title="Link to this heading"></a></h3>
+<p>No specific upgrade instructions.</p>
+<p>This release fixes the <a class="reference internal" href="../administration/security_advisories/cve_2023_45140.html"><span class="doc">CVE-2023-45140</span></a> with severity 4.4 (CVSS V3).
+Please refer to its page for impact details.</p>
+</section>
+<section id="v3-21-00-2025-08-12">
+<h3>v3.21.00 - 2025/08/12<a class="headerlink" href="#v3-21-00-2025-08-12" title="Link to this heading"></a></h3>
+<p>Support of Debian 10 has been dropped, and Debian 13 (Trixie) is now officially supported.</p>
+</section>
+<section id="v3-20-00-2025-03-25">
+<h3>v3.20.00 - 2025/03/25<a class="headerlink" href="#v3-20-00-2025-03-25" title="Link to this heading"></a></h3>
+<p>Support of Ubuntu 18.04 has been dropped. The minimum required Perl version is now v5.26,
+which has been released in 2017.</p>
+</section>
+<section id="v3-19-01-2025-03-04">
+<h3>v3.19.01 - 2025/03/04<a class="headerlink" href="#v3-19-01-2025-03-04" title="Link to this heading"></a></h3>
+<p>No specific upgrade instructions.</p>
+</section>
+<section id="v3-19-00-2025-02-25">
+<h3>v3.19.00 - 2025/02/25<a class="headerlink" href="#v3-19-00-2025-02-25" title="Link to this heading"></a></h3>
+<p>This release now supports IPv6, which is disabled by default unless you set <code class="docutils literal notranslate"><span class="pre">IPv6Allowed</span></code> to <code class="docutils literal notranslate"><span class="pre">true</span></code>.</p>
+<p>Note that some OS versions have an ancient version of <code class="docutils literal notranslate"><span class="pre">Net::Netmask</span></code> that doesn't support IPv6, these will
+behave as if <code class="docutils literal notranslate"><span class="pre">IPv6Allowed</span></code> is always set to <code class="docutils literal notranslate"><span class="pre">false</span></code>, even if you set it to <code class="docutils literal notranslate"><span class="pre">true</span></code>. A message will be logged
+in the syslog if this happens on your system. Of the currently supported list of OS versions,
+only OpenSUSE Leap 15.6 is affected.</p>
+<p>Two deprecated JSON fields have been removed from the <code class="docutils literal notranslate"><span class="pre">groupInfo</span></code> plugin response, these were never documented
+and were duplicates of current fields, but with ancient names dating back to a version before the first public release.
+Those fields were named <code class="docutils literal notranslate"><span class="pre">full_members</span></code> (corresponding to the current <code class="docutils literal notranslate"><span class="pre">members</span></code>) and
+<code class="docutils literal notranslate"><span class="pre">partial_members</span></code> (corresponding to the current <code class="docutils literal notranslate"><span class="pre">guests</span></code>).
+Ensure you don't happen to reference them in any system that consumes the <a class="reference internal" href="../using/api.html"><span class="doc">JSON API</span></a>.</p>
+</section>
+<section id="v3-18-00-2024-12-10">
+<h3>v3.18.00 - 2024/12/10<a class="headerlink" href="#v3-18-00-2024-12-10" title="Link to this heading"></a></h3>
+<p>No specific upgrade instructions.</p>
+</section>
+<section id="v3-17-01-2024-10-23">
+<h3>v3.17.01 - 2024/10/23<a class="headerlink" href="#v3-17-01-2024-10-23" title="Link to this heading"></a></h3>
+<p>No specific upgrade instructions.</p>
+</section>
+<section id="v3-17-00-2024-10-14">
+<h3>v3.17.00 - 2024/10/14<a class="headerlink" href="#v3-17-00-2024-10-14" title="Link to this heading"></a></h3>
+<p>This release drops support for Ubuntu 16.04 and CentOS 7. If you're still using these EOL OS releases (which is
+obviously discouraged), proper functioning of The Bastion is no longer tested or guaranteed.
+It also adds official support for Ubuntu 24.04 LTS and OpenSUSE Leap 15.6, these were already working but
+are now part of the integration tests.</p>
+<p>This release adds support of wildcards (also called &quot;shell-style globbing characters&quot;), namely <code class="docutils literal notranslate"><span class="pre">?</span></code> and <code class="docutils literal notranslate"><span class="pre">*</span></code>,
+when using the <code class="docutils literal notranslate"><span class="pre">--user</span></code> option for plugins such as <code class="docutils literal notranslate"><span class="pre">groupAddServer</span></code>, <code class="docutils literal notranslate"><span class="pre">groupDelServer</span></code>, <code class="docutils literal notranslate"><span class="pre">groupAddGuestAccess</span></code>,
+<code class="docutils literal notranslate"><span class="pre">groupDelGuestAccess</span></code>, <code class="docutils literal notranslate"><span class="pre">accountAddPersonalAccess</span></code>, <code class="docutils literal notranslate"><span class="pre">accountDelPersonalAccess</span></code>, <code class="docutils literal notranslate"><span class="pre">selfAddPersonalAccess</span></code>,
+<code class="docutils literal notranslate"><span class="pre">selfDelPersonalAccess</span></code>.</p>
+<p>We also deprecate all the <code class="docutils literal notranslate"><span class="pre">--sftp</span></code>, <code class="docutils literal notranslate"><span class="pre">--scpdown</span></code>, <code class="docutils literal notranslate"><span class="pre">--scpup</span></code> options that are now replaced by a more generic
+<code class="docutils literal notranslate"><span class="pre">--protocol</span></code> option, which supports <code class="docutils literal notranslate"><span class="pre">sftp</span></code>, <code class="docutils literal notranslate"><span class="pre">scpdownload</span></code>, <code class="docutils literal notranslate"><span class="pre">scpupload</span></code> and now also <code class="docutils literal notranslate"><span class="pre">rsync</span></code> as parameters.
+The use of rsync is similar to sftp and scp, and is detailed here: <a class="reference internal" href="../plugins/open/rsync.html"><span class="doc">rsync</span></a>.</p>
+<p>Last but not least, the <code class="docutils literal notranslate"><span class="pre">sntrup761x25519-sha512&#64;openssh.com</span></code> KEX algorithm is now enabled by default on shipped
+versions of <code class="docutils literal notranslate"><span class="pre">sshd_config</span></code> and <code class="docutils literal notranslate"><span class="pre">ssh_config</span></code>. If you're upgrading, these files won't be touched, so if you want to
+add support, you'll need to modify them manually by prepending <code class="docutils literal notranslate"><span class="pre">sntrup761x25519-sha512&#64;openssh.com</span></code> to the
+<code class="docutils literal notranslate"><span class="pre">KexAlgorithms</span></code> line. Verify that the OpenSSH version shipped by your OS does support it (run <code class="docutils literal notranslate"><span class="pre">ssh</span> <span class="pre">-Q</span> <span class="pre">kex</span></code>).</p>
+</section>
+<section id="v3-16-01-2024-04-17">
+<h3>v3.16.01 - 2024/04/17<a class="headerlink" href="#v3-16-01-2024-04-17" title="Link to this heading"></a></h3>
+<p>No specific upgrade instructions.</p>
+</section>
+<section id="v3-16-00-2024-04-10">
+<h3>v3.16.00 - 2024/04/10<a class="headerlink" href="#v3-16-00-2024-04-10" title="Link to this heading"></a></h3>
+<p>This version adds support for Secure Keys (FIDO2) for ingress authentication. It requires at least OpenSSH 8.2
+installed on the server hosting The Bastion, as support for FIDO2 was added in this version.
+Of the currently supported OS versions, the following are known to have a recent-enough version:</p>
+<ul class="simple">
+<li><p>Debian 11</p></li>
+<li><p>Debian 12</p></li>
+<li><p>Ubuntu 20.04</p></li>
+<li><p>Ubuntu 22.04</p></li>
+<li><p>OpenSUSE Leap 15.5</p></li>
+<li><p>Rocky Linux 9</p></li>
+</ul>
+<p>Note that if you are upgrading, you'll need to enable the new ingress algorithms in the <code class="docutils literal notranslate"><span class="pre">/etc/bastion/bastion.conf</span></code>
+file, under the <code class="docutils literal notranslate"><span class="pre">allowedIngressSshAlgorithms</span></code> option. You may want to add <code class="docutils literal notranslate"><span class="pre">ecdsa-sk</span></code> and <code class="docutils literal notranslate"><span class="pre">ed25519-sk</span></code> to the list
+if you want to support the FIDO2-backed versions of these two algorithms.
+You may also refer to the distributed default configuration file in <code class="docutils literal notranslate"><span class="pre">etc/bastion/bastion.conf.dist</span></code>,
+which enables them by default.</p>
+</section>
+<section id="v3-15-00-2024-03-22">
+<h3>v3.15.00 - 2024/03/22<a class="headerlink" href="#v3-15-00-2024-03-22" title="Link to this heading"></a></h3>
+<p>No specific upgrade instructions.</p>
+</section>
+<section id="v3-14-16-2024-02-20">
+<h3>v3.14.16 - 2024/02/20<a class="headerlink" href="#v3-14-16-2024-02-20" title="Link to this heading"></a></h3>
+<p>No specific upgrade instructions.</p>
+</section>
+<section id="v3-14-15-2023-11-08">
+<h3>v3.14.15 - 2023/11/08<a class="headerlink" href="#v3-14-15-2023-11-08" title="Link to this heading"></a></h3>
+<p>This release fixes the <a class="reference internal" href="../administration/security_advisories/cve_2023_45140.html"><span class="doc">CVE-2023-45140</span></a> with severity 4.8 (CVSS V3).
+Please refer to its page for impact and mitigation details.</p>
+<p>The changes introduced to fix this vulnerability imply that if you're using the <code class="docutils literal notranslate"><span class="pre">scp</span></code> or <code class="docutils literal notranslate"><span class="pre">sftp</span></code> plugins,
+you'll need to update your wrappers using the new versions provided by this release. The old helpers will still
+work, but only for remote hosts that don't require MFA.</p>
+<p>To get the new wrappers for your account on a given bastion, just call <code class="docutils literal notranslate"><span class="pre">--osh</span> <span class="pre">scp</span></code> or <code class="docutils literal notranslate"><span class="pre">--osh</span> <span class="pre">sftp</span></code> without
+specifying any host, which will give you your script, and examples of use.
+As you'll notice, the new scripts are no longer helpers (that were to be used through <code class="docutils literal notranslate"><span class="pre">scp</span> <span class="pre">-S</span></code> and
+<code class="docutils literal notranslate"><span class="pre">sftp</span> <span class="pre">-S</span></code>), but wrappers, that will call  <code class="docutils literal notranslate"><span class="pre">scp</span></code> and <code class="docutils literal notranslate"><span class="pre">sftp</span></code> themselves.</p>
+<p>As outlined above, the old helpers will still work for the foreseeable future, but as they're not able to
+request MFA when this is configured for a remote host, they'll simply fail for such hosts on an updated
+version of the bastion.</p>
+<p>If you have some accounts that use automated accesses through the bastion and use <code class="docutils literal notranslate"><span class="pre">scp</span></code> or <code class="docutils literal notranslate"><span class="pre">sftp</span></code> on
+hosts that have JIT MFA configured through their group, you'll need to set these accounts as immune to JIT MFA,
+which can be done through <a class="reference internal" href="../plugins/restricted/accountModify.html"><span class="doc">accountModify</span></a>'s <code class="docutils literal notranslate"><span class="pre">--mfa-password-required</span> <span class="pre">bypass</span></code>
+and/or <code class="docutils literal notranslate"><span class="pre">accountModify</span> <span class="pre">--mfa-totp-required</span> <span class="pre">bypass</span></code>, as has always been the case for classic SSH access.</p>
+<p>An HMAC shared secret is automatically generated when this release is deployed, this secret must be shared
+by all the instances of the same cluster. Hence, you should start by deploying this release on the primary
+node, which will generate the secret automatically during the standard upgrading procedure, so that this
+node can push the shared-secret to the other nodes. The other nodes don't have to be upgraded beforehand,
+they'll just not use the secret until they're upgraded to this version, and JIT MFA for <code class="docutils literal notranslate"><span class="pre">scp</span></code> and <code class="docutils literal notranslate"><span class="pre">sftp</span></code>
+will not work through them until this is the case.</p>
+<p>Once the primary node is upgraded, you should ensure the new file containing the HMAC shared secret is part
+of the synchronization list. If you did not customize your synchronization list, you can apply the new one
+over the old one directly:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">cat<span class="w"> </span>/opt/bastion/etc/bastion/osh-sync-watcher.rsyncfilter.dist<span class="w"> </span>&gt;<span class="w"> </span>/etc/bastion/osh-sync-watcher.rsyncfilter
+</span></pre></div>
+</div>
+<p>Then, you need to restart the synchronization daemon, so that it takes into consideration the new file
+(containing the shared secret) to push to the other nodes. This is usually done this way:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">systemctl<span class="w"> </span>restart<span class="w"> </span>osh-sync-watcher
+</span></pre></div>
+</div>
+<p>You can verify on the other nodes that the <code class="docutils literal notranslate"><span class="pre">/etc/bastion/mfa-token.conf</span></code> file is now present.</p>
+</section>
+<section id="v3-14-00-2023-09-19">
+<h3>v3.14.00 - 2023/09/19<a class="headerlink" href="#v3-14-00-2023-09-19" title="Link to this heading"></a></h3>
+<p>A new helper is required to support the so-called &quot;type 8&quot; and &quot;type 9&quot; password hash types, used on some
+network devices. This helper is optional, and these hashes types will simply not be generated if the helper is
+missing. The plugins concerned by this change are <code class="docutils literal notranslate"><span class="pre">selfGeneratePassword</span></code>, <code class="docutils literal notranslate"><span class="pre">selfListPasswords</span></code>,
+<code class="docutils literal notranslate"><span class="pre">accountGeneratePassword</span></code>, <code class="docutils literal notranslate"><span class="pre">accountListPasswords</span></code>, <code class="docutils literal notranslate"><span class="pre">groupGeneratePassword</span></code>, <code class="docutils literal notranslate"><span class="pre">groupListPasswords</span></code>.</p>
+<p>New installations will get this helper installed automatically. When upgrading, if you'd like to install
+this helper, you'll need to install it by running the following command as <code class="docutils literal notranslate"><span class="pre">root</span></code>:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>/opt/bastion/bin/admin/install-mkhash-helper.sh<span class="w"> </span>-a
+</pre></div>
+</div>
+<p>This will detect your OS and either install a <code class="docutils literal notranslate"><span class="pre">.deb</span></code> file, an <code class="docutils literal notranslate"><span class="pre">.rpm</span></code> file, or a static binary.</p>
+<p>If you want to ensure that the helper has installed correctly, you can call it manually for testing purposes:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll"><span class="nb">echo</span><span class="w"> </span><span class="nb">test</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>the-bastion-mkhash-helper
+</span><span class="o">{</span><span class="s2">&quot;Type8&quot;</span>:<span class="s2">&quot;</span><span class="nv">$8$EpvF1cVVzoEQFE$L3ZBWzfH9MTPo4WLX29Jd8LTM5sKlfEjtRZ</span><span class="s2">//XMys2U&quot;</span>,<span class="s2">&quot;Type9&quot;</span>:<span class="s2">&quot;</span><span class="nv">$9$yRlXzt0T7WBs3E$YdKk8WMvLvAVcbglx</span><span class="s2">.bMZoRlwBa6l5EhwLhBh1o0u4g&quot;</span>,<span class="s2">&quot;PasswordLen&quot;</span>:4<span class="o">}</span>
+</pre></div>
+</div>
+<p>If you're not generating passwords for use with network devices using type 8 or type 9 hash types, installation of this
+helper is not required.</p>
+</section>
+<section id="v3-13-01-2023-08-22">
+<h3>v3.13.01 - 2023/08/22<a class="headerlink" href="#v3-13-01-2023-08-22" title="Link to this heading"></a></h3>
+<p>No specific upgrade instructions.</p>
+</section>
+<section id="v3-13-00-2023-07-28">
+<h3>v3.13.00 - 2023/07/28<a class="headerlink" href="#v3-13-00-2023-07-28" title="Link to this heading"></a></h3>
+<p>Plugins output is now recorded using ttyrec, as the connections are, instead of being stored in sqlite format
+within the home folder of the account. This helps avoiding the sqlite databases growing too much in size when
+accounts are using osh commands very intensively.</p>
+</section>
+<section id="v3-12-00-2023-06-27">
+<h3>v3.12.00 - 2023/06/27<a class="headerlink" href="#v3-12-00-2023-06-27" title="Link to this heading"></a></h3>
+<p>Support for Debian 9 has been dropped. This doesn't mean that the code will suddenly stop working under this version,
+but that tests no longer include this OS. Please consider upgrading to a more recent OS, as ensuring the underlying
+OS is up to date and still supported is paramount to the security of The Bastion (or any other software).</p>
+<p>Support of Debian &quot;Bookworm&quot; 12 is now official, as this is now Debian stable.</p>
+</section>
+<section id="v3-11-02-2023-04-18">
+<h3>v3.11.02 - 2023/04/18<a class="headerlink" href="#v3-11-02-2023-04-18" title="Link to this heading"></a></h3>
+<p>No specific upgrade instructions.</p>
+</section>
+<section id="v3-11-01-2023-03-27">
+<h3>v3.11.01 - 2023/03/27<a class="headerlink" href="#v3-11-01-2023-03-27" title="Link to this heading"></a></h3>
+<p>No specific upgrade instructions.</p>
+</section>
+<section id="v3-11-00-2023-03-23">
+<h3>v3.11.00 - 2023/03/23<a class="headerlink" href="#v3-11-00-2023-03-23" title="Link to this heading"></a></h3>
+<p>The upgrade path from the preceding version is straightforward, however there is a change
+that you might want to be aware of before hitting the upgrade button:</p>
+<p>The previously implicitly assumed <code class="docutils literal notranslate"><span class="pre">--port-any</span></code> and <code class="docutils literal notranslate"><span class="pre">--user-any</span></code> options
+to the <code class="docutils literal notranslate"><span class="pre">(self|account)(Add|Del)PersonalAccess</span></code> commands, when either <code class="docutils literal notranslate"><span class="pre">--user</span></code> or <code class="docutils literal notranslate"><span class="pre">--port</span></code> were omitted,
+now require to be stated explicitly, to be consistent with the behaviour of <code class="docutils literal notranslate"><span class="pre">group(Add|Del)Server</span></code>,
+which always required it. Note that using this mechanism always emitted a deprecation warning,
+since the first publicly released version, encouraging the explicit use of <code class="docutils literal notranslate"><span class="pre">--user-any</span></code> and/or <code class="docutils literal notranslate"><span class="pre">--port-any</span></code>
+when this was desired. Now, omitting these options will simply return an error,
+as this has always been the case with <code class="docutils literal notranslate"><span class="pre">group(Add|Del)Server</span></code>.</p>
+<p>Example of previous behaviour:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>bssh<span class="w"> </span>--osh<span class="w"> </span>selfAddPersonalAccess<span class="w"> </span>--host<span class="w"> </span><span class="m">127</span>.0.0.5<span class="w"> </span>--force
+╭──ac777d06bec9───────────────────────────────────────────the-bastion-3.10.00───
+│<span class="w"> </span>▶<span class="w"> </span>adding<span class="w"> </span>personal<span class="w"> </span>access<span class="w"> </span>to<span class="w"> </span>a<span class="w"> </span>server<span class="w"> </span>on<span class="w"> </span>your<span class="w"> </span>account
+├───────────────────────────────────────────────────────────────────────────────
+│<span class="w"> </span>❗<span class="w"> </span>You<span class="w"> </span>didn<span class="s1">&#39;t specify --user or --user-any, defaulting to --user-any, this will no longer be implicit in future versions</span>
+<span class="s1">│ ❗ You didn&#39;</span>t<span class="w"> </span>specify<span class="w"> </span>--port<span class="w"> </span>or<span class="w"> </span>--port-any,<span class="w"> </span>defaulting<span class="w"> </span>to<span class="w"> </span>--port-any,<span class="w"> </span>this<span class="w"> </span>will<span class="w"> </span>no<span class="w"> </span>longer<span class="w"> </span>be<span class="w"> </span>implicit<span class="w"> </span><span class="k">in</span><span class="w"> </span>future<span class="w"> </span>versions
+│<span class="w"> </span>Forcing<span class="w"> </span>add<span class="w"> </span>as<span class="w"> </span>asked,<span class="w"> </span>we<span class="w"> </span>didn<span class="s1">&#39;t test the SSH connection, maybe it won&#39;</span>t<span class="w"> </span>work!
+│<span class="w"> </span>Access<span class="w"> </span>to<span class="w"> </span><span class="m">127</span>.0.0.5<span class="w"> </span>was<span class="w"> </span>added<span class="w"> </span>to<span class="w"> </span>account<span class="w"> </span>jdoe
+╰────────────────────────────────────────────────────&lt;/selfAddPersonalAccess&gt;───
+</pre></div>
+</div>
+<p>Example of new behaviour:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>bssh<span class="w"> </span>--osh<span class="w"> </span>selfAddPersonalAccess<span class="w"> </span>--host<span class="w"> </span><span class="m">127</span>.0.0.5<span class="w"> </span>--force
+╭──ac777d06bec9───────────────────────────────────────────the-bastion-3.11.00───
+│<span class="w"> </span>▶<span class="w"> </span>adding<span class="w"> </span>personal<span class="w"> </span>access<span class="w"> </span>to<span class="w"> </span>a<span class="w"> </span>server<span class="w"> </span>on<span class="w"> </span>your<span class="w"> </span>account
+├───────────────────────────────────────────────────────────────────────────────
+│<span class="w"> </span>Add<span class="w"> </span>a<span class="w"> </span>personal<span class="w"> </span>server<span class="w"> </span>access<span class="w"> </span>on<span class="w"> </span>your<span class="w"> </span>account
+│
+│<span class="w"> </span>Usage:<span class="w"> </span>--osh<span class="w"> </span>selfAddPersonalAccess<span class="w"> </span>--host<span class="w"> </span>HOST<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
+│
+│<span class="w">   </span>--host<span class="w"> </span>IP<span class="p">|</span>HOST<span class="p">|</span>IP/MASK<span class="w">   </span>Server<span class="w"> </span>to<span class="w"> </span>add<span class="w"> </span>access<span class="w"> </span>to
+│<span class="w">   </span>--user<span class="w"> </span>USER<span class="w">              </span>Remote<span class="w"> </span>login<span class="w"> </span>to<span class="w"> </span>use,<span class="w"> </span><span class="k">if</span><span class="w"> </span>you<span class="w"> </span>want<span class="w"> </span>to<span class="w"> </span>allow<span class="w"> </span>any<span class="w"> </span>login,<span class="w"> </span>use<span class="w"> </span>--user-any
+│<span class="w">   </span>--user-any<span class="w">               </span>Allow<span class="w"> </span>access<span class="w"> </span>with<span class="w"> </span>any<span class="w"> </span>remote<span class="w"> </span>login
+│<span class="w">   </span>--port<span class="w"> </span>PORT<span class="w">              </span>Remote<span class="w"> </span>SSH<span class="w"> </span>port<span class="w"> </span>to<span class="w"> </span>use,<span class="w"> </span><span class="k">if</span><span class="w"> </span>you<span class="w"> </span>want<span class="w"> </span>to<span class="w"> </span>allow<span class="w"> </span>any<span class="w"> </span>port,<span class="w"> </span>use<span class="w"> </span>--port-any
+│<span class="w">   </span>--port-any<span class="w">               </span>Allow<span class="w"> </span>access<span class="w"> </span>to<span class="w"> </span>all<span class="w"> </span>remote<span class="w"> </span>ports
+│<span class="w">   </span>--scpup<span class="w">                  </span>Allow<span class="w"> </span>SCP<span class="w"> </span>upload,<span class="w"> </span>you--bastion--&gt;server<span class="w"> </span><span class="o">(</span>omit<span class="w"> </span>--user<span class="w"> </span><span class="k">in</span><span class="w"> </span>this<span class="w"> </span><span class="k">case</span><span class="o">)</span>
+│<span class="w">   </span>--scpdown<span class="w">                </span>Allow<span class="w"> </span>SCP<span class="w"> </span>download,<span class="w"> </span>you&lt;--bastion--server<span class="w"> </span><span class="o">(</span>omit<span class="w"> </span>--user<span class="w"> </span><span class="k">in</span><span class="w"> </span>this<span class="w"> </span><span class="k">case</span><span class="o">)</span>
+│<span class="w">   </span>--sftp<span class="w">                   </span>Allow<span class="w"> </span>usage<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>SFTP<span class="w"> </span>subsystem,<span class="w"> </span>you&lt;--bastion--&gt;server<span class="w"> </span><span class="o">(</span>omit<span class="w"> </span>--user<span class="w"> </span><span class="k">in</span><span class="w"> </span>this<span class="w"> </span><span class="k">case</span><span class="o">)</span>
+│<span class="w">   </span>--force<span class="w">                  </span>Add<span class="w"> </span>the<span class="w"> </span>access<span class="w"> </span>without<span class="w"> </span>checking<span class="w"> </span>that<span class="w"> </span>the<span class="w"> </span>public<span class="w"> </span>SSH<span class="w"> </span>key<span class="w"> </span>is<span class="w"> </span>properly<span class="w"> </span>installed<span class="w"> </span>remotely
+│<span class="w">   </span>--force-key<span class="w"> </span>FINGERPRINT<span class="w">  </span>Only<span class="w"> </span>use<span class="w"> </span>the<span class="w"> </span>key<span class="w"> </span>with<span class="w"> </span>the<span class="w"> </span>specified<span class="w"> </span>fingerprint<span class="w"> </span>to<span class="w"> </span>connect<span class="w"> </span>to<span class="w"> </span>the<span class="w"> </span>server<span class="w"> </span><span class="o">(</span>cf<span class="w"> </span>selfListEgressKeys<span class="o">)</span>
+│<span class="w">   </span>--force-password<span class="w"> </span>HASH<span class="w">    </span>Only<span class="w"> </span>use<span class="w"> </span>the<span class="w"> </span>password<span class="w"> </span>with<span class="w"> </span>the<span class="w"> </span>specified<span class="w"> </span><span class="nb">hash</span><span class="w"> </span>to<span class="w"> </span>connect<span class="w"> </span>to<span class="w"> </span>the<span class="w"> </span>server<span class="w"> </span><span class="o">(</span>cf<span class="w"> </span>selfListPasswords<span class="o">)</span>
+│<span class="w">   </span>--ttl<span class="w"> </span>SECONDS<span class="p">|</span>DURATION<span class="w">   </span>Specify<span class="w"> </span>a<span class="w"> </span>number<span class="w"> </span>of<span class="w"> </span>seconds<span class="w"> </span><span class="o">(</span>or<span class="w"> </span>a<span class="w"> </span>duration<span class="w"> </span>string,<span class="w"> </span>such<span class="w"> </span>as<span class="w"> </span><span class="s2">&quot;1d7h8m&quot;</span><span class="o">)</span><span class="w"> </span>after<span class="w"> </span>which<span class="w"> </span>the<span class="w"> </span>access<span class="w"> </span>will<span class="w"> </span>automatically<span class="w"> </span>expire
+│<span class="w">   </span>--comment<span class="w"> </span><span class="s2">&quot;&#39;ANY TEXT&#39;&quot;</span><span class="w">   </span>Add<span class="w"> </span>a<span class="w"> </span>comment<span class="w"> </span>alongside<span class="w"> </span>this<span class="w"> </span>server.<span class="w"> </span>Quote<span class="w"> </span>it<span class="w"> </span>twice<span class="w"> </span>as<span class="w"> </span>shown<span class="w"> </span><span class="k">if</span><span class="w"> </span>you<span class="err">&#39;</span>re<span class="w"> </span>under<span class="w"> </span>a<span class="w"> </span>shell.
+│
+│<span class="w"> </span>⛔<span class="w"> </span>No<span class="w"> </span>user<span class="w"> </span>specified,<span class="w"> </span><span class="k">if</span><span class="w"> </span>you<span class="w"> </span>want<span class="w"> </span>to<span class="w"> </span>add<span class="w"> </span>this<span class="w"> </span>server<span class="w"> </span>with<span class="w"> </span>any<span class="w"> </span>user,<span class="w"> </span>use<span class="w"> </span>--user-any
+╰────────────────────────────────────────────────────&lt;/selfAddPersonalAccess&gt;───
+</pre></div>
+</div>
+</section>
+<section id="v3-10-00-2023-02-17">
+<h3>v3.10.00 - 2023/02/17<a class="headerlink" href="#v3-10-00-2023-02-17" title="Link to this heading"></a></h3>
+<p>No specific upgrade instructions.</p>
+</section>
+<section id="v3-09-02-2022-11-15">
+<h3>v3.09.02 - 2022/11/15<a class="headerlink" href="#v3-09-02-2022-11-15" title="Link to this heading"></a></h3>
+<p>No specific upgrade instructions.</p>
+</section>
+<section id="v3-09-01-2022-10-10">
+<h3>v3.09.01 - 2022/10/10<a class="headerlink" href="#v3-09-01-2022-10-10" title="Link to this heading"></a></h3>
+<p>No specific upgrade instructions.</p>
+</section>
+<section id="v3-09-00-2022-09-21">
+<h3>v3.09.00 - 2022/09/21<a class="headerlink" href="#v3-09-00-2022-09-21" title="Link to this heading"></a></h3>
+<p>This version has changes around the satellite system scripts that should be reviewed:</p>
+<ul class="simple">
+<li><p>The <code class="docutils literal notranslate"><span class="pre">osh-encrypt-rsync.pl</span></code> script now also handles the account's access log and sql logs,
+in addition to the ttyrec files.
+A number of new options have been added to this script's config file, these options have sane defaults but you
+might still want to review those, namely <a class="reference external" href="https://ovh.github.io/the-bastion/administration/configuration/osh-encrypt-rsync_conf.html#encrypt-and-move-user-logs-delay-days">encrypt_and_move_user_logs_delay_days</a>
+and <a class="reference external" href="https://ovh.github.io/the-bastion/administration/configuration/osh-encrypt-rsync_conf.html#encrypt-and-move-user-sqlites-delay-days">encrypt_and_move_user_sqlites_delay_days</a>.</p></li>
+<li><p>As a result of the previous feature, the <code class="docutils literal notranslate"><span class="pre">compress-old-logs.sh</span></code> script has been retired.</p></li>
+<li><p>A new script, <code class="docutils literal notranslate"><span class="pre">osh-cleanup-guest-key-access.pl</span></code>, has been added. It is enabled by default, though it can
+be disabled if you have a good reason to do so. Please refer to its <a class="reference external" href="https://ovh.github.io/thge-bastion/administration/configuration/osh-cleanup-guest-key-access_conf.html">documentation</a> for more
+information.</p></li>
+<li><p>All scripts that are automatically run by cron and reside under the <code class="docutils literal notranslate"><span class="pre">bin/cron</span></code> subfolder now have their own
+configuration file in <code class="docutils literal notranslate"><span class="pre">/etc/bastion</span></code>, even for simple scripts that only have two configuration knobs: their
+logging facility and whether they should be enabled or not. It is now recommended to use these configuration knobs
+to disable the scripts you don't want to see running, instead of removing their corresponding file in the
+<code class="docutils literal notranslate"><span class="pre">/etc/cron.d</span></code> folder, as any future update of the bastion would install them back.</p></li>
+<li><p>The logging format has been standardized across these scripts, to ensure the newly included NRPE probes can detect
+errors in the scripts more easily. By default the logs are going through syslog, using the <code class="docutils literal notranslate"><span class="pre">local6</span></code> facility,
+which ends up in the <code class="docutils literal notranslate"><span class="pre">/var/log/bastion/bastion-scripts.log</span></code> folder if you're using our stock <code class="docutils literal notranslate"><span class="pre">syslog-ng</span></code>
+configuration. The NRPE probes are available in the <code class="docutils literal notranslate"><span class="pre">contrib/nrpe</span></code> directory.</p></li>
+</ul>
+<p>Additionally, NRPE probes have been added, and should be used to monitor your bastion instances / clusters.
+More information is available in the <a class="reference external" href="https://github.com/ovh/the-bastion/blob/master/contrib/nrpe/README.md">NRPE probes readme file</a>.</p>
+<p>Last but not least, CentOS 8 support has been dropped (whereas RockyLinux 8 will remain supported),
+and Ubuntu 22.04 LTS support has been added.</p>
+</section>
+<section id="v3-08-01-2022-01-19">
+<h3>v3.08.01 - 2022/01/19<a class="headerlink" href="#v3-08-01-2022-01-19" title="Link to this heading"></a></h3>
+<p>The upgrade path from the preceding version is straightforward, however you might want to know that there is
+a new satellite script: <code class="docutils literal notranslate"><span class="pre">osh-remove-empty-folders.sh</span></code>, run by cron and enabled by default,
+whose job is to garbage-collect empty folders that may be piling up in busy users' homes,
+under their <code class="docutils literal notranslate"><span class="pre">ttyrec</span></code> folder.</p>
+<p>You can find more information in <a class="reference external" href="https://ovh.github.io/the-bastion/administration/configuration/osh-remove-empty-folders_conf.html">the documentation</a>, the script
+is enabled by default because it can do no harm.</p>
+</section>
+<section id="v3-08-00-2022-01-04">
+<h3>v3.08.00 - 2022/01/04<a class="headerlink" href="#v3-08-00-2022-01-04" title="Link to this heading"></a></h3>
+<p>This version replaces usage of GnuPG 1.x by GnuPG 2.x for the backup/encrypt/rsync satellite scripts, namely:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">bin/cron/osh-backup-acl-keys.sh</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bin/cron/osh-encrypt-rsync.pl</span></code></p></li>
+</ul>
+<p>These are optionally used to help you backup your system, and encrypt/move out ttyrec files.
+If you don't use these scripts and never configured them as seen in the <a class="reference internal" href="advanced.html"><span class="doc">Advanced Installation</span></a> section,
+then you have nothing to do.</p>
+<p>The script <code class="docutils literal notranslate"><span class="pre">setup-gpg.sh</span></code> will now create an Ed25519 key by default, instead of a 4K RSA key.
+This type of key is usually seen as more secure (elliptic curve cryptography), and faster than RSA keys.
+If you have already configured your system, then the above scripts will continue using the previously generated
+RSA key, unless you generate a new key and reference it in the scripts configuration files.</p>
+<p>If you want to generate new Ed25519 keys instead of using your preexisting RSA keys, you may proceed
+to the <a class="reference internal" href="#upgrading-ed25519"><span class="std std-ref">Ed25519 section below</span></a>.</p>
+<p>Otherwise, on the first run, GnuPG 2.x should transparently import the 1.x keyring.
+To verify that it worked correctly, you may want to try:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>/opt/bastion/bin/cron/osh-encrypt-rsync.pl<span class="w"> </span>--config-test
+</pre></div>
+</div>
+<p>If you see <em>Config test passed</em>, and you're okay using your preexisting 4K RSA key, then you may stop here.</p>
+<p>If the test fails, and you know that before upgrading, this script worked correctly, then you might need to
+manually import the GnuPG 1.x public keys:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>gpg1<span class="w"> </span>--armor<span class="w"> </span>--export<span class="w"> </span><span class="p">|</span><span class="w"> </span>gpg<span class="w"> </span>--import
+</pre></div>
+</div>
+<p>Then, try again:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>/opt/bastion/bin/cron/osh-encrypt-rsync.pl<span class="w"> </span>--config-test
+</pre></div>
+</div>
+<p>If you don't see any errors here, you're done.</p>
+<p>If you still see errors, then you might need to manually import the private key:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>gpg1<span class="w"> </span>--armor<span class="w"> </span>--export-secret-keys<span class="w"> </span><span class="p">|</span><span class="w"> </span>gpg<span class="w"> </span>--import
+</pre></div>
+</div>
+<p>You may get asked for a password for the bastion secret key, which should be found in
+<code class="docutils literal notranslate"><span class="pre">/etc/bastion/osh-encrypt-rsync.conf.d/50-gpg-bastion-key.conf</span></code> if you previously used the script to generate it.</p>
+<p>A last config test should now work:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>/opt/bastion/bin/cron/osh-encrypt-rsync.pl<span class="w"> </span>--config-test
+</pre></div>
+</div>
+<p>If you prefer to generate Ed25519 keys instead, then you can proceed to the next section.</p>
+<section id="ed25519">
+<span id="upgrading-ed25519"></span><h4>Ed25519<a class="headerlink" href="#ed25519" title="Link to this heading"></a></h4>
+<p>If you want to replace your RSA key by an Ed25519 one (which is optional), then you don't need to import the
+GnuPG 1.x keys as outlined above but you may run instead:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>/opt/bastion/bin/admin/setup-gpg.sh<span class="w"> </span>generate<span class="w"> </span>--overwrite
+</pre></div>
+</div>
+<p>Once the key has been generated, you may also want to generate a new admin key, by following this
+<a class="reference internal" href="advanced.html#generating-and-importing-the-admins-gpg-key"><span class="std std-ref">section</span></a> of the Advanced Installation documentation.
+Note that you'll need to use the <code class="docutils literal notranslate"><span class="pre">--overwrite</span></code> parameter when importing:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>/opt/bastion/bin/admin/setup-gpg.sh<span class="w"> </span>import<span class="w"> </span>--overwrite
+</pre></div>
+</div>
+<p>Once done, a config test should work:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>/opt/bastion/bin/cron/osh-encrypt-rsync.pl<span class="w"> </span>--config-test
+</pre></div>
+</div>
+</section>
+</section>
+<section id="v3-07-00-2021-12-13">
+<h3>v3.07.00 - 2021/12/13<a class="headerlink" href="#v3-07-00-2021-12-13" title="Link to this heading"></a></h3>
+<p>No specific upgrade instructions.</p>
+</section>
+<section id="v3-06-00-2021-10-15">
+<h3>v3.06.00 - 2021/10/15<a class="headerlink" href="#v3-06-00-2021-10-15" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">sshd_config</span></code> templates have been modified to reflect the changes needed to use
+the new <code class="docutils literal notranslate"><span class="pre">--pubkey-auth-optional</span></code> parameter of <a class="reference internal" href="../plugins/restricted/accountModify.html"><span class="doc">accountModify</span></a>
+(<a class="reference external" href="https://github.com/ovh/the-bastion/pull/237">#237</a>).
+If you want to use it, don't forget to review your <code class="docutils literal notranslate"><span class="pre">sshd_config</span></code> and modify it accordingly:
+the templates can be found in <code class="docutils literal notranslate"><span class="pre">etc/ssh/</span></code>.</p>
+<p>Note that misconfiguring <cite>sshd</cite> and <cite>pam</cite> together could at worst entirely disable sshd authentication.
+If you have a custom configuration, different from the templates we provide, please double-check
+that such corner case is not possible by design.
+A good way to ensure this is to review the <cite>pam</cite> configuration and ensure that there is no execution
+flow that pushes a <cite>pam_success</cite> value to the pam stack without requiring any form of authentication.</p>
+</section>
+<section id="v3-05-01-2021-09-22">
+<h3>v3.05.01 - 2021/09/22<a class="headerlink" href="#v3-05-01-2021-09-22" title="Link to this heading"></a></h3>
+<p>In the configuration of the <code class="docutils literal notranslate"><span class="pre">osh-backup-acl-keys</span></code> script, a signing key can now be specified so that the backups
+are signed by the bastion key in addition to being encrypted to the admin(s) key(s).
+By default, the behaviour is the same as before: encrypt but don't sign.</p>
+</section>
+<section id="v3-05-00-2021-09-14">
+<h3>v3.05.00 - 2021/09/14<a class="headerlink" href="#v3-05-00-2021-09-14" title="Link to this heading"></a></h3>
+<p>The maximum length of accounts is now 28 characters up from 18 characters previously.
+If you have setup a HA cluster with several bastion instances synchronized together, note that accounts longer
+than 18 characters will not be deemed as valid on not-yet upgraded instances of a cluster.</p>
+</section>
+<section id="v3-04-00-2021-07-02">
+<h3>v3.04.00 - 2021/07/02<a class="headerlink" href="#v3-04-00-2021-07-02" title="Link to this heading"></a></h3>
+<p>The upgrade path from the preceding version is straightforward, however there are a few changes
+that you might want to be aware of before hitting the upgrade button:</p>
+<ul class="simple">
+<li><p>Some EOL OSes have been dropped: Debian 8, Ubuntu 14.04, OpenSUSE 15.0 and 15.1.
+This means that while the software might still work, theses OSes are no longer part of the tests
+and might break in any future upgrade.</p></li>
+<li><p>The default logging level of the <a class="reference internal" href="../using/http_proxy.html"><span class="doc">HTTPS Proxy</span></a> has been decreased. If you want to keep full requests
+and responses logging, check the <a class="reference internal" href="../administration/configuration/osh-http-proxy_conf.html"><span class="doc">log_request_response and log_request_response_max_size</span></a> configuration options.</p></li>
+</ul>
+</section>
+<section id="v3-03-01-2021-03-25">
+<h3>v3.03.01 - 2021/03/25<a class="headerlink" href="#v3-03-01-2021-03-25" title="Link to this heading"></a></h3>
+<p>No specific upgrade instructions.</p>
+</section>
+<section id="v3-03-00-2021-02-22">
+<h3>v3.03.00 - 2021/02/22<a class="headerlink" href="#v3-03-00-2021-02-22" title="Link to this heading"></a></h3>
+<p>No specific upgrade instructions.</p>
+</section>
+<section id="v3-02-00-2021-02-01">
+<h3>v3.02.00 - 2021/02/01<a class="headerlink" href="#v3-02-00-2021-02-01" title="Link to this heading"></a></h3>
+<p>The upgrade path from the preceding version is straightforward, however there are a few changes
+that you might want to be aware of before hitting the upgrade button:</p>
+<section id="the-main-configuration-file-now-supports-proper-booleans">
+<h4>The main configuration file now supports proper booleans<a class="headerlink" href="#the-main-configuration-file-now-supports-proper-booleans" title="Link to this heading"></a></h4>
+<p>For a lot of configuration options, previously you would specify &quot;1&quot; to enable a feature, and &quot;0&quot; to disable it.
+This has been changed to use proper <em>true</em> and <em>false</em> json values in <code class="file docutils literal notranslate"><span class="pre">/etc/bastion/bastion.conf</span></code>.
+Of course, backward compatibility with &quot;0&quot; and &quot;1&quot; will always be kept, so no breakage is to be expected
+for this version or future ones even if you keep your configuration untouched.</p>
+</section>
+<section id="logs-have-been-enhanced">
+<h4>Logs have been enhanced<a class="headerlink" href="#logs-have-been-enhanced" title="Link to this heading"></a></h4>
+<p>All connections and plugin executions emit two logs, an <em>open</em> and a <em>close</em> log.
+We now add all the details of the connection to the <em>close</em> logs, those that were previously only available
+in the corresponding <em>open</em> log. This way, it is no longer required to correlate both logs with their uniqid
+to have all the data: the <em>close</em> log should suffice.
+The <em>open</em> log is still there if for some reason the <em>close</em> log can't be emitted (kill -9, system crash, etc.),
+or if the <em>open</em> and the <em>close</em> log are several hours, days or months apart.</p>
+<p>An additional field <strong>duration</strong> has been added to the <em>close</em> logs,
+this represents the number of seconds (with millisecond precision) the connection lasted.</p>
+<p>Two new fields <strong>globalsql</strong> and <strong>accountsql</strong> have been added to the <em>open</em>-type logs.
+These will contain either <cite>ok</cite> if we successfully logged to the corresponding log database,
+<cite>no</cite> if it is disabled, or <cite>error $aDetailedMessage</cite> if we got an error trying to insert the row.
+The <em>close</em>-type log also has the new <strong>accountsql_close</strong> field, but misses the <strong>globalsql_close</strong> field as
+we never update the global database on this event.
+On the <em>close</em> log, we can also have the value <strong>missing</strong>, indicating that we couldn't update the access log row
+in the database, as the corresponding <em>open</em> log couldn't insert it.</p>
+<p>The <strong>ttyrecsize</strong> log field for the <em>close</em>-type logs has been removed, as it was never completely implemented,
+and contains bogus data if ttyrec log rotation occurs. It has also been removed from the sqlite log databases.</p>
+<p>The <em>open</em> and <em>close</em> events are now pushed to our own log files, in addition to syslog, if logging to those files
+is enabled (see <a class="reference internal" href="../administration/configuration/bastion_conf.html#enableglobalaccesslog"><span class="std std-ref">enableGlobalAccessLog</span></a> and <a class="reference internal" href="../administration/configuration/bastion_conf.html#enableaccountaccesslog"><span class="std std-ref">enableAccountAccessLog</span></a>),
+previously the <em>close</em> events were only pushed to syslog.</p>
+<p>The <code class="file docutils literal notranslate"><span class="pre">/home/osh.log</span></code> file is no longer used for <a class="reference internal" href="../administration/configuration/bastion_conf.html#enableglobalaccesslog"><span class="std std-ref">enableGlobalAccessLog</span></a>, the global log
+is instead written to <code class="file docutils literal notranslate"><span class="pre">/home/logkeeper/global-log-YYYYMM.log</span></code>.</p>
+<p>The global sql file, enabled with <a class="reference internal" href="../administration/configuration/bastion_conf.html#enableglobalsqllog"><span class="std std-ref">enableGlobalSqlLog</span></a>, is now split by year-month instead of by year,
+to <code class="file docutils literal notranslate"><span class="pre">/home/logkeeper/global-log-YYYYMM.sqlite</span></code>.</p>
+</section>
+</section>
+<section id="v3-01-03-2020-12-15">
+<h3>v3.01.03 - 2020/12/15<a class="headerlink" href="#v3-01-03-2020-12-15" title="Link to this heading"></a></h3>
+<p>No specific upgrade instructions.</p>
+</section>
+<section id="v3-01-02-2020-12-08">
+<h3>v3.01.02 - 2020/12/08<a class="headerlink" href="#v3-01-02-2020-12-08" title="Link to this heading"></a></h3>
+<p>No specific upgrade instructions.</p>
+</section>
+<section id="v3-01-01-2020-12-04">
+<h3>v3.01.01 - 2020/12/04<a class="headerlink" href="#v3-01-01-2020-12-04" title="Link to this heading"></a></h3>
+<p>No specific upgrade instructions.</p>
+</section>
+<section id="v3-01-00-2020-11-20">
+<h3>v3.01.00 - 2020/11/20<a class="headerlink" href="#v3-01-00-2020-11-20" title="Link to this heading"></a></h3>
+<p>A new bastion.conf option was introduced: <em>interactiveModeByDefault</em>. If not present in your config file,
+its value defaults to 1 (true), which changes the behavior of The Bastion when a user connects
+without specifying any command.
+When this happens, it'll now display the help then drop the user into interactive mode (if this mode is enabled),
+instead of displaying the help and aborting with an error message.
+Set it to 0 (false) if you want to keep the previous behavior.</p>
+<p>An SELinux module has been added in this version, to ensure TOTP MFA works correctly under systems where SELinux
+is on enforcing mode. This module will be installed automatically whenever SELinux is detected on the system.
+If you don't want to use this module, specify <cite>--no-install-selinux-module</cite> on your <cite>/opt/bastion/bin/admin/install</cite>
+upgrade call (please refer to the generic upgrade instructions for more details).</p>
+</section>
+<section id="v3-00-02-2020-11-16">
+<h3>v3.00.02 - 2020/11/16<a class="headerlink" href="#v3-00-02-2020-11-16" title="Link to this heading"></a></h3>
+<p>No specific upgrade instructions.</p>
+</section>
+<section id="v3-00-01-2020-11-06">
+<h3>v3.00.01 - 2020/11/06<a class="headerlink" href="#v3-00-01-2020-11-06" title="Link to this heading"></a></h3>
+<p>If you previously installed <code class="docutils literal notranslate"><span class="pre">ttyrec</span></code> using the now deprecated <code class="docutils literal notranslate"><span class="pre">build-and-install-ttyrec.sh</span></code> script,
+you might want to know that since this version, the script has been replaced by <code class="docutils literal notranslate"><span class="pre">install-ttyrec.sh</span></code>,
+which no longer builds in-place, but prefers downloading and installing prebuild <code class="docutils literal notranslate"><span class="pre">rpm</span></code> or <code class="docutils literal notranslate"><span class="pre">deb</span></code> packages.</p>
+<p>If you previously built and installed <code class="docutils literal notranslate"><span class="pre">ttyrec</span></code> manually, and want to use the new packages instead,
+you might want to manually uninstall your previously built ttyrec program (remove the binaries that were installed
+in <code class="docutils literal notranslate"><span class="pre">/usr/local/bin</span></code>), and call <code class="docutils literal notranslate"><span class="pre">install-ttyrec.sh</span> <span class="pre">-a</span></code> to download and install the proper package instead.</p>
+<p>This is not mandatory and doesn't change anything from the software point of view.</p>
+</section>
+<section id="v3-00-00-2020-10-30">
+<h3>v3.00.00 - 2020/10/30<a class="headerlink" href="#v3-00-00-2020-10-30" title="Link to this heading"></a></h3>
+<p>Initial public version, no specific upgrade instructions.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="advanced.html" class="btn btn-neutral float-left" title="Advanced Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="docker.html" class="btn btn-neutral float-right" title="Sandbox using Docker" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

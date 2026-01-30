@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>osh-http-proxy.conf &mdash; The Bastion 3.23.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="../../_static/jquery.js?v=8dae8fb0"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=eb75f0bc"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="osh-piv-grace-reaper.conf" href="osh-piv-grace-reaper_conf.html" />
+    <link rel="prev" title="osh-sync-watcher.sh" href="osh-sync-watcher_sh.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.23.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using/basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Configuration files</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#main-configuration-files">Main configuration files</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="bastion_conf.html">bastion.conf</a></li>
+<li class="toctree-l3"><a class="reference internal" href="osh-backup-acl-keys_conf.html">osh-backup-acl-keys.conf</a></li>
+<li class="toctree-l3"><a class="reference internal" href="osh-encrypt-rsync_conf.html">osh-encrypt-rsync.conf</a></li>
+<li class="toctree-l3"><a class="reference internal" href="osh-sync-watcher_sh.html">osh-sync-watcher.sh</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">osh-http-proxy.conf</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#option-list">Option List</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#option-reference">Option Reference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#configuration-files-for-satellite-scripts">Configuration files for satellite scripts</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/open/index.html">open plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Configuration files</a></li>
+      <li class="breadcrumb-item active">osh-http-proxy.conf</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/administration/configuration/osh-http-proxy_conf.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="osh-http-proxy-conf">
+<h1>osh-http-proxy.conf<a class="headerlink" href="#osh-http-proxy-conf" title="Link to this heading"></a></h1>
+<blockquote>
+<div><div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This module is optional, and disabled by default.
+To know more about the HTTP Proxy feature of The Bastion,
+please check the <a class="reference internal" href="../../using/http_proxy.html"><span class="doc">HTTPS Proxy</span></a> section</p>
+</div>
+</div></blockquote>
+<section id="option-list">
+<h2>Option List<a class="headerlink" href="#option-list" title="Link to this heading"></a></h2>
+<section id="http-proxy-configuration-options">
+<h3>HTTP Proxy configuration options<a class="headerlink" href="#http-proxy-configuration-options" title="Link to this heading"></a></h3>
+<p>These options modify the behavior of the HTTP Proxy, an optional module of The Bastion</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#enabled">enabled</a></p></li>
+<li><p><a class="reference internal" href="#port">port</a></p></li>
+<li><p><a class="reference internal" href="#ssl-certificate">ssl_certificate</a></p></li>
+<li><p><a class="reference internal" href="#ssl-key">ssl_key</a></p></li>
+<li><p><a class="reference internal" href="#ciphers">ciphers</a></p></li>
+<li><p><a class="reference internal" href="#insecure">insecure</a></p></li>
+<li><p><a class="reference internal" href="#min-servers">min_servers</a></p></li>
+<li><p><a class="reference internal" href="#max-servers">max_servers</a></p></li>
+<li><p><a class="reference internal" href="#min-spare-servers">min_spare_servers</a></p></li>
+<li><p><a class="reference internal" href="#max-spare-servers">max_spare_servers</a></p></li>
+<li><p><a class="reference internal" href="#timeout">timeout</a></p></li>
+<li><p><a class="reference internal" href="#log-request-response">log_request_response</a></p></li>
+<li><p><a class="reference internal" href="#log-request-response-max-size">log_request_response_max_size</a></p></li>
+<li><p><a class="reference internal" href="#allowed-methods">allowed_methods</a></p></li>
+<li><p><a class="reference internal" href="#allowed-egress-protocols">allowed_egress_protocols</a></p></li>
+</ul>
+</section>
+</section>
+<section id="option-reference">
+<h2>Option Reference<a class="headerlink" href="#option-reference" title="Link to this heading"></a></h2>
+<section id="http-proxy-configuration">
+<h3>HTTP Proxy configuration<a class="headerlink" href="#http-proxy-configuration" title="Link to this heading"></a></h3>
+<section id="enabled">
+<h4>enabled<a class="headerlink" href="#enabled" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">bool</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">false</span></code></p>
+</dd>
+</dl>
+<p>Whether the HTTP proxy daemon daemon is enabled or not. If it's not enabled, it'll exit when started.
+Of course, if you want to enable this daemon, you should <strong>also</strong> configure your init system to start it
+for you. Both sysV-style scripts and systemd unit files are provided.
+For systemd, using <cite>systemctl enable osh-http-proxy.service</cite> should be enough.
+For sysV-style inits, it depends on the scripts provided for your distro,
+but usually <cite>update-rc.d osh-http-proxy defaults</cite> then <cite>update-rc.d osh-http-proxy enable</cite> should
+do the trick.</p>
+</section>
+<section id="port">
+<h4>port<a class="headerlink" href="#port" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int,</span> <span class="pre">1</span> <span class="pre">to</span> <span class="pre">65535</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">8443</span></code></p>
+</dd>
+</dl>
+<p>The port to listen to. You can use ports &lt; 1024, in which case privileges will be dropped after binding,
+but please ensure your systemd unit file starts the daemon as root in that case.</p>
+</section>
+<section id="ssl-certificate">
+<h4>ssl_certificate<a class="headerlink" href="#ssl-certificate" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">/etc/ssl/certs/ssl-cert-snakeoil.pem</span></code></p>
+</dd>
+</dl>
+<p>The file that contains the server SSL certificate in PEM format.
+For tests, install the <code class="docutils literal notranslate"><span class="pre">ssl-cert</span></code> package and point this configuration item
+to the snakeoil certs (which is the default).</p>
+</section>
+<section id="ssl-key">
+<h4>ssl_key<a class="headerlink" href="#ssl-key" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">/etc/ssl/private/ssl-cert-snakeoil.key</span></code></p>
+</dd>
+</dl>
+<p>The file that contains the server SSL key in PEM format.
+For tests, install the <code class="docutils literal notranslate"><span class="pre">ssl-cert</span></code> package and point this configuration item
+to the snakeoil certs (which is the default).</p>
+</section>
+<section id="ciphers">
+<h4>ciphers<a class="headerlink" href="#ciphers" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code></p>
+</dd>
+<dt class="field-odd">Example<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">&quot;ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256&quot;</span></code></p>
+</dd>
+</dl>
+<p>The ordered list the TLS server ciphers, in <code class="docutils literal notranslate"><span class="pre">openssl</span></code> classic format. Use <code class="docutils literal notranslate"><span class="pre">openssl</span> <span class="pre">ciphers</span></code>
+to see what your system supports, an empty list leaves the choice to your openssl libraries default
+values (system-dependent)</p>
+</section>
+<section id="insecure">
+<h4>insecure<a class="headerlink" href="#insecure" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">bool</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">false</span></code></p>
+</dd>
+</dl>
+<p>Whether to ignore SSL certificate verification for the connection between the bastion and the devices</p>
+</section>
+<section id="min-servers">
+<h4>min_servers<a class="headerlink" href="#min-servers" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int,</span> <span class="pre">1</span> <span class="pre">to</span> <span class="pre">512</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">8</span></code></p>
+</dd>
+</dl>
+<p>Number of child processes to start at launch</p>
+</section>
+<section id="max-servers">
+<h4>max_servers<a class="headerlink" href="#max-servers" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int,</span> <span class="pre">1</span> <span class="pre">to</span> <span class="pre">512</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">32</span></code></p>
+</dd>
+</dl>
+<p>Hard maximum number of child processes that can be active at any given time no matter what</p>
+</section>
+<section id="min-spare-servers">
+<h4>min_spare_servers<a class="headerlink" href="#min-spare-servers" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int,</span> <span class="pre">1</span> <span class="pre">to</span> <span class="pre">512</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">8</span></code></p>
+</dd>
+</dl>
+<p>The daemon will ensure that there is at least this number of children idle &amp; ready to accept
+new connections (as long as max_servers is not reached)</p>
+</section>
+<section id="max-spare-servers">
+<h4>max_spare_servers<a class="headerlink" href="#max-spare-servers" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int,</span> <span class="pre">1</span> <span class="pre">to</span> <span class="pre">512</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">16</span></code></p>
+</dd>
+</dl>
+<p>The daemon will kill <em>idle</em> children to keep their number below this maximum when traffic is low</p>
+</section>
+<section id="timeout">
+<h4>timeout<a class="headerlink" href="#timeout" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int,</span> <span class="pre">1</span> <span class="pre">to</span> <span class="pre">3600</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">120</span></code></p>
+</dd>
+</dl>
+<p>Timeout delay (in seconds) for the connection between the bastion and the devices</p>
+</section>
+<section id="log-request-response">
+<h4>log_request_response<a class="headerlink" href="#log-request-response" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">bool</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">true</span></code></p>
+</dd>
+</dl>
+<p>When enabled, the complete response of the device to the request we forwarded will be logged,
+otherwise we'll only log the response headers</p>
+</section>
+<section id="log-request-response-max-size">
+<h4>log_request_response_max_size<a class="headerlink" href="#log-request-response-max-size" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int,</span> <span class="pre">0</span> <span class="pre">to</span> <span class="pre">2^30</span> <span class="pre">(1</span> <span class="pre">GiB)</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">65536</span></code></p>
+</dd>
+</dl>
+<p>This option only applies when <cite>log_request_response</cite> is true (see above).
+When set to zero, the complete response will be logged in the account's home log directory,
+including the body, regardless of its size. If set to a positive integer,
+the query response will only be partially logged, with full status and headers but the body only up
+to the specified size. This is a way to avoid turning off request response logging completely on
+very busy bastions, by ensuring logs growth don't get out of hand, as some responses to queries can
+take megabytes, with possibly limited added value to traceability.</p>
+</section>
+<section id="allowed-methods">
+<h4>allowed_methods<a class="headerlink" href="#allowed-methods" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">array</span> <span class="pre">of</span> <span class="pre">strings</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">[&quot;GET&quot;,&quot;POST&quot;]</span></code></p>
+</dd>
+<dt class="field-odd">Example<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">[&quot;GET&quot;,&quot;POST&quot;,&quot;PUT&quot;,&quot;PATCH&quot;,&quot;DELETE&quot;]</span></code></p>
+</dd>
+</dl>
+<p>This array lists the allowed HTTP methods. By default, only GET and POST are allowed.
+If required, other methods can be added such as PUT, PATCH, DELETE, etc.</p>
+</section>
+<section id="allowed-egress-protocols">
+<h4>allowed_egress_protocols<a class="headerlink" href="#allowed-egress-protocols" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">array</span> <span class="pre">of</span> <span class="pre">strings</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">[&quot;https&quot;]</span></code></p>
+</dd>
+<dt class="field-odd">Example<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">[&quot;https&quot;,&quot;http&quot;]</span></code></p>
+</dd>
+</dl>
+<p>This array lists the allowed egress protocols. By default, only https is allowed.
+If required, plain http egress can be enabled here, which is of course strongly discouraged,
+but might be required for your environment if business constraints out of your control force you to.</p>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="osh-sync-watcher_sh.html" class="btn btn-neutral float-left" title="osh-sync-watcher.sh" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="osh-piv-grace-reaper_conf.html" class="btn btn-neutral float-right" title="osh-piv-grace-reaper.conf" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Security &mdash; The Bastion 3.23.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="../_static/jquery.js?v=8dae8fb0"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=eb75f0bc"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FAQ" href="../faq.html" />
+    <link rel="prev" title="Features" href="features.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.23.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="features.html">Features</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Security</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#security-principles-at-the-core">Security principles at the core</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#auditability">Auditability</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../using/basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../administration/configuration/index.html">Configuration files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/open/index.html">open plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Security</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/presentation/security.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="security">
+<h1>Security<a class="headerlink" href="#security" title="Link to this heading"></a></h1>
+<section id="security-principles-at-the-core">
+<h2>Security principles at the core<a class="headerlink" href="#security-principles-at-the-core" title="Link to this heading"></a></h2>
+<p>Even with the most conservative, precautionous and paranoid coding process, code has bugs,
+so it shouldn't be trusted blindly. Hence the bastion doesn't trust its own code.
+It leverages the operating system security primitives to get additional security, as seen below.</p>
+<ul>
+<li><p>Uses the well-known and trusted UNIX Discretionary Access Control:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Bastion users are mapped to actual system users</p></li>
+<li><p>Bastion groups are mapped to actual system groups</p></li>
+<li><p>All the code is constantly checking rights before allowing any action</p></li>
+<li><p>UNIX DAC is used as a safety belt to prevent an action from succeeding even if the code
+is tricked into allowing it</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>The bastion main script is declared as the bastion user's system shell:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>No user has real (<code class="docutils literal notranslate"><span class="pre">bash</span></code>-like) shell access on the system</p></li>
+<li><p>All code is ran under the unprivileged user's system account rights</p></li>
+<li><p>Even if a user could escape to a real shell, they wouldn't be able to connect to machines they don't have
+access to, because they don't have filesystem-level read access to the SSH keys</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>The code is modular</p>
+<blockquote>
+<div><ul>
+<li><p>The main code mainly checks rights, logs actions, and enable <code class="docutils literal notranslate"><span class="pre">ssh</span></code> access to other machines</p></li>
+<li><p>All side commands, called <strong>plugins</strong>, are in modules separated from the main code</p></li>
+<li><p>The modules can either be <strong>open</strong> or <strong>restricted</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Only accounts that have been specifically granted on a need-to-use basis can run a specific restricted plugin</p></li>
+<li><p>This is checked by the code, and also enforced by UNIX DAC (the plugin is only readable and
+executable by the system group specific to the plugin)</p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>All the code needing extended system privileges is separated from the main code, in modules called <strong>helpers</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Helpers are run exclusively under <code class="docutils literal notranslate"><span class="pre">sudo</span></code></p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">sudoers</span></code> configuration is attached to a system group specific to the command,
+which is granted to accounts on a need-to-use basis</p></li>
+<li><p>The helpers are only readable and executable by the system group specific to the command</p></li>
+<li><p>The helpers path and some of their immutable parameters are hardcoded in the <code class="docutils literal notranslate"><span class="pre">sudoers</span></code> configuration</p></li>
+<li><p>Perl tainted mode (<code class="docutils literal notranslate"><span class="pre">-T</span></code>) is used for all code running under <code class="docutils literal notranslate"><span class="pre">sudo</span></code>, preventing any user-input to
+interfere with the logic, by halting execution immediately</p></li>
+<li><p>Code running under <code class="docutils literal notranslate"><span class="pre">sudo</span></code> doesn't trust its caller and re-checks every input</p></li>
+<li><p>Communication between unprivileged and privileged-code are done using JSON</p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</section>
+<section id="auditability">
+<h2>Auditability<a class="headerlink" href="#auditability" title="Link to this heading"></a></h2>
+<ul>
+<li><p>Bastion administrators must use the bastion's logic to connect to itself to administer it (or better,
+use another bastion to do so), this ensures auditability in all cases</p></li>
+<li><p>Every access and action (whether allowed or denied) is logged with:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">syslog</span></code>, which should also be sent to a remote syslog server to ensure even
+bastion administrators can't tamper their tracks, and/or</p></li>
+<li><p>local <code class="docutils literal notranslate"><span class="pre">sqlite3</span></code> databases for easy searching</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>This code is used in production in several PCI-DSS, ISO 27001, SOC1 and SOC2 certified environments</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="features.html" class="btn btn-neutral float-left" title="Features" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../faq.html" class="btn btn-neutral float-right" title="FAQ" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PIV keys support &mdash; The Bastion 3.23.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="../_static/jquery.js?v=8dae8fb0"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=eb75f0bc"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="SFTP, SCP &amp; RSYNC support" href="sftp_scp_rsync.html" />
+    <link rel="prev" title="Access management" href="basics/access_management.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.23.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="basics/index.html">The basics</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">PIV keys support</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#without-a-policy">Without a policy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#per-account-policy">Per-account policy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#global-policy">Global policy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#temporary-grace-period">Temporary grace period</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../administration/configuration/index.html">Configuration files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/open/index.html">open plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">PIV keys support</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/using/piv.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="piv-keys-support">
+<h1><a class="toc-backref" href="#id1" role="doc-backlink">PIV keys support</a><a class="headerlink" href="#piv-keys-support" title="Link to this heading"></a></h1>
+<nav class="contents" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#piv-keys-support" id="id1">PIV keys support</a></p>
+<ul>
+<li><p><a class="reference internal" href="#introduction" id="id2">Introduction</a></p></li>
+<li><p><a class="reference internal" href="#without-a-policy" id="id3">Without a policy</a></p></li>
+<li><p><a class="reference internal" href="#per-account-policy" id="id4">Per-account policy</a></p></li>
+<li><p><a class="reference internal" href="#global-policy" id="id5">Global policy</a></p></li>
+<li><p><a class="reference internal" href="#temporary-grace-period" id="id6">Temporary grace period</a></p></li>
+</ul>
+</li>
+</ul>
+</nav>
+<section id="introduction">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">Introduction</a><a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>The Bastion supports enabling a policy forcing accounts SSH ingress keys to originate from a known hardware token,
+ensuring that the private SSH key is only stored on this hardware token, and not on the filesystem.</p>
+<p>Currently, only Yubico keys implementing PIV can be verified this way. In that case, each individual hardware token
+has a builtin Certificate Authority, signed by a well-known Yubico certificate, hence proving that the hardware token
+is known and legit.</p>
+<p>This builtin CA, in turn, emits an attestation certificate each time a new PIV key is generated on the hardware token,
+hence proving that the bikey (private and public) has been generated by this individual hardware token.
+Other metadata is included in the attestation, such as the firmware version, the serial number of the token,
+the <em>TouchPolicy</em> and <em>PinPolicy</em>. Note that you may decide to overwrite the builtin CA by a one of your own,
+possibly signed by a CA of your company. This would ensure not only that the SSH key is provided by the device,
+but also that the device has been provided by your company.</p>
+<p>Please refer to
+the <a class="reference external" href="https://developers.yubico.com/PIV/Introduction/PIV_attestation.html">Yubico PIV attestation page</a> and
+the <a class="reference external" href="https://developers.yubico.com/yubico-piv-tool/YubiKey_PIV_introduction.html">Yubico PIV tool page</a>
+for more information.</p>
+</section>
+<section id="without-a-policy">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">Without a policy</a><a class="headerlink" href="#without-a-policy" title="Link to this heading"></a></h2>
+<p>If you want to support PIV keys without making those mandatory, you don't have anything to do:
+those keys are just regular RSA/ECDSA keys and they <em>just work</em> with The Bastion.
+In that case, after having properly configured your hardware token with a key in slot 9a,
+you can just use <a class="reference internal" href="../plugins/open/selfAddIngressKey.html"><span class="doc">selfAddIngressKey</span></a> to add the key to your bastion account, and call it a day.
+As a quick guidance, on a Yubikey you can usually generate a key in the proper slot this way,
+after you've setup a management key:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">yubico-piv-tool<span class="w"> </span>--key<span class="o">=</span>YOUR_MGMT_KEY<span class="w"> </span>--action<span class="w"> </span>generate<span class="w"> </span>--pin-policy<span class="w"> </span>always<span class="w"> </span>--touch-policy<span class="w"> </span>never<span class="w"> </span>--slot<span class="w"> </span>9a<span class="w"> </span>-o<span class="w"> </span>-
+</span></pre></div>
+</div>
+<p>Now, if you want the bastion to be aware that this key is from a hardware token, you shall use the <code class="docutils literal notranslate"><span class="pre">--piv</span></code> option
+to <a class="reference internal" href="../plugins/open/selfAddIngressKey.html"><span class="doc">selfAddIngressKey</span></a>. This won't do anything special per-se, except storing
+the certificates information, and showing the details of the PIV key in command outputs
+such as <a class="reference internal" href="../plugins/open/selfListIngressKeys.html"><span class="doc">selfListIngressKeys</span></a>.
+Note however that if in the future you enable the PIV enforcing policy either on your account or globally,
+this key will be considered valid, contrary to all the keys added without the <code class="docutils literal notranslate"><span class="pre">--piv</span></code> option,
+even if these keys happen to be PIV ones. To add a key with the <code class="docutils literal notranslate"><span class="pre">--piv</span></code> option, you'll need the SSH public key
+as usual, but also the attestation certificate and the key certificate.
+Step by step details on how to get those are out of the scope of this document,
+but again as a quick guidance, on a Yubikey you can usually get those this way:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">yubico-piv-tool<span class="w"> </span>--action<span class="o">=</span>read-certificate<span class="w"> </span>--slot<span class="o">=</span>9a<span class="w"> </span>--key-format<span class="o">=</span>SSH
+</span><span class="hll">yubico-piv-tool<span class="w"> </span>--action<span class="o">=</span>attest<span class="w"> </span>--slot<span class="o">=</span>9a
+</span><span class="hll">yubico-piv-tool<span class="w"> </span>--action<span class="o">=</span>read-certificate<span class="w"> </span>--slot<span class="o">=</span>f9
+</span></pre></div>
+</div>
+<p>When you'll have added your key, you'll see a few more details than usual:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="hll"><span class="go">bssh --osh selfAddIngressKey --piv</span>
+</span><span class="go">Enter PIN for &#39;PIV Card Holder pin (PIV_II)&#39;:</span>
+<span class="go">---the-bastion.example.org--------------------------------the-bastion-3.01.03---</span>
+<span class="go">=&gt; add a new public key to your account</span>
+<span class="go">--------------------------------------------------------------------------------</span>
+<span class="go">~ Please paste the SSH key you want to add. This bastion supports the following algorithms:</span>
+<span class="go">~ ED25519: strongness[#####] speed[#####], use `ssh-keygen -t ed25519&#39; to generate one</span>
+<span class="go">~ ECDSA  : strongness[####.] speed[#####], use `ssh-keygen -t ecdsa -b 521&#39; to generate one</span>
+<span class="go">~ RSA    : strongness[###..] speed[#....], use `ssh-keygen -t rsa -b 4096&#39; to generate one</span>
+<span class="go">~</span>
+<span class="go">~ In any case, don&#39;t save it without a passphrase.</span>
+<span class="go">~ You can prepend your key with a from=&quot;IP1,IP2,...&quot; as this bastion policy allows ingress keys &quot;from&quot; override by users</span>
+<span class="go">ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCyAMtxGT/RvzBZXiYlrCswZMruRtoBtONrVJTZ3Cj5ZpjaZyCRjQ/ETzZXXbvu9KiBsZyhVb/5H9F7CSGi+D5BlcRAKrT9P8MsT7BHWU14GhJddhHDy4rMnXapE93oxbnQIjQT34ozvTKlb0qOoR/SlT14LllvQS6ajaXB7Fm4bAJG/gYGXHEs2nmZn37Rll6vvpZ4ExM29UrqU3hAjYO0Ha+kL5G8Tr+fOhV/5ZmzNsYigdW7Ft7Co4Tpld9D0PqVhDPK7F1zHIFUXunFsewGtB3IQxLdLGDaCMzrRi11V6q/pBzN/75YsW6npRdOzJKjnwxG19lTtVCmCY3EPRFz</span>
+<span class="go">~</span>
+<span class="go">~ You have requested to add a PIV-enabled SSH key.</span>
+<span class="go">~ Please paste the PIV attestation certificate of your hardware key in PEM format.</span>
+<span class="go">~ This snippet should start with &#39;-----BEGIN CERTIFICATE-----&#39; and end with &#39;-----END CERTIFICATE-----&#39;:</span>
+<span class="go">~</span>
+<span class="go">-----BEGIN CERTIFICATE-----</span>
+<span class="go">MIIDIDCCAgigAwIBAgIQAajpKeFbM+X1Yfk8GaH9dzANBgkqhkiG9w0BAQsFADAh</span>
+<span class="go">MR8wHQYDVQQDDBZZdWJpY28gUElWIEF0dGVzdGF0aW9uMCAXDTE2MDMxNDAwMDAw</span>
+<span class="go">MFoYDzIwNTIwNDE3MDAwMDAwWjAlMSMwIQYDVQQDDBpZdWJpS2V5IFBJViBBdHRl</span>
+<span class="go">c3RhdGlvbiA5YTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALIAy3EZ</span>
+<span class="go">P9G/MFleJiWsKzBkyu5G2gG042tUlNncKPlmmNpnIJGND8RPNlddu+70qIGxnKFV</span>
+<span class="go">v/kf0XsJIaL4PkGVxEAqtP0/wyxPsEdZTXgaEl12EcPLisyddqkT3ejFudAiNBPf</span>
+<span class="go">ijO9MqVvSo6hH9KVPXguWW9BLpqNpcHsWbhsAkb+BgZccSzaeZmfftGWXq++lngT</span>
+<span class="go">Ezb1SupTeECNg7Qdr6QvkbxOv586FX/lmbM2xiKB1bsW3sKjhOmV30PQ+pWEM8rs</span>
+<span class="go">XXMcgVRe6cWx7Aa0HchDEt0sYNoIzOtGLXVXqr+kHM3/vlixbqelF07MkqOfDEbX</span>
+<span class="go">2VO1UKYJjcQ9EXMCAwEAAaNOMEwwEQYKKwYBBAGCxAoDAwQDBQIEMBQGCisGAQQB</span>
+<span class="go">gsQKAwcEBgIEALeG1jAQBgorBgEEAYLECgMIBAIDATAPBgorBgEEAYLECgMJBAEB</span>
+<span class="go">MA0GCSqGSIb3DQEBCwUAA4IBAQAq9O6H02KRvSmBYsz23r6cNTNS/fr5lSPYMHz/</span>
+<span class="go">fX+D5B1thKKGstsfZVzoopwIjj86cIWpCYuNfEje+a5HrELL8ClV88JutJR2Nihs</span>
+<span class="go">NxU3BbsSUqnwi2rQHcmtHJcC8rjfDzpYDlW1yR+SxVenbVxuRy0v8sbleHSPYaXG</span>
+<span class="go">EhjupEAuhq7n0TjZMF1X7KElx9FZZM9HeuxUJvzV7XWiUgA4Zm05+4/zKW01n2kt</span>
+<span class="go">+aMaQk7T1oiE0oOK51wJX6J80GzF51pM00oPlh4iDvnnNXYN2KvkNuNwPoceDDE/</span>
+<span class="go">8K23ZfJyTN5nibk13UbxEWSHMUue1zcnFp0KdhqxbJYSS/9q</span>
+<span class="go">-----END CERTIFICATE-----</span>
+<span class="go">~</span>
+<span class="go">~ Thanks, now please paste the PIV key certificate of your generated key in PEM format.</span>
+<span class="go">~ This snippet should also start with &#39;-----BEGIN CERTIFICATE-----&#39; and end with &#39;-----END CERTIFICATE-----&#39;:</span>
+<span class="go">~</span>
+<span class="go">-----BEGIN CERTIFICATE-----</span>
+<span class="go">MIIC5jCCAc6gAwIBAgIJAKT/dqaxohbiMA0GCSqGSIb3DQEBCwUAMCsxKTAnBgNV</span>
+<span class="go">BAMMIFl1YmljbyBQSVYgUm9vdCBDQSBTZXJpYWwgMjYzNzUxMCAXDTE2MDMxNDAw</span>
+<span class="go">MDAwMFoYDzIwNTIwNDE3MDAwMDAwWjAhMR8wHQYDVQQDDBZZdWJpY28gUElWIEF0</span>
+<span class="go">dGVzdGF0aW9uMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwDhP3YUI</span>
+<span class="go">yLWSjseIKNzMscqCdicslrdkxPgMoK8Ocxu0err4yvFXiSZZL32BTZYLD8N7Y+d1</span>
+<span class="go">cww6VVsFYdwn01Kc6YLrwM5FIN/msXkGTPdPVhVeqNMHh4QyYrYixwWaTbDCGoQD</span>
+<span class="go">axVlifVmPS02Mvm8NDjC17X3LhsV1OiS/wOScsI8HHGgQXQIQEDMnt6cwZ83QK73</span>
+<span class="go">7Wuu5uhSzT3jVOz28Rnij1p/8PcVWcGKWCPVYNbCmCdcm/sQeJB8y5aERDaePIIZ</span>
+<span class="go">v9axnDT0DnUO7aDpzXA7i7XPbrkiSBEp7RCqXGs5cBqGCbq//xGh+/AGtCCV/sQM</span>
+<span class="go">nTjl0d2k2Q8XTwIDAQABoxUwEzARBgorBgEEAYLECgMDBAMFAgQwDQYJKoZIhvcN</span>
+<span class="go">AQELBQADggEBAHCnp3k5kQaBwYmR9nUHKGY1dgCvhJUlX2SAyY2fUeaMuURcRRlW</span>
+<span class="go">BFw6CvLAjvSs5Dy3O6JWDmk+1WFZo0UMr15WZFiS5Fpy0M+GWvBCRP3YmbSw+J2t</span>
+<span class="go">kyWypCIIu7cMtLpRYkL5SAlWmUCAz8dZPk5FLPpeqmxgQnRoSSe67IXiv3bNyPA1</span>
+<span class="go">3NoXI2xw0hWQU1+85tfTxoTxOiAzY8UpAT2GggtSmCwO3sHsHJUYXRyCf8e6jtJL</span>
+<span class="go">OFBx/uz+VJoRH7hUVOY+sbP5JJ83dRrWZkS57Hf3q0LOtbn27vM+fmL0y7z4vgDo</span>
+<span class="go">DedmrmsbPtsRc3t7RWoqCa80Iq1jPvdm5gw=</span>
+<span class="go">-----END CERTIFICATE-----</span>
+<span class="go">~</span>
+<span class="go">~ Public key successfully added:</span>
+<span class="go">~ info: ADDED_BY=jdoe USING=selfAddIngressKey UNIQID=2993de2bb014 TIMESTAMP=1609427402 DATETIME=2020-12-31T15:10:02 VERSION=3.01.03</span>
+<span class="go">~ PIV: TouchPolicy=Never, PinPolicy=Always, SerialNo=12345678, Firmware=5.2.4</span>
+<span class="go">~ fingerprint: SHA256:8B0T6174KUPL1iTSyC0UpnDOvuaCgyKpu8zo9rb2lco (RSA-2048) [2020/12/17]</span>
+<span class="go">---------------------------------------------------------&lt;/selfAddIngressKey&gt;---</span>
+</pre></div>
+</div>
+<p>As you can see, we added the public key as usual but were also asked for the two certificates.
+On the bastion answer, right before the fingerprint of the key, we have a line starting with <em>PIV:</em>,
+with some metadata extracted from the certificate.</p>
+</section>
+<section id="per-account-policy">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">Per-account policy</a><a class="headerlink" href="#per-account-policy" title="Link to this heading"></a></h2>
+<p>If you want to force several accounts to only use certified PIV keys, you can set the option per-account
+using the <a class="reference internal" href="../plugins/restricted/accountPIV.html"><span class="doc">accountPIV</span></a> command, see its documentation page for all the possible options.
+The main takeaways are:</p>
+<ul class="simple">
+<li><p>If you want an account to only have PIV keys, set the <code class="docutils literal notranslate"><span class="pre">enforce</span></code> policy for this account</p></li>
+<li><p>If you want an account to never require PIV keys, even if the global policy would require it,
+set the <code class="docutils literal notranslate"><span class="pre">never</span></code> policy (useful for accounts used by automated workflows)</p></li>
+</ul>
+</section>
+<section id="global-policy">
+<h2><a class="toc-backref" href="#id5" role="doc-backlink">Global policy</a><a class="headerlink" href="#global-policy" title="Link to this heading"></a></h2>
+<p>If you want to apply a policy bastion-wide, please refer to the <a class="reference internal" href="../administration/configuration/bastion_conf.html#ingressrequirepiv"><span class="std std-ref">ingressRequirePIV</span></a> option.
+This policy can still be overridden per-account if needed, see above.</p>
+</section>
+<section id="temporary-grace-period">
+<h2><a class="toc-backref" href="#id6" role="doc-backlink">Temporary grace period</a><a class="headerlink" href="#temporary-grace-period" title="Link to this heading"></a></h2>
+<p>If you enable the PIV policy globally or on several accounts, you'll soon find out that sometimes people forget
+or lose their PIV-enabled hardware tokens, effectively locking them out of the bastion.
+There is a <em>temporary grace period</em> feature you can use to handle such cases nicely:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="hll"><span class="go">bssh --osh accountPIV --account lechuck --policy grace --ttl 48h</span>
+</span><span class="go">---the-bastion.example.org--------------------------------the-bastion-3.01.03---</span>
+<span class="go">=&gt; modify the PIV policy of an account</span>
+<span class="go">--------------------------------------------------------------------------------</span>
+<span class="go">~ Changing account configuration...</span>
+
+<span class="go">~ PIV grace up to 2d+00:00:00 (Wed 2021-01-13 09:22:29 UTC) has been set for this account</span>
+<span class="go">~ Applying change to keys...</span>
+
+<span class="go">~ Non-PIV account&#39;s ingress keys, if any, have been restored</span>
+<span class="go">----------------------------------------------------------------&lt;/accountPIV&gt;---</span>
+</pre></div>
+</div>
+<p>What happens here is that, for a duration of 48 hours, this account will behave as if no PIV policy was enforced:
+non-PIV keys are allowed again. If this account had non-PIV keys before its policy was set to enforce,
+those keys are even restored (can be viewed using <a class="reference internal" href="../plugins/open/selfListIngressKeys.html"><span class="doc">selfListIngressKeys</span></a> as usual),
+so that they can easily connect again. However, after the grace period expires, their policy will go back to
+what it was previously, and all the non-PIV keys will be disabled again.
+This event is logged, so you can easily link this event from your SIEM to a potential ticket to your Helpdesk
+for a hardware key replacement, or such.</p>
+<p>This mechanism allows some flexibility (avoiding sending people back home just because they forgot their hardware key),
+while still enforcing a high-level security policy with the proper processes in place.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="basics/access_management.html" class="btn btn-neutral float-left" title="Access management" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="sftp_scp_rsync.html" class="btn btn-neutral float-right" title="SFTP, SCP &amp; RSYNC support" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>accountAddPersonalAccess &mdash; The Bastion 3.23.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="../../_static/jquery.js?v=8dae8fb0"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=eb75f0bc"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="accountCreate" href="accountCreate.html" />
+    <link rel="prev" title="restricted plugins" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.23.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using/basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/configuration/index.html">Configuration files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../open/index.html">open plugins</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">restricted plugins</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">accountAddPersonalAccess</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#add-a-personal-server-access-to-an-account">Add a personal server access to an account</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#plugin-configuration">Plugin configuration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#options">Options</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#example">Example</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="accountCreate.html">accountCreate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountDelPersonalAccess.html">accountDelPersonalAccess</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountDelete.html">accountDelete</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountFreeze.html">accountFreeze</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountGeneratePassword.html">accountGeneratePassword</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountGrantCommand.html">accountGrantCommand</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountInfo.html">accountInfo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountList.html">accountList</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountListAccesses.html">accountListAccesses</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountListEgressKeys.html">accountListEgressKeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountListIngressKeys.html">accountListIngressKeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountListPasswords.html">accountListPasswords</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountMFAResetPassword.html">accountMFAResetPassword</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountMFAResetTOTP.html">accountMFAResetTOTP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountModify.html">accountModify</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountPIV.html">accountPIV</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountRevokeCommand.html">accountRevokeCommand</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountUnexpire.html">accountUnexpire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountUnfreeze.html">accountUnfreeze</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountUnlock.html">accountUnlock</a></li>
+<li class="toctree-l2"><a class="reference internal" href="assetForgetHostKey.html">assetForgetHostKey</a></li>
+<li class="toctree-l2"><a class="reference internal" href="groupCreate.html">groupCreate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="groupDelete.html">groupDelete</a></li>
+<li class="toctree-l2"><a class="reference internal" href="realmCreate.html">realmCreate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="realmDelete.html">realmDelete</a></li>
+<li class="toctree-l2"><a class="reference internal" href="realmInfo.html">realmInfo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="realmList.html">realmList</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rootListIngressKeys.html">rootListIngressKeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfAddPersonalAccess.html">selfAddPersonalAccess</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfDelPersonalAccess.html">selfDelPersonalAccess</a></li>
+<li class="toctree-l2"><a class="reference internal" href="whoHasAccessTo.html">whoHasAccessTo</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">restricted plugins</a></li>
+      <li class="breadcrumb-item active">accountAddPersonalAccess</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/plugins/restricted/accountAddPersonalAccess.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="accountaddpersonalaccess">
+<h1>accountAddPersonalAccess<a class="headerlink" href="#accountaddpersonalaccess" title="Link to this heading"></a></h1>
+<section id="add-a-personal-server-access-to-an-account">
+<h2>Add a personal server access to an account<a class="headerlink" href="#add-a-personal-server-access-to-an-account" title="Link to this heading"></a></h2>
+<div class="cmdusage admonition">
+<p class="admonition-title">usage</p>
+<p>--osh accountAddPersonalAccess --account ACCOUNT --host HOST --user USER --port PORT [OPTIONS]</p>
+</div>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-accountAddPersonalAccess-account">
+<span class="sig-name descname"><span class="pre">--account</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-accountAddPersonalAccess-account" title="Link to this definition"></a></dt>
+<dd><p>Bastion account to add the access to</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-accountAddPersonalAccess-host">
+<span class="sig-name descname"><span class="pre">--host</span></span><span class="sig-prename descclassname"> <span class="pre">HOST|IP|SUBNET</span></span><a class="headerlink" href="#cmdoption-accountAddPersonalAccess-host" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Host(s) to add access to, either a HOST which will be resolved to an IP immediately,</p>
+<blockquote>
+<div><p>or an IP, or a whole subnet using the PREFIX/SIZE notation</p>
+</div></blockquote>
+</div></blockquote>
+<dl class="simple">
+<dt>--user USER|PATTERN|*    Specify which remote user should be allowed to connect as.</dt><dd><p>Globbing characters '*' and '?' are supported, so you can specify a pattern
+that will be matched against the actual remote user name.
+To allow any user, use '--user <em>' (you might need to escape '</em>' from your shell)</p>
+</dd>
+<dt>--port PORT|*            Remote port allowed to connect to</dt><dd><p>To allow any port, use '--port <em>' (you might need to escape '</em>' from your shell)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-accountAddPersonalAccess-protocol">
+<span class="sig-name descname"><span class="pre">--protocol</span></span><span class="sig-prename descclassname"> <span class="pre">PROTO</span></span><a class="headerlink" href="#cmdoption-accountAddPersonalAccess-protocol" title="Link to this definition"></a></dt>
+<dd><p>Specify that a special protocol should be allowed for this HOST:PORT tuple, note that you</p>
+<blockquote>
+<div><p>must not specify --user in that case. However, for this protocol to be usable under a given
+remote user, access to the <a class="reference external" href="mailto:USER&#37;&#52;&#48;HOST">USER<span>&#64;</span>HOST</a>:PORT tuple must also be allowed.
+PROTO must be one of:
+scpupload    allow SCP upload, you--bastion--&gt;server
+scpdownload  allow SCP download, you&lt;--bastion--server
+sftp         allow usage of the SFTP subsystem, through the bastion
+rsync        allow usage of rsync, through the bastion</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-accountAddPersonalAccess-force-key">
+<span class="sig-name descname"><span class="pre">--force-key</span></span><span class="sig-prename descclassname"> <span class="pre">FINGERPRINT</span></span><a class="headerlink" href="#cmdoption-accountAddPersonalAccess-force-key" title="Link to this definition"></a></dt>
+<dd><p>Only use the key with the specified fingerprint to connect to the server (cf accountListEgressKeys)</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-accountAddPersonalAccess-force-password">
+<span class="sig-name descname"><span class="pre">--force-password</span></span><span class="sig-prename descclassname"> <span class="pre">HASH</span></span><a class="headerlink" href="#cmdoption-accountAddPersonalAccess-force-password" title="Link to this definition"></a></dt>
+<dd><p>Only use the password with the specified hash to connect to the server (cf accountListPasswords)</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-accountAddPersonalAccess-ttl">
+<span class="sig-name descname"><span class="pre">--ttl</span></span><span class="sig-prename descclassname"> <span class="pre">SECONDS|DURATION</span></span><a class="headerlink" href="#cmdoption-accountAddPersonalAccess-ttl" title="Link to this definition"></a></dt>
+<dd><p>Specify a number of seconds (or a duration string, such as &quot;1d7h8m&quot;) after which the access will automatically expire</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-accountAddPersonalAccess-comment">
+<span class="sig-name descname"><span class="pre">--comment</span></span><span class="sig-prename descclassname"> <span class="pre">&quot;'ANY</span> <span class="pre">TEXT'&quot;</span></span><a class="headerlink" href="#cmdoption-accountAddPersonalAccess-comment" title="Link to this definition"></a></dt>
+<dd><p>Add a comment alongside this server. Quote it twice as shown if you're under a shell.</p>
+</dd></dl>
+
+<p>The access will work only if one of the account's personal egress public key has been copied to the remote server.
+To get the list of an account's personal egress public keys, see <code class="docutils literal notranslate"><span class="pre">accountListEgressKeyss</span></code> and <code class="docutils literal notranslate"><span class="pre">selfListEgressKeys</span></code>.</p>
+</section>
+<section id="plugin-configuration">
+<h2>Plugin configuration<a class="headerlink" href="#plugin-configuration" title="Link to this heading"></a></h2>
+<section id="options">
+<h3>Options<a class="headerlink" href="#options" title="Link to this heading"></a></h3>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-accountAddPersonalAccess-arg-widest_v4_prefix">
+<span id="cmdoption-accountAddPersonalAccess-arg-integer"></span><span id="cmdoption-accountAddPersonalAccess-arg-between"></span><span class="sig-name descname"><span class="pre">widest_v4_prefix</span></span><span class="sig-prename descclassname"> <span class="pre">(optional</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">integer</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">between</span></span><span class="sig-prename descclassname"> <span class="pre">0</span> <span class="pre">and</span> <span class="pre">32)</span></span><a class="headerlink" href="#cmdoption-accountAddPersonalAccess-arg-widest_v4_prefix" title="Link to this definition"></a></dt>
+<dd><p>When specified, this limits the size of subnets that can be added to an
+ACL, e.g. 24 would not allow prefix lengths wider than /24 (such as /20
+or /16).
+Note that this doesn't prevent users from adding thousands of ACLs to
+cover a wide range of networks, but this helps ensuring ACLs such as
+0.0.0.0/0 can't be added in a single command.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-accountAddPersonalAccess-arg-self_remote_user_only">
+<span id="cmdoption-accountAddPersonalAccess-arg-boolean"></span><span class="sig-name descname"><span class="pre">self_remote_user_only</span></span><span class="sig-prename descclassname"> <span class="pre">(optional</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">boolean)</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-accountAddPersonalAccess-arg-self_remote_user_only" title="Link to this definition"></a></dt>
+<dd><p>When true, this only allows to add ACLs with the remote user being the
+same than the account name, i.e. adding an access to a bastion account
+named &quot;johndoe&quot; can only be done specifying this very account name as
+the remote user name, with <code class="docutils literal notranslate"><span class="pre">accountAddPersonalAccess</span> <span class="pre">--user</span> <span class="pre">johndoe</span></code>.</p>
+</dd></dl>
+
+</section>
+<section id="example">
+<h3>Example<a class="headerlink" href="#example" title="Link to this heading"></a></h3>
+<p>Configuration, in JSON format, must be in <code class="file docutils literal notranslate"><span class="pre">/etc/bastion/plugin.accountAddPersonalAccess.conf</span></code>:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="hll"><span class="p">{</span><span class="w"> </span><span class="nt">&quot;widest_v4_prefix&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">24</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;self_remote_user_only&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">}</span>
+</span></pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="restricted plugins" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="accountCreate.html" class="btn btn-neutral float-right" title="accountCreate" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
