@@ -32,7 +32,10 @@ use OVH::Bastion::Helper;
 # Fetch command options
 my $fnret;
 my ($result, @optwarns);
-my ($account, $ip, $user, $port, $action, $ttl, $forceKey, $forcePassword, $target, $comment);
+my (
+    $account,       $ip,     $user,    $port,    $action,    $ttl, $forceKey,
+    $forcePassword, $target, $comment, $proxyIp, $proxyPort, $proxyUser
+);
 eval {
     local $SIG{__WARN__} = sub { push @optwarns, shift };
     $result = GetOptions(
@@ -46,6 +49,9 @@ eval {
         "force-password=s" => sub { $forcePassword //= $_[1] },
         "target=s"         => sub { $target        //= $_[1] },
         "comment=s"        => sub { $comment       //= $_[1] },
+        "proxy-ip=s"       => sub { $proxyIp       //= $_[1] },
+        "proxy-port=i"     => sub { $proxyPort     //= $_[1] },
+        "proxy-user=s"     => sub { $proxyUser     //= $_[1] },
     );
 };
 if ($@) { die $@ }
@@ -81,7 +87,22 @@ if (not grep { $action eq $_ } qw{ add del }) {
 #<PARAMS:ACTION
 
 #>CODE
-my $machine = OVH::Bastion::machine_display(ip => $ip, port => $port, user => $user)->value;
+$fnret = OVH::Bastion::load_configuration();
+$fnret or main_exit(OVH::Bastion::EXIT_CONFIGURATION_FAILURE, "configuration_failure", $fnret->msg);
+my $config = $fnret->value;
+
+if ($action eq 'add' && $proxyIp && !$config->{'egressProxyJumpAllowed'}) {
+    HEXIT('ERR_INVALID_PARAMETER', msg => "ProxyJump egress connections are disabled by policy");
+}
+
+my $machine = OVH::Bastion::machine_display(
+    ip        => $ip,
+    port      => $port,
+    user      => $user,
+    proxyIp   => $proxyIp,
+    proxyPort => $proxyPort,
+    proxyUser => $proxyUser
+)->value;
 
 my $plugin = ($target eq 'self' ? 'self' : 'account') . 'AddPersonalAccess';
 
@@ -115,19 +136,25 @@ $fnret = OVH::Bastion::access_modify(
     forcePassword  => $forcePassword,
     comment        => $comment,
     widestV4Prefix => $widestV4Prefix,
+    proxyIp        => $proxyIp,
+    proxyPort      => $proxyPort,
+    proxyUser      => $proxyUser,
 );
 if ($fnret->err eq 'OK') {
     my $ttlmsg = $ttl ? ' (expires in ' . OVH::Bastion::duration2human(seconds => $ttl)->value->{'human'} . ')' : '';
     HEXIT(
         'OK',
         value => {
-            action  => $action,
-            account => $account,
-            ip      => $ip,
-            user    => $user,
-            port    => $port,
-            ttl     => $ttl,
-            comment => $comment
+            action    => $action,
+            account   => $account,
+            ip        => $ip,
+            user      => $user,
+            port      => $port,
+            ttl       => $ttl,
+            comment   => $comment,
+            proxyIp   => $proxyIp,
+            proxyPort => $proxyPort,
+            proxyUser => $proxyUser,
         },
         msg => $action eq 'add'
         ? "Access to $machine was added to account $account$ttlmsg"

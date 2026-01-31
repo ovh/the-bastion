@@ -340,6 +340,10 @@ sub access_modify {
     my $forceKey      = $params{'forceKey'};
     my $forcePassword = $params{'forcePassword'};
 
+    my $proxyIp   = $params{'proxyIp'};
+    my $proxyPort = $params{'proxyPort'};
+    my $proxyUser = $params{'proxyUser'};
+
     my $dryrun = $params{'dryrun'};      # don't do anything, just check params and prereqs
     my $sudo   = $params{'sudo'};        # passed as-is to subs we use
 
@@ -368,8 +372,9 @@ sub access_modify {
 
     # normalize * into undef
     # also, due to how plugins work, sometimes user and port are just '', make them undef in those cases
-    undef $user if (defined $user && ($user eq '*' || $user eq ''));
-    undef $port if (defined $port && ($port eq '*' || $port eq ''));
+    undef $user      if (defined $user      && ($user eq '*'      || $user eq ''));
+    undef $port      if (defined $port      && ($port eq '*'      || $port eq ''));
+    undef $proxyUser if (defined $proxyUser && ($proxyUser eq '*' || $proxyUser eq ''));
 
     # check way
     if ($way eq 'personal') {
@@ -469,6 +474,35 @@ sub access_modify {
         }
     }
 
+    # check proxy host
+    if (defined $proxyIp) {
+        $fnret = OVH::Bastion::is_valid_ip(ip => $proxyIp, allowSubnets => 0);
+        return $fnret unless $fnret;
+        $proxyIp = $fnret->value->{'ip'};
+    }
+
+    # check proxy port
+    if (defined $proxyPort) {
+        $fnret = OVH::Bastion::is_valid_port(port => $proxyPort);
+        return $fnret unless $fnret;
+        $proxyPort = $fnret->value;
+    }
+
+    # check proxy user
+    if (defined $proxyUser) {
+        $fnret = OVH::Bastion::is_valid_remote_user(user => $proxyUser, allowWildcards => 1);
+        return $fnret unless $fnret;
+        $proxyUser = $fnret->value;
+    }
+
+    # Validate proxy configuration: if PROXYHOST is specified, PROXYPORT must be too
+    if (defined $proxyIp && !defined $proxyPort) {
+        return R('ERR_INVALID_PARAMETER', msg => "When specifying a proxy host, proxy port must also be specified");
+    }
+    if (!defined $proxyIp && defined $proxyPort) {
+        return R('ERR_INVALID_PARAMETER', msg => "When specifying a proxy port, proxy host must also be specified");
+    }
+
     # check if the caller has the right to make the change they're asking
     # ... 1. either $> is allowkeeper and $ENV{'SUDO_USER'} is the requesting account
     # ... 2. or $> is $grouptomodify  and $ENV{'SUDO_USER'} is the requesting account
@@ -549,6 +583,9 @@ sub access_modify {
             way        => $way,
             group      => $shortGroup,
             account    => $account,
+            proxyIp    => $proxyIp,
+            proxyPort  => $proxyPort,
+            proxyUser  => $proxyUser,
             exactMatch => 1,             # we're checking if the exact right we're asked to modify exists or not
         );
         osh_debug("... result is $fnret");
@@ -631,6 +668,15 @@ sub access_modify {
             if ($ttl) {
                 $entry .= " # EXPIRY=" . (time() + $ttl);
             }
+            if ($proxyIp) {
+                $entry .= " # PROXYHOST=" . $proxyIp;
+            }
+            if ($proxyPort) {
+                $entry .= " # PROXYPORT=" . $proxyPort;
+            }
+            if ($proxyUser) {
+                $entry .= " # PROXYUSER=" . $proxyUser;
+            }
             if ($comment) {
                 $comment =~ s{[#<>\\"']}{_}g;
                 $entry .= " # COMMENT=<" . $comment . ">";
@@ -652,7 +698,14 @@ sub access_modify {
             else {
                 return R('ERR_CANNOT_OPEN_FILE', msg => "Error opening $file: $!");
             }
-            my $machine = OVH::Bastion::machine_display(ip => $ip, port => $port, user => $user)->value;
+            my $machine = OVH::Bastion::machine_display(
+                ip        => $ip,
+                port      => $port,
+                user      => $user,
+                proxyIp   => $proxyIp,
+                proxyPort => $proxyPort,
+                proxyUser => $proxyUser,
+            )->value;
             my $ttlmsg =
               $ttl ? (' (expires in ' . OVH::Bastion::duration2human(seconds => $ttl)->value->{'human'} . ')') : '';
             $returnmsg = "Access to $machine successfully added$ttlmsg";
@@ -663,9 +716,35 @@ sub access_modify {
                 my $found = 0;
                 while (my $line = <$fh_file>) {
                     if ($line =~ m{^\Q$entry\E(\s|$)}) {
-                        chomp $line;
-                        $line = "# $line # $comment\n";
-                        $found++;
+                        # now verify that proxy options match too
+                        my $shouldDelete = 1;
+
+                        if (defined $proxyIp) {
+                            $shouldDelete = 0 unless $line =~ m{\# PROXYHOST=\Q$proxyIp\E(\s|$)};
+                        }
+                        elsif ($line =~ m{\# PROXYHOST=}) {
+                            $shouldDelete = 0;
+                        }
+
+                        if ($shouldDelete && defined $proxyPort) {
+                            $shouldDelete = 0 unless $line =~ m{\# PROXYPORT=\Q$proxyPort\E(\s|$)};
+                        }
+                        elsif ($shouldDelete && $line =~ m{\# PROXYPORT=}) {
+                            $shouldDelete = 0;
+                        }
+
+                        if ($shouldDelete && defined $proxyUser) {
+                            $shouldDelete = 0 unless $line =~ m{\# PROXYUSER=\Q$proxyUser\E(\s|$)};
+                        }
+                        elsif ($shouldDelete && $line =~ m{\# PROXYUSER=}) {
+                            $shouldDelete = 0;
+                        }
+
+                        if ($shouldDelete) {
+                            chomp $line;
+                            $line = "# $line # $comment\n";
+                            $found++;
+                        }
                     }
                     $newFile .= $line;
                 }
@@ -677,7 +756,14 @@ sub access_modify {
                     if (open(my $fh_file, '>', $file)) {
                         print $fh_file $newFile;
                         close($fh_file);
-                        my $machine = OVH::Bastion::machine_display(ip => $ip, port => $port, user => $user)->value;
+                        my $machine = OVH::Bastion::machine_display(
+                            ip        => $ip,
+                            port      => $port,
+                            user      => $user,
+                            proxyIp   => $proxyIp,
+                            proxyPort => $proxyPort,
+                            proxyUser => $proxyUser,
+                        )->value;
                         $returnmsg = "Access to $machine successfully removed";
                     }
                     else {
@@ -704,6 +790,9 @@ sub access_modify {
                 ['force_key',      $params{'forceKey'}],
                 ['force_password', $params{'forcePassword'}],
                 ['comment',        $params{'comment'}],
+                ['proxy_ip',       $params{'proxyIp'}],
+                ['proxy_port',     $params{'proxyPort'}],
+                ['proxy_user',     $params{'proxyUser'}],
             ]
         );
         return R('OK', msg => $returnmsg) if $returnmsg;
