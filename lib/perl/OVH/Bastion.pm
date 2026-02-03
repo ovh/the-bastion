@@ -132,6 +132,7 @@ use constant {
 
     OPT_GROUP_IDLE_LOCK_TIMEOUT => {key => 'idle_lock_timeout'},
     OPT_GROUP_IDLE_KILL_TIMEOUT => {key => 'idle_kill_timeout'},
+    OPT_GROUP_TRY_PERSONAL_KEYS => {key => 'try_personal_keys'},
 };
 
 ###########

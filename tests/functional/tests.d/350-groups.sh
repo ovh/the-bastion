@@ -1088,6 +1088,34 @@ EOS
     success guest_ttl_limit $a1 --osh groupModify --group $group1 --guest-ttl-limit 0
     json .command groupModify .error_code OK
 
+    # try-personal-keys tests
+    # test invalid parameter values for try-personal-keys
+    plgfail invalid_try_personal_keys_value $a1 --osh groupModify --group $group1 --try-personal-keys invalid
+    json .error_code ERR_INVALID_PARAMETER
+
+    # enable try-personal-keys
+    success enable_try_personal_keys $a1 --osh groupModify --group $group1 --try-personal-keys yes
+    json .error_code OK .command groupModify .value.try_personal_keys.error_code OK
+
+    # verify the setting is applied in groupInfo
+    success check_try_personal_keys_enabled $a1 --osh groupInfo --group $group1
+    contain "personal egress keys will also be tried"
+    json .error_code OK .command groupInfo .value.try_personal_keys 1
+
+    # disable try-personal-keys
+    success disable_try_personal_keys $a1 --osh groupModify --group $group1 --try-personal-keys no
+    json .error_code OK .command groupModify .value.try_personal_keys.error_code OK
+
+    # verify the setting is applied in groupInfo
+    success check_try_personal_keys_disabled $a1 --osh groupInfo --group $group1
+    contain "No personal egress keys will be used"
+    json .error_code OK .command groupInfo .value.try_personal_keys 0
+
+    # non-owner cannot modify try-personal-keys
+    run non_owner_modify_try_personal_keys $a2 --osh groupModify --group $group1 --try-personal-keys yes
+    retvalshouldbe 106
+    json .error_code KO_RESTRICTED_COMMAND
+
     # if we're just counting the number of tests, don't sleep
     [ "$COUNTONLY" != 1 ] && sleep 1
 
@@ -1146,6 +1174,60 @@ EOS
     contain "allowed ... log on"
     nocontain "$group1"
     contain "personal access"
+
+    # try-personal-keys tests
+    # First, make account2 a member instead of just a guest for proper testing
+    success add_a2_as_member_for_try_personal_keys $a1 --osh groupAddMember --group $group1 --account $account2
+    json .error_code OK .command groupAddMember
+
+    # Without try-personal-keys enabled - should only show group access
+    run a2_group_access_only $a2 127.0.0.11 --user testuser
+    retvalshouldbe 255
+    contain "allowed ... log on"
+    contain "group-member of $group1"
+    nocontain "personal-via-group"
+
+    # Enable try-personal-keys and test access
+    success enable_try_personal_keys_for_access $a1 --osh groupModify --group $group1 --try-personal-keys yes
+    json .error_code OK .command groupModify
+
+    # Now connection should show both group and personal access
+    run a2_group_and_personal_access $a2 127.0.0.11 --user testuser
+    retvalshouldbe 255
+    contain "allowed ... log on"
+    contain "group-member of $group1"
+    contain "personal-via-group"
+
+    # Disable try-personal-keys again
+    success disable_try_personal_keys_for_access $a1 --osh groupModify --group $group1 --try-personal-keys no
+    json .error_code OK .command groupModify
+
+    # Should only show group access again
+    run a2_group_access_only_again $a2 127.0.0.11 --user testuser
+    retvalshouldbe 255
+    contain "allowed ... log on"
+    contain "group-member of $group1"
+    nocontain "personal-via-group"
+
+    # Enable try-personal-keys again
+    success enable_try_personal_keys_again $a1 --osh groupModify --group $group1 --try-personal-keys yes
+    json .error_code OK .command groupModify
+
+    # Remove account2 from group members (this will also remove guest access)
+    success remove_a2_from_members $a1 --osh groupDelMember --group $group1 --account $account2
+    json .error_code OK .command groupDelMember
+
+    # Add account2 back as guest to test guest access only
+    success add_a2_as_guest_after_removal $a1 --osh groupAddGuestAccess --group $group1 --account $account2 --host 127.0.0.10 --user testuser --port 22
+    json .error_code OK .command groupAddGuestAccess
+
+    # Account2 is now guest but can still use personal access keys to connect
+    run a2_guest_access_only_after_member_removal $a2 127.0.0.10 --user testuser
+    retvalshouldbe 255
+    contain "allowed ... log on"
+    contain "group-guest of $group1"
+    nocontain "group-member"
+    contain "personal-via-group"
 
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2(guest(127.0.0.10)) servers(127.0.0.10,127.0.0.11)
     # account1: perso(account1@127.0.0.11:22)
