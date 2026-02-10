@@ -111,6 +111,11 @@ sub is_access_way_granted {
       "checking way $way/$account/$group with ignorePort=$ignorePort ignoreUser=$ignoreUser ignoreProxyUser=$ignoreProxyUser exactIpMatch=$exactIpMatch exactPortMatch=$exactPortMatch exactUserMatch=$exactUserMatch";
     osh_debug($check_debug_msg);
 
+    # make sure both proxyIp and proxyPort are defined or undefined
+    if (defined $wantedProxyIp && !defined $wantedProxyPort) {
+        return R('ERR_INVALID_PARAMETER', msg => "If proxyIp is given, proxyPort must be given too");
+    }
+
     my %match;
     foreach my $entry (@acl) {
         # normalize '*' to undef
@@ -229,11 +234,6 @@ sub is_access_way_granted {
                     }
                 }
             }
-        }
-
-        # make sure both proxyIp and proxyPort are defined or undefined
-        if (defined $wantedProxyIp && !defined $wantedProxyPort) {
-            return R('ERR_INVALID_PARAMETER', msg => "If proxyIp is given, proxyPort must be given too");
         }
 
         # check proxy user if we have a proxy ip
