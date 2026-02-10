@@ -384,16 +384,10 @@ sub is_access_way_granted {
                     }
                     else {
                         # check proxy IP match
-                        if (defined $wantedProxyIp) {
-                            $proxyMatches = 0
-                              if (!defined $entry->{'proxyIp'} || $entry->{'proxyIp'} ne $wantedProxyIp);
-                        }
+                        next if ($entry->{'proxyIp'} ne $wantedProxyIp);
 
                         # check proxy port match
-                        if (defined $wantedProxyPort && $proxyMatches) {
-                            $proxyMatches = 0
-                              if (!defined $entry->{'proxyPort'} || $entry->{'proxyPort'} ne $wantedProxyPort);
-                        }
+                        next if ($entry->{'proxyPort'} ne $wantedProxyPort);
                     }
                 }
                 # Case 2: no proxy requested, but entry has proxy info - should not match
