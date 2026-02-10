@@ -18,6 +18,15 @@ testsuite_proxyjump()
     success a0_create_group1 $a0 --osh groupCreate --group $group1 --owner $account1 --algo ed25519 --size 256
     json .error_code OK .command groupCreate
 
+    # Test that proxy parameters are rejected while the feature is disabled
+    run selfAddPersonalAccess_proxy_feature_disabled $a0 --osh selfAddPersonalAccess --host 192.168.1.100 --user testuser --port 22 --proxy-host 10.0.0.1 --proxy-port 22 --proxy-user testuser --force
+    retvalshouldbe 100
+    contain "ProxyJump egress connections are disabled by policy"
+    json .error_code ERR_INVALID_PARAMETER
+
+    # now enable the proxyjump feature
+    configchg 's=^\\\\x22egressProxyJumpAllowed\\\\x22.+=\\\\x22egressProxyJumpAllowed\\\\x22:true,='
+
     #
     # Test selfAddPersonalAccess with proxy parameters
     #
