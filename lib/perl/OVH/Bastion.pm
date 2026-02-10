@@ -104,6 +104,7 @@ use constant {
     EXIT_ACCOUNT_FROZEN              => 131,
     EXIT_DNS_DISABLED                => 132,
     EXIT_IP_VERSION_DISABLED         => 133,
+    EXIT_INVALID_PROXYJUMP           => 134,
 };
 
 use constant {
@@ -761,15 +762,62 @@ sub is_valid_remote_user {
     return R('ERR_INVALID_PARAMETER', msg => "Specified user doesn't seem to be valid");
 }
 
+sub validate_proxy_params {
+    my %params         = @_;
+    my $proxyHost      = $params{'proxyHost'};
+    my $proxyPort      = $params{'proxyPort'};
+    my $proxyUser      = $params{'proxyUser'};
+    my $allowWildcards = $params{'allowWildcards'} // 1;
+
+    my $proxyIp;
+    my $fnret;
+
+    if ($proxyHost) {
+        $fnret = OVH::Bastion::is_valid_ip(ip => $proxyHost, allowSubnets => 0);
+        if ($fnret) {
+            $proxyIp = $fnret->value->{'ip'};
+        }
+        else {
+            $fnret = OVH::Bastion::get_ip(host => $proxyHost);
+            $fnret or return $fnret;
+            $proxyIp = $fnret->value->{'ip'};
+        }
+    }
+
+    if ($proxyPort) {
+        $fnret = OVH::Bastion::is_valid_port(port => $proxyPort);
+        $fnret or return $fnret;
+        $proxyPort = $fnret->value;
+    }
+
+    if ($proxyUser) {
+        $fnret = OVH::Bastion::is_valid_remote_user(user => $proxyUser, allowWildcards => $allowWildcards);
+        $fnret or return $fnret;
+        $proxyUser = $fnret->value;
+    }
+
+    return R('OK', value => {proxyIp => $proxyIp, proxyPort => $proxyPort, proxyUser => $proxyUser});
+}
+
 sub machine_display {
-    my %params = @_;
-    my $ip     = $params{'ip'};
-    my $port   = $params{'port'};
-    my $user   = $params{'user'};
+    my %params    = @_;
+    my $ip        = $params{'ip'};
+    my $port      = $params{'port'};
+    my $user      = $params{'user'};
+    my $proxyIp   = $params{'proxyIp'};
+    my $proxyPort = $params{'proxyPort'};
+    my $proxyUser = $params{'proxyUser'};
 
     my $machine = (index($ip, ':') >= 0 ? "[$ip]" : $ip);
     $machine .= ":$port"              if $port;
     $machine = $user . '@' . $machine if $user;
+
+    if ($proxyIp) {
+        my $proxy = (index($proxyIp, ':') >= 0 ? "[$proxyIp]" : $proxyIp);
+        $proxy .= ":$proxyPort" if $proxyPort;
+        $proxy   = $proxyUser . '@' . $proxy if $proxyUser;
+        $machine = "$machine via $proxy";
+    }
 
     return R('OK', value => $machine);
 }
@@ -1142,21 +1190,38 @@ sub build_ttyrec_cmdline_part1of2 {
         $params{'ip'} = 'v6[' . $params{'ip'} . ']';
     }
 
+    # handle ipv6 for proxyIp
+    if ($params{'proxyIp'} && index($params{'proxyIp'}, ':') >= 0) {
+        $params{'proxyIp'} =~ tr/:/./;
+        $params{'proxyIp'} = 'v6[' . $params{'proxyIp'} . ']';
+    }
+
     # build ttyrec filename format
     my $bastionName          = OVH::Bastion::config('bastionName')->value;
     my $ttyrecFilenameFormat = OVH::Bastion::config('ttyrecFilenameFormat')->value;
     $ttyrecFilenameFormat =~ s/&bastionname/$bastionName/g;
-    $ttyrecFilenameFormat =~ s/&uniqid/$params{'uniqid'}/g   if $params{'uniqid'};
-    $ttyrecFilenameFormat =~ s/&ip/$params{'ip'}/g           if $params{'ip'};
-    $ttyrecFilenameFormat =~ s/&port/$params{'port'}/g       if defined $params{'port'};
-    $ttyrecFilenameFormat =~ s/&user/$params{'user'}/g       if defined $params{'user'};
-    $ttyrecFilenameFormat =~ s/&account/$params{'account'}/g if $params{'account'};
+    $ttyrecFilenameFormat =~ s/&uniqid/$params{'uniqid'}/g       if $params{'uniqid'};
+    $ttyrecFilenameFormat =~ s/&ip/$params{'ip'}/g               if $params{'ip'};
+    $ttyrecFilenameFormat =~ s/&port/$params{'port'}/g           if defined $params{'port'};
+    $ttyrecFilenameFormat =~ s/&user/$params{'user'}/g           if defined $params{'user'};
+    $ttyrecFilenameFormat =~ s/&account/$params{'account'}/g     if $params{'account'};
+    $ttyrecFilenameFormat =~ s/&proxyip/$params{'proxyIp'}/g     if defined $params{'proxyIp'};
+    $ttyrecFilenameFormat =~ s/&proxyport/$params{'proxyPort'}/g if defined $params{'proxyPort'};
+    $ttyrecFilenameFormat =~ s/&proxyuser/$params{'proxyUser'}/g if defined $params{'proxyUser'};
 
     if ($ttyrecFilenameFormat =~ /&(bastionname|uniqid|ip|port|user|account)/) {
 
         # if we still have a placeholder here, then we were missing parameters
         return R('ERR_MISSING_PARAMETER',
             msg => "Missing bastionname, uniqid, ip, port, user or account in ttyrec cmdline building");
+    }
+
+    # if there is no proxyIp, remove the via part and all proxy placeholders
+    if (!defined $params{'proxyIp'}) {
+        $ttyrecFilenameFormat =~ s/\.via//g;
+        $ttyrecFilenameFormat =~ s/\.&proxyuser//g;
+        $ttyrecFilenameFormat =~ s/\.&proxyip//g;
+        $ttyrecFilenameFormat =~ s/\.&proxyport//g;
     }
 
     # ensure there are no '/'
@@ -1169,7 +1234,14 @@ sub build_ttyrec_cmdline_part1of2 {
         $saveDir .= "/" . $params{'remoteaccount'};
         mkdir($saveDir);
     }
-    $saveDir .= "/" . $params{'ip'};
+
+    # format it like via-$proxyIp-$ip so that it's sorted by proxyIp first, then by ip if you list the directory
+    if ($params{'proxyIp'}) {
+        $saveDir .= "/via-" . $params{'proxyIp'} . "-" . $params{'ip'};
+    }
+    else {
+        $saveDir .= "/" . $params{'ip'};
+    }
     mkdir($saveDir);
 
     my $saveFileFormat = "$saveDir/$ttyrecFilenameFormat";

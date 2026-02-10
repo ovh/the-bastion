@@ -123,6 +123,11 @@
 #  EXAMPLE: "-s -p 40000:49999"
 "moshCommandLine": "",
 #
+# egressProxyJumpAllowed (boolean)
+#     DESC: If set to ``true``, ProxyJump (``-J``) egress connections will be allowed.
+#  DEFAULT: false
+"egressProxyJumpAllowed": false,
+#
 ###########################
 # > Global network policies
 # >> Those options can set a few global network policies to be applied bastion-wide.
@@ -508,7 +513,7 @@
 "sshClientHasOptionE": false,
 #
 # sshAddKeysToAgentAllowed (boolean)
-#     DESC: Set to ``true`` if you want to allow to spawn an ssh-agent and forward it over the egress session when specifically requested with the '--forward-agent' or '-x' flag, with the egress key added to the agent. Useful if you need the ssh-key for authentication on other systems (another jumpserver for example). 
+#     DESC: Set to ``true`` if you want to allow to spawn an ssh-agent and forward it over the egress session when specifically requested with the '--forward-agent' or '-x' flag, with the egress key added to the agent. Useful if you need the ssh-key for authentication on other systems (another jumpserver for example).
 #  DEFAULT: false
 "sshAddKeysToAgentAllowed": false
 }

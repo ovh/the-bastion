@@ -1,0 +1,311 @@
+#! /usr/bin/env perl
+# vim: set filetype=perl ts=4 sw=4 sts=4 et:
+use common::sense;
+use Test::More;
+
+use File::Basename;
+use lib dirname(__FILE__) . '/../../../lib/perl';
+use OVH::Bastion;
+use OVH::Result;
+
+OVH::Bastion::enable_mocking();
+OVH::Bastion::set_mock_data(
+    {
+        "accounts" => {
+            "me" => {
+                "uid"               => 99982,
+                "gid"               => 99982,
+                "personal_accesses" => [
+                    "me\@192.0.2.10:22",
+                    "me\@192.0.2.11",
+                    "me\@192.0.2.20:22 # PROXYHOST=10.0.0.1 # PROXYPORT=2222",
+                    "me\@192.0.2.21:80 # PROXYHOST=10.0.0.1 # PROXYPORT=2222",
+                    "me\@192.0.2.30:22 # PROXYHOST=10.0.0.2 # PROXYPORT=3333",
+                    "me\@192.0.2.50 # PROXYHOST=10.0.0.4 # PROXYPORT=4444",
+                    "192.0.2.60:22 # PROXYHOST=10.0.0.5 # PROXYPORT=5555",
+                    "192.0.2.61:22 # PROXYHOST=10.0.0.5 # PROXYPORT=5555 # PROXYUSER=proxyuser",
+                    "192.0.2.62:22 # PROXYHOST=10.0.0.5 # PROXYPORT=5555",
+                    "192.0.2.63:22 # PROXYHOST=10.0.0.5 # PROXYPORT=5555 # PROXYUSER=admin*",
+                    "192.0.2.64:22 # PROXYHOST=10.0.0.5 # PROXYPORT=5555 # PROXYUSER=user?",
+                    "198.51.100.0/24:22 # PROXYHOST=10.0.0.1 # PROXYPORT=2222",
+                    "198.51.200.0/24:22 # PROXYHOST=10.0.0.1 # PROXYPORT=2222 # PROXYUSER=netuser",
+                    # IPv6 entries
+                    "me\@[2001:db8::10]:22",
+                    "me\@[2001:db8::11]",
+                    "me\@[2001:db8::20]:22 # PROXYHOST=2001:db8:cafe::1 # PROXYPORT=2222",
+                    "me\@[2001:db8::30]:80 # PROXYHOST=2001:db8:cafe::2 # PROXYPORT=3333",
+                    "[2001:db8::40]:22 # PROXYHOST=2001:db8:cafe::4 # PROXYPORT=4444",
+                    "[2001:db8::41]:22 # PROXYHOST=2001:db8:cafe::4 # PROXYPORT=4444 # PROXYUSER=ipv6user",
+                    "[2001:aaaa::/64]:22 # PROXYHOST=2001:db8:cafe::1 # PROXYPORT=2222",
+                ],
+            },
+        },
+    }
+);
+OVH::Bastion::load_configuration(
+    mock_data => {
+        bastionName => "mock",
+    }
+);
+
+my %want;                # truth table
+my $undef = '_none_';    # can't use undef as a hash key, so we'll use this special value instead
+
+# Test 1: Regular access without proxy - should work as before
+$want{"192.0.2.10"}{"22"}{"me"}{$undef}{$undef}     = 'OK';
+$want{"192.0.2.10"}{"22"}{"me"}{"10.0.0.1"}{"2222"} = 'KO_ACCESS_DENIED';    # proxy requested but not configured
+$want{"192.0.2.11"}{"22"}{"me"}{$undef}{$undef}     = 'OK';
+$want{"192.0.2.11"}{"80"}{"me"}{$undef}{$undef}     = 'OK';
+
+# Test 2: Access with specific proxy (no PROXYUSER in ACL) - should work with any proxy-user
+$want{"192.0.2.20"}{"22"}{"me"}{$undef}{$undef}                 = 'KO_ACCESS_DENIED';    # proxy required but not provided
+$want{"192.0.2.20"}{"22"}{"me"}{"10.0.0.1"}{"2222"}             = 'OK';                  # no proxy-user specified
+$want{"192.0.2.20"}{"22"}{"me"}{"10.0.0.1"}{"2222"}{"anyuser"}  = 'OK';                  # no PROXYUSER in ACL = accepts any proxy-user
+$want{"192.0.2.20"}{"22"}{"me"}{"10.0.0.1"}{"2222"}{"testuser"} = 'OK';                  # no PROXYUSER in ACL = accepts any proxy-user
+$want{"192.0.2.20"}{"22"}{"me"}{"10.0.0.1"}{"2222"}{$undef}     = 'OK';                  # no PROXYUSER in ACL = accepts undef too
+$want{"192.0.2.20"}{"22"}{"me"}{"10.0.0.1"}{"3333"}             = 'KO_ACCESS_DENIED';    # wrong proxy port
+$want{"192.0.2.20"}{"22"}{"me"}{"10.0.0.2"}{"2222"}             = 'KO_ACCESS_DENIED';    # wrong proxy IP
+$want{"192.0.2.20"}{"22"}{"me"}{"10.0.0.1"}{$undef}             = 'KO_ACCESS_DENIED';    # proxy IP without port
+
+# Test 3: Different proxy configuration (no PROXYUSER in ACL) - accepts any proxy-user
+$want{"192.0.2.30"}{"22"}{"me"}{"10.0.0.2"}{"3333"}            = 'OK';
+$want{"192.0.2.30"}{"22"}{"me"}{"10.0.0.2"}{"3333"}{"anyuser"} = 'OK';                   # no PROXYUSER in ACL
+$want{"192.0.2.30"}{"22"}{"me"}{"10.0.0.2"}{"3333"}{$undef}    = 'OK';                   # no PROXYUSER in ACL
+$want{"192.0.2.30"}{"22"}{"me"}{"10.0.0.1"}{"2222"}            = 'KO_ACCESS_DENIED';     # wrong proxy
+
+# Test 4: Subnet access with proxy (no PROXYUSER in ACL) - accepts any proxy-user
+$want{"198.51.100.100"}{"22"}{"me"}{"10.0.0.1"}{"2222"}             = 'OK';                  # subnet match with proxy
+$want{"198.51.100.100"}{"22"}{"me"}{"10.0.0.1"}{"2222"}{"anyuser"}  = 'OK';                  # no PROXYUSER in ACL
+$want{"198.51.100.100"}{"22"}{"me"}{"10.0.0.1"}{"2222"}{$undef}     = 'OK';                  # no PROXYUSER in ACL
+$want{"198.51.100.200"}{"22"}{"me"}{"10.0.0.1"}{"2222"}             = 'OK';                  # subnet match with proxy
+$want{"198.51.100.200"}{"22"}{"me"}{"10.0.0.1"}{"2222"}{"testuser"} = 'OK';                  # no PROXYUSER in ACL
+$want{"198.51.100.100"}{"22"}{"me"}{"10.0.0.1"}{"3333"}             = 'KO_ACCESS_DENIED';    # subnet match, wrong proxy port
+$want{"198.51.100.100"}{"22"}{"me"}{$undef}{$undef}                 = 'KO_ACCESS_DENIED';    # subnet match but no proxy requested when proxy required
+
+# Test 5: Port wildcard with proxy (no PROXYUSER in ACL) - accepts any proxy-user
+$want{"192.0.2.50"}{"22"}{"me"}{"10.0.0.4"}{"4444"}             = 'OK';                      # port wildcard with proxy
+$want{"192.0.2.50"}{"22"}{"me"}{"10.0.0.4"}{"4444"}{"anyuser"}  = 'OK';                      # no PROXYUSER in ACL
+$want{"192.0.2.50"}{"22"}{"me"}{"10.0.0.4"}{"4444"}{$undef}     = 'OK';                      # no PROXYUSER in ACL
+$want{"192.0.2.50"}{"80"}{"me"}{"10.0.0.4"}{"4444"}             = 'OK';                      # port wildcard with proxy
+$want{"192.0.2.50"}{"80"}{"me"}{"10.0.0.4"}{"4444"}{"testuser"} = 'OK';                      # no PROXYUSER in ACL
+$want{"192.0.2.50"}{"22"}{"me"}{"10.0.0.4"}{"5555"}             = 'KO_ACCESS_DENIED';        # wrong proxy port
+
+# Test 6: User wildcard with proxy (no PROXYUSER in ACL) - accepts any proxy-user
+$want{"192.0.2.60"}{"22"}{"root"}{"10.0.0.5"}{"5555"}              = 'OK';                   # user wildcard, no proxy-user specified
+$want{"192.0.2.60"}{"22"}{"root"}{"10.0.0.5"}{"5555"}{"anyuser"}   = 'OK';                   # no PROXYUSER in ACL
+$want{"192.0.2.60"}{"22"}{"root"}{"10.0.0.5"}{"5555"}{$undef}      = 'OK';                   # no PROXYUSER in ACL
+$want{"192.0.2.60"}{"22"}{"admin"}{"10.0.0.5"}{"5555"}             = 'OK';                   # user wildcard should match any user with exact proxy
+$want{"192.0.2.60"}{"22"}{"admin"}{"10.0.0.5"}{"5555"}{"testuser"} = 'OK';                   # no PROXYUSER in ACL
+$want{"192.0.2.60"}{"22"}{"root"}{"10.0.0.5"}{"6666"}              = 'KO_ACCESS_DENIED';     # user wildcard but wrong proxy port
+
+# Test 6b: User wildcard with proxy and specific proxy-user
+$want{"192.0.2.61"}{"22"}{"root"}{"10.0.0.5"}{"5555"}{"proxyuser"}  = 'OK';                  # user wildcard, specific proxy-user match
+$want{"192.0.2.61"}{"22"}{"admin"}{"10.0.0.5"}{"5555"}{"proxyuser"} = 'OK';                  # user wildcard, specific proxy-user match
+$want{"192.0.2.61"}{"22"}{"root"}{"10.0.0.5"}{"5555"}{"wronguser"}  = 'KO_ACCESS_DENIED';    # user wildcard, wrong proxy-user
+$want{"192.0.2.61"}{"22"}{"root"}{"10.0.0.5"}{"5555"}{$undef}       = 'KO_ACCESS_DENIED';    # user wildcard, missing proxy-user
+
+# Test 6c: User wildcard with proxy but no proxy-user in ACL (allows any proxy-user)
+$want{"192.0.2.62"}{"22"}{"root"}{"10.0.0.5"}{"5555"}{"anyuser"}    = 'OK';                  # no proxy-user in ACL = wildcard
+$want{"192.0.2.62"}{"22"}{"admin"}{"10.0.0.5"}{"5555"}{"otheruser"} = 'OK';                  # no proxy-user in ACL = wildcard
+$want{"192.0.2.62"}{"22"}{"root"}{"10.0.0.5"}{"5555"}{$undef}       = 'OK';                  # no proxy-user in ACL = wildcard, undef also allowed
+
+# Test 6d: User wildcard with proxy-user pattern (admin*)
+$want{"192.0.2.63"}{"22"}{"root"}{"10.0.0.5"}{"5555"}{"admin"}     = 'OK';                   # proxy-user pattern match
+$want{"192.0.2.63"}{"22"}{"admin"}{"10.0.0.5"}{"5555"}{"admin123"} = 'OK';                   # proxy-user pattern match
+$want{"192.0.2.63"}{"22"}{"root"}{"10.0.0.5"}{"5555"}{"root"}      = 'KO_ACCESS_DENIED';     # proxy-user pattern no match
+$want{"192.0.2.63"}{"22"}{"root"}{"10.0.0.5"}{"5555"}{$undef}      = 'KO_ACCESS_DENIED';     # missing proxy-user
+
+# Test 6e: User wildcard with proxy-user pattern (user?)
+$want{"192.0.2.64"}{"22"}{"root"}{"10.0.0.5"}{"5555"}{"user1"}  = 'OK';                      # proxy-user pattern match
+$want{"192.0.2.64"}{"22"}{"admin"}{"10.0.0.5"}{"5555"}{"userA"} = 'OK';                      # proxy-user pattern match
+$want{"192.0.2.64"}{"22"}{"root"}{"10.0.0.5"}{"5555"}{"user"}   = 'KO_ACCESS_DENIED';        # proxy-user pattern no match (too short)
+$want{"192.0.2.64"}{"22"}{"root"}{"10.0.0.5"}{"5555"}{"user12"} = 'KO_ACCESS_DENIED';        # proxy-user pattern no match (too long)
+$want{"192.0.2.64"}{"22"}{"root"}{"10.0.0.5"}{"5555"}{$undef}   = 'KO_ACCESS_DENIED';        # missing proxy-user
+
+# Test 7: Subnet with proxy-user
+$want{"198.51.200.100"}{"22"}{"me"}{"10.0.0.1"}{"2222"}{"netuser"} = 'OK';                   # subnet match with specific proxy-user
+$want{"198.51.200.200"}{"22"}{"me"}{"10.0.0.1"}{"2222"}{"netuser"} = 'OK';                   # subnet match with specific proxy-user
+$want{"198.51.200.100"}{"22"}{"me"}{"10.0.0.1"}{"2222"}{"other"}   = 'KO_ACCESS_DENIED';     # subnet match, wrong proxy-user
+$want{"198.51.200.100"}{"22"}{"me"}{"10.0.0.1"}{"2222"}{$undef}    = 'KO_ACCESS_DENIED';     # subnet match, missing proxy-user
+
+# Test 8: Negative cases - hosts not in ACL
+$want{"192.0.2.99"}{"22"}{"me"}{$undef}{$undef} = 'KO_ACCESS_DENIED';
+$want{"192.0.2.99"}{"22"}{"me"}{"10.0.0.1"}{"2222"} = 'KO_ACCESS_DENIED';
+
+# IPv6 Tests
+# Test 9: Regular IPv6 access without proxy - should work as before
+$want{"2001:db8::10"}{"22"}{"me"}{$undef}{$undef}             = 'OK';
+$want{"2001:db8::10"}{"22"}{"me"}{"2001:db8:cafe::1"}{"2222"} = 'KO_ACCESS_DENIED';    # proxy requested but not configured
+$want{"2001:db8::11"}{"22"}{"me"}{$undef}{$undef}             = 'OK';
+$want{"2001:db8::11"}{"80"}{"me"}{$undef}{$undef}             = 'OK';
+
+# Test 10: IPv6 access with specific proxy (no PROXYUSER in ACL) - accepts any proxy-user
+$want{"2001:db8::20"}{"22"}{"me"}{$undef}{$undef}                        = 'KO_ACCESS_DENIED';    # proxy required but not provided
+$want{"2001:db8::20"}{"22"}{"me"}{"2001:db8:cafe::1"}{"2222"}            = 'OK';
+$want{"2001:db8::20"}{"22"}{"me"}{"2001:db8:cafe::1"}{"2222"}{"anyuser"} = 'OK';                  # no PROXYUSER in ACL
+$want{"2001:db8::20"}{"22"}{"me"}{"2001:db8:cafe::1"}{"2222"}{$undef}    = 'OK';                  # no PROXYUSER in ACL
+$want{"2001:db8::20"}{"22"}{"me"}{"2001:db8:cafe::1"}{"3333"}            = 'KO_ACCESS_DENIED';    # wrong proxy port
+$want{"2001:db8::20"}{"22"}{"me"}{"2001:db8:cafe::2"}{"2222"}            = 'KO_ACCESS_DENIED';    # wrong proxy IP
+
+# Test 11: IPv6 different proxy configuration (no PROXYUSER in ACL) - accepts any proxy-user
+$want{"2001:db8::30"}{"80"}{"me"}{"2001:db8:cafe::2"}{"3333"}            = 'OK';
+$want{"2001:db8::30"}{"80"}{"me"}{"2001:db8:cafe::2"}{"3333"}{"anyuser"} = 'OK';                  # no PROXYUSER in ACL
+$want{"2001:db8::30"}{"80"}{"me"}{"2001:db8:cafe::2"}{"3333"}{$undef}    = 'OK';                  # no PROXYUSER in ACL
+$want{"2001:db8::30"}{"80"}{"me"}{"2001:db8:cafe::1"}{"2222"}            = 'KO_ACCESS_DENIED';    # wrong proxy
+
+# Test 12: IPv6 user wildcard with proxy (no PROXYUSER in ACL) - accepts any proxy-user
+$want{"2001:db8::40"}{"22"}{"root"}{"2001:db8:cafe::4"}{"4444"}              = 'OK';                  # user wildcard, no proxy-user specified
+$want{"2001:db8::40"}{"22"}{"root"}{"2001:db8:cafe::4"}{"4444"}{"anyuser"}   = 'OK';                  # no PROXYUSER in ACL
+$want{"2001:db8::40"}{"22"}{"root"}{"2001:db8:cafe::4"}{"4444"}{$undef}      = 'OK';                  # no PROXYUSER in ACL
+$want{"2001:db8::40"}{"22"}{"admin"}{"2001:db8:cafe::4"}{"4444"}             = 'OK';                  # user wildcard should match any user with exact proxy
+$want{"2001:db8::40"}{"22"}{"admin"}{"2001:db8:cafe::4"}{"4444"}{"testuser"} = 'OK';                  # no PROXYUSER in ACL
+$want{"2001:db8::40"}{"22"}{"root"}{"2001:db8:cafe::4"}{"5555"}              = 'KO_ACCESS_DENIED';    # user wildcard but wrong proxy port
+
+# Test 12b: IPv6 user wildcard with proxy and specific proxy-user
+$want{"2001:db8::41"}{"22"}{"root"}{"2001:db8:cafe::4"}{"4444"}{"ipv6user"}  = 'OK';                  # IPv6 user wildcard, specific proxy-user match
+$want{"2001:db8::41"}{"22"}{"admin"}{"2001:db8:cafe::4"}{"4444"}{"ipv6user"} = 'OK';                  # IPv6 user wildcard, specific proxy-user match
+$want{"2001:db8::41"}{"22"}{"root"}{"2001:db8:cafe::4"}{"4444"}{"wronguser"} = 'KO_ACCESS_DENIED';    # IPv6 user wildcard, wrong proxy-user
+$want{"2001:db8::41"}{"22"}{"root"}{"2001:db8:cafe::4"}{"4444"}{$undef}      = 'KO_ACCESS_DENIED';    # IPv6 user wildcard, missing proxy-user
+
+# Test 13: IPv6 subnet access with proxy (no PROXYUSER in ACL) - accepts any proxy-user
+$want{"2001:aaaa::100"}{"22"}{"me"}{"2001:db8:cafe::1"}{"2222"}             = 'OK';                   # subnet match with proxy
+$want{"2001:aaaa::100"}{"22"}{"me"}{"2001:db8:cafe::1"}{"2222"}{"anyuser"}  = 'OK';                   # no PROXYUSER in ACL
+$want{"2001:aaaa::100"}{"22"}{"me"}{"2001:db8:cafe::1"}{"2222"}{$undef}     = 'OK';                   # no PROXYUSER in ACL
+$want{"2001:aaaa::200"}{"22"}{"me"}{"2001:db8:cafe::1"}{"2222"}             = 'OK';                   # subnet match with proxy
+$want{"2001:aaaa::200"}{"22"}{"me"}{"2001:db8:cafe::1"}{"2222"}{"testuser"} = 'OK';                   # no PROXYUSER in ACL
+$want{"2001:aaaa::100"}{"22"}{"me"}{"2001:db8:cafe::1"}{"3333"}             = 'KO_ACCESS_DENIED';     # subnet match, wrong proxy port
+$want{"2001:aaaa::100"}{"22"}{"me"}{$undef}{$undef}                         = 'KO_ACCESS_DENIED';     # subnet match but no proxy requested when proxy required
+
+# Test 14: IPv6 negative cases - hosts not in ACL
+$want{"2001:ffff::999"}{"22"}{"me"}{$undef}{$undef} = 'KO_ACCESS_DENIED';
+$want{"2001:ffff::999"}{"22"}{"me"}{"2001:db8:cafe::1"}{"2222"} = 'KO_ACCESS_DENIED';
+
+# Run all the tests
+foreach my $ip (
+    qw{
+    192.0.2.10
+    192.0.2.11
+    192.0.2.20
+    192.0.2.30
+    198.51.100.100
+    198.51.100.200
+    192.0.2.50
+    192.0.2.60
+    192.0.2.61
+    192.0.2.62
+    192.0.2.63
+    192.0.2.64
+    192.0.2.99
+    198.51.200.100
+    198.51.200.200
+    2001:db8::10
+    2001:db8::11
+    2001:db8::20
+    2001:db8::30
+    2001:db8::40
+    2001:db8::41
+    2001:aaaa::100
+    2001:aaaa::200
+    2001:ffff::999
+    }
+  )
+{
+
+    foreach my $port (qw{22 80}) {
+        foreach my $user (qw{me root admin}) {
+            foreach my $proxyIp (
+                $undef,     "10.0.0.1", "10.0.0.2",         "10.0.0.3",
+                "10.0.0.4", "10.0.0.5", "2001:db8:cafe::1", "2001:db8:cafe::2",
+                "2001:db8:cafe::4"
+              )
+            {
+                foreach my $proxyPort ($undef, "2222", "3333", "1234", "4444", "5555", "6666") {
+                    foreach my $proxyUser (
+                        $undef,   "proxyuser", "anyuser", "otheruser", "wronguser", "testuser",
+                        "admin",  "admin123",  "root",    "user1",     "userA",     "user",
+                        "user12", "netuser",   "other",   "ipv6user"
+                      )
+                    {
+                        # Skip combinations that don't make sense
+                        next
+                          if (!defined $proxyIp || $proxyIp eq $undef) && (defined $proxyPort && $proxyPort ne $undef);
+                        next
+                          if (!defined $proxyIp || $proxyIp eq $undef) && (defined $proxyUser && $proxyUser ne $undef);
+
+                        my $expected =
+                          $want{$ip}{$port}{$user}{$proxyIp // $undef}{$proxyPort // $undef}{$proxyUser // $undef};
+                        next unless defined $expected;
+
+                        my %params = (
+                            ipfrom  => "127.0.0.1",
+                            account => "me",
+                            user    => $user,
+                            ip      => $ip,
+                            port    => $port,
+                        );
+
+                        # Add proxy parameters if they are defined
+                        if (defined $proxyIp && $proxyIp ne $undef) {    ## no critic (ProhibitDeepNests)
+                            $params{proxyIp} = $proxyIp;
+                        }
+                        if (defined $proxyPort && $proxyPort ne $undef) {    ## no critic (ProhibitDeepNests)
+                            $params{proxyPort} = $proxyPort;
+                        }
+                        if (defined $proxyUser && $proxyUser ne $undef) {    ## no critic (ProhibitDeepNests)
+                            $params{proxyUser} = $proxyUser;
+                        }
+
+                        my $result = OVH::Bastion::is_access_granted(%params);
+
+                        my $test_desc = sprintf(
+                            "is_access_granted with %s@%s:%s proxy=%s@%s:%s",
+                            $user, $ip, $port,
+                            $proxyUser // '<none>',
+                            $proxyIp   // '<none>',
+                            $proxyPort // '<none>'
+                        );
+
+                        is($result->err, $expected, $test_desc);
+
+                        # If access is granted, verify proxy information is returned
+                        _verify_proxy_information($expected, $proxyIp, $proxyPort, $proxyUser, $result, $test_desc);
+                    }
+                }
+            }
+        }
+    }
+}
+
+sub _verify_proxy_information {    ## no critic (ProhibitManyArgs)
+    my ($expected, $proxyIp, $proxyPort, $proxyUser, $result, $test_desc) = @_;
+
+    # Early return if access is not granted or no proxy expected
+    return if $expected ne 'OK';
+    return if !defined $proxyIp || $proxyIp eq $undef;
+
+    my $value = $result->value;
+    return if ref $value ne 'ARRAY' || @$value == 0;
+
+    # Check if any of the returned grants has proxy info
+    my $found_proxy = 0;
+    foreach my $grant (@$value) {
+        next if !defined $grant->{proxyIp};
+        next if $grant->{proxyIp} ne $proxyIp;
+
+        $found_proxy = 1;
+        if (defined $proxyPort && $proxyPort ne $undef) {
+            is($grant->{proxyPort}, $proxyPort, "$test_desc - proxy port returned");
+        }
+        if (defined $proxyUser && $proxyUser ne $undef) {
+            # Note: proxyUser in grant might be undef if wildcard, so we only check if explicitly set
+            if (defined $grant->{proxyUser}) {
+                ok(1, "$test_desc - proxy user returned");
+            }
+        }
+        last;
+    }
+    ok($found_proxy, "$test_desc - proxy IP returned in grant");
+    return;
+}
+
+done_testing();

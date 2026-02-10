@@ -14,18 +14,21 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,
     header  => "your past sessions list",
     options => {
-        "detailed"   => \my $detailed,
-        "id=s"       => \my $id,
-        "type=s"     => \my $type,
-        "allowed"    => \my $allowed,
-        "denied"     => \my $denied,
-        "after=s"    => \my $after,
-        "before=s"   => \my $before,
-        "from=s"     => \my $from,
-        "via=s"      => \my $via,
-        "via-port=i" => \my $viaPort,
-        "to-port=i"  => \my $toPort,
-        "limit=i"    => \my $limit,
+        "detailed"     => \my $detailed,
+        "id=s"         => \my $id,
+        "type=s"       => \my $type,
+        "allowed"      => \my $allowed,
+        "denied"       => \my $denied,
+        "after=s"      => \my $after,
+        "before=s"     => \my $before,
+        "from=s"       => \my $from,
+        "via=s"        => \my $via,
+        "via-port=i"   => \my $viaPort,
+        "to-port=i"    => \my $toPort,
+        "limit=i"      => \my $limit,
+        "proxy-user=s" => \my $proxyUser,
+        "proxy-ip=s"   => \my $proxyIp,
+        "proxy-port=i" => \my $proxyPort,
     },
     helptext => <<'EOF',
 List the few past sessions of your account
@@ -47,6 +50,9 @@ Usage: --osh SCRIPT_NAME [OPTIONS]
   --user USER            Only sessions connecting using remote USER
   --via HOST             Only sessions that connected through bastion IP HOST
   --via-port PORT        Only sessions that connected through bastion PORT
+  --proxy-user USER       Only sessions that used proxy USER
+  --proxy-ip HOST         Only sessions that used proxy IP
+  --proxy-port PORT       Only sessions that used proxy PORT
 
 Note that only the sessions that happened on this precise bastion instance will be shown,
 not the sessions from its possible cluster siblings.
@@ -95,7 +101,10 @@ $fnret = OVH::Bastion::log_access_get(
     bastionport => $viaPort,
     toPort      => $toPort,
     user        => $user,
-    limit       => $limit
+    limit       => $limit,
+    proxyuser   => $proxyUser,
+    proxyip     => $proxyIp,
+    proxyport   => $proxyPort,
 );
 $fnret or osh_exit $fnret;
 
@@ -148,6 +157,12 @@ else {
           $r->{user} || $r->{ipto} || $r->{portto} || $r->{hostto}
           ? sprintf(' to %s@%s:%s(%s)', $r->{'user'}, $r->{'ipto'}, $r->{'portto'}, $r->{'hostto'})
           : '';
+
+        if ($r->{proxyip}) {
+            $to .= sprintf(' via proxy %s@%s:%s(%s)',
+                $r->{'proxyuser'}, $r->{'proxyip'}, $r->{'proxyport'}, $r->{'proxyhost'});
+        }
+
         $r->{params}      = undef         if ($r->{cmdtype} ne 'osh');
         $r->{returnvalue} = $r->{comment} if $r->{returnvalue} < 0;
 
@@ -177,6 +192,7 @@ else {
             from              => {ip => $r->{ipfrom},    host => $r->{hostfrom},    port => $r->{portfrom}},
             via               => {ip => $r->{bastionip}, port => $r->{bastionport}, user => $r->{account}},
             to                => {ip => $r->{ipto},      port => $r->{portto},      host => $r->{hostto}},
+            proxy             => {ip => $r->{proxyip},   port => $r->{proxyport},   host => $r->{proxyhost}},
             timestamp_started => $r->{timestamp} + $r->{timestampusec} / 1_000_000,
             timestamp_ended   => $r->{timestampend} + $r->{timestampendusec} / 1_000_000,
             type              => $r->{cmdtype},
