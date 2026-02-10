@@ -300,14 +300,10 @@ sub is_access_way_granted {
                 }
 
                 # check proxy IP match
-                if (defined $wantedProxyIp) {
-                    next if (!defined $entry->{'proxyIp'} || $entry->{'proxyIp'} ne $wantedProxyIp);
-                }
+                next if ($entry->{'proxyIp'} ne $wantedProxyIp);
 
                 # check proxy port match
-                if (defined $wantedProxyPort) {
-                    next if (!defined $entry->{'proxyPort'} || $entry->{'proxyPort'} ne $wantedProxyPort);
-                }
+                next if ($entry->{'proxyPort'} ne $wantedProxyPort);
             }
             # Case 2: no proxy requested, but entry has proxy info - should not match
             elsif (defined $entry->{'proxyIp'} || defined $entry->{'proxyPort'}) {
@@ -347,16 +343,10 @@ sub is_access_way_granted {
                     }
                     else {
                         # check proxy IP match
-                        if (defined $wantedProxyIp) {
-                            $proxyMatches = 0
-                              if (!defined $entry->{'proxyIp'} || $entry->{'proxyIp'} ne $wantedProxyIp);
-                        }
+                        $proxyMatches = 0 if ($entry->{'proxyIp'} ne $wantedProxyIp);
 
                         # check proxy port match
-                        if (defined $wantedProxyPort && $proxyMatches) {
-                            $proxyMatches = 0
-                              if (!defined $entry->{'proxyPort'} || $entry->{'proxyPort'} ne $wantedProxyPort);
-                        }
+                        $proxyMatches = 0 if ($proxyMatches && $entry->{'proxyPort'} ne $wantedProxyPort);
                     }
                 }
                 # Case 2: no proxy requested, but entry has proxy info - should not match
