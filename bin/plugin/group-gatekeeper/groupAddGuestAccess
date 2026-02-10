@@ -102,7 +102,7 @@ $fnret = OVH::Bastion::Plugin::ACL::check(
     scpDown   => $scpDown,
     sftp      => $sftp,
     protocol  => $protocol,
-    proxyIp   => $proxyHost,
+    proxyIp   => $proxyIp,
     proxyPort => $proxyPort,
     proxyUser => $proxyUser,
 );
