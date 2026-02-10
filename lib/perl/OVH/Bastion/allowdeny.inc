@@ -295,7 +295,7 @@ sub is_access_way_granted {
             # Case 1: proxy parameters are requested
             if (defined $wantedProxyIp) {
                 # if proxy parameters are requested, the entry must have proxy info
-                if (!defined $entry->{'proxyIp'} && !defined $entry->{'proxyPort'}) {
+                if (!defined $entry->{'proxyIp'} || !defined $entry->{'proxyPort'}) {
                     next;
                 }
 
@@ -342,7 +342,7 @@ sub is_access_way_granted {
                 # Case 1: proxy parameters are requested
                 if (defined $wantedProxyIp) {
                     # if proxy parameters are requested, the entry must have proxy info
-                    if (!defined $entry->{'proxyIp'} && !defined $entry->{'proxyPort'}) {
+                    if (!defined $entry->{'proxyIp'} || !defined $entry->{'proxyPort'}) {
                         $proxyMatches = 0;
                     }
                     else {
