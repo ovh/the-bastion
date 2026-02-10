@@ -779,20 +779,14 @@ sub validate_proxy_params {
         }
         else {
             $fnret = OVH::Bastion::get_ip(host => $proxyHost);
-            if ($fnret) {
-                $proxyIp = $fnret->value->{'ip'};
-            }
-            else {
-                $proxyIp = $proxyHost;
-            }
+            $fnret or return $fnret;
+            $proxyIp = $fnret->value->{'ip'};
         }
     }
 
     if ($proxyPort) {
         $fnret = OVH::Bastion::is_valid_port(port => $proxyPort);
-        if (!$fnret) {
-            return R('ERR_INVALID_PARAMETER', msg => "Proxy port '$proxyPort' is invalid: " . $fnret->msg);
-        }
+        $fnret or return $fnret;
         $proxyPort = $fnret->value;
     }
 

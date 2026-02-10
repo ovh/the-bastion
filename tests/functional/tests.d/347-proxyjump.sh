@@ -41,7 +41,7 @@ testsuite_proxyjump()
 
     # Test invalid proxy-host
     plgfail selfAddPersonalAccess_invalid_proxy_host $a0 --osh selfAddPersonalAccess --host 192.168.1.103 --user testuser --port 22 --proxy-host "invalid..host..name" --proxy-port 22 --proxy-user testuser --force
-    json .command selfAddPersonalAccess .error_code KO_INVALID_IP
+    json .command selfAddPersonalAccess .error_code ERR_HOST_NOT_FOUND
 
     # Test proxy-port without proxy-host
     plgfail selfAddPersonalAccess_proxy_port_without_host $a0  --osh selfAddPersonalAccess --host 192.168.1.104 --user testuser --port 22 --proxy-port 2222 --force
@@ -153,7 +153,7 @@ testsuite_proxyjump()
 
     # Test invalid proxy-host
     plgfail groupAddServer_invalid_proxy_host $a1 --osh groupAddServer --group $group1 --host 192.168.3.103 --user testuser --port 22 --proxy-host "bad...hostname" --proxy-port 22 --proxy-user testuser --force
-    json .command groupAddServer .error_code KO_INVALID_IP
+    json .command groupAddServer .error_code ERR_HOST_NOT_FOUND
 
     # Test proxy-host and proxy-port without proxy-user (should fail)
     plgfail groupAddServer_proxy_without_user $a1 --osh groupAddServer --group $group1 --host 192.168.3.104 --user testuser --port 22 --proxy-host 10.0.0.3 --proxy-port 22 --force
@@ -254,11 +254,12 @@ testsuite_proxyjump()
     # Check that selfListAccesses shows the proxy information
     success selfListAccesses_shows_proxy $a0 --osh selfListAccesses
     json .command selfListAccesses .error_code OK
-    contain '"ip":"192.168.1.200"'
-    contain '"port":"2222"'
-    contain '"user":"listtest"'
-    contain '"proxyIp":"10.0.0.5"'
-    contain '"proxyPort":"5555"'
+    json .value[0].acl[0].ip 192.168.1.200
+    json .value[0].acl[0].port 2222
+    json .value[0].acl[0].user listtest
+    json .value[0].acl[0].proxyIp 10.0.0.5
+    json .value[0].acl[0].proxyPort 5555
+    json .value[0].acl[0].proxyUser listtest
 
     # Clean up
     success cleanup_list_test $a0 --osh selfDelPersonalAccess --host 192.168.1.200 --user listtest --port 2222 --proxy-host 10.0.0.5 --proxy-port 5555 --proxy-user listtest
@@ -269,12 +270,12 @@ testsuite_proxyjump()
     # Check that selfListAccesses shows the proxy-user information
     success selfListAccesses_shows_proxy_user $a0 --osh selfListAccesses
     json .command selfListAccesses .error_code OK
-    json .value[0].ip 192.168.1.201
-    contain '"port":"2222"'
-    contain '"user":"listtest"'
-    contain '"proxyIp":"10.0.0.5"'
-    contain '"proxyPort":"5555"'
-    contain '"proxyUser":"proxyuser"'
+    json .value[0].acl[0].ip 192.168.1.201
+    json .value[0].acl[0].port 2222
+    json .value[0].acl[0].user listtest
+    json .value[0].acl[0].proxyIp 10.0.0.5
+    json .value[0].acl[0].proxyPort 5555
+    json .value[0].acl[0].proxyUser proxyuser
 
     # Clean up
     success cleanup_list_test_with_proxy_user $a0 --osh selfDelPersonalAccess --host 192.168.1.201 --user listtest --port 2222 --proxy-host 10.0.0.5 --proxy-port 5555 --proxy-user proxyuser
@@ -287,11 +288,12 @@ testsuite_proxyjump()
     # Check that accountListAccesses shows the proxy information
     success accountListAccesses_shows_proxy $a0 --osh accountListAccesses --account $account2
     json .command accountListAccesses .error_code OK
-    contain '"ip":"192.168.2.100"'
-    contain '"port":"22"'
-    contain '"user":"testuser"'
-    contain '"proxyIp":"10.0.0.2"'
-    contain '"proxyPort":"22"'
+    json .value[0].acl[0].ip 192.168.2.100
+    json .value[0].acl[0].port 22
+    json .value[0].acl[0].user testuser
+    json .value[0].acl[0].proxyIp 10.0.0.2
+    json .value[0].acl[0].proxyPort 22
+    json .value[0].acl[0].proxyUser testuser
 
     # Clean up
     success cleanup_account_list_test $a0 --osh accountDelPersonalAccess --account $account2 --host 192.168.2.100 --user testuser --port 22 --proxy-host 10.0.0.2 --proxy-port 22 --proxy-user testuser
@@ -304,12 +306,12 @@ testsuite_proxyjump()
     # Check that accountListAccesses shows the proxy-user information
     success accountListAccesses_shows_proxy_user $a0 --osh accountListAccesses --account $account2
     json .command accountListAccesses .error_code OK
-    contain '"ip":"192.168.2.200"'
-    contain '"port":"22"'
-    contain '"user":"testuser"'
-    contain '"proxyIp":"10.0.0.2"'
-    contain '"proxyPort":"22"'
-    contain '"proxyUser":"proxyuser"'
+    json .value[0].acl[0].ip 192.168.2.200
+    json .value[0].acl[0].port 22
+    json .value[0].acl[0].user testuser
+    json .value[0].acl[0].proxyIp 10.0.0.2
+    json .value[0].acl[0].proxyPort 22
+    json .value[0].acl[0].proxyUser proxyuser
 
     # Clean up
     success cleanup_account_list_test_with_proxy_user $a0 --osh accountDelPersonalAccess --account $account2 --host 192.168.2.200 --user testuser --port 22 --proxy-host 10.0.0.2 --proxy-port 22 --proxy-user proxyuser
@@ -322,11 +324,12 @@ testsuite_proxyjump()
     # Check that groupListServers shows the proxy information
     success groupListServers_shows_proxy $a1 --osh groupListServers --group $group1
     json .command groupListServers .error_code OK
-    contain '"ip":"192.168.3.100"'
-    contain '"port":"22"'
-    contain '"user":"testuser"'
-    contain '"proxyIp":"10.0.0.3"'
-    contain '"proxyPort":"22"'
+    json .value[0].ip 192.168.3.100
+    json .value[0].port 22
+    json .value[0].user testuser
+    json .value[0].proxyIp 10.0.0.3
+    json .value[0].proxyPort 22
+    json .value[0].proxyUser testuser
 
     # Clean up
     success cleanup_group_list_test $a1 --osh groupDelServer --group $group1 --host 192.168.3.100 --user testuser --port 22 --proxy-host 10.0.0.3 --proxy-port 22 --proxy-user testuser
@@ -339,12 +342,12 @@ testsuite_proxyjump()
     # Check that groupListServers shows the proxy-user information
     success groupListServers_shows_proxy_user $a1 --osh groupListServers --group $group1
     json .command groupListServers .error_code OK
-    contain '"ip":"192.168.3.200"'
-    contain '"port":"22"'
-    contain '"user":"testuser"'
-    contain '"proxyIp":"10.0.0.3"'
-    contain '"proxyPort":"22"'
-    contain '"proxyUser":"proxyuser"'
+    json .value[0].ip 192.168.3.200
+    json .value[0].port 22
+    json .value[0].user testuser
+    json .value[0].proxyIp 10.0.0.3
+    json .value[0].proxyPort 22
+    json .value[0].proxyUser proxyuser
 
     # Clean up
     success cleanup_group_list_test_with_proxy_user $a1 --osh groupDelServer --group $group1 --host 192.168.3.200 --user testuser --port 22 --proxy-host 10.0.0.3 --proxy-port 22 --proxy-user proxyuser
@@ -383,7 +386,7 @@ testsuite_proxyjump()
 
     # Test invalid proxy-host
     plgfail groupAddGuestAccess_invalid_proxy_host $a1 --osh groupAddGuestAccess --group $group1 --account $account2 --host 192.168.4.105 --user testuser --port 22 --proxy-host "badhostnäim" --proxy-port 22 --proxy-user testuser
-    json .command groupAddGuestAccess .error_code ERR_INVALID_PARAMETER
+    json .command groupAddGuestAccess .error_code ERR_HOST_NOT_FOUND
 
     # Test guest access that requires group to have access to proxy params
     success a1_add_server_no_proxy $a1 --osh groupAddServer --group $group1 --host 192.168.4.110 --user testuser --port 22 --force
