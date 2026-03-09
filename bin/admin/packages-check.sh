@@ -124,7 +124,7 @@ elif echo "$DISTRO_LIKE" | grep -q -w suse; then
             perl-JSON-XS inotify-tools lsof curl perl-TermReadLine-Gnu \
             perl-libwww-perl perl-Digest perl-IO-Socket-SSL \
             perl-Net-Server cryptsetup mosh expect openssh \
-            coreutils bash perl-CGI iputils \
+            coreutils bash perl-CGI iputils util-linux-systemd \
             perl-Time-HiRes perl-Unix-Syslog hostname perl-LWP-Protocol-https \
             google-authenticator-libpam tar perl-Test-Deep"
     [ "$opt_syslogng" = 1 ] && wanted_list="$wanted_list syslog-ng"
