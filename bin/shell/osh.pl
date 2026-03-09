@@ -469,6 +469,10 @@ if ($bind) {
     }
 }
 
+if (defined $optPort && !OVH::Bastion::is_valid_port(port => $optPort)) {
+    main_exit OVH::Bastion::EXIT_INVALID_PORT, 'invalid_port', "Invalid port specified ($optPort)";
+}
+
 if ($generateMfaToken && $mfaToken) {
     main_exit OVH::Bastion::EXIT_CONFLICTING_OPTIONS, "conflicting_options",
       "Can't specify both --generate-mfa-token and --mfa-token";
