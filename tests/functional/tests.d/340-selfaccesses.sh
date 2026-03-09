@@ -93,6 +93,14 @@ testsuite_selfaccesses()
     retvalshouldbe 127
     json .error_code KO_INVALID_REMOTE_USER
 
+    run invalid_port $a1 -p 65539 127.0.0.1 -- id
+    retvalshouldbe 134
+    json .error_code KO_INVALID_PORT
+
+    run invalid_port_wait $a1 --wait -p 65539 127.0.0.1 -- id
+    retvalshouldbe 134
+    json .error_code KO_INVALID_PORT
+
     run mustfail $a1 -osh selfAddPersonalAccess -h 127.0.0.2 -u $shellaccount -p 22
     retvalshouldbe 106
     contain "you to be specifically granted"
