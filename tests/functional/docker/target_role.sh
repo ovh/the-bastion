@@ -171,7 +171,7 @@ if [ "$WANT_HTTP_PROXY" = 1 ]; then
     echo "Starting HTTP Proxy and fake remote server"
     while : ; do
         if ! pgrep -f /osh-http-proxy-daemon >/dev/null; then
-            if [ -x /etc/init.d/osh-http-proxy ]; then
+            if [ -x /etc/init.d/osh-http-proxy ] && [ -f /lib/init/vars.sh ] && command -v start-stop-daemon >/dev/null 2>&1; then
                 /etc/init.d/osh-http-proxy start
             else
                 sudo -n -u proxyhttp -- /opt/bastion/bin/proxy/osh-http-proxy-daemon &
