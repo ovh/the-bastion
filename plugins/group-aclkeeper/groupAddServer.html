@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>groupAddServer &mdash; The Bastion 3.23.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="../../_static/jquery.js?v=8dae8fb0"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=eb75f0bc"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="groupDelServer" href="groupDelServer.html" />
+    <link rel="prev" title="group-aclkeeper plugins" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.23.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using/basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/configuration/index.html">Configuration files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../admin/index.html">admin plugins</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">group-aclkeeper plugins</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">groupAddServer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#add-an-ip-or-ip-block-to-a-group-s-servers-list">Add an IP or IP block to a group's servers list</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="groupDelServer.html">groupDelServer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="groupSetServers.html">groupSetServers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../open/index.html">open plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">group-aclkeeper plugins</a></li>
+      <li class="breadcrumb-item active">groupAddServer</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/plugins/group-aclkeeper/groupAddServer.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="groupaddserver">
+<h1>groupAddServer<a class="headerlink" href="#groupaddserver" title="Link to this heading"></a></h1>
+<section id="add-an-ip-or-ip-block-to-a-group-s-servers-list">
+<h2>Add an IP or IP block to a group's servers list<a class="headerlink" href="#add-an-ip-or-ip-block-to-a-group-s-servers-list" title="Link to this heading"></a></h2>
+<div class="cmdusage admonition">
+<p class="admonition-title">usage</p>
+<p>--osh groupAddServer --group GROUP --host HOST --user USER|* --port PORT|* [OPTIONS]</p>
+</div>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-groupAddServer-group">
+<span class="sig-name descname"><span class="pre">--group</span></span><span class="sig-prename descclassname"> <span class="pre">GROUP</span></span><a class="headerlink" href="#cmdoption-groupAddServer-group" title="Link to this definition"></a></dt>
+<dd><p>Specify which group this machine should be added to</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-groupAddServer-host">
+<span class="sig-name descname"><span class="pre">--host</span></span><span class="sig-prename descclassname"> <span class="pre">HOST|IP|SUBNET</span></span><a class="headerlink" href="#cmdoption-groupAddServer-host" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Host(s) to add access to, either a HOST which will be resolved to an IP immediately,</p>
+<blockquote>
+<div><p>or an IP, or a whole subnet using the PREFIX/SIZE notation</p>
+</div></blockquote>
+</div></blockquote>
+<dl class="simple">
+<dt>--user USER|PATTERN|*    Specify which remote user should be allowed to connect as.</dt><dd><p>Globbing characters '*' and '?' are supported, so you can specify a pattern
+that will be matched against the actual remote user name.
+To allow any user, use '--user <em>' (you might need to escape '</em>' from your shell)</p>
+</dd>
+<dt>--port PORT|*            Remote port allowed to connect to</dt><dd><p>To allow any port, use '--port <em>' (you might need to escape '</em>' from your shell)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-groupAddServer-protocol">
+<span class="sig-name descname"><span class="pre">--protocol</span></span><span class="sig-prename descclassname"> <span class="pre">PROTO</span></span><a class="headerlink" href="#cmdoption-groupAddServer-protocol" title="Link to this definition"></a></dt>
+<dd><p>Specify that a special protocol should be allowed for this HOST:PORT tuple, note that you</p>
+<blockquote>
+<div><p>must not specify --user in that case. However, for this protocol to be usable under a given
+remote user, access to the <a class="reference external" href="mailto:USER&#37;&#52;&#48;HOST">USER<span>&#64;</span>HOST</a>:PORT tuple must also be allowed.
+PROTO must be one of:
+scpup    allow SCP upload, you--bastion--&gt;server
+scpdown  allow SCP download, you&lt;--bastion--server
+sftp     allow usage of the SFTP subsystem, through the bastion
+rsync    allow usage of rsync, through the bastion</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-groupAddServer-force">
+<span class="sig-name descname"><span class="pre">--force</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-groupAddServer-force" title="Link to this definition"></a></dt>
+<dd><p>Don't try the ssh connection, just add the host to the group blindly</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-groupAddServer-force-key">
+<span class="sig-name descname"><span class="pre">--force-key</span></span><span class="sig-prename descclassname"> <span class="pre">FINGERPRINT</span></span><a class="headerlink" href="#cmdoption-groupAddServer-force-key" title="Link to this definition"></a></dt>
+<dd><p>Only use the key with the specified fingerprint to connect to the server (cf groupInfo)</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-groupAddServer-force-password">
+<span class="sig-name descname"><span class="pre">--force-password</span></span><span class="sig-prename descclassname"> <span class="pre">HASH</span></span><a class="headerlink" href="#cmdoption-groupAddServer-force-password" title="Link to this definition"></a></dt>
+<dd><p>Only use the password with the specified hash to connect to the server (cf groupListPasswords)</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-groupAddServer-ttl">
+<span class="sig-name descname"><span class="pre">--ttl</span></span><span class="sig-prename descclassname"> <span class="pre">SECONDS|DURATION</span></span><a class="headerlink" href="#cmdoption-groupAddServer-ttl" title="Link to this definition"></a></dt>
+<dd><p>Specify a number of seconds (or a duration string, such as &quot;1d7h8m&quot;) after which the access will automatically expire</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-groupAddServer-comment">
+<span class="sig-name descname"><span class="pre">--comment</span></span><span class="sig-prename descclassname"> <span class="pre">&quot;'ANY</span> <span class="pre">TEXT'&quot;</span></span><a class="headerlink" href="#cmdoption-groupAddServer-comment" title="Link to this definition"></a></dt>
+<dd><p>Add a comment alongside this server. Quote it twice as shown if you're under a shell.</p>
+</dd></dl>
+
+<p>Examples:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>--osh<span class="w"> </span>groupAddServer<span class="w"> </span>--group<span class="w"> </span>grp1<span class="w"> </span>--host<span class="w"> </span><span class="m">203</span>.0.113.0/24<span class="w"> </span>--user<span class="w"> </span><span class="s1">&#39;*&#39;</span><span class="w"> </span>--port<span class="w"> </span><span class="s1">&#39;*&#39;</span><span class="w"> </span>--force<span class="w"> </span>--ttl<span class="w"> </span>1d12h<span class="w"> </span>--comment<span class="w"> </span><span class="s1">&#39;&quot;a whole network&quot;&#39;</span>
+--osh<span class="w"> </span>groupAddServer<span class="w"> </span>--group<span class="w"> </span>grp2<span class="w"> </span>--host<span class="w"> </span>srv1.example.org<span class="w"> </span>--user<span class="w"> </span>data<span class="w"> </span>--port<span class="w"> </span><span class="m">22</span>
+--osh<span class="w"> </span>groupAddServer<span class="w"> </span>--group<span class="w"> </span>grp2<span class="w"> </span>--host<span class="w"> </span>srv1.example.org<span class="w"> </span>--user<span class="w"> </span>file<span class="w"> </span>--port<span class="w"> </span><span class="m">22</span>
+</pre></div>
+</div>
+<p>Example to allow using sftp to srv1.example.org using remote user 'data' or 'file', in addition to the above commands:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>--osh<span class="w"> </span>groupAddServer<span class="w"> </span>--group<span class="w"> </span>grp2<span class="w"> </span>--host<span class="w"> </span>srv1.example.org<span class="w"> </span>--port<span class="w"> </span><span class="m">22</span><span class="w"> </span>--protocol<span class="w"> </span>sftp
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="group-aclkeeper plugins" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="groupDelServer.html" class="btn btn-neutral float-right" title="groupDelServer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

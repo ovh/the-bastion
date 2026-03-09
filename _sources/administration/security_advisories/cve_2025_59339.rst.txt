@@ -1,0 +1,39 @@
+==============
+CVE-2025-59339
+==============
+
+- ``Severity``: **4.4** (CVSS V3)
+- ``Vector: CVSS:3.1/AV:L/AC:L/PR:H/UI:N/S:U/C:N/I:H/A:N``
+- ``Affected versions``: < 3.22.00
+- ``Patched versions``: >= 3.22.00
+
+`This advisory is also available online <https://github.com/ovh/the-bastion/security/advisories/GHSA-h66q-g57p-rgg6>`_.
+
+Summary
+=======
+
+Session-recording ``ttyrec`` files, may be handled by the provided ``osh-encrypt-rsync`` script that is a helper to rotate, encrypt, sign, copy and optionally move them to a remote storage periodically, if configured to. When running, the script properly rotates and encrypts the files using the provided GPG key(s), but silently fails to sign them, even if asked to.
+
+Details
+=======
+
+When configured to sign files, the script tested the GPG keys validity and their capacity to properly sign files, however it failed to actually sign the files when running.
+
+Impact
+======
+
+The files are not being signed, even when they should be, thus the following expectation from the official documentation was not fulfilled:
+
+"The public key is used by the admins to verify the signature and prove non-repudiation and non-tampering of the ttyrec files."
+
+If unauthorized access to the ``ttyrec`` files was conducted, with privileges high enough to be able to modify them, along with access to the public GPG keys used to encrypt them, it would be possible to tamper with these files, without it being easily detected due to the lack of a GPG signature.
+
+Timeline
+========
+
+- 2025-04-29: security bug report filed on GitHub
+- 2025-06-24: fix proposed
+- 2025-09-12: bug report accepted and confirmed as having a security impact
+- 2023-09-16: CVE ID requested
+- 2023-09-16: CVE ID assigned
+- 2023-09-17: v3.22.00 released with the fix

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FAQ &mdash; The Bastion 3.23.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="_static/jquery.js?v=8dae8fb0"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=eb75f0bc"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Basic Installation" href="installation/basic.html" />
+    <link rel="prev" title="Security" href="presentation/security.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.23.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="presentation/security.html">Security</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">FAQ</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#the-bastion-really">&quot;The Bastion&quot;, really?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#why-using-common-sense">Why using common::sense?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#why-perl">Why Perl?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#why-not-using-a-pki">Why not using a PKI?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#what-does-osh-mean-in-osh">What does <cite>osh</cite> mean in <code class="docutils literal notranslate"><span class="pre">--osh</span></code>?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#what-are-the-recommended-hardware-specifications">What are the recommended hardware specifications?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#can-i-run-it-under-docker-in-production">Can I run it under Docker in production?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#can-i-install-it-on-my-already-existing-server">Can I install it on my already existing server?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-to-use-the-bastion-with-the-ssh-proxycommand-option">How to use The Bastion with the SSH <code class="docutils literal notranslate"><span class="pre">ProxyCommand</span></code> option?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#what-is-session-locking">What is <em>session locking</em>?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#can-i-use-ansible-over-the-bastion">Can I use Ansible over The Bastion?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#can-the-bastion-record-sessions-with-script-or-in-plaintext-format-instead-of-ttyrec">Can The Bastion record sessions with <code class="docutils literal notranslate"><span class="pre">script</span></code> or in plaintext format instead of <code class="docutils literal notranslate"><span class="pre">ttyrec</span></code>?</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="using/basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using/piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using/sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using/http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using/api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using/specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="administration/configuration/index.html">Configuration files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="administration/logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="administration/mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="administration/security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="plugins/admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plugins/group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plugins/group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plugins/group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plugins/open/index.html">open plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plugins/restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">FAQ</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/faq.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="faq">
+<h1>FAQ<a class="headerlink" href="#faq" title="Link to this heading"></a></h1>
+<section id="the-bastion-really">
+<h2>&quot;The Bastion&quot;, really?<a class="headerlink" href="#the-bastion-really" title="Link to this heading"></a></h2>
+<p>We've been using this software for quite a while at OVHcloud, and there it has always been known as &quot;the bastion&quot;:
+nobody ever bothered to find a fancy name for it.
+So, when we decided to release it in opensource, the naming problem arose.
+After going through some possible names, we realized that nothing would work, as everybody would keep
+naming it &quot;the bastion&quot; anyway, so, we decided to call it just <em>The Bastion</em>.</p>
+</section>
+<section id="why-using-common-sense">
+<h2>Why using common::sense?<a class="headerlink" href="#why-using-common-sense" title="Link to this heading"></a></h2>
+<p>Because it's usually a good idea to ensure you use common::sense before writing code!
+On a more serious note, this is almost like using <code class="docutils literal notranslate"><span class="pre">strict</span></code> and <code class="docutils literal notranslate"><span class="pre">warnings</span></code>,
+but with a very reduced memory footprint.
+When you run a bastion with thousands of simultaneous active sessions with that many users, it starts to matter.</p>
+</section>
+<section id="why-perl">
+<h2>Why Perl?<a class="headerlink" href="#why-perl" title="Link to this heading"></a></h2>
+<p>There is probably and endless list of why it's the perfect language for this,
+and another similarly endless list of why Perl is completely irrelevant and other $COOL_LANGUAGE would be a better fit,
+but some &quot;why&quot; reasons include:</p>
+<ul class="simple">
+<li><p>It works everywhere, and most OSes have it installed by default</p></li>
+<li><p>Perl has this cool &quot;taint&quot; mode that adds security to untrusted program inputs, we use this on sensitive code</p></li>
+<li><p>One of the design choice of The Bastion has always been to be very close to the system,
+leveraging some low-level Operating System functions, which are easier to interact with using a scripting language</p></li>
+<li><p>The Bastion has a loose origin from an old script written at OVHcloud in the early days,
+back when the de-facto usual language used internally was Perl</p></li>
+</ul>
+</section>
+<section id="why-not-using-a-pki">
+<h2>Why not using a PKI?<a class="headerlink" href="#why-not-using-a-pki" title="Link to this heading"></a></h2>
+<p>Well, you can, of course! However this is a very centralized way of managing your accesses,
+with all the power in the hands of whoever controls your CA.
+It can be a highly successful if done very carefully, with a lot of security and processes around the
+certificates delivery workflows. Managing a CA correctly is no joke and can bite you quite hard if done improperly.
+This also happens to be a somewhat recent addition to OpenSSH, and if you have a lot of heterogeneous
+systems to handle, this might be a no-go.
+You can read more about this topic here: <a class="reference external" href="https://blog.ovhcloud.com/the-ovhcloud-bastion-part-1/">https://blog.ovhcloud.com/the-ovhcloud-bastion-part-1/</a></p>
+</section>
+<section id="what-does-osh-mean-in-osh">
+<h2>What does <cite>osh</cite> mean in <code class="docutils literal notranslate"><span class="pre">--osh</span></code>?<a class="headerlink" href="#what-does-osh-mean-in-osh" title="Link to this heading"></a></h2>
+<p>This has long been forgotten. Some people say it used to mean &quot;Ovh SHell&quot; at some point,
+but nobody knows whether it's true or just a legend.</p>
+</section>
+<section id="what-are-the-recommended-hardware-specifications">
+<h2>What are the recommended hardware specifications?<a class="headerlink" href="#what-are-the-recommended-hardware-specifications" title="Link to this heading"></a></h2>
+<p>They're actually quite low. Down to its basics, the bastion is merely a fancy wrapper around <code class="docutils literal notranslate"><span class="pre">ssh</span></code>,
+so if you have a device that handles <code class="docutils literal notranslate"><span class="pre">ssh</span></code> well, it'll handle the bastion just fine.</p>
+<p>Now to give you some data points, we've observed that 250 concurrent users take up 2.5 Gb of RAM (including
+the operating system's own footprint, and the usual daemons such as auditd, syslog, etc.).
+So a rule of thumb would be 1 Gb per 100 simultaneous sessions.
+If you expect to get a lot of new connections per minute (not necessarily long-lived),
+it's advised to use SSD drives however, as the bastion workload pattern for disk I/O is a lot of random seeks
+to write logs and ttyrecs. Mechanical hard drives are very bad at this.</p>
+</section>
+<section id="can-i-run-it-under-docker-in-production">
+<span id="faq-docker"></span><h2>Can I run it under Docker in production?<a class="headerlink" href="#can-i-run-it-under-docker-in-production" title="Link to this heading"></a></h2>
+<p>Technically you can, but you have to think about what are the implications (this is true regardless
+of the containerization technology). What's important to understand is that it adds another layer of abstraction,
+and can give you a false sense of security.
+If you either have the complete control of the host running Docker (and hardened it properly),
+or you fully trust whoever is running the host for you, then this is fine.
+Otherwise, <em>somebody</em> might have access to all your keys and you have no way to know or block it.</p>
+<p>Note that the provided Dockerfiles are a good start, but no volumes are defined.
+To ensure that all the accounts don't disappear on a <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">rm</span></code>, you would at least need to ensure that
+<code class="docutils literal notranslate"><span class="pre">/home</span></code>, <code class="docutils literal notranslate"><span class="pre">/etc/passwd</span></code>, <code class="docutils literal notranslate"><span class="pre">/etc/shadow</span></code>, <code class="docutils literal notranslate"><span class="pre">/etc/group</span></code>, <code class="docutils literal notranslate"><span class="pre">/etc/gshadow</span></code> are stored in a volume,
+in addition to <code class="docutils literal notranslate"><span class="pre">/etc/bastion</span></code> and <code class="docutils literal notranslate"><span class="pre">/root/.gpg</span></code>.
+You'll also need an SSH server, obviously, and probably a <code class="docutils literal notranslate"><span class="pre">syslog-ng</span></code> daemon.</p>
+</section>
+<section id="can-i-install-it-on-my-already-existing-server">
+<span id="faq-existing-server"></span><h2>Can I install it on my already existing server?<a class="headerlink" href="#can-i-install-it-on-my-already-existing-server" title="Link to this heading"></a></h2>
+<p>This is discouraged if your server is already doing something else, such as hosting a website,
+handling your e-mails or running a database.</p>
+<p>From a security standpoint, it's a bad idea because if your server gets hacked due to one of
+the other services you're hosting, the SSH keys could get compromised even if The Bastion itself has no security issue.</p>
+<p>This is also discouraged due to the design of The Bastion: being deeply intertwined with the OS it's running on,
+it might make changes that seem intrusive from the point of view of other running services.
+Such as creating and deleting system accounts and groups from time to time, modifying the PAM configuration,
+or hardening the SSH client and server configurations system-wide,
+which could break other services or workflows that expect to be running on a default (non-hardened) SSH configuration.</p>
+</section>
+<section id="how-to-use-the-bastion-with-the-ssh-proxycommand-option">
+<span id="faq-jumphost"></span><h2>How to use The Bastion with the SSH <code class="docutils literal notranslate"><span class="pre">ProxyCommand</span></code> option?<a class="headerlink" href="#how-to-use-the-bastion-with-the-ssh-proxycommand-option" title="Link to this heading"></a></h2>
+<p><strong>tl;dr</strong>: you can't.</p>
+<p><strong>Fast answer</strong>: you can't, because The Bastion is not a proxy, nor what is often called an &quot;ssh jumphost&quot;.
+Granted, sometimes these are also called &quot;bastions&quot;, hence the confusion.
+Note that this also applies to the <code class="docutils literal notranslate"><span class="pre">-J</span></code> or <code class="docutils literal notranslate"><span class="pre">JumpHost</span></code> ssh option, which is just a simplified <code class="docutils literal notranslate"><span class="pre">ProxyCommand</span></code>.</p>
+<p><strong>Long answer</strong>: The Bastion is acting as a trusted party between you (the admin or the robot) and the server
+of the infrastructure you need to access. To achieve this, when you use the bastion to connect to the server,
+there are two distinct ssh connections present at the same time:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>The ingress ssh connection, between you and the bastion.
+For this connection your local private ssh key is used to authenticate yourself to the bastion</p></li>
+<li><p>The egress ssh connection, between the bastion and the remote server you need to access.
+For this connection your bastion egress private ssh key (or a group egress private ssh key you're member of)
+is used to authenticate the bastion to the remote server</p></li>
+</ul>
+</div></blockquote>
+<p>Those two connections are distinct, and the bastion logic merges those two so that you're under the impression
+that you're directly connected to the remote server. There is no dynamic port forwarding happening on the bastion
+to enable access to the remote server from your desktop, network-wise (which is what <code class="docutils literal notranslate"><span class="pre">JumpHost</span></code> does).</p>
+<p>Using <code class="docutils literal notranslate"><span class="pre">ProxyCommand</span></code> with the bastion doesn't make sense because with this option, your local ssh client expects
+to talk the SSH dialect on the STDIN of the ProxyCommand you're giving, and it'll try to use your local SSH key
+to authenticate you through it, which won't work as it's only used for the ingress connection.
+However, when you use the usual bastion alias, in STDIN you have the remote server terminal directly,
+all the SSH stuff has already been done.</p>
+<p>Attempting to summarize this a bit would be: <code class="docutils literal notranslate"><span class="pre">ProxyCommand</span></code> and <code class="docutils literal notranslate"><span class="pre">JumpHost</span></code> are useful when the server
+you're trying to connect to can't be accessed <em>network-wise</em> from where you stand, and needs to be accessed
+through some kind of proxy instead, where The Bastion's logic is to use two distinct SSH connections,
+and two distinct authentication phases, with two distinct SSH keys (yours for the ingress connection,
+and your bastion egress key for the egress connection).</p>
+</section>
+<section id="what-is-session-locking">
+<h2>What is <em>session locking</em>?<a class="headerlink" href="#what-is-session-locking" title="Link to this heading"></a></h2>
+<p>Session locking can be enabled in the global configuration, through the <a class="reference internal" href="administration/configuration/bastion_conf.html#idlelocktimeout"><span class="std std-ref">idleLockTimeout</span></a> option.</p>
+<p>When enabled, the interactive SSH session will automatically lock itself after a defined amount of idle time.
+Unlocking such a session can be done, but re-authentication is required, i.e. connecting to the bastion
+from another console, and using the <a class="reference internal" href="plugins/open/unlock.html"><span class="doc">unlock</span></a> command.
+Here, idle time is defined as keyboard input idle time, so even if a remote command might be running
+(such as <code class="docutils literal notranslate"><span class="pre">tail</span> <span class="pre">-f</span></code>), the connection will still be considered idle if no input is detected. This is by design.</p>
+<p>Such as configuration can be required by policy or regulations, in some sensitive environments,
+to ensure opened connections are automatically cut off when unused.
+Locking such sessions can be an alternative to cutting (see the <a class="reference internal" href="administration/configuration/bastion_conf.html#idlekilltimeout"><span class="std std-ref">idleKillTimeout</span></a> option) as it gives
+a chance to unlock the session before tearing the connection down.
+Both can also be used, such as locking first, then tearing down after more time has passed without the session
+being unlocked. Note that while a session is locked, any potentially running remote command will still be running,
+as locking the session will just hide the normal console output, and prevent any input to be registered.
+Unlocking the session will simply resume display to the console.
+Session locking can be seen as the equivalent of a desktop screensaver, but for SSH interactive sessions.</p>
+<p>A locked session looks like this:</p>
+<img alt="_images/locked_session.png" src="_images/locked_session.png" />
+</section>
+<section id="can-i-use-ansible-over-the-bastion">
+<h2>Can I use Ansible over The Bastion?<a class="headerlink" href="#can-i-use-ansible-over-the-bastion" title="Link to this heading"></a></h2>
+<p>Yes, you can, by using a wrapper available <a class="reference external" href="https://github.com/ovh/the-bastion-ansible-wrapper">here</a>.</p>
+<p>Please note however that some Ansible modules may not use the builtin SSH command of Ansible,
+which we override with our wrapper, but some other mechanism we can't hook into.
+This is for example the case of the <cite>network_cli</cite> module of Ansible, which underneath uses Paramiko,
+a Python library to handle SSH connections, which prevents our wrapper to be used (see
+<a class="reference external" href="https://github.com/ovh/the-bastion/issues/254">this GitHub issue</a> for more information).</p>
+</section>
+<section id="can-the-bastion-record-sessions-with-script-or-in-plaintext-format-instead-of-ttyrec">
+<h2>Can The Bastion record sessions with <code class="docutils literal notranslate"><span class="pre">script</span></code> or in plaintext format instead of <code class="docutils literal notranslate"><span class="pre">ttyrec</span></code>?<a class="headerlink" href="#can-the-bastion-record-sessions-with-script-or-in-plaintext-format-instead-of-ttyrec" title="Link to this heading"></a></h2>
+<p>The ttyrec program is actually a fork and a superset of script, and their output format is very similar.
+The main change is that for ttyrec, there is timing info added in the output file, so that it can be
+replayed &quot;at the same pace&quot; that the captured console.</p>
+<p>With both programs, the entire console output is captured, i.e. plaintext, but also control codes,
+such as &quot;move the cursor here&quot;, &quot;change the background color to this&quot;, etc. If you cat the output files
+of script or ttyrec, you'll see plaintext but also these non-printable control-codes.
+It is not trivial to convert these to &quot;real&quot; plaintext because you have to interpret all the control codes
+correctly to reproduce the actual output, which is an actual terminal does.</p>
+<p>For example, if I type &quot;helk&quot; then &quot;backspace&quot; then &quot;lo&quot;, on my console, &quot;hello&quot; will be displayed when I'm done,
+but in the output files of both script and ttyrec, this is what will be written: <code class="docutils literal notranslate"><span class="pre">helk^H^[[Klo</span></code>.
+So grepping for &quot;hello&quot; inside these files will not work, even if you would have expected it to work.</p>
+<p>This even gets more complicated for programs using curses such as vim, where you can navigate in a file:
+a lot of control codes are used to control what the console displays, and there is no way, from what is displayed
+in the console, to know what is part of the preexisting file, and what is being typed by the person.
+In both cases, it just ends up on the screen.</p>
+<p>Now, some solutions exist. You might want to have a look at <code class="docutils literal notranslate"><span class="pre">IPBT</span></code> (&quot;It's Playback Time&quot;), which is an advanced
+ttyrec player from the author of PuTTY: <a class="reference external" href="https://www.chiark.greenend.org.uk/~sgtatham/ipbt">IPBT</a>.
+It has the option of actually grepping for a string inside a ttyrec, and it does this by rendering each &quot;frame&quot;
+in-memory, then actually looking for the output in the emulated console.
+This would work with the &quot;hello&quot; example above.
+It also has a tool named <code class="docutils literal notranslate"><span class="pre">ipbt-dump</span></code> that should help converting ttyrec files to something that you can better
+work with.</p>
+<p>(adapted from <a class="reference external" href="https://github.com/ovh/the-bastion/issues/522">this GitHub issue</a>).</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="presentation/security.html" class="btn btn-neutral float-left" title="Security" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="installation/basic.html" class="btn btn-neutral float-right" title="Basic Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
