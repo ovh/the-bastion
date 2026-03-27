@@ -94,7 +94,7 @@ if (open(my $fh, '<', "/proc/" . getppid() . '/cmdline')) {
     }
 
     # interactive mode: our parent is osh.pl
-    elsif ($pargv[0] eq 'perl' and $pargv[1] =~ m{/bin/shell/osh\.pl$}) {
+    elsif ($pargv[0] =~ m{^(/usr/bin/)?perl$} and $pargv[1] =~ m{/bin/shell/osh\.pl$}) {
         ;             # we're being called by the interactive mode of osh.pl, ok
     }
 
