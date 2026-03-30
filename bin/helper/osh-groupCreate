@@ -156,16 +156,46 @@ osh_info("Creating groups");
 
 # Create all 4 groups with allocated GIDs to avoid collisions with account UIDs
 my @groups_to_create = ($group, "$group-aclkeeper", "$group-gatekeeper", "$group-owner");
+my $group_main_gid;
 foreach my $tocreate (@groups_to_create) {
     $fnret = OVH::Bastion::get_next_available_gid();
     $fnret or HEXIT('ERR_GID_ALLOCATION_FAILED', msg => "Failed to allocate GID for group $tocreate: " . $fnret->msg);
     my $gid = $fnret->value;
+
+    $group_main_gid //= $gid;    # save the GID of $group (first iteration)
 
     $fnret = OVH::Bastion::sys_groupadd(group => $tocreate, gid => $gid, noisy_stderr => 1);
     $fnret->err eq 'OK'
       or HEXIT('ERR_GROUPADD_FAILED',
         msg => "Error while running groupadd command for $tocreate with GID $gid (" . $fnret->msg . ")");
     osh_debug("Created group $tocreate with GID $gid");
+}
+
+# Determine the UID for the group system user.
+# Prefer the same value as its main GID (so uid == gid); if that UID is already taken,
+# fall back to the next free UID starting from groupGidMin, which is guaranteed to be
+# strictly above the bastion account UID range (accountUidMin..accountUidMax).
+# We don't let the system pick the UID itself because it could fall into the
+# bastion account UID range (even if, on recent systems, `useradd` seems
+# to pick up the max_uid_seen_in_passwd + 1)
+my $group_uid;
+if (!getpwuid($group_main_gid)) {
+    $group_uid = $group_main_gid;
+}
+else {
+    my $groupGidMin = OVH::Bastion::config('groupGidMin')->value;
+    my $candidate   = $groupGidMin;
+    my $maxAttempts = 100_000;
+    for my $attempt (1 .. $maxAttempts) {
+        if (!getpwuid($candidate)) {
+            $group_uid = $candidate;
+            last;
+        }
+        $candidate++;
+    }
+    defined $group_uid
+      or HEXIT('ERR_UID_ALLOCATION_FAILED',
+        msg => "Failed to allocate UID for group user $group: no free UID found above groupGidMin");
 }
 
 osh_debug("Creating directory");
@@ -176,8 +206,14 @@ osh_info("Creating user corresponding to group $shortGroup");
 
 # if a comment has been set, we'll store it as the user's GECOS corresponding to the group name
 # user is member of the group, cannot login and have no password
-$fnret =
-  OVH::Bastion::sys_useradd(user => $group, gid => $group, shell => undef, comment => $comment, noisy_stderr => 1);
+$fnret = OVH::Bastion::sys_useradd(
+    user         => $group,
+    uid          => $group_uid,
+    gid          => $group,
+    shell        => undef,
+    comment      => $comment,
+    noisy_stderr => 1
+);
 $fnret->err eq 'OK'
   or HEXIT('ERR_USERADD_FAILED',
     msg => "Error while adding corresponding user of group $shortGroup (" . $fnret->msg . ")");
