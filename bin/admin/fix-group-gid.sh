@@ -41,9 +41,16 @@ _run()
 next_available_gid=$((MINGID + 1))
 find_next_available_gid()
 {
-    while getent group "$next_available_gid" >/dev/null; do
-        next_available_gid=$((next_available_gid + 1))
-    done
+    next_available_gid=$(
+        getent group 2>/dev/null | cut -d: -f3 | sort -n | awk -v start="$MINGID" '
+          BEGIN { candidate = start }
+          {
+            if ($1 + 0 == candidate) { candidate++; }
+            else if ($1 + 0 > candidate) { print candidate; exit }
+          }
+          END { print candidate }
+        '
+    )
 }
 
 change_gid()
