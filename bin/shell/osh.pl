@@ -1499,6 +1499,7 @@ else {
         push @command, '-A', '-o', 'AddKeysToAgent=yes';
     }
     push @command, '-o', 'PreferredAuthentications=' . (join(',', @preferredAuths));
+    push @command, '-o', 'PasswordAuthentication=yes' if $config->{'passwordAllowed'};
 
     if ($config->{'sshClientHasOptionE'}) {
         push @command, '-E', $saveFile . '.sshdebug';
