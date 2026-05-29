@@ -181,6 +181,64 @@ testsuite_mfa()
         contain 'pamtester: successfully authenticated'
         contain 'Permission denied'
 
+        success a4_gen_self_egress_pass $a0 --osh accountGeneratePassword --account $account4 --do-it
+        json .command accountGeneratePassword .error_code OK
+
+        script a4_connect_g3_server_selfpass_jitmfa "echo 'set timeout $default_timeout; \
+            spawn $a4 root@127.7.7.7 -P; \
+            expect \"is required (password)\" { sleep 0.1; }; \
+            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
+            expect \"is required (password)\" { sleep 0.1; }; \
+            expect \":\" { sleep 0.2; send \"BADPASSWORD\\n\"; }; \
+            expect \"is required (password)\" { sleep 0.1; }; \
+            expect \":\" { sleep 0.2; send \"BADPASSWORD\\n\"; }; \
+            expect \"is required (password)\" { sleep 0.1; }; \
+            expect \":\" { sleep 0.2; send \"BADPASSWORD\\n\\n\"; }; \
+            expect eof; \
+            lassign [wait] pid spawnid value value; \
+            exit \$value' | expect -f -"
+        retvalshouldbe 125
+        contain 'will use SSH with password autologin'
+        contain 'entering MFA phase'
+        contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
+        contain REGEX 'Password:|Password for'
+        contain 'pamtester: '
+        nocontain 'pamtester: successfully authenticated'
+        nocontain 'Permission denied'
+
+        script a4_gen_g3_egress_pass "echo 'set timeout $default_timeout;
+            spawn $a4 --osh groupGeneratePassword --group $group3 --do-it;
+            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; };
+            expect eof;
+            lassign [wait] pid spawnid value value;
+            exit \$value' | expect -f -"
+        retvalshouldbe 0
+        contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
+        contain REGEX 'Password:|Password for'
+        json .command groupGeneratePassword .error_code OK
+
+        script a4_connect_g3_server_grouppass_jitmfa "echo 'set timeout $default_timeout; \
+            spawn $a4 root@127.7.7.7 --password $group3; \
+            expect \"is required (password)\" { sleep 0.1; }; \
+            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
+            expect \"is required (password)\" { sleep 0.1; }; \
+            expect \":\" { sleep 0.2; send \"BADPASSWORD\\n\"; }; \
+            expect \"is required (password)\" { sleep 0.1; }; \
+            expect \":\" { sleep 0.2; send \"BADPASSWORD\\n\"; }; \
+            expect \"is required (password)\" { sleep 0.1; }; \
+            expect \":\" { sleep 0.2; send \"BADPASSWORD\\n\\n\"; }; \
+            expect eof; \
+            lassign [wait] pid spawnid value value; \
+            exit \$value' | expect -f -"
+        retvalshouldbe 125
+        contain 'will use SSH with password autologin'
+        contain 'entering MFA phase'
+        contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
+        contain REGEX 'Password:|Password for'
+        contain 'pamtester: '
+        nocontain 'pamtester: successfully authenticated'
+        nocontain 'Permission denied'
+
         # test proactive mfa
         script set_help_mfa $r0 "'"'echo \{\"mfa_required\":\ \"password\"\} > '"$opt_remote_etc_bastion"'/plugin.help.conf; chmod 644 '"$opt_remote_etc_bastion"'/plugin.help.conf'"'"
         retvalshouldbe 0

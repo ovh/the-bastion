@@ -1228,6 +1228,16 @@ if ($osh_debug) {
     osh_debug(Data::Dumper::Dumper(\@accessList));
 }
 
+# Determine whether any of the access grants authorizing this connection requires JIT MFA.
+# This must be done regardless of the egress authentication method.
+# Note: for the ssh egress key path, this value is refined below by get_details_from_access_array(),
+# which additionally honours --use-key. We keep the "last non-none grant wins" semantics it uses.
+foreach my $access (@accessList) {
+    if ($access->{'mfaRequired'} && $access->{'mfaRequired'} ne 'none') {
+        $JITMFARequired = $access->{'mfaRequired'};
+    }
+}
+
 # build ttyrec command that'll prefix the real command
 my $ttyrec_fnret = OVH::Bastion::build_ttyrec_cmdline_part1of2(
     ip            => $ip,
