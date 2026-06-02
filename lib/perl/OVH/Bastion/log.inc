@@ -349,8 +349,8 @@ sub _sql_log_insert_file {
         }
         elsif ($sqltype eq 'global') {
             @execute = (
-                $uniqid, $timestamp, $account, $cmdtype,   $allowed,   $ipfrom,  $ipto,
-                $portto, $user,      $plugin,  $proxyuser, $proxyhost, $proxyip, $proxyport
+                $uniqid, $timestamp, $account, $cmdtype,   $allowed, $ipfrom,    $ipto,
+                $portto, $user,      $plugin,  $proxyuser, $proxyip, $proxyhost, $proxyport
             );
             $prepare =
               "INSERT INTO connections_summary (uniqid,timestamp,account,cmdtype,allowed,ipfrom,ipto,portto,user,plugin,proxyuser,proxyip,proxyhost,proxyport)"
