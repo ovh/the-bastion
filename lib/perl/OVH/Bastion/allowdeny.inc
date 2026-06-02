@@ -1130,6 +1130,53 @@ sub is_access_granted {
     return R('KO_ACCESS_DENIED', msg => "Access denied for $account to $machine");
 }
 
+# Build the ssh "-o ProxyCommand=..." option used to reach an egress host through a jumphost
+sub build_proxyjump_ssh_options {
+    my %params     = @_;
+    my $proxyIp    = $params{'proxyIp'};
+    my $proxyPort  = $params{'proxyPort'};
+    my $proxyUser  = $params{'proxyUser'};
+    my @sshOptions = @{$params{'sshOptions'} || []};
+
+    # refuse to build the option if the feature has been disabled
+    if (!OVH::Bastion::config('egressProxyJumpAllowed')->value) {
+        return R('KO_PROXYJUMP_DENIED', msg => "egress proxy-jump connections have been disabled by policy");
+    }
+
+    # defense in depth: re-validate (and untaint) the proxy tuple, even though our callers already did
+    my $fnret = OVH::Bastion::is_valid_ip(ip => $proxyIp, allowSubnets => 0);
+    $fnret or return R('KO_INVALID_PROXY_IP', msg => "invalid proxy-jump IP");
+    $proxyIp = $fnret->value->{'ip'};
+
+    $fnret = OVH::Bastion::is_valid_port(port => $proxyPort);
+    $fnret or return R('KO_INVALID_PROXY_PORT', msg => "invalid proxy-jump port");
+    $proxyPort = $fnret->value;
+
+    $fnret = OVH::Bastion::is_valid_remote_user(user => $proxyUser, allowWildcards => 0);
+    $fnret or return R('KO_INVALID_PROXY_USER', msg => "invalid proxy-jump user");
+    $proxyUser = $fnret->value;
+
+    # assemble and shell-quote the ProxyCommand.
+    # brackets around %h: ensure it works for IPv6 (it's also working for IPv4)
+    my @proxyCommand = ('ssh', @sshOptions);
+    push @proxyCommand, '-p', $proxyPort if $proxyPort && $proxyPort != 22;
+    push @proxyCommand, '-l', $proxyUser, '-W', '[%h]:%p', $proxyIp;
+
+    my $proxyCommandStr = join(' ', map { _shell_quote_arg($_) } @proxyCommand);
+    osh_debug("Built ProxyCommand: $proxyCommandStr");
+
+    return R('OK', value => {sshArgs => ['-o', "ProxyCommand=$proxyCommandStr"]});
+}
+
+# Quote a single argument for safe inclusion in a /bin/sh command line, by wrapping it in
+# single quotes and escaping any embedded single quote (the '\'' trick).
+sub _shell_quote_arg {
+    my $str = shift;
+    $str = '' if !defined $str;
+    $str =~ s/'/'\\''/g;
+    return "'$str'";
+}
+
 sub ssh_test_access_way {
     my %params  = @_;
     my $account = $params{'account'};
@@ -1248,18 +1295,21 @@ sub ssh_test_access_way {
 
     # add proxyjump when specified
     if (defined $proxyIp) {
-        my @proxyCommand = qw{ ssh -o ConnectTimeout=5 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no };
-        push @proxyCommand, '-o', 'PreferredAuthentications=' . $preferredAuthentications;
-        foreach (@keyList) {
-            push @proxyCommand, "-i", $_;
-        }
-        push @proxyCommand, "-p", $proxyPort if $proxyPort && $proxyPort != 22;
-        push @proxyCommand, '-l', $proxyUser, '-W', '%h:%p', $proxyIp;
-
-        my $proxyCommandStr = join(' ', map { /\s/ ? "'$_'" : $_ } @proxyCommand);
-        osh_debug("Testing with ProxyCommand: $proxyCommandStr");
-
-        push @command, '-o', "ProxyCommand=$proxyCommandStr";
+        my @proxySshOptions = (
+            '-o', 'ConnectTimeout=5',
+            '-o', 'UserKnownHostsFile=/dev/null',
+            '-o', 'StrictHostKeyChecking=no',
+            '-o', 'PreferredAuthentications=' . $preferredAuthentications,
+        );
+        push @proxySshOptions, map { ('-i', $_) } @keyList;
+        $fnret = OVH::Bastion::build_proxyjump_ssh_options(
+            proxyIp    => $proxyIp,
+            proxyPort  => $proxyPort,
+            proxyUser  => $proxyUser,
+            sshOptions => \@proxySshOptions,
+        );
+        $fnret or return $fnret;
+        push @command, @{$fnret->value->{'sshArgs'}};
 
         $ENV{'OSH_PROXYJUMP_CONNECTION'} = 1;
     }

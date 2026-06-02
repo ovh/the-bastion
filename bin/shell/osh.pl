@@ -1617,36 +1617,27 @@ else {
     push @command, '-o', "ConnectTimeout=$timeout" if $timeout;
 
     if ($proxyJump) {
-        # check if poxyJump connections are allowed
-        if (!$config->{'egressProxyJumpAllowed'}) {
-            main_exit OVH::Bastion::EXIT_ACCESS_DENIED, "proxyjump_not_allowed",
-              "Sorry $self, egress proxy-jump connections have been disabled by policy";
-        }
-
-        # Build ProxyCommand with same options as main SSH command
-        my @proxyCommand = ('ssh');
-        push @proxyCommand, '-o', 'PreferredAuthentications=' . (join(',', @preferredAuths));
-
-        # Add the same SSH keys to the proxy command
-        if ($fnret && $fnret->value->{'sshKeysArgs'}) {
-            push @proxyCommand, @{$fnret->value->{'sshKeysArgs'}};
-        }
-
-        push @proxyCommand, '-p', $proxyPort if $proxyPort && $proxyPort != 22;
-        push @proxyCommand, '-l', $proxyUser, '-W', '%h:%p', $proxyIp;
-
+        # build the same ssh options as the main SSH command for the proxy hop
+        my @proxySshOptions = ('-o', 'PreferredAuthentications=' . (join(',', @preferredAuths)));
         if ($verbose) {
-            foreach (1 .. $verbose) {
-                push @proxyCommand, '-v';
-            }
+            push @proxySshOptions, '-v' for (1 .. $verbose);
         }
-        push @proxyCommand, '-o', "ConnectTimeout=$timeout" if $timeout;
+        push @proxySshOptions, '-o', "ConnectTimeout=$timeout" if $timeout;
 
-        # Quote arguments that contain spaces and build the command string
-        my $proxyCommandStr = join(' ', map { /\s/ ? "'$_'" : $_ } @proxyCommand);
-        push @command, '-o', "ProxyCommand=$proxyCommandStr";
+        # use the same egress keys (already in '-i key' form) for the proxy hop
+        push @proxySshOptions, @{$fnret->value->{'sshKeysArgs'}} if ($fnret && $fnret->value->{'sshKeysArgs'});
 
-        osh_debug("ProxyCommand: $proxyCommandStr");
+        # the helper enforces the egressProxyJumpAllowed policy and builds a shell-quoted ProxyCommand
+        my $proxyFnret = OVH::Bastion::build_proxyjump_ssh_options(
+            proxyIp    => $proxyIp,
+            proxyPort  => $proxyPort,
+            proxyUser  => $proxyUser,
+            sshOptions => \@proxySshOptions,
+        );
+        if (!$proxyFnret) {
+            main_exit OVH::Bastion::EXIT_ACCESS_DENIED, "proxyjump_not_allowed", "Sorry $self, " . $proxyFnret->msg;
+        }
+        push @command, @{$proxyFnret->value->{'sshArgs'}};
     }
 
     if (not $quiet) {

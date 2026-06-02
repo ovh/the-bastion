@@ -401,25 +401,18 @@ foreach my $key (@keys) {
     push @cmd, ('-i', $key);
 }
 
-# Add ProxyCommand if proxy is specified
+# Add ProxyCommand if proxy is specified (also checks whether egressProxyJumpAllowed)
 if ($proxyIp) {
-    # Build ProxyCommand similar to how osh.pl does it
-    my @proxyCommand = ('ssh');
-    push @proxyCommand, '-o', 'ForwardAgent=no', '-o', 'PermitLocalCommand=no', '-o', 'ClearAllForwardings=yes';
-
-    # Add the same SSH keys to the proxy command
-    foreach my $key (@keys) {
-        push @proxyCommand, ('-i', $key);
-    }
-
-    push @proxyCommand, '-p', $proxyPort if $proxyPort && $proxyPort != 22;
-    push @proxyCommand, '-l', $proxyUser, '-W', '%h:%p', $proxyIp;
-
-    # Quote arguments that contain spaces and build the command string
-    my $proxyCommandStr = join(' ', map { /\s/ ? "'$_'" : $_ } @proxyCommand);
-    push @cmd, '-o', "ProxyCommand=$proxyCommandStr";
-
-    osh_debug("ProxyCommand: $proxyCommandStr");
+    my @proxySshOptions = ('-o', 'ForwardAgent=no', '-o', 'PermitLocalCommand=no', '-o', 'ClearAllForwardings=yes');
+    push @proxySshOptions, map { ('-i', $_) } @keys;
+    $fnret = OVH::Bastion::build_proxyjump_ssh_options(
+        proxyIp    => $proxyIp,
+        proxyPort  => $proxyPort,
+        proxyUser  => $proxyUser,
+        sshOptions => \@proxySshOptions,
+    );
+    $fnret or osh_exit($fnret);
+    push @cmd, @{$fnret->value->{'sshArgs'}};
 }
 
 push @cmd, "--", $ip, $decoded;
