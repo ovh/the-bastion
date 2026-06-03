@@ -865,6 +865,77 @@ sub _is_in_any_net {
     return R('KO', msg => "No match found");
 }
 
+# Evaluate the configured ingressToEgressRules for a SINGLE egress IP, given the ingress IP.
+# Returns R('OK') if connecting to $ip is permitted by the rules, or a KO_ACCESS_DENIED otherwise.
+# This is called once for the target host, and once more for the proxy host (if any), so that the
+# jumphost is subject to the very same network policy as the final destination (each hop must pass
+# the rules on its own).
+sub _check_ingress_to_egress {
+    my %params = @_;
+    my $ipfrom = $params{'ipfrom'};
+    my $ip     = $params{'ip'};
+    my @rules  = @{$params{'rules'} || []};
+
+    foreach my $ruleNb (0 .. $#rules) {
+        my ($inNets, $outNets, $policy) = @{$rules[$ruleNb]};
+
+        my $fnret = _is_in_any_net(ip => $ipfrom, networks => $inNets);
+        if ($fnret->is_err) {
+            warn("Denied access due to potential configuration error in ingressToEgressRules (rule #$ruleNb, ingress");
+            return R('KO_ACCESS_DENIED', msg => "Error checking ingressToEgressRules, warn your bastion admin!");
+        }
+
+        # ingress IP doesn't match for this rule, go to next:
+        next if $fnret->is_ko;
+
+        # ingress IP matches, check whether egress IP matches
+        $fnret = _is_in_any_net(ip => $ip, networks => $outNets);
+        if ($fnret->is_err) {
+            warn("Denied access due to potential configuration error in ingressToEgressRules (rule #$ruleNb, egress");
+            return R('KO_ACCESS_DENIED', msg => "Error checking ingressToEgressRules, warn your bastion admin!");
+        }
+
+        if ($policy eq 'ALLOW-EXCLUSIVE') {
+
+            # egress matches: allowed, stop checking more rules
+            return R('OK') if $fnret->is_ok;
+
+            # is_ko: we're in exclusive mode, stop checking and deny
+            return R('KO_ACCESS_DENIED',
+                msg =>
+                  "Can't connect you to $ip, as it's not part of the allowed networks given where you're connecting from ($ipfrom)"
+            );
+        }
+        elsif ($policy eq 'DENY') {
+            if ($fnret->is_ok) {
+
+                # egress matches: we have been asked to deny
+                return R('KO_ACCESS_DENIED',
+                    msg =>
+                      "Can't connect you to $ip, as it's not part of the allowed networks given where you're connecting from ($ipfrom)"
+                );
+            }
+
+            # is_ko: egress doesn't match, check next rule
+        }
+        elsif ($policy eq 'ALLOW') {
+
+            # egress matches: we have been asked to allow, stop checking more rules
+            return R('OK') if $fnret->is_ok;
+
+            # is_ko: egress doesn't match, check next rule
+        }
+        else {
+            # invalid policy
+            warn("Denied access due to potential configuration error in ingressToEgressRules (rule #$ruleNb, policy");
+            return R('KO_ACCESS_DENIED', msg => "Error checking ingressToEgressRules, warn your bastion admin!");
+        }
+    }
+
+    # no rule denied the access: allowed
+    return R('OK');
+}
+
 # this function checks if the given account has access to user@ip:port
 # through any of the supported ways (personal/group/guest/legacy accesses),
 # by calling is_access_way_granted() multiple times with the proper params.
@@ -931,78 +1002,27 @@ sub is_access_granted {
         }
     }
 
-    # 0c/3 check if there are more complex "ingressToEgressRules" defined, and potentially bail out whether needed
-    $fnret = OVH::Bastion::config('ingressToEgressRules');
-    my @rules = @{$fnret->value || []};
-    foreach my $ruleNb (0 .. $#rules) {
-        my ($inNets, $outNets, $policy) = @{$rules[$ruleNb]};
+    # 0c/3 check if there are more complex "ingressToEgressRules" defined, and potentially bail out.
+    # The rules are evaluated independently for the target host and (if any) the proxy host, so that
+    # the jumphost is subject to the same egress network policy as the final destination: each hop
+    # must pass the rules on its own.
+    my $rules = OVH::Bastion::config('ingressToEgressRules')->value || [];
+    if (@$rules) {
+        $fnret = _check_ingress_to_egress(ipfrom => $ipfrom, ip => $ip, rules => $rules);
+        $fnret or return $fnret;
 
-        $fnret = _is_in_any_net(ip => $ipfrom, networks => $inNets);
-        if ($fnret->is_err) {
-            warn("Denied access due to potential configuration error in ingressToEgressRules (rule #$ruleNb, ingress");
-            return R('KO_ACCESS_DENIED', msg => "Error checking ingressToEgressRules, warn your bastion admin!");
-        }
-
-        # ingress IP doesn't match for this rule, go to next:
-        next if $fnret->is_ko;
-
-        # ingress IP matches, check whether egress IP matches
-        $fnret = _is_in_any_net(ip => $ip, networks => $outNets);
-        if ($fnret->is_err) {
-            warn("Denied access due to potential configuration error in ingressToEgressRules (rule #$ruleNb, egress");
-            return R('KO_ACCESS_DENIED', msg => "Error checking ingressToEgressRules, warn your bastion admin!");
-        }
         if (defined $proxyIp) {
-            my $fnret2 = _is_in_any_net(ip => $proxyIp, networks => $outNets);
-            if ($fnret2->is_err) {
-                warn(
-                    "Denied access due to potential configuration error in ingressToEgressRules (rule #$ruleNb, egress proxy"
-                );
-                return R('KO_ACCESS_DENIED', msg => "Error checking ingressToEgressRules, warn your bastion admin!");
-            }
-            if ($fnret2->is_ok) {
-                # proxy egress matches too, we consider the egress matches
-                $fnret = $fnret2;
-            }
-        }
-        if ($policy eq 'ALLOW-EXCLUSIVE') {
-            if ($fnret->is_ok) {
+            $fnret = _check_ingress_to_egress(ipfrom => $ipfrom, ip => $proxyIp, rules => $rules);
 
-                # egress matches: allowed, stop checking more rules
-                last;
-            }
+            # a hard error (e.g. a malformed rule) propagates verbatim, just like for the target hop above,
+            # so the admin-facing message isn't masked and the proxy hop can never accidentally fail open
+            return $fnret if $fnret->is_err;
 
-            # is_ko: we're in exclusive mode, stop checking and deny
+            # access denied: same fail-closed behavior as the target hop, but make clear it's the proxy hop
             return R('KO_ACCESS_DENIED',
                 msg =>
-                  "Can't connect you to $ip, as it's not part of the allowed networks given where you're connecting from ($ipfrom)"
-            );
-        }
-        elsif ($policy eq 'DENY') {
-            if ($fnret->is_ok) {
-
-                # egress matches: we have been asked to deny
-                return R('KO_ACCESS_DENIED',
-                    msg =>
-                      "Can't connect you to $ip, as it's not part of the allowed networks given where you're connecting from ($ipfrom)"
-                );
-            }
-
-            # is_ko: egress doesn't match, check next rule
-        }
-        elsif ($policy eq 'ALLOW') {
-            if ($fnret->is_ok) {
-
-                # egress matches: we have been asked to allow, stop checking more rules
-                last;
-            }
-
-            # is_ko: egress doesn't match, check next rule
-        }
-        else {
-            # invalid policy
-            warn("Denied access due to potential configuration error in ingressToEgressRules (rule #$ruleNb, policy");
-            return R('KO_ACCESS_DENIED', msg => "Error checking ingressToEgressRules, warn your bastion admin!");
+                  "Can't connect you to $ip via proxy $proxyIp, as the proxy is not part of the allowed networks given where you're connecting from ($ipfrom)"
+            ) if $fnret->is_ko;
         }
     }
 
