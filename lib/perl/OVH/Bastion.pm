@@ -1197,53 +1197,82 @@ sub build_ttyrec_cmdline_part1of2 {
         $params{'proxyIp'} = 'v6[' . $params{'proxyIp'} . ']';
     }
 
-    # build ttyrec filename format
-    my $bastionName          = OVH::Bastion::config('bastionName')->value;
-    my $ttyrecFilenameFormat = OVH::Bastion::config('ttyrecFilenameFormat')->value;
-    $ttyrecFilenameFormat =~ s/&bastionname/$bastionName/g;
-    $ttyrecFilenameFormat =~ s/&uniqid/$params{'uniqid'}/g       if $params{'uniqid'};
-    $ttyrecFilenameFormat =~ s/&ip/$params{'ip'}/g               if $params{'ip'};
-    $ttyrecFilenameFormat =~ s/&port/$params{'port'}/g           if defined $params{'port'};
-    $ttyrecFilenameFormat =~ s/&user/$params{'user'}/g           if defined $params{'user'};
-    $ttyrecFilenameFormat =~ s/&account/$params{'account'}/g     if $params{'account'};
-    $ttyrecFilenameFormat =~ s/&proxyip/$params{'proxyIp'}/g     if defined $params{'proxyIp'};
-    $ttyrecFilenameFormat =~ s/&proxyport/$params{'proxyPort'}/g if defined $params{'proxyPort'};
-    $ttyrecFilenameFormat =~ s/&proxyuser/$params{'proxyUser'}/g if defined $params{'proxyUser'};
+    # Resolve the ttyrec recording path. Two dedicated full-path templates (directories + filename)
+    # are used depending on whether the egress connection goes through a jumphost ('via') or not
+    # ('direct'). When the relevant option isn't set, the path is built from the standard layout
+    # using ttyrecFilenameFormat (which sets the filename only).
+    my $bastionName = OVH::Bastion::config('bastionName')->value;
+    my $isVia       = defined $params{'proxyIp'};
 
-    if ($ttyrecFilenameFormat =~ /&(bastionname|uniqid|ip|port|user|account)/) {
+    my $pathFormat =
+      $isVia
+      ? OVH::Bastion::config('ttyrecViaPathFormat')->value
+      : OVH::Bastion::config('ttyrecDirectPathFormat')->value;
 
-        # if we still have a placeholder here, then we were missing parameters
+    if (!$pathFormat) {
+        my $filenameFormat = OVH::Bastion::config('ttyrecFilenameFormat')->value;
+
+        # standard layout: <home>/ttyrec[/<remoteaccount>]/<perhost>/<filename>, where <perhost>
+        # is 'via-<proxyip>-<ip>' for proxy-jump connections (so it sorts by proxy first) or '<ip>'
+        my $perHost = $isVia ? 'via-&proxyip-&ip' : '&ip';
+        $pathFormat = "&home/ttyrec/&remoteaccount/$perHost/$filenameFormat";
+    }
+
+    # Substitute placeholders. Required tokens are left untouched when their value is missing, so
+    # the check just below catches the error; optional tokens (proxy*, remoteaccount) become the
+    # empty string when absent, and the resulting empty path components are collapsed afterwards.
+    my %requiredToken = (
+        '&home'        => $params{'home'},
+        '&bastionname' => $bastionName,
+        '&uniqid'      => $params{'uniqid'},
+        '&ip'          => $params{'ip'},
+        '&port'        => $params{'port'},
+        '&user'        => $params{'user'},
+        '&account'     => $params{'account'},
+    );
+    my %optionalToken = (
+        '&remoteaccount' => (($params{'realm'} && $params{'remoteaccount'}) ? $params{'remoteaccount'} : ''),
+        '&proxyip'       => $params{'proxyIp'},
+        '&proxyport'     => $params{'proxyPort'},
+        '&proxyuser'     => $params{'proxyUser'},
+    );
+    foreach my $tok (keys %requiredToken) {
+        my $val = $requiredToken{$tok};
+        next if !defined $val;
+        $val =~ tr{/}{_} if $tok ne '&home';    # slash guard, except &home which is legitimately a path
+        $pathFormat =~ s/\Q$tok\E/$val/g;
+    }
+    foreach my $tok (keys %optionalToken) {
+        my $val = $optionalToken{$tok} // '';
+        $val        =~ tr{/}{_};
+        $pathFormat =~ s/\Q$tok\E/$val/g;
+    }
+
+    # a still-present required placeholder means we were called with a missing parameter
+    if ($pathFormat =~ /&(home|bastionname|uniqid|ip|port|user|account)/) {
         return R('ERR_MISSING_PARAMETER',
-            msg => "Missing bastionname, uniqid, ip, port, user or account in ttyrec cmdline building");
+            msg => "Missing home, bastionname, uniqid, ip, port, user or account in ttyrec cmdline building");
     }
 
-    # if there is no proxyIp, remove the via part and all proxy placeholders
-    if (!defined $params{'proxyIp'}) {
-        $ttyrecFilenameFormat =~ s/\.via//g;
-        $ttyrecFilenameFormat =~ s/\.&proxyuser//g;
-        $ttyrecFilenameFormat =~ s/\.&proxyip//g;
-        $ttyrecFilenameFormat =~ s/\.&proxyport//g;
+    # collapse empty path components (e.g. an empty &remoteaccount for non-realm accounts)
+    $pathFormat =~ s{/+}{/}g;
+
+    # safety: the resolved path must be absolute and must not climb out of the tree with '..'
+    if ($pathFormat !~ m{^/} || $pathFormat =~ m{(?:^|/)\.\.(?:/|$)}) {
+        return R('ERR_SECURITY_VIOLATION', msg => "Refusing to use unsafe ttyrec path '$pathFormat'");
     }
 
-    # ensure there are no '/'
-    $ttyrecFilenameFormat =~ tr{/}{_};
-
-    # prepend (and create) directory
-    my $saveDir = $params{'home'} . "/ttyrec";
-    mkdir($saveDir);
-    if ($params{'realm'} && $params{'remoteaccount'}) {
-        $saveDir .= "/" . $params{'remoteaccount'};
-        mkdir($saveDir);
+    # split into directory + filename, and create the directory tree (best-effort, default perms)
+    my ($saveDir, $ttyrecFilenameFormat) = $pathFormat =~ m{^(.*)/([^/]+)$};
+    if (!$saveDir || !$ttyrecFilenameFormat) {
+        return R('ERR_INVALID_PARAMETER', msg => "Invalid ttyrec path '$pathFormat'");
     }
-
-    # format it like via-$proxyIp-$ip so that it's sorted by proxyIp first, then by ip if you list the directory
-    if ($params{'proxyIp'}) {
-        $saveDir .= "/via-" . $params{'proxyIp'} . "-" . $params{'ip'};
+    my $mkpath = '';
+    foreach my $component (split m{/}, $saveDir) {
+        next if !$component;
+        $mkpath .= "/$component";
+        mkdir($mkpath);    # ignore errors: parent directories likely already exist
     }
-    else {
-        $saveDir .= "/" . $params{'ip'};
-    }
-    mkdir($saveDir);
 
     my $saveFileFormat = "$saveDir/$ttyrecFilenameFormat";
 

@@ -174,7 +174,7 @@ $fnret = OVH::Bastion::build_ttyrec_cmdline_part1of2(
 cmp_deeply(
     $fnret->value->{'saveFile'},
     re(
-        qr{^\Q/home/randomuser/ttyrec/via-10.0.0.1-192.168.1.100/20\E\d\d-\d\d-\d\d.\d\d\-\d\d\-\d\d\.\d{6}\Q.cafed00dcafe.bastionuser.targetuser.192.168.1.100.22.via.jumpi.10.0.0.1.2222.ttyrec\E$}
+        qr{^\Q/home/randomuser/ttyrec/via-10.0.0.1-192.168.1.100/20\E\d\d-\d\d-\d\d.\d\d\-\d\d\-\d\d\.\d{6}\Q.cafed00dcafe.bastionuser.targetuser.192.168.1.100.22.ttyrec\E$}
     ),
     "build_ttyrec_cmdline_part1of2 with proxy saveFile"
 );
@@ -185,7 +185,7 @@ cmp_deeply(
         '-f',
         $fnret->value->{'saveFile'},
         '-F',
-        '/home/randomuser/ttyrec/via-10.0.0.1-192.168.1.100/%Y-%m-%d.%H-%M-%S.#usec#.cafed00dcafe.bastionuser.targetuser.192.168.1.100.22.via.jumpi.10.0.0.1.2222.ttyrec'
+        '/home/randomuser/ttyrec/via-10.0.0.1-192.168.1.100/%Y-%m-%d.%H-%M-%S.#usec#.cafed00dcafe.bastionuser.targetuser.192.168.1.100.22.ttyrec'
     ],
     "build_ttyrec_cmdline_part1of2 with proxy cmd"
 );
@@ -205,7 +205,7 @@ $fnret = OVH::Bastion::build_ttyrec_cmdline_part1of2(
 cmp_deeply(
     $fnret->value->{'saveFile'},
     re(
-        qr{^\Q/home/randomuser/ttyrec/via-v6[2001.db8..1]-192.168.1.200/20\E\d\d-\d\d-\d\d.\d\d\-\d\d\-\d\d\.\d{6}\Q.cafed00dcafe.bastionuser.targetuser.192.168.1.200.22.via.jumpi.v6[2001.db8..1].22.ttyrec\E$}
+        qr{^\Q/home/randomuser/ttyrec/via-v6[2001.db8..1]-192.168.1.200/20\E\d\d-\d\d-\d\d.\d\d\-\d\d\-\d\d\.\d{6}\Q.cafed00dcafe.bastionuser.targetuser.192.168.1.200.22.ttyrec\E$}
     ),
     "build_ttyrec_cmdline_part1of2 with IPv6 proxy saveFile"
 );
@@ -216,7 +216,7 @@ cmp_deeply(
         '-f',
         $fnret->value->{'saveFile'},
         '-F',
-        '/home/randomuser/ttyrec/via-v6[2001.db8..1]-192.168.1.200/%Y-%m-%d.%H-%M-%S.#usec#.cafed00dcafe.bastionuser.targetuser.192.168.1.200.22.via.jumpi.v6[2001.db8..1].22.ttyrec'
+        '/home/randomuser/ttyrec/via-v6[2001.db8..1]-192.168.1.200/%Y-%m-%d.%H-%M-%S.#usec#.cafed00dcafe.bastionuser.targetuser.192.168.1.200.22.ttyrec'
     ],
     "build_ttyrec_cmdline_part1of2 with IPv6 proxy cmd"
 );
@@ -485,5 +485,188 @@ is(
     qr/^.*azerty.*$|^st.*ar$|^que.stion$|^c.*ompl.i.*cated.*$/,
     "build_re_from_wildcards() 2"
 );
+
+# ttyrecDirectPathFormat / ttyrecViaPathFormat
+
+# a custom direct path format: full path with &home, &account, &ip, &port and a filename
+OVH::Bastion::load_configuration(
+    mock_data => {
+        bastionName            => 'mock',
+        ttyrecDirectPathFormat => '&home/rec/&account/&ip-&port/%Y.#usec#.&uniqid.&user.ttyrec',
+    }
+);
+$fnret = OVH::Bastion::build_ttyrec_cmdline_part1of2(
+    ip      => "203.0.113.5",
+    port    => 2222,
+    user    => "alice",
+    account => "bob",
+    uniqid  => 'deadbeef',
+    home    => "/home/bob",
+);
+cmp_deeply(
+    $fnret->value->{'saveFile'},
+    re(qr{^\Q/home/bob/rec/bob/203.0.113.5-2222/20\E\d\d\Q.\E\d{6}\Q.deadbeef.alice.ttyrec\E$}),
+    "ttyrecDirectPathFormat: custom path saveFile"
+);
+is(
+    $fnret->value->{'cmd'}[4],
+    '/home/bob/rec/bob/203.0.113.5-2222/%Y.#usec#.deadbeef.alice.ttyrec',
+    "ttyrecDirectPathFormat: custom path -F format"
+);
+
+# a custom via path format: proxy tokens are available, and only the via format is consulted for proxy connections
+OVH::Bastion::load_configuration(
+    mock_data => {
+        bastionName         => 'mock',
+        ttyrecViaPathFormat => '&home/rec/via-&proxyuser-at-&proxyip-&proxyport/&ip/%Y.#usec#.&uniqid.ttyrec',
+    }
+);
+$fnret = OVH::Bastion::build_ttyrec_cmdline_part1of2(
+    ip        => "203.0.113.5",
+    port      => 22,
+    user      => "alice",
+    account   => "bob",
+    uniqid    => 'deadbeef',
+    home      => "/home/bob",
+    proxyIp   => "198.51.100.9",
+    proxyPort => 2222,
+    proxyUser => "jump",
+);
+is(
+    $fnret->value->{'cmd'}[4],
+    '/home/bob/rec/via-jump-at-198.51.100.9-2222/203.0.113.5/%Y.#usec#.deadbeef.ttyrec',
+    "ttyrecViaPathFormat: custom path with proxy tokens"
+);
+
+# realm account, fallback layout: the &remoteaccount subfolder is inserted
+OVH::Bastion::load_configuration(mock_data => {bastionName => 'mock'});
+$fnret = OVH::Bastion::build_ttyrec_cmdline_part1of2(
+    ip            => "203.0.113.5",
+    port          => 22,
+    user          => "alice",
+    account       => "realm_foo",
+    uniqid        => 'deadbeef',
+    home          => "/home/realm_foo",
+    realm         => "foo",
+    remoteaccount => "bob",
+);
+cmp_deeply(
+    $fnret->value->{'saveFile'},
+    re(qr{^\Q/home/realm_foo/ttyrec/bob/203.0.113.5/20\E\d\d.*\Q.deadbeef.realm_foo.alice.203.0.113.5.22.ttyrec\E$}),
+    "fallback realm account: &remoteaccount subfolder is present"
+);
+
+# a path format that tries to climb out of the tree must be refused
+OVH::Bastion::load_configuration(
+    mock_data => {bastionName => 'mock', ttyrecDirectPathFormat => '&home/../../etc/&ip/x'});
+$fnret = OVH::Bastion::build_ttyrec_cmdline_part1of2(
+    ip      => "1.2.3.4",
+    port    => 22,
+    user    => "u",
+    account => "a",
+    uniqid  => 'x',
+    home    => "/home/u",
+);
+is($fnret->err, 'ERR_SECURITY_VIOLATION', "ttyrec path with '..' is refused");
+
+# full matrix: {only Direct, only Via, both, neither} x {direct conn, via conn}
+# each of ttyrecDirectPathFormat and ttyrecViaPathFormat falls back independently to the legacy
+# layout (built from ttyrecFilenameFormat) when its own value is empty. We verify every cell.
+
+# returns the ttyrec '-F' format (i.e. the resolved path template, before strftime expansion)
+sub _ttyrec_F {
+    my %extra = @_;
+    my $r     = OVH::Bastion::build_ttyrec_cmdline_part1of2(
+        ip      => "203.0.113.5",
+        port    => 22,
+        user    => "alice",
+        account => "bob",
+        uniqid  => 'deadbeef',
+        home    => "/home/bob",
+        %extra,
+    );
+    return $r ? $r->value->{'cmd'}[4] : "ERR:" . $r->err;
+}
+
+my $DIRECT_FMT = '&home/D/&account/&ip-&port/%Y.#usec#.&uniqid.&user.ttyrec';
+my $VIA_FMT    = '&home/V/&proxyuser-&proxyip-&proxyport/&ip/%Y.#usec#.&uniqid.ttyrec';
+my %VIA_CONN   = (proxyIp => "198.51.100.9", proxyPort => 2222, proxyUser => "jump");
+
+my $DIRECT_CUSTOM   = '/home/bob/D/bob/203.0.113.5-22/%Y.#usec#.deadbeef.alice.ttyrec';
+my $VIA_CUSTOM      = '/home/bob/V/jump-198.51.100.9-2222/203.0.113.5/%Y.#usec#.deadbeef.ttyrec';
+my $DIRECT_FALLBACK = '/home/bob/ttyrec/203.0.113.5/%Y-%m-%d.%H-%M-%S.#usec#.deadbeef.bob.alice.203.0.113.5.22.ttyrec';
+my $VIA_FALLBACK =
+  '/home/bob/ttyrec/via-198.51.100.9-203.0.113.5/%Y-%m-%d.%H-%M-%S.#usec#.deadbeef.bob.alice.203.0.113.5.22.ttyrec';
+
+# only ttyrecDirectPathFormat defined
+OVH::Bastion::load_configuration(mock_data => {bastionName => 'mock', ttyrecDirectPathFormat => $DIRECT_FMT});
+is(_ttyrec_F(),          $DIRECT_CUSTOM, "only Direct defined: direct conn uses ttyrecDirectPathFormat");
+is(_ttyrec_F(%VIA_CONN), $VIA_FALLBACK,  "only Direct defined: via conn falls back (ttyrecViaPathFormat empty)");
+
+# only ttyrecViaPathFormat defined
+OVH::Bastion::load_configuration(mock_data => {bastionName => 'mock', ttyrecViaPathFormat => $VIA_FMT});
+is(_ttyrec_F(),          $DIRECT_FALLBACK, "only Via defined: direct conn falls back (ttyrecDirectPathFormat empty)");
+is(_ttyrec_F(%VIA_CONN), $VIA_CUSTOM,      "only Via defined: via conn uses ttyrecViaPathFormat");
+
+# both defined
+OVH::Bastion::load_configuration(
+    mock_data => {bastionName => 'mock', ttyrecDirectPathFormat => $DIRECT_FMT, ttyrecViaPathFormat => $VIA_FMT});
+is(_ttyrec_F(),          $DIRECT_CUSTOM, "both defined: direct conn uses ttyrecDirectPathFormat");
+is(_ttyrec_F(%VIA_CONN), $VIA_CUSTOM,    "both defined: via conn uses ttyrecViaPathFormat");
+
+# neither defined (fallback for both)
+OVH::Bastion::load_configuration(mock_data => {bastionName => 'mock'});
+is(_ttyrec_F(),          $DIRECT_FALLBACK, "neither defined: direct conn uses fallback layout");
+is(_ttyrec_F(%VIA_CONN), $VIA_FALLBACK,    "neither defined: via conn uses fallback layout");
+
+# &home and &remoteaccount are usable in ttyrecFilenameFormat too: the substitution is applied to
+# the whole resolved path, so these tokens are not restricted to the new path-format options.
+OVH::Bastion::load_configuration(
+    mock_data => {bastionName => 'mock', ttyrecFilenameFormat => '&uniqid.&remoteaccount.&user.&ip.&port.ttyrec'});
+is(
+    _ttyrec_F(account => "realm_foo", home => "/home/realm_foo", realm => "foo", remoteaccount => "bob"),
+    '/home/realm_foo/ttyrec/bob/203.0.113.5/deadbeef.bob.alice.203.0.113.5.22.ttyrec',
+    "&remoteaccount is usable inside ttyrecFilenameFormat"
+);
+OVH::Bastion::load_configuration(mock_data => {bastionName => 'mock', ttyrecFilenameFormat => '&home.&uniqid.ttyrec'});
+is(_ttyrec_F(), '/home/bob/ttyrec/203.0.113.5/home/bob.deadbeef.ttyrec', "&home is usable inside ttyrecFilenameFormat");
+
+# pre-proxyjump directory-layout regression: the &remoteaccount subfolder must be inserted IFF both 'realm'
+# and 'remoteaccount' are passed (matching the pre-proxyjump 'if ($realm && $remoteaccount)' behavior).
+OVH::Bastion::load_configuration(mock_data => {bastionName => 'mock'});
+my $WITH_REMACCT =
+  '/home/bob/ttyrec/remacct/203.0.113.5/%Y-%m-%d.%H-%M-%S.#usec#.deadbeef.bob.alice.203.0.113.5.22.ttyrec';
+is(_ttyrec_F(), $DIRECT_FALLBACK, "pre-proxyjump layout: no realm + no remoteaccount => no subfolder");
+is(_ttyrec_F(realm => "myrealm", remoteaccount => "remacct"),
+    $WITH_REMACCT, "pre-proxyjump layout: realm + remoteaccount => remoteaccount subfolder");
+is(_ttyrec_F(realm => "myrealm"), $DIRECT_FALLBACK,
+    "pre-proxyjump layout: realm without remoteaccount => no subfolder");
+is(_ttyrec_F(remoteaccount => "remacct"),
+    $DIRECT_FALLBACK, "pre-proxyjump layout: remoteaccount without realm => no subfolder");
+
+# Default vanilla install: ttyrecFilenameFormat at its shipped default, and both path-format options
+# unset (''). This is the most common configuration, so its behavior must be identical before and
+# after this PR. First pin those default values (mock-defaulting == a freshly copied bastion.conf):
+OVH::Bastion::load_configuration(mock_data => {bastionName => 'mock'});
+my $DEFAULT_FNAME = '%Y-%m-%d.%H-%M-%S.#usec#.&uniqid.&account.&user.&ip.&port.ttyrec';
+is(OVH::Bastion::config('ttyrecFilenameFormat')->value, $DEFAULT_FNAME, "vanilla: ttyrecFilenameFormat default value");
+is(OVH::Bastion::config('ttyrecDirectPathFormat')->value, '', "vanilla: ttyrecDirectPathFormat defaults to ''");
+is(OVH::Bastion::config('ttyrecViaPathFormat')->value,    '', "vanilla: ttyrecViaPathFormat defaults to ''");
+
+# Same, but with all three options set EXPLICITLY to their vanilla values (as a copied
+# bastion.conf.dist would have them): the resolved paths must match the pre-proxyjump layout, i.e. be
+# identical to omitting the path-format options entirely.
+OVH::Bastion::load_configuration(
+    mock_data => {
+        bastionName            => 'mock',
+        ttyrecFilenameFormat   => $DEFAULT_FNAME,
+        ttyrecDirectPathFormat => '',
+        ttyrecViaPathFormat    => '',
+    }
+);
+is(_ttyrec_F(),          $DIRECT_FALLBACK, "vanilla (explicit defaults): direct conn => pre-proxyjump layout");
+is(_ttyrec_F(%VIA_CONN), $VIA_FALLBACK,    "vanilla (explicit defaults): via conn => pre-proxyjump layout");
+is(_ttyrec_F(realm => "myrealm", remoteaccount => "remacct"),
+    $WITH_REMACCT, "vanilla (explicit defaults): realm+remoteaccount => pre-proxyjump layout");
 
 done_testing();
