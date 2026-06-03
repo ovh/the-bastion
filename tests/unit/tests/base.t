@@ -340,6 +340,57 @@ ok(
     "is_access_granted(wildcard) on allowed machine due to ingressToEgressRules catch-all"
 );
 
+# The proxy hop must be subject to the SAME ingressToEgressRules as the target: each hop is checked
+# independently, so a proxy outside the allowed egress is refused even if the target is allowed.
+$fnret = OVH::Bastion::is_access_granted(
+    account   => "wildcard",
+    user      => "root",
+    ipfrom    => "10.19.1.2",
+    ip        => "10.20.1.2",    # target IS in the ALLOW-EXCLUSIVE egress net
+    port      => "9876",
+    proxyIp   => "1.2.3.4",      # but the proxy is NOT
+    proxyPort => 22,
+    proxyUser => "root",
+);
+is($fnret->err, "KO_ACCESS_DENIED", "ingressToEgressRules: proxy outside the exclusive egress is denied");
+like(
+    $fnret->msg,
+    qr/via proxy 1\.2\.3\.4, as the proxy is not part of the allowed networks/,
+    "ingressToEgressRules: denial message points at the proxy"
+);
+
+# a proxy caught by a DENY rule is refused too (the target alone would be allowed by the catch-all)
+$fnret = OVH::Bastion::is_access_granted(
+    account   => "wildcard",
+    user      => "root",
+    ipfrom    => "192.168.43.1",
+    ip        => "5.6.7.8",
+    port      => "9876",
+    proxyIp   => "192.168.42.4",    # in the DENY egress net 192.168.0.0/16
+    proxyPort => 22,
+    proxyUser => "root",
+);
+is($fnret->err, "KO_ACCESS_DENIED", "ingressToEgressRules: proxy matching a DENY rule is denied");
+like($fnret->msg, qr/via proxy 192\.168\.42\.4/, "ingressToEgressRules: DENY denial points at the proxy");
+
+# when BOTH target and proxy are within the exclusive egress, the network filter passes (the access
+# is then only refused by the regular ACL check, not by the network policy)
+$fnret = OVH::Bastion::is_access_granted(
+    account   => "wildcard",
+    user      => "root",
+    ipfrom    => "10.19.1.2",
+    ip        => "10.20.1.2",
+    port      => "9876",
+    proxyIp   => "10.20.5.5",    # both target and proxy in 10.20.0.0/16
+    proxyPort => 22,
+    proxyUser => "root",
+);
+unlike(
+    $fnret->msg // '',
+    qr/not part of the allowed networks/,
+    "ingressToEgressRules: proxy inside the exclusive egress passes the network filter"
+);
+
 # check that "bool" type options are correctly normalized
 is(OVH::Bastion::config("enableSyslog")->value,             1, "config bool(1)");
 is(OVH::Bastion::config("enableGlobalAccessLog")->value,    1, "config bool(true)");
@@ -668,5 +719,71 @@ is(_ttyrec_F(),          $DIRECT_FALLBACK, "vanilla (explicit defaults): direct 
 is(_ttyrec_F(%VIA_CONN), $VIA_FALLBACK,    "vanilla (explicit defaults): via conn => pre-proxyjump layout");
 is(_ttyrec_F(realm => "myrealm", remoteaccount => "remacct"),
     $WITH_REMACCT, "vanilla (explicit defaults): realm+remoteaccount => pre-proxyjump layout");
+
+# The proxy hop is also subject to forbiddenNetworks: a proxy in a forbidden net is refused, even
+# when the target itself is not forbidden.
+OVH::Bastion::load_configuration(mock_data => {bastionName => 'mock', forbiddenNetworks => ["192.0.2.0/24"]});
+$fnret = OVH::Bastion::is_access_granted(
+    account   => "wildcard",
+    user      => "root",
+    ipfrom    => "203.0.113.1",
+    ip        => "198.51.100.5",    # target NOT forbidden
+    port      => "9876",
+    proxyIp   => "192.0.2.10",      # proxy IS in the forbidden net
+    proxyPort => 22,
+    proxyUser => "root",
+);
+is($fnret->err, "KO_ACCESS_DENIED", "forbiddenNetworks: proxy in a forbidden net is denied");
+like(
+    $fnret->msg,
+    qr/via proxy 192\.0\.2\.10 as it's part of the forbidden networks/,
+    "forbiddenNetworks: denial message points at the proxy"
+);
+
+# a proxy outside any forbidden net passes the forbidden-networks filter (then only the ACL may deny)
+$fnret = OVH::Bastion::is_access_granted(
+    account   => "wildcard",
+    user      => "root",
+    ipfrom    => "203.0.113.1",
+    ip        => "198.51.100.5",
+    port      => "9876",
+    proxyIp   => "203.0.113.9",    # not forbidden
+    proxyPort => 22,
+    proxyUser => "root",
+);
+unlike($fnret->msg // '', qr/forbidden networks/, "forbiddenNetworks: non-forbidden proxy passes the filter");
+
+# The proxy hop is also subject to allowedNetworks: when set, a proxy outside the allowed nets is
+# refused, even when the target is inside them.
+OVH::Bastion::load_configuration(mock_data => {bastionName => 'mock', allowedNetworks => ["198.51.100.0/24"]});
+$fnret = OVH::Bastion::is_access_granted(
+    account   => "wildcard",
+    user      => "root",
+    ipfrom    => "203.0.113.1",
+    ip        => "198.51.100.5",    # target IS in the allowed net
+    port      => "9876",
+    proxyIp   => "203.0.113.9",     # proxy is NOT
+    proxyPort => 22,
+    proxyUser => "root",
+);
+is($fnret->err, "KO_ACCESS_DENIED", "allowedNetworks: proxy outside the allowed nets is denied");
+like(
+    $fnret->msg,
+    qr/via proxy 203\.0\.113\.9 as it's not part of the allowed networks/,
+    "allowedNetworks: denial message points at the proxy"
+);
+
+# a proxy inside the allowed nets passes the allowed-networks filter (then only the ACL may deny)
+$fnret = OVH::Bastion::is_access_granted(
+    account   => "wildcard",
+    user      => "root",
+    ipfrom    => "203.0.113.1",
+    ip        => "198.51.100.5",
+    port      => "9876",
+    proxyIp   => "198.51.100.9",    # in the allowed net
+    proxyPort => 22,
+    proxyUser => "root",
+);
+unlike($fnret->msg // '', qr/not part of the allowed networks/, "allowedNetworks: in-net proxy passes the filter");
 
 done_testing();
