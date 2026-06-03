@@ -156,11 +156,19 @@ sub load_configuration {
         {name => 'syslogDescription', default => 'bastion', validre => qr/^([a-zA-Z0-9_.-]+)$/},
         {
             name    => 'ttyrecFilenameFormat',
-            default =>
-              '%Y-%m-%d.%H-%M-%S.#usec#.&uniqid.&account.&user.&ip.&port.via.&proxyuser.&proxyip.&proxyport.ttyrec',
+            default => '%Y-%m-%d.%H-%M-%S.#usec#.&uniqid.&account.&user.&ip.&port.ttyrec',
             validre => qr/^([a-zA-Z0-9%&#_.-]+)$/
         },
-        {name => 'accountExpiredMessage', default => '', validre => qr/^(.*)$/, emptyok => 1},
+
+        # ttyrecDirectPathFormat/ttyrecViaPathFormat: full absolute path templates (directories +
+        # filename) for the session recording, used respectively for direct egress and for
+        # proxy-jump ('via') egress. When left empty (the default), the path is built from the
+        # standard layout using ttyrecFilenameFormat. '/' separates directory components; the last
+        # component is the filename. The supported placeholders are the same as ttyrecFilenameFormat;
+        # see bastion.conf.dist for the full list.
+        {name => 'ttyrecDirectPathFormat', default => '', validre => qr{^([a-zA-Z0-9%&#_./-]*)$}, emptyok => 1},
+        {name => 'ttyrecViaPathFormat',    default => '', validre => qr{^([a-zA-Z0-9%&#_./-]*)$}, emptyok => 1},
+        {name => 'accountExpiredMessage',  default => '', validre => qr/^(.*)$/,                  emptyok => 1},
         {name => 'fanciness', default => 'full', validre => qr/^((none|boomer)|(basic|millenial)|(full|genz))$/},
         {name => 'accountExternalValidationProgram', default => '', validre => qr'^([a-zA-Z0-9/$_.-]*)$', emptyok => 1},
         {name => 'ttyrecStealthStdoutPattern',       default => '', validre => qr'^(.{0,4096})$',         emptyok => 1},
