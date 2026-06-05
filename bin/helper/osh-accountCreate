@@ -173,7 +173,7 @@ getgrgid($ttygid) and HEXIT('ERR_GID_COLLISION', msg => "This GID ($ttygid) is a
 
 if ($uid < $config->{'accountUidMin'} or $uid > $config->{'accountUidMax'}) {
     HEXIT('ERR_UID_INVALID_RANGE',
-        msg => "UID must be < " . $config->{'accountUidMin'} . " and > " . $config->{'accountUidMax'});
+        msg => "UID must be between " . $config->{'accountUidMin'} . " and " . $config->{'accountUidMax'});
 }
 
 my @vettedKeys;
