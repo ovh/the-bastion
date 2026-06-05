@@ -155,6 +155,14 @@ account0="$4"
 user_ssh_key_path="$5"
 root_ssh_key_path="$6"
 
+# the IPs (container names) of the two slim ssh boxes behind the bastion, used by the proxy-jump
+# tests: the bastion proxies through $jumphost_ip to reach $remoteserver_ip. They're passed through
+# the environment (not positionally) and may be empty if the runner didn't start those boxes.
+# shellcheck disable=SC2034
+jumphost_ip="${JUMPHOST_IP:-}"
+# shellcheck disable=SC2034
+remoteserver_ip="${REMOTESERVER_IP:-}"
+
 # does ssh work there ?
 server_output=$(echo test | nc -w 1 $remote_ip $remote_port)
 if echo "$server_output" | grep -q ^SSH-2 ; then
@@ -242,6 +250,13 @@ check_sourced_module_output()
     a4d="$td ssh -F $mytmpdir/ssh_config -i $account4key1file $account4@$remote_ip -p $remote_port -- $js "
     a4np="$t ssh -F $mytmpdir/ssh_config -o PubkeyAuthentication=no $account4@$remote_ip -p $remote_port -- $js "
     r0="  $t ssh -F $mytmpdir/ssh_config -i $rootkeyfile           root@$remote_ip -p $remote_port -- "
+
+    # root SSH handles to the two slim ssh boxes behind the bastion (empty unless the runner started
+    # them), so the proxy-jump tests can push the bastion egress keys into the test users there
+    rJ=''
+    rR=''
+    [ -n "$jumphost_ip" ]     && rJ="$t ssh -F $mytmpdir/ssh_config -i $rootkeyfile root@$jumphost_ip -p 22 -- "
+    [ -n "$remoteserver_ip" ] && rR="$t ssh -F $mytmpdir/ssh_config -i $rootkeyfile root@$remoteserver_ip -p 22 -- "
 
     # gpg has a terrible tendency to block on the pseudo-random number generator because it
     # reads from /dev/random instead of /dev/urandom for bad reasons. so, just hardcode some keys here
