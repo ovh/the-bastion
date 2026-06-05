@@ -2050,6 +2050,7 @@ sub do_plugin_jit_mfa {
         port      => $port,
         proxyIp   => $proxyIp,
         proxyPort => $proxyPort,
+        proxyUser => $proxyUser,
         details   => 1
     );
 
