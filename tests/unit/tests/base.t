@@ -221,6 +221,29 @@ cmp_deeply(
     "build_ttyrec_cmdline_part1of2 with IPv6 proxy cmd"
 );
 
+# osh plugin/command session: 'ip' is the command name and port/user are 0 (there's no real egress
+# target, see osh.pl). Those zero values are valid and must still be substituted into the path: a
+# falsy-but-defined parameter must NOT be treated as missing.
+$fnret = OVH::Bastion::build_ttyrec_cmdline_part1of2(
+    ip      => "groupCreate",
+    port    => 0,
+    user    => 0,
+    account => "bastionuser",
+    uniqid  => 'cafed00dcafe',
+    home    => "/home/randomuser",
+);
+cmp_deeply(
+    $fnret->value->{'cmd'},
+    [
+        'ttyrec',
+        '-f',
+        $fnret->value->{'saveFile'},
+        '-F',
+        '/home/randomuser/ttyrec/groupCreate/%Y-%m-%d.%H-%M-%S.#usec#.cafed00dcafe.bastionuser.0.groupCreate.0.ttyrec'
+    ],
+    "build_ttyrec_cmdline_part1of2 plugin session (port/user = 0)"
+);
+
 is(OVH::Bastion::config("bastionName")->value, "mock", "bastion name is mocked");
 
 ok(OVH::Bastion::is_account_valid(account => "azerty")->is_ok, "is_account_valid('azerty')");
