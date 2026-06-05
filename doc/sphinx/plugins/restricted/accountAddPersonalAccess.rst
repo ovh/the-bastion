@@ -56,6 +56,16 @@ Add a personal server access to an account
 
    Add a comment alongside this server. Quote it twice as shown if you're under a shell.
 
+.. option:: --proxy-host HOST|IP
+
+   Use this host as a proxy/jump host to reach the target server
+
+.. option:: --proxy-port PORT
+
+   Proxy host port to connect to (mandatory when --proxy-host is specified)
+
+  --proxy-user USER|PATTERN|*  Proxy user to connect as (mandatory when --proxy-host is specified).
+                               Globbing characters '*' and '?' are supported for pattern matching.
 
 The access will work only if one of the account's personal egress public key has been copied to the remote server.
 To get the list of an account's personal egress public keys, see ``accountListEgressKeyss`` and ``selfListEgressKeys``.
