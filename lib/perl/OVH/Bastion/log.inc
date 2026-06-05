@@ -228,23 +228,25 @@ EOS
     # endof version==0
 
     if ($user_version == 1) {
-        # add proxy columns for proxyjump feature
+        # add proxy columns for the proxyjump feature. Use a transaction so that if we're interrupted,
+        # the rollback leaves the db untouched at version 1 and the next run retries cleanly.
         my $table = ($sqltype eq 'local' ? "connections" : "connections_summary");
 
-        $dbh->do("ALTER TABLE $table ADD COLUMN proxyuser TEXT")
-          or return R('KO', msg => "adding proxyuser column to $table");
+        $dbh->begin_work or return R('KO', msg => "starting transaction to upgrade $table to v2");
 
-        $dbh->do("ALTER TABLE $table ADD COLUMN proxyip TEXT")
-          or return R('KO', msg => "adding proxyip column to $table");
+        my $ok =
+             $dbh->do("ALTER TABLE $table ADD COLUMN proxyuser TEXT")
+          && $dbh->do("ALTER TABLE $table ADD COLUMN proxyip TEXT")
+          && $dbh->do("ALTER TABLE $table ADD COLUMN proxyhost TEXT")
+          && $dbh->do("ALTER TABLE $table ADD COLUMN proxyport INTEGER")
+          && $dbh->do("PRAGMA user_version=2");
 
-        $dbh->do("ALTER TABLE $table ADD COLUMN proxyhost TEXT")
-          or return R('KO', msg => "adding proxyhost column to $table");
+        if (!$ok) {
+            $dbh->rollback;
+            return R('KO', msg => "adding proxy columns to $table");
+        }
 
-        $dbh->do("ALTER TABLE $table ADD COLUMN proxyport INTEGER")
-          or return R('KO', msg => "adding proxyport column to $table");
-
-        $dbh->do("PRAGMA user_version=2")
-          or return R('KO', msg => "setting user_version to 2");
+        $dbh->commit or return R('KO', msg => "committing v2 upgrade of $table");
         $user_version = 2;
     }
 
