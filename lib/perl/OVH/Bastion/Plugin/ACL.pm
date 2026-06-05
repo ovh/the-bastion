@@ -84,8 +84,15 @@ sub check {
         );
     }
 
-    # check proxy-host and proxy-port parameters
-    osh_debug("Checking proxy parameters: proxyIp='$proxyIp' proxyPort='$proxyPort' proxyUser='$proxyUser'");
+    # check proxy-host and proxy-port parameters (proxy* are usually undef: don't warn on interpolation)
+    osh_debug(
+        sprintf(
+            "Checking proxy parameters: proxyIp='%s' proxyPort='%s' proxyUser='%s'",
+            $proxyIp   // '',
+            $proxyPort // '',
+            $proxyUser // ''
+        )
+    );
     if ($proxyIp) {
         if (!$proxyPort) {
             return R('ERR_MISSING_PARAMETER', msg => "When --proxy-host is specified, --proxy-port becomes mandatory");

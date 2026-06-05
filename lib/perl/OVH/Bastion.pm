@@ -837,10 +837,28 @@ sub is_valid_remote_user {
 
 sub validate_proxy_params {
     my %params         = @_;
+    my $proxyJump      = $params{'proxyJump'};             # optional "[user@]host[:port]" spec, parsed below
     my $proxyHost      = $params{'proxyHost'};
     my $proxyPort      = $params{'proxyPort'};
     my $proxyUser      = $params{'proxyUser'};
     my $allowWildcards = $params{'allowWildcards'} // 1;
+
+    # if we were given a combined proxy-jump spec (the "-J [user@]host[:port]" form used by osh.pl and the
+    # scp plugin), split it into its host/port/user components here, so the spec grammar lives in exactly
+    # one place. Callers that already have the components separately (e.g. --proxy-host/--proxy-port/
+    # --proxy-user) simply don't pass proxyJump; the validation below is shared between both forms.
+    if (defined $proxyJump && $proxyJump ne '') {
+        if ($proxyJump =~ /^(?:([a-zA-Z0-9._@!-]{1,128})@)?(\[[0-9a-fA-F:.]+\]|[a-zA-Z0-9._-]+)(?::(\d+))?$/) {
+            $proxyUser = $1 if $1;
+            $proxyHost = $2;
+            $proxyPort = $3 if $3;
+            $proxyHost =~ s/^\[(.+)\]$/$1/;    # strip brackets around an IPv6 literal (e.g. [2001:db8::1])
+        }
+        else {
+            return R('ERR_INVALID_PROXYJUMP',
+                msg => "Invalid proxyjump specification '$proxyJump', should be [user\@]host[:port]");
+        }
+    }
 
     my $proxyIp;
     my $fnret;
