@@ -39,3 +39,13 @@ Remove a personal server access from an account
                               scpdownload  allow SCP download, you<--bastion--server
                               sftp         allow usage of the SFTP subsystem, through the bastion
                               rsync        allow usage of rsync, through the bastion
+.. option:: --proxy-host HOST|IP
+
+   Specify which host was used as a proxy/jump host to reach the target server
+
+.. option:: --proxy-port PORT
+
+   Proxy port that was used to reach the target server
+
+  --proxy-user USER|PATTERN|*  Proxy user that was configured for this access (mandatory when --proxy-host is specified).
+                               Globbing characters '*' and '?' are supported for pattern matching.

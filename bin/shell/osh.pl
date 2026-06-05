@@ -1595,11 +1595,8 @@ else {
 
         # OpenSSH runs a ProxyCommand through the shell named by $SHELL (`$SHELL -c 'exec <ProxyCommand>'`,
         # see sshconnect.c). On a bastion the account's login shell *is* osh.pl, so without intervention the
-        # egress ssh would re-invoke us to run the proxy hop — an internal re-entry we'd then have to detect
-        # and distinguish from an attacker-supplied command. We sidestep that entire problem by pinning the
-        # egress ssh's $SHELL to /bin/sh (a real POSIX shell that dequotes our _shell_quote_arg'd command
-        # losslessly): the ProxyCommand runs directly under /bin/sh and osh.pl is never re-entered. The value
-        # is a fixed constant we set right before exec, so the connecting account cannot influence it.
+        # egress ssh would re-invoke us to run the proxy hop, so we override the account's shell to /bin/sh here,
+        # this way the ProxyCommand will invoke /bin/sh -c as it expects to.
         $ENV{'SHELL'} = '/bin/sh';
     }
 

@@ -135,6 +135,13 @@ through some kind of proxy instead, where The Bastion's logic is to use two dist
 and two distinct authentication phases, with two distinct SSH keys (yours for the ingress connection,
 and your bastion egress key for the egress connection).
 
+.. note::
+
+   This entry is about using the bastion *itself* as an ``ssh`` proxy/jump host, which is unsupported.
+   The reverse *is* supported, though: the bastion can reach an egress server *through* an intermediate
+   SSH jump host, for the case where that server isn't directly reachable from the bastion network-wise.
+   This is a distinct, opt-in feature that applies on the *egress* side only; see :doc:`/using/proxyjump`.
+
 What is *session locking*?
 ==========================
 
