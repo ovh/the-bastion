@@ -153,28 +153,52 @@ sub get_next_available_uid {
     return R('ERR_UID_COLLISION', msg   => "No available UID in the allowed range");
 }
 
-sub get_next_available_gid {
+# Find the next available UID or GID at or above groupGidMin. This "group range"
+# is guaranteed by the configuration sanity checks to sit strictly above the
+# account UID/GID range (accountUidMin..accountUidMax and the ttyrec GIDs), so
+# any ID returned here can never collide with a (possibly fixed) account ID.
+# The $type parameter ('uid' or 'gid') selects which namespace is scanned.
+# Internal: callers should use the get_next_available_group_uid()/_gid() wrappers.
+sub _get_next_available_id_in_group_range {
     my %params = @_;
+    my $type   = $params{'type'} // 'gid';
 
-    # Get the minimum GID from configuration (should be >> accountUidMax to avoid collisions)
+    if ($type ne 'uid' && $type ne 'gid') {
+        return R('ERR_INVALID_PARAMETER', msg => "Parameter 'type' must be 'uid' or 'gid'");
+    }
+
+    # should be >> accountUidMax to avoid collisions
     my $groupGidMin = OVH::Bastion::config('groupGidMin')->value();
 
-    # Start from groupGidMin and find the next available GID
+    # start from groupGidMin and find the next available ID in the requested namespace
     my $next        = $groupGidMin;
     my $maxAttempts = 100_000;        # safety limit
     my $attempts    = 0;
 
     while ($attempts < $maxAttempts) {
-        # Check if this GID is available
-        if (!scalar(getgrgid($next))) {
-            # Found an available GID
+        my $taken = ($type eq 'uid') ? scalar(getpwuid($next)) : scalar(getgrgid($next));
+        if (!$taken) {
+            # found an available ID
             return R('OK', value => $next);
         }
         $next++;
         $attempts++;
     }
 
-    return R('ERR_GID_COLLISION', msg => "No available GID found in the allowed range starting from $groupGidMin");
+    return R(($type eq 'uid' ? 'ERR_UID_COLLISION' : 'ERR_GID_COLLISION'),
+        msg => "No available $type found in the allowed range starting from $groupGidMin");
+}
+
+# convenience wrapper to get the next available UID in the group range
+sub get_next_available_group_uid {
+    my %params = @_;
+    return _get_next_available_id_in_group_range(%params, type => 'uid');
+}
+
+# convenience wrapper to get the next available GID in the group range
+sub get_next_available_group_gid {
+    my %params = @_;
+    return _get_next_available_id_in_group_range(%params, type => 'gid');
 }
 
 sub is_bastion_account_valid_and_existing {
