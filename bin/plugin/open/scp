@@ -312,36 +312,16 @@ my $fnret;
 my $proxyIp   = undef;
 my $proxyPort = 22;
 my $proxyUser = undef;
-# Parse proxyjump args if specified
+# Parse and validate the proxyjump spec if specified. The "-J [user@]host[:port]" grammar and its
+# validation live in OVH::Bastion::validate_proxy_params() (shared with osh.pl and the ACL plugins);
+# any error (bad spec, DNS/IP-version disabled, host not found, invalid user) is propagated as-is.
 if ($proxyJump) {
-    if ($proxyJump =~ /^(?:([a-zA-Z0-9._@!-]{1,128})@)?(\[?[a-zA-Z0-9._-]+\]?)(?::(\d+))?$/) {
-        $proxyUser = $1 if $1;
-        $proxyIp   = $2;
-        $proxyPort = $3 if $3;
-        osh_debug("parsed proxyjump: host=$proxyIp port=$proxyPort user=$proxyUser");
-    }
-    else {
-        osh_exit 'ERR_INVALID_PARAMETER', "Invalid proxyjump specification '$proxyJump', should be [user@]host[:port]";
-    }
-
-    $fnret = OVH::Bastion::get_ip(host => $proxyIp, allowSubnets => 0);
-    if (!$fnret) {
-        if ($fnret->err eq 'ERR_DNS_DISABLED') {
-            osh_exit 'ERR_DNS_DISABLED', $fnret->msg;
-        }
-        elsif ($fnret->err eq 'ERR_IP_VERSION_DISABLED') {
-            osh_exit 'ERR_IP_VERSION_DISABLED', $fnret->msg;
-        }
-        else {
-            osh_exit 'ERR_HOST_NOT_FOUND', $fnret->msg;
-        }
-    }
-    $proxyIp = $fnret->value->{'ip'};
-    osh_debug("Proxyjump host resolved to IP: $proxyIp");
-
-    if ($proxyUser && !OVH::Bastion::is_valid_remote_user(user => $proxyUser, allowWildcards => 0)) {
-        osh_exit 'EXIT_INVALID_REMOTE_USER', 'invalid_proxy_user', "Proxy user name '$proxyUser' seems invalid";
-    }
+    $fnret = OVH::Bastion::validate_proxy_params(proxyJump => $proxyJump, allowWildcards => 0);
+    $fnret or osh_exit($fnret);
+    $proxyIp   = $fnret->value->{'proxyIp'};
+    $proxyPort = $fnret->value->{'proxyPort'} // 22;
+    $proxyUser = $fnret->value->{'proxyUser'};
+    osh_debug("parsed proxyjump: host=$proxyIp port=$proxyPort user=$proxyUser");
 }
 
 if (not $host) {
