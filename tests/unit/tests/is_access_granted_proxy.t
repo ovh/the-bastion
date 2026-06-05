@@ -48,6 +48,11 @@ OVH::Bastion::load_configuration(
     }
 );
 
+# if Net::Netmask is too old, IPv6 is not supported: we'll skip the IPv6 test
+# cases below (but still run the IPv4 ones, contrary to the IPv6-only test files)
+my $has_ipv6 = OVH::Bastion::system_supports_ipv6();
+note "IPv6 is not supported on this system, skipping IPv6 proxy tests" if !$has_ipv6;
+
 my %want;                # truth table
 my $undef = '_none_';    # can't use undef as a hash key, so we'll use this special value instead
 
@@ -210,6 +215,8 @@ foreach my $ip (
     }
   )
 {
+    # skip IPv6 targets when the system doesn't support IPv6 (e.g. Net::Netmask too old)
+    next if !$has_ipv6 && $ip =~ /:/;
 
     foreach my $port (qw{22 80}) {
         foreach my $user (qw{me root admin}) {
@@ -219,6 +226,9 @@ foreach my $ip (
                 "2001:db8:cafe::4"
               )
             {
+                # skip IPv6 proxies when the system doesn't support IPv6 (e.g. Net::Netmask too old)
+                next if !$has_ipv6 && $proxyIp ne $undef && $proxyIp =~ /:/;
+
                 foreach my $proxyPort ($undef, "2222", "3333", "1234", "4444", "5555", "6666") {
                     foreach my $proxyUser (
                         $undef,   "proxyuser", "anyuser", "otheruser", "wronguser", "testuser",
