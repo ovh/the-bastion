@@ -1280,16 +1280,19 @@ sub build_ttyrec_cmdline_part1of2 {
         return R('ERR_SECURITY_VIOLATION', msg => "Refusing to use unsafe ttyrec path '$pathFormat'");
     }
 
-    # split into directory + filename, and create the directory tree (best-effort, default perms)
+    # split into directory + filename, and create the directory tree (best-effort, default perms).
+    # under mocking (unit tests), skip the actual mkdir so we never touch the real filesystem.
     my ($saveDir, $ttyrecFilenameFormat) = $pathFormat =~ m{^(.*)/([^/]+)$};
     if (!$saveDir || !$ttyrecFilenameFormat) {
         return R('ERR_INVALID_PARAMETER', msg => "Invalid ttyrec path '$pathFormat'");
     }
-    my $mkpath = '';
-    foreach my $component (split m{/}, $saveDir) {
-        next if !$component;
-        $mkpath .= "/$component";
-        mkdir($mkpath);    # ignore errors: parent directories likely already exist
+    if (!OVH::Bastion::is_mocking()) {
+        my $mkpath = '';
+        foreach my $component (split m{/}, $saveDir) {
+            next if !$component;
+            $mkpath .= "/$component";
+            mkdir($mkpath);    # ignore errors: parent directories likely already exist
+        }
     }
 
     my $saveFileFormat = "$saveDir/$ttyrecFilenameFormat";
