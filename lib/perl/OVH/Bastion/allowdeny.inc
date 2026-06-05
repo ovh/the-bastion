@@ -1330,8 +1330,6 @@ sub ssh_test_access_way {
         );
         $fnret or return $fnret;
         push @command, @{$fnret->value->{'sshArgs'}};
-
-        $ENV{'OSH_PROXYJUMP_CONNECTION'} = 1;
     }
 
     push @command, '-T', '--', 'true';
@@ -1343,7 +1341,15 @@ sub ssh_test_access_way {
     $connection_info_msg .= ", please wait...";
 
     osh_info($connection_info_msg);
-    $fnret = OVH::Bastion::execute(cmd => \@command, noisy_stderr => 1);
+
+    # Pin $SHELL to /bin/sh for the egress test: OpenSSH runs any ProxyCommand through the shell named by
+    # $SHELL, which on a bastion is the account's login shell (osh.pl). Forcing /bin/sh makes the proxy hop
+    # run directly under a real POSIX shell instead of re-entering osh.pl. Scoped to this block so we don't
+    # perturb the calling plugin's environment (a non-proxy test ssh ignores $SHELL anyway).
+    {
+        local $ENV{'SHELL'} = '/bin/sh';
+        $fnret = OVH::Bastion::execute(cmd => \@command, noisy_stderr => 1);
+    }
     $fnret or return $fnret;
 
     if (grep { $fnret->value->{'sysret'} eq $_ }
