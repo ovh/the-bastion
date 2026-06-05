@@ -121,10 +121,15 @@ sub check {
         }
     }
 
+    # --proxy-host is the mandatory part of a proxy tuple, ensure we have it
+    if ($proxyUser && !$proxyIp) {
+        return R('ERR_MISSING_PARAMETER', msg => "When --proxy-user is specified, --proxy-host becomes mandatory");
+    }
+
     # now, remap port and user '*' back to undef
     undef $user      if $user eq '*';
     undef $port      if $port eq '*';
-    undef $proxyUser if $proxyUser eq '*';
+    undef $proxyUser if defined $proxyUser && $proxyUser eq '*';
 
     return R(
         'OK',
