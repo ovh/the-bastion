@@ -1413,6 +1413,12 @@ if ($userPasswordClue) {
     }
 }
 
+# Password autologin through a proxy jump is not currently supported.
+if ($proxyJump && $userPasswordClue) {
+    main_exit OVH::Bastion::EXIT_CONFLICTING_OPTIONS, "conflicting_options",
+      "Sorry, password autologin through a proxy jump (-J) is not currently supported";
+}
+
 # if we want telnet (not ssh)
 if ($telnet) {
 
@@ -1498,7 +1504,6 @@ else {
     @ttyrec = @{$ttyrec_fnret->value->{'cmd'}};
 
     # SSH PASSWORD AUTOLOGIN
-    # TODO: how tf does this work??? And how to proxyjump with this?
     if ($userPasswordClue) {
 
         push @preferredAuths, 'keyboard-interactive';
