@@ -144,7 +144,7 @@ my %_autoload_files = (
         qw{ get_personal_account_keys get_group_keys is_access_way_granted get_ip ip2host get_user_groups duration2human print_acls is_access_granted ssh_test_access_way get_acls get_acl_way }
     ],
     allowkeeper => [
-        qw{ is_user_in_group is_group_existing is_valid_uid get_next_available_uid is_bastion_account_valid_and_existing is_account_valid is_account_existing access_modify is_valid_group is_valid_group_and_existing add_user_to_group get_group_list get_account_list get_realm_list is_admin is_super_owner is_auditor is_group_aclkeeper is_group_gatekeeper is_group_owner is_group_guest is_group_member get_remote_accounts_from_realm is_valid_ttl build_re_from_wildcards }
+        qw{ is_user_in_group is_group_existing is_valid_uid get_next_available_uid get_next_available_group_uid get_next_available_group_gid is_bastion_account_valid_and_existing is_account_valid is_account_existing access_modify is_valid_group is_valid_group_and_existing add_user_to_group get_group_list get_account_list get_realm_list is_admin is_super_owner is_auditor is_group_aclkeeper is_group_gatekeeper is_group_owner is_group_guest is_group_member get_remote_accounts_from_realm is_valid_ttl build_re_from_wildcards }
     ],
     configuration => [
         qw{ load_configuration_file main_configuration_directory load_configuration config account_config plugin_config group_config json_load }
