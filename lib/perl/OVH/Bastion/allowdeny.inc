@@ -1256,6 +1256,13 @@ sub ssh_test_access_way {
         return R('OK_MAGIC_USER', msg => "Didn't really test the connection, as the specified user is special");
     }
 
+    # likewise, a wildcard/magic proxy-user can't be connected through (there's no concrete user to jump
+    # as, and build_proxyjump_ssh_options requires one), so skip the live test in that case too, just as
+    # we do for a special target user above
+    if (defined $proxyIp && $proxyUser =~ /[*?]|^!/) {
+        return R('OK_MAGIC_USER', msg => "Didn't really test the connection, as the specified proxy-user is special");
+    }
+
     if ($group) {
         $fnret = OVH::Bastion::is_valid_group_and_existing(group => $group, groupType => "key");
         $fnret or return $fnret;
