@@ -272,45 +272,6 @@ osh_debug("user-passed options : $realOptions");
 #   Command params
 #
 
-# special case: check if this is a ProxyJump connection that should be executed directly
-if ($ENV{'OSH_PROXYJUMP_CONNECTION'}) {
-    delete $ENV{'OSH_PROXYJUMP_CONNECTION'};    # make sure nothing else gets interpreted as proxyjump
-
-    # check if poxyJump connections are allowed
-    # This condition should never be true if proxyJump isn't allowed, but let's double check
-    if (!$config->{'egressProxyJumpAllowed'}) {
-        main_exit OVH::Bastion::EXIT_ACCESS_DENIED, "proxyjump_not_allowed",
-          "Sorry $self, egress proxy-jump connections have been disabled by policy";
-    }
-    osh_debug("Detected ProxyJump connection, executing command directly");
-
-    # Execute the proxy command directly without further validation
-    if ($realOptions) {
-        # Parse the command to extract program and arguments
-        my @cmd_parts = split(/\s+/, $realOptions);
-        if (!@cmd_parts) {
-            main_exit(OVH::Bastion::EXIT_EXEC_FAILED, "proxy_parsing_failed", "Failed to parse proxy command");
-        }
-
-        # Remove "exec" if it's the first argument (the ssh subprocess puts that there)
-        if ($cmd_parts[0] eq 'exec') {
-            shift @cmd_parts;
-        }
-
-        # this should never happen, but just in case...
-        if ($cmd_parts[0] ne 'ssh') {
-            main_exit(OVH::Bastion::EXIT_EXEC_FAILED, "proxy_no_ssh_cmd", "Proxy command must start with 'ssh'");
-        }
-
-        osh_debug("Executing proxy command parts: " . join(' ', @cmd_parts));
-        exec(@cmd_parts)
-          or main_exit(OVH::Bastion::EXIT_EXEC_FAILED, "proxy_exec_failed", "Failed to execute proxy command: $!");
-    }
-    else {
-        main_exit(OVH::Bastion::EXIT_EXEC_FAILED, "proxy_no_cmd", "No proxy command provided");
-    }
-}
-
 my $port = 22;    # can be override by special port
 my @toExecute;
 # special case: mosh, in that case we have something like this in $realOptions
@@ -1626,6 +1587,15 @@ else {
             main_exit OVH::Bastion::EXIT_ACCESS_DENIED, "proxyjump_not_allowed", "Sorry $self, " . $proxyFnret->msg;
         }
         push @command, @{$proxyFnret->value->{'sshArgs'}};
+
+        # OpenSSH runs a ProxyCommand through the shell named by $SHELL (`$SHELL -c 'exec <ProxyCommand>'`,
+        # see sshconnect.c). On a bastion the account's login shell *is* osh.pl, so without intervention the
+        # egress ssh would re-invoke us to run the proxy hop — an internal re-entry we'd then have to detect
+        # and distinguish from an attacker-supplied command. We sidestep that entire problem by pinning the
+        # egress ssh's $SHELL to /bin/sh (a real POSIX shell that dequotes our _shell_quote_arg'd command
+        # losslessly): the ProxyCommand runs directly under /bin/sh and osh.pl is never re-entered. The value
+        # is a fixed constant we set right before exec, so the connecting account cannot influence it.
+        $ENV{'SHELL'} = '/bin/sh';
     }
 
     if (not $quiet) {

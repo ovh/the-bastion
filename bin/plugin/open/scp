@@ -401,8 +401,15 @@ print STDERR ">>> Hello $self, transferring your file through the bastion "
   . ($protocol eq 'scpupload' ? 'to' : 'from')
   . " $machine...\n";
 
-# Use system here and in plugin's json config to avoid buffering deadlock issues (#486)
-$fnret = OVH::Bastion::execute(cmd => \@cmd, system => 1);
+# Use system here and in plugin's json config to avoid buffering deadlock issues (#486).
+# Pin $SHELL to /bin/sh while ssh runs: OpenSSH executes a ProxyCommand through the shell named by
+# $SHELL, which on a bastion is the account's login shell (osh.pl). Forcing /bin/sh makes the proxy
+# hop run directly under a real POSIX shell instead of re-entering osh.pl. Scoped so we don't perturb
+# the rest of the plugin's environment (a non-proxy transfer ignores $SHELL anyway).
+{
+    local $ENV{'SHELL'} = '/bin/sh';
+    $fnret = OVH::Bastion::execute(cmd => \@cmd, system => 1);
+}
 if ($fnret->err ne 'OK') {
     osh_exit 'ERR_TRANSFER_FAILED', "Error launching transfer: $fnret";
 }
