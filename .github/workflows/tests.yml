@@ -21,7 +21,7 @@ jobs:
         if: ${{ github.event_name == 'pull_request' || inputs.test_type == 'short' }}
         timeout-minutes: 45
         steps:
-        - uses: actions/checkout@v4
+        - uses: actions/checkout@v6
           with:
             persist-credentials: false
         - name: run tests inside a debian12 docker
@@ -38,7 +38,7 @@ jobs:
         if: ${{ contains(github.event.pull_request.labels.*.name, 'tests:long') || inputs.test_type == 'long' }}
         timeout-minutes: 45
         steps:
-        - uses: actions/checkout@v4
+        - uses: actions/checkout@v6
           with:
             persist-credentials: false
         - name: run tests inside a ${{ matrix.platform }} docker
@@ -55,7 +55,7 @@ jobs:
         if: ${{ contains(github.event.pull_request.labels.*.name, 'tests:full') || inputs.test_type == 'full' }}
         timeout-minutes: 45
         steps:
-        - uses: actions/checkout@v4
+        - uses: actions/checkout@v6
           with:
             persist-credentials: false
         - name: run tests inside a ${{ matrix.platform }} docker

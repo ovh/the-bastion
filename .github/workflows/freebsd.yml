@@ -12,7 +12,7 @@ jobs:
     if: ${{ contains(github.event.pull_request.labels.*.name, 'tests:freebsd') }}
     timeout-minutes: 45
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         persist-credentials: false
     - name: Functional tests under FreeBSD
