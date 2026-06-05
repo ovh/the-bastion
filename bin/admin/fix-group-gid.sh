@@ -1,9 +1,14 @@
 #! /usr/bin/env bash
 # vim: set filetype=sh ts=4 sw=4 sts=4 et:
 # This script ensures that GIDs of bastion groups (including their group system
-# roles) are higher than the configured groupGidMin value.
-# It shifts group GIDs from the low range (where they may collide with reserved
-# account UIDs) to the high range defined by groupGidMin.
+# roles), as well as the UID of the system user matching each group, are higher
+# than the configured groupGidMin value.
+# It shifts group GIDs and the matching group user's UID from the low range
+# (where they may collide with reserved account UIDs/GIDs) to the high range
+# defined by groupGidMin.
+# Note that a group might already have a correct GID (e.g. because it was fixed
+# by a previous run of this script, or created by a recent version of the code)
+# while its system user still has a low UID: such groups are handled too.
 set -e
 
 basedir=$(readlink -f "$(dirname "$0")"/../..)
@@ -41,9 +46,31 @@ _run()
 next_available_gid=$((MINGID + 1))
 find_next_available_gid()
 {
-    while getent group "$next_available_gid" >/dev/null; do
-        next_available_gid=$((next_available_gid + 1))
-    done
+    next_available_gid=$(
+        getent group 2>/dev/null | cut -d: -f3 | sort -n | awk -v start="$MINGID" '
+          BEGIN { candidate = start }
+          {
+            if ($1 + 0 == candidate) { candidate++; }
+            else if ($1 + 0 > candidate) { exit }
+          }
+          END { print candidate }
+        '
+    )
+}
+
+next_available_uid=$MINGID
+find_next_available_uid()
+{
+    next_available_uid=$(
+        getent passwd 2>/dev/null | cut -d: -f3 | sort -n | awk -v start="$MINGID" '
+          BEGIN { candidate = start }
+          {
+            if ($1 + 0 == candidate) { candidate++; }
+            else if ($1 + 0 > candidate) { exit }
+          }
+          END { print candidate }
+        '
+    )
 }
 
 change_gid()
@@ -84,6 +111,46 @@ change_gid()
     fi
 }
 
+# only the main group has a matching system user; this shifts that user's UID to
+# the high range, mirroring what osh-groupCreate does for newly created groups.
+change_uid()
+{
+    group="$1"
+
+    getent passwd "$group" >/dev/null || fail "user $group doesn't exist"
+    getent group  "$group" >/dev/null || fail "group $group doesn't exist"
+
+    olduid=$(getent passwd "$group" | awk -F: '{print $3}')
+
+    # nothing to do if the UID is already in the high range
+    [ "$olduid" -ge "$MINGID" ] && return
+
+    # prefer uid == gid: at this point the group's GID is already in the high
+    # range (either it was already correct, or change_gid() fixed it earlier in
+    # this batch), so reuse it as the UID when that value is free in the passwd
+    # namespace; otherwise scan for the next free UID in the high range.
+    gid=$(getent group "$group" | awk -F: '{print $3}')
+    if [ "$gid" -ge "$MINGID" ] && ! getent passwd "$gid" >/dev/null; then
+        newuid=$gid
+    else
+        find_next_available_uid
+        newuid=$next_available_uid
+    fi
+
+    _run usermod_changeuid_compat "$group" "$newuid"
+
+    # re-own the files that belonged to the old UID: usermod only reassigns the
+    # home directory on some systems, and not at all on others
+    tocheck=""
+    for dir in "/home/$group" "/home/keykeeper/$group"; do
+        test -d "$dir" && tocheck="$tocheck $dir"
+    done
+    if [ -n "$tocheck" ]; then
+        # shellcheck disable=SC2086
+        _run find $tocheck -uid "$olduid" -exec chown "$group" '{}' \;
+    fi
+}
+
 batchrun()
 {
     something_to_do=0
@@ -91,6 +158,7 @@ batchrun()
     change_gid "key$from-gatekeeper" secondary
     change_gid "key$from-aclkeeper"  secondary
     change_gid "key$from-owner"      secondary
+    change_uid "key$from"
 }
 
 main()
