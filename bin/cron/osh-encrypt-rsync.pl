@@ -499,7 +499,8 @@ sub potentially_work_on_this_file {
     state $openedFiles;
     if (ref $openedFiles ne 'HASH') {
         $openedFiles = {};
-        if (open(my $fh_lsof, '-|', "lsof -a -n -c ttyrec -- /home/")) {
+        # in some circumstances, lsof may misbehave, ensure it doesn't eat up too much CPU by setting a timeout
+        if (open(my $fh_lsof, '-|', "timeout 5 lsof -a -n -c ttyrec -- /home/")) {
             while (<$fh_lsof>) {
                 chomp;
                 m{\s(/home/[^/]+/ttyrec/\S+)$} and $openedFiles->{$1} = 1;
