@@ -105,7 +105,7 @@ VerifyHostKeyDNS ask
 # yell if remote hostkey changed
 StrictHostKeyChecking ask
 
-# === SYSTEM ===
+# === SYSTEM === 
 
 # don't hash the users known_hosts files, in the context of a bastion, this adds no security
 HashKnownHosts no
