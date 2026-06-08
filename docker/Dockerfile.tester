@@ -1,4 +1,4 @@
-FROM debian:bookworm
+FROM debian:trixie
 LABEL maintainer="stephane.lesimple+bastion@ovhcloud.com"
 
 # install prerequisites
