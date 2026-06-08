@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-# vim: set filetype=sh ts=4 sw=4 sts=4 et:
+# vim: set filetype=sh ts=4 sw=4 sts=4 et: 
 
 basedir=$(readlink -f "$(dirname "$0")"/../..)
 # shellcheck source=lib/shell/functions.inc
