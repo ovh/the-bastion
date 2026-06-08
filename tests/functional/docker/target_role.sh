@@ -186,7 +186,5 @@ if [ "$WANT_HTTP_PROXY" = 1 ]; then
     done
 else
     echo "Now sleeping forever (docker mode)"
-    while : ; do
-        sleep 3600
-    done
+    sleep infinity
 fi
