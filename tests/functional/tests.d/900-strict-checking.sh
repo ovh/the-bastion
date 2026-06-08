@@ -25,7 +25,6 @@ testsuite_strict_checking()
     # change the remote hostkeys, and get the proper sshd PID so that we can force it to reload
     success change_host_keys $r0 "\"find /etc/ssh/ -type f -name 'ssh_host_*key*' -print -delete; ssh-keygen -A; ps faxu; printf %s SSHD_PIDS=; ps ax -o pid,args | grep -E '^ *[0-9]+ +(sshd: .+listener|/usr/sbin/sshd)' | awk '{print \\\$1}' | tr '\\\n' ' '\""
     contain 'generating new host keys'
-    get_stdout
     local sshd_pids
     sshd_pids=$(get_stdout | grep SSHD_PIDS= | cut -d= -f2-)
 
