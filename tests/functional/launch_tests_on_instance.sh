@@ -227,9 +227,10 @@ check_sourced_module_output()
 
     jq="jq --raw-output --compact-output --sort-keys"
     js="--json-greppable"
-    default_timeout=$((30 * opt_slowness_factor))
+    default_timeout=$((8 * opt_slowness_factor))
     t="timeout --foreground $default_timeout"
     tf="timeout --foreground $((default_timeout / 2))"
+    td="timeout --foreground $((default_timeout * 2))"
     a0="  $t ssh -F $mytmpdir/ssh_config -i $account0key1file $account0@$remote_ip -p $remote_port -- $js "
     a0f="$tf ssh -F $mytmpdir/ssh_config -i $account0key1file $account0@$remote_ip -p $remote_port -- $js "
     a1="  $t ssh -F $mytmpdir/ssh_config -i $account1key1file $account1@$remote_ip -p $remote_port -- $js "
@@ -238,6 +239,7 @@ check_sourced_module_output()
     a3="  $t ssh -F $mytmpdir/ssh_config -i $account3key1file $account3@$remote_ip -p $remote_port -- $js "
     a4="  $t ssh -F $mytmpdir/ssh_config -i $account4key1file $account4@$remote_ip -p $remote_port -- $js "
     a4f="$tf ssh -F $mytmpdir/ssh_config -i $account4key1file $account4@$remote_ip -p $remote_port -- $js "
+    a4d="$td ssh -F $mytmpdir/ssh_config -i $account4key1file $account4@$remote_ip -p $remote_port -- $js "
     a4np="$t ssh -F $mytmpdir/ssh_config -o PubkeyAuthentication=no $account4@$remote_ip -p $remote_port -- $js "
     r0="  $t ssh -F $mytmpdir/ssh_config -i $rootkeyfile           root@$remote_ip -p $remote_port -- "
 
@@ -450,6 +452,15 @@ run()
     fi
     case="$1"
     shift
+
+    # before replacing $basename with the current test's basename, print elapsed_ms for the previous test
+    if [ -n "${previous_test_t0:-}" ]; then
+        local elapsed_ms
+        elapsed_ms=$(perl -MTime::HiRes=time -e 'printf "%.0f\n", ((time() * 1000) - '"$previous_test_t0"')')
+        infomsg "elapsed_ms $elapsed_ms $basename"
+    fi
+    previous_test_t0=$(perl -MTime::HiRes=time -e 'printf "%.0f\n", time() * 1000')
+
     basename=$(printf '%04d-%s-%s' $testno $name $case | sed -re "s=/=_=g")
 
     # if we're about to run a script, keep a copy there
@@ -700,7 +711,7 @@ dump_vars_and_funcs()
 {
     set | grep -v -E '^('\
 'testno|section|code_warn_exclude|COPROC_PID|LINES|COLUMNS|PIPESTATUS|_|'\
-'BASH_LINENO|basename|case|json|name|tmpscript|grepit|got|isbad|'\
+'BASH_LINENO|basename|case|json|name|tmpscript|grepit|got|isbad|previous_test_t0|'\
 'nbfailedgrep|nbfailedcon|nbfailedgeneric|nbfailedlog|nbfailedret|shouldbe|modulename)='
 }
 
