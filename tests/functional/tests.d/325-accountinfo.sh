@@ -16,23 +16,35 @@ testsuite_accountinfo()
     json .error_code OK .command accountCreate .value null
 
     # create a third account with a ttl
-    local ttl_account_seconds
-    ttl_account_seconds=55
+    local ttl_account_seconds=$default_timeout
     success a0_create_a3 $a0 --osh accountCreate --always-active --account $account3 --uid $uid3 --public-key "\"$(cat $account3key1file.pub)\"" --ttl ${ttl_account_seconds}s
     json .error_code OK .command accountCreate .value null
-    local ttl_account_created_at
-    ttl_account_created_at=$(date +%s)
 
     # check that account3 can connect during their TTL
     success a3_ttl_connect $a3 --osh info
     json .error_code OK
 
+    # check that account3 info has the ttl in it
+    success a0_info_a3_ttl $a0 --osh accountInfo --account $account3
+    json .error_code OK .value.is_ttl_expired 0 .value.is_ttl_set 1
+
+    # sleep to ensure TTL has expired
+    waitfor $(( ttl_account_seconds + 1 )) "waiting for account to expire"
+
+    # check that account3 can no longer connect due to their TTL
+    run a3_ttl_connect_no $a3 --osh info
+    retvalshouldbe 121
+    contain 'TTL has expired'
+
+    success a0_info_a3_ttl_no $a0 --osh accountInfo --account $account3
+    json .error_code OK .value.is_ttl_expired 1
+
     # grant accountInfo to a1
     success a0_grant_a1_accountinfo $a0 --osh accountGrantCommand --command accountInfo --account $account1
 
-    # check that account3 info has the ttl in it
+    # check that account3 info has the ttl in it and that it's expired
     success a0_info_a3_ttl $a0 --osh accountInfo --account $account3
-    json .error_code OK .value.is_ttl_expired 0
+    json .error_code OK .value.is_ttl_expired 1 .value.is_ttl_set 1
 
     # a1 should see basic info about a2
     success a1_accountinfo_a2_basic $a1 --osh accountInfo --account $account2
@@ -133,21 +145,6 @@ EOS
     # --all should not work when not auditor
     plgfail a1_accountinfo_all_no_auditor $a1 --osh accountInfo --all
     json .command accountInfo .error_code ERR_ACCESS_DENIED .value null
-
-    # sleep to ensure TTL has expired. add 2 seconds to be extra-sure and avoid int-rounding errors
-    local sleep_for
-    sleep_for=$(( ttl_account_seconds - ( $(date +%s) - ttl_account_created_at ) + 2 ))
-    if [ "$COUNTONLY" != 1 ] && [ $sleep_for -gt 0 ]; then
-        sleep $sleep_for
-    fi
-
-    # check that account3 can no longer connect due to their TTL
-    run a3_ttl_connect_no $a3 --osh info
-    retvalshouldbe 121
-    contain 'TTL has expired'
-
-    success a0_info_a3_ttl_no $a0 --osh accountInfo --account $account3
-    json .error_code OK .value.is_ttl_expired 1
 
     # lock account2
     success a0_freeze_a2 $a0 --osh accountFreeze --account $account2 --reason "\"'cest la vie'\""

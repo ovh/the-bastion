@@ -404,7 +404,7 @@ testsuite_mfa()
 
         # login and fail without totp (timeout)
         script a4_connect_after_totp_fail "echo 'set timeout $default_timeout;
-            spawn $a4 --osh groupList;
+            spawn $a4f --osh groupList;
             expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; };
             expect eof;
             lassign [wait] pid spawnid value value;
@@ -488,7 +488,7 @@ testsuite_mfa()
         json .command groupList .error_code OK_EMPTY
 
         # pubkey-auth-optional disabled: fail with pubkey but no password (timeout)
-        script a4_no_pubkeyauthoptional_login_pubkey_nopam $a4 --osh groupList
+        script a4_no_pubkeyauthoptional_login_pubkey_nopam $a4f --osh groupList
         retvalshouldbe 124
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
         contain 'Your password expires on'
@@ -536,7 +536,7 @@ testsuite_mfa()
         json .command groupList .error_code OK_EMPTY
 
         # pubkey-auth-optional enabled: fail with pubkey only
-        script a4_pubkeyauthoptional_login_pubkey_nopam $a4 --osh groupList
+        script a4_pubkeyauthoptional_login_pubkey_nopam $a4f --osh groupList
         retvalshouldbe 124
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
         contain 'Your password expires on'

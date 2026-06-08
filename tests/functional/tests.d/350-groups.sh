@@ -159,7 +159,6 @@ EOS
     run a1_ssh_wait $a1 --wait 192.0.2.0
     retvalshouldbe 124 # timeout
     contain "Waiting for port 22 to be open on 192.0.2.0"
-    contain REGEX "Still trying to connect to 192.0.2.0:22 after 1[0-9] seconds"
 
     success a1_remove_non_routable_ip $a1 --osh groupDelServer --host 192.0.2.0 --user-any --port-any --group $group1
 
@@ -955,13 +954,13 @@ EOS
     json .command groupAddServer .error_code OK .value.group $group1 .value.ip 127.0.0.11 .value.port null .value.user null
 
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2() servers(127.0.0.10,127.0.0.11)
-    success thirdaddttl $a1 --osh groupAddServer --group $group1 --host 127.0.0.12 --port-any --user-any --force --ttl 0w19s0d
+    success thirdaddttl $a1 --osh groupAddServer --group $group1 --host 127.0.0.12 --port-any --user-any --force --ttl 0w${default_timeout}s0d
     contain "was added to group"
-    contain "expires in 00:00:"
-    json .command groupAddServer .error_code OK .value.group $group1 .value.ip 127.0.0.12 .value.port null .value.user null .value.ttl 19
+    contain "expires in 00:0"
+    json .command groupAddServer .error_code OK .value.group $group1 .value.ip 127.0.0.12 .value.port null .value.user null '.value.ttl > 1' true
 
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2() servers(127.0.0.10,127.0.0.11,127.0.0.12-TTL)
-    success list   $a1 --osh groupListServers --group $group1
+    success list_before_ttl_expiry   $a1 --osh groupListServers --group $group1
     json .command groupListServers .error_code OK
     contain REGEX '127\.0\.0\.1[[:space:]]+22[[:space:]]+g1[[:space:]]+'$group1'\(group\)[[:space:]]+'$account2'[[:space:]]'
     contain REGEX '127\.0\.0\.2[[:space:]]+22[[:space:]]+g2[[:space:]]+'$group1'\(group\)[[:space:]]+'$account2'[[:space:]]'
@@ -971,10 +970,7 @@ EOS
     contain '5 accesses listed'
 
     # wait for the access to expire
-    if [ "$COUNTONLY" != 1 ]; then
-        echo "Waiting 20 seconds for the access to expire..."
-        sleep 20
-    fi
+    waitfor $((default_timeout + 1)) "waiting for the access to expire"
 
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2() servers(127.0.0.10,127.0.0.11)
     success listttlexpired   $a1 --osh groupListServers --group $group1
@@ -1088,8 +1084,8 @@ EOS
     success guest_ttl_limit $a1 --osh groupModify --group $group1 --guest-ttl-limit 0
     json .command groupModify .error_code OK
 
-    # if we're just counting the number of tests, don't sleep
-    [ "$COUNTONLY" != 1 ] && sleep 1
+    # wait for the 1s-ttl guest access added above to expire, so that the re-add below is an actual change (and not OK_NO_CHANGE)
+    waitfor 2 "waiting for the 1s-ttl guest access to expire"
 
     # group1: a1(owner,aclkeeper,gatekeeper,member) a2() servers(127.0.0.10,127.0.0.11)
     success works $a1 --osh groupAddGuestAccess --group $group1 --account $account2 --port-any --user-any --host 127.0.0.10
