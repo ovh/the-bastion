@@ -1,4 +1,4 @@
-# PAM configuration for the Secure Shell service
+# PAM configuration for the Secure Shell service 
 
 # instantly fail if /etc/nologin exists and user is not root:
 auth   requisite                                                pam_nologin.so
