@@ -403,6 +403,19 @@ prefix()
     fi
 }
 
+infomsg()
+{
+    [ "$COUNTONLY" = 1 ] && return
+    printf '%b %b%b%b\n' "$(prefix)" "$DARKGRAY" "$*" "$NOC"
+}
+
+waitfor()
+{
+    [ "$COUNTONLY" = 1 ] && return
+    infomsg "sleeping for $1 seconds ${2:-...}"
+    sleep $1
+}
+
 run()
 {
     # display verbose output about the previous test if it was bad

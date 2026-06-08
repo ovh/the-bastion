@@ -124,7 +124,7 @@ EOF
     contain "Permission denied"
 
     # set PIV grace on account1
-    success a0_piv_grace_a1 $a0 --osh accountPIV --policy grace --ttl 10 --account $account1
+    success a0_piv_grace_a1 $a0 --osh accountPIV --policy grace --ttl $default_timeout --account $account1
     json .command accountPIV .error_code OK
 
     # account1 should be able to connect now
@@ -132,10 +132,7 @@ EOF
     json .command selfListIngressKeys .error_code OK '.value.keys|length' 2
 
     # sleep to ensure grace expires
-    if [ "$COUNTONLY" != 1 ]; then
-        echo "sleeping 10 seconds to wait for grace expiration"
-        sleep 10
-    fi
+    waitfor $((default_timeout + 1)) "to wait for grace expiration"
 
     # manually launch the grace reaper (normally done by cron)
     success grace_reaper $r0 $opt_remote_basedir/bin/cron/osh-piv-grace-reaper.pl
