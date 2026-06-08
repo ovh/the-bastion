@@ -22,7 +22,7 @@ PermitUserEnvironment no
 PermitUserRC no
 GatewayPorts no
 
-# === INFORMATION DISCLOSURE ===
+# === INFORMATION DISCLOSURE === 
 
 # however, display a legal notice for each connection
 Banner /etc/ssh/banner
