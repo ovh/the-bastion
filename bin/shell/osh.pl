@@ -456,10 +456,15 @@ if ($longHelp) {
 
 if ($bind) {
     $fnret = OVH::Bastion::get_bastion_ips();
-    if ($fnret) {
-        if (not grep { $bind eq $_ } @{$fnret->value}) {
-            main_exit OVH::Bastion::EXIT_CONFLICTING_OPTIONS, "invalid_bind", "Invalid binding IP specified ($bind)";
-        }
+
+    # if we can't get the list of our own IPs, we can't validate the
+    # user-supplied bind IP, so refuse rather than letting an arbitrary value through
+    if (!$fnret) {
+        main_exit OVH::Bastion::EXIT_CONFLICTING_OPTIONS, "invalid_bind",
+          "Couldn't verify the binding IP specified ($bind): " . $fnret->msg;
+    }
+    if (not grep { $bind eq $_ } @{$fnret->value}) {
+        main_exit OVH::Bastion::EXIT_CONFLICTING_OPTIONS, "invalid_bind", "Invalid binding IP specified ($bind)";
     }
 }
 
