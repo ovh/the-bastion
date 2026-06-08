@@ -24,8 +24,8 @@ echo "GO!"
 tempdir=$(mktemp -d)
 # shellcheck disable=SC2317
 cleanup() {
-    test -d "$tempdir" && rm -rf "$tempdir"
     docker ps | grep -Eo 'bastion_.*_(target|tester)$' | xargs -r docker kill
+    printf '\n%b%b%b\n\n' "$WHITE_ON_BLUE" "Individual logs are under $tempdir/, when you're done, you can \`rm -rf $tempdir'" "$NOC"
 }
 trap 'cleanup' EXIT
 
@@ -34,8 +34,8 @@ do
     [ "$t" = "-" ] && continue
     (
         friendlyname=$(echo "$t" | sed -re 's/@[^:]+//')
-        DOCKER_TTY=false ./docker_build_and_run_tests.sh "$t" "--log-prefix=$friendlyname $*"
-        echo $? > "$tempdir/$friendlyname"
+        DOCKER_TTY=false ./docker_build_and_run_tests.sh "$t" "--log-prefix=$friendlyname $*" |& tee "$tempdir/$friendlyname.log"
+        echo "${PIPESTATUS[0]}" > "$tempdir/$friendlyname"
     ) &
 done
 wait
@@ -51,18 +51,18 @@ do
     err=$(cat "$tempdir/$friendlyname" 2>/dev/null)
     rm -f "$tempdir/$friendlyname"
     if [ -z "$err" ]; then
-        printf "%b%16s: tests couldn't run properly%b\\n" "$BLACK_ON_RED" "$friendlyname" "$NOC"
+        printf "%b%16s: tests couldn't run properly%b\\n" "$WHITE_ON_RED" "$friendlyname" "$NOC"
         nberrors=$(( nberrors + 1 ))
     elif [ "$err" = 0 ]; then
         printf "%b%16s: no errors :)%b\\n" "$BLACK_ON_GREEN" "$friendlyname" "$NOC"
     elif [ "$err" = 143 ]; then
-        printf "%b%16s: tests interrupted%b\\n" "$BLACK_ON_RED" "$friendlyname" "$NOC"
+        printf "%b%16s: tests interrupted%b\\n" "$WHITE_ON_RED" "$friendlyname" "$NOC"
         nberrors=$(( nberrors + 1 ))
     elif [ "$err" -lt 254 ]; then
-        printf "%b%16s: $err tests failed%b\\n" "$BLACK_ON_RED" "$friendlyname" "$NOC"
+        printf "%b%16s: $err tests failed%b log: %b\\n" "$WHITE_ON_RED" "$friendlyname" "$NOC" "less -SR $tempdir/$friendlyname.log"
         nberrors=$(( nberrors + 1 ))
     else
-        printf "%b%16s: $err errors%b\\n" "$BLACK_ON_RED" "$friendlyname" "$NOC"
+        printf "%b%16s: $err errors%b log: %b\\n" "$WHITE_ON_RED" "$friendlyname" "$NOC" "less -SR $tempdir/$friendlyname.log"
         nberrors=$(( nberrors + 1 ))
     fi
 done
