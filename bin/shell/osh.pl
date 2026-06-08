@@ -675,6 +675,12 @@ if (defined $user and $user =~ /^(telnet|ssh)-passw(or)?d-([^-]+)(-([^-]+))?$/) 
     # update user
     $user = $3;
 
+    # $user was just rewritten from the password-login prefix syntax, so we re-validate it
+    if (!OVH::Bastion::is_valid_remote_user(user => $user, allowWildcards => ($osh_command ? 1 : 0))) {
+        main_exit OVH::Bastion::EXIT_INVALID_REMOTE_USER, 'invalid_remote_user',
+          "Remote user name '$user' seems invalid";
+    }
+
     if ($4) {
         $userPasswordClue = $5;
     }
