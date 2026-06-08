@@ -23,10 +23,12 @@ testsuite_strict_checking()
     contain "Permanently added"
 
     # change the remote hostkeys, and get the proper sshd PID so that we can force it to reload
-    success change_host_keys $r0 "\"find /etc/ssh/ -type f -name 'ssh_host_*key*' -print -delete; ssh-keygen -A; ps faxu; printf %s SSHD_PIDS=; ps ax -o pid,args | grep -E '^ *[0-9]+ +(sshd: .+listener|/usr/sbin/sshd)' | awk '{print \\\$1}' | tr '\\\n' ' '\""
+    success change_host_keys $r0 "\"find /etc/ssh/ -type f -name 'ssh_host_*key*' -print -delete; ssh-keygen -A; ps faxu; printf %s SSHD_PIDS=; ps ax -o pid,args | grep -E '^ *[0-9]+ +(sshd: .+listener|/usr/sbin/sshd)' | awk '{print \\\$1}' | tr '\\\n' ' '; echo\""
     contain 'generating new host keys'
+    contain REGEX 'SSHD_PIDS=[0-9]'
     local sshd_pids
-    sshd_pids=$(get_stdout | grep SSHD_PIDS= | cut -d= -f2-)
+    sshd_pids=$(get_stdout | grep -Eo 'SSHD_PIDS=[0-9 ]+' | cut -d= -f2)
+    infomsg "detected sshd PIDs are: $sshd_pids"
 
     success reload_target_sshd $r0 "\"kill -HUP $sshd_pids\""
 
