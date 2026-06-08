@@ -113,3 +113,4 @@ HashKnownHosts no
 # send an ssh ping each 57 seconds to the client and disconnect after 5 no-replies
 ServerAliveInterval 57
 ServerAliveCountMax 5
+
