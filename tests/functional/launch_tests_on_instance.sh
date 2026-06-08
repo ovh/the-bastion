@@ -369,13 +369,6 @@ outdir="$mytmpdir/out"
 mkdir -p $outdir || exit 1
 touch "$outdir/.basename"
 
-# checking which screen syntax works on this OS
-screen="screen -L"
-if screen -h 2>&1 | grep -q -- -Logfile; then
-    screen="screen -L -Logfile"
-fi
-# /checking
-
 testno=0
 testcount=0
 basename=""
@@ -459,8 +452,12 @@ run()
     # put an invalid value in this file, should be overwritten. we also use it as a lock file.
     echo -1 > $outdir/$basename.retval
     # run the test
-    flock "$outdir/$basename.retval" $screen "$outdir/$basename.log" -D -m -fn -ln bash -c "set -f; $* ; echo \$? > $outdir/$basename.retval ; sleep $sleepafter"
-    flock "$outdir/$basename.retval" true
+    if [ "$OS_FAMILY" = FreeBSD ]; then
+        command script -q "$outdir/$basename.log" bash -c "set -f; $*; echo \$? > $outdir/$basename.retval ; sleep $sleepafter" >/dev/null 2>&1 || true
+    else
+        command script -q -c "set -f; $* ; echo \$? > $outdir/$basename.retval ; sleep $sleepafter" "$outdir/$basename.log" >/dev/null 2>&1 || true
+        grep -Eva '^Script (started|done) on ' "$outdir/$basename.log" | sponge "$outdir/$basename.log" || true
+    fi
     unset sleepafter
 
     # look for generally bad strings in the output
@@ -476,21 +473,11 @@ run()
     if [ "$opt_consistency_check" = 1 ]; then
         # sleep 1s if sshd has been reloaded
         [ "$case" = "sshd_reload" ] && sleep 1
-        flock "$outdir/$basename.retval" $screen "$outdir/$basename.cc" -D -m -fn -ln $r0 '
-                /opt/bastion/bin/admin/check-consistency.pl ; echo _RETVAL_CC=$?= ;
-                grep -Fw -e warn -e die -e code-warning /var/log/bastion/bastion.log
-                | grep -Fv
-                  -e "'"${code_warn_exclude:-__none__}"'"
-                  -e "System does not support IPv6"
-                  -e "Defaulting to E[UG]ID"
-                  -e "starting!"
-                  -e "Binding to SSL port"
-                | sed "s/^/_SYSLOG=/" ;
-                : > /var/log/bastion/bastion.log
-            '
-        flock "$outdir/$basename.retval" true
-        ccret=$(     grep _RETVAL_CC= "$outdir/$basename.cc" | cut -d= -f2)
-        syslogline=$(grep _SYSLOG=    "$outdir/$basename.cc" | cut -d= -f2-)
+        if ! $r0 bash -c '/opt/bastion/bin/admin/check-consistency.pl ; echo _RETVAL_CC=$?= ; grep -Fw -e warn -e die -e code-warning /var/log/bastion/bastion.log | sed s/^/_SYSLOG=/ ; : > /var/log/bastion/bastion.log' >"$outdir/$basename.cc" 2>&1; then
+            fail "CONSISTENCY CHECK CALL FAILED"
+        fi
+        ccret=$(     grep _RETVAL_CC= "$outdir/$basename.cc" | cut -d= -f2 || true)
+        syslogline=$(grep _SYSLOG=    "$outdir/$basename.cc" | cut -d= -f2- | grep -Fv -e "${code_warn_exclude:-__none__}" -e "System does not support IPv6" -e  "Defaulting to EUID" -e "Defaulting to EGID" -e "starting!" -e "Binding to SSL port" || true)
         if [ "$ccret" != 0 ]; then
             nbfailedcon=$(( nbfailedcon + 1 ))
             fail "CONSISTENCY CHECK"
