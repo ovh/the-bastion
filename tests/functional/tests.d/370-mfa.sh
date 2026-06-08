@@ -147,8 +147,8 @@ testsuite_mfa()
         contain REGEX 'Password:|Password for'
 
         # connect to 127.7.7.7 with MFA JIT, bad password
-        script a4_connect_g3_server_badpass "echo 'set timeout 45; \
-            spawn $a4 root@127.7.7.7; \
+        script a4_connect_g3_server_badpass "echo 'set timeout $((default_timeout * 2)); \
+            spawn $a4d root@127.7.7.7; \
             expect \"is required (password)\" { sleep 0.1; }; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect \"is required (password)\" { sleep 0.1; }; \
@@ -184,8 +184,8 @@ testsuite_mfa()
         success a4_gen_self_egress_pass $a0 --osh accountGeneratePassword --account $account4 --do-it
         json .command accountGeneratePassword .error_code OK
 
-        script a4_connect_g3_server_selfpass_jitmfa "echo 'set timeout $default_timeout; \
-            spawn $a4 root@127.7.7.7 -P; \
+        script a4_connect_g3_server_selfpass_jitmfa "echo 'set timeout $((default_timeout * 2)); \
+            spawn $a4d root@127.7.7.7 -P; \
             expect \"is required (password)\" { sleep 0.1; }; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect \"is required (password)\" { sleep 0.1; }; \
@@ -217,8 +217,8 @@ testsuite_mfa()
         contain REGEX 'Password:|Password for'
         json .command groupGeneratePassword .error_code OK
 
-        script a4_connect_g3_server_grouppass_jitmfa "echo 'set timeout $default_timeout; \
-            spawn $a4 root@127.7.7.7 --password $group3; \
+        script a4_connect_g3_server_grouppass_jitmfa "echo 'set timeout $((default_timeout * 2)); \
+            spawn $a4d root@127.7.7.7 --password $group3; \
             expect \"is required (password)\" { sleep 0.1; }; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect \"is required (password)\" { sleep 0.1; }; \
