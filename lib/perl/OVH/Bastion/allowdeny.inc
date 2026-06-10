@@ -859,6 +859,16 @@ sub is_access_granted {
             # normal member case, just reuse $grantedGroup
             osh_debug("is_access_granted: adding grantedGroup to grants because is member");
             push @grants, {type => 'group-member', group => $shortGroup, %{$grantedGroup->value}};
+
+            # check if group has the "try-personal-keys" option enabled, and if so, add personal keys too
+            my $tryPersonalKeysConfig =
+              OVH::Bastion::group_config(group => $group, %{OVH::Bastion::OPT_GROUP_TRY_PERSONAL_KEYS()});
+            if ($tryPersonalKeysConfig && $tryPersonalKeysConfig->value && $tryPersonalKeysConfig->value eq '1') {
+                osh_debug(
+                    "is_access_granted: try-personal-keys is enabled for group $shortGroup, adding personal access");
+                push @grants, {type => 'personal-via-group', group => $shortGroup, %{$grantedGroup->value}};
+            }
+
         }
         elsif (OVH::Bastion::is_group_guest(group => $shortGroup, account => $account, sudo => $params{'sudo'})) {
 
@@ -871,6 +881,16 @@ sub is_access_granted {
             if ($grantedGuest && $grantedGroup) {
                 push @grants, {type => 'group-guest', group => $shortGroup, %{$grantedGuest->value}};
                 osh_debug("is_access_granted: adding grantedGuest to grants because is guest and group has access");
+
+                # check if group has the "try-personal-keys" option enabled, and if so, add personal keys too
+                my $tryPersonalKeysConfig =
+                  OVH::Bastion::group_config(group => $group, %{OVH::Bastion::OPT_GROUP_TRY_PERSONAL_KEYS()});
+                if ($tryPersonalKeysConfig && $tryPersonalKeysConfig->value && $tryPersonalKeysConfig->value eq '1') {
+                    osh_debug(
+                        "is_access_granted: try-personal-keys is enabled for group $shortGroup, adding personal access"
+                    );
+                    push @grants, {type => 'personal-via-group', group => $shortGroup, %{$grantedGroup->value}};
+                }
             }
 
             # special legacy case; we also check if account has a legacy access for ip AND that the group ALSO has access to this ip
@@ -912,6 +932,22 @@ sub is_access_granted {
                 );
                 $data{'mfa'} =
                   OVH::Bastion::account_config(key => "personal_egress_mfa_required", account => $sysaccount);
+            }
+            elsif ($access->{'type'} eq 'personal-via-group') {
+                # This is personal access triggered by try-personal-keys group option
+                # Use personal keys but group MFA and timeout settings
+                $data{'keys'} = OVH::Bastion::get_personal_account_keys(
+                    account  => $sysaccount,
+                    listOnly => $listOnly,
+                    noexec   => $noexec,
+                    forceKey => $access->{'forceKey'}
+                );
+                # Use group MFA and timeout settings since access is via group
+                $data{'mfa'} = OVH::Bastion::group_config(key => "mfa_required", group => $access->{'group'});
+                $data{'idle_lock_timeout'} = OVH::Bastion::group_config(%{OVH::Bastion::OPT_GROUP_IDLE_LOCK_TIMEOUT()},
+                    group => $access->{'group'});
+                $data{'idle_kill_timeout'} = OVH::Bastion::group_config(%{OVH::Bastion::OPT_GROUP_IDLE_KILL_TIMEOUT()},
+                    group => $access->{'group'});
             }
             else {
                 # unknown access type? no key!
