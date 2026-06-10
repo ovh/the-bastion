@@ -202,3 +202,26 @@ It also has a tool named ``ipbt-dump`` that should help converting ttyrec files 
 work with.
 
 (adapted from `this GitHub issue <https://github.com/ovh/the-bastion/issues/522>`_).
+
+A user lost their personal SSH key, how do I add a new one to their account?
+============================================================================
+
+There is intentionally no admin command to push an ingress key onto somebody else's account.
+This is by design: such a command would let anybody who has access to it add a key they control to *any*
+account, effectively taking over that account, including its roles and accesses, on the bastion.
+
+Instead, an admin can do it explicitly through :doc:`/plugins/admin/adminSudo`, which leaves a clear audit trail
+of who impersonated whom and for which command:
+
+.. code-block:: shell
+
+    bastion --osh adminSudo -- --sudo-as useraccount --sudo-cmd selfAddIngressKey -- --public-key '"ssh-ed25519 AAAAC3NzaC[...]"'
+
+Note the double-quoting around the public key: the outer (single) quotes are consumed by your local shell,
+so the inner (double) quotes are what the bastion actually receives.
+
+If your organization already keeps an authoritative inventory of users and their SSH keys (such as an HR system,
+a directory, a key management service, or any other company-wide tool), a more scalable approach is to develop a
+dedicated restricted plugin that interfaces with it and can synchronize any account's ingress keys from this single
+source of truth, rather than relying on admins manually updating keys one by one. You can then give access to this
+restricted plugin to several people with a controlled impact, as they won't be able to insert any key manually.
