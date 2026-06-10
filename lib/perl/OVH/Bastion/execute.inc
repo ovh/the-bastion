@@ -556,7 +556,7 @@ sub helper {
         expects_stdin => $expects_stdin,
         stdin_str     => $stdin_str
     );
-    $fnret or return R('ERR_HELPER_FAILED', "something went wrong in helper script (" . $fnret->msg . ")");
+    $fnret or return R('ERR_HELPER_FAILED', msg => "something went wrong in helper script (" . $fnret->msg . ")");
 
     $fnret = OVH::Bastion::result_from_helper($fnret->value->{'stdout'});
     $fnret or return $fnret;
