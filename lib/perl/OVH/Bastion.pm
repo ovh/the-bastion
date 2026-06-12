@@ -105,6 +105,7 @@ use constant {
     EXIT_DNS_DISABLED                => 132,
     EXIT_IP_VERSION_DISABLED         => 133,
     EXIT_INVALID_PORT                => 134,
+    EXIT_INVALID_PROXYJUMP           => 135,
 };
 
 use constant {
@@ -141,7 +142,7 @@ use constant {
 # for i in *.inc ; do bz=$(basename $i .inc) ; echo "$bz => "'[qw{ '$(grep ^sub $i | grep -v 'sub _' | awk '{print $2}' | tr "\n" " ")'}],' ; done
 my %_autoload_files = (
     allowdeny => [
-        qw{ get_personal_account_keys get_group_keys is_access_way_granted get_ip ip2host get_user_groups duration2human print_acls is_access_granted ssh_test_access_way get_acls get_acl_way }
+        qw{ get_personal_account_keys get_group_keys is_access_way_granted get_ip ip2host get_user_groups duration2human print_acls is_access_granted build_proxyjump_ssh_options ssh_test_access_way get_acls get_acl_way }
     ],
     allowkeeper => [
         qw{ is_user_in_group is_group_existing is_valid_uid get_next_available_uid get_next_available_group_uid get_next_available_group_gid is_bastion_account_valid_and_existing is_account_valid is_account_existing access_modify is_valid_group is_valid_group_and_existing add_user_to_group get_group_list get_account_list get_realm_list is_admin is_super_owner is_auditor is_group_aclkeeper is_group_gatekeeper is_group_owner is_group_guest is_group_member get_remote_accounts_from_realm is_valid_ttl build_re_from_wildcards }
@@ -828,15 +829,80 @@ sub is_valid_remote_user {
     return R('ERR_INVALID_PARAMETER', msg => "Specified user doesn't seem to be valid");
 }
 
+sub validate_proxy_params {
+    my %params         = @_;
+    my $proxyJump      = $params{'proxyJump'};             # optional "[user@]host[:port]" spec, parsed below
+    my $proxyHost      = $params{'proxyHost'};
+    my $proxyPort      = $params{'proxyPort'};
+    my $proxyUser      = $params{'proxyUser'};
+    my $allowWildcards = $params{'allowWildcards'} // 1;
+
+    # if we were given a combined proxy-jump spec (the "-J [user@]host[:port]" form used by osh.pl and the
+    # scp plugin), split it into its host/port/user components here, so the spec grammar lives in exactly
+    # one place. Callers that already have the components separately (e.g. --proxy-host/--proxy-port/
+    # --proxy-user) simply don't pass proxyJump; the validation below is shared between both forms.
+    if (defined $proxyJump && $proxyJump ne '') {
+        if ($proxyJump =~ /^(?:([a-zA-Z0-9._@!-]{1,128})@)?(\[[0-9a-fA-F:.]+\]|[a-zA-Z0-9._-]+)(?::(\d+))?$/) {
+            $proxyUser = $1 if $1;
+            $proxyHost = $2;
+            $proxyPort = $3 if $3;
+            $proxyHost =~ s/^\[(.+)\]$/$1/;    # strip brackets around an IPv6 literal (e.g. [2001:db8::1])
+        }
+        else {
+            return R('ERR_INVALID_PROXYJUMP',
+                msg => "Invalid proxyjump specification '$proxyJump', should be [user\@]host[:port]");
+        }
+    }
+
+    my $proxyIp;
+    my $fnret;
+
+    if ($proxyHost) {
+        $fnret = OVH::Bastion::is_valid_ip(ip => $proxyHost, allowSubnets => 0);
+        if ($fnret) {
+            $proxyIp = $fnret->value->{'ip'};
+        }
+        else {
+            $fnret = OVH::Bastion::get_ip(host => $proxyHost);
+            $fnret or return $fnret;
+            $proxyIp = $fnret->value->{'ip'};
+        }
+    }
+
+    if ($proxyPort) {
+        $fnret = OVH::Bastion::is_valid_port(port => $proxyPort);
+        $fnret or return $fnret;
+        $proxyPort = $fnret->value;
+    }
+
+    if ($proxyUser) {
+        $fnret = OVH::Bastion::is_valid_remote_user(user => $proxyUser, allowWildcards => $allowWildcards);
+        $fnret or return $fnret;
+        $proxyUser = $fnret->value;
+    }
+
+    return R('OK', value => {proxyIp => $proxyIp, proxyPort => $proxyPort, proxyUser => $proxyUser});
+}
+
 sub machine_display {
-    my %params = @_;
-    my $ip     = $params{'ip'};
-    my $port   = $params{'port'};
-    my $user   = $params{'user'};
+    my %params    = @_;
+    my $ip        = $params{'ip'};
+    my $port      = $params{'port'};
+    my $user      = $params{'user'};
+    my $proxyIp   = $params{'proxyIp'};
+    my $proxyPort = $params{'proxyPort'};
+    my $proxyUser = $params{'proxyUser'};
 
     my $machine = (index($ip, ':') >= 0 ? "[$ip]" : $ip);
     $machine .= ":$port"              if $port;
     $machine = $user . '@' . $machine if $user;
+
+    if ($proxyIp) {
+        my $proxy = (index($proxyIp, ':') >= 0 ? "[$proxyIp]" : $proxyIp);
+        $proxy .= ":$proxyPort" if $proxyPort;
+        $proxy   = $proxyUser . '@' . $proxy if $proxyUser;
+        $machine = "$machine via $proxy";
+    }
 
     return R('OK', value => $machine);
 }
@@ -1215,35 +1281,91 @@ sub build_ttyrec_cmdline_part1of2 {
         $params{'ip'} = 'v6[' . $params{'ip'} . ']';
     }
 
-    # build ttyrec filename format
-    my $bastionName          = OVH::Bastion::config('bastionName')->value;
-    my $ttyrecFilenameFormat = OVH::Bastion::config('ttyrecFilenameFormat')->value;
-    $ttyrecFilenameFormat =~ s/&bastionname/$bastionName/g;
-    $ttyrecFilenameFormat =~ s/&uniqid/$params{'uniqid'}/g   if $params{'uniqid'};
-    $ttyrecFilenameFormat =~ s/&ip/$params{'ip'}/g           if $params{'ip'};
-    $ttyrecFilenameFormat =~ s/&port/$params{'port'}/g       if defined $params{'port'};
-    $ttyrecFilenameFormat =~ s/&user/$params{'user'}/g       if defined $params{'user'};
-    $ttyrecFilenameFormat =~ s/&account/$params{'account'}/g if $params{'account'};
+    # handle ipv6 for proxyIp
+    if ($params{'proxyIp'} && index($params{'proxyIp'}, ':') >= 0) {
+        $params{'proxyIp'} =~ tr/:/./;
+        $params{'proxyIp'} = 'v6[' . $params{'proxyIp'} . ']';
+    }
 
-    if ($ttyrecFilenameFormat =~ /&(bastionname|uniqid|ip|port|user|account)/) {
+    # Resolve the ttyrec recording path. Two dedicated full-path templates (directories + filename)
+    # are used depending on whether the egress connection goes through a jumphost ('via') or not
+    # ('direct'). When the relevant option isn't set, the path is built from the standard layout
+    # using ttyrecFilenameFormat (which sets the filename only).
+    my $bastionName = OVH::Bastion::config('bastionName')->value;
+    my $isVia       = defined $params{'proxyIp'};
 
-        # if we still have a placeholder here, then we were missing parameters
+    my $pathFormat =
+      $isVia
+      ? OVH::Bastion::config('ttyrecViaPathFormat')->value
+      : OVH::Bastion::config('ttyrecDirectPathFormat')->value;
+
+    if (!$pathFormat) {
+        my $filenameFormat = OVH::Bastion::config('ttyrecFilenameFormat')->value;
+
+        # standard layout: <home>/ttyrec[/<remoteaccount>]/<perhost>/<filename>, where <perhost>
+        # is 'via-<proxyip>-<ip>' for proxy-jump connections (so it sorts by proxy first) or '<ip>'
+        my $perHost = $isVia ? 'via-&proxyip-&ip' : '&ip';
+        $pathFormat = "&home/ttyrec/&remoteaccount/$perHost/$filenameFormat";
+    }
+
+    # Substitute placeholders. Required tokens are left untouched when their value is missing, so
+    # the check just below catches the error; optional tokens (proxy*, remoteaccount) become the
+    # empty string when absent, and the resulting empty path components are collapsed afterwards.
+    my %requiredToken = (
+        '&home'        => $params{'home'},
+        '&bastionname' => $bastionName,
+        '&uniqid'      => $params{'uniqid'},
+        '&ip'          => $params{'ip'},
+        '&port'        => $params{'port'},
+        '&user'        => $params{'user'},
+        '&account'     => $params{'account'},
+    );
+    my %optionalToken = (
+        '&remoteaccount' => (($params{'realm'} && $params{'remoteaccount'}) ? $params{'remoteaccount'} : ''),
+        '&proxyip'       => $params{'proxyIp'},
+        '&proxyport'     => $params{'proxyPort'},
+        '&proxyuser'     => $params{'proxyUser'},
+    );
+    foreach my $tok (keys %requiredToken) {
+        my $val = $requiredToken{$tok};
+        next if !defined $val;
+        $val =~ tr{/}{_} if $tok ne '&home';    # slash guard, except &home which is legitimately a path
+        $pathFormat =~ s/\Q$tok\E/$val/g;
+    }
+    foreach my $tok (keys %optionalToken) {
+        my $val = $optionalToken{$tok} // '';
+        $val        =~ tr{/}{_};
+        $pathFormat =~ s/\Q$tok\E/$val/g;
+    }
+
+    # a still-present required placeholder means we were called with a missing parameter
+    if ($pathFormat =~ /&(home|bastionname|uniqid|ip|port|user|account)/) {
         return R('ERR_MISSING_PARAMETER',
-            msg => "Missing bastionname, uniqid, ip, port, user or account in ttyrec cmdline building");
+            msg => "Missing home, bastionname, uniqid, ip, port, user or account in ttyrec cmdline building");
     }
 
-    # ensure there are no '/'
-    $ttyrecFilenameFormat =~ tr{/}{_};
+    # collapse empty path components (e.g. an empty &remoteaccount for non-realm accounts)
+    $pathFormat =~ s{/+}{/}g;
 
-    # prepend (and create) directory
-    my $saveDir = $params{'home'} . "/ttyrec";
-    mkdir($saveDir);
-    if ($params{'realm'} && $params{'remoteaccount'}) {
-        $saveDir .= "/" . $params{'remoteaccount'};
-        mkdir($saveDir);
+    # safety: the resolved path must be absolute and must not climb out of the tree with '..'
+    if ($pathFormat !~ m{^/} || $pathFormat =~ m{(?:^|/)\.\.(?:/|$)}) {
+        return R('ERR_SECURITY_VIOLATION', msg => "Refusing to use unsafe ttyrec path '$pathFormat'");
     }
-    $saveDir .= "/" . $params{'ip'};
-    mkdir($saveDir);
+
+    # split into directory + filename, and create the directory tree (best-effort, default perms).
+    # under mocking (unit tests), skip the actual mkdir so we never touch the real filesystem.
+    my ($saveDir, $ttyrecFilenameFormat) = $pathFormat =~ m{^(.*)/([^/]+)$};
+    if (!$saveDir || !$ttyrecFilenameFormat) {
+        return R('ERR_INVALID_PARAMETER', msg => "Invalid ttyrec path '$pathFormat'");
+    }
+    if (!OVH::Bastion::is_mocking()) {
+        my $mkpath = '';
+        foreach my $component (split m{/}, $saveDir) {
+            next if !$component;
+            $mkpath .= "/$component";
+            mkdir($mkpath);    # ignore errors: parent directories likely already exist
+        }
+    }
 
     my $saveFileFormat = "$saveDir/$ttyrecFilenameFormat";
 

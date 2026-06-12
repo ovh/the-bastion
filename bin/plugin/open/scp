@@ -23,8 +23,11 @@ my ($scpCmd);
 my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,
     header  => undef,
-    options => {'scp-cmd=s' => \$scpCmd},
-    help    => \&help,
+    options => {
+        'scp-cmd=s'    => \$scpCmd,
+        'proxy-jump=s' => \my $proxyJump,
+    },
+    help => \&help,
 );
 
 sub help {
@@ -65,10 +68,11 @@ REMOTE_HOST=""
 REMOTE_PORT=22
 REMOTE_USER=""
 REMOTE_PATH=""
+PROXY_JUMP=""
 
 usage() {
     cat >&2 <<EOF
-Usage: $0 [-p] [-q] [-r] [-T] [-v] [-l limit] [-i identity_file] [-P port] [-o ssh_option] source target
+Usage: $0 [-p] [-q] [-r] [-T] [-v] [-l limit] [-i identity_file] [-P port] [-J jumphost] [-o ssh_option] source target
 
 Please refer to the scp manpage for details about each command-line option above.
 EOF
@@ -89,6 +93,13 @@ while [ -n "${1:-}" ]; do
                 BASTION_SSH_EXTRA_ARGS="$BASTION_SSH_EXTRA_ARGS $1 $2"
                 BASTION_SCP_EXTRA_ARGS="$BASTION_SCP_EXTRA_ARGS $1 $2"
             fi
+            shift 2;;
+        "-J")
+            if [ -z "${2:-}" ]; then
+                echo "scpwrapper: missing argument after '$1'" >&2
+                exit 1
+            fi
+            PROXY_JUMP="$2"
             shift 2;;
         "-P"|"-l")
             if [ -z "${2:-}" ]; then
@@ -170,7 +181,11 @@ fi
 
 # shellcheck disable=SC2086
 [ "$BASTION_SCP_DEBUG" = 1 ] && set -x
-$BASTION_CMD -t $BASTION_SSH_EXTRA_ARGS -- --osh scp --host "$REMOTE_HOST" --port "$REMOTE_PORT" --user "$REMOTE_USER" --generate-mfa-token | tee "$t"
+if [ -n "$PROXY_JUMP" ]; then
+    $BASTION_CMD -t $BASTION_SSH_EXTRA_ARGS -- --osh scp --host "$REMOTE_HOST" --port "$REMOTE_PORT" --user "$REMOTE_USER" -J "$PROXY_JUMP" --generate-mfa-token | tee "$t"
+else
+    $BASTION_CMD -t $BASTION_SSH_EXTRA_ARGS -- --osh scp --host "$REMOTE_HOST" --port "$REMOTE_PORT" --user "$REMOTE_USER" --generate-mfa-token | tee "$t"
+fi
 [ "$BASTION_SCP_DEBUG" = 1 ] && set +x
 token=$(grep -Eo '^MFA_TOKEN=[a-zA-Z0-9,]+' "$t" | tail -n 1 | cut -d= -f2)
 
@@ -229,7 +244,11 @@ scpcmd=$(echo "$3" | sed -e 's/#/##/g;s/ /#/g')
 # and go
 [ "$BASTION_SCP_DEBUG" = 1 ] && set -x
 EOF
-echo "exec $BASTION_CMD -T \$sshcmdline $BASTION_SSH_EXTRA_ARGS -- --user \"\$REMOTE_USER\" --port \"\$REMOTE_PORT\" --host \"\$REMOTE_HOST\" --osh scp --scp-cmd \"\$scpcmd\" --mfa-token $token" >> "$t"
+if [ -n "$PROXY_JUMP" ]; then
+    echo "exec $BASTION_CMD -T \$sshcmdline $BASTION_SSH_EXTRA_ARGS -- --user \"\$REMOTE_USER\" --port \"\$REMOTE_PORT\" --host \"\$REMOTE_HOST\" -J \"$PROXY_JUMP\" --osh scp --proxy-jump \"$PROXY_JUMP\" --scp-cmd \"\$scpcmd\" --mfa-token $token" >> "$t"
+else
+    echo "exec $BASTION_CMD -T \$sshcmdline $BASTION_SSH_EXTRA_ARGS -- --user \"\$REMOTE_USER\" --port \"\$REMOTE_PORT\" --host \"\$REMOTE_HOST\" --osh scp --scp-cmd \"\$scpcmd\" --mfa-token $token" >> "$t"
+fi
 chmod +x "$t"
 
 # don't use exec below, because we need the trap to be executed on exit
@@ -290,6 +309,20 @@ EOF
 # code
 #
 my $fnret;
+my $proxyIp   = undef;
+my $proxyPort = 22;
+my $proxyUser = undef;
+# Parse and validate the proxyjump spec if specified. The "-J [user@]host[:port]" grammar and its
+# validation live in OVH::Bastion::validate_proxy_params() (shared with osh.pl and the ACL plugins);
+# any error (bad spec, DNS/IP-version disabled, host not found, invalid user) is propagated as-is.
+if ($proxyJump) {
+    $fnret = OVH::Bastion::validate_proxy_params(proxyJump => $proxyJump, allowWildcards => 0);
+    $fnret or osh_exit($fnret);
+    $proxyIp   = $fnret->value->{'proxyIp'};
+    $proxyPort = $fnret->value->{'proxyPort'} // 22;
+    $proxyUser = $fnret->value->{'proxyUser'};
+    osh_debug("parsed proxyjump: host=$proxyIp port=$proxyPort user=$proxyUser");
+}
 
 if (not $host) {
     help();
@@ -320,13 +353,19 @@ if ($decoded =~ m{[\`\$\;><\|\&]}) {
 
 $port ||= 22;                                              # scp uses 22 if not specified, so we need to test access to that port and not any port (aka undef)
 $user ||= $self;                                           # same for user
+if ($proxyIp) {
+    $proxyUser ||= $user;
+}
 
 $fnret = OVH::Bastion::Plugin::otherProtocol::has_protocol_access(
-    account  => $self,
-    user     => $user,
-    ip       => $ip,
-    port     => $port,
-    protocol => $protocol,
+    account   => $self,
+    user      => $user,
+    ip        => $ip,
+    port      => $port,
+    protocol  => $protocol,
+    proxyIp   => $proxyIp,
+    proxyPort => $proxyPort,
+    proxyUser => $proxyUser,
 );
 $fnret or osh_exit($fnret);
 
@@ -342,14 +381,35 @@ foreach my $key (@keys) {
     push @cmd, ('-i', $key);
 }
 
+# Add ProxyCommand if proxy is specified (also checks whether egressProxyJumpAllowed)
+if ($proxyIp) {
+    my @proxySshOptions = ('-o', 'ForwardAgent=no', '-o', 'PermitLocalCommand=no', '-o', 'ClearAllForwardings=yes');
+    push @proxySshOptions, map { ('-i', $_) } @keys;
+    $fnret = OVH::Bastion::build_proxyjump_ssh_options(
+        proxyIp    => $proxyIp,
+        proxyPort  => $proxyPort,
+        proxyUser  => $proxyUser,
+        sshOptions => \@proxySshOptions,
+    );
+    $fnret or osh_exit($fnret);
+    push @cmd, @{$fnret->value->{'sshArgs'}};
+}
+
 push @cmd, "--", $ip, $decoded;
 
 print STDERR ">>> Hello $self, transferring your file through the bastion "
   . ($protocol eq 'scpupload' ? 'to' : 'from')
   . " $machine...\n";
 
-# Use system here and in plugin's json config to avoid buffering deadlock issues (#486)
-$fnret = OVH::Bastion::execute(cmd => \@cmd, system => 1);
+# Use system here and in plugin's json config to avoid buffering deadlock issues (#486).
+# Pin $SHELL to /bin/sh while ssh runs: OpenSSH executes a ProxyCommand through the shell named by
+# $SHELL, which on a bastion is the account's login shell (osh.pl). Forcing /bin/sh makes the proxy
+# hop run directly under a real POSIX shell instead of re-entering osh.pl. Scoped so we don't perturb
+# the rest of the plugin's environment (a non-proxy transfer ignores $SHELL anyway).
+{
+    local $ENV{'SHELL'} = '/bin/sh';
+    $fnret = OVH::Bastion::execute(cmd => \@cmd, system => 1);
+}
 if ($fnret->err ne 'OK') {
     osh_exit 'ERR_TRANSFER_FAILED', "Error launching transfer: $fnret";
 }

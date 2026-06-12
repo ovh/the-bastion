@@ -70,7 +70,11 @@ sub main_exit {
         plugin      => undef,
         params      => join('^', @ARGV),
         comment     => $comment,
-        uniqid      => $log_uniq_id
+        uniqid      => $log_uniq_id,
+        proxyuser   => undef,
+        proxyip     => undef,
+        proxyhost   => undef,
+        proxyport   => undef
     ) if (not defined $log_db_name or not defined $log_insert_id);
 
     my $R = R($retcode eq OVH::Bastion::EXIT_OK ? 'OK' : 'KO_' . uc($comment), msg => $msg);
@@ -264,7 +268,6 @@ osh_debug("user-passed options : $realOptions");
 
 my $port = 22;    # can be override by special port
 my @toExecute;
-
 # special case: mosh, in that case we have something like this in $realOptions
 # mosh-server 'new' '-s' '-c' '256' '-l' 'LANG=en_US.UTF-8' '-l' 'LANGUAGE=en_US' '--' '--osh' 'info'
 if (defined $realOptions && $realOptions =~ /^mosh-server (.+?) '--' (.*)/) {
@@ -376,6 +379,7 @@ my $remainingOptions;
     "generate-mfa-token"        => \my $generateMfaToken,
     "mfa-token=s"               => \my $mfaToken,
     "term-passthrough"          => \my $termPassthrough,
+    "J=s"                       => \my $proxyJump,
 );
 if (not defined $realOptions) {
     help();
@@ -520,7 +524,11 @@ if ($interactive and not $ENV{'OSH_IN_INTERACTIVE_SESSION'}) {
         plugin      => undef,
         params      => undef,
         comment     => undef,
-        uniqid      => $log_uniq_id
+        uniqid      => $log_uniq_id,
+        proxyuser   => undef,
+        proxyip     => undef,
+        proxyhost   => undef,
+        proxyport   => undef
     );
     if ($logret) {
 
@@ -574,6 +582,7 @@ else {
     }
     else {
         $host = shift(@{$remainingOptions});
+        osh_debug("After shift, remainingOptions " . join('/', @$remainingOptions));
         if ($host eq '-osh' || $host eq '--osh') {
 
             # special case when using -osh without argument
@@ -595,6 +604,38 @@ else {
         $command .= join(' ', @$remainingOptions);
         osh_debug("Going to add extra command $command");
     }
+}
+
+my $proxyIp   = undef;
+my $proxyPort = undef;
+my $proxyUser = $user;    # user might be undef. We'll handle that later
+# Parse and validate the proxyjump spec if specified. The "-J [user@]host[:port]" grammar and its
+# validation live in OVH::Bastion::validate_proxy_params() (shared with the scp plugin and the ACL
+# plugins); here we just map the library error to the matching osh.pl exit code.
+if ($proxyJump) {
+    $fnret = OVH::Bastion::validate_proxy_params(proxyJump => $proxyJump, allowWildcards => 0);
+    if (!$fnret) {
+        my $err = $fnret->err;
+        if ($err eq 'ERR_INVALID_PROXYJUMP') {
+            main_exit OVH::Bastion::EXIT_INVALID_PROXYJUMP, 'invalid_proxyjump', $fnret->msg;
+        }
+        elsif ($err eq 'ERR_DNS_DISABLED') {
+            main_exit OVH::Bastion::EXIT_DNS_DISABLED, 'dns_disabled', $fnret->msg;
+        }
+        elsif ($err eq 'ERR_IP_VERSION_DISABLED') {
+            main_exit OVH::Bastion::EXIT_IP_VERSION_DISABLED, 'ip_version_disabled', $fnret->msg;
+        }
+        elsif ($err eq 'ERR_INVALID_PARAMETER') {
+            main_exit OVH::Bastion::EXIT_INVALID_REMOTE_USER, 'invalid_proxy_user', $fnret->msg;
+        }
+        else {
+            main_exit OVH::Bastion::EXIT_HOST_NOT_FOUND, 'host_not_found', $fnret->msg;
+        }
+    }
+    $proxyIp   = $fnret->value->{'proxyIp'};
+    $proxyPort = $fnret->value->{'proxyPort'} // 22;
+    $proxyUser = $fnret->value->{'proxyUser'} if $fnret->value->{'proxyUser'};
+    osh_debug("parsed proxyjump: host=$proxyIp port=$proxyPort user=$proxyUser");
 }
 
 # for plugins (osh_command), do a first check with allowWildcards, it'll be re-done in Plugin::start with
@@ -811,6 +852,8 @@ osh_debug("self     : "
       . (defined $host ? $host : '<undef>') . "\n"
       . "port       : "
       . (defined $port ? $port : '<undef>') . "\n"
+      . "proxyJump  : "
+      . (defined $proxyJump ? $proxyJump : '<undef>') . "\n"
       . "verbose    : "
       . (defined $verbose ? $verbose : '<undef>') . "\n"
       . "tty        : "
@@ -822,6 +865,10 @@ osh_debug("self     : "
       . "\n");
 
 my $hostto = OVH::Bastion::ip2host($host)->value || $host;
+my $proxyhost;
+if (defined $proxyIp) {
+    $proxyhost = OVH::Bastion::ip2host($proxyIp)->value || $proxyIp;
+}
 
 # Special case: adminSudo for ssh connection as another user
 if ($sshAs) {
@@ -843,7 +890,11 @@ if ($sshAs) {
         plugin      => undef,
         params      => join(' ', @$remainingOptions),
         comment     => undef,
-        uniqid      => $log_uniq_id
+        uniqid      => $log_uniq_id,
+        proxyuser   => $proxyUser,
+        proxyip     => $proxyIp,
+        proxyhost   => $proxyhost,
+        proxyport   => $proxyPort
     );
     if (!$fnret) {
         main_exit OVH::Bastion::EXIT_RESTRICTED_COMMAND, "sshas_denied",
@@ -964,7 +1015,11 @@ if ($osh_command) {
         plugin      => $osh_command,
         params      => join(' ', @$remainingOptions),
         comment     => 'plugin-' . ($fnret->value ? $fnret->value->{'type'} : 'UNDEF'),
-        uniqid      => $log_uniq_id
+        uniqid      => $log_uniq_id,
+        proxyuser   => $proxyUser,
+        proxyip     => $proxyIp,
+        proxyhost   => $proxyhost,
+        proxyport   => $proxyPort
     );
     if ($logret) {
 
@@ -1087,6 +1142,9 @@ if ($osh_command) {
             debug          => $osh_debug,
             tty            => $tty,
             notty          => $notty,
+            proxyIp        => $proxyIp,
+            proxyPort      => $proxyPort,
+            proxyUser      => $proxyUser,
             stealth_stdout => OVH::Bastion::plugin_config(
                 plugin => $osh_command,
                 key    => "stealth_stdout"
@@ -1150,13 +1208,25 @@ if (!$quiet) {
 # do that here, cause sometimes we do not want to pass user to osh
 $user = $user || $config->{'defaultLogin'} || $remoteself || $sysself;
 
+# if we have a proxyIp but no proxyUser, set it to $user
+$proxyUser = $user if ($proxyIp && !$proxyUser);
+
 # log request
 osh_debug("final request : " . "$user\@$ip -p $port -- $command'\n");
 
-my $displayLine = sprintf("%s => %s => %s",
+my $displayLine = sprintf(
+    "%s => %s => %s",
     OVH::Bastion::machine_display(ip => $hostfrom,    port => $portfrom)->value,
     OVH::Bastion::machine_display(ip => $bastionhost, port => $bastionport, user => $self)->value,
-    OVH::Bastion::machine_display(ip => $hostto,      port => $port,        user => $user)->value,
+    OVH::Bastion::machine_display(
+        ip        => $hostto,
+        port      => $port,
+        user      => $user,
+        proxyIp   => $proxyIp,
+        proxyPort => $proxyPort,
+        proxyUser => $proxyUser,
+    )->value,
+
 );
 
 if (!$quiet) {
@@ -1170,12 +1240,15 @@ if ($fnret and $fnret->value() =~ /yes/) {
 }
 else {
     $fnret = OVH::Bastion::is_access_granted(
-        account => $self,
-        user    => $user,
-        ipfrom  => $ipfrom,
-        ip      => $ip,
-        port    => $port,
-        details => 1
+        account   => $self,
+        user      => $user,
+        ipfrom    => $ipfrom,
+        ip        => $ip,
+        port      => $port,
+        proxyIp   => $proxyIp,
+        proxyPort => $proxyPort,
+        proxyUser => $proxyUser,
+        details   => 1
     );
 }
 
@@ -1204,7 +1277,11 @@ if (!$fnret) {
         portto      => $port,
         user        => $user,
         params      => $command,
-        uniqid      => $log_uniq_id
+        uniqid      => $log_uniq_id,
+        proxyuser   => $proxyUser,
+        proxyip     => $proxyIp,
+        proxyhost   => $proxyhost,
+        proxyport   => $proxyPort
     );
     if (!$logret) {
         osh_warn($logret);
@@ -1244,7 +1321,10 @@ my $ttyrec_fnret = OVH::Bastion::build_ttyrec_cmdline_part1of2(
     remoteaccount => $remoteself,
     debug         => $osh_debug,
     tty           => $tty,
-    notty         => $notty
+    notty         => $notty,
+    proxyIp       => $proxyIp,
+    proxyPort     => $proxyPort,
+    proxyUser     => $proxyUser
 );
 main_exit(OVH::Bastion::EXIT_TTYREC_CMDLINE_FAILED, "ttyrec_failed", $ttyrec_fnret->msg) if !$ttyrec_fnret;
 
@@ -1320,6 +1400,12 @@ if ($userPasswordClue) {
             }
         }
     }
+}
+
+# Password autologin through a proxy jump is not currently supported.
+if ($proxyJump && $userPasswordClue) {
+    main_exit OVH::Bastion::EXIT_CONFLICTING_OPTIONS, "conflicting_options",
+      "Sorry, password autologin through a proxy jump (-J) is not currently supported";
 }
 
 # if we want telnet (not ssh)
@@ -1460,7 +1546,7 @@ else {
         if ($fnret) {
             # add the -i key1 -i key2 etc. returned by get_details_from_access_array()
             push @command, @{$fnret->value->{'sshKeysArgs'}};
-            # updathe the JIT MFA flag
+            # update the JIT MFA flag
             $JITMFARequired = $fnret->value->{'mfaRequired'};
         }
         else {
@@ -1477,6 +1563,36 @@ else {
     push @command, '-t' if $tty;
     push @command, '-T' if $notty;
     push @command, '-o', "ConnectTimeout=$timeout" if $timeout;
+
+    if ($proxyJump) {
+        # build the same ssh options as the main SSH command for the proxy hop
+        my @proxySshOptions = ('-o', 'PreferredAuthentications=' . (join(',', @preferredAuths)));
+        if ($verbose) {
+            push @proxySshOptions, '-v' for (1 .. $verbose);
+        }
+        push @proxySshOptions, '-o', "ConnectTimeout=$timeout" if $timeout;
+
+        # use the same egress keys (already in '-i key' form) for the proxy hop
+        push @proxySshOptions, @{$fnret->value->{'sshKeysArgs'}} if ($fnret && $fnret->value->{'sshKeysArgs'});
+
+        # the helper enforces the egressProxyJumpAllowed policy and builds a shell-quoted ProxyCommand
+        my $proxyFnret = OVH::Bastion::build_proxyjump_ssh_options(
+            proxyIp    => $proxyIp,
+            proxyPort  => $proxyPort,
+            proxyUser  => $proxyUser,
+            sshOptions => \@proxySshOptions,
+        );
+        if (!$proxyFnret) {
+            main_exit OVH::Bastion::EXIT_ACCESS_DENIED, "proxyjump_not_allowed", "Sorry $self, " . $proxyFnret->msg;
+        }
+        push @command, @{$proxyFnret->value->{'sshArgs'}};
+
+        # OpenSSH runs a ProxyCommand through the shell named by $SHELL (`$SHELL -c 'exec <ProxyCommand>'`,
+        # see sshconnect.c). On a bastion the account's login shell *is* osh.pl, so without intervention the
+        # egress ssh would re-invoke us to run the proxy hop, so we override the account's shell to /bin/sh here,
+        # this way the ProxyCommand will invoke /bin/sh -c as it expects to.
+        $ENV{'SHELL'} = '/bin/sh';
+    }
 
     if (not $quiet) {
         $fnret =
@@ -1600,7 +1716,11 @@ my $logret = OVH::Bastion::log_access_insert(
     user        => $user,
     params      => join(' ', @ttyrec),
     ttyrecfile  => $saveFile,
-    uniqid      => $log_uniq_id
+    uniqid      => $log_uniq_id,
+    proxyuser   => $proxyUser,
+    proxyip     => $proxyIp,
+    proxyhost   => $proxyhost,
+    proxyport   => $proxyPort
 );
 if (!$logret) {
     osh_warn($logret);
@@ -1914,12 +2034,15 @@ sub do_plugin_jit_mfa {
     my $remoteuser = $user || $config->{'defaultLogin'} || $remoteself || $sysself;
 
     $localfnret = OVH::Bastion::is_access_granted(
-        account => $self,
-        user    => $user,
-        ipfrom  => $ipfrom,
-        ip      => $ip,
-        port    => $port,
-        details => 1
+        account   => $self,
+        user      => $user,
+        ipfrom    => $ipfrom,
+        ip        => $ip,
+        port      => $port,
+        proxyIp   => $proxyIp,
+        proxyPort => $proxyPort,
+        proxyUser => $proxyUser,
+        details   => 1
     );
 
     if (!$localfnret) {

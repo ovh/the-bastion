@@ -170,13 +170,17 @@ sub act {
     my %values = %{$fnret->value()};
     my ($group, $shortGroup, $account, $type, $realm, $remoteaccount, $sysaccount) =
       @values{qw{ group shortGroup account type realm remoteaccount sysaccount }};
-    my ($action, $self, $user, $host, $port, $ttl, $comment) = @params{qw{ action self user host port ttl comment }};
+    my ($action, $self, $user, $host, $port, $proxyIp, $proxyPort, $proxyUser, $ttl, $comment) =
+      @params{qw{ action self user host port proxyIp proxyPort proxyUser ttl comment }};
 
     my @command;
 
-    osh_debug(
-        "groupSetRole::act, $action $type $group/$account ($sysaccount/$realm/$remoteaccount) $user\@$host:$port ttl=$ttl"
-    );
+    my $debug_msg =
+      "groupSetRole::act, $action $type $group/$account ($sysaccount/$realm/$remoteaccount) $user\@$host:$port ttl=$ttl";
+    if ($proxyIp) {
+        $debug_msg .= " via proxy $proxyUser\@$proxyIp:$proxyPort";
+    }
+    osh_debug($debug_msg);
 
     # add/del system user to system group except if we're removing a guest access (will be done after if needed)
     if (!($type eq 'guest' and $action eq 'del')) {
@@ -207,19 +211,25 @@ sub act {
                 # foreach guest access, delete
                 foreach my $access (@acl) {
                     my $machine = OVH::Bastion::machine_display(
-                        ip   => $access->{'ip'},
-                        port => $access->{'port'},
-                        user => $access->{'user'}
+                        ip        => $access->{'ip'},
+                        port      => $access->{'port'},
+                        user      => $access->{'user'},
+                        proxyIp   => $access->{'proxyIp'},
+                        proxyPort => $access->{'proxyPort'},
+                        proxyUser => $access->{'proxyUser'},
                     )->value;
                     $fnret = OVH::Bastion::Plugin::groupSetRole::act(
-                        account => $account,
-                        group   => $shortGroup,
-                        action  => 'del',
-                        type    => 'guest',
-                        user    => $access->{'user'},
-                        port    => $access->{'port'},
-                        host    => $access->{'ip'},
-                        self    => $self,
+                        account   => $account,
+                        group     => $shortGroup,
+                        action    => 'del',
+                        type      => 'guest',
+                        user      => $access->{'user'},
+                        port      => $access->{'port'},
+                        host      => $access->{'ip'},
+                        proxyIp   => $access->{'proxyIp'},
+                        proxyPort => $access->{'proxyPort'},
+                        proxyUser => $access->{'proxyUser'},
+                        self      => $self,
                     );
                     if (!$fnret) {
                         osh_warn("Failed removing guest access to $machine, proceeding anyway...");
@@ -253,18 +263,28 @@ sub act {
 
         # in that case, we need to handle the add/del of the guest access to $user@$host:$port
         # check if group has access to $user@$ip:$port
-        my $machine = OVH::Bastion::machine_display(ip => $host, port => $port, user => $user)->value;
+        my $machine = OVH::Bastion::machine_display(
+            ip        => $host,
+            port      => $port,
+            user      => $user,
+            proxyIp   => $proxyIp,
+            proxyPort => $proxyPort,
+            proxyUser => $proxyUser
+        )->value;
         osh_debug(
             "groupSetRole::act, checking if group $group has access to $machine to $action $type access to $account");
 
         if ($action eq 'add') {
 
             $fnret = OVH::Bastion::is_access_way_granted(
-                way   => 'group',
-                group => $shortGroup,
-                user  => $user,
-                port  => $port,
-                ip    => $host,
+                way       => 'group',
+                group     => $shortGroup,
+                user      => $user,
+                port      => $port,
+                ip        => $host,
+                proxyIp   => $proxyIp,
+                proxyPort => $proxyPort,
+                proxyUser => $proxyUser,
             );
             if (not $fnret) {
                 osh_debug("groupSetRole::act, it doesn't! $fnret");
@@ -287,14 +307,17 @@ sub act {
         # Add/Del user access to user@host:port with group key
         @command = qw{ sudo -n -u allowkeeper -- /usr/bin/env perl -T };
         push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountAddGroupServer';
-        push @command, '--group',   $group;     # must be first params, forced in sudoers.d
-        push @command, '--account', $account;
-        push @command, '--action',  $action;
-        push @command, '--ip',      $host;
-        push @command, '--user',    $user    if $user;
-        push @command, '--port',    $port    if $port;
-        push @command, '--ttl',     $ttl     if $ttl;
-        push @command, '--comment', $comment if $comment;
+        push @command, '--group',      $group;     # must be first params, forced in sudoers.d
+        push @command, '--account',    $account;
+        push @command, '--action',     $action;
+        push @command, '--ip',         $host;
+        push @command, '--user',       $user      if $user;
+        push @command, '--port',       $port      if $port;
+        push @command, '--proxy-ip',   $proxyIp   if $proxyIp;
+        push @command, '--proxy-port', $proxyPort if $proxyPort;
+        push @command, '--proxy-user', $proxyUser if $proxyUser;
+        push @command, '--ttl',        $ttl       if $ttl;
+        push @command, '--comment',    $comment   if $comment;
 
         $fnret = OVH::Bastion::helper(cmd => \@command);
         $fnret or return $fnret;
@@ -388,16 +411,19 @@ sub act {
             severity => 'info',
             type     => 'membership',
             fields   => [
-                ['action',  $action],
-                ['type',    $type],
-                ['group',   $shortGroup],
-                ['account', $account],
-                ['self',    $self],
-                ['user',    $user],
-                ['host',    $host],
-                ['port',    $port],
-                ['ttl',     $ttl],
-                ['comment', $comment || ''],
+                ['action',    $action],
+                ['type',      $type],
+                ['group',     $shortGroup],
+                ['account',   $account],
+                ['self',      $self],
+                ['user',      $user],
+                ['host',      $host],
+                ['port',      $port],
+                ['proxyIp',   $proxyIp],
+                ['proxyPort', $proxyPort],
+                ['proxyUser', $proxyUser],
+                ['ttl',       $ttl],
+                ['comment',   $comment || ''],
             ]
         );
     }

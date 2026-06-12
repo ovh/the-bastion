@@ -11,7 +11,15 @@
         "groupAddGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +.*--port" , {"pr" : ["<PORT>"]},
         "groupAddGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +--user +\\S+"                             , {"ac" : ["<enter>", "--port"]},
         "groupAddGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +--port +\\S+"                             , {"ac" : ["<enter>", "--user"]},
-        "groupAddGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +--(port|user) +\\S+ +--(port|user) +\\S+" , {"pr" : ["<enter>"]}
+        "groupAddGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +--(port|user) +\\S+ +--(port|user) +\\S+" , {"ac" : ["--proxy-host", "--ttl", "--comment", "<enter>"]},
+        "groupAddGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +--(port|user) +\\S+ +--(port|user) +\\S+ +.*--proxy-host" , {"pr" : ["<PROXY_HOST>", "<PROXY_IP>"]},
+        "groupAddGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +--(port|user) +\\S+ +--(port|user) +\\S+ +.*--proxy-host +\\S+"    , {"ac" : ["--proxy-port"]},
+        "groupAddGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +--(port|user) +\\S+ +--(port|user) +\\S+ +.*--proxy-host +\\S+ +.*--proxy-port" , {"pr" : ["<PROXY_PORT>"]},
+        "groupAddGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +--(port|user) +\\S+ +--(port|user) +\\S+ +.*--proxy-host +\\S+ +.*--proxy-port +\\S+"    , {"ac" : ["--proxy-user"]},
+        "groupAddGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +--(port|user) +\\S+ +--(port|user) +\\S+ +.*--proxy-host +\\S+ +.*--proxy-port +\\S+ +.*--proxy-user" , {"pr" : ["<PROXY_USER>"]},
+        "groupAddGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +--(port|user) +\\S+ +--(port|user) +\\S+ +.*--proxy-host +\\S+ +.*--proxy-port +\\S+ +.*--proxy-user +\\S+"    , {"ac" : ["--ttl", "--comment", "<enter>"]},
+        "groupAddGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +--(port|user) +\\S+ +--(port|user) +\\S+ +.*--ttl" , {"pr" : ["<SECONDS>"]},
+        "groupAddGuestAccess +--account +\\S+ +--group +\\S+ +--host +\\S+ +--(port|user) +\\S+ +--(port|user) +\\S+ +.*--comment" , {"pr" : ["<COMMENT>"]}
     ],
     "master_only": true
 }

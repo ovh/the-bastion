@@ -49,6 +49,7 @@ All the options related to the SSH configuration and policies, both for ingress 
 - `moshTimeoutNetwork`_
 - `moshTimeoutSignal`_
 - `moshCommandLine`_
+- `egressProxyJumpAllowed`_
 
 Global network policies options
 -------------------------------
@@ -75,6 +76,8 @@ Options to customize how logs should be produced.
 - `enableGlobalSqlLog`_
 - `enableAccountSqlLog`_
 - `ttyrecFilenameFormat`_
+- `ttyrecDirectPathFormat`_
+- `ttyrecViaPathFormat`_
 - `ttyrecAdditionalParameters`_
 - `ttyrecStealthStdoutPattern`_
 
@@ -355,6 +358,17 @@ moshCommandLine
 
 Additional parameters that will be passed as-is to mosh-server. See ``man mosh-server``, you should at least add the ``-p`` option to specify a fixed number of ports (easier for firewall configuration).
 
+.. _egressProxyJumpAllowed:
+
+egressProxyJumpAllowed
+**********************
+
+:Type: ``boolean``
+
+:Default: ``false``
+
+If set to ``true``, ProxyJump (``-J``) egress connections will be allowed.
+
 Global network policies
 -----------------------
 
@@ -549,7 +563,33 @@ ttyrecFilenameFormat
 
 :Default: ``"%Y-%m-%d.%H-%M-%S.#usec#.&uniqid.&account.&user.&ip.&port.ttyrec"``
 
-Sets the filename format of the output files of ttyrec for a given session. Magic tokens are: ``&bastionname``, ``&uniqid``, ``&account``, ``&ip``, ``&port``, ``&user`` (they'll be replaced by the corresponding values of the current session). Then, this string (automatically prepended with the correct folder) will be passed to ttyrec's ``-F`` parameter, which uses ``strftime()`` to expand it, so the usual character conversions will be done (``%Y`` for the year, ``%H`` for the hour, etc., see ``man strftime``). Note that in a addition to the usual ``strftime()`` conversion specifications, ttyrec also supports ``#usec#``, to be replaced by the current microsecond value of the time.
+Sets the filename format of the output files of ttyrec for a given session. Magic tokens are: ``&bastionname``, ``&uniqid``, ``&account``, ``&ip``, ``&port``, ``&user``, ``&home`` (the connecting account's home directory) and ``&remoteaccount`` (the remote account name for realm accounts, empty otherwise); they'll be replaced by the corresponding values of the current session. Then, this string (automatically prepended with the correct folder) will be passed to ttyrec's ``-F`` parameter, which uses ``strftime()`` to expand it, so the usual character conversions will be done (``%Y`` for the year, ``%H`` for the hour, etc., see ``man strftime``). Note that in a addition to the usual ``strftime()`` conversion specifications, ttyrec also supports ``#usec#``, to be replaced by the current microsecond value of the time. NOTE: this option sets the *filename* only, which is placed within a standard folder layout. To control the full path (directories included), define ``ttyrecDirectPathFormat`` and/or ``ttyrecViaPathFormat`` instead, which take precedence over this option when set.
+
+.. _ttyrecDirectPathFormat:
+
+ttyrecDirectPathFormat
+**********************
+
+:Type: ``string``
+
+:Default: ``""``
+
+:Example: ``"&home/ttyrec/&ip/%Y-%m-%d.%H-%M-%S.#usec#.&uniqid.&account.&user.&ip.&port.ttyrec"``
+
+Full absolute path template (directories AND filename) of the ttyrec recording for a *direct* egress connection (i.e. not going through a jumphost). The supported magic tokens are the same as ``ttyrecFilenameFormat``. ``/`` separates directory components, the last one being the filename, which is passed to ttyrec's ``-F`` (hence ``strftime()``-expanded as for ``ttyrecFilenameFormat``). The directory tree is created as needed. When left empty, the standard layout ``&home/ttyrec/&ip/<ttyrecFilenameFormat>`` is used (with an extra ``&remoteaccount`` subfolder for realm accounts).
+
+.. _ttyrecViaPathFormat:
+
+ttyrecViaPathFormat
+*******************
+
+:Type: ``string``
+
+:Default: ``""``
+
+:Example: ``"&home/ttyrec/via-&proxyip-&ip/%Y-%m-%d.%H-%M-%S.#usec#.&uniqid.&account.&user.&ip.&port.via.&proxyuser.&proxyip.&proxyport.ttyrec"``
+
+Same as ``ttyrecDirectPathFormat``, but used for egress connections going *through* a jumphost (proxy-jump). In addition to the tokens above, the proxy-related tokens ``&proxyip``, ``&proxyport`` and ``&proxyuser`` are available. When left empty, the standard layout ``&home/ttyrec/via-&proxyip-&ip/<ttyrecFilenameFormat>`` is used; note that with the default ``ttyrecFilenameFormat`` the proxy information then only appears in the folder name, so set this option explicitly if you want it in the filename too.
 
 .. _ttyrecAdditionalParameters:
 
@@ -1094,5 +1134,5 @@ sshAddKeysToAgentAllowed
 
 :Default: ``false``
 
-Set to ``true`` if you want to allow to spawn an ssh-agent and forward it over the egress session when specifically requested with the '--forward-agent' or '-x' flag, with the egress key added to the agent. Useful if you need the ssh-key for authentication on other systems (another jumpserver for example). 
+Set to ``true`` if you want to allow to spawn an ssh-agent and forward it over the egress session when specifically requested with the '--forward-agent' or '-x' flag, with the egress key added to the agent. Useful if you need the ssh-key for authentication on other systems (another jumpserver for example).
 

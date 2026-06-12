@@ -81,6 +81,9 @@ Of course, managing the installation of these keys manually quickly becomes impr
 but you can consider these part of the configuration of the servers, hence they should be managed with whichever
 centralized configuration system you already use (Puppet, Chef, Ansible, /bin/cp… wait, no, strike this last one).
 
+A server that can't be reached directly from the bastion can also be declared as reachable through an
+intermediate SSH jump host; see :doc:`/using/proxyjump`.
+
 Members list
 ************
 

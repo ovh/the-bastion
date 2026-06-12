@@ -21,6 +21,9 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
         "force-password=s" => \my $forcePassword,
         "ttl=s"            => \my $ttl,
         "comment=s"        => \my $comment,
+        "proxy-host=s"     => \my $proxyHost,
+        "proxy-port=s"     => \my $proxyPort,
+        "proxy-user=s"     => \my $proxyUser,
         # undocumented/compatibility:
         "user-any" => \my $userAny,
         "port-any" => \my $portAny,
@@ -54,6 +57,10 @@ Usage: --osh SCRIPT_NAME --account ACCOUNT --host HOST --user USER --port PORT [
   --force-password HASH    Only use the password with the specified hash to connect to the server (cf accountListPasswords)
   --ttl SECONDS|DURATION   Specify a number of seconds (or a duration string, such as "1d7h8m") after which the access will automatically expire
   --comment "'ANY TEXT'"   Add a comment alongside this server. Quote it twice as shown if you're under a shell.
+  --proxy-host HOST|IP     Use this host as a proxy/jump host to reach the target server
+  --proxy-port PORT        Proxy host port to connect to (mandatory when --proxy-host is specified)
+  --proxy-user USER|PATTERN|*  Proxy user to connect as (mandatory when --proxy-host is specified).
+                               Globbing characters '*' and '?' are supported for pattern matching.
 
 The access will work only if one of the account's personal egress public key has been copied to the remote server.
 To get the list of an account's personal egress public keys, see ``accountListEgressKeyss`` and ``selfListEgressKeys``.
@@ -94,22 +101,36 @@ if (!$ip) {
     osh_exit 'ERR_MISSING_PARAMETER', "Missing parameter 'host' or didn't resolve correctly";
 }
 
+my $proxyIp;
+if ($proxyHost) {
+    $fnret =
+      OVH::Bastion::validate_proxy_params(proxyHost => $proxyHost, proxyPort => $proxyPort, proxyUser => $proxyUser);
+    $fnret or osh_exit $fnret;
+    $proxyIp   = $fnret->value->{'proxyIp'};
+    $proxyPort = $fnret->value->{'proxyPort'};
+    $proxyUser = $fnret->value->{'proxyUser'};
+}
+
 $fnret = OVH::Bastion::Plugin::ACL::check(
-    user     => $user,
-    userAny  => $userAny,
-    port     => $port,
-    portAny  => $portAny,
-    scpUp    => $scpUp,
-    scpDown  => $scpDown,
-    sftp     => $sftp,
-    protocol => $protocol,
+    user      => $user,
+    userAny   => $userAny,
+    port      => $port,
+    portAny   => $portAny,
+    scpUp     => $scpUp,
+    scpDown   => $scpDown,
+    sftp      => $sftp,
+    protocol  => $protocol,
+    proxyIp   => $proxyIp,
+    proxyPort => $proxyPort,
+    proxyUser => $proxyUser,
 );
 if (!$fnret) {
     help();
     osh_exit($fnret);
 }
-$user = $fnret->value->{'user'};
-$port = $fnret->value->{'port'};
+$user      = $fnret->value->{'user'};
+$port      = $fnret->value->{'port'};
+$proxyUser = $fnret->value->{'proxyUser'};
 
 if (defined $ttl) {
     $fnret = OVH::Bastion::is_valid_ttl(ttl => $ttl);
@@ -155,6 +176,14 @@ if ($pluginConfig && $pluginConfig->{'self_remote_user_only'}) {
     }
 }
 
+if ($pluginConfig && $pluginConfig->{'self_remote_user_only'}) {
+    if ($proxyIp && (!$proxyUser || $proxyUser ne $account)) {
+        osh_exit('ERR_INVALID_PARAMETER',
+            msg => "This bastion policy forces the remote user of personal accesses to match\n"
+              . "the account name: you may retry with --proxy-user $account");
+    }
+}
+
 # if no comment is specified, but we're adding the server by hostname,
 # use it to craft a comment
 if (!$comment && $host ne $ip) {
@@ -176,6 +205,9 @@ $fnret = OVH::Bastion::access_modify(
     forcePassword  => $forcePassword,
     comment        => $comment,
     widestV4Prefix => ($pluginConfig ? $pluginConfig->{'widest_v4_prefix'} : undef),
+    proxyIp        => $proxyIp,
+    proxyPort      => $proxyPort,
+    proxyUser      => $proxyUser,
 );
 $fnret or osh_exit($fnret);
 
@@ -194,5 +226,8 @@ push @command, '--force-key',      $forceKey      if $forceKey;
 push @command, '--force-password', $forcePassword if $forcePassword;
 push @command, '--ttl',            $ttl           if $ttl;
 push @command, '--comment',        $comment       if $comment;
+push @command, '--proxy-ip',       $proxyIp       if $proxyIp;
+push @command, '--proxy-port',     $proxyPort     if $proxyPort;
+push @command, '--proxy-user',     $proxyUser     if $proxyUser;
 
 osh_exit OVH::Bastion::helper(cmd => \@command);
