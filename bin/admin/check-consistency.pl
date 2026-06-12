@@ -605,6 +605,152 @@ if (keys %ALL_FILES) {
     print Dumper(sort keys %ALL_FILES);
 }
 
+# Expand a set of raw sudoers template lines into a list of normalized, atomic
+# rules (one command per rule). The templates may use line continuations ("\" at
+# the end of a line) and group several commands sharing the same
+# account/group/runas tuple into a single comma-separated rule, to reduce the
+# number of rules sudo has to parse, e.g.:
+#    SUPEROWNERS, %GROUP%-owner ALL=(root) NOPASSWD: \
+#        /path/helperA --group %GROUP% *, \
+#        /path/helperB --group %GROUP% *
+# while the per-helper "# KEYSUDOERS" declarations are always written as a single
+# command per rule. Expanding both sides to the same atomic, whitespace-normalized
+# form lets us compare them regardless of how the template is laid out. Comment
+# and blank lines expand to nothing.
+sub _expand_sudoers_rules {
+    my @rawlines = @_;
+
+    # first, join continuation lines together and drop comment/blank lines
+    my @logical;
+    my $current;
+    foreach my $line (@rawlines) {
+        if (!defined $current) {
+            next if $line =~ /^\s*(?:#|$)/;
+            $current = $line;
+        }
+        else {
+            $line =~ s/^\s+//;
+            $current .= " $line";
+        }
+        if ($current =~ s/\s*\\\s*$//) {
+            next;    # the rule continues on the next line
+        }
+        push @logical, $current;
+        undef $current;
+    }
+    push @logical, $current if defined $current;
+
+    # then split each rule's comma-separated command list into atomic rules,
+    # keeping the "user host=(runas) TAG:" prefix (which ends at the first colon)
+    my @atomic;
+    foreach my $rule (@logical) {
+        my ($prefix, $commands) = $rule =~ /^(.*?:)\s*(.+)$/ or next;
+        foreach my $command (split /\s*,\s*/, $commands) {
+            my $atom = "$prefix $command";
+            $atom =~ s/\s+/ /g;
+            $atom =~ s/^\s+|\s+$//g;
+            push @atomic, $atom;
+        }
+    }
+    return @atomic;
+}
+
+# load a sudoers template directory (account or group), returning its raw lines.
+# OS-specific templates (named xxx-name.os.sudoers) are skipped.
+sub _load_sudoers_template {
+    my $subdir = shift;
+    my @lines;
+    foreach my $tplfile (sort glob "$BASEDIR/etc/$subdir/*.sudoers") {
+        next if basename($tplfile) =~ /\..+\.sudoers$/;    # OS-specific template, skip
+        my $fh;
+        if (!open($fh, '<', $tplfile)) {
+            _err "can't open sudoers file template $tplfile to check: $!";
+            next;
+        }
+        my @l = <$fh>;
+        close($fh);
+        chomp @l;
+        push @lines, @l;
+    }
+    return @lines;
+}
+
+# compute the normalized, sudoers-alias-safe identifier the generator substitutes
+# for %NORMACCOUNT% / %NORMGROUP%: uppercased, with every non-alphanumeric (and
+# non-underscore) char turned into '_', suffixed with the first 6 hex chars of the
+# md5 of the (raw) entity name.
+sub _norm_name {
+    my $name = shift;
+    (my $norm = $name) =~ tr/[A-Za-z0-9_]/_/c;
+    return uc($norm . '_' . substr(Digest::MD5::md5_hex($name), 0, 6));
+}
+
+# parse the sharded sudoers files for the given type ('account' or 'group') and
+# return a hash mapping each entity name to the arrayref of raw lines of its block.
+# Each shard file holds several blocks delimited by the markers the generator emits:
+#     #>>> <type> <name>
+#     ...rules...
+#     #<<< <type> <name>
+sub _read_sharded_sudoers {
+    my $type = shift;
+    my %blocks;
+    foreach my $sudoersfile (sort glob "$sudoers_dir/osh-${type}s-shard-*") {
+        my $fh;
+        if (!open($fh, '<', $sudoersfile)) {
+            _err "can't open $sudoersfile to check: $!";
+            next;
+        }
+        my $name;
+        while (my $line = <$fh>) {
+            chomp $line;
+            if ($line =~ /^#>>> \Q$type\E (.+)$/) {
+                $name = $1;
+                $blocks{$name} ||= [];
+            }
+            elsif ($line =~ /^#<<< \Q$type\E /) {
+                undef $name;
+            }
+            elsif (defined $name) {
+                push @{$blocks{$name}}, $line;
+            }
+        }
+        close($fh);
+    }
+    return %blocks;
+}
+
+# verify that every sharded block of the given type contains all the rules of its
+# template, and return the set of entity names that were seen (so the caller can
+# in turn check that no expected entity is missing a block). $token is the template
+# placeholder base, i.e. 'GROUP' (for %GROUP%/%NORMGROUP%) or 'ACCOUNT'.
+sub _check_sharded_sudoers {
+    my ($type, $subdir, $token) = @_;
+    my @template = _load_sudoers_template($subdir);
+    my %blocks   = _read_sharded_sudoers($type);
+    my %seen;
+    foreach my $name (sort keys %blocks) {
+        $seen{$name} = 1;
+        my $norm     = _norm_name($name);
+        my @expected = map {
+            my $line = $_;
+            $line =~ s/%NORM\Q$token\E%/$norm/g;
+            $line =~ s/%\Q$token\E%/$name/g;
+            $line =~ s=%BASEPATH%=/opt/bastion=g;
+            $line;
+        } @template;
+
+        # the template may group commands sharing the same tuple into a single
+        # rule (continuations + comma lists), so compare on expanded atomic rules
+        my %present = map { $_ => 1 } _expand_sudoers_rules(@{$blocks{$name}});
+        foreach my $wantedrule (_expand_sudoers_rules(@expected)) {
+            if (!$present{$wantedrule}) {
+                _err "missing line in $type block '$name' (in $sudoers_dir/osh-${type}s-shard-*): $wantedrule";
+            }
+        }
+    }
+    return %seen;
+}
+
 # for new code, check sudo stuff
 sub _tocheck {
     my $file       = shift;
@@ -657,7 +803,7 @@ sub _tocheck {
                 _err "sudoers file $sudoersfile has a bad mode $mode";
             }
             if (!open(my $fh_sudoers, '<', $sudoersfile)) {
-                _err "can't open sudoers file $sudoersfile to check";
+                _err "can't open sudoers file $sudoersfile to check: $!";
             }
             else {
                 my @contents = <$fh_sudoers>;
@@ -675,7 +821,7 @@ sub _tocheck {
         my @contents;
         foreach my $sudoersfile (sort <$BASEDIR/etc/sudoers.group.template.d/*>) {
             if (!open(my $fh_sudoers, '<', $sudoersfile)) {
-                _err "can't open sudoers file template $sudoersfile to check";
+                _err "can't open sudoers file template $sudoersfile to check: $!";
             }
             else {
                 my @lines = <$fh_sudoers>;
@@ -685,10 +831,17 @@ sub _tocheck {
             }
         }
         if (@contents) {
+            # expand the (possibly grouped/multi-line) template into atomic rules
+            my %templaterules = map { $_ => 1 } _expand_sudoers_rules(@contents);
             foreach my $wantedline (@{$tocheck{'KEYSUDOERS'}}) {
                 $wantedline =~ s'@KEYGROUP@'%GROUP%'g;
-                if (not grep { $_ eq $wantedline } @contents) {
-                    _err "missing line in plugin sudoers.group.template: $wantedline";
+
+                # a KEYSUDOERS declaration may be a documentation comment rather
+                # than an actual rule: those expand to nothing and are skipped
+                foreach my $wantedrule (_expand_sudoers_rules($wantedline)) {
+                    if (!$templaterules{$wantedrule}) {
+                        _err "missing line in plugin sudoers.group.template: $wantedline";
+                    }
                 }
             }
         }
@@ -711,7 +864,7 @@ while (my $file = glob "$BASEDIR/bin/helper/*") {
     }
     my $fh_helper;
     if (!open($fh_helper, '<', $file)) {
-        _err "can't open helper file $file to check";
+        _err "can't open helper file $file to check: $!";
         next;
     }
     my %tochecklocal;
@@ -759,59 +912,29 @@ while (my $distfile = glob "$BASEDIR/etc/sudoers.d/*") {
     }
 }
 
-if (1) {
-    my @template;
-    foreach my $sudoersfile (sort <$BASEDIR/etc/sudoers.group.template.d/*>) {
-        if (!open(my $fh_sudoers, '<', $sudoersfile)) {
-            _err "can't open sudoers file template $sudoersfile to check";
-        }
-        else {
-            my @lines = <$fh_sudoers>;
-            close($fh_sudoers);
-            chomp @lines;
-            push @template, @lines;
-        }
-    }
-
-    my %seensudogroupfile;
-    while (my $sudoersfile = glob "$sudoers_dir/osh-group-*") {
-
-        # TODO check 0440
-        # TODO check there's a matching group (and the other way around)
-
-        # the unescaped group should be present in the file (see GROUPNAME below),
-        # but to backwards compatible, try to guess it by ourselves if it's not
-        my $group = $sudoersfile;
-        $group =~ s/^.*osh-group-key//;
-
-        my $fh_sudoers;
-        if (!open($fh_sudoers, '<', $sudoersfile)) {
-            _err "can't open $sudoersfile file to check: $!";
-            next;
-        }
-        my @contents = <$fh_sudoers>;
-        close($fh_sudoers);
-        chomp @contents;
-
-        # now try to get it from the file
-        foreach (@contents) {
-            /^# GROUPNAME=key(.+)/ and $group = $1;
-        }
-        $seensudogroupfile{$group} = 1;
-
-        my @expected = @template;
-        do { s/%GROUP%/key$group/g; s=%BASEPATH%=/opt/bastion=g; }
-          for @expected;
-
-        foreach my $wantedline (@expected) {
-            if (not grep { $_ eq $wantedline } @contents) {
-                _err "missing line in $sudoersfile: $wantedline";
-            }
-        }
-    }
+# check the per-entity sudoers blocks. Both accounts and groups are now sharded:
+# instead of one file per entity, the generator writes a handful of
+# "osh-accounts-shard-NN" / "osh-groups-shard-NN" files, each holding several
+# entity blocks (see _check_sharded_sudoers / _read_sharded_sudoers above).
+{
+    # groups: the block name is the full unix key-group name (e.g. "keymygroup"),
+    # which is exactly what %GROUP% expands to in the template
+    my %seengroups = _check_sharded_sudoers('group', 'sudoers.group.template.d', 'GROUP');
     foreach my $group (keys %keygroupsbyname) {
-        next if exists $seensudogroupfile{$group};
-        _err "missing $sudoers_dir/osh-group-key$group file";
+        next if $seengroups{"key$group"};
+        _err "missing sudoers block for key group 'key$group' in $sudoers_dir/osh-groups-shard-*";
+    }
+
+    # accounts: there's one block per bastion account, i.e. each account whose
+    # login shell is the bastion's osh.pl (this mirrors how the generator decides
+    # which accounts get a sudoers entry)
+    my %seenaccounts = _check_sharded_sudoers('account', 'sudoers.account.template.d', 'ACCOUNT');
+    foreach my $line (qx{getent passwd}) {    ## no critic (ProhibitBacktickOperators)
+        chomp $line;
+        my ($account, $shell) = (split /:/, $line)[0, 6];
+        next if !defined $shell || $shell ne '/opt/bastion/bin/shell/osh.pl';
+        next if $seenaccounts{$account};
+        _err "missing sudoers block for account '$account' in $sudoers_dir/osh-accounts-shard-*";
     }
 }
 
