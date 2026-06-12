@@ -25,6 +25,9 @@ packages = Data::Dumper File::Find FindBin Log::Log4perl DBI
 [Subroutines::RequireArgUnpacking]
 short_subroutine_statements = 3
 
+[BuiltinFunctions::ProhibitComplexMappings]
+max_statements = 5
+
 [-BuiltinFunctions::ProhibitBooleanGrep]
 [-ControlStructures::ProhibitCascadingIfElse]
 [-ControlStructures::ProhibitPostfixControls]

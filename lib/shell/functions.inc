@@ -452,3 +452,34 @@ join_by(){
         printf "%s" "${first}" "${@/#/$delim}"
     fi
 }
+
+# number of sudoers shards per entity type (accounts, groups). Changing it
+# requires running `bin/sudogen/generate-sudoers.sh create account` and
+# `... create group` (full regen) so every entity moves to its new shard.
+# shellcheck disable=SC2034 # used in the sudogen script that sources us
+SUDOERS_SHARD_COUNT=32
+
+# with_lock <lockname> <command> [args...]
+# Serializes <command> against other holders of the same <lockname>.
+with_lock() {
+    local _name="$1"
+    shift
+    local _lockparent="${SUDOERS_DIR:-/tmp}/.osh-sudogen.lock.d"
+    local _lockdir="$_lockparent/$_name"
+    local _rc=0 _i=0
+
+    mkdir -p "$_lockparent" 2>/dev/null || true
+    while ! mkdir "$_lockdir" 2>/dev/null; do
+        _i=$((_i + 1))
+        if [ "$_i" -gt 600 ]; then
+            # ~60s elapsed: assume a crashed holder left a stale lock, steal it
+            echo "with_lock: stealing apparently-stale lock $_lockdir after 60s" >&2
+            break
+        fi
+        sleep 0.1
+    done
+
+    "$@" || _rc=$?
+    rmdir "$_lockdir" 2>/dev/null || true
+    return "$_rc"
+}
