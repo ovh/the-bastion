@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multi-Factor Authentication &mdash; The Bastion 3.23.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="../_static/jquery.js?v=8dae8fb0"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=eb75f0bc"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Security Advisories" href="security_advisories.html" />
+    <link rel="prev" title="Logs" href="logs.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.23.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../using/basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="configuration/index.html">Configuration files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="logs.html">Logs</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Multi-Factor Authentication</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#flavors">Flavors</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#supported-additional-factors">Supported additional factors</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#immediate-mfa">Immediate MFA</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#detailed-explanation-of-the-ssh-server-and-pam-configuration">Detailed explanation of the SSH server and PAM configuration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#sshd-config-snippet">sshd_config snippet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pam-ssh-snippet">PAM ssh snippet</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#how-to-use-immediate-mfa">How to use Immediate MFA</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#requiring-all-users-to-setup-their-mfa">Requiring all users to setup their MFA</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#requiring-only-a-subset-of-users-to-setup-their-mfa">Requiring only a subset of users to setup their MFA</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#jit-mfa">JIT MFA</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#proper-setup-of-sshd-config">Proper setup of sshd_config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#on-a-per-plugin-basis">On a per-plugin basis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#on-a-per-group-basis">On a per-group basis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#on-a-per-account-basis">On a per-account basis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bypassing-mfa-for-automated-workflows">Bypassing MFA for automated workflows</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#additional-information">Additional information</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mfa-and-interactive-mode">MFA and interactive mode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mfa-and-osh-batch">MFA and --osh batch</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/open/index.html">open plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Multi-Factor Authentication</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/administration/mfa.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="multi-factor-authentication">
+<h1><a class="toc-backref" href="#id2" role="doc-backlink">Multi-Factor Authentication</a><a class="headerlink" href="#multi-factor-authentication" title="Link to this heading"></a></h1>
+<nav class="contents" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#multi-factor-authentication" id="id2">Multi-Factor Authentication</a></p>
+<ul>
+<li><p><a class="reference internal" href="#introduction" id="id3">Introduction</a></p>
+<ul>
+<li><p><a class="reference internal" href="#flavors" id="id4">Flavors</a></p></li>
+<li><p><a class="reference internal" href="#supported-additional-factors" id="id5">Supported additional factors</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#immediate-mfa" id="id6">Immediate MFA</a></p>
+<ul>
+<li><p><a class="reference internal" href="#detailed-explanation-of-the-ssh-server-and-pam-configuration" id="id7">Detailed explanation of the SSH server and PAM configuration</a></p>
+<ul>
+<li><p><a class="reference internal" href="#sshd-config-snippet" id="id8">sshd_config snippet</a></p></li>
+<li><p><a class="reference internal" href="#pam-ssh-snippet" id="id9">PAM ssh snippet</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#how-to-use-immediate-mfa" id="id10">How to use Immediate MFA</a></p>
+<ul>
+<li><p><a class="reference internal" href="#requiring-all-users-to-setup-their-mfa" id="id11">Requiring all users to setup their MFA</a></p></li>
+<li><p><a class="reference internal" href="#requiring-only-a-subset-of-users-to-setup-their-mfa" id="id12">Requiring only a subset of users to setup their MFA</a></p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#jit-mfa" id="id13">JIT MFA</a></p>
+<ul>
+<li><p><a class="reference internal" href="#proper-setup-of-sshd-config" id="id14">Proper setup of sshd_config</a></p></li>
+<li><p><a class="reference internal" href="#on-a-per-plugin-basis" id="id15">On a per-plugin basis</a></p></li>
+<li><p><a class="reference internal" href="#on-a-per-group-basis" id="id16">On a per-group basis</a></p></li>
+<li><p><a class="reference internal" href="#on-a-per-account-basis" id="id17">On a per-account basis</a></p></li>
+<li><p><a class="reference internal" href="#bypassing-mfa-for-automated-workflows" id="id18">Bypassing MFA for automated workflows</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#additional-information" id="id19">Additional information</a></p>
+<ul>
+<li><p><a class="reference internal" href="#mfa-and-interactive-mode" id="id20">MFA and interactive mode</a></p></li>
+<li><p><a class="reference internal" href="#mfa-and-osh-batch" id="id21">MFA and --osh batch</a></p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+<section id="introduction">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">Introduction</a><a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<section id="flavors">
+<h3><a class="toc-backref" href="#id4" role="doc-backlink">Flavors</a><a class="headerlink" href="#flavors" title="Link to this heading"></a></h3>
+<p>The Bastion supports two flavors of Multi-Factor Authentication (MFA, sometimes called 2FA):</p>
+<ul class="simple">
+<li><p><cite>Immediate MFA</cite>, mandatory on a per-account basis during the SSH authentication phase on the ingress side,
+done by the system even before executing the bastion code, regardless of which actions (plugin calls,
+remote connection, ...) are to be done by the account currently being authenticated</p></li>
+<li><p><cite>JIT MFA</cite>, done after the authentication phase, by the bastion code, conditionally (<em>just-in-time</em>), when
+an action that is about to be done requires it by (configurable) policy</p></li>
+</ul>
+<p>Each of these methods and their differences are detailed below, so you can choose the one that fits your environment.</p>
+</section>
+<section id="supported-additional-factors">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">Supported additional factors</a><a class="headerlink" href="#supported-additional-factors" title="Link to this heading"></a></h3>
+<p>The first factor is always the SSH publickey. Two additional factors are supported:</p>
+<ul class="simple">
+<li><p><cite>password</cite>, in which case a password is attached to the account. This password's policy is configurable through
+<a class="reference internal" href="configuration/bastion_conf.html#mfapasswordmindays"><span class="std std-ref">MFAPasswordMinDays</span></a>,
+<a class="reference internal" href="configuration/bastion_conf.html#mfapasswordmaxdays"><span class="std std-ref">MFAPasswordMaxDays</span></a>,
+<a class="reference internal" href="configuration/bastion_conf.html#mfapasswordwarndays"><span class="std std-ref">MFAPasswordWarnDays</span></a>,
+<a class="reference internal" href="configuration/bastion_conf.html#mfapasswordinactivedays"><span class="std std-ref">MFAPasswordInactiveDays</span></a>.</p></li>
+<li><p><cite>TOTP</cite>, aka &quot;Time-based One-Time Password&quot;, which requires a smartphone app and generates a new pin-code every
+60 seconds.</p></li>
+</ul>
+</section>
+</section>
+<section id="immediate-mfa">
+<h2><a class="toc-backref" href="#id6" role="doc-backlink">Immediate MFA</a><a class="headerlink" href="#immediate-mfa" title="Link to this heading"></a></h2>
+<p>This method implements MFA directly using PAM during the initial SSH authentication phase, on the ingress
+side, e.g. when accounts are connecting to the bastion. This entirely resides on SSH/PAM and doesn't even depend
+on The Bastion code (apart from the setup side of the additional factor for each account).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Use this method if you want to enable MFA for some or all accounts unconditionally, regardless of which action
+they're about to conduct on The Bastion (i.e. use an <code class="docutils literal notranslate"><span class="pre">--osh</span></code> command, or attempt to connect somewhere,
+or just display the help). If you want to enable MFA only for some precise <code class="docutils literal notranslate"><span class="pre">--osh</span></code> commands or some remote hosts,
+you'll want to use <a class="reference internal" href="#jit-mfa"><span class="std std-ref">JIT MFA</span></a> instead.</p>
+</div>
+<p>This method requires proper configuration of both the SSH server, and PAM. The included templates of
+<code class="file docutils literal notranslate"><span class="pre">/etc/ssh/sshd_config</span></code> and <code class="file docutils literal notranslate"><span class="pre">/etc/pam.d/ssh</span></code> files do support it out of the box.</p>
+<section id="detailed-explanation-of-the-ssh-server-and-pam-configuration">
+<h3><a class="toc-backref" href="#id7" role="doc-backlink">Detailed explanation of the SSH server and PAM configuration</a><a class="headerlink" href="#detailed-explanation-of-the-ssh-server-and-pam-configuration" title="Link to this heading"></a></h3>
+<p>This works by modifying the <code class="docutils literal notranslate"><span class="pre">AuthenticationMethods</span></code> in <code class="file docutils literal notranslate"><span class="pre">sshd_config</span></code> to add <code class="docutils literal notranslate"><span class="pre">keyboard-interactive:pam</span></code>,
+which instructs the SSH server to rely on PAM for part of the authentication phase. Then, the PAM file defines
+several authentications methods, which include several factors that can be configured per-account.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You can skip this subsection if you're not interested in how this works exactly, but mainly want to know how
+to setup MFA. If you're using the included <code class="file docutils literal notranslate"><span class="pre">sshd_config</span></code> and <code class="file docutils literal notranslate"><span class="pre">pam.d/ssh</span></code> templates unmodified,
+which you are if you've followed the installation section, this will just work out of the box so you may skip
+over the details and jump to <a class="reference internal" href="#immediate-mfa-howto"><span class="std std-ref">How to use Immediate MFA</span></a>.</p>
+</div>
+<section id="sshd-config-snippet">
+<h4><a class="toc-backref" href="#id8" role="doc-backlink">sshd_config snippet</a><a class="headerlink" href="#sshd-config-snippet" title="Link to this heading"></a></h4>
+<p>Let's take the last few lines of the <code class="file docutils literal notranslate"><span class="pre">ssh_config</span></code> file and explain them step by step. These are where the
+MFA logic is implemented. We've left the comments that can be found in the template, for clarity.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># If 2FA has been configured for root, we force pubkey+PAM for it. If this is the case</span>
+<span class="c1"># on your system, uncomment the next two lines (see</span>
+<span class="c1"># https://ovh.github.io/the-bastion/installation/advanced.html#fa-root-authentication)</span>
+<span class="c1">#Match User root</span>
+<span class="c1">#    AuthenticationMethods publickey,keyboard-interactive:pam</span>
+</pre></div>
+</div>
+<p>As explained in the comments within the file, this section (commented by default) refers to the MFA that can be
+configured on the <code class="docutils literal notranslate"><span class="pre">root</span></code> account to protect The Bastion's own system. This is out of the scope of this documentation
+section, as we're focusing on the users MFA here, so refer to the <a class="reference internal" href="../installation/advanced.html#fa-root-authentication"><span class="std std-ref">2FA root authentication</span></a>
+section if that's what you want to achieve.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Unconditionally skip PAM auth for members of the bastion-nopam group</span>
+Match<span class="w"> </span>Group<span class="w"> </span>bastion-nopam
+<span class="w">    </span>AuthenticationMethods<span class="w"> </span>publickey
+</pre></div>
+</div>
+<p>The snipper above tells the SSH server to NOT rely on PAM (hence disable MFA) for accounts that are part of the
+<code class="docutils literal notranslate"><span class="pre">bastion-nopam</span></code> group. This is an internal group that is used for accounts whose MFA setup has been set to
+bypass PAM authentication, with the following command:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh --osh accountModify --account robot-sync --pam-auth-bypass yes
+</span>╭──ac777d06bec9───────────────────────────────────────────the-bastion-3.12.00───
+│ ▶ modify the configuration of an account
+├───────────────────────────────────────────────────────────────────────────────
+│ Bypassing sshd PAM auth usage for this account...
+│ ... done, this account will no longer use PAM for authentication
+╰────────────────────────────────────────────────────────────&lt;/accountModify&gt;───
+</pre></div>
+</div>
+<p>This way, the account <code class="docutils literal notranslate"><span class="pre">robot-sync</span></code> will fall into the above configuration section <code class="docutils literal notranslate"><span class="pre">Match</span></code> case and end up
+only using classic <code class="docutils literal notranslate"><span class="pre">publickey</span></code> authentication, hence no MFA. As MFA is only meaningful for humans, use this setting
+for accounts that are used by any automated process you might have that interact with the bastion (for example using
+its <a class="reference internal" href="../using/api.html"><span class="doc">JSON API</span></a>).</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># if in one of the mfa groups AND the osh-pubkey-auth-optional group, use publickey+pam OR pam</span>
+Match<span class="w"> </span>Group<span class="w"> </span>mfa-totp-configd,mfa-password-configd<span class="w"> </span>Group<span class="w"> </span>osh-pubkey-auth-optional
+<span class="w">    </span>AuthenticationMethods<span class="w"> </span>publickey,keyboard-interactive:pam<span class="w"> </span>keyboard-interactive:pam
+</pre></div>
+</div>
+<p>The snippet above tells SSH that for accounts having an authentication factor configured, namely either a TOTP or
+a password, and having the &quot;public key is optional&quot; flag, set by <code class="docutils literal notranslate"><span class="pre">--osh</span> <span class="pre">accountModify</span> <span class="pre">--pubkey-auth-optional</span></code>,
+implies that those accounts can either authenticate through public key and an additional factor (through PAM),
+or through PAM only. In essence these accounts may use only a password, or a TOTP, or both, without having a
+public key in addition to the other factors. Hence, this is not MFA per-se, but is an additional functionaly available
+should you need this in your environment. You may remove (or comment) the two lines above if you're confident you'll
+never require the <cite>pubkey-auth-optional</cite> feature.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># if in one of the mfa groups, use publickey AND pam</span>
+Match<span class="w"> </span>Group<span class="w"> </span>mfa-totp-configd,mfa-password-configd
+<span class="w">    </span>AuthenticationMethods<span class="w"> </span>publickey,keyboard-interactive:pam
+</pre></div>
+</div>
+<p>The snippet above is the core of the mandatory MFA configuration of the SSH server: it instructs the SSH server to
+authenticate accounts that have at least one MFA factor configured with their public key first, then hand over the
+authentication phase to PAM to check the additional factors.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># by default, always ask the publickey (no PAM)</span>
+Match<span class="w"> </span>All
+<span class="w">    </span>AuthenticationMethods<span class="w"> </span>publickey
+</pre></div>
+</div>
+<p>Finally, the snippet above is for the general case, i.e. accounts not having MFA configured, in which case they're
+authenticated using their public key only.</p>
+</section>
+<section id="pam-ssh-snippet">
+<h4><a class="toc-backref" href="#id9" role="doc-backlink">PAM ssh snippet</a><a class="headerlink" href="#pam-ssh-snippet" title="Link to this heading"></a></h4>
+<p>The template is <cite>heavily commented&lt;https://github.com/ovh/the-bastion/blob/master/etc/pam.d/sshd.debian12&gt;</cite>, line by line, please have a look at it if you want to know more.</p>
+</section>
+</section>
+<section id="how-to-use-immediate-mfa">
+<span id="immediate-mfa-howto"></span><h3><a class="toc-backref" href="#id10" role="doc-backlink">How to use Immediate MFA</a><a class="headerlink" href="#how-to-use-immediate-mfa" title="Link to this heading"></a></h3>
+<p>If you want to setup immediate MFA, you'll need to setup the SSH server and PAM configurations correctly, as explained
+above. If you installed the provided templates for both (which is the default), you're good to go.</p>
+<p>You may want either to enable MFA for <em>all</em> the accounts existing on your bastion, or only a subset of these users,
+read on the proper section below for each case.</p>
+<section id="requiring-all-users-to-setup-their-mfa">
+<h4><a class="toc-backref" href="#id11" role="doc-backlink">Requiring all users to setup their MFA</a><a class="headerlink" href="#requiring-all-users-to-setup-their-mfa" title="Link to this heading"></a></h4>
+<p>To ensure no user can use their account without configuring their MFA first, you have to set the <code class="docutils literal notranslate"><span class="pre">accountMFAPolicy</span></code>
+option of <code class="file docutils literal notranslate"><span class="pre">bastion.conf</span></code> to either <code class="docutils literal notranslate"><span class="pre">any-required</span></code>, <code class="docutils literal notranslate"><span class="pre">totp-required</span></code> or <code class="docutils literal notranslate"><span class="pre">password-required</span></code>. Detailed
+information about this configuration setting is available
+<a class="reference internal" href="configuration/bastion_conf.html#accountmfapolicy"><span class="std std-ref">here</span></a>.</p>
+<p>When this setting is configured to any of the 3 above values, no interaction will be allowed on the bastion (such as
+using plugins or connecting to a remote asset) as long as the user didn't set up their MFA:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>bssh --osh selfListAccesses
+│
+│ ⛔ Sorry johndoe, but you need to setup the Multi-Factor Authentication before using this bastion, please use either the `--osh selfMFASetupPassword&#39; or the `--osh selfMFASetupTOTP&#39; option, at your discretion, to do so
+</pre></div>
+</div>
+<p>The only allowed <code class="docutils literal notranslate"><span class="pre">--osh</span></code> commands allowed in such a case are <code class="docutils literal notranslate"><span class="pre">help</span></code>, <code class="docutils literal notranslate"><span class="pre">info</span></code> and the two ones referenced in the
+above error message, precisely to be able to setup the MFA on the account.</p>
+<p>In this mode, if you want to exclude a few accounts from requiring MFA (if you have accounts that are used by
+automation or any other M2M workflow), you can do so using <code class="docutils literal notranslate"><span class="pre">accountModify</span> <span class="pre">--pam-auth-bypass</span> <span class="pre">yes</span></code>.</p>
+</section>
+<section id="requiring-only-a-subset-of-users-to-setup-their-mfa">
+<span id="immediate-mfa-subset-users"></span><h4><a class="toc-backref" href="#id12" role="doc-backlink">Requiring only a subset of users to setup their MFA</a><a class="headerlink" href="#requiring-only-a-subset-of-users-to-setup-their-mfa" title="Link to this heading"></a></h4>
+<p>If instead of forcing all users to require MFA, you want to require a precise subset of users to have MFA, you should
+leave the <code class="docutils literal notranslate"><span class="pre">accountMFAPolicy</span></code> to <code class="docutils literal notranslate"><span class="pre">enabled</span></code>, and set the requirement flag on a per-account basis. This can be
+done using <code class="docutils literal notranslate"><span class="pre">accountModify</span> <span class="pre">--mfa-password-required</span> <span class="pre">yes</span></code> and/or <code class="docutils literal notranslate"><span class="pre">accountModify</span> <span class="pre">--mfa-totp-required</span> <span class="pre">yes</span></code>. If you
+set both flags on the same account, the bastion will require both factors to be set and provided on authentication,
+in addition to publickey authentication. In this case, 3 authentication factors would be required. This is why we
+call it <em>MFA</em> instead of <em>2FA</em>: the number of additional factors you want is configurable.</p>
+</section>
+</section>
+</section>
+<section id="jit-mfa">
+<span id="id1"></span><h2><a class="toc-backref" href="#id13" role="doc-backlink">JIT MFA</a><a class="headerlink" href="#jit-mfa" title="Link to this heading"></a></h2>
+<p>This method implements MFA checking right before an action is allowed, depending on the bastion policy, instead of
+requiring it at the ingress authentication stage.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Use this method if you want to enable MFA on a per-action basis. In this case, The Bastion will decide whether
+providing additional authentication factors is required right before a specific action is requested (such as
+connection to a given remote asset, or execution of a subset of <code class="docutils literal notranslate"><span class="pre">--osh</span></code> commands).
+You may also want to use this method if for some reason you can't setup the <code class="file docutils literal notranslate"><span class="pre">sshd_config</span></code> file
+as required by the <em>Immediate MFA</em> method</p>
+</div>
+<p>Note that the different ways detailed below can be cumulated: you might want to enable MFA for a few plugins, along
+with enabling it for sensitive remote hosts present in specific bastion groups, in addition to a few sensitive
+accounts that would require it no matter what.</p>
+<section id="proper-setup-of-sshd-config">
+<span id="jit-mfa-sshd-config"></span><h3><a class="toc-backref" href="#id14" role="doc-backlink">Proper setup of sshd_config</a><a class="headerlink" href="#proper-setup-of-sshd-config" title="Link to this heading"></a></h3>
+<p>To use <cite>JIT MFA</cite>, your first have to disable <cite>Immediate MFA</cite>, as is the default if you're using the provided
+configuration template for your SSH server (which you are if you followed the default installation steps).
+You'll need to comment out two lines within the <code class="file docutils literal notranslate"><span class="pre">/etc/ssh/sshd_config</span></code> file, these are located near the
+end of the file:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># if in one of the mfa groups, use publickey AND pam</span>
+<span class="c1">#Match Group mfa-totp-configd,mfa-password-configd</span>
+<span class="c1">#    AuthenticationMethods publickey,keyboard-interactive:pam</span>
+</pre></div>
+</div>
+<p>You'll need to reload the SSH daemon for this to be taken into account. The next subsections explain how to setup
+policies depending on the actions you want to protect through <cite>JIT MFA</cite>.</p>
+</section>
+<section id="on-a-per-plugin-basis">
+<h3><a class="toc-backref" href="#id15" role="doc-backlink">On a per-plugin basis</a><a class="headerlink" href="#on-a-per-plugin-basis" title="Link to this heading"></a></h3>
+<p>First ensure you've followed the <a class="reference internal" href="#jit-mfa-sshd-config"><span class="std std-ref">Proper setup of sshd_config</span></a>.</p>
+<p>To force MFA for a plugin, you may add the <code class="docutils literal notranslate"><span class="pre">mfa_required</span></code> option to its configuration. This configuration parameter
+allows 4 values:</p>
+<ul class="simple">
+<li><p><cite>any</cite>, in which case MFA is required with any supported factor (currently either password or TOTP)</p></li>
+<li><p><cite>password</cite>, in which case a password is required in addition to publickey authentication</p></li>
+<li><p><cite>totp</cite>, in which case a TOTP is required in addition to publickey authentication</p></li>
+<li><p><cite>none</cite>, in which case no MFA is required (which is the default if the <code class="docutils literal notranslate"><span class="pre">mfa_required</span></code> setting is omitted)</p></li>
+</ul>
+<p>To enable MFA for the <code class="docutils literal notranslate"><span class="pre">adminSudo</span></code> plugin, for example, you may add:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="o">{</span>
+<span class="w">   </span><span class="s2">&quot;mfa_required&quot;</span>:<span class="w"> </span><span class="s2">&quot;any&quot;</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+<p>to the <code class="file docutils literal notranslate"><span class="pre">/etc/bastion/plugin.adminSudo.conf</span></code> file. Please ensure that this file is readable by the
+<code class="docutils literal notranslate"><span class="pre">bastion-users</span></code> system group (as all <code class="file docutils literal notranslate"><span class="pre">/etc/bastion/plugin.*.conf</span></code> files should be), so that the code running
+under the bastion users permissions can read it.</p>
+<p>When configured like this, usage of the adminSudo plugin, in our example, will trigger the validation of additional
+authentication factors.
+Note that for this to work, you must have the <code class="file docutils literal notranslate"><span class="pre">/etc/pam.d/ssh</span></code> file set up correctly,
+as we're using PAM for this. The provided template is advised, and you're already using it if you followed the
+default installation steps.
+If you are not sure you're using the provided template, you may compare your current <code class="file docutils literal notranslate"><span class="pre">/etc/pam.d/ssh</span></code> file
+with the proper template for your distro, which can be found in <code class="file docutils literal notranslate"><span class="pre">/opt/bastion/etc/pam.d/sshd.*</span></code>.</p>
+<p>As you see, the MFA phase will be fired up for this plugin, but not for the <code class="docutils literal notranslate"><span class="pre">info</span></code> plugin for example:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh --osh adminSudo
+</span>As this is required to run this plugin, entering MFA phase for johndoe.
+Your account has Multi-Factor Authentication enabled, an additional authentication factor is required (password).
+Your password expires on 2023/10/31, in 89 days
+Password: ^C
+
+<span class="hll">bssh --osh info
+</span>╭──ac777d06bec9───────────────────────────────────────────the-bastion-3.12.00───
+│ ▶ information
+├───────────────────────────────────────────────────────────────────────────────
+│ You are johndoe
+[...]
+</pre></div>
+</div>
+</section>
+<section id="on-a-per-group-basis">
+<h3><a class="toc-backref" href="#id16" role="doc-backlink">On a per-group basis</a><a class="headerlink" href="#on-a-per-group-basis" title="Link to this heading"></a></h3>
+<p>First ensure you've followed the <a class="reference internal" href="#jit-mfa-sshd-config"><span class="std std-ref">Proper setup of sshd_config</span></a>.</p>
+<p>If you want to ensure that MFA is required to connect to a remote host through a bastion group,
+you should tag this group to require MFA. To do this, use the <code class="docutils literal notranslate"><span class="pre">groupModify</span></code> command:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="hll">guybrush@bastion1(master)&gt; groupModify --group securegroup --mfa-required any
+</span>╭──ac777d06bec9───────────────────────────────────────────the-bastion-3.12.00───
+│ ▶ modify the configuration of a group
+├───────────────────────────────────────────────────────────────────────────────
+│ Modifying mfa-required policy of group...
+│ ... done, policy is now: any
+╰──────────────────────────────────────────────────────────────&lt;/groupModify&gt;───
+
+<span class="hll">guybrush@bastion1(master)&gt; groupInfo --group securegroup
+</span>╭──ac777d06bec9───────────────────────────────────────────the-bastion-3.12.00───
+│ ▶ group info
+├───────────────────────────────────────────────────────────────────────────────
+│ Group securegroup&#39;s Owners are: guybrush
+[...]
+│ ❗ MFA Required: when connecting to servers of this group, users will be asked for an additional authentication factor
+[...]
+
+<span class="hll">guybrush@bastion1(master)&gt; ssh root@127.1.2.3
+</span>│ Welcome to bastion1, guybrush, your last login was 00:00:27 ago (Wed 2023-08-02 15:36:03 UTC) from 172.17.0.1(172.17.0.1)
+[...]
+
+ will try the following accesses you have:
+  - group-member of securegroup with ED25519-256 key SHA256:94yETEnnWUy9yTG1dgAdXgunq6zzJPjlddFXjUH0Czw [2023/03/03]  (MFA REQUIRED: ANY)
+
+As this is required for this host, entering MFA phase for guybrush.
+Your account has Multi-Factor Authentication enabled, an additional authentication factor is required (password).
+Your password expires on 2023/10/31, in 89 days
+Password:
+</pre></div>
+</div>
+<p>As you see, after setting the flag on the group, attempting to access an asset that is part of the group (see
+<code class="docutils literal notranslate"><span class="pre">groupListServers</span></code>) will require MFA.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If an account has access to an asset via several groups, MFA will be required if at least one group requires it.
+Hence, a good way to ensure that all connections to an asset will require MFA would be to list the
+SSH keys on the remote server, match those to groups on the bastion, and ensure they all have <code class="docutils literal notranslate"><span class="pre">--mfa-required</span></code> enabled.</p>
+</div>
+</section>
+<section id="on-a-per-account-basis">
+<h3><a class="toc-backref" href="#id17" role="doc-backlink">On a per-account basis</a><a class="headerlink" href="#on-a-per-account-basis" title="Link to this heading"></a></h3>
+<p>You may also use this method to enable MFA on a per-account basis (as is possible with the <cite>Immediate MFA</cite> method).</p>
+<p>To do this, you should follow the same steps than are outlined in the <a class="reference internal" href="#immediate-mfa-subset-users"><span class="std std-ref">Requiring only a subset of users to setup their MFA</span></a> subsection of the <cite>Immediate MFA</cite> setup.</p>
+<p>The only difference will be in your <code class="file docutils literal notranslate"><span class="pre">sshd_config</span></code> file, as for <cite>JIT MFA</cite> your should ensure you've followed the <a class="reference internal" href="#jit-mfa-sshd-config"><span class="std std-ref">Proper setup of sshd_config</span></a>.</p>
+<p>In the case of <cite>Immediate MFA</cite>, the uncommented <code class="file docutils literal notranslate"><span class="pre">sshd_config</span></code> file block asks the SSH server to hand over authentication to PAM, hereby
+requiring MFA at the authentication phase. For the <cite>JIT MFA</cite> on a per-account basis, this configuration is disabled, but the bastion code, after the
+authentication phase is over, verifies whether the account requires to provide additional authentication factors, and triggers a PAM call if this
+is the case.</p>
+</section>
+<section id="bypassing-mfa-for-automated-workflows">
+<h3><a class="toc-backref" href="#id18" role="doc-backlink">Bypassing MFA for automated workflows</a><a class="headerlink" href="#bypassing-mfa-for-automated-workflows" title="Link to this heading"></a></h3>
+<p>If you have accounts that are used for automation, you'll want to exclude them from requiring MFA.</p>
+<p>To do this, use <code class="docutils literal notranslate"><span class="pre">--osh</span> <span class="pre">accountModify</span> <span class="pre">--mfa-password-required</span> <span class="pre">bypass</span> <span class="pre">--mfa-totp-required</span> <span class="pre">bypass</span></code>. Accounts
+with this setting will no longer require to enter additional credentials even when the policy of <cite>JIT MFA</cite> would
+require them to.</p>
+</section>
+</section>
+<section id="additional-information">
+<h2><a class="toc-backref" href="#id19" role="doc-backlink">Additional information</a><a class="headerlink" href="#additional-information" title="Link to this heading"></a></h2>
+<section id="mfa-and-interactive-mode">
+<h3><a class="toc-backref" href="#id20" role="doc-backlink">MFA and interactive mode</a><a class="headerlink" href="#mfa-and-interactive-mode" title="Link to this heading"></a></h3>
+<p>When using the interactive mode, and <cite>JIT MFA</cite>, attempting to conduct an action that requires MFA will trigger the MFA authentication phase, as expected.</p>
+<p>However, when multiple MFA-required operations are to be done back to back, as is often the case when interactive mode
+is used, the MFA authentication phase will be triggered for each and every action, which can be cumbersome.</p>
+<p>As long as <a class="reference internal" href="configuration/bastion_conf.html#interactivemodeproactivemfaenabled"><span class="std std-ref">interactiveModeProactiveMFAenabled</span></a> is true, users can use the <strong>mfa</strong> command in interactive
+mode, to trigger the MFA authentication phase proactively, and enter an elevated session that will not require to enter MFA again. This elevated session
+will expire after <a class="reference internal" href="configuration/bastion_conf.html#interactivemodeproactivemfaexpiration"><span class="std std-ref">interactiveModeProactiveMFAexpiration</span></a> seconds (15 minutes by default). Users can exit
+the elevated session manually by typing <strong>nomfa</strong>.</p>
+<p>Here is how it looks like:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh -i
+</span>
+Welcome to bastion1 interactive mode, type `help&#39; for available commands.
+You can use &lt;tab&gt; and &lt;tab&gt;&lt;tab&gt; for autocompletion.
+You&#39;ll be disconnected after 60 seconds of inactivity.
+Loading... 90 commands and 0 autocompletion rules loaded.
+
+<span class="hll">guybrush@bastion1(master)&gt; mfa
+</span>As proactive MFA validation has been requested, entering MFA phase.
+Your account has Multi-Factor Authentication enabled, an additional authentication factor is required (password).
+Your password expires on 2023/10/31, in 88 days
+<span class="hll">Password:
+</span>pamtester: successfully authenticated
+Proactive MFA enabled, any command requiring MFA from now on will not ask you again.
+This mode will expire in 00:15:00 (Thu 2023-08-03 12:35:08 UTC)
+To exit this mode manually, type &#39;nomfa&#39;.
+
+<span class="hll">guybrush@bastion1(master)[MFA-OK]&gt; groupAddServer
+</span>╭──ac777d06bec9───────────────────────────────────────────the-bastion-3.12.00───
+│ ▶ adding a server to a group
+├───────────────────────────────────────────────────────────────────────────────
+[...]
+
+<span class="hll">guybrush@bastion1(master)[MFA-OK]&gt; nomfa
+</span>Your proactive MFA validation has been forgotten.
+
+<span class="hll">guybrush@bastion1(master)&gt;
+</span></pre></div>
+</div>
+<p>As you seen, once <code class="docutils literal notranslate"><span class="pre">mfa</span></code> has been entered and the MFA validated, the prompt changes to <code class="docutils literal notranslate"><span class="pre">[MFA-OK]</span></code> implying that
+any command usually requiring MFA will not ask for it again (such as <code class="docutils literal notranslate"><span class="pre">groupAddServer</span></code> in the above example, as
+we've configured it to). We then explicitly exit the MFA elevated session by entering <code class="docutils literal notranslate"><span class="pre">nomfa</span></code>.</p>
+</section>
+<section id="mfa-and-osh-batch">
+<h3><a class="toc-backref" href="#id21" role="doc-backlink">MFA and --osh batch</a><a class="headerlink" href="#mfa-and-osh-batch" title="Link to this heading"></a></h3>
+<p>The <a class="reference internal" href="../plugins/open/batch.html"><span class="doc">batch</span></a> plugin is useful to enter several <code class="docutils literal notranslate"><span class="pre">--osh</span></code> commands in a batch way. However, if
+any of those commands require MFA, it would ask us repeatedly for our MFA, which can be cumbersome.</p>
+<p>To avoid this behavior, and if you know that some of the commands you want to use in batch more will require MFA,
+you may use the <code class="docutils literal notranslate"><span class="pre">--proactive-mfa</span></code> option to the bastion, which will ask for your MFA <em>before</em> executing the
+<a class="reference internal" href="../plugins/open/batch.html"><span class="doc">batch</span></a> plugin, and any command requiring MFA will not ask for it again:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh --proactive-mfa --osh batch
+</span>
+As proactive MFA has been requested, entering MFA phase for guybrush.
+Your account has Multi-Factor Authentication enabled, an additional authentication factor is required (password).
+Your password expires on 2023/11/01, in 89 days
+<span class="hll">Password:
+</span>pamtester: successfully authenticated
+╭──ac777d06bec9───────────────────────────────────────────the-bastion-3.12.00───
+│ ▶ batch
+├───────────────────────────────────────────────────────────────────────────────
+│ Feed me osh commands line by line on stdin, I&#39;ll execute them sequentially.
+│ Use &#39;exit&#39;, &#39;quit&#39; or ^D to stop.
+│ --- waiting for input
+[...]
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="logs.html" class="btn btn-neutral float-left" title="Logs" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="security_advisories.html" class="btn btn-neutral float-right" title="Security Advisories" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

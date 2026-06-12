@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Writing tests &mdash; The Bastion 3.23.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="../_static/jquery.js?v=8dae8fb0"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=eb75f0bc"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="admin plugins" href="../plugins/admin/index.html" />
+    <link rel="prev" title="Environment setup" href="setup.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.23.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../using/basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../administration/configuration/index.html">Configuration files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Environment setup</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Writing tests</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#example">Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reference">Reference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#launch-a-test">Launch a test</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#run">run</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#success">success</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#plgfail">plgfail</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#verify-a-test-validity">Verify a test validity</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#retvalshouldbe">retvalshouldbe</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#contain">contain</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#nocontain">nocontain</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#json">json</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/open/index.html">open plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Writing tests</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/development/tests.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="writing-tests">
+<h1><a class="toc-backref" href="#id4" role="doc-backlink">Writing tests</a><a class="headerlink" href="#writing-tests" title="Link to this heading"></a></h1>
+<nav class="contents" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#writing-tests" id="id4">Writing tests</a></p>
+<ul>
+<li><p><a class="reference internal" href="#example" id="id5">Example</a></p></li>
+<li><p><a class="reference internal" href="#reference" id="id6">Reference</a></p>
+<ul>
+<li><p><a class="reference internal" href="#launch-a-test" id="id7">Launch a test</a></p>
+<ul>
+<li><p><a class="reference internal" href="#run" id="id8">run</a></p></li>
+<li><p><a class="reference internal" href="#success" id="id9">success</a></p></li>
+<li><p><a class="reference internal" href="#plgfail" id="id10">plgfail</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#verify-a-test-validity" id="id11">Verify a test validity</a></p>
+<ul>
+<li><p><a class="reference internal" href="#retvalshouldbe" id="id12">retvalshouldbe</a></p></li>
+<li><p><a class="reference internal" href="#contain" id="id13">contain</a></p></li>
+<li><p><a class="reference internal" href="#nocontain" id="id14">nocontain</a></p></li>
+<li><p><a class="reference internal" href="#json" id="id15">json</a></p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+<p>When modifying code, adding features or fixing bugs, you're expected to write one or more tests to ensure that
+the feature your adding works correctly, or that the bug you've fixed doesn't come back.</p>
+<p>Integration tests modules live in the <code class="file docutils literal notranslate"><span class="pre">tests/functional/tests.d</span></code> folder.
+You may either add a new file to test your feature, or modify an existing file.</p>
+<p>These modules are shell scripts, and are sourced by the main integration test engine. Having a look at one of
+these modules will help you understand how they work, the <code class="file docutils literal notranslate"><span class="pre">tests/functional/tests.d/320-base.sh</span></code> is a good
+example you might want to look at.</p>
+<section id="example">
+<h2><a class="toc-backref" href="#id5" role="doc-backlink">Example</a><a class="headerlink" href="#example" title="Link to this heading"></a></h2>
+<p>Here is a simple test taken from <code class="file docutils literal notranslate"><span class="pre">320-base.sh</span></code>:</p>
+<div class="literal-block-wrapper docutils container" id="id1">
+<div class="code-block-caption"><span class="caption-text">a simple test</span><a class="headerlink" href="#id1" title="Link to this code"></a></div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>success   help2     $a0 --osh help
+contain &quot;OSH help&quot;
+json .error_code OK .command help .value null
+</pre></div>
+</div>
+</div>
+<p>A complete reference of such commands can be found below, but let's explain this example in a few words:</p>
+<p>The command <code class="docutils literal notranslate"><span class="pre">success</span></code> implies that we're running a new test command, and that we expect it to work (we might
+also want to test invalid commands and ensure they fail as they should).
+The tester docker will connect to the target docker (that is running the bastion code) as a bastion user, and
+run the <code class="docutils literal notranslate"><span class="pre">--osh</span> <span class="pre">help</span></code> command there. This is expected to exit with a code indicating success (0),
+otherwise this test fails.</p>
+<p>The output of the command, once run on the bastion, should contain the text <code class="docutils literal notranslate"><span class="pre">OSH</span> <span class="pre">help</span></code>, or the test will fail.</p>
+<p>In the JSON output (see <a class="reference internal" href="../using/api.html"><span class="doc">JSON API</span></a>) of this command, we expect to find the <code class="docutils literal notranslate"><span class="pre">error_code</span></code> field set to <code class="docutils literal notranslate"><span class="pre">OK</span></code>,
+the <code class="docutils literal notranslate"><span class="pre">command</span></code> field set to <code class="docutils literal notranslate"><span class="pre">help</span></code>, and the <code class="docutils literal notranslate"><span class="pre">value</span></code> field set to <code class="docutils literal notranslate"><span class="pre">null</span></code>, or the test will fail.</p>
+<p>Running just this test will yield the following output:</p>
+<div class="literal-block-wrapper docutils container" id="id2">
+<div class="code-block-caption"><span class="caption-text">a simple test output</span><a class="headerlink" href="#id2" title="Link to this code"></a></div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>00m04 [--] *** [0010/0021] 320-base::help2 (timeout --foreground 30 ssh -F /tmp/bastiontest.pgoA5h/ssh_config -i /tmp/bastiontest.pgoA5h/account0key1file user.5000@bastion_debian10_target -p 22 -- --json-greppable --osh help)
+00m05 [--] [ OK ] RETURN VALUE (0)
+00m05 [--] [ OK ] MUST CONTAIN (OSH help)
+00m05 [--] [ OK ] JSON VALUE (.error_code =&gt; OK) [  ]
+00m05 [--] [ OK ] JSON VALUE (.command =&gt; help) [  ]
+00m05 [--] [ OK ] JSON VALUE (.value =&gt; null) [  ]
+</pre></div>
+</div>
+</div>
+<p>As you can see, this simple test actually checked 5 things: the return value, whether the output text contained
+a given string, and 3 fields of the JSON output.</p>
+</section>
+<section id="reference">
+<h2><a class="toc-backref" href="#id6" role="doc-backlink">Reference</a><a class="headerlink" href="#reference" title="Link to this heading"></a></h2>
+<p>These are functions that are defined by the integration test engine and should be used in the test modules.</p>
+<section id="launch-a-test">
+<h3><a class="toc-backref" href="#id7" role="doc-backlink">Launch a test</a><a class="headerlink" href="#launch-a-test" title="Link to this heading"></a></h3>
+<section id="run">
+<h4><a class="toc-backref" href="#id8" role="doc-backlink">run</a><a class="headerlink" href="#run" title="Link to this heading"></a></h4>
+<div class="cmdusage admonition">
+<p class="admonition-title">syntax</p>
+<ul class="simple">
+<li><p>run &lt;name&gt; &lt;command&gt;</p></li>
+</ul>
+</div>
+<p>This function runs a new test named <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code>, which will execute <code class="docutils literal notranslate"><span class="pre">&lt;command&gt;</span></code> on the tester docker.
+Usually <code class="docutils literal notranslate"><span class="pre">&lt;command&gt;</span></code> will connect to the target docker (running the bastion code) using one of the test accounts,
+and run a command there.</p>
+<p>A few accounts are preconfigured:</p>
+<ul class="simple">
+<li><p>The main account (&quot;account 0&quot;): this one is guaranteed to always exist at all times, and is a bastion admin.
+There are a few variables that can be referenced to use this account:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">$a0</span></code> is the ssh command-line to connect to the remote bastion as this account</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">$account0</span></code> is the account name, to be used in parameters of <code class="docutils literal notranslate"><span class="pre">--osh</span></code> commands where needed</p></li>
+</ul>
+</li>
+<li><p>A few secondary accounts that are created, deleted, modified during the tests:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">$a1</span></code>, <code class="docutils literal notranslate"><span class="pre">$a2</span></code> and <code class="docutils literal notranslate"><span class="pre">$a3</span></code> are the ssh command-lines to connect to the remote bastion as these accounts</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">$account1</span></code>, <code class="docutils literal notranslate"><span class="pre">$account2</span></code> and <code class="docutils literal notranslate"><span class="pre">$account3</span></code> are the accounts names</p></li>
+</ul>
+</li>
+<li><p>Another special non-bastion-account command exists:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">$r0</span></code> is the required command-line to directly connect to the remote docker on which the bastion code is running,
+as root, with a bash shell. Only use this to modify the remote bastion files, such as config files, between tests</p></li>
+</ul>
+</li>
+</ul>
+<p>A few examples follow:</p>
+<div class="literal-block-wrapper docutils container" id="id3">
+<div class="code-block-caption"><span class="caption-text">running a few test commands</span><a class="headerlink" href="#id3" title="Link to this code"></a></div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>run test1 $a0 --osh info
+run test2 $a0 --osh accountInfo --account $account1
+run test3 $a1 --osh accountDelete --account $account2
+</pre></div>
+</div>
+</div>
+<p>Note that the <code class="docutils literal notranslate"><span class="pre">run</span></code> function just runs the given command, but doesn't check whether it exited normally, you'll
+need other functions to verify this, see below.</p>
+</section>
+<section id="success">
+<h4><a class="toc-backref" href="#id9" role="doc-backlink">success</a><a class="headerlink" href="#success" title="Link to this heading"></a></h4>
+<div class="cmdusage admonition">
+<p class="admonition-title">syntax</p>
+<ul class="simple">
+<li><p>success &lt;name&gt; &lt;command&gt;</p></li>
+</ul>
+</div>
+<p>This function is exactly the same as the <code class="docutils literal notranslate"><span class="pre">run</span></code> command above, except that it expects the given <code class="docutils literal notranslate"><span class="pre">&lt;command&gt;</span></code> to
+return a valid error code (zero). Most of the time, you should be using this instead of <code class="docutils literal notranslate"><span class="pre">run</span></code>, except if you're
+expecting the command to fail, in which case you should use <code class="docutils literal notranslate"><span class="pre">run</span></code> + <code class="docutils literal notranslate"><span class="pre">retvalshouldbe</span></code>, see below.</p>
+</section>
+<section id="plgfail">
+<h4><a class="toc-backref" href="#id10" role="doc-backlink">plgfail</a><a class="headerlink" href="#plgfail" title="Link to this heading"></a></h4>
+<div class="cmdusage admonition">
+<p class="admonition-title">syntax</p>
+<ul class="simple">
+<li><p>plgfail &lt;name&gt; &lt;command&gt;</p></li>
+</ul>
+</div>
+<p>This function is exactly the same as the <code class="docutils literal notranslate"><span class="pre">run</span></code> command above, except that it expects the given <code class="docutils literal notranslate"><span class="pre">&lt;command&gt;</span></code> to
+return an error code of 100, which is the standard exit value when an osh command fails.</p>
+<p>This function is equivalent to using <code class="docutils literal notranslate"><span class="pre">run</span></code> followed by <code class="docutils literal notranslate"><span class="pre">retvalshouldbe</span> <span class="pre">100</span></code> (see below).</p>
+</section>
+</section>
+<section id="verify-a-test-validity">
+<h3><a class="toc-backref" href="#id11" role="doc-backlink">Verify a test validity</a><a class="headerlink" href="#verify-a-test-validity" title="Link to this heading"></a></h3>
+<section id="retvalshouldbe">
+<h4><a class="toc-backref" href="#id12" role="doc-backlink">retvalshouldbe</a><a class="headerlink" href="#retvalshouldbe" title="Link to this heading"></a></h4>
+<div class="cmdusage admonition">
+<p class="admonition-title">syntax</p>
+<ul class="simple">
+<li><p>retvalshouldbe &lt;value&gt;</p></li>
+</ul>
+</div>
+<p>Verify that the return value of a test launched right before with the <code class="docutils literal notranslate"><span class="pre">run</span></code> function is <code class="docutils literal notranslate"><span class="pre">&lt;value&gt;</span></code>.
+You should use this if you expect the previous test to return a non-zero value.</p>
+<p>Note that the <code class="docutils literal notranslate"><span class="pre">success</span></code> function is equivalent to using <code class="docutils literal notranslate"><span class="pre">run</span></code> followed by <code class="docutils literal notranslate"><span class="pre">retvalshouldbe</span> <span class="pre">0</span></code>.</p>
+</section>
+<section id="contain">
+<h4><a class="toc-backref" href="#id13" role="doc-backlink">contain</a><a class="headerlink" href="#contain" title="Link to this heading"></a></h4>
+<div class="cmdusage admonition">
+<p class="admonition-title">syntax</p>
+<ul class="simple">
+<li><p>contain &lt;text&gt;</p></li>
+<li><p>contain REGEX &lt;regex&gt;</p></li>
+</ul>
+</div>
+<p>This function verifies that the output of the test contains a given <code class="docutils literal notranslate"><span class="pre">&lt;text&gt;</span></code>. If you need to use a regex
+to match the output, you can use the <code class="docutils literal notranslate"><span class="pre">contain</span> <span class="pre">REGEX</span></code> construction, followed by the regex.</p>
+</section>
+<section id="nocontain">
+<h4><a class="toc-backref" href="#id14" role="doc-backlink">nocontain</a><a class="headerlink" href="#nocontain" title="Link to this heading"></a></h4>
+<div class="cmdusage admonition">
+<p class="admonition-title">syntax</p>
+<ul class="simple">
+<li><p>nocontain &lt;text&gt;</p></li>
+<li><p>nocontain REGEX &lt;regex&gt;</p></li>
+</ul>
+</div>
+<p>This function does the exact opposite of the <code class="docutils literal notranslate"><span class="pre">contain</span></code> function just above, and ensure that a given text
+or regex is NOT present in the output.</p>
+</section>
+<section id="json">
+<h4><a class="toc-backref" href="#id15" role="doc-backlink">json</a><a class="headerlink" href="#json" title="Link to this heading"></a></h4>
+<div class="cmdusage admonition">
+<p class="admonition-title">syntax</p>
+<ul class="simple">
+<li><p>json &lt;field1&gt; &lt;value1&gt; [&lt;field2&gt; &lt;value2&gt; ...]</p></li>
+</ul>
+</div>
+<p>This function checks the JSON API output of the test, and validates that it contains the correct value for each
+specified field. The <code class="docutils literal notranslate"><span class="pre">&lt;fieldX&gt;</span></code> entries must be valid <cite>jq</cite> filters.</p>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="setup.html" class="btn btn-neutral float-left" title="Environment setup" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../plugins/admin/index.html" class="btn btn-neutral float-right" title="admin plugins" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>osh-encrypt-rsync.conf &mdash; The Bastion 3.23.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="../../_static/jquery.js?v=8dae8fb0"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=eb75f0bc"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="osh-sync-watcher.sh" href="osh-sync-watcher_sh.html" />
+    <link rel="prev" title="osh-backup-acl-keys.conf" href="osh-backup-acl-keys_conf.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.23.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using/basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Configuration files</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#main-configuration-files">Main configuration files</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="bastion_conf.html">bastion.conf</a></li>
+<li class="toctree-l3"><a class="reference internal" href="osh-backup-acl-keys_conf.html">osh-backup-acl-keys.conf</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">osh-encrypt-rsync.conf</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#option-list">Option List</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#option-reference">Option Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="osh-sync-watcher_sh.html">osh-sync-watcher.sh</a></li>
+<li class="toctree-l3"><a class="reference internal" href="osh-http-proxy_conf.html">osh-http-proxy.conf</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#configuration-files-for-satellite-scripts">Configuration files for satellite scripts</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/open/index.html">open plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Configuration files</a></li>
+      <li class="breadcrumb-item active">osh-encrypt-rsync.conf</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/administration/configuration/osh-encrypt-rsync_conf.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="osh-encrypt-rsync-conf">
+<h1>osh-encrypt-rsync.conf<a class="headerlink" href="#osh-encrypt-rsync-conf" title="Link to this heading"></a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The osh-encrypt-rsync script is called by cron and is responsible for encrypting
+and optionally pushing the recorded <code class="docutils literal notranslate"><span class="pre">ttyrec</span></code> files to a distant server, along
+with the user logs (<code class="docutils literal notranslate"><span class="pre">/home/*/*.log</span></code>) and user sqlite files (<code class="docutils literal notranslate"><span class="pre">/home/*/*.sqlite</span></code>).
+The global log and sqlite files are also handled (located in <code class="docutils literal notranslate"><span class="pre">/home/logkeeper/</span></code>).
+Note that logs sent through syslog are NOT managed by this script.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>If left unconfigured, this script won't do anything, and the recorded <code class="docutils literal notranslate"><span class="pre">ttyrec</span></code> files,
+along with the log and sqlite files won't be encrypted or moved out from the server.
+This might not be a problem for low-traffic bastions or if you have plenty of storage available, though.</p>
+</div>
+<section id="option-list">
+<h2>Option List<a class="headerlink" href="#option-list" title="Link to this heading"></a></h2>
+<section id="logging-options">
+<h3>Logging options<a class="headerlink" href="#logging-options" title="Link to this heading"></a></h3>
+<p>These options configure the way the script logs its actions</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#logfile">logfile</a></p></li>
+<li><p><a class="reference internal" href="#syslog-facility">syslog_facility</a></p></li>
+<li><p><a class="reference internal" href="#verbose">verbose</a></p></li>
+</ul>
+</section>
+<section id="encryption-and-signing-options">
+<h3>Encryption and signing options<a class="headerlink" href="#encryption-and-signing-options" title="Link to this heading"></a></h3>
+<p>These options configure how the script uses GPG to encrypt and sign the ttyrec files</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#signing-key">signing_key</a></p></li>
+<li><p><a class="reference internal" href="#signing-key-passphrase">signing_key_passphrase</a></p></li>
+<li><p><a class="reference internal" href="#recipients">recipients</a></p></li>
+<li><p><a class="reference internal" href="#encrypt-and-move-to-directory">encrypt_and_move_to_directory</a></p></li>
+<li><p><a class="reference internal" href="#encrypt-and-move-ttyrec-delay-days">encrypt_and_move_ttyrec_delay_days</a></p></li>
+<li><p><a class="reference internal" href="#encrypt-and-move-user-logs-delay-days">encrypt_and_move_user_logs_delay_days</a></p></li>
+<li><p><a class="reference internal" href="#encrypt-and-move-user-sqlites-delay-days">encrypt_and_move_user_sqlites_delay_days</a></p></li>
+</ul>
+</section>
+<section id="push-files-to-a-remote-destination-options">
+<h3>Push files to a remote destination options<a class="headerlink" href="#push-files-to-a-remote-destination-options" title="Link to this heading"></a></h3>
+<p>These options configure the way the script uses rsync to optionally push the encrypted files out of the server</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#rsync-destination">rsync_destination</a></p></li>
+<li><p><a class="reference internal" href="#rsync-rsh">rsync_rsh</a></p></li>
+<li><p><a class="reference internal" href="#rsync-delay-before-remove-days">rsync_delay_before_remove_days</a></p></li>
+</ul>
+</section>
+</section>
+<section id="option-reference">
+<h2>Option Reference<a class="headerlink" href="#option-reference" title="Link to this heading"></a></h2>
+<section id="logging">
+<h3>Logging<a class="headerlink" href="#logging" title="Link to this heading"></a></h3>
+<section id="logfile">
+<h4>logfile<a class="headerlink" href="#logfile" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string,</span> <span class="pre">path</span> <span class="pre">to</span> <span class="pre">a</span> <span class="pre">file</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code></p>
+</dd>
+</dl>
+<p>File where the logs will be written to (don't forget to configure <code class="docutils literal notranslate"><span class="pre">logrotate</span></code>!).
+Note that using this configuration option, the script will directly write to the file, without using syslog.
+If empty, won't log directly to any file.</p>
+</section>
+<section id="syslog-facility">
+<h4>syslog_facility<a class="headerlink" href="#syslog-facility" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;local6&quot;</span></code></p>
+</dd>
+</dl>
+<p>The syslog facility to use for logging the script output.
+If set to the empty string, we'll not log through syslog at all.
+If this configuration option is missing from your config file altogether,
+the default value will be used (local6), which means that we'll log to syslog.</p>
+</section>
+<section id="verbose">
+<h4>verbose<a class="headerlink" href="#verbose" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;=</span> <span class="pre">0</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">0</span></code></p>
+</dd>
+</dl>
+<p>The verbosity level of the logs produced by the script
+0: normal (default)
+1: log more information about what is happening
+2: log debug-level information</p>
+</section>
+</section>
+<section id="encryption-and-signing">
+<h3>Encryption and signing<a class="headerlink" href="#encryption-and-signing" title="Link to this heading"></a></h3>
+<section id="signing-key">
+<h4>signing_key<a class="headerlink" href="#signing-key" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string,</span> <span class="pre">GPG</span> <span class="pre">key</span> <span class="pre">ID</span> <span class="pre">in</span> <span class="pre">short</span> <span class="pre">or</span> <span class="pre">long</span> <span class="pre">format</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">(none),</span> <span class="pre">setting</span> <span class="pre">a</span> <span class="pre">value</span> <span class="pre">is</span> <span class="pre">mandatory</span></code></p>
+</dd>
+</dl>
+<p>ID of the GPG key used to sign the ttyrec files.
+The key must be in the local root keyring, check it with <code class="docutils literal notranslate"><span class="pre">gpg</span> <span class="pre">--list-secret-keys</span></code></p>
+</section>
+<section id="signing-key-passphrase">
+<h4>signing_key_passphrase<a class="headerlink" href="#signing-key-passphrase" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">(none),</span> <span class="pre">setting</span> <span class="pre">a</span> <span class="pre">value</span> <span class="pre">is</span> <span class="pre">mandatory</span></code></p>
+</dd>
+</dl>
+<p>This passphrase should be able to unlock the <code class="docutils literal notranslate"><span class="pre">signing_key</span></code> defined above.
+As a side note, please ensure this configuration file only readable by root (0640),
+to protect this passphrase. As a security measure,
+the script will refuse to read the configuration otherwise.</p>
+</section>
+<section id="recipients">
+<h4>recipients<a class="headerlink" href="#recipients" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">array</span> <span class="pre">of</span> <span class="pre">array</span> <span class="pre">of</span> <span class="pre">strings,</span> <span class="pre">a</span> <span class="pre">string</span> <span class="pre">being</span> <span class="pre">a</span> <span class="pre">GPG</span> <span class="pre">key</span> <span class="pre">ID</span> <span class="pre">in</span> <span class="pre">short</span> <span class="pre">or</span> <span class="pre">long</span> <span class="pre">format</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">(none),</span> <span class="pre">setting</span> <span class="pre">a</span> <span class="pre">value</span> <span class="pre">is</span> <span class="pre">mandatory</span></code></p>
+</dd>
+</dl>
+<p>The ttyrecs will be encrypted with those GPG keys, possibly using multi-layer GPG encryption.
+Each sub-array is a layer, the first sub-array being the first encryption layer (which is also the last one for decryption)
+To completely decrypt a ttyrec, one would need at least one key of each layer.
+To encrypt only to a single layer and to only one key, simply use [ [ &quot;KEYID&quot; ] ].
+To encrypt to a single layer but with 3 keys being able to decrypt the ttyrec, use [ [ &quot;KEY1&quot;, &quot;KEY2&quot;, &quot;KEY3&quot; ] ], etc.
+A common use of multi-layer encryption is to have the first layer composed of the auditors' GPG keys, and
+the second layer composed of the sysadmins' GPG keys. During an audit, the sysadmins would get the ttyrec encrypted file,
+decrypt the second encryption layer (the first for decryption), and handle the now only auditor-protected file to the auditors.
+All public keys must be in the local root keyring (gpg --list-keys).
+Don't forget to trust those keys &quot;ultimately&quot; in root's keyring, too (gpg --edit-key ID)</p>
+</section>
+<section id="encrypt-and-move-to-directory">
+<h4>encrypt_and_move_to_directory<a class="headerlink" href="#encrypt-and-move-to-directory" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string,</span> <span class="pre">a</span> <span class="pre">valid</span> <span class="pre">directory</span> <span class="pre">name</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;/home/.encrypt&quot;</span></code></p>
+</dd>
+</dl>
+<p>After encryption (and compression), move ttyrec, user sqlite and user log files to subdirs of this directory.
+It'll be created if it doesn't exist yet.
+You may want this directory to be the mount point of a remote filer, if you wish.
+If you change this, it's probably a good idea to ensure that the path is excluded from the
+master/slave synchronization, in <code class="docutils literal notranslate"><span class="pre">/etc/bastion/osh-sync-watcher.rsyncfilter</span></code>.
+This is already the case for the default value.</p>
+</section>
+<section id="encrypt-and-move-ttyrec-delay-days">
+<h4>encrypt_and_move_ttyrec_delay_days<a class="headerlink" href="#encrypt-and-move-ttyrec-delay-days" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;</span> <span class="pre">0,</span> <span class="pre">or</span> <span class="pre">-1</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">14</span></code></p>
+</dd>
+</dl>
+<p>Don't touch ttyrec files that have a modification time more recent than this amount of days.
+The files won't be encrypted nor moved yet, and will still be readable by the <code class="docutils literal notranslate"><span class="pre">selfPlaySession</span></code> command.
+You can set this to a (possibly) much higher value, the only limit is the amount of disk space you have.
+If set to -1, the ttyrec files will never get encrypted or moved by this script.
+The eligible files will be encrypted and moved to <code class="docutils literal notranslate"><span class="pre">encrypt_and_move_to_directory</span></code>.
+NOTE: The old name of this option is <cite>encrypt_and_move_delay_days</cite>.
+If it is found in your configuration file and <cite>encrypt_and_move_ttyrec_delay_days</cite> is not,
+then the value of <cite>encrypt_and_move_delay_days</cite> will be used instead of the default.</p>
+</section>
+<section id="encrypt-and-move-user-logs-delay-days">
+<h4>encrypt_and_move_user_logs_delay_days<a class="headerlink" href="#encrypt-and-move-user-logs-delay-days" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;=</span> <span class="pre">31,</span> <span class="pre">or</span> <span class="pre">-1</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">31</span></code></p>
+</dd>
+</dl>
+<p>Don't touch user log files (<code class="docutils literal notranslate"><span class="pre">/home/*/*.log</span></code>) that have been modified more recently than this amount of days.
+The bare minimum is 31 days, to ensure we're not moving a current-month file.
+You can set this to a (possibly) much higher value, the only limit is the amount of disk space you have.
+If set to -1, the user log files will never get encrypted or moved by this script.
+The eligible files will be encrypted and moved to <code class="docutils literal notranslate"><span class="pre">encrypt_and_move_to_directory</span></code>.</p>
+</section>
+<section id="encrypt-and-move-user-sqlites-delay-days">
+<h4>encrypt_and_move_user_sqlites_delay_days<a class="headerlink" href="#encrypt-and-move-user-sqlites-delay-days" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;=</span> <span class="pre">31,</span> <span class="pre">or</span> <span class="pre">-1</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">31</span></code></p>
+</dd>
+</dl>
+<p>Don't touch user sqlite files (<code class="docutils literal notranslate"><span class="pre">/home/*/*.sqlite</span></code>) that have been modified more recently than this amount of days.
+The files won't be encrypted nor moved yet, and will still be usable by the <code class="docutils literal notranslate"><span class="pre">selfListSessions</span></code> command.
+The bare minimum is 31 days, to ensure we're not moving a current-month file.
+You can set this to a (possibly) much higher value, the only limit is the amount of disk space you have.
+If set to -1, the user sqlite files will never get encrypted or moved by this script.
+The eligible files will be encrypted and moved to <code class="docutils literal notranslate"><span class="pre">encrypt_and_move_to_directory</span></code>.</p>
+</section>
+</section>
+<section id="push-files-to-a-remote-destination">
+<h3>Push files to a remote destination<a class="headerlink" href="#push-files-to-a-remote-destination" title="Link to this heading"></a></h3>
+<section id="rsync-destination">
+<h4>rsync_destination<a class="headerlink" href="#rsync-destination" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code></p>
+</dd>
+<dt class="field-odd">Example<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">&quot;user&#64;remotebackup.example.org:/remote/dir&quot;</span></code></p>
+</dd>
+</dl>
+<p>The value of this option will be passed to <code class="docutils literal notranslate"><span class="pre">rsync</span></code> as the destination.
+Note that the source of the rsync is already configured above, as the <code class="docutils literal notranslate"><span class="pre">encrypt_and_move_to_directory</span></code>.
+We only rsync the files that have already been encrypted and moved there.
+If this option is empty, this will <strong>disable</strong> <code class="docutils literal notranslate"><span class="pre">rsync</span></code>, meaning that the ttyrec files will be encrypted,
+but not moved out of the server. In other words, the files will pile up in <code class="docutils literal notranslate"><span class="pre">encrypt_and_move_to_directory</span></code>,
+which can be pretty okay in you have enough disk space.</p>
+</section>
+<section id="rsync-rsh">
+<h4>rsync_rsh<a class="headerlink" href="#rsync-rsh" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code></p>
+</dd>
+<dt class="field-odd">Example<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">&quot;ssh</span> <span class="pre">-p</span> <span class="pre">222</span> <span class="pre">-i</span> <span class="pre">/root/.ssh/id_ed25519_backup&quot;</span></code></p>
+</dd>
+</dl>
+<p>The value of this option will be passed to <code class="docutils literal notranslate"><span class="pre">rsync</span></code>'s <code class="docutils literal notranslate"><span class="pre">--rsh</span></code> option.
+This is useful to specify an SSH key or an alternate SSH port for example.
+This option is ignored when <code class="docutils literal notranslate"><span class="pre">rsync</span></code> is disabled (i.e. when <code class="docutils literal notranslate"><span class="pre">rsync_destination</span></code> is empty).</p>
+</section>
+<section id="rsync-delay-before-remove-days">
+<h4>rsync_delay_before_remove_days<a class="headerlink" href="#rsync-delay-before-remove-days" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;=</span> <span class="pre">0,</span> <span class="pre">or</span> <span class="pre">-1</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">0</span></code></p>
+</dd>
+</dl>
+<p>After encryption/compression, and successful rsync of <code class="docutils literal notranslate"><span class="pre">encrypt_and_move_to_directory</span></code> to remote,
+wait for this amount of days before removing the encrypted/compressed files locally.
+Specify 0 to remove the files as soon as they're transferred.
+This option is ignored when <code class="docutils literal notranslate"><span class="pre">rsync</span></code> is disabled (i.e. when <code class="docutils literal notranslate"><span class="pre">rsync_destination</span></code> is empty).
+Note that if rsync is enabled (see <code class="docutils literal notranslate"><span class="pre">rsync_destination</span></code> above), we'll always sync the files present in
+<code class="docutils literal notranslate"><span class="pre">encrypt_and_move_to_directory</span></code> as soon as we can, to ensure limitation of logs data loss in case of
+catastrophic failure of the server. The <code class="docutils literal notranslate"><span class="pre">rsync_delay_before_remove_days</span></code> option configures the number
+of days after we remove the files locally, but note that these have already been transferred remotely
+as soon as they were present in <code class="docutils literal notranslate"><span class="pre">encrypt_and_move_to_directory</span></code>.
+To rsync the files remotely but never delete them locally, set this to -1.</p>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="osh-backup-acl-keys_conf.html" class="btn btn-neutral float-left" title="osh-backup-acl-keys.conf" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="osh-sync-watcher_sh.html" class="btn btn-neutral float-right" title="osh-sync-watcher.sh" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

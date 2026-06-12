@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>accountInfo &mdash; The Bastion 3.23.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="../../_static/jquery.js?v=8dae8fb0"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=eb75f0bc"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="accountList" href="accountList.html" />
+    <link rel="prev" title="accountGrantCommand" href="accountGrantCommand.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.23.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using/basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/configuration/index.html">Configuration files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../administration/security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../open/index.html">open plugins</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">restricted plugins</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="accountAddPersonalAccess.html">accountAddPersonalAccess</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountCreate.html">accountCreate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountDelPersonalAccess.html">accountDelPersonalAccess</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountDelete.html">accountDelete</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountFreeze.html">accountFreeze</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountGeneratePassword.html">accountGeneratePassword</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountGrantCommand.html">accountGrantCommand</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">accountInfo</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#display-some-information-about-an-account">Display some information about an account</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usage-examples">Usage examples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#output-example">Output example</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="accountList.html">accountList</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountListAccesses.html">accountListAccesses</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountListEgressKeys.html">accountListEgressKeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountListIngressKeys.html">accountListIngressKeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountListPasswords.html">accountListPasswords</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountMFAResetPassword.html">accountMFAResetPassword</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountMFAResetTOTP.html">accountMFAResetTOTP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountModify.html">accountModify</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountPIV.html">accountPIV</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountRevokeCommand.html">accountRevokeCommand</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountUnexpire.html">accountUnexpire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountUnfreeze.html">accountUnfreeze</a></li>
+<li class="toctree-l2"><a class="reference internal" href="accountUnlock.html">accountUnlock</a></li>
+<li class="toctree-l2"><a class="reference internal" href="assetForgetHostKey.html">assetForgetHostKey</a></li>
+<li class="toctree-l2"><a class="reference internal" href="groupCreate.html">groupCreate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="groupDelete.html">groupDelete</a></li>
+<li class="toctree-l2"><a class="reference internal" href="realmCreate.html">realmCreate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="realmDelete.html">realmDelete</a></li>
+<li class="toctree-l2"><a class="reference internal" href="realmInfo.html">realmInfo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="realmList.html">realmList</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rootListIngressKeys.html">rootListIngressKeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfAddPersonalAccess.html">selfAddPersonalAccess</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selfDelPersonalAccess.html">selfDelPersonalAccess</a></li>
+<li class="toctree-l2"><a class="reference internal" href="whoHasAccessTo.html">whoHasAccessTo</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">restricted plugins</a></li>
+      <li class="breadcrumb-item active">accountInfo</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/plugins/restricted/accountInfo.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="accountinfo">
+<h1>accountInfo<a class="headerlink" href="#accountinfo" title="Link to this heading"></a></h1>
+<section id="display-some-information-about-an-account">
+<h2>Display some information about an account<a class="headerlink" href="#display-some-information-about-an-account" title="Link to this heading"></a></h2>
+<div class="cmdusage admonition">
+<p class="admonition-title">usage</p>
+<p>--osh accountInfo &lt;--account ACCOUNT|--all&gt; [OPTIONS]</p>
+</div>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-accountInfo-account">
+<span class="sig-name descname"><span class="pre">--account</span></span><span class="sig-prename descclassname"> <span class="pre">ACCOUNT</span></span><a class="headerlink" href="#cmdoption-accountInfo-account" title="Link to this definition"></a></dt>
+<dd><p>The account name to work on</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-accountInfo-all">
+<span class="sig-name descname"><span class="pre">--all</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-accountInfo-all" title="Link to this definition"></a></dt>
+<dd><p>Dump info for all accounts (auditors only), use with <code class="docutils literal notranslate"><span class="pre">--json</span></code></p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-accountInfo-with-out-everything">
+<span class="sig-name descname"><span class="pre">--with[out]-everything</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-accountInfo-with-out-everything" title="Link to this definition"></a></dt>
+<dd><p>Include or exclude all below options, including future ones</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-accountInfo-with-out-groups">
+<span class="sig-name descname"><span class="pre">--with[out]-groups</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-accountInfo-with-out-groups" title="Link to this definition"></a></dt>
+<dd><p>Whether to include the groups the account has a role on (SLOW, default: no)</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-accountInfo-with-out-mfa-password-info">
+<span class="sig-name descname"><span class="pre">--with[out]-mfa-password-info</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-accountInfo-with-out-mfa-password-info" title="Link to this definition"></a></dt>
+<dd><p>Whether to include MFA password info of the account (SLOW, auditors only, default: no)</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-accountInfo-with-out-egress-keys">
+<span class="sig-name descname"><span class="pre">--with[out]-egress-keys</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-accountInfo-with-out-egress-keys" title="Link to this definition"></a></dt>
+<dd><p>Whether to include the account's egress keys (SLOW, auditors only, default: no)</p>
+</dd></dl>
+
+</section>
+<section id="usage-examples">
+<h2>Usage examples<a class="headerlink" href="#usage-examples" title="Link to this heading"></a></h2>
+<p>Show info about a specific account:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>--osh<span class="w"> </span>accountInfo<span class="w"> </span>--account<span class="w"> </span>jdoe12
+</pre></div>
+</div>
+<p>Gather info about all accounts, with no extra data except their egress keys:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>--osh<span class="w"> </span>accountInfo<span class="w"> </span>--all<span class="w"> </span>--without-everything<span class="w"> </span>--with-egress-keys<span class="w"> </span>--json
+</pre></div>
+</div>
+<p>Gather info about all accounts, including all extra data (and possibly future options):</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>--osh<span class="w"> </span>accountInfo<span class="w"> </span>--all<span class="w"> </span>--with-everything<span class="w"> </span>--json
+</pre></div>
+</div>
+</section>
+<section id="output-example">
+<h2>Output example<a class="headerlink" href="#output-example" title="Link to this heading"></a></h2>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>│<span class="w"> </span>user1<span class="w"> </span>is<span class="w"> </span>a<span class="w"> </span>bastion<span class="w"> </span>admin
+│<span class="w"> </span>user1<span class="w"> </span>is<span class="w"> </span>a<span class="w"> </span>bastion<span class="w"> </span>superowner
+│<span class="w"> </span>user1<span class="w"> </span>is<span class="w"> </span>a<span class="w"> </span>bastion<span class="w"> </span>auditor
+│
+│<span class="w"> </span>user1<span class="w"> </span>has<span class="w"> </span>access<span class="w"> </span>to<span class="w"> </span>the<span class="w"> </span>following<span class="w"> </span>restricted<span class="w"> </span>commands:
+│<span class="w"> </span>-<span class="w"> </span>accountCreate
+│<span class="w"> </span>-<span class="w"> </span>accountDelete
+│<span class="w"> </span>-<span class="w"> </span>groupCreate
+│<span class="w"> </span>-<span class="w"> </span>groupDelete
+│
+│<span class="w"> </span>This<span class="w"> </span>account<span class="w"> </span>is<span class="w"> </span>part<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>following<span class="w"> </span>groups:
+│<span class="w">         </span>testgroup1<span class="w"> </span>Owner<span class="w"> </span>GateKeeper<span class="w"> </span>ACLKeeper<span class="w"> </span>Member<span class="w">     </span>-
+│<span class="w">    </span>gatekeeper-grp2<span class="w"> </span>Owner<span class="w"> </span>GateKeeper<span class="w">         </span>-<span class="w">      </span>-<span class="w">     </span>-
+│
+│<span class="w"> </span>This<span class="w"> </span>account<span class="w"> </span>is<span class="w"> </span>active
+│<span class="w"> </span>This<span class="w"> </span>account<span class="w"> </span>has<span class="w"> </span>no<span class="w"> </span>TTL<span class="w"> </span><span class="nb">set</span>
+│<span class="w"> </span>This<span class="w"> </span>account<span class="w"> </span>is<span class="w"> </span>not<span class="w"> </span>frozen
+│<span class="w"> </span>This<span class="w"> </span>account<span class="w"> </span>has<span class="w"> </span>seen<span class="w"> </span>recent-enough<span class="w"> </span>activity<span class="w"> </span>to<span class="w"> </span>not<span class="w"> </span>be<span class="w"> </span>activity-expired
+│<span class="w"> </span>As<span class="w"> </span>a<span class="w"> </span>consequence,<span class="w"> </span>this<span class="w"> </span>account<span class="w"> </span>can<span class="w"> </span>connect<span class="w"> </span>to<span class="w"> </span>this<span class="w"> </span>bastion
+│
+│<span class="w"> </span>Last<span class="w"> </span>seen<span class="w"> </span>on<span class="w"> </span>Thu<span class="w"> </span><span class="m">2023</span>-03-16<span class="w"> </span><span class="m">07</span>:51:49<span class="w"> </span>UTC<span class="w"> </span><span class="o">(</span><span class="m">00</span>:00:00<span class="w"> </span>ago<span class="o">)</span>
+│<span class="w"> </span>Created<span class="w"> </span>on<span class="w"> </span>Fri<span class="w"> </span><span class="m">2022</span>-06-17<span class="w"> </span><span class="m">09</span>:52:50<span class="w"> </span>UTC<span class="w"> </span><span class="o">(</span>271d+21:58:59<span class="w"> </span>ago<span class="o">)</span>
+│<span class="w"> </span>Created<span class="w"> </span>by<span class="w"> </span>jdoe
+│<span class="w"> </span>Created<span class="w"> </span>using<span class="w"> </span>The<span class="w"> </span>Bastion<span class="w"> </span>v3.08.01
+│
+│<span class="w"> </span>Account<span class="w"> </span>egress<span class="w"> </span>SSH<span class="w"> </span>config:
+│<span class="w"> </span>-<span class="w"> </span><span class="o">(</span>default<span class="o">)</span>
+│
+│<span class="w"> </span>PIV-enforced<span class="w"> </span>policy<span class="w"> </span><span class="k">for</span><span class="w"> </span>ingress<span class="w"> </span>keys<span class="w"> </span>on<span class="w"> </span>this<span class="w"> </span>account<span class="w"> </span>is<span class="w"> </span>enabled
+│
+│<span class="w"> </span>Account<span class="w"> </span>Multi-Factor<span class="w"> </span>Authentication<span class="w"> </span>status:
+│<span class="w"> </span>-<span class="w"> </span>Additional<span class="w"> </span>password<span class="w"> </span>authentication<span class="w"> </span>is<span class="w"> </span>not<span class="w"> </span>required<span class="w"> </span><span class="k">for</span><span class="w"> </span>this<span class="w"> </span>account
+│<span class="w"> </span>-<span class="w"> </span>Additional<span class="w"> </span>password<span class="w"> </span>authentication<span class="w"> </span>bypass<span class="w"> </span>is<span class="w"> </span>disabled<span class="w"> </span><span class="k">for</span><span class="w"> </span>this<span class="w"> </span>account
+│<span class="w"> </span>-<span class="w"> </span>Additional<span class="w"> </span>password<span class="w"> </span>authentication<span class="w"> </span>is<span class="w"> </span>enabled<span class="w"> </span>and<span class="w"> </span>active
+│<span class="w"> </span>-<span class="w"> </span>Additional<span class="w"> </span>TOTP<span class="w"> </span>authentication<span class="w"> </span>is<span class="w"> </span>not<span class="w"> </span>required<span class="w"> </span><span class="k">for</span><span class="w"> </span>this<span class="w"> </span>account
+│<span class="w"> </span>-<span class="w"> </span>Additional<span class="w"> </span>TOTP<span class="w"> </span>authentication<span class="w"> </span>bypass<span class="w"> </span>is<span class="w"> </span>disabled<span class="w"> </span><span class="k">for</span><span class="w"> </span>this<span class="w"> </span>account
+│<span class="w"> </span>-<span class="w"> </span>Additional<span class="w"> </span>TOTP<span class="w"> </span>authentication<span class="w"> </span>is<span class="w"> </span>disabled
+│<span class="w"> </span>-<span class="w"> </span>PAM<span class="w"> </span>authentication<span class="w"> </span>bypass<span class="w"> </span>is<span class="w"> </span>disabled
+│<span class="w"> </span>-<span class="w"> </span>Optional<span class="w"> </span>public<span class="w"> </span>key<span class="w"> </span>authentication<span class="w"> </span>is<span class="w"> </span>disabled
+│<span class="w"> </span>-<span class="w"> </span>MFA<span class="w"> </span>policy<span class="w"> </span>on<span class="w"> </span>personal<span class="w"> </span>accesses<span class="w"> </span><span class="o">(</span>using<span class="w"> </span>personal<span class="w"> </span>keys<span class="o">)</span><span class="w"> </span>on<span class="w"> </span>egress<span class="w"> </span>side<span class="w"> </span>is:<span class="w"> </span>password
+│
+│<span class="w"> </span>-<span class="w"> </span>Account<span class="w"> </span>is<span class="w"> </span>immune<span class="w"> </span>to<span class="w"> </span>idle<span class="w"> </span>counter-measures:<span class="w"> </span>no
+│<span class="w"> </span>-<span class="w"> </span>Maximum<span class="w"> </span>number<span class="w"> </span>of<span class="w"> </span>days<span class="w"> </span>of<span class="w"> </span>inactivity<span class="w"> </span>before<span class="w"> </span>account<span class="w"> </span>is<span class="w"> </span>disabled:<span class="w"> </span><span class="o">(</span>default<span class="o">)</span>
+│
+│<span class="w"> </span>Account<span class="w"> </span>PAM<span class="w"> </span>UNIX<span class="w"> </span>password<span class="w"> </span>information<span class="w"> </span><span class="o">(</span>used<span class="w"> </span><span class="k">for</span><span class="w"> </span>password<span class="w"> </span>MFA<span class="o">)</span>:
+│<span class="w"> </span>-<span class="w"> </span>Password<span class="w"> </span>is<span class="w"> </span><span class="nb">set</span>
+│<span class="w"> </span>-<span class="w"> </span>Password<span class="w"> </span>was<span class="w"> </span>last<span class="w"> </span>changed<span class="w"> </span>on<span class="w"> </span><span class="m">2023</span>-01-27
+│<span class="w"> </span>-<span class="w"> </span>Password<span class="w"> </span>must<span class="w"> </span>be<span class="w"> </span>changed<span class="w"> </span>every<span class="w"> </span><span class="m">90</span><span class="w"> </span>days<span class="w"> </span>at<span class="w"> </span>least
+│<span class="w"> </span>-<span class="w"> </span>A<span class="w"> </span>warning<span class="w"> </span>is<span class="w"> </span>displayed<span class="w"> </span><span class="m">75</span><span class="w"> </span>days<span class="w"> </span>before<span class="w"> </span>expiration
+│<span class="w"> </span>-<span class="w"> </span>Account<span class="w"> </span>will<span class="w"> </span>not<span class="w"> </span>be<span class="w"> </span>disabled<span class="w"> </span>after<span class="w"> </span>password<span class="w"> </span>expiration
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="accountGrantCommand.html" class="btn btn-neutral float-left" title="accountGrantCommand" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="accountList.html" class="btn btn-neutral float-right" title="accountList" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

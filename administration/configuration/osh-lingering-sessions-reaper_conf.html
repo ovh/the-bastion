@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>osh-lingering-sessions-reaper.conf &mdash; The Bastion 3.23.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="../../_static/jquery.js?v=8dae8fb0"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=eb75f0bc"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="osh-orphaned-homedir.conf" href="osh-orphaned-homedir_conf.html" />
+    <link rel="prev" title="osh-cleanup-guest-key-access.conf" href="osh-cleanup-guest-key-access_conf.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.23.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using/basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Configuration files</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="index.html#main-configuration-files">Main configuration files</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#configuration-files-for-satellite-scripts">Configuration files for satellite scripts</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="osh-piv-grace-reaper_conf.html">osh-piv-grace-reaper.conf</a></li>
+<li class="toctree-l3"><a class="reference internal" href="osh-remove-empty-folders_conf.html">osh-remove-empty-folders.conf</a></li>
+<li class="toctree-l3"><a class="reference internal" href="osh-cleanup-guest-key-access_conf.html">osh-cleanup-guest-key-access.conf</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">osh-lingering-sessions-reaper.conf</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#option-list">Option List</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#option-reference">Option Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="osh-orphaned-homedir_conf.html">osh-orphaned-homedir.conf</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/open/index.html">open plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Configuration files</a></li>
+      <li class="breadcrumb-item active">osh-lingering-sessions-reaper.conf</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/administration/configuration/osh-lingering-sessions-reaper_conf.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="osh-lingering-sessions-reaper-conf">
+<h1>osh-lingering-sessions-reaper.conf<a class="headerlink" href="#osh-lingering-sessions-reaper-conf" title="Link to this heading"></a></h1>
+<blockquote>
+<div><div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This script is called by cron and is responsible for terminating
+lingering sessions that no longer have any tty attached nor parent PID,
+and have been running for some time.</p>
+</div>
+</div></blockquote>
+<section id="option-list">
+<h2>Option List<a class="headerlink" href="#option-list" title="Link to this heading"></a></h2>
+<section id="logging-activation-options">
+<h3>Logging &amp; activation options<a class="headerlink" href="#logging-activation-options" title="Link to this heading"></a></h3>
+<p>Script logging configuration and script activation</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#logfile">LOGFILE</a></p></li>
+<li><p><a class="reference internal" href="#log-facility">LOG_FACILITY</a></p></li>
+<li><p><a class="reference internal" href="#enabled">ENABLED</a></p></li>
+</ul>
+</section>
+<section id="main-options">
+<h3>Main options<a class="headerlink" href="#main-options" title="Link to this heading"></a></h3>
+<p>These options govern the behavior of the script</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#max-age">MAX_AGE</a></p></li>
+</ul>
+</section>
+</section>
+<section id="option-reference">
+<h2>Option Reference<a class="headerlink" href="#option-reference" title="Link to this heading"></a></h2>
+<section id="logging-activation">
+<h3>Logging &amp; activation<a class="headerlink" href="#logging-activation" title="Link to this heading"></a></h3>
+<section id="logfile">
+<h4>LOGFILE<a class="headerlink" href="#logfile" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string,</span> <span class="pre">path</span> <span class="pre">to</span> <span class="pre">a</span> <span class="pre">file</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code></p>
+</dd>
+</dl>
+<p>File where the logs will be written to (don't forget to configure <code class="docutils literal notranslate"><span class="pre">logrotate</span></code>!).
+Note that using this configuration option, the script will directly write to the file, without using syslog.
+If empty, won't log directly to any file.</p>
+</section>
+<section id="log-facility">
+<h4>LOG_FACILITY<a class="headerlink" href="#log-facility" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;local6&quot;</span></code></p>
+</dd>
+</dl>
+<p>The syslog facility to use for logging the script output.
+If set to the empty string, we'll not log through syslog at all.
+If this configuration option is missing from your config file altogether,
+the default value will be used (local6), which means that we'll log to syslog.</p>
+</section>
+<section id="enabled">
+<h4>ENABLED<a class="headerlink" href="#enabled" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">or</span> <span class="pre">1</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">1</span></code></p>
+</dd>
+</dl>
+<p>If set to 1, the script is enabled and will run when started by crond.</p>
+</section>
+</section>
+<section id="main">
+<h3>Main<a class="headerlink" href="#main" title="Link to this heading"></a></h3>
+<section id="max-age">
+<h4>MAX_AGE<a class="headerlink" href="#max-age" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;=</span> <span class="pre">0</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">86400</span></code></p>
+</dd>
+</dl>
+<p>The minimum number of seconds a session must have been opened before
+being considered as possibly a lingering orphan session.
+Still alive sessions, even older than MAX_AGE seconds, will be kept.</p>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="osh-cleanup-guest-key-access_conf.html" class="btn btn-neutral float-left" title="osh-cleanup-guest-key-access.conf" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="osh-orphaned-homedir_conf.html" class="btn btn-neutral float-right" title="osh-orphaned-homedir.conf" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

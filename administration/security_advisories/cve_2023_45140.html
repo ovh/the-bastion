@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CVE-2023-45140 &mdash; The Bastion 3.23.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="../../_static/jquery.js?v=8dae8fb0"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=eb75f0bc"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="CVE-2025-59339" href="cve_2025_59339.html" />
+    <link rel="prev" title="Security Advisories" href="../security_advisories.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.23.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using/basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../configuration/index.html">Configuration files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../security_advisories.html">Security Advisories</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">CVE-2023-45140</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#details">Details</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-to-reproduce-for-group-based-jit-mfa">How to reproduce for group-based JIT MFA</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-to-reproduce-for-account-based-jit-mfa">How to reproduce for account-based JIT MFA</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#impact-for-group-based-jit-mfa">Impact for group-based JIT MFA</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#impact-for-account-based-jit-mfa">Impact for account-based JIT MFA</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mitigation">Mitigation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#timeline">Timeline</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="cve_2025_59339.html">CVE-2025-59339</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/open/index.html">open plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../security_advisories.html">Security Advisories</a></li>
+      <li class="breadcrumb-item active">CVE-2023-45140</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/administration/security_advisories/cve_2023_45140.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="cve-2023-45140">
+<h1>CVE-2023-45140<a class="headerlink" href="#cve-2023-45140" title="Link to this heading"></a></h1>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Severity</span></code>: <strong>4.8</strong> (CVSS V3)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Vector:</span> <span class="pre">CVSS:3.1/AV:N/AC:L/PR:H/UI:R/S:C/C:L/I:L/A:N</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Affected</span> <span class="pre">versions</span></code>: &lt; 3.14.15</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Patched</span> <span class="pre">versions</span></code>: &gt;= 3.14.15</p></li>
+</ul>
+<p><a class="reference external" href="https://github.com/ovh/the-bastion/security/advisories/GHSA-pr4q-w883-pf5x">This advisory is also available online</a>.</p>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h2>
+<p>SCP and SFTP plugins don't honor group-based and account-based JIT MFA.</p>
+</section>
+<section id="details">
+<h2>Details<a class="headerlink" href="#details" title="Link to this heading"></a></h2>
+<p>Establishing a SCP/SFTP connection through The Bastion via a group access where MFA is enforced does not ask for additional factor. This abnormal behavior only applies to <a class="reference external" href="https://ovh.github.io/the-bastion/administration/mfa.html#on-a-per-group-basis">per-group-based JIT MFA</a> and <a class="reference external" href="https://ovh.github.io/the-bastion/administration/mfa.ht↪·ml#on-a-per-account-basis">JIT MFA on a per-account basis</a>.</p>
+<p>Other MFA setup types, such as <a class="reference external" href="https://ovh.github.io/the-bastion/administration/mfa.html#immediate-mfa">Immediate MFA</a> and <a class="reference external" href="https://ovh.github.io/the-bastion/administration/mfa.html#on-a-per-plugin-basis">JIT MFA on a per-plugin basis</a> are not affected.</p>
+<p>Normal SSH access (i.e. not SCP nor SFTP) is not affected.</p>
+</section>
+<section id="how-to-reproduce-for-group-based-jit-mfa">
+<h2>How to reproduce for group-based JIT MFA<a class="headerlink" href="#how-to-reproduce-for-group-based-jit-mfa" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Create a group</p></li>
+<li><p>Apply <code class="docutils literal notranslate"><span class="pre">groupModify</span> <span class="pre">--mfa-required</span> <span class="pre">any</span></code> to this group</p></li>
+<li><p>Grant SSH access to someone via this group on a given IP</p></li>
+<li><p>Grant <code class="docutils literal notranslate"><span class="pre">scp</span></code> download right (or <code class="docutils literal notranslate"><span class="pre">sftp</span></code> right) to the same person via this group on the same IP</p></li>
+<li><p>This group should now force MFA for any connection of the person allowed through the group's rights set. This is the case for SSH, but not for SCP or SFTP as would be expected.</p></li>
+</ul>
+</section>
+<section id="how-to-reproduce-for-account-based-jit-mfa">
+<h2>How to reproduce for account-based JIT MFA<a class="headerlink" href="#how-to-reproduce-for-account-based-jit-mfa" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Create an account</p></li>
+<li><p>Apply <code class="docutils literal notranslate"><span class="pre">accountModify</span> <span class="pre">--personal-egress-mfa-required</span> <span class="pre">any</span></code> to this account</p></li>
+<li><p>Grant a personal SSH access to this account on a given IP</p></li>
+<li><p>Grant <code class="docutils literal notranslate"><span class="pre">scp</span></code> download right (or <code class="docutils literal notranslate"><span class="pre">sftp</span></code> right) to the same account via their personal access on the same IP</p></li>
+<li><p>This account should now have forced MFA for any egress connection allowed through their personal rights set. This is the case for SSH, but not for SCP or SFTP as would be expected.</p></li>
+</ul>
+</section>
+<section id="impact-for-group-based-jit-mfa">
+<h2>Impact for group-based JIT MFA<a class="headerlink" href="#impact-for-group-based-jit-mfa" title="Link to this heading"></a></h2>
+<p>For an actor to be able to bypass MFA for scp/sftp to a given remote server, ALL the following conditions must apply:</p>
+<ul class="simple">
+<li><p>The target server must be part of a group (and have the egress group's public key trusted in its <code class="file docutils literal notranslate"><span class="pre">authorized_keys</span></code> file)</p></li>
+<li><p>The group must have JIT MFA enabled on it (through <code class="docutils literal notranslate"><span class="pre">groupModify</span> <span class="pre">--mfa-required</span> <span class="pre">any</span></code>)</p></li>
+<li><p>The actor must have an account on the bastion</p></li>
+<li><p>The actor must be a member of the group (granted by the groups's gatekeepers)</p></li>
+<li><p>scp and/or sftp must be globally enabled on the bastion (this is the default)</p></li>
+<li><p>scp and/or sftp must be explicitly allowed to the given remote server through the group (granted by the groups's aclkeepers)</p></li>
+</ul>
+<p>When all conditions above apply, the actor would be able to use scp or sftp on the target server without requiring to provide an additional factor where it should.</p>
+</section>
+<section id="impact-for-account-based-jit-mfa">
+<h2>Impact for account-based JIT MFA<a class="headerlink" href="#impact-for-account-based-jit-mfa" title="Link to this heading"></a></h2>
+<p>For an actor to be able to bypass MFA for scp/sftp to a given remote server, ALL the following conditions must apply:</p>
+<ul class="simple">
+<li><p>The target server must be part of the actor's account personal accesses (and have the account's egress public key trusted in its <code class="file docutils literal notranslate"><span class="pre">authorized_keys</span></code> file)</p></li>
+<li><p>The account must have JIT MFA enabled on it (through <code class="docutils literal notranslate"><span class="pre">accountModify</span> <span class="pre">--personal-egress-mfa-required</span> <span class="pre">any</span></code>)</p></li>
+<li><p>scp and/or sftp must be globally enabled on the bastion (this is the default)</p></li>
+<li><p>scp and/or sftp must be explicitly allowed to the given remote server through this account's personal accesses (granted by either <code class="docutils literal notranslate"><span class="pre">selfAddPersonalAccess</span></code> or <code class="docutils literal notranslate"><span class="pre">accountAddPersonalAccess</span></code>)</p></li>
+</ul>
+<p>When all conditions above apply, the actor would be able to use scp or sftp on the target server without requiring to provide an additional factor where it should.</p>
+</section>
+<section id="mitigation">
+<h2>Mitigation<a class="headerlink" href="#mitigation" title="Link to this heading"></a></h2>
+<p>If you don't use the <a class="reference external" href="https://ovh.github.io/the-bastion/administration/mfa.html#on-a-per-group-basis">per-group-based JIT MFA</a> on any of your groups (through <code class="docutils literal notranslate"><span class="pre">groupModify</span> <span class="pre">--mfa-required</span></code>), and don't use the <a class="reference external" href="https://ovh.gi↪·thub.io/the-bastion/administration/mfa.ht↪·ml#on-a-per-account-basis">JIT MFA on a per-account basis</a> (through <code class="docutils literal notranslate"><span class="pre">accountModify</span> <span class="pre">--personal-egress-mfa-required</span></code>), you don't need to mitigate the issue as you don't use the impacted feature (see above for impact details).</p>
+<p>Otherwise, if you can't immediately upgrade to v3.14.15 or more recent, and you feel that the aforementioned impacts are important enough in your environment, you may choose to temporarily disable the <code class="docutils literal notranslate"><span class="pre">scp</span></code> and <code class="docutils literal notranslate"><span class="pre">sftp</span></code> plugins globally on the bastion, by setting <code class="docutils literal notranslate"><span class="pre">&quot;disabled&quot;:</span> <span class="pre">true</span></code> in these plugins configuration files, which can be found in <code class="file docutils literal notranslate"><span class="pre">/etc/bastion/plugin.scp.conf</span></code> and <code class="file docutils literal notranslate"><span class="pre">/etc/bastion/plugin.sftp.conf</span></code> respectively. If these files don't exist, create them with the contents as <code class="docutils literal notranslate"><span class="pre">{</span> <span class="pre">&quot;disabled&quot;:</span> <span class="pre">true</span> <span class="pre">}</span></code>. They should be readable by anyone but modifiable only by root (i.e. <code class="docutils literal notranslate"><span class="pre">chmod</span> <span class="pre">664;</span> <span class="pre">chown</span> <span class="pre">root:root</span></code>)</p>
+</section>
+<section id="timeline">
+<h2>Timeline<a class="headerlink" href="#timeline" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>2023-10-06: security bug report filed on GitHub</p></li>
+<li><p>2023-10-06: bug report accepted and confirmed as having a security impact</p></li>
+<li><p>2023-10-11: CVE ID requested</p></li>
+<li><p>2023-10-11: CVE ID assigned</p></li>
+<li><p>2023-11-07: fix pushed to a private fork for review</p></li>
+<li><p>2023-11-08: v3.14.15 released with the fix</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../security_advisories.html" class="btn btn-neutral float-left" title="Security Advisories" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="cve_2025_59339.html" class="btn btn-neutral float-right" title="CVE-2025-59339" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

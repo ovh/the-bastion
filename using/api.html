@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JSON API &mdash; The Bastion 3.23.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="../_static/jquery.js?v=8dae8fb0"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=eb75f0bc"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Specific SSH clients tutorials" href="specific_ssh_clients_tutorials/index.html" />
+    <link rel="prev" title="HTTPS Proxy" href="http_proxy.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.23.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">JSON API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#using-json-pretty">Using --json-pretty</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#using-json">Using --json</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#using-json-greppable">Using --json-greppable</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#json-payload-format">JSON payload format</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#command">command</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#error-code">error_code</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#error-message">error_message</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#value">value</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#good-practices">Good practices</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../administration/configuration/index.html">Configuration files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/open/index.html">open plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">JSON API</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/using/api.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="json-api">
+<h1><a class="toc-backref" href="#id1" role="doc-backlink">JSON API</a><a class="headerlink" href="#json-api" title="Link to this heading"></a></h1>
+<nav class="contents" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#json-api" id="id1">JSON API</a></p>
+<ul>
+<li><p><a class="reference internal" href="#introduction" id="id2">Introduction</a></p></li>
+<li><p><a class="reference internal" href="#examples" id="id3">Examples</a></p>
+<ul>
+<li><p><a class="reference internal" href="#using-json-pretty" id="id4">Using --json-pretty</a></p></li>
+<li><p><a class="reference internal" href="#using-json" id="id5">Using --json</a></p></li>
+<li><p><a class="reference internal" href="#using-json-greppable" id="id6">Using --json-greppable</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#json-payload-format" id="id7">JSON payload format</a></p>
+<ul>
+<li><p><a class="reference internal" href="#command" id="id8">command</a></p></li>
+<li><p><a class="reference internal" href="#error-code" id="id9">error_code</a></p></li>
+<li><p><a class="reference internal" href="#error-message" id="id10">error_message</a></p></li>
+<li><p><a class="reference internal" href="#value" id="id11">value</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#good-practices" id="id12">Good practices</a></p></li>
+</ul>
+</li>
+</ul>
+</nav>
+<section id="introduction">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">Introduction</a><a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>The Bastion has a JSON API that can be used to interact with <a class="reference internal" href="../index.html#plugins"><span class="std std-ref">Plugins</span></a>.</p>
+<p>Instead of exposing a specific HTTPS port for this API, The Bastion leverages its already exposed protocol, SSH,
+to expose its API through it. The rationale is:</p>
+<ul class="simple">
+<li><p>Avoid exposing a new port and a new protocol (HTTPS) to avoid widening the attack surface</p></li>
+<li><p>Leverage the pre-existing authentication and user isolation mechanisms implemented by The Bastion behind SSH</p></li>
+</ul>
+<p>This API is implemented for all <a class="reference internal" href="../index.html#plugins"><span class="std std-ref">plugins</span></a>, and can be enabled by the <code class="docutils literal notranslate"><span class="pre">--json*</span></code> series of options.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Within this page, the <code class="docutils literal notranslate"><span class="pre">bssh</span></code> bastion alias we usually use through the documentation is replaced by
+explicit <code class="docutils literal notranslate"><span class="pre">ssh</span></code> commands, to emphasize the fact that as we're doing M2M calls,
+there would be no terminal involved, hence we shouldn't use the <code class="docutils literal notranslate"><span class="pre">-t</span></code> SSH option to connect to the bastion
+(as is the case with the <code class="docutils literal notranslate"><span class="pre">bssh</span></code> alias).</p>
+</div>
+<p>Adding either <code class="docutils literal notranslate"><span class="pre">--json</span></code>, <code class="docutils literal notranslate"><span class="pre">--json-pretty</span></code> or <code class="docutils literal notranslate"><span class="pre">--json-greppable</span></code> to your <code class="docutils literal notranslate"><span class="pre">--osh</span></code> commands enable
+the JSON API output. Here is an example of each one below.</p>
+</section>
+<section id="examples">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">Examples</a><a class="headerlink" href="#examples" title="Link to this heading"></a></h2>
+<section id="using-json-pretty">
+<h3><a class="toc-backref" href="#id4" role="doc-backlink">Using --json-pretty</a><a class="headerlink" href="#using-json-pretty" title="Link to this heading"></a></h3>
+<p>Let's start with <code class="docutils literal notranslate"><span class="pre">--json-pretty</span></code>:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">ssh<span class="w"> </span>robot-group@bastion1.example.org<span class="w"> </span>--<span class="w"> </span>--osh<span class="w"> </span>groupListServers<span class="w"> </span>--group<span class="w"> </span>mygroup<span class="w"> </span>--json-pretty
+</span>╭──ac777d06bec9───────────────────────────────────────────the-bastion-3.12.00───
+│<span class="w"> </span>▶<span class="w"> </span>list<span class="w"> </span>of<span class="w"> </span>servers<span class="w"> </span>pertaining<span class="w"> </span>to<span class="w"> </span>the<span class="w"> </span>group
+├───────────────────────────────────────────────────────────────────────────────
+│<span class="w">        </span>IP<span class="w"> </span>PORT<span class="w">  </span>USER<span class="w">      </span>ACCESS-BY<span class="w"> </span>ADDED-BY<span class="w">   </span>ADDED-AT
+│<span class="w"> </span>---------<span class="w"> </span>----<span class="w"> </span>-----<span class="w"> </span>--------------<span class="w"> </span>--------<span class="w"> </span>----------
+│<span class="w"> </span><span class="m">127</span>.1.2.3<span class="w">   </span><span class="m">22</span><span class="w"> </span><span class="o">(</span>any<span class="o">)</span><span class="w"> </span>mygroup<span class="o">(</span>group<span class="o">)</span><span class="w">  </span>johndoe<span class="w"> </span><span class="m">2023</span>-07-31
+│
+│<span class="w"> </span><span class="m">1</span><span class="w"> </span>accesses<span class="w"> </span>listed
+
+JSON_START
+<span class="o">{</span>
+<span class="w">   </span><span class="s2">&quot;command&quot;</span><span class="w"> </span>:<span class="w"> </span><span class="s2">&quot;groupListServers&quot;</span>,
+<span class="w">   </span><span class="s2">&quot;value&quot;</span><span class="w"> </span>:<span class="w"> </span><span class="o">[</span>
+<span class="w">      </span><span class="o">{</span>
+<span class="w">         </span><span class="s2">&quot;port&quot;</span><span class="w"> </span>:<span class="w"> </span><span class="s2">&quot;22&quot;</span>,
+<span class="w">         </span><span class="s2">&quot;expiry&quot;</span><span class="w"> </span>:<span class="w"> </span>null,
+<span class="w">         </span><span class="s2">&quot;forcePassword&quot;</span><span class="w"> </span>:<span class="w"> </span>null,
+<span class="w">         </span><span class="s2">&quot;forceKey&quot;</span><span class="w"> </span>:<span class="w"> </span>null,
+<span class="w">         </span><span class="s2">&quot;addedBy&quot;</span><span class="w"> </span>:<span class="w"> </span><span class="s2">&quot;johndoe&quot;</span>,
+<span class="w">         </span><span class="s2">&quot;userComment&quot;</span><span class="w"> </span>:<span class="w"> </span>null,
+<span class="w">         </span><span class="s2">&quot;comment&quot;</span><span class="w"> </span>:<span class="w"> </span>null,
+<span class="w">         </span><span class="s2">&quot;user&quot;</span><span class="w"> </span>:<span class="w"> </span>null,
+<span class="w">         </span><span class="s2">&quot;ip&quot;</span><span class="w"> </span>:<span class="w"> </span><span class="s2">&quot;127.1.2.3&quot;</span>,
+<span class="w">         </span><span class="s2">&quot;addedDate&quot;</span><span class="w"> </span>:<span class="w"> </span><span class="s2">&quot;2023-07-31 08:56:05&quot;</span>,
+<span class="w">         </span><span class="s2">&quot;reverseDns&quot;</span><span class="w"> </span>:<span class="w"> </span>null
+<span class="w">      </span><span class="o">}</span>
+<span class="w">   </span><span class="o">]</span>,
+<span class="w">   </span><span class="s2">&quot;error_code&quot;</span><span class="w"> </span>:<span class="w"> </span><span class="s2">&quot;OK&quot;</span>,
+<span class="w">   </span><span class="s2">&quot;error_message&quot;</span><span class="w"> </span>:<span class="w"> </span><span class="s2">&quot;OK&quot;</span>
+<span class="o">}</span>
+
+JSON_END
+╰─────────────────────────────────────────────────────────&lt;/groupListServers&gt;───
+</pre></div>
+</div>
+<p>As you see, adding <code class="docutils literal notranslate"><span class="pre">--json-pretty</span></code> to the command enables output of additional text that can be parsed as JSON.
+This option is the most human-readable one, and encloses the JSON output between two anchors, namely
+<code class="docutils literal notranslate"><span class="pre">JSON_START</span></code> and <code class="docutils literal notranslate"><span class="pre">JSON_END</span></code>. All the text output out of these anchors can be ignored for the JSON API parsing.</p>
+<p>Here is an example of parsing using simple shell commands:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">ssh<span class="w"> </span>robot-group@bastion1.example.org<span class="w"> </span>--<span class="w"> </span>--osh<span class="w"> </span>groupListServers<span class="w"> </span>--group<span class="w"> </span>mygroup<span class="w"> </span>--json-pretty<span class="w"> </span>--quiet<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+</span><span class="hll"><span class="w">  </span>awk<span class="w"> </span><span class="s1">&#39;/^JSON_END\r?$/ {if(P==1){exit}} { if(P==1){print} } /^JSON_START\r?$/ {P=1}&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>.
+</span><span class="o">{</span>
+<span class="w">  </span><span class="s2">&quot;error_code&quot;</span>:<span class="w"> </span><span class="s2">&quot;OK&quot;</span>,
+<span class="w">  </span><span class="s2">&quot;error_message&quot;</span>:<span class="w"> </span><span class="s2">&quot;OK&quot;</span>,
+<span class="w">  </span><span class="s2">&quot;value&quot;</span>:<span class="w"> </span><span class="o">[</span>
+<span class="w">    </span><span class="o">{</span>
+<span class="w">      </span><span class="s2">&quot;userComment&quot;</span>:<span class="w"> </span>null,
+<span class="w">      </span><span class="s2">&quot;reverseDns&quot;</span>:<span class="w"> </span>null,
+<span class="w">      </span><span class="s2">&quot;expiry&quot;</span>:<span class="w"> </span>null,
+<span class="w">      </span><span class="s2">&quot;user&quot;</span>:<span class="w"> </span>null,
+<span class="w">      </span><span class="s2">&quot;forceKey&quot;</span>:<span class="w"> </span>null,
+<span class="w">      </span><span class="s2">&quot;addedDate&quot;</span>:<span class="w"> </span><span class="s2">&quot;2023-07-31 08:56:05&quot;</span>,
+<span class="w">      </span><span class="s2">&quot;port&quot;</span>:<span class="w"> </span><span class="s2">&quot;22&quot;</span>,
+<span class="w">      </span><span class="s2">&quot;addedBy&quot;</span>:<span class="w"> </span><span class="s2">&quot;johndoe&quot;</span>,
+<span class="w">      </span><span class="s2">&quot;ip&quot;</span>:<span class="w"> </span><span class="s2">&quot;127.1.2.3&quot;</span>,
+<span class="w">      </span><span class="s2">&quot;forcePassword&quot;</span>:<span class="w"> </span>null,
+<span class="w">      </span><span class="s2">&quot;comment&quot;</span>:<span class="w"> </span>null
+<span class="w">    </span><span class="o">}</span>
+<span class="w">  </span><span class="o">]</span>,
+<span class="w">  </span><span class="s2">&quot;command&quot;</span>:<span class="w"> </span><span class="s2">&quot;groupListServers&quot;</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+<p>Note that we use <code class="docutils literal notranslate"><span class="pre">--quiet</span></code>, which removes some text that is only useful to humans, and it also disables colors
+in the output. In any case, the JSON API output between the anchors never has colors enabled.</p>
+</section>
+<section id="using-json">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">Using --json</a><a class="headerlink" href="#using-json" title="Link to this heading"></a></h3>
+<p>This option uses the same anchors than <code class="docutils literal notranslate"><span class="pre">--json-pretty</span></code>, but doesn't prettify the JSON, so the output
+is more compact:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">ssh<span class="w"> </span>robot-group@bastion1.example.org<span class="w"> </span>--<span class="w"> </span>--osh<span class="w"> </span>groupListServers<span class="w"> </span>--group<span class="w"> </span>mygroup<span class="w"> </span>--json
+</span>---ac777d06bec9-------------------------------------------the-bastion-3.12.00---
+<span class="o">=</span>&gt;<span class="w"> </span>list<span class="w"> </span>of<span class="w"> </span>servers<span class="w"> </span>pertaining<span class="w"> </span>to<span class="w"> </span>the<span class="w"> </span>group
+--------------------------------------------------------------------------------
+~<span class="w">        </span>IP<span class="w"> </span>PORT<span class="w">  </span>USER<span class="w">          </span>ACCESS-BY<span class="w"> </span>ADDED-BY<span class="w">   </span>ADDED-AT
+~<span class="w"> </span>---------<span class="w"> </span>----<span class="w"> </span>-----<span class="w"> </span>------------------<span class="w"> </span>--------<span class="w"> </span>----------
+~<span class="w"> </span><span class="m">127</span>.1.2.3<span class="w">   </span><span class="m">22</span><span class="w"> </span><span class="o">(</span>any<span class="o">)</span><span class="w">     </span>mygroup<span class="o">(</span>group<span class="o">)</span><span class="w">  </span>johndoe<span class="w"> </span><span class="m">2023</span>-07-31
+~
+~<span class="w"> </span><span class="m">1</span><span class="w"> </span>accesses<span class="w"> </span>listed
+
+JSON_START
+<span class="o">{</span><span class="s2">&quot;error_code&quot;</span>:<span class="s2">&quot;OK&quot;</span>,<span class="s2">&quot;error_message&quot;</span>:<span class="s2">&quot;OK&quot;</span>,<span class="s2">&quot;value&quot;</span>:<span class="o">[{</span><span class="s2">&quot;forcePassword&quot;</span>:null,<span class="s2">&quot;expiry&quot;</span>:null,<span class="s2">&quot;port&quot;</span>:<span class="s2">&quot;22&quot;</span>,<span class="s2">&quot;addedBy&quot;</span>:<span class="s2">&quot;johndoe&quot;</span>,<span class="s2">&quot;ip&quot;</span>:<span class="s2">&quot;127.1.2.3&quot;</span>,<span class="s2">&quot;userComment&quot;</span>:null,<span class="s2">&quot;addedDate&quot;</span>:<span class="s2">&quot;2023-07-31 08:56:05&quot;</span>,<span class="s2">&quot;user&quot;</span>:null,<span class="s2">&quot;reverseDns&quot;</span>:null,<span class="s2">&quot;comment&quot;</span>:null,<span class="s2">&quot;forceKey&quot;</span>:null<span class="o">}]</span>,<span class="s2">&quot;command&quot;</span>:<span class="s2">&quot;groupListServers&quot;</span><span class="o">}</span>
+JSON_END
+</pre></div>
+</div>
+<p>As the anchors are the same, the parsing can be done with the same logic as above:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">ssh<span class="w"> </span>robot-group@bastion1.example.org<span class="w"> </span>--<span class="w"> </span>--osh<span class="w"> </span>groupListServers<span class="w"> </span>--group<span class="w"> </span>mygroup<span class="w"> </span>--json<span class="w"> </span>--quiet<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+</span><span class="hll"><span class="w">  </span>awk<span class="w"> </span><span class="s1">&#39;/^JSON_END\r?$/ {if(P==1){exit}} { if(P==1){print} } /^JSON_START\r?$/ {P=1}&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>.
+</span><span class="o">{</span>
+<span class="w">  </span><span class="s2">&quot;error_code&quot;</span>:<span class="w"> </span><span class="s2">&quot;OK&quot;</span>,
+<span class="w">  </span><span class="s2">&quot;error_message&quot;</span>:<span class="w"> </span><span class="s2">&quot;OK&quot;</span>,
+<span class="w">  </span><span class="s2">&quot;value&quot;</span>:<span class="w"> </span><span class="o">[</span>
+<span class="w">    </span><span class="o">{</span>
+<span class="w">      </span><span class="s2">&quot;userComment&quot;</span>:<span class="w"> </span>null,
+<span class="w">      </span><span class="s2">&quot;reverseDns&quot;</span>:<span class="w"> </span>null,
+<span class="w">      </span><span class="s2">&quot;expiry&quot;</span>:<span class="w"> </span>null,
+<span class="w">      </span><span class="s2">&quot;user&quot;</span>:<span class="w"> </span>null,
+<span class="w">      </span><span class="s2">&quot;forceKey&quot;</span>:<span class="w"> </span>null,
+<span class="w">      </span><span class="s2">&quot;addedDate&quot;</span>:<span class="w"> </span><span class="s2">&quot;2023-07-31 08:56:05&quot;</span>,
+<span class="w">      </span><span class="s2">&quot;port&quot;</span>:<span class="w"> </span><span class="s2">&quot;22&quot;</span>,
+<span class="w">      </span><span class="s2">&quot;addedBy&quot;</span>:<span class="w"> </span><span class="s2">&quot;johndoe&quot;</span>,
+<span class="w">      </span><span class="s2">&quot;ip&quot;</span>:<span class="w"> </span><span class="s2">&quot;127.1.2.3&quot;</span>,
+<span class="w">      </span><span class="s2">&quot;forcePassword&quot;</span>:<span class="w"> </span>null,
+<span class="w">      </span><span class="s2">&quot;comment&quot;</span>:<span class="w"> </span>null
+<span class="w">    </span><span class="o">}</span>
+<span class="w">  </span><span class="o">]</span>,
+<span class="w">  </span><span class="s2">&quot;command&quot;</span>:<span class="w"> </span><span class="s2">&quot;groupListServers&quot;</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+</section>
+<section id="using-json-greppable">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">Using --json-greppable</a><a class="headerlink" href="#using-json-greppable" title="Link to this heading"></a></h3>
+<p>This is a variant of the <code class="docutils literal notranslate"><span class="pre">--json</span></code> option, but instead of relying on <code class="docutils literal notranslate"><span class="pre">JSON_START</span></code> and <code class="docutils literal notranslate"><span class="pre">JSON_END</span></code> anchors,
+which works for both <code class="docutils literal notranslate"><span class="pre">--json</span></code> and <code class="docutils literal notranslate"><span class="pre">--json-pretty</span></code> modes, here the JSON output is packed on one line,
+starting with the <code class="docutils literal notranslate"><span class="pre">JSON_OUTPUT=</span></code> anchor.
+You may use the option that is the easier for you to parse in your script or calling program.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">ssh<span class="w"> </span>robot-group@bastion1.example.org<span class="w"> </span>--<span class="w"> </span>--osh<span class="w"> </span>groupListServers<span class="w"> </span>--group<span class="w"> </span>mygroup<span class="w"> </span>--json--greppable
+</span>---ac777d06bec9-------------------------------------------the-bastion-3.12.00---
+<span class="o">=</span>&gt;<span class="w"> </span>list<span class="w"> </span>of<span class="w"> </span>servers<span class="w"> </span>pertaining<span class="w"> </span>to<span class="w"> </span>the<span class="w"> </span>group
+--------------------------------------------------------------------------------
+~<span class="w">        </span>IP<span class="w"> </span>PORT<span class="w">  </span>USER<span class="w">          </span>ACCESS-BY<span class="w"> </span>ADDED-BY<span class="w">   </span>ADDED-AT
+~<span class="w"> </span>---------<span class="w"> </span>----<span class="w"> </span>-----<span class="w"> </span>------------------<span class="w"> </span>--------<span class="w"> </span>----------
+~<span class="w"> </span><span class="m">127</span>.1.2.3<span class="w">   </span><span class="m">22</span><span class="w"> </span><span class="o">(</span>any<span class="o">)</span><span class="w">     </span>mygroup<span class="o">(</span>group<span class="o">)</span><span class="w">  </span>johndoe<span class="w"> </span><span class="m">2023</span>-07-31
+~
+~<span class="w"> </span><span class="m">1</span><span class="w"> </span>accesses<span class="w"> </span>listed
+
+<span class="nv">JSON_OUTPUT</span><span class="o">={</span><span class="s2">&quot;error_code&quot;</span>:<span class="s2">&quot;OK&quot;</span>,<span class="s2">&quot;command&quot;</span>:<span class="s2">&quot;groupListServers&quot;</span>,<span class="s2">&quot;error_message&quot;</span>:<span class="s2">&quot;OK&quot;</span>,<span class="s2">&quot;value&quot;</span>:<span class="o">[{</span><span class="s2">&quot;reverseDns&quot;</span>:null,<span class="s2">&quot;userComment&quot;</span>:null,<span class="s2">&quot;user&quot;</span>:null,<span class="s2">&quot;forceKey&quot;</span>:null,<span class="s2">&quot;port&quot;</span>:<span class="s2">&quot;22&quot;</span>,<span class="s2">&quot;addedDate&quot;</span>:<span class="s2">&quot;2023-07-31 08:56:05&quot;</span>,<span class="s2">&quot;expiry&quot;</span>:null,<span class="s2">&quot;addedBy&quot;</span>:<span class="s2">&quot;johndoe&quot;</span>,<span class="s2">&quot;ip&quot;</span>:<span class="s2">&quot;127.1.2.3&quot;</span>,<span class="s2">&quot;comment&quot;</span>:null,<span class="s2">&quot;forcePassword&quot;</span>:null<span class="o">}]}</span>
+----------------------------------------------------------&lt;/groupListServers&gt;---
+</pre></div>
+</div>
+<p>Here is an example of parsing using simple shell commands:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">ssh<span class="w"> </span>robot-group@bastion1.example.org<span class="w"> </span>--<span class="w"> </span>--osh<span class="w"> </span>groupListServers<span class="w"> </span>--group<span class="w"> </span>mygroup<span class="w"> </span>--json-greppable<span class="w"> </span>--quiet<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+</span><span class="hll"><span class="w">  </span>grep<span class="w"> </span>^JSON_OUTPUT<span class="o">=</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>cut<span class="w"> </span>-d<span class="o">=</span><span class="w"> </span>-f2-<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>.
+</span><span class="o">{</span>
+<span class="w">  </span><span class="s2">&quot;error_code&quot;</span>:<span class="w"> </span><span class="s2">&quot;OK&quot;</span>,
+<span class="w">  </span><span class="s2">&quot;error_message&quot;</span>:<span class="w"> </span><span class="s2">&quot;OK&quot;</span>,
+<span class="w">  </span><span class="s2">&quot;value&quot;</span>:<span class="w"> </span><span class="o">[</span>
+<span class="w">    </span><span class="o">{</span>
+<span class="w">      </span><span class="s2">&quot;userComment&quot;</span>:<span class="w"> </span>null,
+<span class="w">      </span><span class="s2">&quot;reverseDns&quot;</span>:<span class="w"> </span>null,
+<span class="w">      </span><span class="s2">&quot;expiry&quot;</span>:<span class="w"> </span>null,
+<span class="w">      </span><span class="s2">&quot;user&quot;</span>:<span class="w"> </span>null,
+<span class="w">      </span><span class="s2">&quot;forceKey&quot;</span>:<span class="w"> </span>null,
+<span class="w">      </span><span class="s2">&quot;addedDate&quot;</span>:<span class="w"> </span><span class="s2">&quot;2023-07-31 08:56:05&quot;</span>,
+<span class="w">      </span><span class="s2">&quot;port&quot;</span>:<span class="w"> </span><span class="s2">&quot;22&quot;</span>,
+<span class="w">      </span><span class="s2">&quot;addedBy&quot;</span>:<span class="w"> </span><span class="s2">&quot;johndoe&quot;</span>,
+<span class="w">      </span><span class="s2">&quot;ip&quot;</span>:<span class="w"> </span><span class="s2">&quot;127.1.2.3&quot;</span>,
+<span class="w">      </span><span class="s2">&quot;forcePassword&quot;</span>:<span class="w"> </span>null,
+<span class="w">      </span><span class="s2">&quot;comment&quot;</span>:<span class="w"> </span>null
+<span class="w">    </span><span class="o">}</span>
+<span class="w">  </span><span class="o">]</span>,
+<span class="w">  </span><span class="s2">&quot;command&quot;</span>:<span class="w"> </span><span class="s2">&quot;groupListServers&quot;</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="json-payload-format">
+<h2><a class="toc-backref" href="#id7" role="doc-backlink">JSON payload format</a><a class="headerlink" href="#json-payload-format" title="Link to this heading"></a></h2>
+<p>The JSON payload is always a hash with 4 keys: <code class="docutils literal notranslate"><span class="pre">error_code</span></code>, <code class="docutils literal notranslate"><span class="pre">error_message</span></code>, <code class="docutils literal notranslate"><span class="pre">value</span></code> and <code class="docutils literal notranslate"><span class="pre">command</span></code>,
+as you may have witnessed from the examples above.</p>
+<p>These keys are detailed below.</p>
+<section id="command">
+<h3><a class="toc-backref" href="#id8" role="doc-backlink">command</a><a class="headerlink" href="#command" title="Link to this heading"></a></h3>
+<p>The associated value is a string, containing the name of the command (plugin) that generated this output.</p>
+</section>
+<section id="error-code">
+<h3><a class="toc-backref" href="#id9" role="doc-backlink">error_code</a><a class="headerlink" href="#error-code" title="Link to this heading"></a></h3>
+<p>The associated value is an always-uppercase string. You should look at the prefix of this string to know
+whether the command was a success or not. The value is never <code class="docutils literal notranslate"><span class="pre">null</span></code> and always matches the following regex:
+<code class="docutils literal notranslate"><span class="pre">^(OK|KO|ERR)[A-Z0-9_]*$</span></code>. The possible prefixes are either:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">OK</span></code>: the command has succeeded</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">KO</span></code>: the command did not succeed</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ERR</span></code>: the command encountered an error, more information should be available in the <code class="docutils literal notranslate"><span class="pre">error_message</span></code> field,
+the <code class="docutils literal notranslate"><span class="pre">value</span></code> field will most likely be <code class="docutils literal notranslate"><span class="pre">null</span></code></p></li>
+</ul>
+<p>Examples of such values include: <code class="docutils literal notranslate"><span class="pre">KO_ACCESS_DENIED</span></code>, <code class="docutils literal notranslate"><span class="pre">OK</span></code>, <code class="docutils literal notranslate"><span class="pre">OK_NO_CHANGE</span></code>, <code class="docutils literal notranslate"><span class="pre">ERR_MEMBER_CANNOT_BE_GUEST</span></code>.</p>
+<p>You should rely on these error codes in the code using The Bastion's API to take decisions.</p>
+</section>
+<section id="error-message">
+<h3><a class="toc-backref" href="#id10" role="doc-backlink">error_message</a><a class="headerlink" href="#error-message" title="Link to this heading"></a></h3>
+<p>The associated value is a string, intended for human reading. It gives more details about the returned <code class="docutils literal notranslate"><span class="pre">error_code</span></code>,
+but is not intended to be parsed by your code, as it may change without notice from version to version. If there is no
+specific <code class="docutils literal notranslate"><span class="pre">error_message</span></code> for a given case, the value will be the same than the one for <code class="docutils literal notranslate"><span class="pre">error_code</span></code>, hence this
+field is guaranteed to always exist and never be <code class="docutils literal notranslate"><span class="pre">null</span></code>.</p>
+</section>
+<section id="value">
+<h3><a class="toc-backref" href="#id11" role="doc-backlink">value</a><a class="headerlink" href="#value" title="Link to this heading"></a></h3>
+<p>The data associated to the key <code class="docutils literal notranslate"><span class="pre">value</span></code> is entirely dependent on <code class="docutils literal notranslate"><span class="pre">command</span></code>, and can be a nested structure of
+hashes and/or arrays. This is the actual data payload returned by the command you've invoked. Note that <code class="docutils literal notranslate"><span class="pre">value</span></code>
+can also be <code class="docutils literal notranslate"><span class="pre">null</span></code>, particularly if the <code class="docutils literal notranslate"><span class="pre">error_code</span></code> doesn't start with the <code class="docutils literal notranslate"><span class="pre">OK</span></code> prefix.</p>
+</section>
+</section>
+<section id="good-practices">
+<h2><a class="toc-backref" href="#id12" role="doc-backlink">Good practices</a><a class="headerlink" href="#good-practices" title="Link to this heading"></a></h2>
+<p>If you're intending interaction with The Bastion API, it's a good idea to have accounts dedicated to this, to have
+a clear distinction between human SSH usage and automated API calls. Additionally, if your automation will only
+use such accounts to call plugins (<code class="docutils literal notranslate"><span class="pre">--osh</span></code> commands), you might want to create such accounts with the <code class="docutils literal notranslate"><span class="pre">--osh-only</span></code>
+parameter to <code class="docutils literal notranslate"><span class="pre">accountCreate</span></code>, this guarantees that such accounts will never be able to use The Bastion to connect
+to other infrastructures (e.g. using SSH) even if granted to.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="http_proxy.html" class="btn btn-neutral float-left" title="HTTPS Proxy" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="specific_ssh_clients_tutorials/index.html" class="btn btn-neutral float-right" title="Specific SSH clients tutorials" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

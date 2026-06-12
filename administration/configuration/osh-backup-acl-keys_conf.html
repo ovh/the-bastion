@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>osh-backup-acl-keys.conf &mdash; The Bastion 3.23.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="../../_static/jquery.js?v=8dae8fb0"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=eb75f0bc"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="osh-encrypt-rsync.conf" href="osh-encrypt-rsync_conf.html" />
+    <link rel="prev" title="bastion.conf" href="bastion_conf.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.23.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using/basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../using/specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Configuration files</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#main-configuration-files">Main configuration files</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="bastion_conf.html">bastion.conf</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">osh-backup-acl-keys.conf</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#option-list">Option List</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#option-reference">Option Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="osh-encrypt-rsync_conf.html">osh-encrypt-rsync.conf</a></li>
+<li class="toctree-l3"><a class="reference internal" href="osh-sync-watcher_sh.html">osh-sync-watcher.sh</a></li>
+<li class="toctree-l3"><a class="reference internal" href="osh-http-proxy_conf.html">osh-http-proxy.conf</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#configuration-files-for-satellite-scripts">Configuration files for satellite scripts</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/open/index.html">open plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plugins/restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Configuration files</a></li>
+      <li class="breadcrumb-item active">osh-backup-acl-keys.conf</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/administration/configuration/osh-backup-acl-keys_conf.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="osh-backup-acl-keys-conf">
+<h1>osh-backup-acl-keys.conf<a class="headerlink" href="#osh-backup-acl-keys-conf" title="Link to this heading"></a></h1>
+<blockquote>
+<div><div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This script is called by cron and is responsible
+for backing up the bastion configuration, users &amp; groups lists,
+credentials, and everything needed to be able to restore a functioning
+bastion from scratch.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>If left unconfigured, this script won't do anything,
+and you won't have backups, unless this task is handled by
+some other external system.</p>
+</div>
+</div></blockquote>
+<section id="option-list">
+<h2>Option List<a class="headerlink" href="#option-list" title="Link to this heading"></a></h2>
+<section id="logging-activation-options">
+<h3>Logging &amp; activation options<a class="headerlink" href="#logging-activation-options" title="Link to this heading"></a></h3>
+<p>Script logging configuration and script activation</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#logfile">LOGFILE</a></p></li>
+<li><p><a class="reference internal" href="#log-facility">LOG_FACILITY</a></p></li>
+<li><p><a class="reference internal" href="#enabled">ENABLED</a></p></li>
+</ul>
+</section>
+<section id="backup-policy-options">
+<h3>Backup policy options<a class="headerlink" href="#backup-policy-options" title="Link to this heading"></a></h3>
+<p>These options configure the backup policy to apply</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#destdir">DESTDIR</a></p></li>
+<li><p><a class="reference internal" href="#daystokeep">DAYSTOKEEP</a></p></li>
+</ul>
+</section>
+<section id="encryption-and-signing-options">
+<h3>Encryption and signing options<a class="headerlink" href="#encryption-and-signing-options" title="Link to this heading"></a></h3>
+<p>These options configure how the script uses GPG to encrypt and sign the ttyrec files</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#gpgkeys">GPGKEYS</a></p></li>
+<li><p><a class="reference internal" href="#signing-key">SIGNING_KEY</a></p></li>
+<li><p><a class="reference internal" href="#signing-key-passphrase">SIGNING_KEY_PASSPHRASE</a></p></li>
+</ul>
+</section>
+<section id="remote-backup-options">
+<h3>Remote backup options<a class="headerlink" href="#remote-backup-options" title="Link to this heading"></a></h3>
+<p>These options configure how the script should push the encrypted backups to a remote system</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#push-remote">PUSH_REMOTE</a></p></li>
+<li><p><a class="reference internal" href="#push-options">PUSH_OPTIONS</a></p></li>
+</ul>
+</section>
+</section>
+<section id="option-reference">
+<h2>Option Reference<a class="headerlink" href="#option-reference" title="Link to this heading"></a></h2>
+<section id="logging-activation">
+<h3>Logging &amp; activation<a class="headerlink" href="#logging-activation" title="Link to this heading"></a></h3>
+<section id="logfile">
+<h4>LOGFILE<a class="headerlink" href="#logfile" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string,</span> <span class="pre">path</span> <span class="pre">to</span> <span class="pre">a</span> <span class="pre">file</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code></p>
+</dd>
+</dl>
+<p>File where the logs will be written to (don't forget to configure <code class="docutils literal notranslate"><span class="pre">logrotate</span></code>!).
+Note that using this configuration option, the script will directly write to the file, without using syslog.
+If empty, won't log directly to any file.</p>
+</section>
+<section id="log-facility">
+<h4>LOG_FACILITY<a class="headerlink" href="#log-facility" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;local6&quot;</span></code></p>
+</dd>
+</dl>
+<p>The syslog facility to use for logging the script output.
+If set to the empty string, we'll not log through syslog at all.
+If this configuration option is missing from your config file altogether,
+the default value will be used (local6), which means that we'll log to syslog.</p>
+</section>
+<section id="enabled">
+<h4>ENABLED<a class="headerlink" href="#enabled" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">or</span> <span class="pre">1</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">1</span></code></p>
+</dd>
+</dl>
+<p>If set to 1, the script is enabled and will run when started by crond.</p>
+</section>
+</section>
+<section id="backup-policy">
+<h3>Backup policy<a class="headerlink" href="#backup-policy" title="Link to this heading"></a></h3>
+<section id="destdir">
+<h4>DESTDIR<a class="headerlink" href="#destdir" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">path</span> <span class="pre">to</span> <span class="pre">a</span> <span class="pre">folder</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code></p>
+</dd>
+<dt class="field-odd">Example<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">&quot;/root/backups&quot;</span></code></p>
+</dd>
+</dl>
+<p>Folder where to put the backup artefacts (<code class="docutils literal notranslate"><span class="pre">.tar.gz</span></code> files).
+This folder will be created if needed. If empty or omitted,
+the script won't run: this option is mandatory.</p>
+</section>
+<section id="daystokeep">
+<h4>DAYSTOKEEP<a class="headerlink" href="#daystokeep" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">&gt;</span> <span class="pre">0</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">90</span></code></p>
+</dd>
+</dl>
+<p>Number of days to keep the old backups on the filesystem before deleting them.</p>
+</section>
+</section>
+<section id="encryption-and-signing">
+<h3>Encryption and signing<a class="headerlink" href="#encryption-and-signing" title="Link to this heading"></a></h3>
+<section id="gpgkeys">
+<h4>GPGKEYS<a class="headerlink" href="#gpgkeys" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string,</span> <span class="pre">space-separated</span> <span class="pre">list</span> <span class="pre">of</span> <span class="pre">GPG</span> <span class="pre">keys</span> <span class="pre">IDs</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code></p>
+</dd>
+<dt class="field-odd">Example<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">&quot;41FDB9C7</span> <span class="pre">DA97EFD1</span> <span class="pre">339483FF&quot;</span></code></p>
+</dd>
+</dl>
+<p>List of public GPG keys to encrypt to (see <code class="docutils literal notranslate"><span class="pre">gpg</span> <span class="pre">--list-keys</span></code>), these must be separated by spaces.
+Note that if this option is empty or omitted, backup artefacts will NOT be encrypted!</p>
+</section>
+<section id="signing-key">
+<h4>SIGNING_KEY<a class="headerlink" href="#signing-key" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string,</span> <span class="pre">GPG</span> <span class="pre">key</span> <span class="pre">ID</span> <span class="pre">in</span> <span class="pre">short</span> <span class="pre">or</span> <span class="pre">long</span> <span class="pre">format</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">(none)</span></code></p>
+</dd>
+</dl>
+<p>ID of the GPG key used to sign the ttyrec files.
+The key must be in the local root keyring, check it with <code class="docutils literal notranslate"><span class="pre">gpg</span> <span class="pre">--list-secret-keys</span></code>.
+If empty, the archives will not be signed, but encrypted only (using the GPGKEYS configuration above).</p>
+</section>
+<section id="signing-key-passphrase">
+<h4>SIGNING_KEY_PASSPHRASE<a class="headerlink" href="#signing-key-passphrase" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">(none)</span></code></p>
+</dd>
+</dl>
+<p>This passphrase should be able to unlock the SIGNING_KEY defined above.
+Please ensure this configuration file only readable by root (0640), to protect this passphrase.
+As a security measure, the script will refuse to read the configuration otherwise.</p>
+</section>
+</section>
+<section id="remote-backup">
+<h3>Remote backup<a class="headerlink" href="#remote-backup" title="Link to this heading"></a></h3>
+<section id="push-remote">
+<h4>PUSH_REMOTE<a class="headerlink" href="#push-remote" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code></p>
+</dd>
+<dt class="field-odd">Example<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">&quot;push&#64;192.0.2.4:~/backup/&quot;</span></code></p>
+</dd>
+</dl>
+<p>The <code class="docutils literal notranslate"><span class="pre">scp</span></code> remote host push backups to. If empty or missing, won't push backups.
+This will also be the case if the <code class="docutils literal notranslate"><span class="pre">GPGKEYS</span></code> option above is empty or missing,
+because we will never push unencrypted backups.
+Don't forget to put a trailing <code class="docutils literal notranslate"><span class="pre">/</span></code> (except if you want to push to the remote <code class="docutils literal notranslate"><span class="pre">$HOME</span></code>,
+in which case ending with a simple <code class="docutils literal notranslate"><span class="pre">:</span></code> works, as per standard <code class="docutils literal notranslate"><span class="pre">scp</span></code>).</p>
+</section>
+<section id="push-options">
+<h4>PUSH_OPTIONS<a class="headerlink" href="#push-options" title="Link to this heading"></a></h4>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p>
+</dd>
+<dt class="field-even">Default<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code></p>
+</dd>
+<dt class="field-odd">Example<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">&quot;-i</span> <span class="pre">$HOME/.ssh/id_backup&quot;</span></code></p>
+</dd>
+</dl>
+<p>Additional options to pass to <code class="docutils literal notranslate"><span class="pre">scp</span></code>, if needed.</p>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="bastion_conf.html" class="btn btn-neutral float-left" title="bastion.conf" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="osh-encrypt-rsync_conf.html" class="btn btn-neutral float-right" title="osh-encrypt-rsync.conf" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

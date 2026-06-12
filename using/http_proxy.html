@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HTTPS Proxy &mdash; The Bastion 3.23.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="../_static/jquery.js?v=8dae8fb0"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=eb75f0bc"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="JSON API" href="api.html" />
+    <link rel="prev" title="SFTP, SCP &amp; RSYNC support" href="sftp_scp_rsync.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.23.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">HTTPS Proxy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#query-workflow">Query workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#setting-up-the-https-proxy">Setting up the HTTPS Proxy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#running-a-query-through-the-proxy">Running a query through the proxy</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#first-try">First try</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#access-declaration">Access declaration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#egress-password">Egress password</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#for-personal-accesses">For personal accesses</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#for-group-accesses">For group accesses</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../administration/configuration/index.html">Configuration files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/open/index.html">open plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">HTTPS Proxy</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/using/http_proxy.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="https-proxy">
+<h1><a class="toc-backref" href="#id1" role="doc-backlink">HTTPS Proxy</a><a class="headerlink" href="#https-proxy" title="Link to this heading"></a></h1>
+<nav class="contents" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#https-proxy" id="id1">HTTPS Proxy</a></p>
+<ul>
+<li><p><a class="reference internal" href="#introduction" id="id2">Introduction</a></p></li>
+<li><p><a class="reference internal" href="#query-workflow" id="id3">Query workflow</a></p></li>
+<li><p><a class="reference internal" href="#setting-up-the-https-proxy" id="id4">Setting up the HTTPS Proxy</a></p></li>
+<li><p><a class="reference internal" href="#running-a-query-through-the-proxy" id="id5">Running a query through the proxy</a></p>
+<ul>
+<li><p><a class="reference internal" href="#first-try" id="id6">First try</a></p></li>
+<li><p><a class="reference internal" href="#access-declaration" id="id7">Access declaration</a></p></li>
+<li><p><a class="reference internal" href="#egress-password" id="id8">Egress password</a></p>
+<ul>
+<li><p><a class="reference internal" href="#for-personal-accesses" id="id9">For personal accesses</a></p></li>
+<li><p><a class="reference internal" href="#for-group-accesses" id="id10">For group accesses</a></p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+<section id="introduction">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">Introduction</a><a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>In addition to securing your SSH accesses, by splitting the authentication part (ingress connection)
+and the authorization part (egress connection), The Bastion can do a similar job for HTTPS connections.</p>
+<p>Note that there is an overhead (depending on your hardware setup) of several hundreds of milliseconds
+for each query-response trip, due to the fact that multiple processes are spawned for each query,
+to ensure proper security containment to the calling account's system user.
+It's probably a bad idea to use on a multi-million queries/day workload,
+or if each added millisecond to the query-response trip impacts the QoS of your service.</p>
+<p>The primary use is for network devices, that happen to have more and more HTTPS APIs in addition
+to the usual <code class="docutils literal notranslate"><span class="pre">conf</span> <span class="pre">terminal</span></code> available through SSH. As the same commands are usually available from
+HTTPS and SSH on these devices, it would be too bad to secure the access to SSH through the bastion,
+but leave direct access to their HTTPS API!</p>
+</section>
+<section id="query-workflow">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">Query workflow</a><a class="headerlink" href="#query-workflow" title="Link to this heading"></a></h2>
+<p>The workflow is similar to the one used by SSH, e.g. two distinct connections (ingress and egress),
+with the egress connection using credentials stored on the bastion:</p>
+<ul class="simple">
+<li><p>A client makes an HTTP request to the proxy, with the following information embedded in:</p>
+<ul>
+<li><p>The type of request (GET or POST)</p></li>
+<li><p>The complete URI, including the host of the remote HTTPS server it would like to send the request to</p></li>
+<li><p>Potential body data for POST requests</p></li>
+<li><p>Credentials to authenticate to the proxy on the ingress connection, namely the
+bastion account name and its proxy password (set by <code class="docutils literal notranslate"><span class="pre">selfGenerateProxyPassword</span></code>)</p></li>
+<li><p>User name to use to authenticate on the remote HTTPS server (for the egress connection)</p></li>
+</ul>
+</li>
+<li><p>The bastion checks the provided credentials to authenticate the request against a known account (authentication part)</p></li>
+<li><p>The bastion verifies whether the just-authenticated account has access rights to connect to the remote server
+as the specified remote user (authorization part)</p></li>
+<li><p>The bastion uses the (group or personal) credentials stored on the bastion,
+to passthrough the HTTP request to the remote server, as the specified remote user</p></li>
+<li><p>The bastion forwards the response to the client</p></li>
+</ul>
+</section>
+<section id="setting-up-the-https-proxy">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">Setting up the HTTPS Proxy</a><a class="headerlink" href="#setting-up-the-https-proxy" title="Link to this heading"></a></h2>
+<p>You should enable the HTTPS Proxy daemon, and configure it.
+Please check the <a class="reference internal" href="../administration/configuration/osh-http-proxy_conf.html"><span class="doc">osh-http-proxy.conf</span></a> for more information.</p>
+</section>
+<section id="running-a-query-through-the-proxy">
+<h2><a class="toc-backref" href="#id5" role="doc-backlink">Running a query through the proxy</a><a class="headerlink" href="#running-a-query-through-the-proxy" title="Link to this heading"></a></h2>
+<section id="first-try">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">First try</a><a class="headerlink" href="#first-try" title="Link to this heading"></a></h3>
+<p>Once the proxy is running, we can try to query it:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="hll">curl https://bastion1.example.org:8443/
+</span>No authentication provided, and authentication is mandatory
+</pre></div>
+</div>
+<p>Of course, the proxy only accepts to work when one is properly authenticated to it.
+To do this, one should have an account on the bastion, and use the <a class="reference internal" href="../plugins/open/selfGenerateProxyPassword.html"><span class="doc">selfGenerateProxyPassword</span></a>
+command so that a new ingress password is set for their account. They'll then be able to authenticate to the proxy
+using the HTTP basic-auth method, and try to send a request to a remote server.
+To keep a high compatibility with HTTP clients and libraries that can be used on the ingress side,
+all the additional data required by the bastion to properly authenticate, authorize and passthrough the request
+is encoded in the <em>user</em> part of the widely supported HTTP Authorize header (basic-auth).
+The <em>password</em> part corresponds to the password we've generated just above.</p>
+<p>The format of the <em>user</em> part is as follows:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>BASTION_ACCOUNT@REMOTE_USER@REMOTE_HOST%REMOTE_PORT
+</pre></div>
+</div>
+<p>The <strong>%REMOTE_PORT</strong> part is optional, and defaults to <strong>443</strong> if omitted.
+For example, to send a <strong>GET /info</strong> request to the remote network device named <strong>router12.example.org</strong> on
+the default port <strong>443</strong>, using the remote account <strong>monitoring</strong>, through the <strong>bastion1.example.org</strong> bastion,
+having the HTTPS Proxy listening on its port <strong>8443</strong> and a bastion account <strong>robot-mon</strong>, one can use <strong>curl</strong>:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="hll">curl -u robot-mon@monitoring@router12.example.org https://bastion1.example.org:8443/info
+</span>Enter host password for user &#39;robot-mon@monitoring@router12.example.org&#39;:
+This account doesn&#39;t have access to this user@host tuple (Access denied for robot-mon to monitoring@router12.example.org:443)
+</pre></div>
+</div>
+<p>A password will be prompted: the password generated by <code class="docutils literal notranslate"><span class="pre">selfGenerateProxyPassword</span></code> should be entered.
+Remember: this is to authenticate yourself to the bastion (ingress connection), then the bastion will authenticate
+itself to the remote machine (egress connection), using credentials stored on the bastion,
+that your account must have access to.</p>
+<p>In the above case, we entered the password correctly, but our account doesn't have access to
+the requested host <cite>monitoring&#64;router12.example.org</cite>. This is what we need to do now.</p>
+</section>
+<section id="access-declaration">
+<h3><a class="toc-backref" href="#id7" role="doc-backlink">Access declaration</a><a class="headerlink" href="#access-declaration" title="Link to this heading"></a></h3>
+<p>The access check is the same than the one done for SSH accesses, which means that oneself
+can have access to a remote host either through a <a class="reference internal" href="basics/access_management.html#accessmanagementpersonalaccesses"><span class="std std-ref">personal access</span></a> or
+a <a class="reference internal" href="basics/access_management.html#accessmanagementgroupaccesses"><span class="std std-ref">group access</span></a>.</p>
+<p>To get granted access to a remote device, through a personal access, either
+the <a class="reference internal" href="../plugins/restricted/selfAddPersonalAccess.html"><span class="doc">selfAddPersonalAccess</span></a> or the <a class="reference internal" href="../plugins/restricted/accountAddPersonalAccess.html"><span class="doc">accountAddPersonalAccess</span></a> shall
+be used (both are restricted commands) such as:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh --osh accountAddPersonalAccess --host router12.example.org --port 443 --user monitoring --force
+</span></pre></div>
+</div>
+<p>Note the use of <code class="docutils literal notranslate"><span class="pre">--force</span></code> to skip the SSH connection test, which is useless in our case.</p>
+<p>To use a group access instead, one of the <a class="reference internal" href="basics/access_management.html#accessmanagementgrouproles"><span class="std std-ref">aclkeepers</span></a> of the group
+should use <a class="reference internal" href="../plugins/group-aclkeeper/groupAddServer.html"><span class="doc">groupAddServer</span></a>, such as:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh --osh groupAddServer --group netdevices --host router12.example.org --port 443 --user monitoring --force
+</span></pre></div>
+</div>
+</section>
+<section id="egress-password">
+<h3><a class="toc-backref" href="#id8" role="doc-backlink">Egress password</a><a class="headerlink" href="#egress-password" title="Link to this heading"></a></h3>
+<section id="for-personal-accesses">
+<h4><a class="toc-backref" href="#id9" role="doc-backlink">For personal accesses</a><a class="headerlink" href="#for-personal-accesses" title="Link to this heading"></a></h4>
+<p>If access to a remote device is granted to you through a personal access (using either the <code class="docutils literal notranslate"><span class="pre">selfAddPersonalAccess</span></code>
+or <code class="docutils literal notranslate"><span class="pre">accountAddPersonalAccess</span></code> commands), you must first generate a new set of credentials that will be stored
+on your bastion account, for egress connections. This is the equivalent of your personal egress keys for SSH,
+but in that case it's a password that will be used to authenticate using basic-auth to the remote server.
+You can generate this password using the <code class="docutils literal notranslate"><span class="pre">selfGeneratePassword</span></code> command:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh --osh selfGeneratePassword --do-it
+</span>*------------------------------------------------------------------------------*
+|THIS IS A PRIVATE COMPUTER SYSTEM, UNAUTHORIZED ACCESS IS STRICTLY PROHIBITED.|
+|ALL CONNECTIONS ARE LOGGED. IF YOU ARE NOT AUTHORIZED, DISCONNECT NOW.        |
+*------------------------------------------------------------------------------*
+╭──bastion1.example.org───────────────────────────────the-bastion-3.03.99-rc1───
+│ ▶ generating a new egress password for your account
+├───────────────────────────────────────────────────────────────────────────────
+│ Generated a new password of length 16 for your account, robot-mon, hashes follow:
+│ md5crypt: $1$G0fo$2DH2OJQJ9bMgo5fUUuPeK.
+│ sha256crypt: $5$2xd1aGuD$ze7px3olXdjWthSrdnzelm6avzT2kszx/voXms8/V00
+│ sha512crypt: $6$udw2UNLs$tQ1p7ZYraOT4Woh1ZCGJNf.UAIh09nXPBf4ejpRurOY/fJUs6Dgh1WdkpY4pdCvKMQrPeetB42bNTSzIwJyGi1
+│ This new password will now be used by default.
+╰─────────────────────────────────────────────────────&lt;/selfGeneratePassword&gt;───
+</pre></div>
+</div>
+<p>As you can see, the password is stored on your bastion account, and is not printed: only its hashes are.
+With this information, the corresponding remote account can be provisioned on the device (usually, a network device).
+In our above example, an account named <strong>monitoring</strong> would have to be created on the remote device,
+using one of these hashes. Prefer to use the most secure hashing algorithm supported by the remote device.</p>
+<p>To get your password (hash) list, you can use <code class="docutils literal notranslate"><span class="pre">selfListPasswords</span></code>:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh --osh selfListPasswords
+</span>*------------------------------------------------------------------------------*
+|THIS IS A PRIVATE COMPUTER SYSTEM, UNAUTHORIZED ACCESS IS STRICTLY PROHIBITED.|
+|ALL CONNECTIONS ARE LOGGED. IF YOU ARE NOT AUTHORIZED, DISCONNECT NOW.        |
+*------------------------------------------------------------------------------*
+╭──bastion1.example.org───────────────────────────────the-bastion-3.03.99-rc1───
+│ ▶ list your egress passwords
+├───────────────────────────────────────────────────────────────────────────────
+│ Current password created at Tue Jun 22 15:42:10 2021 by robot-mon
+│ ... md5crypt: $1$G0fo$2DH2OJQJ9bMgo5fUUuPeK.
+│ ... sha256crypt: $5$2xd1aGuD$ze7px3olXdjWthSrdnzelm6avzT2kszx/voXms8/V00
+│ ... sha512crypt: $6$udw2UNLs$tQ1p7ZYraOT4Woh1ZCGJNf.UAIh09nXPBf4ejpRurOY/fJUs6Dgh1WdkpY4pdCvKMQrPeetB42bNTSzIwJyGi1
+│
+│ Fallback password 1 created at Wed Jun  2 08:00:01 2021 by robot-mon
+│ ... md5crypt: $1$qF0M$2.rbRRGs66aPiEpc/SqGv/
+│ ... sha256crypt: $5$E9qkC7D6$SG8BB.nXvwU0dB0Bq9S/sF5pDidLwSIDKCv95qNWhX0
+│ ... sha512crypt: $6$druGNgSk$bzVHSvux/OOE2ZhDpabFekQU3GTsiKS7Yl/lLmb9gIAmjnFfR6gj7GzOniK2jdLtEcB/hQlhcx9TDgj5zHhVd.
+│
+╰────────────────────────────────────────────────────────&lt;/selfListPasswords&gt;───
+</pre></div>
+</div>
+<p>If the <code class="docutils literal notranslate"><span class="pre">selfGeneratePassword</span></code> command is used several times, the newly generated password will always override
+the previous one. Still, all the previous passwords are kept (archived) for good measure, and can be restored
+manually by a bastion admin. These passwords are named <em>Fallback passwords</em> in the output of <code class="docutils literal notranslate"><span class="pre">selfListPasswords</span></code>.</p>
+</section>
+<section id="for-group-accesses">
+<h4><a class="toc-backref" href="#id10" role="doc-backlink">For group accesses</a><a class="headerlink" href="#for-group-accesses" title="Link to this heading"></a></h4>
+<p>If the access to the remote device is given through a group, then the group's own credentials will be used.
+To this effect, one of the group owners should use the <a class="reference internal" href="../plugins/group-owner/groupGeneratePassword.html"><span class="doc">groupGeneratePassword</span></a> command:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh --osh groupGeneratePassword --group netdevices --do-it
+</span>╭──bastion1.example.org───────────────────────────────the-bastion-3.03.99-rc1───
+│ ▶ generating a new egress password for the group
+├───────────────────────────────────────────────────────────────────────────────
+│ Generated a new password of length 16 for group netdevices, hashes follow:
+│ md5crypt: $1$9sb2$X8/pPBSLfQ0ddBGR/bzsT1
+│ sha256crypt: $5$o6Jr8w0X$yQfLuX17tUwE1jfhhAX//vsn6KpXU5jUd7SCNbkYNH.
+│ sha512crypt: $6$gyxMyjao$YNhZJPXZa4r838XKg2tfvvoV/Dtm5HKsyKt18BnvFfT.y.hZuSXRX9GhM4mA0hUsO9f0UBisO/WiK3vF/9qsL1
+│ This new password will now be used by default.
+╰────────────────────────────────────────────────────&lt;/groupGeneratePassword&gt;───
+</pre></div>
+</div>
+<p>As with the personal egress passwords, the password is stored on the bastion only, and is not printed:
+only its hashes are. With this information, the corresponding remote account can be provisioned
+on the device (usually, a network device).
+In our above example, an account named <strong>monitoring</strong> would have to be created on the remote device,
+using one of these hashes. Prefer to use the most secure hashing algorithm supported by the remote device.</p>
+<p>To get the group's password (hash) list, one can use the <a class="reference internal" href="../plugins/open/groupListPasswords.html"><span class="doc">groupListPasswords</span></a> command:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh --osh groupListPasswords --group netdevices
+</span>*------------------------------------------------------------------------------*
+|THIS IS A PRIVATE COMPUTER SYSTEM, UNAUTHORIZED ACCESS IS STRICTLY PROHIBITED.|
+|ALL CONNECTIONS ARE LOGGED. IF YOU ARE NOT AUTHORIZED, DISCONNECT NOW.        |
+*------------------------------------------------------------------------------*
+╭──bastion1.example.org───────────────────────────────the-bastion-3.03.99-rc1───
+│ ▶ list the egress passwords of the group
+├───────────────────────────────────────────────────────────────────────────────
+│ Current password created at Tue Jun 29 10:21:38 2021 by slesimpl
+│ ... md5crypt: $1$9sb2$X8/pPBSLfQ0ddBGR/bzsT1
+│ ... sha256crypt: $5$o6Jr8w0X$yQfLuX17tUwE1jfhhAX//vsn6KpXU5jUd7SCNbkYNH.
+│ ... sha512crypt: $6$gyxMyjao$YNhZJPXZa4r838XKg2tfvvoV/Dtm5HKsyKt18BnvFfT.y.hZuSXRX9GhM4mA0hUsO9f0UBisO/WiK3vF/9qsL1
+╰───────────────────────────────────────────────────────&lt;/groupListPasswords&gt;───
+</pre></div>
+</div>
+<p>If the <code class="docutils literal notranslate"><span class="pre">groupGeneratePassword</span></code> command is used several times, the newly generated password will always
+override the previous one. Still, all the previous passwords are kept (archived) for good measure,
+and can be restored manually by a bastion admin.
+These passwords are named <em>Fallback passwords</em> in the output of <code class="docutils literal notranslate"><span class="pre">groupListPasswords</span></code>.</p>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="sftp_scp_rsync.html" class="btn btn-neutral float-left" title="SFTP, SCP &amp; RSYNC support" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api.html" class="btn btn-neutral float-right" title="JSON API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

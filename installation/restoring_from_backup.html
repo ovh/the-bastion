@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Restoring from backup &mdash; The Bastion 3.23.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="../_static/jquery.js?v=8dae8fb0"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=eb75f0bc"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="The basics" href="../using/basics/index.html" />
+    <link rel="prev" title="Sandbox using Docker" href="docker.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.23.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Restoring from backup</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#steps">Steps</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#installation">Installation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gpg-key-and-backup-archive-import">GPG key and backup archive import</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#decrypt-and-extract-accounts-and-groups">Decrypt and extract accounts and groups</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ensuring-the-uids-gids-are-in-sync">Ensuring the UIDs/GIDs are in sync</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#restoring">Restoring</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#back-to-production">Back to production</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../using/basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../using/specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../administration/configuration/index.html">Configuration files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/open/index.html">open plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Restoring from backup</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/installation/restoring_from_backup.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="restoring-from-backup">
+<h1>Restoring from backup<a class="headerlink" href="#restoring-from-backup" title="Link to this heading"></a></h1>
+<p>In this section, we'll detail how to restore a bastion's main data from a backup.</p>
+<p>This can be useful in two main cases:</p>
+<ul class="simple">
+<li><p>When an account with high privileges has deleted or altered by mistake a great amount of accounts or groups, up
+to a point where it's operationally easier to just restore the settings, accounts, groups and keys from the latest
+available backup</p></li>
+<li><p>When you are not in an <a class="reference internal" href="advanced.html#installadv-ha"><span class="std std-ref">HA setup</span></a> and your only
+instance is down and can't be brought back up in a timely manner.</p></li>
+</ul>
+<p>Note that if you are in a HA setup and you need to add a new node (regardless of the fact that you're replacing
+a failed node or not), you don't need to restore from backup: you can simply follow the HA setup procedure so
+that your new node is synced with your main node.</p>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading"></a></h2>
+<p>First, you obviously must have a backup at hand, which should be the case if you followed the
+<a class="reference internal" href="advanced.html#installadv-backup"><span class="std std-ref">Configuring keys, accounts &amp; groups remote backup</span></a> section when you first installed the instance you want to restore.</p>
+<p>If the backup is encrypted with GPG (it should be), you must have access to the corresponding GPG private key and
+its passphrase.</p>
+<p>You must ensure that the new server you're setting up has the same OS release than the one the backup file
+comes from, as we'll overwrite the new server's accounts and groups files with the backed up versions.
+This could cause adverse effects if the distro or release differ, although the restore script won't stop
+you from doing so (it'll even help you adjust the discrepancies if needed, but again, this is strongly discouraged).</p>
+</section>
+<section id="steps">
+<h2>Steps<a class="headerlink" href="#steps" title="Link to this heading"></a></h2>
+<section id="installation">
+<h3>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h3>
+<p>On the new server you want to deploy the backup to, you must first follow the standard <a class="reference internal" href="basic.html"><span class="doc">Basic Installation</span></a>
+procedure, up to and including the <em>Check that the code works on your machine</em> step.</p>
+<p>Once done, you may proceed to the next steps below.</p>
+</section>
+<section id="gpg-key-and-backup-archive-import">
+<h3>GPG key and backup archive import<a class="headerlink" href="#gpg-key-and-backup-archive-import" title="Link to this heading"></a></h3>
+<p>On the server you've just installed, you'll need to import the private GPG key that was used to encrypt the backup, and
+you'll also need to fetch the backup archive itself. It's a good practice to NOT decrypt the backup archive prior to
+transferring it to the new server. This way, you're sure that the credentials and keys contained in the backup have
+not been compromised.</p>
+<p>To import the GPG key, just run:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">gpg<span class="w"> </span>--import
+</span></pre></div>
+</div>
+<p>And paste the private GPG key corresponding to the backup so that it gets imported into root's keyring.</p>
+<p>Alternatively, you can put the private GPG key in a temporary file, and import it this way:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">gpg<span class="w"> </span>--import<span class="w"> </span>&lt;<span class="w"> </span>/tmp/backupkey.asc
+</span></pre></div>
+</div>
+<p>You may now import the backup archive, which usually has a name matching the <code class="file docutils literal notranslate"><span class="pre">backup-YYYY-MM-DD.tar.gz.gpg</span></code> format.
+You can use <code class="docutils literal notranslate"><span class="pre">scp</span></code>, <code class="docutils literal notranslate"><span class="pre">sftp</span></code> or any other method to get this file onto the server, at any location you see fit. We'll use
+<code class="file docutils literal notranslate"><span class="pre">/root</span></code> as location for the rest of this documentation, as this is guaranteed to only be readable by root,
+hence not compromising the keys and credentials.</p>
+</section>
+<section id="decrypt-and-extract-accounts-and-groups">
+<h3>Decrypt and extract accounts and groups<a class="headerlink" href="#decrypt-and-extract-accounts-and-groups" title="Link to this heading"></a></h3>
+<p>Now, you can decrypt the backup archive:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">gpg<span class="w"> </span>-d<span class="w"> </span>/root/backup-YYYY-MM-DD.tar.gz.gpg<span class="w"> </span>&gt;<span class="w"> </span>/root/backup-decrypted.tar.gz
+</span>gpg:<span class="w"> </span>encrypted<span class="w"> </span>with<span class="w"> </span><span class="m">4096</span>-bit<span class="w"> </span>RSA<span class="w"> </span>key,<span class="w"> </span>ID<span class="w"> </span>F50BFFC49143C821,<span class="w"> </span>created<span class="w"> </span><span class="m">2021</span>-03-27
+<span class="w">   </span><span class="s2">&quot;Bastion Administrators &lt;bastions.admins@example.org&gt;&quot;</span>
+</pre></div>
+</div>
+<p>You'll have to input the GPG private key passphrase when asked to.</p>
+<p>Then, check whether the archive seems okay:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">tar<span class="w"> </span>tvzf<span class="w"> </span>/root/backup-decrypted.tar.gz
+</span></pre></div>
+</div>
+<p>You should see a long list of files, most under the <code class="file docutils literal notranslate"><span class="pre">/home</span></code> hierarchy.</p>
+<p>We now need to extract the backed up <code class="file docutils literal notranslate"><span class="pre">/etc/passwd</span></code> and <code class="file docutils literal notranslate"><span class="pre">/etc/group</span></code> files, to ensure the new
+instance we're setting up has its UIDs/GIDs synced with the system we're restoring:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">tar<span class="w"> </span>xvzf<span class="w"> </span>/root/backup-decrypted.tar.gz<span class="w"> </span>-C<span class="w"> </span>/root<span class="w"> </span>--strip-components<span class="o">=</span><span class="m">1</span><span class="w"> </span>etc/passwd<span class="w"> </span>etc/group
+</span>etc/group
+etc/passwd
+</pre></div>
+</div>
+<p>We now have the two original accounts and groups lists in <code class="file docutils literal notranslate"><span class="pre">/root</span></code>, and we can proceed to check
+whether the UIDs and GIDs are in sync.</p>
+</section>
+<section id="ensuring-the-uids-gids-are-in-sync">
+<h3>Ensuring the UIDs/GIDs are in sync<a class="headerlink" href="#ensuring-the-uids-gids-are-in-sync" title="Link to this heading"></a></h3>
+<p>This procedure is the same than when setting up a slave instance bastion,
+please follow the corresponding <a class="reference internal" href="advanced.html#installadv-ha-uidgidsync"><span class="std std-ref">step there</span></a> and come
+back to this documentation when it's done.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The referenced step above asks you to reboot at the end, please ensure you've done it before
+continuing with the rest of the procedure below.</p>
+</div>
+</section>
+<section id="restoring">
+<h3>Restoring<a class="headerlink" href="#restoring" title="Link to this heading"></a></h3>
+<p>Now that we know the UIDs/GIDs are synced, we can proceed with the full restore:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">tar<span class="w"> </span>-C<span class="w"> </span>/<span class="w"> </span>--preserve-permissions<span class="w"> </span>--preserve-order<span class="w"> </span>--overwrite<span class="w"> </span>--acls<span class="w"> </span>--numeric-owner<span class="w"> </span>-xzvf<span class="w"> </span>/root/backup-decrypted.tar.gz
+</span></pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you're getting errors such as 'Warning: Cannot acl_from_text: Invalid argument', please ensure that your
+filesystem supports ACLs and is mounted with ACL support, otherwise <code class="docutils literal notranslate"><span class="pre">tar</span></code> can't restore ACLs from the backup.</p>
+</div>
+</section>
+<section id="back-to-production">
+<h3>Back to production<a class="headerlink" href="#back-to-production" title="Link to this heading"></a></h3>
+<p>As the configuration of the SSH daemon has also been restored, you might want to restart it so that it
+picks up the new configuration:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">service<span class="w"> </span>ssh<span class="w"> </span>restart
+</span></pre></div>
+</div>
+<p>Once this is done, all the accounts that were present in the backup should be working. After ensuring this is the case,
+you may put the server put back in production.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="docker.html" class="btn btn-neutral float-left" title="Sandbox using Docker" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../using/basics/index.html" class="btn btn-neutral float-right" title="The basics" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
