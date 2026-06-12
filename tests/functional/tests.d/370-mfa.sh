@@ -147,8 +147,8 @@ testsuite_mfa()
         contain REGEX 'Password:|Password for'
 
         # connect to 127.7.7.7 with MFA JIT, bad password
-        script a4_connect_g3_server_badpass "echo 'set timeout 45; \
-            spawn $a4 root@127.7.7.7; \
+        script a4_connect_g3_server_badpass "echo 'set timeout $((default_timeout * 2)); \
+            spawn $a4d root@127.7.7.7; \
             expect \"is required (password)\" { sleep 0.1; }; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect \"is required (password)\" { sleep 0.1; }; \
@@ -184,8 +184,8 @@ testsuite_mfa()
         success a4_gen_self_egress_pass $a0 --osh accountGeneratePassword --account $account4 --do-it
         json .command accountGeneratePassword .error_code OK
 
-        script a4_connect_g3_server_selfpass_jitmfa "echo 'set timeout $default_timeout; \
-            spawn $a4 root@127.7.7.7 -P; \
+        script a4_connect_g3_server_selfpass_jitmfa "echo 'set timeout $((default_timeout * 2)); \
+            spawn $a4d root@127.7.7.7 -P; \
             expect \"is required (password)\" { sleep 0.1; }; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect \"is required (password)\" { sleep 0.1; }; \
@@ -217,8 +217,8 @@ testsuite_mfa()
         contain REGEX 'Password:|Password for'
         json .command groupGeneratePassword .error_code OK
 
-        script a4_connect_g3_server_grouppass_jitmfa "echo 'set timeout $default_timeout; \
-            spawn $a4 root@127.7.7.7 --password $group3; \
+        script a4_connect_g3_server_grouppass_jitmfa "echo 'set timeout $((default_timeout * 2)); \
+            spawn $a4d root@127.7.7.7 --password $group3; \
             expect \"is required (password)\" { sleep 0.1; }; \
             expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect \"is required (password)\" { sleep 0.1; }; \
@@ -404,7 +404,7 @@ testsuite_mfa()
 
         # login and fail without totp (timeout)
         script a4_connect_after_totp_fail "echo 'set timeout $default_timeout;
-            spawn $a4 --osh groupList;
+            spawn $a4f --osh groupList;
             expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; };
             expect eof;
             lassign [wait] pid spawnid value value;
@@ -488,7 +488,7 @@ testsuite_mfa()
         json .command groupList .error_code OK_EMPTY
 
         # pubkey-auth-optional disabled: fail with pubkey but no password (timeout)
-        script a4_no_pubkeyauthoptional_login_pubkey_nopam $a4 --osh groupList
+        script a4_no_pubkeyauthoptional_login_pubkey_nopam $a4f --osh groupList
         retvalshouldbe 124
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
         contain 'Your password expires on'
@@ -536,7 +536,7 @@ testsuite_mfa()
         json .command groupList .error_code OK_EMPTY
 
         # pubkey-auth-optional enabled: fail with pubkey only
-        script a4_pubkeyauthoptional_login_pubkey_nopam $a4 --osh groupList
+        script a4_pubkeyauthoptional_login_pubkey_nopam $a4f --osh groupList
         retvalshouldbe 124
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
         contain 'Your password expires on'

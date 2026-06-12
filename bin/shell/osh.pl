@@ -456,10 +456,15 @@ if ($longHelp) {
 
 if ($bind) {
     $fnret = OVH::Bastion::get_bastion_ips();
-    if ($fnret) {
-        if (not grep { $bind eq $_ } @{$fnret->value}) {
-            main_exit OVH::Bastion::EXIT_CONFLICTING_OPTIONS, "invalid_bind", "Invalid binding IP specified ($bind)";
-        }
+
+    # if we can't get the list of our own IPs, we can't validate the
+    # user-supplied bind IP, so refuse rather than letting an arbitrary value through
+    if (!$fnret) {
+        main_exit OVH::Bastion::EXIT_CONFLICTING_OPTIONS, "invalid_bind",
+          "Couldn't verify the binding IP specified ($bind): " . $fnret->msg;
+    }
+    if (not grep { $bind eq $_ } @{$fnret->value}) {
+        main_exit OVH::Bastion::EXIT_CONFLICTING_OPTIONS, "invalid_bind", "Invalid binding IP specified ($bind)";
     }
 }
 
@@ -669,6 +674,12 @@ if (defined $user and $user =~ /^(telnet|ssh)-passw(or)?d-([^-]+)(-([^-]+))?$/) 
 
     # update user
     $user = $3;
+
+    # $user was just rewritten from the password-login prefix syntax, so we re-validate it
+    if (!OVH::Bastion::is_valid_remote_user(user => $user, allowWildcards => ($osh_command ? 1 : 0))) {
+        main_exit OVH::Bastion::EXIT_INVALID_REMOTE_USER, 'invalid_remote_user',
+          "Remote user name '$user' seems invalid";
+    }
 
     if ($4) {
         $userPasswordClue = $5;

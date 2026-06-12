@@ -213,10 +213,7 @@ testsuite_proxy()
     ignorecodewarn 'osh-http-proxy-daemon'
     # pkill doesn't work well under FreeBSD, so do it ourselves for all OSes
     success force_restart $r0 "\"ps -U proxyhttp -o pid,command | grep -v PID | awk '{print \\\$1}' | xargs -r kill; true\""
-    if [ "$COUNTONLY" != 1 ]; then
-        # wait for target_role.sh to restart the daemon
-        sleep 4
-    fi
+    waitfor 4 "waiting for daemon restart"
 
     # post some data
     script post_data "curl -ski -X POST -d somedata -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
@@ -293,10 +290,7 @@ testsuite_proxy()
     ignorecodewarn 'osh-http-proxy-daemon'
     # pkill doesn't work well under FreeBSD, so do it ourselves for all OSes
     success force_restart $r0 "\"ps -U proxyhttp -o pid,command | grep -v PID | awk '{print \\\$1}' | xargs -r kill; true\""
-    if [ "$COUNTONLY" != 1 ]; then
-        # wait for target_role.sh to restart the daemon
-        sleep 4
-    fi
+    waitfor 4 "waiting for daemon restart"
 
     # when daemon will restart, it'll log stuff, ignore it
     ignorecodewarn 'osh-http-proxy-daemon'

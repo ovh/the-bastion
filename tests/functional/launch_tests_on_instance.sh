@@ -227,9 +227,10 @@ check_sourced_module_output()
 
     jq="jq --raw-output --compact-output --sort-keys"
     js="--json-greppable"
-    default_timeout=$((30 * opt_slowness_factor))
+    default_timeout=$((8 * opt_slowness_factor))
     t="timeout --foreground $default_timeout"
     tf="timeout --foreground $((default_timeout / 2))"
+    td="timeout --foreground $((default_timeout * 2))"
     a0="  $t ssh -F $mytmpdir/ssh_config -i $account0key1file $account0@$remote_ip -p $remote_port -- $js "
     a0f="$tf ssh -F $mytmpdir/ssh_config -i $account0key1file $account0@$remote_ip -p $remote_port -- $js "
     a1="  $t ssh -F $mytmpdir/ssh_config -i $account1key1file $account1@$remote_ip -p $remote_port -- $js "
@@ -238,6 +239,7 @@ check_sourced_module_output()
     a3="  $t ssh -F $mytmpdir/ssh_config -i $account3key1file $account3@$remote_ip -p $remote_port -- $js "
     a4="  $t ssh -F $mytmpdir/ssh_config -i $account4key1file $account4@$remote_ip -p $remote_port -- $js "
     a4f="$tf ssh -F $mytmpdir/ssh_config -i $account4key1file $account4@$remote_ip -p $remote_port -- $js "
+    a4d="$td ssh -F $mytmpdir/ssh_config -i $account4key1file $account4@$remote_ip -p $remote_port -- $js "
     a4np="$t ssh -F $mytmpdir/ssh_config -o PubkeyAuthentication=no $account4@$remote_ip -p $remote_port -- $js "
     r0="  $t ssh -F $mytmpdir/ssh_config -i $rootkeyfile           root@$remote_ip -p $remote_port -- "
 
@@ -369,13 +371,6 @@ outdir="$mytmpdir/out"
 mkdir -p $outdir || exit 1
 touch "$outdir/.basename"
 
-# checking which screen syntax works on this OS
-screen="screen -L"
-if screen -h 2>&1 | grep -q -- -Logfile; then
-    screen="screen -L -Logfile"
-fi
-# /checking
-
 testno=0
 testcount=0
 basename=""
@@ -408,6 +403,19 @@ prefix()
     else
         printf "${prefixfmt}%02dm%02d %b[%d err]%b" "$opt_log_prefix" "$min" "$sec" "$RED" "$totalerrors" "$NOC"
     fi
+}
+
+infomsg()
+{
+    [ "$COUNTONLY" = 1 ] && return
+    printf '%b %b%b%b\n' "$(prefix)" "$DARKGRAY" "$*" "$NOC"
+}
+
+waitfor()
+{
+    [ "$COUNTONLY" = 1 ] && return
+    infomsg "sleeping for $1 seconds ${2:-...}"
+    sleep $1
 }
 
 run()
@@ -444,6 +452,15 @@ run()
     fi
     case="$1"
     shift
+
+    # before replacing $basename with the current test's basename, print elapsed_ms for the previous test
+    if [ -n "${previous_test_t0:-}" ]; then
+        local elapsed_ms
+        elapsed_ms=$(perl -MTime::HiRes=time -e 'printf "%.0f\n", ((time() * 1000) - '"$previous_test_t0"')')
+        infomsg "elapsed_ms $elapsed_ms $basename"
+    fi
+    previous_test_t0=$(perl -MTime::HiRes=time -e 'printf "%.0f\n", time() * 1000')
+
     basename=$(printf '%04d-%s-%s' $testno $name $case | sed -re "s=/=_=g")
 
     # if we're about to run a script, keep a copy there
@@ -459,8 +476,12 @@ run()
     # put an invalid value in this file, should be overwritten. we also use it as a lock file.
     echo -1 > $outdir/$basename.retval
     # run the test
-    flock "$outdir/$basename.retval" $screen "$outdir/$basename.log" -D -m -fn -ln bash -c "set -f; $* ; echo \$? > $outdir/$basename.retval ; sleep $sleepafter"
-    flock "$outdir/$basename.retval" true
+    if [ "$OS_FAMILY" = FreeBSD ]; then
+        command script -q "$outdir/$basename.log" bash -c "set -f; $*; echo \$? > $outdir/$basename.retval ; sleep $sleepafter" >/dev/null 2>&1 || true
+    else
+        command script -q -c "set -f; $* ; echo \$? > $outdir/$basename.retval ; sleep $sleepafter" "$outdir/$basename.log" >/dev/null 2>&1 || true
+        grep -Eva '^Script (started|done) on ' "$outdir/$basename.log" | sponge "$outdir/$basename.log" || true
+    fi
     unset sleepafter
 
     # look for generally bad strings in the output
@@ -476,21 +497,11 @@ run()
     if [ "$opt_consistency_check" = 1 ]; then
         # sleep 1s if sshd has been reloaded
         [ "$case" = "sshd_reload" ] && sleep 1
-        flock "$outdir/$basename.retval" $screen "$outdir/$basename.cc" -D -m -fn -ln $r0 '
-                /opt/bastion/bin/admin/check-consistency.pl ; echo _RETVAL_CC=$?= ;
-                grep -Fw -e warn -e die -e code-warning /var/log/bastion/bastion.log
-                | grep -Fv
-                  -e "'"${code_warn_exclude:-__none__}"'"
-                  -e "System does not support IPv6"
-                  -e "Defaulting to E[UG]ID"
-                  -e "starting!"
-                  -e "Binding to SSL port"
-                | sed "s/^/_SYSLOG=/" ;
-                : > /var/log/bastion/bastion.log
-            '
-        flock "$outdir/$basename.retval" true
-        ccret=$(     grep _RETVAL_CC= "$outdir/$basename.cc" | cut -d= -f2)
-        syslogline=$(grep _SYSLOG=    "$outdir/$basename.cc" | cut -d= -f2-)
+        if ! $r0 bash -c '/opt/bastion/bin/admin/check-consistency.pl ; echo _RETVAL_CC=$?= ; grep -Fw -e warn -e die -e code-warning /var/log/bastion/bastion.log | sed s/^/_SYSLOG=/ ; : > /var/log/bastion/bastion.log' >"$outdir/$basename.cc" 2>&1; then
+            fail "CONSISTENCY CHECK CALL FAILED"
+        fi
+        ccret=$(     grep _RETVAL_CC= "$outdir/$basename.cc" | cut -d= -f2 || true)
+        syslogline=$(grep _SYSLOG=    "$outdir/$basename.cc" | cut -d= -f2- | grep -Fv -e "${code_warn_exclude:-__none__}" -e "System does not support IPv6" -e  "Defaulting to EUID" -e "Defaulting to EGID" -e "starting!" -e "Binding to SSL port" || true)
         if [ "$ccret" != 0 ]; then
             nbfailedcon=$(( nbfailedcon + 1 ))
             fail "CONSISTENCY CHECK"
@@ -700,7 +711,7 @@ dump_vars_and_funcs()
 {
     set | grep -v -E '^('\
 'testno|section|code_warn_exclude|COPROC_PID|LINES|COLUMNS|PIPESTATUS|_|'\
-'BASH_LINENO|basename|case|json|name|tmpscript|grepit|got|isbad|'\
+'BASH_LINENO|basename|case|json|name|tmpscript|grepit|got|isbad|previous_test_t0|'\
 'nbfailedgrep|nbfailedcon|nbfailedgeneric|nbfailedlog|nbfailedret|shouldbe|modulename)='
 }
 

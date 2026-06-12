@@ -107,7 +107,7 @@ testsuite_mfa_realm()
     contain "Permission denied (publickey)"
 
     # cleanup
-    success realmDelete $a0 --osh realmDelete --realm $realm_shared_account "<<< \"Yes, do as I say and delete $realm_shared_account, kthxbye\""
+    script realmDelete $a0 --osh realmDelete --realm $realm_shared_account "<<< \"Yes, do as I say and delete $realm_shared_account, kthxbye\""
 
     script a0_delete_a4 $a0 --osh accountDelete --account $account4 "<<< \"Yes, do as I say and delete $account4, kthxbye\""
     retvalshouldbe 0
