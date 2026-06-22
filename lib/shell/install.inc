@@ -77,13 +77,14 @@ set_download_url() {
 
             if command -v jq >/dev/null; then
                 # If we have jq, we can do it properly
-                urls="$(jq -r '.[0].assets|.[]|.browser_download_url' < "$payload" || true)"
+                urls="$(jq -r 'first(.[] | select(.prerelease or .draft | not)).assets[].browser_download_url' < "$payload" || true)"
             elif perl -MJSON -e 1 2>/dev/null; then
                 # If we don't, there's a good chance we have Perl with the JSON module, use it
-                urls="$(perl -MJSON -e 'undef $/; $d=decode_json(<>); exit if ref $d ne "ARRAY"; foreach(@{ $d->[0]{assets} || [] }) { print $_->{browser_download_url}."\n" }' "$payload")"
+                urls="$(perl -MJSON -e 'undef $/; $d=decode_json(<>); exit if ref $d ne "ARRAY"; for my $rel (@$d) { next if $rel->{prerelease} || $rel->{draft}; print "$_->{browser_download_url}\n" for @{$rel->{assets}}; last }' "$payload")"
             else
-                # Otherwise, go the ugly way, don't bother the user in installing jq just for this need
-                urls="$(grep -Eo 'https://[a-z0-9./_-]+' "$payload")"
+                action_error "Found no jq or perl, can't fetch the download URLs, using hardcoded ones"
+                USE_DEFAULT_URLS=1
+                continue
             fi
         fi
 
