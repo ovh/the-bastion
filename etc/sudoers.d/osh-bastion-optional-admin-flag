@@ -1,0 +1,4 @@
+# Disable the useless dropping of a file the first time sudo succeeds for a user,
+# this is meaningless on a bastion and avoids a sudo portion of code listing
+# all the groups of the calling user ( create_admin_success_flag() in sudoers/timestamp.c )
+Defaults !admin_flag

@@ -506,6 +506,11 @@ if [ "$nothing" = 0 ]; then
     for file in "$basedir/etc/sudoers.d"/osh-*; do
         filename=$(basename "$file")
         sed_compat "/\/$filename$/d" "$oldsudoers"
+        # for optional sudoers files, first verify if our sudo can parse it
+        if echo "$filename" | grep -q optional && ! visudo -cqf "$filename" >/dev/null 2>&1; then
+            action_detail "... skipping $filename (unsupported but optional, non-fatal)"
+            continue
+        fi
         action_detail "... copying $filename"
         # don't use install(1) because it doesn't overwrite in place (it unlinks then copies data)
         # this can lead to a race condition if somebody uses sudo exactly at this moment, where it'll

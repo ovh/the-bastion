@@ -907,7 +907,7 @@ while (my $distfile = glob "$BASEDIR/etc/sudoers.d/*") {
             _err "sudoers file $distfile and $prodfile differ";
         }
     }
-    else {
+    elsif ($prodfile !~ /optional/) {
         _err "sudoers file $prodfile not found";
     }
 }
