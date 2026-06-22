@@ -125,7 +125,9 @@ foreach my $groupData (@groups) {
 
         # being a member of the system group corresponding to the bastion group
         # can mean either member or guest, so check this here, taking into account the
-        # case of the realm accounts
+        # case of the realm accounts. We pass skipRegularCheck because we already validated
+        # the system group membership (otherwise it runs an expensive loop we already paid
+        # the price for).
         my (@members, @guests);
         foreach my $account (@{$roles{'member'}}) {
             # realm accounts
@@ -139,7 +141,15 @@ foreach my $groupData (@groups) {
                 }
                 # show remote realm accounts names, either as guests or members
                 foreach my $pRemoteaccount (@{$fnret->value}) {
-                    if (OVH::Bastion::is_group_guest(group => $shortGroup, account => "$pRealm/$pRemoteaccount")) {
+                    if (
+                        OVH::Bastion::is_group_guest(
+                            group            => $shortGroup,
+                            account          => "$pRealm/$pRemoteaccount",
+                            cache            => 1,
+                            skipRegularCheck => 1
+                        )
+                      )
+                    {
                         push @guests, "$pRealm/$pRemoteaccount";
                     }
                     else {
@@ -149,7 +159,15 @@ foreach my $groupData (@groups) {
             }
             # normal case (non-realm accounts)
             else {
-                if (OVH::Bastion::is_group_guest(account => $account, group => $shortGroup)) {
+                if (
+                    OVH::Bastion::is_group_guest(
+                        account          => $account,
+                        group            => $shortGroup,
+                        cache            => 1,
+                        skipRegularCheck => 1
+                    )
+                  )
+                {
                     push @guests, $account;
                 }
                 else {

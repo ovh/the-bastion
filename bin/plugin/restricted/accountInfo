@@ -106,13 +106,6 @@ $fnret = OVH::Bastion::get_plugin_list(restrictedOnly => 1);
 $fnret or osh_exit $fnret;
 my @commands = sort keys %{$fnret->value};
 
-my @groups;
-if ($withGroups) {
-    $fnret = OVH::Bastion::get_group_list();
-    $fnret or osh_exit $fnret;
-    @groups = sort keys %{$fnret->value};
-}
-
 # gather info from the account(s)
 
 my %return;
@@ -141,14 +134,13 @@ foreach my $accHash (@accounts) {
 
     my $groups_hash = {};
     if ($withGroups) {
-        foreach my $name (@groups) {
-            my @flags;
-            push @flags, 'owner'      if OVH::Bastion::is_group_owner(group => $name, account => $account);
-            push @flags, 'gatekeeper' if OVH::Bastion::is_group_gatekeeper(group => $name, account => $account);
-            push @flags, 'aclkeeper'  if OVH::Bastion::is_group_aclkeeper(group => $name, account => $account);
-            push @flags, 'member'     if OVH::Bastion::is_group_member(group => $name, account => $account);
-            push @flags, 'guest'      if OVH::Bastion::is_group_guest(group => $name, account => $account);
-            $groups_hash->{$name} = {flags => \@flags, name => $name} if @flags;
+        # get the roles this account holds in each bastion group directly, rather
+        # than testing it against every single group (which is more expensive).
+        # we get back a hashref keyed by shortGroupName, with a list of roles for each.
+        $fnret = OVH::Bastion::get_account_roles_by_group(account => $account, cache => 1);
+        $fnret or osh_exit $fnret;
+        foreach my $name (keys %{$fnret->value}) {
+            $groups_hash->{$name} = {flags => $fnret->value->{$name}, name => $name};
         }
     }
     $ret{'groups'} = $groups_hash;

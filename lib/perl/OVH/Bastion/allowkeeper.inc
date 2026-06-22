@@ -894,6 +894,64 @@ sub get_group_list {
     return R('OK', value => \%groups);
 }
 
+# Given an account, return the bastion groups it holds any role in, along with
+# the list of roles it has in each. We return an hashref such as:
+#   { groupShortName1 => ['owner', 'member'], otherGroup => ['guest'], ... }
+sub get_account_roles_by_group {
+    my %params  = @_;
+    my $account = $params{'account'} || $params{'user'};
+    my $cache   = $params{'cache'};
+
+    if (!$account) {
+        return R('ERR_MISSING_PARAMETER', msg => "Missing parameter 'account'");
+    }
+
+    # set of existing bastion groups (short names), so that we can ignore orphaned system groups
+    # no longer having their base group for some reason (e.g. X-gatekeeper without X).
+    state %validGroups;
+    if (!$cache || !%validGroups) {
+        my $fnret = OVH::Bastion::get_group_list(cache => $cache);
+        $fnret or return $fnret;
+        %validGroups = map { $_ => 1 } keys %{$fnret->value};
+    }
+
+    # get the system groups this account belongs to (including the role groups thanks to extra => 1)
+    my $fnret = OVH::Bastion::get_user_groups(account => $account, extra => 1, cache => $cache);
+
+    my %rolesByGroup;
+    foreach my $sysGroup (@{$fnret->value || []}) {
+        # $sysGroup is a system group name, e.g. "keyMYGROUP" or "keyMYGROUP-owner";
+        # turn it into the bastion (short) group name, plus possibly a role suffix
+        (my $shortGroup = $sysGroup) =~ s/^key// or next;
+        my $role;
+        $role = $1 if ($shortGroup =~ s/-(owner|gatekeeper|aclkeeper)$//);
+
+        # ignore role groups whose base bastion group no longer exists
+        next if !$validGroups{$shortGroup};
+
+        if ($role) {
+            push @{$rolesByGroup{$shortGroup}}, $role;
+        }
+        else {
+            # no role suffix means a "regular" membership, i.e. either member or
+            # guest. We already know the account is a regular member of this group
+            # (it's in the group's member list), so we pass skipRegularCheck to
+            # avoid re-verifying that and only resolve the member-vs-guest question.
+            push @{$rolesByGroup{$shortGroup}},
+              OVH::Bastion::is_group_member(
+                group            => $shortGroup,
+                account          => $account,
+                cache            => $cache,
+                skipRegularCheck => 1
+              )
+              ? 'member'
+              : 'guest';
+        }
+    }
+
+    return R('OK', value => \%rolesByGroup);
+}
+
 # return the list of bastion accounts (i.e. not the system user list)
 sub get_account_list {
     my %params   = @_;
@@ -1162,17 +1220,26 @@ sub is_group_owner {
 }
 
 sub _is_group_member_or_guest {
-    my %params     = @_;
-    my $shortGroup = $params{'group'};
-    my $want       = $params{'want'};     # guest or member
-    my $cache      = $params{'cache'};    # allow cache use of sys_getpw_name() through
-                                          # is_bastion_account_valid_and_existing() and sys_getgr_name()
-                                          # through is_valid_group_and_existing()
+    my %params           = @_;
+    my $account          = $params{'account'};
+    my $shortGroup       = $params{'group'};
+    my $want             = $params{'want'};                # guest or member
+    my $cache            = $params{'cache'};               # allow cache use of sys_getpw_name() through
+                                                           # is_bastion_account_valid_and_existing() and sys_getgr_name()
+                                                           # through is_valid_group_and_existing()
+    my $skipRegularCheck = $params{'skipRegularCheck'};    # caller already knows account is a regular member
+                                                           # of the group (e.g. it's iterating the group's own
+                                                           # member list), so skip re-verifying it: that check
+                                                           # is an O(group size) scan, and doing it per-account
+                                                           # turns such a loop into an O(group size ^ 2) one.
 
-    my $fnret = _has_group_role(%params, role => "regular");
-    $fnret or return $fnret;
+    my $fnret;
+    if (!$skipRegularCheck) {
+        $fnret = _has_group_role(%params, role => "regular");
+        $fnret or return $fnret;
+        $account = $fnret->value()->{'account'};
+    }
 
-    my $account = $fnret->value()->{'account'};
     $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account, cache => $cache);
     $fnret or return $fnret;
 

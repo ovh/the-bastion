@@ -689,6 +689,41 @@ sub sys_getgr_all_cached {
     return R($_gr_all_cached ? 'OK' : 'KO');
 }
 
+# Reverse index of the group database: returns a hashref mapping each user to
+# the list of groups it's a supplementary member of (note that this doesn't
+# include the implicit primary GID of each user).
+my %_gr_byuser_cache;
+my $_gr_byuser_cached = 0;
+
+sub sys_getgr_all_byuser {
+    my %params = @_;
+    my $cache  = $params{'cache'} || $ENV{'PW_GR_CACHE'};
+    my $user   = $params{'user'};                           # if set, only return this user's groups (arrayref)
+
+    if (!$cache || !$_gr_byuser_cached) {
+        # (re)build the reverse index from the full group list. We pass our own
+        # $cache down: when caching is disallowed, sys_getgr_all() rebuilds its
+        # cache from the system, and we rebuild ours from it, so both stay coherent.
+        my $fnret = OVH::Bastion::sys_getgr_all(cache => $cache);
+        $fnret or return $fnret;
+
+        %_gr_byuser_cache = ();
+        foreach my $entry (values %{$fnret->value}) {
+            foreach my $member (@{$entry->{'members'} || []}) {
+                push @{$_gr_byuser_cache{$member}}, $entry->{'name'};
+            }
+        }
+        $_gr_byuser_cached = 1;
+    }
+
+    # return just the requested user's groups if asked to (empty arrayref if none)
+    if (defined $user) {
+        return R('OK', value => ($_gr_byuser_cache{$user} || []));
+    }
+
+    return R('OK', value => \%_gr_byuser_cache);
+}
+
 # get a system group entry from name (getent group / getgrnam)
 sub sys_getgr_name {
     my %params = @_;
