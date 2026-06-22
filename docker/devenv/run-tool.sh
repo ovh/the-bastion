@@ -7,7 +7,7 @@ BASEDIR=$(readlink -f "$(dirname "$0")/../..")
 
 docker_run() {
     echo "The Bastion devenv docker wasn't running, starting it..."
-    docker run -d --name $NAME -v "$BASEDIR:/opt/bastion" $NAME
+    docker run -d --init --name $NAME -v "$BASEDIR:/opt/bastion" $NAME
 }
 
 docker_build() {
