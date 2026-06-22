@@ -39,14 +39,26 @@ EOF
 
 my $fnret;
 
-$fnret = OVH::Bastion::get_group_list();
-$fnret or osh_exit $fnret;
-
 my $includere = OVH::Bastion::build_re_from_wildcards(wildcards => \@includes, implicit_contains => 1)->value;
 my $excludere = OVH::Bastion::build_re_from_wildcards(wildcards => \@excludes, implicit_contains => 1)->value;
 
+# get all the groups we have at least a role in
+$fnret = OVH::Bastion::get_account_roles_by_group(account => $sysself, cache => 1);
+$fnret or osh_exit $fnret;
+my $accountRoles = $fnret;
+
+my %selfRoles;
+foreach my $group (keys %{$accountRoles->value}) {
+    $selfRoles{$group} = {map { $_ => 1 } @{$accountRoles->value->{$group}}};
+}
+
+# get all the existing groups
+$fnret = OVH::Bastion::get_group_list();
+$fnret or osh_exit $fnret;
+my $groupList = $fnret;
+
 my $result_hash = {};
-foreach my $name (sort keys %{$fnret->value}) {
+foreach my $name (sort keys %{$groupList->value}) {
 
     # if we have excludes, match name against the built regex
     next if ($excludere && $name =~ $excludere);
@@ -55,11 +67,11 @@ foreach my $name (sort keys %{$fnret->value}) {
     next if ($includere && $name !~ $includere);
 
     my @flags;
-    push @flags, 'owner'      if OVH::Bastion::is_group_owner(group => $name);
-    push @flags, 'gatekeeper' if OVH::Bastion::is_group_gatekeeper(group => $name);
-    push @flags, 'aclkeeper'  if OVH::Bastion::is_group_aclkeeper(group => $name);
-    push @flags, 'member'     if OVH::Bastion::is_group_member(group => $name);
-    push @flags, 'guest'      if OVH::Bastion::is_group_guest(group => $name);
+    push @flags, 'owner'      if $selfRoles{$name}{'owner'};
+    push @flags, 'gatekeeper' if $selfRoles{$name}{'gatekeeper'};
+    push @flags, 'aclkeeper'  if $selfRoles{$name}{'aclkeeper'};
+    push @flags, 'member'     if $selfRoles{$name}{'member'};
+    push @flags, 'guest'      if $selfRoles{$name}{'guest'};
     if (@flags or $all) {
         push @flags, 'no-access' if not @flags;
         my $line = sprintf "%18s", $name;
