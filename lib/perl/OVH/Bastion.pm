@@ -419,50 +419,62 @@ sub is_account_ttl_nonexpired {
     return R('OK_NO_TTL');
 }
 
-# Check whether a user is still active, if this feature has been enabled in the config
+# Check whether a user is still active, if this feature has been enabled in the config.
+# As the activeness check usually spawns an external program (which can itself do an expensive
+# network lookup), cache the result if we're allowed to.
+my %_account_active_cache;
+
 sub is_account_active {
     my %params  = @_;
     my $account = $params{'account'};
+    my $cache   = $params{'cache'} || $ENV{'ACCOUNT_ACTIVE_CACHE'};
     my $fnret;
 
     my $checkProgram = OVH::Bastion::config('accountExternalValidationProgram')->value;
     return R('OK_FEATURE_DISABLED') if !$checkProgram;
 
     # Get sysaccount from account because for realm case we need to check if the support account of the realm is active
-    $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);
+    $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account, cache => $cache);
     $fnret or return $fnret;
     my $sysaccount = $fnret->value->{'sysaccount'};
 
-    # If in alwaysActive, then is active
-    my $alwaysActiveAccounts = OVH::Bastion::config('alwaysActiveAccounts');
-    if ($alwaysActiveAccounts and $alwaysActiveAccounts->value) {
-        if (grep { $sysaccount eq $_ } @{$alwaysActiveAccounts->value}) {
+    # if caching is allowed and we already determined this account's activeness, return it
+    return $_account_active_cache{$sysaccount}
+      if $cache && exists $_account_active_cache{$sysaccount};
+
+    # the actual determination is wrapped in a func so that we can cache its result exactly
+    my $compute = sub {
+        # If in alwaysActive, then is active
+        my $alwaysActiveAccounts = OVH::Bastion::config('alwaysActiveAccounts');
+        if ($alwaysActiveAccounts and $alwaysActiveAccounts->value) {
+            if (grep { $sysaccount eq $_ } @{$alwaysActiveAccounts->value}) {
+                return R('OK');
+            }
+        }
+
+        # If account has the flag in public config, then is active
+        if (
+            OVH::Bastion::account_config(
+                account => $sysaccount,
+                key     => OVH::Bastion::OPT_ACCOUNT_ALWAYS_ACTIVE,
+                public  => 1
+            )->value
+          )
+        {
             return R('OK');
         }
-    }
 
-    # If account has the flag in public config, then is active
-    if (
-        OVH::Bastion::account_config(
-            account => $sysaccount,
-            key     => OVH::Bastion::OPT_ACCOUNT_ALWAYS_ACTIVE,
-            public  => 1
-        )->value
-      )
-    {
-        return R('OK');
-    }
+        if (!-r -x $checkProgram) {
+            warn_syslog("Configured check program '$checkProgram' doesn't exist or is not readable+executable");
+            return R('ERR_INTERNAL',
+                msg => "The account activeness check program doesn't exist. Report this to sysadmin!");
+        }
 
-    if (!-r -x $checkProgram) {
-        warn_syslog("Configured check program '$checkProgram' doesn't exist or is not readable+executable");
-        return R('ERR_INTERNAL', msg => "The account activeness check program doesn't exist. Report this to sysadmin!");
-    }
-
-    $fnret = OVH::Bastion::execute(cmd => [$checkProgram, $sysaccount]);
-    if (!$fnret) {
-        warn_syslog("Failed to execute program '$checkProgram': " . $fnret->msg);
-        return R('ERR_INTERNAL', msg => "The account activeness check program failed. Report this to sysadmin!");
-    }
+        $fnret = OVH::Bastion::execute(cmd => [$checkProgram, $sysaccount]);
+        if (!$fnret) {
+            warn_syslog("Failed to execute program '$checkProgram': " . $fnret->msg);
+            return R('ERR_INTERNAL', msg => "The account activeness check program failed. Report this to sysadmin!");
+        }
 
 =begin comment
     # exit code meanings are as follows:
@@ -474,32 +486,37 @@ sub is_account_active {
 =end comment
 =cut
 
-    if ($fnret->value->{'status'} == 0) {
-        return R('OK');
-    }
-    if ($fnret->value->{'status'} == 3) {
-        if (!$fnret->value->{'stderr'}) {
-            warn_syslog("External account validation program returned status 2 (empty stderr)");
+        if ($fnret->value->{'status'} == 0) {
+            return R('OK');
         }
-        else {
-            warn_syslog("External account validation program returned status 2: " . $_)
-              for @{$fnret->value->{'stderr'} || []};
+        if ($fnret->value->{'status'} == 3) {
+            if (!$fnret->value->{'stderr'}) {
+                warn_syslog("External account validation program returned status 2 (empty stderr)");
+            }
+            else {
+                warn_syslog("External account validation program returned status 2: " . $_)
+                  for @{$fnret->value->{'stderr'} || []};
+            }
         }
-    }
-    if ($fnret->value->{'status'} == 4) {
-        if (!$fnret->value->{'stderr'}) {
-            osh_warn("External account validation program returned status 2 (empty stderr)");
+        if ($fnret->value->{'status'} == 4) {
+            if (!$fnret->value->{'stderr'}) {
+                osh_warn("External account validation program returned status 2 (empty stderr)");
+            }
+            else {
+                osh_warn("External account validation program returned status 2: " . $_)
+                  for @{$fnret->value->{'stderr'} || []};
+            }
         }
-        else {
-            osh_warn("External account validation program returned status 2: " . $_)
-              for @{$fnret->value->{'stderr'} || []};
+        if ($fnret->value->{'status'} >= 2 && $fnret->value->{'status'} <= 4) {
+            return R('ERR_UNKNOWN');
         }
-    }
-    if ($fnret->value->{'status'} >= 2 && $fnret->value->{'status'} <= 4) {
-        return R('ERR_UNKNOWN');
-    }
 
-    return R('KO_INACTIVE_ACCOUNT');
+        return R('KO_INACTIVE_ACCOUNT');
+    };
+
+    my $result = $compute->();
+    $_account_active_cache{$sysaccount} = $result if $cache;
+    return $result;
 }
 
 sub json_output {    ## no critic (ArgUnpacking)
