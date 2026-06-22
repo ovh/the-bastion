@@ -13,6 +13,9 @@ use OVH::Bastion::Plugin qw( :DEFAULT help );
 # globally allow sys_getpw* and sys_getgr* cache use
 $ENV{'PW_GR_CACHE'} = 1;
 
+# globally allow is_account_active() cache use
+$ENV{'ACCOUNT_ACTIVE_CACHE'} = 1;
+
 my $withKeys = 1;
 
 sub toggle_all {
