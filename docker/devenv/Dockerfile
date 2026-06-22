@@ -17,4 +17,4 @@ RUN ["rm", "-rf", "/tmp/bastion"]
 RUN ["mkdir", "/opt/bastion"]
 
 # just sleep
-ENTRYPOINT /bin/sleep 9999d
+ENTRYPOINT ["/bin/sleep", "infinity"]

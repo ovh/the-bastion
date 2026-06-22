@@ -8,4 +8,4 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y jq netca
 COPY . /opt/bastion
 
 # start at entrypoint
-ENTRYPOINT /opt/bastion/tests/functional/docker/tester_role.sh
+ENTRYPOINT ["/opt/bastion/tests/functional/docker/tester_role.sh"]

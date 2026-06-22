@@ -32,4 +32,4 @@ RUN \
 EXPOSE 22/tcp
 
 # start at entrypoint
-ENTRYPOINT /opt/bastion/docker/entrypoint.sh --sandbox
+ENTRYPOINT ["/opt/bastion/docker/entrypoint.sh", "--sandbox"]
