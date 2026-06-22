@@ -547,7 +547,7 @@ sub get_user_groups {
     my %params = @_;
     my $user   = $params{'user'} || $params{'account'};
     my $extra  = $params{'extra'};                        # Do we want to include gatekeeper/aclkeeper/owner groups ?
-    my $cache  = $params{'cache'};                        # allow cache use of sys_getgr_all(), and also our own
+    my $cache  = $params{'cache'};                        # allow cache use of sys_getgr_all_byuser(), and also our own
                                                           # cache if we've already been called with same params before
     state %cached_response;
 
@@ -560,21 +560,15 @@ sub get_user_groups {
         return $cached_response{$cachekey};
     }
 
-    # we loop through all the system groups to find the ones having user
-    # as a member
-    my $fnret = OVH::Bastion::sys_getgr_all(cache => $cache);
+    # get the list of groups this user is a member of. We use the reverse index
+    # of the group database (sys_getgr_all_byuser) so we get the user's groups
+    # directly, instead of having to scan through every system group ourselves
+    # looking for the ones having the user as a member (more expensive).
+    my $fnret = OVH::Bastion::sys_getgr_all_byuser(user => $user, cache => $cache);
     $fnret or return $fnret;
 
-    my @groups;
-    foreach my $name (keys %{$fnret->value}) {
-        my $entry = $fnret->value->{$name};
-        if (grep { $user eq $_ } @{$entry->{'members'} || []}) {
-            push @groups, $name;
-        }
-    }
-
     my @availableGroups;
-    foreach my $group (@groups) {
+    foreach my $group (@{$fnret->value}) {
         if ($group =~ /^key.+-(gatekeeper|aclkeeper|owner)$/) {
             push @availableGroups, $group if $extra;
         }
