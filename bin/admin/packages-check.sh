@@ -56,7 +56,7 @@ if echo "$DISTRO_LIKE" | grep -q -w debian; then
     if [ "$opt_install" = 1 ]; then
             export DEBIAN_FRONTEND=noninteractive
             # shellcheck disable=SC2086
-            apt-get update && apt-get install -y $wanted_list
+            apt-get update && apt-get install -y --no-install-recommends $wanted_list
             exit $?
     fi
 
