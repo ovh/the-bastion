@@ -96,14 +96,19 @@ sub syslogFormatted {
         }
         $dedupe{$key} = $value;
 
-        # remove any \n in the value
-        $value =~ s/\n/ /g;
-
-        # replace any \ by an escaped \ aka \\
+        # escape any \ by an escaped \ aka \\ first, so that the escape sequences we
+        # introduce just below for control chars are not themselves re-escaped
         $value =~ s{\\}{\\\\}g;
 
-        # replace any " by \"
+        # replace any " by \", as we use " as the field value delimiter below
         $value =~ s{"}{\\"}g;
+
+        # neutralize control characters (newline, CR, tab, NUL, etc.).
+        # We render them visibly as \xNN so the audit trail stays faithful and machine-parseable.
+        # The class is restricted to 0x00-0x1F & 0x7F, which can never be part of a valid UTF-8 multibyte sequence,
+        # so legitimate non-ASCII content (e.g. account comments) is left untouched.
+        $value =~ s/([\x00-\x1f\x7f])/sprintf('\\x%02x', ord($1))/ge;
+
         push @msg, qq{$key="$value"};
     }
 
