@@ -189,14 +189,17 @@ sub run {
 }
 
 # used twice in process_http_request(): get the worker cmd to execute, launch it
-# and decapsulate the result with the proper error checks
-## no critic (Subroutines::RequireArgUnpacking)
+# and decapsulate the result with the proper error checks. The request body, if any, is
+# passed to the worker through its STDIN (the worker reads it fully before producing output).
 sub _exec_worker_and_get_result {
-    my $self = shift;
-    my @cmd  = @_;
+    my ($self, $cmdref, $stdin_str) = @_;
+    my @cmd = @$cmdref;
     my $fnret;
 
-    $fnret = OVH::Bastion::execute_simple(cmd => \@cmd);
+    # execute() natively pipes stdin_str to the worker (interleaving the write with reading the worker's
+    # stdout, so a large request body can't deadlock us), and gives us back the worker's stdout. With an
+    # empty/undef body it closes the worker's stdin right away, giving it the EOF it waits for.
+    $fnret = OVH::Bastion::execute(cmd => \@cmd, stdin_str => $stdin_str // '');
     $fnret
       or return $self->log_and_exit(
         500,
@@ -214,7 +217,10 @@ sub _exec_worker_and_get_result {
         );
     }
 
-    if (!$fnret->value->{'output'}) {
+    # execute() returns stdout already split on $/, reassemble it into the worker's JSON blob
+    my $output = join($/, @{$fnret->value->{'stdout'} || []});
+
+    if (!$output) {
         return $self->log_and_exit(
             500,
             "Internal Error (worker returned no data)",
@@ -224,15 +230,15 @@ sub _exec_worker_and_get_result {
     }
 
     my $json_decoded;
-    eval { $json_decoded = decode_json($fnret->value->{'output'}); };
+    eval { $json_decoded = decode_json($output); };
     if ($@) {
         return $self->log_and_exit(
             500,
             "Internal Error (worker returned invalid JSON)",
             "Worker returned "
-              . (length($fnret->value->{'output'}))
+              . (length($output))
               . " bytes of data but JSON decoding failed ($@). The first 500 bytes follow:\n"
-              . substr($fnret->value->{'output'}, 0, 500),
+              . substr($output, 0, 500),
             {comment => "worker_invalid_json"}
         );
     }
@@ -325,7 +331,7 @@ sub process_http_request {
         );
         push @cmd, "--monitoring", "--uniqid", $ENV{'UNIQID'};
 
-        $fnret = $self->_exec_worker_and_get_result(@cmd);
+        $fnret = $self->_exec_worker_and_get_result(\@cmd);
 
         my $workerversion = $fnret->value->{'body'};
 
@@ -575,6 +581,9 @@ sub process_http_request {
       if ($self->{'proxy_config'}{'log_request_response'});
     push @cmd, "--egress-protocol", $egress_protocol;
 
+    # the request body is passed to the worker through its STDIN (see below), not the environment
+    push @cmd, "--post-data-stdin";
+
     # X-Test-* is only used for functional tests, and has to be passed to the remote
     foreach my $pattern (qw{ accept content-type content-length content-encoding x-test-[a-z-]+ }) {
         foreach my $key (grep { /^$pattern$/i } keys %$req_headers) {
@@ -596,17 +605,16 @@ sub process_http_request {
     if (my $param = $verb2param{$self->{'request_info'}{'request_method'}}) {
         $content = CGI->new->param($param);
     }
-    $ENV{'CONTENT_TYPE'}    = $real_content_type;
-    $ENV{'PROXY_POST_DATA'} = encode_base64($content);
+    $ENV{'CONTENT_TYPE'} = $real_content_type;
 
     $ENV{'PROXY_ACCOUNT_PASSWORD'} = $pass;
     undef $pass;
-    $self->{'_log'}{'request_body_length'} = length($content);
+    $self->{'_log'}{'request_body_length'} = length($content // '');
 
-    $fnret = $self->_exec_worker_and_get_result(@cmd);
+    # the body goes to the worker through STDIN
+    $fnret = $self->_exec_worker_and_get_result(\@cmd, $content);
 
     delete $ENV{'PROXY_ACCOUNT_PASSWORD'};
-    delete $ENV{'PROXY_POST_DATA'};
 
     if (ref $fnret->value->{'headers'} eq 'ARRAY') {
         push @{$self->{'_supplementary_headers'}}, @{$fnret->value->{'headers'}};

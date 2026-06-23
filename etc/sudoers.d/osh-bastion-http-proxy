@@ -1,3 +1,7 @@
+# Note: PROXY_POST_DATA is no longer used by the daemon, which now passes the request body to the
+# worker through STDIN instead of the environment. It is however kept in env_keep on purpose to ensure
+# a non-breaking upgrade.
+# TODO: remove this a few releases after --post-data-stdin is shipped.
 Defaults:proxyhttp env_keep += "PROXY_POST_DATA PROXY_ACCOUNT_PASSWORD REMOTE_ADDR REMOTE_PORT SERVER_ADDR SERVER_PORT REQUEST_URI HTTP_USER_AGENT"
 
 proxyhttp ALL=(%bastion-users) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/proxy/osh-http-proxy-worker *

@@ -212,6 +212,12 @@ sub execute {
         # monitor our own stdin only if we expect it (we'll pipe it to our child's stdin)
         $select->add(\*STDIN);
     }
+    else {
+        # we have nothing to feed to our child's stdin (no stdin_str, and we're not piping our own
+        # stdin to it), so close it right away to give the child an EOF: otherwise a child that reads
+        # its stdin until EOF (such as our http proxy worker) would block waiting for data forever
+        close($child_stdin);
+    }
 
     # then, while we still have at least two filehandles to monitor OR we have only one which is not our own STDIN:
     while ($select->count() > 1 || ($select->count() == 1 && !$select->exists(\*STDIN))) {

@@ -90,13 +90,19 @@ GetOptions(
 );
 push @headers, ["X-Bastion-Remote-Host" => $remotemachine];
 
+# the daemon normally passes --post-data-stdin and feeds the body on our STDIN (below). The env
+# branch is the fallback for the upgrade window: a not-yet-restarted daemon runs the previous in-RAM
+# code and still passes the body via PROXY_POST_DATA. Keep it until that path is no longer possible.
 if (!$postDataStdin) {
+    # TODO: remove this a few releases after --post-data-stdin is shipped.
     $content = delete $ENV{'PROXY_POST_DATA'};
     $content = decode_base64($content) if $content;
 }
 else {
+    binmode STDIN;
     local $/ = undef;
     $content = <STDIN>;
+    $content //= '';    # readline returns undef on an empty stream (e.g. a body-less GET)
 }
 push @headers, ["X-Bastion-Request-Length" => "" . length($content)];
 

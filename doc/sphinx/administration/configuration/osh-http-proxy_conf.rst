@@ -56,12 +56,14 @@ do the trick.
 port
 ****
 
-:Type: ``int, 1 to 65535``
+:Type: ``int, 1024 to 65535``
 
 :Default: ``8443``
 
-The port to listen to. You can use ports < 1024, in which case privileges will be dropped after binding,
-but please ensure your systemd unit file starts the daemon as root in that case.
+The port to listen to. The daemon runs unprivileged (as the 'proxyhttp' user) and never
+binds as root, so this must be a non-privileged port (>= 1024). If you need to expose the
+proxy on a privileged port such as 443, redirect it to this port at the firewall level
+(e.g. an iptables/pf REDIRECT rule).
 
 ssl_certificate
 ***************

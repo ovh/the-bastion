@@ -39,25 +39,39 @@ case "$1" in
     stop)
         echo -n "Shutting down osh-http-proxy-daemon daemon... "
         if pgrep -c -f $DAEMON >/dev/null ; then
-            pkill -f $DAEMON
+            # SIGQUIT asks the daemon to stop accepting and drain in-flight requests before exiting,
+            # instead of killing them mid-request (which would surface as 500s to clients)
+            pkill -QUIT -f $DAEMON
             echo done
         else
             echo "not running"
         fi
         ;;
-    force-reload|restart)
-        echo -n "Restarting osh-http-proxy-daemon daemon"
+    reload|force-reload)
+        # Graceful, zero-downtime reload: SIGHUP makes the daemon re-exec itself in place (picking up
+        # new code and config) while keeping the listening socket open and draining in-flight requests.
+        # This is the command to use after a code upgrade.
+        echo -n "Reloading osh-http-proxy-daemon daemon... "
         if pgrep -c -f $DAEMON >/dev/null ; then
-            pkill -f $DAEMON
+            pkill -HUP -f $DAEMON
             echo done
         else
             echo "not running"
         fi
-        start-stop-daemon --start --background --exec $DAEMON
+        ;;
+    restart)
+        echo -n "Restarting osh-http-proxy-daemon daemon"
+        if pgrep -c -f $DAEMON >/dev/null ; then
+            pkill -QUIT -f $DAEMON
+            echo done
+        else
+            echo "not running"
+        fi
+        start-stop-daemon --start --background --chuid $USER --exec $DAEMON
         echo "."
         ;;
     *)
-        echo "Usage: $0 {start|stop|restart|force-reload}"
+        echo "Usage: $0 {start|stop|restart|reload|force-reload}"
         exit 1
 esac
 exit 0

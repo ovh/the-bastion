@@ -10,7 +10,20 @@ ConditionPathExists=/home/allowkeeper/healthcheck/allowed.ip
 
 [Service]
 ExecStart=/opt/bastion/bin/proxy/osh-http-proxy-daemon
+
+# Graceful, zero-downtime reload: `systemctl reload osh-http-proxy` sends SIGHUP, which makes the
+# daemon re-exec itself in place (picking up new code and config) while keeping the listening socket
+# open and letting in-flight requests drain. Use this use after a code upgrade.
+ExecReload=/bin/kill -HUP $MAINPID
+
+# On stop/restart, drain rather than kill: SIGQUIT triggers a graceful shutdown.
+# KillMode=process required, so that systemd only signals the master, not the children.
+# TimeoutStopSec must be long enough for an in-flight request to complete; keep it slightly above the largest expected
+# egress 'timeout' (default 120s) and raise it if you raise that config value.
 KillMode=process
+KillSignal=SIGQUIT
+TimeoutStopSec=130s
+
 Restart=on-failure
 RestartSec=5s
 User=proxyhttp

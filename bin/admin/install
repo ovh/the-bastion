@@ -81,6 +81,7 @@ set_default_options()
     opt[overwrite-syslog-ng]=1
     opt[check-ttyrec]=1
     opt[install-fake-ttyrec]=0
+    opt[reload-http-proxy]=1
 }
 set_default_options
 
@@ -111,6 +112,7 @@ while [ -n "$1" ]; do
         opt[overwrite-cron]=0
         opt[syslog-ng]=0
         opt[overwrite-syslog-ng]=0
+        opt[reload-http-proxy]=0
         [ "$1" = "--nothing" ] && nothing=1
     elif [ "$1" = "--managed-upgrade" ] || [ "$1" = "--puppet" ]; then
         set_default_options
@@ -133,7 +135,7 @@ while [ -n "$1" ]; do
             modify-pam-lastlog remove-weak-moduli regen-hostkeys overwrite-logrotate overwrite-cron \
             overwrite-syslog-ng logrotate cron syslog-ng migration-grant-aclkeeper-to-gatekeepers \
             init systemd-units profile modify-pam-sshd wait check-ttyrec install-fake-ttyrec \
-            install-selinux-module generate-mfa-secret
+            install-selinux-module generate-mfa-secret reload-http-proxy
         do
             if [ "$1" = "--no-$allowedopt" ]; then
                 opt[$allowedopt]=0
@@ -227,6 +229,9 @@ Usage:
     --[no-]check-ttyrec          verify that the ttyrec installed version is compatible with our code [N, U, M]
     --[no-]install-fake-ttyrec   install a fake ttyrec binary if ttyrec is not present; useful mainly for tests,
                                  or if you *really* don't want to use the real ttyrec
+
+    --[no-]reload-http-proxy     gracefully reload the HTTP proxy daemon, but only if it's already running, so
+                                 that a code upgrade is applied to it with zero downtime [N, U, M]
 
 EOF
     exit 1
@@ -1141,6 +1146,31 @@ if [ "${opt[systemd-units]}" = 1 ]; then
     done
     systemctl daemon-reload || true
     action_done
+fi
+
+if [ "${opt[reload-http-proxy]}" = 1 ]; then
+    # Gracefully reload the HTTP proxy daemon (only if it's already running)
+    action_doing "Gracefully reload the HTTP proxy daemon if it's already running"
+    proxy_daemon="$basedir/bin/proxy/osh-http-proxy-daemon"
+    if ! pgrep -f "$proxy_daemon" >/dev/null 2>&1; then
+        action_na "not running"
+    else
+        reloaded=0
+        if command -v systemctl >/dev/null && [ -d /var/run/systemd ] \
+            && systemctl is-active --quiet osh-http-proxy 2>/dev/null; then
+            systemctl reload osh-http-proxy && reloaded=1
+        elif [ -x /etc/init.d/osh-http-proxy ]; then
+            /etc/init.d/osh-http-proxy reload && reloaded=1
+        else
+            # last resort: signal the daemon directly, it'll re-exec itself in place
+            pkill -HUP -f "$proxy_daemon" && reloaded=1
+        fi
+        if [ "$reloaded" = 1 ]; then
+            action_done "reloaded"
+        else
+            action_error "failed to reload, you might want to do it manually"
+        fi
+    fi
 fi
 
 if [ "$autodetect_selinux" = 1 ]; then
