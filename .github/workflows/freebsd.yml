@@ -8,8 +8,11 @@ on:
 jobs:
   freebsd:
     runs-on: ubuntu-latest
-    name: FreeBSD
+    name: FreeBSD ${{ matrix.version }}
     if: ${{ contains(github.event.pull_request.labels.*.name, 'tests:freebsd') }}
+    strategy:
+      matrix:
+        version: ['14.4', '15.0', '15.1']
     timeout-minutes: 45
     steps:
     - uses: actions/checkout@v6
@@ -19,7 +22,7 @@ jobs:
       uses: cross-platform-actions/action@master
       with:
         operating_system: freebsd
-        version: '14.3'
+        version: ${{ matrix.version }}
         shell: bash
         sync_files: runner-to-vm
         run: |
