@@ -103,7 +103,7 @@ if (grep { $command eq $_ } qw{ admin superowner }) {
     HEXIT('ERR_SECURITY_VIOLATION',
         msg => "Specified command ($command) can't be granted this way for security reasons");
 }
-if (grep { $command eq $_ } qw{ accountGrantCommand accountRevokeCommand } && !OVH::Bastion::is_admin(sudo => 1)) {
+if ((grep { $command eq $_ } qw{ accountGrantCommand accountRevokeCommand }) && !OVH::Bastion::is_admin(sudo => 1)) {
     HEXIT('ERR_SECURITY_VIOLATION',
         msg => "Specified command ($command) can only be granted by bastion admins for security reasons");
 }
