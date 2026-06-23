@@ -818,11 +818,17 @@ sub is_valid_remote_user {
     my %params         = @_;
     my $user           = $params{'user'};
     my $allowWildcards = $params{'allowWildcards'};
+    my $stricter       = $params{'stricter'};
+
+    my $extraChars = '';
+
+    # by default, allow those
+    $extraChars .= '@!:' if !$stricter;
 
     # if allowWildcards, then additional chars are allowed in the regex
-    my $extraChars = ($allowWildcards ? '?*' : '');
+    $extraChars .= '?*' if $allowWildcards;
 
-    if ($user =~ /^([\Q${extraChars}\Ea-zA-Z0-9._@!:-]{1,128})$/) {
+    if ($user =~ /^([\Q${extraChars}\Ea-zA-Z0-9._-]{1,128})$/) {
         return R('OK', value => $1);
     }
     return R('ERR_INVALID_PARAMETER', msg => "Specified user doesn't seem to be valid");
