@@ -2,10 +2,6 @@
 Welcome to The Bastion documentation!
 =====================================
 
-.. warning::
-
-   This documentation is in a WIP status, some edges might be rough!
-
 Wait, what's a bastion exactly? (in 140-ish characters)
 =======================================================
 

@@ -27,6 +27,18 @@ See the ``--help`` for a more fine-grained upgrade path if needed.
 Version-specific upgrade instructions
 =====================================
 
+v3.23.99-rc1 - 2026/06/24
+*************************
+
+If you're using the HTTP Proxy, it now supports graceful reload on upgrade, which means that all the
+in-flight connections will drain gracefully and the TCP port stays open while the daemon re-execs itself.
+This behavior is now automatic on upgrade, handled by the :file:`bin/admin/install` script. It will apply
+the reload only if the proxy is currently running. To disable this behaviour, add `--no-reload-http-proxy`
+to the install script arguments.
+Note that on the first upgrade to this version, the in-flight connections will be cut (as with previous versions
+when restarting the proxy), however the port will stay open and accept new connections correctly. On all the next
+upgrades, the in-flight connections will drain normally.
+
 v3.23.01 - 2026/01/29
 *********************
 
@@ -52,7 +64,6 @@ This shift amount is configurable in bastion.conf as ``groupGidMin`` (``500000``
 If you use fixed UIDs for your accounts and you want to ensure any preexisting group's GID won't get in the way,
 you may use the updated :file:`bin/admin/fix-group-gid.sh` script to shift any preexisting group GID that would be
 out of the new ``groupGidMin`` range. This is optional.
-
 
 v3.23.00 - 2025/12/22
 *********************

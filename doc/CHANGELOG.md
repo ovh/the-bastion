@@ -1,3 +1,23 @@
+## v3.23.99-rc1 - 2026/06/24
+- enh: perf: sudoers sharding for a sudo performance boost on big bastions
+- enh: perf: disable the ``admin_flag`` option of sudo, where supported
+- enh: http proxy: graceful zero-downtime reload + pass body via STDIN
+- enh: harden ``osh-encrypt-rsync.pl`` against symlink attacks
+- enh: harden ``syslogFormatted()`` to proactively drop control characters
+- enh: ``get_from_for_user_key``: use the canonicalized versions of IPs when building ``from=''``
+- enh: ``packages-check.sh``: install with ``--no-install-recommends`` on Debian/Ubuntu
+- enh: ``fix-group-gid.sh``: also fix the group's corresponding user uid if applicable
+- fix: ``accountModifyCommand``: granting/revoking ``accountGrantCommand`` now correctly requires admin
+- fix: ``realmCreate``: re-check the ``from=''`` IP list validity in the helper
+- fix: http proxy: validate the user properly
+- fix: allow password authentication for egress if ``passwordAllowed`` is configured
+- fix: when using ``-P``, ensure we go through JIT MFA
+- fix: account expiration & ``accountUnexpire`` usage for ``realm/user`` accounts
+- fix: ``groupCreate``: specify the UID of the group's corresponding user
+- fix: defensive: refuse to proceed when using ``--bind`` shall ``get_bastion_ips()`` fail
+- fix: early check for port validity to avoid warnings later on
+- chg: test all FreeBSD upstream-supported versions, and drop the HardenedBSD mention
+
 ## v3.23.01 - 2026/01/29
 - feat: accept ``-l`` as an additional alias to specify the username (mimicking ``ssh``'s option)
 - enh: better interaction between systemd units and /home encryption
