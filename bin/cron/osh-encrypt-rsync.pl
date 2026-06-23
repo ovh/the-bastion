@@ -491,8 +491,9 @@ sub potentially_work_on_this_file {
     # we might not have the right to touch some filetypes, as per config
     return if ($file_delay < 0);
 
-    # $_ must exist and be a file
-    -f or return;
+    # $_ must be a regular file and not a symlink (-l lstat()s without following), so a user-owned
+    # ttyrec/ dir can't make this root cron follow a symlink to an arbitrary file.
+    (-f && !-l) or return;
     my $file = $_;
 
     # first, populate (once) the list of ttyrec files that are still opened by ttyrec
