@@ -401,7 +401,17 @@ $fnret = OVH::Bastion::add_user_to_group(
 $fnret or HEXIT($fnret);
 osh_debug('user keyreader added to group');
 
-my $finalPrefix = $realmFrom ? sprintf('from="%s"', $realmFrom) : $from;
+# --from (from realmCreate) overrides the from="" clause, re-validate each IP
+my $finalPrefix = $from;
+if (defined $realmFrom && $realmFrom ne '') {
+    my @validatedFrom;
+    foreach my $ip (split(/,/, $realmFrom)) {
+        $fnret = OVH::Bastion::is_valid_ip(ip => $ip, allowSubnets => 1);
+        $fnret or HEXIT('ERR_INVALID_PARAMETER', msg => "Invalid IP or subnet in --from: $ip");
+        push @validatedFrom, $fnret->value->{'ip'};
+    }
+    $finalPrefix = sprintf('from="%s"', join(',', @validatedFrom));
+}
 $finalPrefix .= ' ' if $finalPrefix;
 
 osh_info "Adding provided public key in authorized_keys file...";

@@ -54,7 +54,10 @@ if ($fnret) {
     osh_exit 'ERR_ALREADY_EXISTING', "This realm already exists";
 }
 
-# TODO check $from
+foreach my $ip (split(/,/, $from)) {
+    $fnret = OVH::Bastion::is_valid_ip(ip => $ip, allowSubnets => 1);
+    $fnret or osh_exit 'ERR_INVALID_PARAMETER', "Invalid IP or subnet in --from: $ip";
+}
 
 if (!$pubKey) {
     osh_info("Please paste the SSH key you want to add, which should be the egress key ");
