@@ -82,12 +82,18 @@ OVH::Bastion::ProxyHTTP->new()->run(
     max_spare_servers => $config->{'max_spare_servers'},
     access_log_file   => "/home/proxyhttp/access.log",
 
+    # Needed for graceful zero-downtime reload: on SIGHUP, Net::Server re-exec's this daemon while keeping
+    # the bound listening socket open. This option ensures the pre-existing children are left to drain
+    # and exit. As max_requests is 1, this happens as soon as the in-flight request is completed.
+    leave_children_open_on_hup => 1,
+
     # This is the max time allowed for http_process_request(), which is where we spawn our worker.
     # This value is defined when the proxy starts and is only applicable to the master process, hence it can't be
     # modified afterwards with X-Bastion-Timeout.
     # So we set it to the max value allowed for X-Bastion-Timeout,
     # which is also the max allowed value of the 'timeout' config param (see above).
     timeout_idle => 3600,
+
     proxy_config => {
         insecure                      => $config->{'insecure'} ? 1 : 0,
         timeout                       => $config->{'timeout'},                         # our worker will wait for up to this amount of time for the egress connection to complete

@@ -18,6 +18,7 @@ sub process_http_request {
 
     my $hasContentType;
     my $wantedResponseSize = 64;
+    my $responseDelay      = 0;
 
     # this is to get the unparsed body of the request, portion of code
     # taken from lib/perl/OVH/Bastion/ProxyHTTP.pm, more context available over there
@@ -37,7 +38,15 @@ sub process_http_request {
         elsif (lc $headerTuple->[0] eq 'x-test-wanted-response-size') {
             $wantedResponseSize = $headerTuple->[1];
         }
+        elsif (lc $headerTuple->[0] eq 'x-test-response-delay') {
+            # hold the response for N seconds, to keep the request in-flight on the proxy side
+            ($responseDelay) = $headerTuple->[1] =~ /^(\d+)$/;
+        }
     }
+
+    # delay the whole response if asked to (used by the graceful-reload test)
+    sleep $responseDelay if $responseDelay;
+
     print "Content-type: text/plain\n" if !$hasContentType;
 
     # if the request had a body, include it verbatim in our answer
