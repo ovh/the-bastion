@@ -484,7 +484,7 @@ sub process_http_request {
     $account = $fnret->value->{'account'};                      # untaint
     $self->{'_log'}{'account'} = $account;
 
-    if ($user !~ /^[a-zA-Z0-9._-]+/) {
+    if (!OVH::Bastion::is_valid_remote_user(user => $user, stricter => 1)) {
         return $self->log_and_exit(
             400,
             "Bad Request (bad user name)",

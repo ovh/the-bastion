@@ -16,7 +16,6 @@ use HTTP::Message;
 use IO::Pipe;
 use IO::Select;
 use IO::Socket::SSL;
-use IO::Socket::SSL;
 use LWP::UserAgent;
 use MIME::Base64;
 use POSIX    ();
@@ -117,7 +116,15 @@ $egress_protocol ||= "https";
 
 $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account);    # time: 20ms
 $fnret or log_and_exit(400, "Bad Request (bad account)", "Account name is invalid\n", {comment => "invalid_account"});
-$account               = $fnret->value->{'account'};                                  # untaint
+$account = $fnret->value->{'account'};                                                # untaint
+
+# re-validate the remote user here, the daemon already checks this, but as a privileged helper
+# we must revalidate everything that is passed on to us
+if (!defined $user || !($fnret = OVH::Bastion::is_valid_remote_user(user => $user, stricter => 1))) {
+    log_and_exit(400, "Bad Request (bad user name)", "User name is invalid\n", {comment => "bad_user_name"});
+}
+$user = $fnret->value;    # untaint
+
 $log_params{'account'} = $account;
 $log_params{'user'}    = $user;
 $log_params{'hostto'}  = $remotemachine;

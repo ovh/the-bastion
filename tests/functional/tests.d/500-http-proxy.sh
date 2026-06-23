@@ -96,6 +96,17 @@ testsuite_proxy()
 
     proxy_password="$proxy_password2"
 
+    # a remote user name with forbidden characters must be rejected (regression test for the
+    # user revalidation done by both the daemon and the worker, see is_valid_remote_user(stricter => 1)).
+    # '!' is rejected under stricter mode; the daemon's previous (loose, unanchored) regex let it through.
+    script bad_user_name "curl -m $default_timeout -ski -u '$account0@te!st@127.0.0.1:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain 'HTTP/1.0 400 Bad Request (bad user name)'
+    testsuite_proxy_check_headers
+    nocontain 'WWW-Authenticate: '
+    contain 'Content-Type: text/plain'
+    contain "User name 'te!st' has forbidden characters"
+
     script good_auth_no_access "curl -m $default_timeout -ski -u '$account0@test@127.0.0.1:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 403 Access Denied (access denied to remote)'
