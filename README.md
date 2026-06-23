@@ -120,16 +120,16 @@ Linux distros below are tested with each release, but as this is a security prod
 - Debian 13 (Trixie), 12 (Bookworm), 11 (Bullseye)
 - RockyLinux 9.x, 8.x
 - Ubuntu LTS 24.04, 22.04, 20.04
-- OpenSUSE Leap 15.5\*
+- OpenSUSE Leap 15.6\*
 
 \*: Note that these versions have no out-of-the-box MFA support, as they lack packaged versions of `pamtester`, `pam-google-authenticator`, or both. Of course, you may compile those yourself.
 Any other so-called "modern" Linux version are not tested with each release, but should work with no or minor adjustments.
 
 The following OS are also tested with each release:
 
-- FreeBSD/HardenedBSD 14.3\*\*
+- FreeBSD 14.4, 15.0, 15.1\*\*
 
-\*\*: Note that these have partial MFA support, due to their reduced set of available `pam` plugins. Support for either an additional password or TOTP factor can be configured, but not both at the same time. The code is actually known to work on FreeBSD/HardenedBSD 10+, but it's only regularly tested under 14.3.
+\*\*: Note that these have partial MFA support, due to their reduced set of available `pam` plugins. Support for either an additional password or TOTP factor can be configured, but not both at the same time.
 
 Other BSD variants, such as OpenBSD and NetBSD, are unsupported as they have a severe limitation over the maximum number of supplementary groups, causing problems for group membership and restricted commands checks, as well as no filesystem-level ACL support and missing PAM support (hence no MFA).
 
