@@ -478,7 +478,12 @@ sub get_from_for_user_key {
         @ipList = @$forcedList;
     }
 
-    my @ipListVerified = grep { OVH::Bastion::is_valid_ip(ip => $_, allowSubnets => 1) } @ipList;
+    # use the canonical/untainted values
+    my @ipListVerified;
+    foreach my $ipEntry (@ipList) {
+        my $ipFnret = OVH::Bastion::is_valid_ip(ip => $ipEntry, allowSubnets => 1);
+        push @ipListVerified, $ipFnret->value->{'ip'} if $ipFnret;
+    }
 
     my $from = '';
     if (@ipListVerified) {
