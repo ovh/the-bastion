@@ -30,7 +30,20 @@ do_generate()
     fi
     mkdir -p "$BASTION_ETC_DIR/osh-backup-acl-keys.conf.d"
 
-    sign_key_pass=$(perl -e '$p .= chr(int(rand(93))+33) for (1..16); $p =~ s{[\$`"\\]}{~}g; print "$p"')
+    # The charset is restricted to chars that are safe in the contexts this passphrase ends up in:
+    # the gpg batch, the JSON config below, and the double-quoted shell config below.
+    sign_key_pass=$(perl -M5.026 -Mwarnings -I"$basedir/lib/perl" -MOVH::Bastion -e '
+        my $fnret = OVH::Bastion::get_random_string(
+            length => 24,
+            chars  => [("a".."z"), ("A".."Z"), (0..9), qw(+ - = _ . , : @ # % /)],
+        );
+        $fnret or die "passphrase generation failed: $fnret\n";
+        print $fnret->value;
+    ')
+    if [ -z "$sign_key_pass" ]; then
+        echo "Error: couldn't generate the signing key passphrase" >&2
+        exit 1
+    fi
 
     echo "Detecting GnuPG version..."
     if gpg --dump-options | grep -q -- --quick-generate-key; then

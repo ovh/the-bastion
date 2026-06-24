@@ -91,34 +91,18 @@ sub act {
     my ($self, $account, $shortGroup, $group, $size, $passhome, $base, $context, $passhome, $base) =
       @values{qw{ self account shortGroup group size passhome base context passhome base }};
 
-    my $pass;
-    my $antiloop = 1000;
+    # Generate a password.
+    # We only add 3 specials chars which are recognized as special chars in TL1,
+    # as some network devices are very picky and only allow these 3.
+    my @charset = ('a' .. 'z', 'A' .. 'Z', '0' .. '9', '+', '%', '#');
+    $fnret = OVH::Bastion::get_random_string(length => $size, chars => \@charset);
+    $fnret or return $fnret;
+    my $pass = $fnret->value;
 
-    my $hashes;
-  RETRY: while ($antiloop-- > 0) {
-
-        # generate a password
-        $pass = '';
-        # We only add 3 specials chars which are recognized as special chars in TL1,
-        # as some network devices are very picky and only allow these 3.
-        my @allowedChars = ('a' .. 'z', 'A' .. 'Z', '0' .. '9', '+', '%', '#');
-        foreach (1 .. $size) {
-            $pass .= $allowedChars[int(rand(@allowedChars))];
-        }
-
-        # get the corresponding hashes
-        $fnret = OVH::Bastion::get_hashes_from_password(password => $pass);
-        $fnret or return $fnret;
-
-        # verify that the hashes match this regex (some constructors need it)
-        my $check_re = qr'^\$\d\$[a-zA-Z0-9]+\$[a-zA-Z0-9.\/]+$';
-        foreach my $hash (keys %{$fnret->value}) {
-            next RETRY if ($fnret->value->{$hash} && $fnret->value->{$hash} !~ $check_re);
-        }
-
-        $hashes = $fnret->value;
-        last;
-    }
+    # get the corresponding hashes
+    $fnret = OVH::Bastion::get_hashes_from_password(password => $pass);
+    $fnret or return $fnret;
+    my $hashes = $fnret->value;
 
     if (ref $hashes ne 'HASH') {
         return R('ERR_INTERNAL', msg => "Couldn't generate a valid password");
