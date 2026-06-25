@@ -327,7 +327,7 @@ sub is_account_nonexpired {
         # last login date is unknown and an expiration policy is configured:
         # err to the side of caution and return an error to deny login.
         # if no policy is configured, we fall through and allow login below.
-        return R('KO_UNKNOWN_LAST_LOGIN', msg => "Couldn't determine last login date");
+        return R('KO_UNKNOWN_LAST_LOGIN', value => {}, msg => "Couldn't determine last login date");
     }
 
     # called at several places below, only when we return OK
