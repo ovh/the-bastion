@@ -241,7 +241,7 @@ foreach my $accHash (@accounts) {
 
         if (!$fnret->is_err) {
             $ret{'can_connect'} = $canConnect;
-            if ($fnret->value->{'already_seen_before'}) {
+            if ($fnret->value && $fnret->value->{'already_seen_before'}) {
                 $ret{'already_seen_before'} = 1;
                 if (defined $fnret->value->{'seconds'}) {
                     $fnret = OVH::Bastion::duration2human(seconds => $fnret->value->{'seconds'}, tense => "past");
