@@ -1,3 +1,10 @@
+## v3.23.99-rc2 - 2026/06/29
+- feat: implement proxy jump for egress connections (#592)
+- enh: perf: speedup groupList by resolving our roles in a single pass
+- enh: perf: add optional cache to is_account_active()
+- enh: perf: avoid O(accounts x groups) scans with a user->groups reverse index
+- fix (rc1): accountInfo: handle KO_UNKNOWN_LAST_LOGIN gracefully
+
 ## v3.23.99-rc1 - 2026/06/24
 - enh: perf: sudoers sharding for a sudo performance boost on big bastions
 - enh: perf: disable the ``admin_flag`` option of sudo, where supported
