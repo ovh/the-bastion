@@ -27,11 +27,17 @@ Remove a specific group server access from an account
    Host(s) to remove access from, either a HOST which will be resolved to an IP immediately,
 
                                  or an IP, or a whole subnet using the PREFIX/SIZE notation
-  --user USER|PATTERN|*        Specify which remote user was allowed to connect as.
+.. option:: --user USER|PATTERN|*
+
+   Specify which remote user was allowed to connect as.
+
                                  Globbing characters '*' and '?' are supported, so you can specify a pattern
                                  that will be matched against the actual remote user name.
                                  If any user was allowed, use '--user *' (you might need to escape '*' from your shell)
-  --port PORT|*                Remote port that was allowed to connect to
+.. option:: --port PORT|*
+
+   Remote port that was allowed to connect to
+
                                  If any user was allowed, use '--port *' (you might need to escape '*' from your shell)
 .. option:: --protocol PROTO
 
@@ -52,7 +58,10 @@ Remove a specific group server access from an account
 
    Proxy host port to connect to (mandatory when --proxy-host is specified)
 
-  --proxy-user USER|PATTERN|*  Proxy user to connect as (mandatory when --proxy-host is specified).
+.. option:: --proxy-user USER|PATTERN|*
+
+   Proxy user to connect as (mandatory when --proxy-host is specified).
+
                                    Globbing characters '*' and '?' are supported for pattern matching.
 
 This command removes, from an existing bastion account, access to a given server, using the

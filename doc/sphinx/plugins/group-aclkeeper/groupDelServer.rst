@@ -23,11 +23,17 @@ Remove an IP or IP block from a group's server list
    Host(s) to remove access from, either a HOST which will be resolved to an IP immediately,
 
                              or an IP, or a whole subnet using the PREFIX/SIZE notation
-  --user USER|PATTERN|*    Specify which remote user was allowed to connect as.
+.. option:: --user USER|PATTERN|*
+
+   Specify which remote user was allowed to connect as.
+
                              Globbing characters '*' and '?' are supported, so you can specify a pattern
                              that will be matched against the actual remote user name.
                              If any user was allowed, use '--user *' (you might need to escape '*' from your shell)
-  --port PORT|*            Remote port that was allowed to connect to
+.. option:: --port PORT|*
+
+   Remote port that was allowed to connect to
+
                              If any port was allowed, use '--port *' (you might need to escape '*' from your shell)
 .. option:: --protocol PROTO
 
@@ -45,9 +51,12 @@ Remove an IP or IP block from a group's server list
 
 .. option:: --proxy-port PORT
 
-   Proxy port that was used to reach the target server
+   Proxy port that was used to reach the target server (mandatory when --proxy-host is specified)
 
-  --proxy-user USER|PATTERN|*  Proxy user that was configured for this access (mandatory when --proxy-host is specified).
+.. option:: --proxy-user USER|PATTERN|*
+
+   Proxy user that was configured for this access (mandatory when --proxy-host is specified).
+
                                Globbing characters '*' and '?' are supported for pattern matching.
 
 This command adds, to an existing bastion account, access to a given server, using the
