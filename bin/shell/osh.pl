@@ -611,8 +611,7 @@ else {
     }
 }
 
-my $proxyIp   = undef;
-my $proxyPort = undef;
+my ($proxyIp, $proxyPort);
 my $proxyUser = $user;    # user might be undef. We'll handle that later
 # Parse and validate the proxyjump spec if specified. The "-J [user@]host[:port]" grammar and its
 # validation live in OVH::Bastion::validate_proxy_params() (shared with the scp plugin and the ACL

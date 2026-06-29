@@ -156,7 +156,7 @@ sub is_access_way_granted {
                 # we want an exact match
                 if (not defined $entry->{'port'}) {
                     if (not defined $wantedPort) {
-                        ;    # both undefined ? ok
+                        ;    # both undefined? OK
                     }
                     else {
                         next;    # if only one of two is undef, it's not an exact match
@@ -1238,7 +1238,7 @@ sub ssh_test_access_way {
         $fnret or return $fnret;
         $proxyPort = $fnret->value;
 
-        $proxyUser = OVH::Bastion::get_user_from_env()->value if not $proxyUser;                    # no proxyUser or account ? get from env then
+        $proxyUser = OVH::Bastion::get_user_from_env()->value if not $proxyUser;                    # no proxyUser or account? Get from env then
         $fnret     = OVH::Bastion::is_valid_remote_user(user => $proxyUser, allowWildcards => 1);
         $fnret or return $fnret;
         $proxyUser = $fnret->value;
@@ -1246,7 +1246,7 @@ sub ssh_test_access_way {
 
     $user  = OVH::Bastion::config("defaultLogin")->value if not $user;
     $user  = $account                                    if not $user;    # defaultLogin empty means the user himself
-    $user  = OVH::Bastion::get_user_from_env()->value    if not $user;    # no user or account ? get from env then
+    $user  = OVH::Bastion::get_user_from_env()->value    if not $user;    # no user or account? Get from env then
     $fnret = OVH::Bastion::is_valid_remote_user(user => $user, allowWildcards => 1);
     $fnret or return $fnret;
     $user = $fnret->value;

@@ -246,7 +246,7 @@ EOS
             return R('KO', msg => "adding proxy columns to $table");
         }
 
-        $dbh->commit or return R('KO', msg => "committing v2 upgrade of $table");
+        $dbh->commit or return R('KO', msg => "committing v2 upgrade of $table: " . $dbh->errstr);
         $user_version = 2;
     }
 

@@ -843,10 +843,16 @@ sub validate_proxy_params {
     my $proxyUser      = $params{'proxyUser'};
     my $allowWildcards = $params{'allowWildcards'} // 1;
 
-    # if we were given a combined proxy-jump spec (the "-J [user@]host[:port]" form used by osh.pl and the
+    # Callers that already have the components separately (e.g. --proxy-host/--proxy-port/--proxy-user)
+    # must not pass proxyJump too.
+    if (defined $proxyJump && (defined $proxyHost || defined $proxyPort || defined $proxyUser)) {
+        return R('ERR_INCOMPATIBLE_PARAMETERS',
+            msg => "Proxyjump specification passed along with at least a proxy host, port or user");
+    }
+
+    # If we were given a combined proxy-jump spec (the "-J [user@]host[:port]" form used by osh.pl and the
     # scp plugin), split it into its host/port/user components here, so the spec grammar lives in exactly
-    # one place. Callers that already have the components separately (e.g. --proxy-host/--proxy-port/
-    # --proxy-user) simply don't pass proxyJump; the validation below is shared between both forms.
+    # one place.
     if (defined $proxyJump && $proxyJump ne '') {
         if ($proxyJump =~ /^(?:([a-zA-Z0-9._@!-]{1,128})@)?(\[[0-9a-fA-F:.]+\]|[a-zA-Z0-9._-]+)(?::(\d+))?$/) {
             $proxyUser = $1 if $1;

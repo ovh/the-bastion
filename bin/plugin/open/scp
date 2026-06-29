@@ -19,12 +19,11 @@ local $ENV{'FORCE_STDERR'} = 1;
 # don't output fancy stuff, this can get digested by scp and we get garbage output
 local $ENV{'PLUGIN_QUIET'} = 1;
 
-my ($scpCmd);
 my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,
     header  => undef,
     options => {
-        'scp-cmd=s'    => \$scpCmd,
+        'scp-cmd=s'    => \my $scpCmd,
         'proxy-jump=s' => \my $proxyJump,
     },
     help => \&help,

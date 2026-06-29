@@ -744,23 +744,23 @@ sub access_modify {
                         my $shouldDelete = 1;
 
                         if (defined $proxyIp) {
-                            $shouldDelete = 0 unless $line =~ m{\# PROXYHOST=\Q$proxyIp\E(\s|$)};
+                            $shouldDelete = 0 unless $line =~ m{# PROXYHOST=\Q$proxyIp\E(\s|$)};
                         }
-                        elsif ($line =~ m{\# PROXYHOST=}) {
+                        elsif ($line =~ m{# PROXYHOST=}) {
                             $shouldDelete = 0;
                         }
 
                         if ($shouldDelete && defined $proxyPort) {
-                            $shouldDelete = 0 unless $line =~ m{\# PROXYPORT=\Q$proxyPort\E(\s|$)};
+                            $shouldDelete = 0 unless $line =~ m{# PROXYPORT=\Q$proxyPort\E(\s|$)};
                         }
-                        elsif ($shouldDelete && $line =~ m{\# PROXYPORT=}) {
+                        elsif ($shouldDelete && $line =~ m{# PROXYPORT=}) {
                             $shouldDelete = 0;
                         }
 
                         if ($shouldDelete && defined $proxyUser) {
-                            $shouldDelete = 0 unless $line =~ m{\# PROXYUSER=\Q$proxyUser\E(\s|$)};
+                            $shouldDelete = 0 unless $line =~ m{# PROXYUSER=\Q$proxyUser\E(\s|$)};
                         }
-                        elsif ($shouldDelete && $line =~ m{\# PROXYUSER=}) {
+                        elsif ($shouldDelete && $line =~ m{# PROXYUSER=}) {
                             $shouldDelete = 0;
                         }
 
