@@ -766,6 +766,7 @@ sub access_modify {
 
                         if ($shouldDelete) {
                             chomp $line;
+                            # we add it back but commented (i.e. disabled), for history purposes
                             $line = "# $line # $comment\n";
                             $found++;
                         }
