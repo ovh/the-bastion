@@ -48,7 +48,7 @@ Usage: --osh SCRIPT_NAME --account ACCOUNT --host HOST --user USER --port PORT [
                               sftp         allow usage of the SFTP subsystem, through the bastion
                               rsync        allow usage of rsync, through the bastion
   --proxy-host HOST|IP     Specify which host was used as a proxy/jump host to reach the target server
-  --proxy-port PORT        Proxy port that was used to reach the target server
+  --proxy-port PORT        Proxy port that was used to reach the target server (mandatory when --proxy-host is specified)
   --proxy-user USER|PATTERN|*  Proxy user that was configured for this access (mandatory when --proxy-host is specified).
                                Globbing characters '*' and '?' are supported for pattern matching.
 EOF
