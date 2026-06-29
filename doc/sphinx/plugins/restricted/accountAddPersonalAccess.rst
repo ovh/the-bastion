@@ -23,11 +23,17 @@ Add a personal server access to an account
    Host(s) to add access to, either a HOST which will be resolved to an IP immediately,
 
                              or an IP, or a whole subnet using the PREFIX/SIZE notation
-  --user USER|PATTERN|*    Specify which remote user should be allowed to connect as.
+.. option:: --user USER|PATTERN|*
+
+   Specify which remote user should be allowed to connect as.
+
                              Globbing characters '*' and '?' are supported, so you can specify a pattern
                              that will be matched against the actual remote user name.
                              To allow any user, use '--user *' (you might need to escape '*' from your shell)
-  --port PORT|*            Remote port allowed to connect to
+.. option:: --port PORT|*
+
+   Remote port allowed to connect to
+
                              To allow any port, use '--port *' (you might need to escape '*' from your shell)
 .. option:: --protocol PROTO
 
@@ -56,6 +62,19 @@ Add a personal server access to an account
 
    Add a comment alongside this server. Quote it twice as shown if you're under a shell.
 
+.. option:: --proxy-host HOST|IP
+
+   Use this host as a proxy/jump host to reach the target server
+
+.. option:: --proxy-port PORT
+
+   Proxy host port to connect to (mandatory when --proxy-host is specified)
+
+.. option:: --proxy-user USER|PATTERN|*
+
+   Proxy user to connect as (mandatory when --proxy-host is specified).
+
+                               Globbing characters '*' and '?' are supported for pattern matching.
 
 The access will work only if one of the account's personal egress public key has been copied to the remote server.
 To get the list of an account's personal egress public keys, see ``accountListEgressKeyss`` and ``selfListEgressKeys``.

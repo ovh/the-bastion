@@ -1,0 +1,15 @@
+# vim: set filetype=dockerfile ts=4 sw=4 sts=4 et:
+# Minimal SSH-only image used by the functional tests to play the roles of a
+# "jumphost" and a "remoteserver" sitting behind the bastion, see
+# tests/functional/docker/sshhost_role.sh
+#
+# These are plain sshd boxes: they contain NO bastion code. The role script is
+# bind-mounted and run as the entrypoint at `docker run` time, so this image is
+# generic and doesn't need to be rebuilt when the role script changes.
+FROM debian:stable-slim
+LABEL maintainer="stephane.lesimple+bastion@ovhcloud.com"
+
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server openssh-client \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /run/sshd

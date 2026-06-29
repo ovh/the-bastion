@@ -228,6 +228,31 @@ EOS
     # endof version==0
 
     if ($user_version == 1) {
+        # add proxy columns for the proxyjump feature. Use a transaction so that if we're interrupted,
+        # the rollback leaves the db untouched at version 1 and the next run retries cleanly.
+        my $table = ($sqltype eq 'local' ? "connections" : "connections_summary");
+
+        $dbh->begin_work or return R('KO', msg => "starting transaction to upgrade $table to v2");
+
+        my $ok =
+             $dbh->do("ALTER TABLE $table ADD COLUMN proxyuser TEXT")
+          && $dbh->do("ALTER TABLE $table ADD COLUMN proxyip TEXT")
+          && $dbh->do("ALTER TABLE $table ADD COLUMN proxyhost TEXT")
+          && $dbh->do("ALTER TABLE $table ADD COLUMN proxyport INTEGER")
+          && $dbh->do("PRAGMA user_version=2");
+
+        if (!$ok) {
+            $dbh->rollback;
+            return R('KO', msg => "adding proxy columns to $table");
+        }
+
+        $dbh->commit or return R('KO', msg => "committing v2 upgrade of $table: " . $dbh->errstr);
+        $user_version = 2;
+    }
+
+    # endof version==1
+
+    if ($user_version == 2) {
         ;    # insert here future schema modifications
     }
 
@@ -259,6 +284,10 @@ sub _sql_log_insert_file {
     my $timestampusec = $params{'timestampusec'};
     my $uniqid        = $params{'uniqid'};
     my $sqltype       = $params{'sqltype'};
+    my $proxyuser     = $params{'proxyuser'};
+    my $proxyip       = $params{'proxyip'};
+    my $proxyhost     = $params{'proxyhost'};
+    my $proxyport     = $params{'proxyport'};
 
     if ($sqltype ne 'local' and $sqltype ne 'global') {
         return R('ERR_INVALID_PARAMETER', msg => "Invalid parameter sqltype");
@@ -309,20 +338,24 @@ sub _sql_log_insert_file {
         my @execute;
         if ($sqltype eq 'local') {
             @execute = (
-                $uniqid, $timestamp, $timestampusec, $account,     $cmdtype, $allowed, $hostfrom,
-                $ipfrom, $portfrom,  $bastionip,     $bastionport, $hostto,  $ipto,    $portto,
-                $user,   $plugin,    $params,        $comment,     $ttyrecfile
+                $uniqid,     $timestamp, $timestampusec, $account,   $cmdtype,     $allowed,
+                $hostfrom,   $ipfrom,    $portfrom,      $bastionip, $bastionport, $hostto,
+                $ipto,       $portto,    $user,          $plugin,    $params,      $comment,
+                $ttyrecfile, $proxyuser, $proxyip,       $proxyhost, $proxyport
             );
             $prepare =
                 "INSERT INTO connections"
-              . "(uniqid,timestamp,timestampusec,account,cmdtype,allowed,hostfrom,ipfrom,portfrom,bastionip,bastionport,hostto,ipto,portto,user,plugin,params,comment,ttyrecfile)"
+              . "(uniqid,timestamp,timestampusec,account,cmdtype,allowed,hostfrom,ipfrom,portfrom,bastionip,bastionport,hostto,ipto,portto,user,plugin,params,comment,ttyrecfile,proxyuser,proxyip,proxyhost,proxyport)"
               . 'VALUES ('
               . ('?,' x (@execute - 1)) . '?)';
         }
         elsif ($sqltype eq 'global') {
-            @execute = ($uniqid, $timestamp, $account, $cmdtype, $allowed, $ipfrom, $ipto, $portto, $user, $plugin);
+            @execute = (
+                $uniqid, $timestamp, $account, $cmdtype,   $allowed, $ipfrom,    $ipto,
+                $portto, $user,      $plugin,  $proxyuser, $proxyip, $proxyhost, $proxyport
+            );
             $prepare =
-              "INSERT INTO connections_summary (uniqid,timestamp,account,cmdtype,allowed,ipfrom,ipto,portto,user,plugin)"
+              "INSERT INTO connections_summary (uniqid,timestamp,account,cmdtype,allowed,ipfrom,ipto,portto,user,plugin,proxyuser,proxyip,proxyhost,proxyport)"
               . 'VALUES ('
               . ('?,' x (@execute - 1)) . '?)';
         }
@@ -410,6 +443,9 @@ sub log_access_insert {
     if (not defined $params{'hostfrom'} and defined $params{'ipfrom'}) {
         $params{'hostfrom'} = OVH::Bastion::ip2host($params{'ipfrom'})->value;
     }
+    if (not defined $params{'proxyhost'} and defined $params{'proxyip'}) {
+        $params{'proxyhost'} = OVH::Bastion::ip2host($params{'proxyip'})->value;
+    }
 
     my ($timestamp, $timestampusec) = Time::HiRes::gettimeofday();
     $params{'timestamp'}     = $timestamp;
@@ -480,6 +516,10 @@ sub log_access_insert {
         ['accountsql',   $accountsql],
         ['comment',      $params{'comment'}],
         ['params',       $params{'params'}],
+        ['proxyuser',    $params{'proxyuser'}],
+        ['proxyip',      $params{'proxyip'}],
+        ['proxyhost',    $params{'proxyhost'}],
+        ['proxyport',    $params{'proxyport'}],
     );
     if (ref $custom eq 'ARRAY') {
         foreach my $item (@$custom) {
@@ -776,6 +816,9 @@ sub _sql_log_fetch_from_file {
     my $portto      = $params{'portto'};
     my $bastionip   = $params{'bastionip'};
     my $bastionport = $params{'bastionport'};
+    my $proxyuser   = $params{'proxyuser'};
+    my $proxyip     = $params{'proxyip'};
+    my $proxyport   = $params{'proxyport'};
     my $user        = $params{'user'};
     my $plugin      = $params{'plugin'};
     my $before      = $params{'before'};
@@ -832,6 +875,18 @@ sub _sql_log_fetch_from_file {
     if ($bastionport) {
         push @conditions, "bastionport = ?";
         push @execvalues, $bastionport;
+    }
+    if ($proxyuser) {
+        push @conditions, "proxyuser = ?";
+        push @execvalues, $proxyuser;
+    }
+    if ($proxyip) {
+        push @conditions, "proxyip = ?";
+        push @execvalues, $proxyip;
+    }
+    if ($proxyport) {
+        push @conditions, "proxyport = ?";
+        push @execvalues, $proxyport;
     }
     if ($before) {
         push @conditions, "timestamp <= ?";

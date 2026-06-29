@@ -77,6 +77,12 @@ echo "Building test environment"
 testenv_dockerfile="$(dirname "$0")/../../../docker/Dockerfile.tester"
 docker build -f "$testenv_dockerfile" -t "$namespace:tester" "$(dirname "$0")"/../../..
 
+# slim sshd-only image, used to spin up the "jumphost" and "remoteserver" boxes
+# sitting behind the bastion (for the proxy-jump functional tests). The role
+# script is bind-mounted at run time, so this image carries no bastion code.
+echo "Building slim ssh host environment"
+docker build -f "$(dirname "$0")/../../../docker/Dockerfile.sshslim" -t "$namespace:sshslim" "$(dirname "$0")"/../../..
+
 # if we have a subtarget, we need to override the FROM of the target_dockerfile
 # don't do this in place however, create a tempfile for this
 if [ -n "$subtarget" ]; then
@@ -120,6 +126,8 @@ trap - EXIT
 echo "Configuring network"
 docker rm -f "bastion_${target}_target" 2>/dev/null || true
 docker rm -f "bastion_${target}_tester" 2>/dev/null || true
+docker rm -f "bastion_${target}_jumphost" 2>/dev/null || true
+docker rm -f "bastion_${target}_remoteserver" 2>/dev/null || true
 if docker inspect "bastion-$target" >/dev/null 2>&1; then
     docker network rm "bastion-$target" >/dev/null
 fi
@@ -140,6 +148,37 @@ docker run $privileged \
     $namespace:"$target"
 docker logs -f "bastion_${target}_target" | sed -u -e 's/^/target: /;s/$/\r/' &
 
+# spin up the two slim ssh boxes behind the bastion (used by the proxy-jump tests):
+# - jumphost: the host the bastion proxies through (egress user 'jump_')
+# - remoteserver: the final host reached through the bastion and the jumphost (egress user 'test-shell_')
+# both get the root pubkey so the tester can root-SSH in and push the bastion egress keys at test time
+sshhost_role="$basedir/tests/functional/docker/sshhost_role.sh"
+echo "Starting jumphost instance"
+docker run \
+    --name="bastion_${target}_jumphost" \
+    --network "bastion-$target" \
+    -d \
+    -v "$sshhost_role:/sshhost_role.sh:ro" \
+    --entrypoint bash \
+    -e ROOT_PUBKEY_B64="$ROOT_PUBKEY_B64" \
+    -e SSHHOST_ROLE="jumphost" \
+    -e SSHHOST_USERS="jump_" \
+    "$namespace:sshslim" /sshhost_role.sh
+docker logs -f "bastion_${target}_jumphost" | sed -u -e 's/^/jumphost: /;s/$/\r/' &
+
+echo "Starting remoteserver instance"
+docker run \
+    --name="bastion_${target}_remoteserver" \
+    --network "bastion-$target" \
+    -d \
+    -v "$sshhost_role:/sshhost_role.sh:ro" \
+    --entrypoint bash \
+    -e ROOT_PUBKEY_B64="$ROOT_PUBKEY_B64" \
+    -e SSHHOST_ROLE="remoteserver" \
+    -e SSHHOST_USERS="test-shell_" \
+    "$namespace:sshslim" /sshhost_role.sh
+docker logs -f "bastion_${target}_remoteserver" | sed -u -e 's/^/remoteserver: /;s/$/\r/' &
+
 show_target_logs() {
     if [ "$ret" -ne 0 ] && [ "$ret" -ne 255 ]; then
         echo
@@ -150,7 +189,8 @@ show_target_logs() {
 
 cleanup() {
     set +e
-    docker rm -f "bastion_${target}_target" "bastion_${target}_tester" >/dev/null 2>/dev/null || true
+    docker rm -f "bastion_${target}_target" "bastion_${target}_tester" \
+        "bastion_${target}_jumphost" "bastion_${target}_remoteserver" >/dev/null 2>/dev/null || true
     docker network rm "bastion-$target" >/dev/null
 }
 
@@ -185,6 +225,8 @@ docker run \
     -e TARGET_IP="bastion_${target}_target" \
     -e TARGET_PORT=22 \
     -e TARGET_PROXY_PORT=8443 \
+    -e JUMPHOST_IP="bastion_${target}_jumphost" \
+    -e REMOTESERVER_IP="bastion_${target}_remoteserver" \
     -e TARGET_USER="user.5000" \
     -e USER_PRIVKEY_B64="$USER_PRIVKEY_B64" \
     -e ROOT_PRIVKEY_B64="$ROOT_PRIVKEY_B64" \
