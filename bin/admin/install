@@ -287,6 +287,8 @@ if [ "${opt[modify-ssh-config]}" = 1 ] || [ "${opt[modify-sshd-config]}" = 1 ] ;
             fi
         elif echo "$DISTRO_LIKE" | grep -q -w suse; then
             filesuffix=opensuse15
+        elif echo "$DISTRO_LIKE" | grep -q -w gentoo; then
+            filesuffix=gentoo
         fi
     elif [ "$OS_FAMILY" = FreeBSD ]; then
         filesuffix=freebsd
@@ -1253,6 +1255,8 @@ if [ "${opt[modify-pam-sshd]}" = 1 ]; then
         [ "$OS_FAMILY" = FreeBSD ] && pamsuffix=freebsd
         if [ "$LINUX_DISTRO" = ubuntu ] && [ "$DISTRO_VERSION_MAJOR" -ge 22 ]; then
             pamsuffix="ubuntu2204"
+        elif [ "$LINUX_DISTRO" = "'gentoo'" ]; then
+            pamsuffix="gentoo"
         elif [ -n "$pamsuffix" ] && [ -e "$basedir/etc/pam.d/sshd.$pamsuffix$DISTRO_VERSION" ]; then
             pamsuffix="$pamsuffix$DISTRO_VERSION"
         fi
