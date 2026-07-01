@@ -65,6 +65,7 @@ The unavoidable and iconic FAQ is also available under the **PRESENTATION** sect
    using/sftp_scp_rsync
    using/http_proxy
    using/proxyjump
+   using/realms
    using/api
    using/specific_ssh_clients_tutorials/index
 
