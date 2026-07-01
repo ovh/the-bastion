@@ -1132,7 +1132,7 @@ if ($osh_command) {
         $ENV{'OSH_IP_FROM'} = $ipfrom;    # used in some plugins for is_access_granted()
 
         # check if we have a plugin override for idle lock/kill timeouts
-        foreach my $timeoutType (qw{ idle kill }) {
+        foreach my $timeoutType (qw{ lock kill }) {
             $fnret = OVH::Bastion::plugin_config(plugin => $osh_command, key => "idle_${timeoutType}_timeout");
             if ($fnret && defined $fnret->value) {
                 $idleTimeout{${timeoutType}} = $fnret->value;
