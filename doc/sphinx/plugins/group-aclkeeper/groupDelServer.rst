@@ -40,10 +40,10 @@ Remove an IP or IP block from a group's server list
    Specify that a special protocol allowance should be removed from this HOST:PORT tuple, note that you
    must not specify --user in that case.
    PROTO must be one of:
-   scpup    allow SCP upload, you--bastion-->server
-   scpdown  allow SCP download, you<--bastion--server
-   sftp     allow usage of the SFTP subsystem, through the bastion
-   rsync    allow usage of rsync, through the bastion
+   scpupload    allow SCP upload, you--bastion-->server
+   scpdownload  allow SCP download, you<--bastion--server
+   sftp         allow usage of the SFTP subsystem, through the bastion
+   rsync        allow usage of rsync, through the bastion
 
 .. option:: --proxy-host HOST|IP
 
@@ -58,12 +58,3 @@ Remove an IP or IP block from a group's server list
    Proxy user that was configured for this access (mandatory when --proxy-host is specified).
    Globbing characters '*' and '?' are supported for pattern matching.
 
-
-This command adds, to an existing bastion account, access to a given server, using the
-egress keys of the group. The list of eligible servers for a given group is given by ``groupListServers``
-
-If you want to add member access to an account to all the present and future servers
-of the group, using the group key, please use ``groupAddMember`` instead.
-
-If you want to add access to an account to a group server but using their personal bastion
-key instead of the group key, please use ``accountAddPersonalAccess`` instead.

@@ -37,13 +37,12 @@ Remove a specific group server access from an account
 .. option:: --port PORT|*
 
    Remote port that was allowed to connect to
-   If any user was allowed, use '--port *' (you might need to escape '*' from your shell)
+   If any port was allowed, use '--port *' (you might need to escape '*' from your shell)
 
 .. option:: --protocol PROTO
 
-   Specify that a special protocol was allowed for this HOST:PORT tuple, note that you
-   must not specify --user in that case. However, for this protocol to be usable under a given
-   remote user, access to the USER@HOST:PORT tuple must also be allowed.
+   Specify that a special protocol allowance should be removed from this HOST:PORT tuple, note that you
+   must not specify --user in that case.
    PROTO must be one of:
    scpupload    allow SCP upload, you--bastion-->server
    scpdownload  allow SCP download, you<--bastion--server
@@ -52,15 +51,15 @@ Remove a specific group server access from an account
 
 .. option:: --proxy-host HOST|IP
 
-   Use this host as a proxy/jump host to reach the target server
+   Specify which host was used as a proxy/jump host to reach the target server
 
 .. option:: --proxy-port PORT
 
-   Proxy host port to connect to (mandatory when --proxy-host is specified)
+   Proxy port that was used to reach the target server (mandatory when --proxy-host is specified)
 
 .. option:: --proxy-user USER|PATTERN|*
 
-   Proxy user to connect as (mandatory when --proxy-host is specified).
+   Proxy user that was configured for this access (mandatory when --proxy-host is specified).
    Globbing characters '*' and '?' are supported for pattern matching.
 
 

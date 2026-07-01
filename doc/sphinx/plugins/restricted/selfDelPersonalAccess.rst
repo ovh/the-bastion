@@ -54,3 +54,6 @@ Remove a personal server access from your account
    Proxy user that was configured for this access (mandatory when --proxy-host is specified).
    Globbing characters '*' and '?' are supported for pattern matching.
 
+
+Note that this only removes the access from the bastion; it doesn't remove your personal
+egress public key from the remote server, which you may want to do as well.
