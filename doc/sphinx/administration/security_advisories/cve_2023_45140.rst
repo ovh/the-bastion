@@ -16,7 +16,7 @@ SCP and SFTP plugins don't honor group-based and account-based JIT MFA.
 
 Details
 =======
-Establishing a SCP/SFTP connection through The Bastion via a group access where MFA is enforced does not ask for additional factor. This abnormal behavior only applies to `per-group-based JIT MFA <https://ovh.github.io/the-bastion/administration/mfa.html#on-a-per-group-basis>`_ and `JIT MFA on a per-account basis <https://ovh.github.io/the-bastion/administration/mfa.ht↪·ml#on-a-per-account-basis>`_.
+Establishing a SCP/SFTP connection through The Bastion via a group access where MFA is enforced does not ask for additional factor. This abnormal behavior only applies to `per-group-based JIT MFA <https://ovh.github.io/the-bastion/administration/mfa.html#on-a-per-group-basis>`_ and `JIT MFA on a per-account basis <https://ovh.github.io/the-bastion/administration/mfa.html#on-a-per-account-basis>`_.
 
 Other MFA setup types, such as `Immediate MFA <https://ovh.github.io/the-bastion/administration/mfa.html#immediate-mfa>`_ and `JIT MFA on a per-plugin basis <https://ovh.github.io/the-bastion/administration/mfa.html#on-a-per-plugin-basis>`_ are not affected.
 
@@ -64,7 +64,7 @@ When all conditions above apply, the actor would be able to use scp or sftp on t
 
 Mitigation
 ==========
-If you don't use the `per-group-based JIT MFA <https://ovh.github.io/the-bastion/administration/mfa.html#on-a-per-group-basis>`_ on any of your groups (through ``groupModify --mfa-required``), and don't use the `JIT MFA on a per-account basis <https://ovh.gi↪·thub.io/the-bastion/administration/mfa.ht↪·ml#on-a-per-account-basis>`_ (through ``accountModify --personal-egress-mfa-required``), you don't need to mitigate the issue as you don't use the impacted feature (see above for impact details).
+If you don't use the `per-group-based JIT MFA <https://ovh.github.io/the-bastion/administration/mfa.html#on-a-per-group-basis>`_ on any of your groups (through ``groupModify --mfa-required``), and don't use the `JIT MFA on a per-account basis <https://ovh.github.io/the-bastion/administration/mfa.html#on-a-per-account-basis>`_ (through ``accountModify --personal-egress-mfa-required``), you don't need to mitigate the issue as you don't use the impacted feature (see above for impact details).
 
 Otherwise, if you can't immediately upgrade to v3.14.15 or more recent, and you feel that the aforementioned impacts are important enough in your environment, you may choose to temporarily disable the ``scp`` and ``sftp`` plugins globally on the bastion, by setting ``"disabled": true`` in these plugins configuration files, which can be found in :file:`/etc/bastion/plugin.scp.conf` and :file:`/etc/bastion/plugin.sftp.conf` respectively. If these files don't exist, create them with the contents as ``{ "disabled": true }``. They should be readable by anyone but modifiable only by root (i.e. ``chmod 664; chown root:root``)
 

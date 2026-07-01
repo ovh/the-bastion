@@ -29,8 +29,8 @@ Create a new bastion account
 .. option:: --always-active
 
    This account's activation won't be challenged on connection, even if the bastion is globally
+   configured to check for account activation
 
-                              configured to check for account activation
 .. option:: --osh-only
 
    This account will only be able to use ``--osh`` commands, and can't connect anywhere through the bastion
@@ -38,8 +38,8 @@ Create a new bastion account
 .. option:: --max-inactive-days DAYS
 
    Set account expiration policy, overriding the global bastion configuration 'accountMaxInactiveDays',
+   setting this option to zero disables account expiration.
 
-                              setting this option to zero disables account expiration.
 .. option:: --immutable-key
 
    Deny any subsequent modification of the account key (selfAddKey and selfDelKey are denied)
@@ -51,8 +51,8 @@ Create a new bastion account
 .. option:: --public-key '"KEY"'
 
    Account public SSH key to deposit on the bastion, if not present,
+   you'll be prompted interactively for it. Quote it twice as shown if your're under a shell.
 
-                              you'll be prompted interactively for it. Quote it twice as shown if your're under a shell.
 .. option:: --no-key
 
    Don't prompt for an SSH key, no ingress public key will be installed

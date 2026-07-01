@@ -104,7 +104,7 @@ Error message 2
 
 If you have the following message:
 
-::
+.. code-block:: text
 
     Sorry, but you don't seem to have access to HOST:IP
 

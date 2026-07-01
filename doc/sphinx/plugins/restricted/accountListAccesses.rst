@@ -21,8 +21,8 @@ View the expanded access list of a given bastion account
 .. option:: --hide-groups
 
    Don't show the machines the accouns has access to through group rights.
+   In other words, list only the account's personal accesses.
 
-                       In other words, list only the account's personal accesses.
 .. option:: --reverse-dns
 
    Attempt to resolve the reverse hostnames (SLOW!)
@@ -30,14 +30,14 @@ View the expanded access list of a given bastion account
 .. option:: --include PATTERN
 
    Only include accesses matching the given PATTERN (see below)
+   This option can be used multiple times to refine results
 
-                        This option can be used multiple times to refine results
 .. option:: --exclude PATTERN
 
    Omit accesses matching the given PATTERN (see below)
+   This option can be used multiple times.
+   Note that --exclude takes precedence over --include
 
-                        This option can be used multiple times.
-                        Note that --exclude takes precedence over --include
 
 **Note:** PATTERN supports the ``*`` and ``?`` wildcards.
 If PATTERN is a simple string without wildcards, then names containing this string will be considered.

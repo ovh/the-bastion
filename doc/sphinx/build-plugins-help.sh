@@ -43,10 +43,12 @@ do
             cat "doc/sphinx-plugins-override/$name.override.rst"
         else
             perl "$pluginfile" '' '' '' '' | perl -e 'undef $/; $_=<>; s/\n+$/\n/; print $_' | perl -ne '
-                if (m{^Usage: (.+)}) { print ".. admonition:: usage\n   :class: cmdusage\n\n   $1\n\n.. program:: '"$name"'\n\n"; }
-                elsif (m{^  (-[- ,a-z|/A-Z*"'"'"'\[\]]+)  (.+)}) { ($c,$t)=($1,$2); $c=~s/ +$//; print ".. option:: $c\n\n   $t\n\n"; }
-                elsif ($l++ == 0) { chomp; print "$_\n"."="x(length($_))."\n\n"; }
-                else { print "$_"; }
+                if (m{^Usage: (.+)}) { print "\n" if $inopt; $inopt=0; print ".. admonition:: usage\n   :class: cmdusage\n\n   $1\n\n.. program:: '"$name"'\n\n"; }
+                elsif (m{^  (-[- ,a-z|/A-Z*?0-9"'"'"'\[\]]+)  (.+)}) { print "\n" if $inopt; ($c,$t)=($1,$2); $c=~s/ +$//; print ".. option:: $c\n\n   $t\n"; $inopt=1; }
+                elsif ($inopt && m{^\s{3,}(\S.*?)\s*$}) { print "   $1\n"; }
+                elsif ($l++ == 0) { print "\n" if $inopt; $inopt=0; chomp; print "$_\n"."="x(length($_))."\n\n"; }
+                else { print "\n" if $inopt; $inopt=0; print "$_"; }
+                END { print "\n" if $inopt; }
             '
             pluginret=${PIPESTATUS[0]}
             if [ "$pluginret" != 100 ] && [ "$pluginret" != 0 ]; then

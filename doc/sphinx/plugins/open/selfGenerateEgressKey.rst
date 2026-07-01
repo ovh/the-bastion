@@ -22,10 +22,10 @@ Create a new public + private key pair on your bastion account
 .. option:: --size SIZE
 
    Specifies the size of the key to be generated.
+   For RSA, choose between 2048 and 8192 (4096 is good).
+   For ECDSA, choose either 256, 384 or 521.
+   For ED25519, size is always 256.
 
-               For RSA, choose between 2048 and 8192 (4096 is good).
-               For ECDSA, choose either 256, 384 or 521.
-               For ED25519, size is always 256.
 
 .. option:: --encrypted
 

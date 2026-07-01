@@ -37,14 +37,14 @@ List the bastion accounts
 .. option:: --include PATTERN
 
    Only show accounts whose name match the given PATTERN (see below)
+   This option can be used multiple times to refine results
 
-                         This option can be used multiple times to refine results
 .. option:: --exclude PATTERN
 
    Omit accounts whose name match the given PATTERN (see below)
+   This option can be used multiple times.
+   Note that --exclude takes precedence over --include
 
-                         This option can be used multiple times.
-                         Note that --exclude takes precedence over --include
 
 **Note:** PATTERN supports the ``*`` and ``?`` wildcards.
 If PATTERN is a simple string without wildcards, then names containing this string will be considered.

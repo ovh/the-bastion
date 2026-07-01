@@ -176,7 +176,7 @@ Please note however that some Ansible modules may not use the builtin SSH comman
 which we override with our wrapper, but some other mechanism we can't hook into.
 This is for example the case of the `network_cli` module of Ansible, which underneath uses Paramiko,
 a Python library to handle SSH connections, which prevents our wrapper to be used (see
-`this GitHub issue <https://github.com/ovh/the-bastion/issues/254>`_ for more information).
+`this GitHub issue <https://github.com/ovh/the-bastion/issues/254>`__ for more information).
 
 Can The Bastion record sessions with ``script`` or in plaintext format instead of ``ttyrec``?
 =============================================================================================
@@ -208,7 +208,7 @@ This would work with the "hello" example above.
 It also has a tool named ``ipbt-dump`` that should help converting ttyrec files to something that you can better
 work with.
 
-(adapted from `this GitHub issue <https://github.com/ovh/the-bastion/issues/522>`_).
+(adapted from `this GitHub issue <https://github.com/ovh/the-bastion/issues/522>`__).
 
 A user lost their personal SSH key, how do I add a new one to their account?
 ============================================================================
