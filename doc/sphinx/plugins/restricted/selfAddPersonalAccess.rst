@@ -77,6 +77,9 @@ Add a personal server access to your account
    When connecting via SSH (not plugins), defaults to --user value for convenience.
 
 
+The access will work only if one of your personal egress public keys has been copied to the remote server.
+To get the list of your personal egress public keys, see ``selfListEgressKeys``.
+
 Plugin configuration
 ====================
 

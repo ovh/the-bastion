@@ -77,7 +77,7 @@ Add a personal server access to an account
 
 
 The access will work only if one of the account's personal egress public key has been copied to the remote server.
-To get the list of an account's personal egress public keys, see ``accountListEgressKeyss`` and ``selfListEgressKeys``.
+To get the list of an account's personal egress public keys, see ``accountListEgressKeys`` and ``selfListEgressKeys``.
 
 Plugin configuration
 ====================

@@ -42,18 +42,17 @@ Usage: --osh SCRIPT_NAME --group GROUP --account ACCOUNT [OPTIONS]
                                  that will be matched against the actual remote user name.
                                  If any user was allowed, use '--user *' (you might need to escape '*' from your shell)
   --port PORT|*                Remote port that was allowed to connect to
-                                 If any user was allowed, use '--port *' (you might need to escape '*' from your shell)
-  --protocol PROTO             Specify that a special protocol was allowed for this HOST:PORT tuple, note that you
-                                  must not specify --user in that case. However, for this protocol to be usable under a given
-                                  remote user, access to the USER@HOST:PORT tuple must also be allowed.
+                                 If any port was allowed, use '--port *' (you might need to escape '*' from your shell)
+  --protocol PROTO             Specify that a special protocol allowance should be removed from this HOST:PORT tuple, note that you
+                                  must not specify --user in that case.
                                   PROTO must be one of:
                                   scpupload    allow SCP upload, you--bastion-->server
                                   scpdownload  allow SCP download, you<--bastion--server
                                   sftp         allow usage of the SFTP subsystem, through the bastion
                                   rsync        allow usage of rsync, through the bastion
-  --proxy-host HOST|IP         Use this host as a proxy/jump host to reach the target server
-  --proxy-port PORT            Proxy host port to connect to (mandatory when --proxy-host is specified)
-  --proxy-user USER|PATTERN|*  Proxy user to connect as (mandatory when --proxy-host is specified).
+  --proxy-host HOST|IP         Specify which host was used as a proxy/jump host to reach the target server
+  --proxy-port PORT            Proxy port that was used to reach the target server (mandatory when --proxy-host is specified)
+  --proxy-user USER|PATTERN|*  Proxy user that was configured for this access (mandatory when --proxy-host is specified).
                                    Globbing characters '*' and '?' are supported for pattern matching.
 
 This command removes, from an existing bastion account, access to a given server, using the

@@ -51,6 +51,9 @@ Usage: --osh SCRIPT_NAME --account ACCOUNT --host HOST --user USER --port PORT [
   --proxy-port PORT        Proxy port that was used to reach the target server (mandatory when --proxy-host is specified)
   --proxy-user USER|PATTERN|*  Proxy user that was configured for this access (mandatory when --proxy-host is specified).
                                Globbing characters '*' and '?' are supported for pattern matching.
+
+Note that this only removes the access from the bastion; it doesn't remove the account's
+personal egress public key from the remote server, which you may want to do as well.
 EOF
 );
 
