@@ -45,13 +45,13 @@ List the accounts that have access to a given server
 .. option:: --ignore-group GROUP
 
    Ignore accesses by this group, if you know GROUP public key is in fact
+   not present on remote server but bastion thinks it is
 
-                          not present on remote server but bastion thinks it is
 .. option:: --show-wildcards
 
    Also list accesses that match because 0.0.0.0/0 is listed in a group or private access,
+   this is disabled by default because this is almost always just noise (see Note below)
 
-                          this is disabled by default because this is almost always just noise (see Note below)
 
 Note: This list is what the bastion THINKS is true, which means that if some group has 0.0.0.0/0 in its list,
 then it'll show all the members of that group as having access to the machine you're specifying, through this group key.

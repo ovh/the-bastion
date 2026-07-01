@@ -310,7 +310,10 @@ since the first publicly released version, encouraging the explicit use of ``--u
 when this was desired. Now, omitting these options will simply return an error,
 as this has always been the case with ``group(Add|Del)Server``.
 
-Example of previous behaviour::
+Example of previous behaviour:
+
+.. code-block:: text
+   :emphasize-lines: 1
 
    $ bssh --osh selfAddPersonalAccess --host 127.0.0.5 --force
    ╭──ac777d06bec9───────────────────────────────────────────the-bastion-3.10.00───
@@ -322,7 +325,10 @@ Example of previous behaviour::
    │ Access to 127.0.0.5 was added to account jdoe
    ╰────────────────────────────────────────────────────</selfAddPersonalAccess>───
 
-Example of new behaviour::
+Example of new behaviour:
+
+.. code-block:: text
+   :emphasize-lines: 1
 
    $ bssh --osh selfAddPersonalAccess --host 127.0.0.5 --force
    ╭──ac777d06bec9───────────────────────────────────────────the-bastion-3.11.00───

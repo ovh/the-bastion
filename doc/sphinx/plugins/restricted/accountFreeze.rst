@@ -21,5 +21,5 @@ Freeze an account, to prevent it from connecting
 .. option:: --reason  "'SOME REASON'"
 
    Optional reason for the account to be frozen (will be displayed to the user),
+   if you are in a shell (and not in interactive mode), quote it twice as shown.
 
-                               if you are in a shell (and not in interactive mode), quote it twice as shown.

@@ -25,8 +25,8 @@ Modify the PIV policy for the ingress keys of an account
 .. option:: --ttl SECONDS|DURATION
 
    For the ``grace`` policy, amount of time after which the account will automatically revert
+   to its previous policy (amount of seconds, or duration string such as "4d12h15m").
 
-                            to its previous policy (amount of seconds, or duration string such as "4d12h15m").
 
 Possible POLICY values:
 -----------------------

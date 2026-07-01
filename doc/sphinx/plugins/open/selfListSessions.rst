@@ -41,13 +41,13 @@ List the few past sessions of your account
 .. option:: --after WHEN
 
    Only sessions that started after WHEN,
+   WHEN can be a TIMESTAMP, or YYYY-MM-DD[@HH:MM:SS]
 
-                           WHEN can be a TIMESTAMP, or YYYY-MM-DD[@HH:MM:SS]
 .. option:: --before WHEN
 
    Only sessions that started before WHEN,
+   WHEN can be a TIMESTAMP, or YYYY-MM-DD[@HH:MM:SS]
 
-                           WHEN can be a TIMESTAMP, or YYYY-MM-DD[@HH:MM:SS]
 .. option:: --host HOST
 
    Only sessions connecting to remote HOST

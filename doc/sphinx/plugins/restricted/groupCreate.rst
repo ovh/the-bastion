@@ -27,8 +27,8 @@ Create a group
 .. option:: --encrypted
 
    Add a passphrase to the key. Beware that you'll have to enter it for each use.
+   Do NOT add the passphrase after this option, you'll be prompted interactively for it.
 
-                  Do NOT add the passphrase after this option, you'll be prompted interactively for it.
 
 .. option:: --algo
 
@@ -37,10 +37,10 @@ Create a group
 .. option:: --size
 
    Specifies the size of the key to be generated.
+   For RSA, choose between 2048 and 8192 (4096 is good).
+   For ECDSA, choose either 256, 384 or 521.
+   For ED25519, size is always 256.
 
-                  For RSA, choose between 2048 and 8192 (4096 is good).
-                  For ECDSA, choose either 256, 384 or 521.
-                  For ED25519, size is always 256.
 
 .. option:: --no-key
 

@@ -22,15 +22,21 @@ Modify the configuration of a group
 
    Enforce UNIX password requirement, or TOTP requirement, or any MFA requirement, when connecting to a server of the group
 
-  --idle-lock-timeout DURATION|0|-1            Overrides the global setting (`idleLockTimeout`), to the specified duration. If set to 0, disables `idleLockTimeout` for
-                                                 this group. If set to -1, remove this group override and use the global setting instead.
-  --idle-kill-timeout DURATION|0|-1            Overrides the global setting (`idleKillTimeout`), to the specified duration. If set to 0, disables `idleKillTimeout` for
-                                                 this group. If set to -1, remove this group override and use the global setting instead.
+.. option:: --idle-lock-timeout DURATION|0|-1
+
+   Overrides the global setting (`idleLockTimeout`), to the specified duration. If set to 0, disables `idleLockTimeout` for
+   this group. If set to -1, remove this group override and use the global setting instead.
+
+.. option:: --idle-kill-timeout DURATION|0|-1
+
+   Overrides the global setting (`idleKillTimeout`), to the specified duration. If set to 0, disables `idleKillTimeout` for
+   this group. If set to -1, remove this group override and use the global setting instead.
+
 .. option:: --guest-ttl-limit   DURATION
 
    This group will enforce TTL setting, on guest access creation, to be set, and not to a higher value than DURATION,
+   set to zero to allow guest accesses creation without any TTL set (default)
 
-                                                 set to zero to allow guest accesses creation without any TTL set (default)
 
 Note that `--idle-lock-timeout` and `--idle-kill-timeout` will NOT be applied for catch-all groups (having 0.0.0.0/0 in their server list).
 
