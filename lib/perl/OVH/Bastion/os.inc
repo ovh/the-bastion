@@ -724,6 +724,18 @@ sub sys_getgr_all_byuser {
     return R('OK', value => \%_gr_byuser_cache);
 }
 
+# Invalidate the passwd/group enumeration caches, so that the next cache-enabled
+# lookup rebuilds a fresh snapshot from the system.
+sub sys_invalidate_pw_gr_cache {
+    %_pw_cache         = ();
+    $_pw_all_cached    = 0;
+    %_gr_cache         = ();
+    $_gr_all_cached    = 0;
+    %_gr_byuser_cache  = ();
+    $_gr_byuser_cached = 0;
+    return R('OK');
+}
+
 # get a system group entry from name (getent group / getgrnam)
 sub sys_getgr_name {
     my %params = @_;

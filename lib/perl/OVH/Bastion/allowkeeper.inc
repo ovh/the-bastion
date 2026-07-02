@@ -113,6 +113,7 @@ sub is_valid_uid {
 
 sub get_next_available_uid {
     my %params = @_;
+    my $cache  = $params{'cache'};    # allow cache use of sys_getpw_all()/sys_getgr_all()
 
     # if true, also check for the availability of the corresponding GID:
     my $available_gid = $params{'available_gid'};
@@ -122,35 +123,42 @@ sub get_next_available_uid {
 
     my $higher = OVH::Bastion::config('accountUidMax')->value();
     my $lower  = OVH::Bastion::config('accountUidMin')->value();
-    my $next   = $higher;
-    my $found  = 0;
-    while (1) {
 
-        # find the first available UID, starting from the upper ID allowed and decrementing
-        while ($next >= $lower) {
-            last if not scalar(getpwuid($next));
-            $next--;
-        }
+    # Enumerate the namespaces once and build sets of the IDs already in use,
+    # instead of probing each candidate with getpwuid()/getgrgid().
+    my $fnret = OVH::Bastion::sys_getpw_all(cache => $cache);
+    $fnret or return $fnret;
+    my %taken_uid = map { $_->{'uid'} => 1 } values %{$fnret->value};
 
-        # did we get out of the loop because we found a candidate, or because we're out of bounds?
-        last if $next < $lower;
+    # the corresponding-GID checks live in the group namespace, only enumerate it if needed
+    my %taken_gid;
+    if ($available_gid || $available_gid_ttyrec) {
+        $fnret = OVH::Bastion::sys_getgr_all(cache => $cache);
+        $fnret or return $fnret;
+        %taken_gid = map { $_->{'gid'} => 1 } values %{$fnret->value};
+    }
 
-        # if $available_gid, also check if the corresponding GID is available
-        # if $available_gid_ttyrec, also check if the corresponding GID + the ttyrec offset is available
-        if (
-               (!$available_gid || !scalar(getgrgid($next)))
-            && (!$available_gid_ttyrec || !scalar(getgrgid($next + OVH::Bastion::config('ttyrecGroupIdOffset')->value)))
-          )
+    my $ttyrecOffset = OVH::Bastion::config('ttyrecGroupIdOffset')->value;
+
+    # find the first available UID, starting from the upper ID allowed and decrementing.
+    # if $available_gid, also require the corresponding GID to be available.
+    # if $available_gid_ttyrec, also require the corresponding GID + the ttyrec offset to be available.
+    my $next = $higher;
+    while ($next >= $lower) {
+        if (   !$taken_uid{$next}
+            && (!$available_gid        || !$taken_gid{$next})
+            && (!$available_gid_ttyrec || !$taken_gid{$next + $ttyrecOffset}))
         {
-            $found = 1;
-            last;
-        }
+            # invalidate the module cache now: our caller is about to consume the ID we return by
+            # creating an account/group, which makes any enumeration snapshot stale.
+            OVH::Bastion::sys_invalidate_pw_gr_cache();
 
-        # if we're here, at least one of the $available_gid* check failed, so continue looking
+            return R('OK', value => $next);
+        }
         $next--;
     }
-    return R('OK',                value => $next) if $found;
-    return R('ERR_UID_COLLISION', msg   => "No available UID in the allowed range");
+
+    return R('ERR_UID_COLLISION', msg => "No available UID in the allowed range");
 }
 
 # Find the next available UID or GID at or above groupGidMin. This "group range"
@@ -158,44 +166,79 @@ sub get_next_available_uid {
 # account UID/GID range (accountUidMin..accountUidMax and the ttyrec GIDs), so
 # any ID returned here can never collide with a (possibly fixed) account ID.
 # The $type parameter ('uid' or 'gid') selects which namespace is scanned.
-# Internal: callers should use the get_next_available_group_uid()/_gid() wrappers.
+# If the 'count' parameter is specified, the 'count' next available IDs are
+# returned as an arrayref instead of a single scalar value; this lets a caller
+# allocate several IDs at once from a single enumeration.
 sub _get_next_available_id_in_group_range {
     my %params = @_;
     my $type   = $params{'type'} // 'gid';
+    my $cache  = $params{'cache'};           # allow cache use of sys_getpw_all()/sys_getgr_all()
+    my $count  = $params{'count'};           # if defined, return that many available IDs as an arrayref
 
     if ($type ne 'uid' && $type ne 'gid') {
         return R('ERR_INVALID_PARAMETER', msg => "Parameter 'type' must be 'uid' or 'gid'");
     }
 
+    # when 'count' is omitted we keep the legacy behaviour (return a single
+    # scalar); when it's specified we return an arrayref of that many IDs.
+    my $multiple = defined $count;
+    if (!$multiple) {
+        $count = 1;
+    }
+    elsif ($count !~ /^\d+$/ || $count < 1) {
+        return R('ERR_INVALID_PARAMETER', msg => "Parameter 'count' must be a strictly positive integer");
+    }
+
     # should be >> accountUidMax to avoid collisions
     my $groupGidMin = OVH::Bastion::config('groupGidMin')->value();
 
-    # start from groupGidMin and find the next available ID in the requested namespace
+    # Enumerate the requested namespace once and build a set of the IDs already
+    # in use, instead of probing each candidate with getpwuid()/getgrgid().
+    my $fnret =
+      ($type eq 'uid')
+      ? OVH::Bastion::sys_getpw_all(cache => $cache)
+      : OVH::Bastion::sys_getgr_all(cache => $cache);
+    $fnret or return $fnret;
+
+    my %taken = map { $_->{$type} => 1 } values %{$fnret->value};
+
+    # start from groupGidMin and collect the next $count available IDs in the requested namespace
+    my @available;
     my $next        = $groupGidMin;
     my $maxAttempts = 100_000;        # safety limit
     my $attempts    = 0;
 
     while ($attempts < $maxAttempts) {
-        my $taken = ($type eq 'uid') ? scalar(getpwuid($next)) : scalar(getgrgid($next));
-        if (!$taken) {
+        if (!$taken{$next}) {
             # found an available ID
-            return R('OK', value => $next);
+            push @available, $next;
+            last if @available >= $count;
         }
         $next++;
         $attempts++;
     }
 
-    return R(($type eq 'uid' ? 'ERR_UID_COLLISION' : 'ERR_GID_COLLISION'),
-        msg => "No available $type found in the allowed range starting from $groupGidMin");
+    if (@available < $count) {
+        return R(($type eq 'uid' ? 'ERR_UID_COLLISION' : 'ERR_GID_COLLISION'),
+            msg => "Couldn't find $count available $type(s) in the allowed range starting from $groupGidMin");
+    }
+
+    # invalidate the module cache: our caller is about to consume the ID(s) we return
+    # by creating group(s), which makes any enumeration snapshot stale.
+    OVH::Bastion::sys_invalidate_pw_gr_cache();
+
+    return R('OK', value => ($multiple ? \@available : $available[0]));
 }
 
-# convenience wrapper to get the next available UID in the group range
+# convenience wrapper to get the next available UID in the group range.
+# accepts an optional 'count' parameter (see _get_next_available_id_in_group_range).
 sub get_next_available_group_uid {
     my %params = @_;
     return _get_next_available_id_in_group_range(%params, type => 'uid');
 }
 
-# convenience wrapper to get the next available GID in the group range
+# convenience wrapper to get the next available GID in the group range.
+# accepts an optional 'count' parameter (see _get_next_available_id_in_group_range).
 sub get_next_available_group_gid {
     my %params = @_;
     return _get_next_available_id_in_group_range(%params, type => 'gid');
