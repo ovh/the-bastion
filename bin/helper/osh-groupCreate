@@ -154,16 +154,18 @@ if ($encrypted) {
 # First create group
 osh_info("Creating groups");
 
-# Create all 4 groups with allocated GIDs to avoid collisions with account UIDs
+# Create all 4 groups with allocated GIDs to avoid collisions with account UIDs.
+# We hold the "passwd" lock (acquired above), so no concurrent group/account
+# creation can happen: we can allocate every GID we need in a single pass (one
+# database enumeration) instead of re-scanning for each group.
 my @groups_to_create = ($group, "$group-aclkeeper", "$group-gatekeeper", "$group-owner");
-my $group_main_gid;
+$fnret = OVH::Bastion::get_next_available_group_gid(count => scalar @groups_to_create);
+$fnret or HEXIT('ERR_GID_ALLOCATION_FAILED', msg => "Failed to allocate GIDs for group $group: " . $fnret->msg);
+my @gids = @{$fnret->value};
+
+my $group_main_gid = $gids[0];    # the GID of $group (first one)
 foreach my $tocreate (@groups_to_create) {
-    $fnret = OVH::Bastion::get_next_available_group_gid();
-    $fnret or HEXIT('ERR_GID_ALLOCATION_FAILED', msg => "Failed to allocate GID for group $tocreate: " . $fnret->msg);
-    my $gid = $fnret->value;
-
-    $group_main_gid //= $gid;    # save the GID of $group (first iteration)
-
+    my $gid = shift @gids;
     $fnret = OVH::Bastion::sys_groupadd(group => $tocreate, gid => $gid, noisy_stderr => 1);
     $fnret->err eq 'OK'
       or HEXIT('ERR_GROUPADD_FAILED',
