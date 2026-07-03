@@ -1,3 +1,12 @@
+## v3.23.99-rc3 - 2026/07/03
+- enh: perf: speedup groupCreate on big bastions
+- fix: plugins help: better explanations in ACL management plugins
+- chore: doc: adjust the generation script to get proper indentation in generated files
+- doc: add documentation about realms (finally)
+- fix: use HEXIT() in 3 helpers instead of main_exit()
+- fix: per-plugin lock time config was ignored
+- fix: connect.pl: spurious 'security violation error' on potential race condition
+
 ## v3.23.99-rc2 - 2026/06/29
 - feat: implement proxy jump for egress connections (#592)
 - enh: perf: speedup groupList by resolving our roles in a single pass
