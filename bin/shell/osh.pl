@@ -1443,12 +1443,18 @@ if ($telnet) {
         push @command, ($fallbackPasswordDelay // 3);
         push @command, ($notty           ? "raw -echo"  : "");
         push @command, ($termPassthrough ? $ENV{'TERM'} : "");
+        # after the positional args come the passthrough args, which 'autologin' inserts
+        # before the host for telnet, as telnet stops parsing options at the host
+        push @command, '-b', $bind if $bind;
     }
 
     # TELNET PASSWORD INTERACTIVE
     else {
         osh_print(" will use TELNET with interactive password login\n") unless $quiet;
-        push @command, '/usr/bin/telnet', '-l', $user, $host, $port;
+        push @command, '/usr/bin/telnet', '-l', $user;
+        # bind option must come before the host, as telnet stops parsing options there
+        push @command, '-b',  $bind if $bind;
+        push @command, $host, $port;
     }
 }
 
@@ -1579,6 +1585,7 @@ else {
     push @command, '-t' if $tty;
     push @command, '-T' if $notty;
     push @command, '-o', "ConnectTimeout=$timeout" if $timeout;
+    push @command, '-b', $bind                     if $bind;
 
     if ($proxyJump) {
         # build the same ssh options as the main SSH command for the proxy hop
@@ -1587,6 +1594,10 @@ else {
             push @proxySshOptions, '-v' for (1 .. $verbose);
         }
         push @proxySshOptions, '-o', "ConnectTimeout=$timeout" if $timeout;
+
+        # the ProxyCommand ssh built below opens the only egress TCP connection the bastion makes
+        # in the proxy jump case (bastion -> proxy host), so -b must be set on it.
+        push @proxySshOptions, '-b', $bind if $bind;
 
         # use the same egress keys (already in '-i key' form) for the proxy hop
         push @proxySshOptions, @{$fnret->value->{'sshKeysArgs'}} if ($fnret && $fnret->value->{'sshKeysArgs'});
@@ -1680,12 +1691,6 @@ else {
 
     # the '--' is to force ttyrec (started by us) to stop processing its options and execute the rest as is
     push @ttyrec, '--', @command;
-}
-
-# add binding IP if specified
-# works for ssh *and* telnet
-if ($bind) {
-    push @command, '-b', $bind;
 }
 
 osh_debug("about to exec: " . join(' ', @ttyrec));

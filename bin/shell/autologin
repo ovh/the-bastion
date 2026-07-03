@@ -29,16 +29,20 @@ set ::env(TERM) $arg_term
 
 # start the program
 if { $arg_prog == "ssh" } {
+    # ssh keeps parsing options even after the destination, so passthrough args can simply be appended
     lappend spawn_args -l $arg_login -p $arg_port $arg_ip
+    if { [llength $arg_remaining] > 0 } {
+        set spawn_args [concat $spawn_args $arg_remaining]
+    }
 } elseif { $arg_prog == "telnet" } {
+    # telnet stops parsing options at the host, so passthrough args must come before it
+    if { [llength $arg_remaining] > 0 } {
+        set spawn_args $arg_remaining
+    }
     lappend spawn_args $arg_ip $arg_port
 } else {
     puts "BASTION SAYS: autologin usage error, program must be either 'ssh' or 'telnet'"
     exit 1
-}
-
-if { [llength $arg_remaining] > 0 } {
-    set spawn_args [concat $spawn_args $arg_remaining]
 }
 
 # set the interactive timeout for expect{} blocks
