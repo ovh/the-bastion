@@ -61,8 +61,13 @@ if (open(my $fh, '<', "/proc/" . getppid() . '/cmdline')) {
     my @pargv = split(/\x00/, $cmdline);
 
     # now check our parent infos.
+
+    if (@pargv == 0) {
+        ;    # seems to happen from time to time, race condition? Just skip the check in this case
+    }
+
     # regular case: ssh
-    if (@pargv == 1 and $pargv[0] =~ /^sshd(-session)?: /) {
+    elsif (@pargv == 1 and $pargv[0] =~ /^sshd(-session)?: /) {
         ;    # ok, our parent is sshd, legitimate use
     }
 
@@ -124,7 +129,7 @@ if (open(my $fh, '<', "/proc/" . getppid() . '/cmdline')) {
     }
 }
 else {
-    ;    # grsec can deny us this. if that's the case, nevermind ... bypass this check
+    ;    # some Linux LSMs can deny us this. if that's the case, nevermind ... bypass this check
 }
 
 # in any case, force this
