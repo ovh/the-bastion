@@ -1418,6 +1418,12 @@ if ($proxyJump && $userPasswordClue) {
       "Sorry, password autologin through a proxy jump (-J) is not currently supported";
 }
 
+# Telnet can't go through a proxy jump (which is an ssh mechanism)
+if ($proxyJump && $telnet) {
+    main_exit OVH::Bastion::EXIT_CONFLICTING_OPTIONS, "conflicting_options",
+      "Sorry, telnet through a proxy jump (-J) is not supported";
+}
+
 # if we want telnet (not ssh)
 if ($telnet) {
 
