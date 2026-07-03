@@ -27,7 +27,7 @@ See the ``--help`` for a more fine-grained upgrade path if needed.
 Version-specific upgrade instructions
 =====================================
 
-v3.23.99-rc2 - 2026/06/29
+v3.23.99-rc3 - 2026/07/03
 *************************
 
 If you're using the HTTP Proxy, it now supports graceful reload on upgrade, which means that all the
