@@ -710,7 +710,8 @@ sub account_config {
         $rootdir = "/home/allowkeeper/$sysaccount";
     }
     else {
-        $rootdir = (getpwnam($sysaccount))[7];
+        # already untainted by is_bastion_account_valid_and_existing()
+        $rootdir = $fnret->value->{'dir'};
     }
 
     if (!-d $rootdir) {
