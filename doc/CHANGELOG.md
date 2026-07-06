@@ -1,3 +1,7 @@
+## v3.24.00 - 2026/07/06
+- fix (rc1): install: optional sudoers: visudo validity check was always false
+- enh: perf: account_config: use the already-extracted homedir value
+
 ## v3.23.99-rc3 - 2026/07/03
 - enh: perf: speedup groupCreate on big bastions
 - fix: plugins help: better explanations in ACL management plugins

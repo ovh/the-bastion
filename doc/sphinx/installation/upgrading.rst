@@ -27,8 +27,8 @@ See the ``--help`` for a more fine-grained upgrade path if needed.
 Version-specific upgrade instructions
 =====================================
 
-v3.23.99-rc3 - 2026/07/03
-*************************
+v3.24.00 - 2026/07/06
+*********************
 
 If you're using the HTTP Proxy, it now supports graceful reload on upgrade, which means that all the
 in-flight connections will drain gracefully and the TCP port stays open while the daemon re-execs itself.
@@ -38,6 +38,8 @@ to the install script arguments.
 Note that on the first upgrade to this version, the in-flight connections will be cut (as with previous versions
 when restarting the proxy), however the port will stay open and accept new connections correctly. On all the next
 upgrades, the in-flight connections will drain normally.
+
+This version supports egress proxy jump, which is disabled by default. Refer to :doc:`/using/proxyjump` for guidance.
 
 v3.23.01 - 2026/01/29
 *********************
