@@ -512,7 +512,7 @@ if [ "$nothing" = 0 ]; then
         filename=$(basename "$file")
         sed_compat "/\/$filename$/d" "$oldsudoers"
         # for optional sudoers files, first verify if our sudo can parse it
-        if echo "$filename" | grep -q optional && ! visudo -cqf "$filename" >/dev/null 2>&1; then
+        if echo "$filename" | grep -q optional && ! visudo -cqf "$file" >/dev/null 2>&1; then
             action_detail "... skipping $filename (unsupported but optional, non-fatal)"
             continue
         fi
