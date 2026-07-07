@@ -155,13 +155,17 @@ account0="$4"
 user_ssh_key_path="$5"
 root_ssh_key_path="$6"
 
-# the IPs (container names) of the two slim ssh boxes behind the bastion, used by the proxy-jump
-# tests: the bastion proxies through $jumphost_ip to reach $remoteserver_ip. They're passed through
-# the environment (not positionally) and may be empty if the runner didn't start those boxes.
+# the IPs (or container names) of the two slim ssh boxes behind the bastion, used by the proxy-jump
+# tests: the bastion proxies through $jumphost_ip to reach $remoteserver_ip.
 # shellcheck disable=SC2034
 jumphost_ip="${JUMPHOST_IP:-}"
 # shellcheck disable=SC2034
 remoteserver_ip="${REMOTESERVER_IP:-}"
+
+# the IP (or container name) of a second bastion instance, used by the inter-realm MFA
+# tests as the "remote" bastion.
+# shellcheck disable=SC2034
+target2_ip="${TARGET2_IP:-}"
 
 # does ssh work there ?
 server_output=$(echo test | nc -w 1 $remote_ip $remote_port)
@@ -257,6 +261,14 @@ check_sourced_module_output()
     rR=''
     [ -n "$jumphost_ip" ]     && rJ="$t ssh -F $mytmpdir/ssh_config -i $rootkeyfile root@$jumphost_ip -p 22 -- "
     [ -n "$remoteserver_ip" ] && rR="$t ssh -F $mytmpdir/ssh_config -i $rootkeyfile root@$remoteserver_ip -p 22 -- "
+
+    # SSH handles to the second bastion instance (empty unless the runner started it): 'b2' is the
+    # admin account (shares account0's key) and 'r2' is root, used by the inter-realm MFA tests to
+    # set up a realm on the remote bastion and flip its global MFA policy.
+    b2=''
+    r2=''
+    [ -n "$target2_ip" ] && b2="$t ssh -F $mytmpdir/ssh_config -i $account0key1file $account0@$target2_ip -p $remote_port -- $js "
+    [ -n "$target2_ip" ] && r2="$t ssh -F $mytmpdir/ssh_config -i $rootkeyfile           root@$target2_ip -p $remote_port -- "
 
     # gpg has a terrible tendency to block on the pseudo-random number generator because it
     # reads from /dev/random instead of /dev/urandom for bad reasons. so, just hardcode some keys here
@@ -714,6 +726,35 @@ configsetquoted()
 configset()
 {
     success configset $r0 perl -pe 's=^\\\\x22'"$1"'\\\\x22.+=\\\\x22'"$1"'\\\\x22:'"$2"',=' -i "$opt_remote_etc_bastion/bastion.conf"
+}
+
+# same as configsetquoted, but operates on the second bastion instance (see $r2/$b2)
+configsetquoted2()
+{
+    success configset2 $r2 perl -pe 's=^\\\\x22'"$1"'\\\\x22.+=\\\\x22'"$1"'\\\\x22:\\\\x22'"$2"'\\\\x22,=' -i "$opt_remote_etc_bastion/bastion.conf"
+}
+
+# same as configchg, but operates on the second bastion instance (see $r2)
+configchg2()
+{
+    success configchange2 $r2 perl -pe "$*" -i "$opt_remote_etc_bastion/bastion.conf"
+}
+
+# resolve the second bastion's container name to an IP (the bastion stores IPs in its ACLs, so realm
+# egress entries need the resolved address) and wait for its sshd to be up, so realm tests can use it
+# as a true remote/egress bastion. Echoes the resolved IP, or nothing if no second bastion was provided
+# by the runner. Side-effecting (DNS + network), so callers must keep it out of the COUNTONLY pass.
+wait_for_target2()
+{
+    [ -z "${target2_ip:-}" ] && return 0
+    local ip
+    ip=$(getent hosts "$target2_ip" | awk '{print $1; exit}')
+    [ -z "$ip" ] && return 0
+    for _ in $(seq 1 60); do
+        echo 'SSH-2.0-bastiontest_healthcheck' | nc -w 1 "$ip" "$remote_port" 2>/dev/null | grep -q ^SSH-2 && break
+        sleep 1
+    done
+    echo "$ip"
 }
 
 
