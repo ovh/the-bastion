@@ -1,11 +1,14 @@
 #! /usr/bin/env bash
 # vim: set filetype=sh ts=4 sw=4 sts=4 et:
+
 CONFIGFILE=/etc/bastion/luks-config.sh
 # shellcheck source=etc/bastion/luks-config.sh.dist
 . "$CONFIGFILE"
 
 update_banner()
 {
+    # nothing to do if the service isn't installed yet (brand new install)
+    svc_installed osh-seal-banner || return 0
     if command -v systemctl >/dev/null 2>&1; then
         if systemctl stop osh-seal-banner.service; then
             echo "SSH banner updated"
@@ -21,13 +24,28 @@ update_banner()
     fi
 }
 
+# check whether a bastion service (systemd unit or sysv init script) is
+# installed on this system.
+svc_installed()
+{
+    local _unit="$1"
+    if command -v systemctl >/dev/null 2>&1; then
+        [ -e "/etc/systemd/system/$_unit.service" ]
+    else
+        [ -x "/etc/init.d/$_unit" ]
+    fi
+}
+
+
 # helper to start a service
 startsvc()
 {
     local unit="$1"
+    # nothing to do if the service isn't installed yet (brand new install)
+    svc_installed "$unit" || return 0
     if command -v systemctl >/dev/null 2>&1; then
         local is_enabled
-        is_enabled="$(systemctl is-enabled "$unit.service")"
+        is_enabled="$(systemctl is-enabled "$unit.service" 2>/dev/null)"
         if [ "$is_enabled" = "enabled" ]; then
             if systemctl start "$unit.service"; then
                 echo "Service $unit started"
@@ -35,7 +53,7 @@ startsvc()
                 echo "Warning: service $unit start failed, you might want to start it manually if needed"
             fi
         else
-            echo "Service $unit is-enabled returned '$is_enabled', not starting it"
+            echo "Service $unit is not enabled ($is_enabled), not starting it"
         fi
     else
         echo "No systemctl found, not attempting to start $unit"
