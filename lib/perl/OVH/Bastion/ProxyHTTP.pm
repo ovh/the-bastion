@@ -204,7 +204,7 @@ sub _exec_worker_and_get_result {
       or return $self->log_and_exit(
         500,
         "Internal Error (couldn't exec worker)",
-        "Couldn't exec worker (" . $fnret->msg . ")",
+        "Couldn't exec worker ($fnret)",
         {comment => "worker_exec_failed"}
       );
 

@@ -119,7 +119,7 @@ if ($self =~ /^realm_([a-zA-Z0-9_.-]+)/) {
         $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $potentialSelf, realmOnly => 1);
         $fnret
           or main_exit(OVH::Bastion::EXIT_ACCOUNT_INVALID,
-            "account_invalid", "The realm-scoped account '$self' is invalid (" . $fnret->msg . ")");
+            "account_invalid", "The realm-scoped account '$self' is invalid ($fnret)");
 
         # $potentialSelf is valid, we can use it
         $self = $potentialSelf;
@@ -133,8 +133,7 @@ else {
     # non-realm case
     $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $self);
     $fnret
-      or
-      main_exit(OVH::Bastion::EXIT_ACCOUNT_INVALID, "account_invalid", "The account is invalid (" . $fnret->msg . ")");
+      or main_exit(OVH::Bastion::EXIT_ACCOUNT_INVALID, "account_invalid", "The account is invalid ($fnret)");
 }
 {
     my %values = %{$fnret->value};
@@ -197,7 +196,7 @@ if (-e '/home/allowkeeper/maintenance') {
 
 $fnret = OVH::Bastion::is_account_ttl_nonexpired(account => $self, sysaccount => $sysself);
 if (!$fnret) {
-    main_exit(OVH::Bastion::EXIT_TTL_EXPIRED, "ttl_expired", "Sorry $self, access denied (" . $fnret->msg . ")");
+    main_exit(OVH::Bastion::EXIT_TTL_EXPIRED, "ttl_expired", "Sorry $self, access denied ($fnret)");
 }
 
 #
@@ -465,7 +464,7 @@ if ($bind) {
     # user-supplied bind IP, so refuse rather than letting an arbitrary value through
     if (!$fnret) {
         main_exit OVH::Bastion::EXIT_CONFLICTING_OPTIONS, "invalid_bind",
-          "Couldn't verify the binding IP specified ($bind): " . $fnret->msg;
+          "Couldn't verify the binding IP specified ($bind): $fnret";
     }
     if (not grep { $bind eq $_ } @{$fnret->value}) {
         main_exit OVH::Bastion::EXIT_CONFLICTING_OPTIONS, "invalid_bind", "Invalid binding IP specified ($bind)";

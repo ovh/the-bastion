@@ -188,7 +188,7 @@ $fnret = OVH::Bastion::execute(
     noisy_stdout => 1
 );
 if (!$fnret) {
-    warn_syslog("Error during account deletion of '$account', couldn't delete sudoers file: " . $fnret->msg);
+    warn_syslog("Error during account deletion of '$account', couldn't delete sudoers file: $fnret");
     $nbErrors++;
 }
 
@@ -214,7 +214,7 @@ push @tarcmd, '--one-file-system', '-p', '--remove-files', $fulldir;
 
 $fnret = OVH::Bastion::execute(cmd => \@tarcmd, must_succeed => 1);
 if (!$fnret) {
-    warn_syslog("Couldn't tar the backup homedir of this account (" . $fnret->msg . "), proceeding anyway.");
+    warn_syslog("Couldn't tar the backup homedir of this account ($fnret), proceeding anyway.");
     my $i = 0;
     foreach (@{$fnret->value->{'stderr'} || []}) {
         warn_syslog("tar: $_");

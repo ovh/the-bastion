@@ -60,7 +60,7 @@ _log "Looking for accounts with a PIV grace...";
 # loop through all the accounts, and only work on those that have a grace period set
 $fnret = OVH::Bastion::get_account_list();
 if (!$fnret) {
-    _err "Couldn't get account list: " . $fnret->msg;
+    _err "Couldn't get account list: $fnret";
     exit 1;
 }
 foreach my $account (sort keys %{$fnret->value}) {
@@ -93,7 +93,7 @@ foreach my $account (sort keys %{$fnret->value}) {
         delete  => 1
     );
     if (!$fnret) {
-        warn_syslog("Couldn't remove grace flag for $account: " . $fnret->msg);
+        warn_syslog("Couldn't remove grace flag for $account: $fnret");
         _err "... couldn't remove grace flag for $account";
         next;
     }
@@ -115,7 +115,7 @@ foreach my $account (sort keys %{$fnret->value}) {
     # we need to remove the non-PIV keys from the account's authorized_keys2 file, as we're now out from grace
     $fnret = OVH::Bastion::is_effective_piv_account_policy_enabled(account => $account);
     if ($fnret->is_err) {
-        my $msg = "Couldn't get the effective PIV account policy of $account (" . $fnret->msg . ")";
+        my $msg = "Couldn't get the effective PIV account policy of $account ($fnret)";
         warn_syslog($msg);
         _err("... $msg");
     }
@@ -128,7 +128,7 @@ foreach my $account (sort keys %{$fnret->value}) {
             OVH::SimpleLog::setSyslog($config->{'SyslogFacility'});
         }
         if (!$fnret) {
-            my $msg = "failed to re-enforce PIV policy for $account (" . $fnret->msg . ")";
+            my $msg = "failed to re-enforce PIV policy for $account ($fnret)";
             warn_syslog($msg);
             _err("... $msg");
         }

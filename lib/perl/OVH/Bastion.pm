@@ -472,7 +472,7 @@ sub is_account_active {
 
         $fnret = OVH::Bastion::execute(cmd => [$checkProgram, $sysaccount]);
         if (!$fnret) {
-            warn_syslog("Failed to execute program '$checkProgram': " . $fnret->msg);
+            warn_syslog("Failed to execute program '$checkProgram': $fnret");
             return R('ERR_INTERNAL', msg => "The account activeness check program failed. Report this to sysadmin!");
         }
 
@@ -1607,7 +1607,7 @@ sub do_pamtester {
             s/%ACCOUNT%/$self/g for @$MFAPostCommand;
             $fnret = OVH::Bastion::execute(cmd => $MFAPostCommand, must_succeed => 1);
             if (!$fnret) {
-                warn_syslog("MFAPostCommand returned a non-zero value: " . $fnret->msg);
+                warn_syslog("MFAPostCommand returned a non-zero value: $fnret");
             }
         }
         last;

@@ -199,7 +199,7 @@ foreach my $accHash (@accounts) {
             $ret{'is_ttl_expired'} = 1;
         }
         else {
-            osh_warn "Error getting account TTL expiration info (" . $fnret->msg . ")";
+            osh_warn "Error getting account TTL expiration info ($fnret)";
         }
         $ret{'ttl_timestamp'} =
           ($fnret->value && $fnret->value->{'expiry_time'}) ? $fnret->value->{'expiry_time'} : undef;
@@ -228,7 +228,7 @@ foreach my $accHash (@accounts) {
             $ret{'is_expired'} = 1;
         }
         else {
-            osh_warn "Error getting account expiration info (" . $fnret->msg . ")";
+            osh_warn "Error getting account expiration info ($fnret)";
         }
 
         if (!$fnret->is_err) {

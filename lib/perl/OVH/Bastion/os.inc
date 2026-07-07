@@ -76,9 +76,8 @@ sub _sys_autoretry {
             warn_syslog('Too much concurrency on try '
                   . $try
                   . " running command '"
-                  . join(" ", @{$params{'cmd'} || []}) . "', "
-                  . $fnret->msg
-                  . ", stdout: '"
+                  . join(" ", @{$params{'cmd'} || []})
+                  . "', $fnret, stdout: '"
                   . (($fnret->value && $fnret->value->{'stdout'}) ? $fnret->value->{'stdout'}->[0] : '(null)') . "'"
                   . ", stderr: '"
                   . (($fnret->value && $fnret->value->{'stderr'}) ? $fnret->value->{'stderr'}->[0] : '(null)')
@@ -93,11 +92,7 @@ sub _sys_autoretry {
     }
 
     # failed too many times, log the detailed error in our system log, warn the user and return what we have
-    warn_syslog('Too much concurrency running command "'
-          . join(" ", $params{'cmd'})
-          . '", returned '
-          . $fnret->msg
-          . ', gave up');
+    warn_syslog('Too much concurrency running command "' . join(" ", $params{'cmd'}) . "\", returned $fnret, gave up");
     warn "Couldn't apply modifications (concurrency problem?)";
     return $fnret;
 }

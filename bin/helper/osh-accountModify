@@ -394,7 +394,7 @@ foreach my $tuple (@modify) {
                 osh_info "... modification done";
             }
             else {
-                osh_warn "... error while setting StrictHostKeyChecking policy: " . $fnret->msg;
+                osh_warn "... error while setting StrictHostKeyChecking policy: $fnret";
             }
         }
     }
@@ -457,7 +457,7 @@ foreach my $tuple (@modify) {
                 osh_info "... modification done";
             }
             else {
-                osh_warn "... error while setting MFA policy: " . $fnret->msg;
+                osh_warn "... error while setting MFA policy: $fnret";
             }
         }
     }
@@ -478,7 +478,7 @@ foreach my $tuple (@modify) {
                 osh_info "... modification done";
             }
             else {
-                osh_warn "... error while setting the account expiration policy: " . $fnret->msg;
+                osh_warn "... error while setting the account expiration policy: $fnret";
             }
         }
     }

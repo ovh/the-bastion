@@ -998,7 +998,7 @@ sub add_user_to_group {
     $group = $fnret->value->{'group'};
 
     $fnret = OVH::Bastion::sys_addmembertogroup(group => $group, user => $user);
-    $fnret or return R('ERR_USERMOD_FAILED', msg => "Error while adding $user to group $group (" . $fnret->msg . ")");
+    $fnret or return R('ERR_USERMOD_FAILED', msg => "Error while adding $user to group $group ($fnret)");
     return R('OK');
 }
 

@@ -476,7 +476,7 @@ sub log_access_insert {
                 $accountsql = 'ok';
             }
             else {
-                $accountsql = 'error ' . $fnret->msg;
+                $accountsql = "error $fnret";
             }
         }
         else {
@@ -492,7 +492,7 @@ sub log_access_insert {
             sqltype => "global",
             file    => sprintf("/home/logkeeper/global-log-%04d%02d.sqlite", $localtime[5] + 1900, $localtime[4] + 1)
         );
-        $globalsql = $fnret ? 'ok' : 'error ' . $fnret->msg;
+        $globalsql = $fnret ? 'ok' : "error $fnret";
     }
 
     # 2/3) push to syslog, we'll also say if any sqlinsert failed through globalsql/accountsql
@@ -739,7 +739,7 @@ sub log_access_update {
     if (OVH::Bastion::config('enableAccountSqlLog')->value()) {
         if ($insert_id && $db_name) {
             $fnret      = _sql_log_update_file(%params, file => $db_name, id => $insert_id);
-            $accountsql = $fnret ? 'ok' : 'error ' . $fnret->msg;
+            $accountsql = $fnret ? 'ok' : "error $fnret";
         }
         else {
             $accountsql = 'missing';

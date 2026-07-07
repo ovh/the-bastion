@@ -78,7 +78,7 @@ EOM
             }
         }
         elsif ($fnret->err ne 'KO_NO_SUCH_FILE') {
-            warn_syslog("Interactive mode: error reading configuration for plugin '$plugin': " . $fnret->msg);
+            warn_syslog("Interactive mode: error reading configuration for plugin '$plugin': $fnret");
         }
     }
     print scalar(@cmdlist) . " commands and " . (@rules / 2) . " autocompletion rules loaded.\n\n";
@@ -249,7 +249,7 @@ EOM
                     print "As proactive MFA validation has been requested, entering MFA phase.\n";
                     $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $self);
                     if (!$fnret) {
-                        warn_syslog("Couldn't get account details in interactive mode (" . $fnret->msg . ")");
+                        warn_syslog("Couldn't get account details in interactive mode ($fnret)");
                         main_exit(OVH::Bastion::EXIT_ACCOUNT_INVALID(),
                             "account_invalid", "Error while getting account details");
                     }

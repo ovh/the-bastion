@@ -81,7 +81,7 @@ if (defined $mfaRequired) {
             osh_info "... done, policy is now: $mfaRequired";
         }
         else {
-            osh_warn "... error while changing mfa-required policy (" . $fnret->msg . ")";
+            osh_warn "... error while changing mfa-required policy ($fnret)";
         }
         $result{'mfa_required'} = $fnret;
     }
@@ -125,14 +125,10 @@ foreach my $item (keys %idleTimeout) {
             }
         }
         else {
-            osh_warn "... error while setting the group-specific "
-              . $idleTimeout{$item}{'name'}
-              . " policy ("
-              . $fnret->msg . ")";
+            osh_warn "... error while setting the group-specific " . $idleTimeout{$item}{'name'} . " policy ($fnret)";
             warn_syslog "Error setting the group-specific "
               . $idleTimeout{$item}{'name'}
-              . " policy of $group ("
-              . $fnret->msg . ")";
+              . " policy of $group ($fnret)";
         }
     }
     else {
@@ -141,14 +137,10 @@ foreach my $item (keys %idleTimeout) {
             osh_info "... done, this group will now use the global " . $idleTimeout{$item}{'name'} . " policy";
         }
         else {
-            osh_warn "... error while removing the group-specific "
-              . $idleTimeout{$item}{'name'}
-              . " policy ("
-              . $fnret->msg . ")";
+            osh_warn "... error while removing the group-specific " . $idleTimeout{$item}{'name'} . " policy ($fnret)";
             warn_syslog "Error removing the group-specific "
               . $idleTimeout{$item}{'name'}
-              . " policy of $group ("
-              . $fnret->msg . ")";
+              . " policy of $group ($fnret)";
         }
     }
     $result{$idleTimeout{$item}{'key'}} = $fnret;
@@ -163,7 +155,7 @@ if (defined $ttl) {
               . OVH::Bastion::duration2human(seconds => $ttl)->value->{'human'};
         }
         else {
-            osh_warn "... error while setting guest-ttl-limit (" . $fnret->msg . ")";
+            osh_warn "... error while setting guest-ttl-limit ($fnret)";
         }
     }
     else {
@@ -172,7 +164,7 @@ if (defined $ttl) {
             osh_info "... done, guest accesses no longer need to have a TTL set";
         }
         else {
-            osh_warn "... error while removing guest-ttl-limit (" . $fnret->msg . ")";
+            osh_warn "... error while removing guest-ttl-limit ($fnret)";
         }
     }
     $result{'guest_ttl_limit'} = $fnret;

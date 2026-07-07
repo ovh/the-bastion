@@ -166,7 +166,7 @@ sub add_key_to_authorized_keys_file {
         }
     }
     else {
-        warn_syslog("Failed to format key for authorized_keys write to '$file', aborting (" . $fnret->msg . ")");
+        warn_syslog("Failed to format key for authorized_keys write to '$file', aborting ($fnret)");
         return R('ERR_INVALID_PARAMETER', msg => "Specified 'key' is not valid");
     }
     return R('OK');
@@ -237,9 +237,8 @@ sub put_authorized_keys_to_file {
             }
             else {
                 warn_syslog(
-                        "Failed to format key for authorized_keys write to '$file' for '$account', ignoring this one ("
-                      . $fnret->msg
-                      . ")");
+                    "Failed to format key for authorized_keys write to '$file' for '$account', ignoring this one ($fnret)"
+                );
             }
         }
         close($fh);
@@ -345,8 +344,7 @@ sub get_ssh_pub_key_info {
         if ($fnret->is_err || !$fnret->value || ($fnret->value->{'sysret'} != 0 && $fnret->value->{'sysret'} != 1)) {
 
             # sysret == 1 means ssh-keygen didn't recognize this key, handled below.
-            return R('ERR_SSH_KEYGEN_FAILED',
-                msg => "Couldn't read the fingerprint of $filename (" . $fnret->msg . ")");
+            return R('ERR_SSH_KEYGEN_FAILED', msg => "Couldn't read the fingerprint of $filename ($fnret)");
         }
         my $sshkeygen;
         if ($fnret->err eq 'OK') {
@@ -434,7 +432,7 @@ EOS
         $fnret->{'msg'} = "This key generation algorithm has been disabled on this bastion, please use another one.";
     }
     elsif (not $fnret) {
-        $fnret->{'msg'} = "Unknown error (" . $fnret->msg . "), please report to your sysadmin.";
+        $fnret->{'msg'} = "Unknown error ($fnret), please report to your sysadmin.";
     }
     else {
         if (not grep { $fnret->value->{'family'} eq $_ } qw{ RSA ECDSA ED25519 ECDSA-SK ED25519-SK }) {
@@ -563,7 +561,7 @@ sub generate_ssh_key {
 
     $fnret = OVH::Bastion::execute(cmd => \@command, noisy_stderr => 1);
     $fnret->err eq 'OK'
-      or return R('ERR_SSH_KEYGEN_FAILED', msg => "Error while generating group key (" . $fnret->msg . ")");
+      or return R('ERR_SSH_KEYGEN_FAILED', msg => "Error while generating group key ($fnret)");
 
     my %files = (
         $sshKeyName          => ($group_readable ? oct(440) : oct(400)),

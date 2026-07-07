@@ -129,7 +129,7 @@ else {
     HEXIT('ERR_INTERNAL');    # unreachable
 }
 if ($fnret->err ne 'OK') {
-    osh_debug('Unable to modify group: ' . $fnret->msg);
+    osh_debug("Unable to modify group: $fnret");
     HEXIT('ERR_INTERNAL', msg => "Error while doing $action on account $account from $type list of $shortGroup");
 }
 osh_debug("groupSetRole: Account $action of $account done on $type list of $shortGroup");

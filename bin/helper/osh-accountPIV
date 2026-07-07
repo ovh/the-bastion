@@ -124,8 +124,7 @@ if ($step == 1) {
             value   => $policy
         );
         if (!$fnret) {
-            warn_syslog(
-                "Couldn't apply the requested PIV policy '$policy' (current is '$currentPolicy'): " . $fnret->msg);
+            warn_syslog("Couldn't apply the requested PIV policy '$policy' (current is '$currentPolicy'): $fnret");
             HEXIT($fnret);
         }
         else {
@@ -151,7 +150,7 @@ if ($step == 1) {
                 delete  => 1
             );
             if (!$fnret) {
-                warn_syslog("Couldn't remove the grace TTL PIV policy: " . $fnret->msg);
+                warn_syslog("Couldn't remove the grace TTL PIV policy: $fnret");
 
                 # attempt to continue nevertheless...
             }
@@ -182,7 +181,7 @@ if ($step == 1) {
             value   => (time() + $ttl)
         );
         if (!$fnret) {
-            warn_syslog("Couldn't apply the requested grace ttl PIV policy: " . $fnret->msg);
+            warn_syslog("Couldn't apply the requested grace ttl PIV policy: $fnret");
             HEXIT($fnret);
         }
         my $human = OVH::Bastion::duration2human(seconds => $ttl)->value;
