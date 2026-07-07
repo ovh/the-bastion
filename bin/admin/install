@@ -88,10 +88,12 @@ set_default_options
 show_help=0
 [ -z "$1" ] && show_help=1
 nothing=0
+newinstall=0
 
 while [ -n "$1" ]; do
     if [ "$1" = "--new-install" ]; then
         set_default_options
+        newinstall=1
         opt[modify-banner]=1
         opt[modify-sshd-config]=1
         opt[modify-ssh-config]=1
@@ -1151,6 +1153,36 @@ if [ "${opt[systemd-units]}" = 1 ]; then
     done
     systemctl daemon-reload || true
     action_done
+fi
+
+# On a brand new install (--new-install), if /home encryption has been set up
+# beforehand (see setup-encryption.sh), enable the seal-banner service, so that
+# at boot the SSH banner indicates a sealed state until an admin unlocks /home.
+# Don't do it on upgrades to ensure we don't reverse an admin decision to disable it.
+# We detect a configured encryption by checking that the device referenced by
+# luks-config.sh is an actual LUKS container.
+luks_config=/etc/bastion/luks-config.sh
+if [ "$newinstall" = 1 ] && [ -f "$luks_config" ] && command -v cryptsetup >/dev/null 2>&1; then
+    # luks-config.sh is a shell script, source it and fetch the value
+    # shellcheck source=etc/bastion/luks-config.sh.dist
+    dev_encrypted=$( { . "$luks_config"; } >/dev/null 2>&1; printf '%s' "$DEV_ENCRYPTED")
+    if [ -n "$dev_encrypted" ] && cryptsetup isLuks "$dev_encrypted" 2>/dev/null; then
+        if [ "${opt[systemd-units]}" = 1 ]; then
+            action_doing "Enabling SSH banner seal service (/home encryption detected)"
+            if systemctl enable osh-seal-banner.service 2>/dev/null; then
+                action_done "enabled"
+            else
+                action_error "couldn't enable osh-seal-banner.service, please enable it manually"
+            fi
+        elif [ "${opt[init]}" = 1 ]; then
+            action_doing "Enabling SSH banner seal service (/home encryption detected)"
+            if update-rc.d osh-seal-banner defaults >/dev/null 2>&1; then
+                action_done "enabled"
+            else
+                action_error "couldn't enable osh-seal-banner service, please enable it manually"
+            fi
+        fi
+    fi
 fi
 
 if [ "${opt[reload-http-proxy]}" = 1 ]; then
