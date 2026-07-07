@@ -1,6 +1,7 @@
 #! /usr/bin/env perl
 # vim: set filetype=perl ts=4 sw=4 sts=4 et:
 use common::sense;
+use List::Util qw{ none };
 
 use File::Basename;
 use lib dirname(__FILE__) . '/../../../lib/perl';
@@ -88,7 +89,7 @@ if ((grep { defined } values %modify) == 0) {
 
 foreach my $key (qw{ mfa-password-required mfa-totp-required }) {
     next unless $modify{$key};
-    if (not grep { $modify{$key} eq $_ } qw{ yes no bypass }) {
+    if (none { $modify{$key} eq $_ } qw{ yes no bypass }) {
         help();
         osh_exit 'ERR_INVALID_PARAMETER',
           "Expected '--$key yes' or '--$key no' or '--$key bypass' instead of '--$key $modify{$key}'";
@@ -96,26 +97,26 @@ foreach my $key (qw{ mfa-password-required mfa-totp-required }) {
 }
 foreach my $key (qw{ always-active pam-auth-bypass idle-ignore osh-only pubkey-auth-optional }) {
     next unless $modify{$key};
-    if (not grep { $modify{$key} eq $_ } qw{ yes no }) {
+    if (none { $modify{$key} eq $_ } qw{ yes no }) {
         help();
         osh_exit 'ERR_INVALID_PARAMETER', "Expected '--$key yes' or '--$key no' instead of '--$key $modify{$key}'";
     }
 }
-if ($modify{'egress-strict-host-key-checking'} && !grep { $modify{'egress-strict-host-key-checking'} eq $_ }
+if ($modify{'egress-strict-host-key-checking'} && none { $modify{'egress-strict-host-key-checking'} eq $_ }
     qw{ yes accept-new no ask default bypass })
 {
     help();
     osh_exit 'ERR_INVALID_PARAMETER',
       "Expected option 'yes', 'accept-new', 'no', 'ask', 'default' or 'bypass' to --egress-strict-host-key-checking";
 }
-if ($modify{'personal-egress-mfa-required'} && !grep { $modify{'personal-egress-mfa-required'} eq $_ }
+if ($modify{'personal-egress-mfa-required'} && none { $modify{'personal-egress-mfa-required'} eq $_ }
     qw{ password totp any none })
 {
     help();
     osh_exit 'ERR_INVALID_PARAMETER',
       "Expected option 'password', 'totp', 'any', 'none' to --personal-egress-mfa-required";
 }
-if ($modify{'egress-session-multiplexing'} && !grep { $modify{'egress-session-multiplexing'} eq $_ }
+if ($modify{'egress-session-multiplexing'} && none { $modify{'egress-session-multiplexing'} eq $_ }
     qw{ yes no default })
 {
     help();

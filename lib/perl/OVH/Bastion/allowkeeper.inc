@@ -4,6 +4,7 @@ package OVH::Bastion;
 
 use common::sense;
 
+use List::Util qw{ any none };
 use Time::Piece;    # $t->strftime
 
 # Check if a system user belongs to a specific system group
@@ -21,7 +22,7 @@ sub is_user_in_group {
     my $fnret = OVH::Bastion::sys_getgr_name(name => $group, cache => $cache);
     $fnret or return $fnret;
 
-    if (grep { $user eq $_ } @{$fnret->value->{'members'} || []}) {
+    if (any { $user eq $_ } @{$fnret->value->{'members'} || []}) {
         return R('OK', value => {group => $group, account => $user});
     }
     else {
@@ -298,7 +299,7 @@ sub is_account_valid {
     elsif ($account !~ m/^realm_/ && $accountType eq 'realm') {
         return R('KO_BAD_PREFIX', msg => "$whatis should start with the realm prefix");
     }
-    elsif (grep { $account eq $_ } qw{ root proxyhttp keykeeper passkeeper logkeeper realm realm_realm }) {
+    elsif (any { $account eq $_ } qw{ root proxyhttp keykeeper passkeeper logkeeper realm realm_realm }) {
         return R('KO_FORBIDDEN_NAME', msg => "$whatis name is reserved");
     }
     elsif ($account =~ m{^([a-zA-Z0-9-]+)/([a-zA-Z0-9._-]+)$} && $accountType eq 'normal') {
@@ -422,7 +423,7 @@ sub access_modify {
 
     my $fnret;
 
-    if (!grep { $action eq $_ } qw{ add del clear }) {
+    if (none { $action eq $_ } qw{ add del clear }) {
         return R('ERR_INVALID_PARAMETER', msg => "Action should be add, del or clear");
     }
 
@@ -907,11 +908,11 @@ sub is_valid_group {
 
     # autodetect if my caller prefixed the group name with 'key' or not, and adjust accordingly.
     # we'll return normalized group and shortGroup values to our caller
-    if ($group !~ /^key/ && defined $groupType && grep { $groupType eq $_ } qw{ key gatekeeper aclkeeper owner }) {
+    if ($group !~ /^key/ && defined $groupType && any { $groupType eq $_ } qw{ key gatekeeper aclkeeper owner }) {
         $group = "key$group";
     }
 
-    if ($group =~ m/keeper$/i and not grep { $groupType eq $_ } qw{ gatekeeper aclkeeper }) {
+    if ($group =~ m/keeper$/i and none { $groupType eq $_ } qw{ gatekeeper aclkeeper }) {
         return R('KO_FORBIDDEN_SUFFIX', msg => 'Forbidden suffix in group name');
     }
     elsif ($group =~ m/owner$/i and $groupType ne 'owner') {
@@ -920,7 +921,7 @@ sub is_valid_group {
     elsif ($group =~ m/-tty$/i and $groupType ne 'tty') {
         return R('KO_FORBIDDEN_SUFFIX', msg => 'Forbidden suffix in group name');
     }
-    elsif ($group =~ m/^key/i and not grep { $groupType eq $_ } qw{ key gatekeeper owner }) {
+    elsif ($group =~ m/^key/i and none { $groupType eq $_ } qw{ key gatekeeper owner }) {
         return R('KO_FORBIDDEN_PREFIX', msg => 'Forbidden prefix in group name');
     }
     elsif ($group =~ m/^[-.]/) {
@@ -953,7 +954,7 @@ sub is_valid_group {
         }
 
         # 18 max for the short group name, because 32 - length(key) - length(-gatekeeper) == 18
-        if ((grep { $groupType eq $_ } qw{ key gatekeeper aclkeeper owner }) && (length($shortGroup) > 18)) {
+        if ((any { $groupType eq $_ } qw{ key gatekeeper aclkeeper owner }) && (length($shortGroup) > 18)) {
             return R('KO_NAME_TOO_LONG', msg => "Group name is too long (limit is 18 chars)");
         }
 
@@ -1101,7 +1102,7 @@ sub get_account_list {
     foreach my $name (keys %{$fnret->value}) {
 
         # if $accounts has been specified, only consider those
-        next if (@$accounts && !grep { $name eq $_ } @$accounts);
+        next if (@$accounts && none { $name eq $_ } @$accounts);
 
         # skip invalid accounts.
         # if !$cache, then we've filled the cache with sys_getpw_all() just above,
@@ -1138,7 +1139,7 @@ sub get_realm_list {
     foreach my $name (keys %{$fnret->value}) {
 
         # if $realms has been specified, only consider those
-        next if (@$realms && !grep { $name eq "realm_$_" } @$realms);
+        next if (@$realms && none { $name eq "realm_$_" } @$realms);
 
         # skip invalid realms.
         # if !$cache, then we've filled the cache with sys_getpw_all() just above,
@@ -1197,7 +1198,7 @@ sub is_admin {
     }
 
     my $adminList = OVH::Bastion::config('adminAccounts')->value();
-    if (grep { $account eq $_ } @$adminList) {
+    if (any { $account eq $_ } @$adminList) {
         return OVH::Bastion::is_user_in_group(group => "osh-admin", user => $account, cache => $cache);
     }
     return R('KO_ACCESS_DENIED');
@@ -1232,7 +1233,7 @@ sub is_super_owner {
     }
 
     my $superownerList = OVH::Bastion::config('superOwnerAccounts')->value();
-    if (grep { $account eq $_ } @$superownerList) {
+    if (any { $account eq $_ } @$superownerList) {
         return OVH::Bastion::is_user_in_group(group => "osh-superowner", user => $account, cache => $cache);
     }
 

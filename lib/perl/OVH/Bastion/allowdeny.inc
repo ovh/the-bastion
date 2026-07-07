@@ -4,7 +4,8 @@ package OVH::Bastion;
 
 use common::sense;
 
-use Socket qw{ :all };
+use List::Util qw{ any };
+use Socket     qw{ :all };
 
 sub get_personal_account_keys {
     my %params   = @_;
@@ -1353,7 +1354,7 @@ sub ssh_test_access_way {
     }
     $fnret or return $fnret;
 
-    if (grep { $fnret->value->{'sysret'} eq $_ }
+    if (any { $fnret->value->{'sysret'} eq $_ }
         (0, OVH::Bastion::EXIT_ACCOUNT_INVALID(), OVH::Bastion::EXIT_HOST_NOT_FOUND()))
     {
         return R('OK');
@@ -1362,10 +1363,10 @@ sub ssh_test_access_way {
     my $hint;
 
     # 124 is the return code from the timeout system command when it times out
-    if ($fnret->value->{'sysret'} == 124 || grep { /timed out/i } @{$fnret->value->{'stderr'} || []}) {
+    if ($fnret->value->{'sysret'} == 124 || any { /timed out/i } @{$fnret->value->{'stderr'} || []}) {
         $hint = "Hint: did you remotely allow this bastion to access the SSH port?";
     }
-    elsif (grep { /Permission denied/i } @{$fnret->value->{'stderr'} || []}) {
+    elsif (any { /Permission denied/i } @{$fnret->value->{'stderr'} || []}) {
         $hint = "Hint: did you add the proper public key to the remote's authorized_keys?";
     }
     my $msg = "Couldn't connect to $user\@$ip (ssh returned error " . $fnret->value->{'sysret'} . ")";

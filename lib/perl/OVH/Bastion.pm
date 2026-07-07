@@ -3,7 +3,8 @@ package OVH::Bastion;
 # vim: set filetype=perl ts=4 sw=4 sts=4 et:
 use common::sense;
 use Fcntl;
-use POSIX qw(strftime);
+use List::Util qw{ any none };
+use POSIX      qw(strftime);
 
 our $VERSION = '3.24.00';
 
@@ -173,7 +174,7 @@ sub AUTOLOAD {    ## no critic (AutoLoading)
     $subname =~ s/.*:://;
 
     foreach my $file (keys %_autoload_files) {
-        if (grep { $subname eq $_ } @{$_autoload_files{$file}}) {
+        if (any { $subname eq $_ } @{$_autoload_files{$file}}) {
             require $BASEPATH . '/lib/perl/OVH/Bastion/' . $file . '.inc';
 
             # Catch a declared but not implemented subroutine before calling it
@@ -447,7 +448,7 @@ sub is_account_active {
         # If in alwaysActive, then is active
         my $alwaysActiveAccounts = OVH::Bastion::config('alwaysActiveAccounts');
         if ($alwaysActiveAccounts and $alwaysActiveAccounts->value) {
-            if (grep { $sysaccount eq $_ } @{$alwaysActiveAccounts->value}) {
+            if (any { $sysaccount eq $_ } @{$alwaysActiveAccounts->value}) {
                 return R('OK');
             }
         }
@@ -559,7 +560,7 @@ sub osh_header {
     my $versionline = 'the-bastion-' . $VERSION;
     my $output      = '';
     my $fanciness   = OVH::Bastion::config('fanciness')->value;
-    if (OVH::Bastion::can_use_utf8() && grep { $fanciness eq $_ } qw{ basic full }) {
+    if (OVH::Bastion::can_use_utf8() && any { $fanciness eq $_ } qw{ basic full }) {
         my $line =
             "\N{U+256D}\N{U+2500}\N{U+2500}"
           . $hostname
@@ -594,7 +595,7 @@ sub osh_footer {
 
     my $output;
     my $fanciness = OVH::Bastion::config('fanciness')->value;
-    if (OVH::Bastion::can_use_utf8() && grep { $fanciness eq $_ } qw{ basic full }) {
+    if (OVH::Bastion::can_use_utf8() && any { $fanciness eq $_ } qw{ basic full }) {
         $output = colored("\N{U+2570}" . "\N{U+2500}" x (79 - length($text) - 6) . "</$text>" . "\N{U+2500}" x 3 . "\n",
             'bold blue');
     }
@@ -1072,7 +1073,7 @@ sub can_account_execute_plugin {
     if ($account =~ m{^realm_}) {
         return R('ERR_SECURITY_VIOLATION', msg => "Realm support accounts can't execute any plugin by themselves");
     }
-    if ($account =~ m{/} && !grep { $plugin eq $_ }
+    if ($account =~ m{/} && none { $plugin eq $_ }
         qw{ alive help info mtr nc ping selfForgetHostKey selfListAccesses selfListEgressKeys })
     {
         return R('ERR_REALM_USER',
@@ -1192,14 +1193,14 @@ sub set_terminal_mode_for_plugin {
         local $" = ', ';
         return R('ERR_MISSING_PARAMETER', "Missing mandatory parameter(s): @missingParameters");
     }
-    if (not grep { $action eq $_ } qw{ set restore }) {
+    if (none { $action eq $_ } qw{ set restore }) {
         return R('ERR_INVALID_PARAMETER', "Parameter 'action' is invalid, expected either 'set' or 'restore'");
     }
 
     my $mode;
     my $fnret = OVH::Bastion::plugin_config(plugin => $plugin, key => "terminal_mode");
     if ($fnret && defined $fnret->value) {
-        if (grep { $fnret->value eq $_ } qw{ noecho cbreak raw }) {
+        if (any { $fnret->value eq $_ } qw{ noecho cbreak raw }) {
             $mode = $fnret->value;
         }
         else {

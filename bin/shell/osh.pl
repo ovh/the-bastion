@@ -9,6 +9,7 @@ use OVH::Result;
 use OVH::Bastion;
 
 use Getopt::Long qw(GetOptionsFromString :config pass_through no_ignore_case no_auto_abbrev);
+use List::Util   qw{ none };
 use Sys::Hostname;
 use POSIX qw(strftime);
 use Term::ANSIColor;
@@ -467,7 +468,7 @@ if ($bind) {
         main_exit OVH::Bastion::EXIT_CONFLICTING_OPTIONS, "invalid_bind",
           "Couldn't verify the binding IP specified ($bind): " . $fnret->msg;
     }
-    if (not grep { $bind eq $_ } @{$fnret->value}) {
+    if (none { $bind eq $_ } @{$fnret->value}) {
         main_exit OVH::Bastion::EXIT_CONFLICTING_OPTIONS, "invalid_bind", "Invalid binding IP specified ($bind)";
     }
 }

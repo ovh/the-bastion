@@ -1,6 +1,7 @@
 #! /usr/bin/env perl
 # vim: set filetype=perl ts=4 sw=4 sts=4 et:
 use common::sense;
+use List::Util qw{ none };
 
 use File::Basename;
 use lib dirname(__FILE__) . '/../../../lib/perl';
@@ -61,7 +62,7 @@ $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $account
 $fnret or osh_exit $fnret;
 $account = $fnret->value->{'account'};
 
-if (not grep { $policy eq $_ } qw{ default enforce never grace }) {
+if (none { $policy eq $_ } qw{ default enforce never grace }) {
     help();
     osh_exit 'ERR_INVALID_PARAMETER', "Expected either 'none,' enforce', 'never' or 'grace' as a parameter to --policy";
 }

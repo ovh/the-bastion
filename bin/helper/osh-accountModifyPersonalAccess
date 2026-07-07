@@ -23,6 +23,7 @@
 #>HEADER
 use common::sense;
 use Getopt::Long qw(:config no_auto_abbrev no_ignore_case);
+use List::Util   qw{ none };
 
 use File::Basename;
 use lib dirname(__FILE__) . '/../../lib/perl';
@@ -80,7 +81,7 @@ if ($target eq 'self' && $self ne $account) {
 #<RIGHTSCHECK
 
 #>PARAMS:ACTION
-if (not grep { $action eq $_ } qw{ add del }) {
+if (none { $action eq $_ } qw{ add del }) {
     return R('ERR_INVALID_PARAMETER', msg => "expected 'add' or 'del' as an action");
 }
 

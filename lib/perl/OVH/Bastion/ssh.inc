@@ -3,7 +3,7 @@ package OVH::Bastion;
 
 use common::sense;
 
-use List::Util qw{ first };
+use List::Util qw{ any first none };
 use File::Temp;
 use Fcntl qw{ :mode :DEFAULT };
 
@@ -437,7 +437,7 @@ EOS
         $fnret->{'msg'} = "Unknown error (" . $fnret->msg . "), please report to your sysadmin.";
     }
     else {
-        if (not grep { $fnret->value->{'family'} eq $_ } qw{ RSA ECDSA ED25519 ECDSA-SK ED25519-SK }) {
+        if (none { $fnret->value->{'family'} eq $_ } qw{ RSA ECDSA ED25519 ECDSA-SK ED25519-SK }) {
             $fnret->{'err'} = 'ERR_UNKNOWN_TYPE';
             $fnret->{'msg'} =
               "Unknown family type (" . $fnret->value->{'family'} . "), please report to your sysadmin.";
@@ -669,7 +669,7 @@ sub is_allowed_algo_and_size {
     $fnret or return $fnret;
     my @supportedList = @{$fnret->value};
 
-    if (not grep { $algo eq $_ } @supportedList) {
+    if (none { $algo eq $_ } @supportedList) {
         return R('KO_NOT_SUPPORTED',
             msg => "The algorithm '$algo' is not supported (or disabled) for $way on this bastion");
     }
@@ -688,7 +688,7 @@ sub is_allowed_algo_and_size {
     }
     elsif ($algo eq 'ecdsa') {
         $algo = 'ecdsa';                                            # untaint
-        if (not grep { $size eq $_ } qw{ 256 384 521 }) {
+        if (none { $size eq $_ } qw{ 256 384 521 }) {
             return R('KO_KEY_SIZE_INVALID', msg => "For the selected algorithm, valid key sizes are 256, 384, 521");
         }
     }
@@ -1091,25 +1091,25 @@ sub print_accepted_key_algorithms {
         osh_info("\n.. code-block:: none\n");
     }
 
-    if ($fido && grep { 'ed25519-sk' eq $_ } @algoList) {
+    if ($fido && any { 'ed25519-sk' eq $_ } @algoList) {
         osh_info("${prefix}FIDO2 Ed25519: robustness[$X$X$X] speed[$X$X$X]"
               . ($generate ? ", generate: `ssh-keygen -t ed25519-sk -O resident -O application=$appName" : ""));
         $hasFido = 1;
     }
-    if (grep { 'ed25519' eq $_ } @algoList) {
+    if (any { 'ed25519' eq $_ } @algoList) {
         osh_info("${prefix}Ed25519      : robustness[$X$X$X] speed[$X$X$X]"
               . ($generate ? ", generate: `ssh-keygen -t ed25519'" : ""));
     }
-    if ($fido && grep { 'ecdsa-sk' eq $_ } @algoList) {
+    if ($fido && any { 'ecdsa-sk' eq $_ } @algoList) {
         osh_info("${prefix}FIDO2 ECDSA  : robustness[$X$X$o] speed[$X$X$X]"
               . ($generate ? ", generate: `ssh-keygen -t ecdsa-sk -b 521 -O resident -O application=$appName" : ""));
         $hasFido = 1;
     }
-    if (grep { 'ecdsa' eq $_ } @algoList) {
+    if (any { 'ecdsa' eq $_ } @algoList) {
         osh_info("${prefix}ECDSA        : robustness[$X$X$o] speed[$X$X$X]"
               . ($generate ? ", generate: `ssh-keygen -t ecdsa -b 521'" : ""));
     }
-    if (grep { 'rsa' eq $_ } @algoList) {
+    if (any { 'rsa' eq $_ } @algoList) {
         osh_info("${prefix}RSA          : robustness[$X$o$o] speed[$X$o$o]"
               . ($generate ? ", generate: `ssh-keygen -t rsa -b 4096'" : ""));
     }

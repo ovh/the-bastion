@@ -9,6 +9,7 @@ use common::sense;
 use base qw (Exporter);
 our @EXPORT = qw(_log _warn _err);    ## no critic (ProhibitAutomaticExportation)
 
+use List::Util qw{ none };
 use Term::ANSIColor;
 use Sys::Syslog qw{};
 
@@ -112,7 +113,7 @@ sub _display {
         # valid levels: DEBUG, INFO, NOTICE, WARNING, ERR, EMERG
         my $priority = uc($level);
         $priority = 'WARNING' if $priority eq 'WARN';
-        $priority = 'INFO'    if (!grep { $priority eq $_ } qw{ DEBUG NOTICE WARNING ERR EMERG });
+        $priority = 'INFO'    if (none { $priority eq $_ } qw{ DEBUG NOTICE WARNING ERR EMERG });
         eval { Sys::Syslog::syslog($priority, $fullmsg); };
         if ($@) {
             print STDERR "Couldn't syslog, report to administrator ($@)\n";
