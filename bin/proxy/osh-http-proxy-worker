@@ -22,7 +22,7 @@ use POSIX    ();
 use Storable qw{ freeze thaw };
 use Sys::Hostname;
 use Time::HiRes ();
-use List::Util  qw{ first };
+use List::Util  qw{ any first };
 
 $ENV{'FORCE_STDERR'} = 1;
 $ENV{'PATH'}         = '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/pkg/bin';
@@ -575,7 +575,7 @@ else {
 my @passthru_headers = qw{ content-type content-length client-ssl-cert-subject client-ssl-cipher client-ssl-warning };
 if ($res) {
     foreach my $key ($res->headers->header_field_names) {
-        next unless (grep { lc($key) eq $_ } @passthru_headers);
+        next unless (any { lc($key) eq $_ } @passthru_headers);
         push @headers, [$key => $res->header($key)];
     }
 }

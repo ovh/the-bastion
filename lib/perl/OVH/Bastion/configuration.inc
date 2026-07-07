@@ -3,6 +3,7 @@ package OVH::Bastion;
 
 use common::sense;
 
+use List::Util qw{ any none };
 use JSON;
 use Fcntl qw{ :mode :DEFAULT };
 
@@ -308,7 +309,7 @@ sub load_configuration {
             }
 
             # if set to "no", "false" or "disabled", be nice and cast to false (because a string is true, otherwise)
-            elsif (grep { lc($C->{$o}) eq lc } qw{ no false disabled }) {
+            elsif (any { lc($C->{$o}) eq lc } qw{ no false disabled }) {
                 push @errors,
                     "Configuration error: found value '"
                   . $C->{$o}
@@ -530,7 +531,7 @@ sub load_configuration {
         }
         elsif ($C->{'defaultAccountEgressKeyAlgorithm'} eq 'ecdsa') {
             $C->{'defaultAccountEgressKeySize'} ||= 521;
-            if (!grep { $C->{'defaultAccountEgressKeySize'} eq $_ } qw{ 256 384 521 }) {
+            if (none { $C->{'defaultAccountEgressKeySize'} eq $_ } qw{ 256 384 521 }) {
                 push @errors,
                     "Configuration error: value of option 'defaultAccountEgressKeySize' ('"
                   . $C->{'defaultAccountEgressKeySize'}
@@ -629,7 +630,7 @@ sub load_configuration {
                         }
                     }
                 }
-                if (!grep { $rule->[2] eq $_ } qw{ ALLOW-EXCLUSIVE ALLOW DENY }) {
+                if (none { $rule->[2] eq $_ } qw{ ALLOW-EXCLUSIVE ALLOW DENY }) {
                     $C->{'ingressToEgressRules'} = [];
                     push @errors,
                         "Configuration error: option 'ingressToEgressRules' has an invalid format ('"

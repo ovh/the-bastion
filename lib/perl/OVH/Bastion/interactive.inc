@@ -2,6 +2,7 @@
 package OVH::Bastion;
 
 use common::sense;
+use List::Util qw{ any };
 use Term::ReadLine;
 use POSIX ();
 
@@ -146,7 +147,7 @@ EOM
             # check that here
 
             my ($typedPlugin) = $line =~ m{^(\S+)};
-            next unless grep { $typedPlugin eq $_ } @cmdlist;
+            next unless any { $typedPlugin eq $_ } @cmdlist;
 
             # if autocomplete specified, just return it
             if ($item->{'ac'}) {

@@ -2,6 +2,7 @@
 # vim: set filetype=perl ts=4 sw=4 sts=4 et:
 use common::sense;
 use Data::Dumper;
+use List::Util qw{ none };
 use Term::ANSIColor;
 use Digest::MD5 ();
 use File::Basename;
@@ -118,7 +119,7 @@ if ($allowkeeper_groups[0] eq 'allowkeeper' && $allowkeeper_groups[1] eq ':') {
     @allowkeeper_groups = splice @allowkeeper_groups, 2;
 }
 foreach my $group (keys %keygroupsbyname) {
-    _err "allowkeeper user is not a member of group key$group" if (not grep { $_ eq "key$group" } @allowkeeper_groups);
+    _err "allowkeeper user is not a member of group key$group" if (none { $_ eq "key$group" } @allowkeeper_groups);
 }
 
 # now check if each key group has a gk
@@ -570,7 +571,7 @@ foreach my $account (keys %users) {
                 next;
             }
 
-            if (not grep { $2 eq $_ } keys %keygroupsbyname) {
+            if (none { $2 eq $_ } keys %keygroupsbyname) {
                 _err "file /home/allowkeeper/$account/$file has no corresponding known group";
             }
             if ($1 eq 'ip') {
@@ -810,7 +811,7 @@ sub _tocheck {
                 close($fh_sudoers);
                 chomp @contents;
                 foreach my $wantedline (@{$tocheck{'SUDOERS'}}) {
-                    if (not grep { $_ eq $wantedline } @contents) {
+                    if (none { $_ eq $wantedline } @contents) {
                         _err "missing line in plugin $sudoersfile: $wantedline";
                     }
                 }

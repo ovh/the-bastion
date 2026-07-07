@@ -8,6 +8,7 @@
 #>HEADER
 use common::sense;
 use Getopt::Long qw(:config no_auto_abbrev no_ignore_case);
+use List::Util   qw{ none };
 
 use File::Basename;
 use lib dirname(__FILE__) . '/../../lib/perl';
@@ -38,7 +39,7 @@ if (not $action) {
     HEXIT('ERR_MISSING_PARAMETER', msg => "Missing argument 'action'");
 }
 
-if (not grep { $action eq $_ } qw{ set unset }) {
+if (none { $action eq $_ } qw{ set unset }) {
     HEXIT('ERR_INVALID_PARAMETER', msg => "Expected action 'set' or 'unset'");
 }
 

@@ -1,6 +1,7 @@
 #! /usr/bin/env perl
 # vim: set filetype=perl ts=4 sw=4 sts=4 et:
 use common::sense;
+use List::Util qw{ none };
 use Term::ANSIColor;
 
 use File::Basename;
@@ -106,7 +107,7 @@ sub process_account {
             if ($access->{'type'} =~ /^personal/ and not $ignorePersonal) {
                 $byPersonal++;
             }
-            elsif ($access->{'type'} =~ /^group/ and not grep { $access->{'group'} eq $_ } @ignoreGroups) {
+            elsif ($access->{'type'} =~ /^group/ and none { $access->{'group'} eq $_ } @ignoreGroups) {
                 $byGroups{$access->{'group'} . '(' . $access->{'type'} . ')'} = 1;
             }
         }

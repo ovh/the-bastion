@@ -10,6 +10,7 @@
 #>HEADER
 use common::sense;
 use Getopt::Long qw(:config no_auto_abbrev no_ignore_case);
+use List::Util   qw{ none };
 
 use File::Basename;
 use lib dirname(__FILE__) . '/../../lib/perl';
@@ -44,7 +45,7 @@ if (!$account || !$type) {
 
 #>PARAMS:TYPE
 osh_debug("Checking type");
-if (not grep { $type eq $_ } qw{ normal realm }) {
+if (none { $type eq $_ } qw{ normal realm }) {
     HEXIT('ERR_INVALID_PARAMETER', "Expected type 'normal' or 'realm'");
 }
 

@@ -1,6 +1,7 @@
 #! /usr/bin/env perl
 # vim: set filetype=perl ts=4 sw=4 sts=4 et:
 use common::sense;
+use List::Util qw{ any };
 
 use File::Basename;
 use lib dirname(__FILE__) . '/../../../lib/perl';
@@ -57,10 +58,10 @@ elsif ($TOTPProvider eq 'google-authenticator') {
     $fnret = OVH::Bastion::execute(cmd => ['google-authenticator', '-h'], must_succeed => 1);
     $fnret or osh_exit($fnret);
     my @additional_params;
-    if (grep { /--issuer/ } @{$fnret->value->{'stdout'}}) {
+    if (any { /--issuer/ } @{$fnret->value->{'stdout'}}) {
         push @additional_params, "--issuer=" . OVH::Bastion::config('bastionName')->value;
     }
-    if ($noConfirm && grep { /--no-confirm/ } @{$fnret->value->{'stdout'}}) {
+    if ($noConfirm && any { /--no-confirm/ } @{$fnret->value->{'stdout'}}) {
         push @additional_params, "--no-confirm";
     }
 

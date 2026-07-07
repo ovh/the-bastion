@@ -10,6 +10,7 @@
 #>HEADER
 use common::sense;
 use Getopt::Long qw(:config no_auto_abbrev no_ignore_case);
+use List::Util   qw{ none };
 
 use File::Basename;
 use lib dirname(__FILE__) . '/../../lib/perl';
@@ -55,7 +56,7 @@ $account = $fnret->value->{'account'};
 #<PARAMS:ACCOUNT
 
 #>PARAMS:POLICY
-if (not grep { $policy eq $_ } qw{ default enforce grace never }) {
+if (none { $policy eq $_ } qw{ default enforce grace never }) {
     HEXIT('ERR_INVALID_PARAMETER',
         "Expected either 'default,' enforce', 'grace' or 'never' as a parameter to --policy");
 }

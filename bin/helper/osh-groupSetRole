@@ -16,6 +16,7 @@
 #>HEADER
 use common::sense;
 use Getopt::Long qw(:config no_auto_abbrev no_ignore_case);
+use List::Util   qw{ any };
 
 use File::Basename;
 use lib dirname(__FILE__) . '/../../lib/perl';
@@ -98,7 +99,7 @@ elsif ($action eq 'del' && $fnret->is_ko) {
 }
 
 # add/del from sysgroup
-my $groupName = ((grep { $type eq $_ } qw{ guest member }) ? $group : "$group-$type");
+my $groupName = ((any { $type eq $_ } qw{ guest member }) ? $group : "$group-$type");
 
 osh_debug("going to $action account $account to/from $groupName");
 $fnret = R('OK', silent => 1);
