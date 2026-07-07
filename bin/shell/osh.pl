@@ -838,7 +838,7 @@ if ($mfaPolicy ne 'disabled'
     if (($mfaPolicy eq 'totp-required' && !$hasMfaTOTPBypass) || $isMfaTOTPRequired) {
         main_exit(OVH::Bastion::EXIT_MFA_TOTP_SETUP_REQUIRED, 'mfa_totp_setup_required',
             "Sorry $self, but you need to setup the Multi-Factor Authentication before using this bastion, please use the `--osh selfMFASetupTOTP' option to do so"
-        ) if !($isMfaTOTPConfigured && !$ingressRealm{'mfa'}{'totp'});
+        ) if (!$isMfaTOTPConfigured && !$ingressRealm{'mfa'}{'totp'});
     }
 
     if (   $mfaPolicy eq 'any-required'

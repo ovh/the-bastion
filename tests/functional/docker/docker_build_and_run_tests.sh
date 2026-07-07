@@ -125,6 +125,7 @@ trap - EXIT
 
 echo "Configuring network"
 docker rm -f "bastion_${target}_target" 2>/dev/null || true
+docker rm -f "bastion_${target}_target2" 2>/dev/null || true
 docker rm -f "bastion_${target}_tester" 2>/dev/null || true
 docker rm -f "bastion_${target}_jumphost" 2>/dev/null || true
 docker rm -f "bastion_${target}_remoteserver" 2>/dev/null || true
@@ -139,6 +140,7 @@ echo "Starting target instance"
 docker run $privileged \
     --name="bastion_${target}_target" \
     --network "bastion-$target" \
+    --init \
     -d \
     --entrypoint=/opt/bastion/tests/functional/docker/target_role.sh \
     -e USER_PUBKEY_B64="$USER_PUBKEY_B64" \
@@ -148,7 +150,21 @@ docker run $privileged \
     $namespace:"$target"
 docker logs -f "bastion_${target}_target" | sed -u -e 's/^/target: /;s/$/\r/' &
 
-# spin up the two slim ssh boxes behind the bastion (used by the proxy-jump tests):
+# start a second bastion, used as the "remote" bastion for the inter-realm tests
+echo "Starting second bastion instance"
+docker run $privileged \
+    --name="bastion_${target}_target2" \
+    --network "bastion-$target" \
+    --init \
+    -d \
+    --entrypoint=/opt/bastion/tests/functional/docker/target_role.sh \
+    -e USER_PUBKEY_B64="$USER_PUBKEY_B64" \
+    -e ROOT_PUBKEY_B64="$ROOT_PUBKEY_B64" \
+    -e TARGET_USER="user.5000" \
+    $namespace:"$target"
+docker logs -f "bastion_${target}_target2" | sed -u -e 's/^/target2: /;s/$/\r/' &
+
+# start two slim ssh boxes behind the bastion (used by the proxy-jump tests):
 # - jumphost: the host the bastion proxies through (egress user 'jump_')
 # - remoteserver: the final host reached through the bastion and the jumphost (egress user 'test-shell_')
 # both get the root pubkey so the tester can root-SSH in and push the bastion egress keys at test time
@@ -157,6 +173,7 @@ echo "Starting jumphost instance"
 docker run \
     --name="bastion_${target}_jumphost" \
     --network "bastion-$target" \
+    --init \
     -d \
     -v "$sshhost_role:/sshhost_role.sh:ro" \
     --entrypoint bash \
@@ -170,6 +187,7 @@ echo "Starting remoteserver instance"
 docker run \
     --name="bastion_${target}_remoteserver" \
     --network "bastion-$target" \
+    --init \
     -d \
     -v "$sshhost_role:/sshhost_role.sh:ro" \
     --entrypoint bash \
@@ -184,12 +202,14 @@ show_target_logs() {
         echo
         echo '>>> TARGET LOGS FOLLOW <<<'
         docker logs "bastion_${target}_target" | sed -u -e 's/^/target: /;s/$/\r/'
+        echo '>>> SECOND BASTION LOGS FOLLOW <<<'
+        docker logs "bastion_${target}_target2" 2>/dev/null | sed -u -e 's/^/target2: /;s/$/\r/'
     fi
 }
 
 cleanup() {
     set +e
-    docker rm -f "bastion_${target}_target" "bastion_${target}_tester" \
+    docker rm -f "bastion_${target}_target" "bastion_${target}_target2" "bastion_${target}_tester" \
         "bastion_${target}_jumphost" "bastion_${target}_remoteserver" >/dev/null 2>/dev/null || true
     docker network rm "bastion-$target" >/dev/null
 }
@@ -220,11 +240,13 @@ set +e
 docker run \
     --name="bastion_${target}_tester" \
     --network "bastion-$target" \
+    --init \
     -i \
     --tty=$DOCKER_TTY \
     -e TARGET_IP="bastion_${target}_target" \
     -e TARGET_PORT=22 \
     -e TARGET_PROXY_PORT=8443 \
+    -e TARGET2_IP="bastion_${target}_target2" \
     -e JUMPHOST_IP="bastion_${target}_jumphost" \
     -e REMOTESERVER_IP="bastion_${target}_remoteserver" \
     -e TARGET_USER="user.5000" \
