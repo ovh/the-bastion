@@ -1039,9 +1039,7 @@ sub is_access_granted {
 
     # 2/3 check groups
     $fnret = OVH::Bastion::get_user_groups(account => $sysaccount);
-    osh_debug("is_access_granted: get_user_groups of $sysaccount says "
-          . $fnret->msg
-          . " with grouplist "
+    osh_debug("is_access_granted: get_user_groups of $sysaccount says $fnret with grouplist "
           . Data::Dumper::Dumper($fnret->value));
 
     foreach my $group (@{$fnret->value || []}) {
@@ -1405,10 +1403,8 @@ sub get_acls {
 
     # 2/3 check groups
     $fnret = OVH::Bastion::get_user_groups(account => $sysaccount);
-    osh_debug("get_acls: get_user_groups of $sysaccount says "
-          . $fnret->msg
-          . " with grouplist "
-          . Data::Dumper::Dumper($fnret->value));
+    osh_debug(
+        "get_acls: get_user_groups of $sysaccount says $fnret with grouplist " . Data::Dumper::Dumper($fnret->value));
 
     foreach my $group (@{$fnret->value || []}) {
 

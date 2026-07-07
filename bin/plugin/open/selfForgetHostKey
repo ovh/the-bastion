@@ -83,11 +83,11 @@ foreach my $item (@toCheck) {
         }
         else {
             $result_hash->{$item} = {action => 'ERR_DELETE_FAILED'};
-            osh_crit "An error occurred while trying to delete the key (" . $fnret->msg . ")";
+            osh_crit "An error occurred while trying to delete the key ($fnret)";
         }
     }
     else {
-        osh_exit 'ERR_SSH_KEYGEN_FIND', "An error occurred while trying to look for the key (" . $fnret->msg . ")";
+        osh_exit 'ERR_SSH_KEYGEN_FIND', "An error occurred while trying to look for the key ($fnret)";
     }
 }
 

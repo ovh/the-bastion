@@ -143,7 +143,7 @@ sub config_load_and_lint {
             rootonly => 1,
         );
         if (not $fnret) {
-            _err "Error while loading configuration from $configfile, aborting (" . $fnret->msg . ")";
+            _err "Error while loading configuration from $configfile, aborting ($fnret)";
             return 1;
         }
         foreach my $key (keys %{$fnret->value}) {

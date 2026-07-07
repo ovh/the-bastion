@@ -210,8 +210,7 @@ my $homedir = "/home/$account";
 osh_info "Creating group $account with GID $uid...";
 $fnret = OVH::Bastion::sys_groupadd(noisy_stderr => 1, gid => $uid, group => $account);
 $fnret->err eq 'OK'
-  or HEXIT('ERR_GROUPADD_FAILED',
-    msg => "Error while running groupadd with UID $uid and group $account (" . $fnret->msg . ")");
+  or HEXIT('ERR_GROUPADD_FAILED', msg => "Error while running groupadd with UID $uid and group $account ($fnret)");
 osh_debug('ok, group was created');
 
 osh_info "Creating user $account with UID $uid...";
@@ -224,7 +223,7 @@ $fnret = OVH::Bastion::sys_useradd(
     home         => $homedir
 );
 $fnret->err eq 'OK'
-  or HEXIT('ERR_USERADD_FAILED', msg => "Error while running useradd for $account UID/GID $uid (" . $fnret->msg . ")");
+  or HEXIT('ERR_USERADD_FAILED', msg => "Error while running useradd for $account UID/GID $uid ($fnret)");
 osh_debug('user created');
 
 chmod 0750, $homedir;
@@ -243,8 +242,7 @@ chown $uid, $uid, $akfile;
 osh_info "Creating tty group of account...";
 $fnret = OVH::Bastion::sys_groupadd(noisy_stderr => 1, group => $ttygroup, gid => $ttygid);
 $fnret->err eq 'OK'
-  or HEXIT('ERR_GROUPADD_FAILED',
-    msg => "Error while running groupadd with UID $ttygid and group $ttygroup (" . $fnret->msg . ")");
+  or HEXIT('ERR_GROUPADD_FAILED', msg => "Error while running groupadd with UID $ttygid and group $ttygroup ($fnret)");
 osh_debug('ok, group was created');
 
 $fnret = OVH::Bastion::add_user_to_group(
@@ -316,11 +314,11 @@ $fnret = OVH::Bastion::execute(
     noisy_stderr => 1
 );
 $fnret->err eq 'OK'
-  or HEXIT('ERR_CHMOD_FAILED', msg => "Error while running chmod on allowkeeper (" . $fnret->msg . ")");
+  or HEXIT('ERR_CHMOD_FAILED', msg => "Error while running chmod on allowkeeper ($fnret)");
 
 $fnret = OVH::Bastion::execute(cmd => ['chmod', '-R', 'o+rX', "/home/allowkeeper/$account"], noisy_stderr => 1);
 $fnret->err eq 'OK'
-  or HEXIT('ERR_CHMOD_FAILED', msg => "Error while running chmod -R on allowkeeper (" . $fnret->msg . ")");
+  or HEXIT('ERR_CHMOD_FAILED', msg => "Error while running chmod -R on allowkeeper ($fnret)");
 
 if (ref $config->{'accountCreateDefaultPersonalAccesses'} eq 'ARRAY' && $type eq 'normal') {
     foreach my $defAccess (@{$config->{'accountCreateDefaultPersonalAccesses'}}) {
@@ -338,7 +336,7 @@ if (ref $config->{'accountCreateDefaultPersonalAccesses'} eq 'ARRAY' && $type eq
         }
         $port and push @command, '--port', $port;
         $fnret = OVH::Bastion::execute(cmd => \@command, noisy_stdout => 1, noisy_stderr => 1, is_helper => 1);
-        $fnret->err eq 'OK' or osh_warn("Couldn't add private access to account to $defAccess (" . $fnret->msg . ")");
+        $fnret->err eq 'OK' or osh_warn("Couldn't add private access to account to $defAccess ($fnret)");
     }
 }
 
@@ -355,14 +353,14 @@ my %metadata      = (
 $fnret = OVH::Bastion::account_config(account => $account, key => "creation_info", value => encode_json(\%metadata));
 if (!$fnret) {
     osh_warn("Couldn't set creation_info account metadata, continuing anyway");
-    warn_syslog("While creating account '$account', couldn't set creation_info metadata: " . $fnret->msg);
+    warn_syslog("While creating account '$account', couldn't set creation_info metadata: $fnret");
 }
 
 # also store the bare creation timestamp by itself, it's used by osh.pl for TTL accounts
 $fnret = OVH::Bastion::account_config(account => $account, key => "creation_timestamp", value => time());
 if (!$fnret) {
-    osh_warn("Couldn't store creation timestamp (" . $fnret->msg . "), continuing anyway");
-    warn_syslog("While creating account '$account', couldn't store creation timestamp: " . $fnret->msg);
+    osh_warn("Couldn't store creation timestamp ($fnret), continuing anyway");
+    warn_syslog("While creating account '$account', couldn't store creation timestamp: $fnret");
 }
 
 if ($ttl) {
@@ -370,10 +368,10 @@ if ($ttl) {
     osh_info sprintf("Setting this account TTL (will expire in %s)", $fnret->value->{'human'});
     $fnret = OVH::Bastion::account_config(account => $account, key => "account_ttl", value => $ttl);
     if (!$fnret) {
-        osh_warn("Couldn't store account TTL (" . $fnret->msg . "), this account will NOT expire, continuing anyway");
-        warn_syslog("Couldn't store account TTL ("
-              . $fnret->msg
-              . ") while creating account '$account', this account will NOT expire, continuing anyway");
+        osh_warn("Couldn't store account TTL ($fnret), this account will NOT expire, continuing anyway");
+        warn_syslog(
+            "Couldn't store account TTL ($fnret) while creating account '$account', this account will NOT expire, continuing anyway"
+        );
     }
 }
 
@@ -385,10 +383,8 @@ if ($alwaysActive || $type eq 'realm') {
         public  => 1
     );
     if (!$fnret) {
-        osh_warn("Couldn't store always_active flag (" . $fnret->msg . "), continuing anyway");
-        warn_syslog("Couldn't store always_active flag ("
-              . $fnret->msg
-              . ") while creating account '$account', continuing anyway");
+        osh_warn("Couldn't store always_active flag ($fnret), continuing anyway");
+        warn_syslog("Couldn't store always_active flag ($fnret) while creating account '$account', continuing anyway");
     }
 }
 

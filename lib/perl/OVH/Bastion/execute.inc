@@ -415,7 +415,7 @@ sub execute {
     my $child_exit_status = $?;
 
     $fnret = sysret2human($child_exit_status);
-    osh_debug("cmd returned with " . $fnret->msg);
+    osh_debug("cmd returned with $fnret");
     return R(
         $fnret->value->{'status'} == 0 ? 'OK' : ($must_succeed ? 'ERR_NON_ZERO_EXIT' : 'OK_NON_ZERO_EXIT'),
         value => {
@@ -485,7 +485,7 @@ sub execute_simple {
     my $child_exit_status = $?;
 
     $fnret = sysret2human($child_exit_status);
-    osh_debug("cmd returned with " . $fnret->msg);
+    osh_debug("cmd returned with $fnret");
     return R(
         $fnret->value->{'status'} == 0 ? 'OK' : ($must_succeed ? 'ERR_NON_ZERO_EXIT' : 'OK_NON_ZERO_EXIT'),
         value => {
@@ -562,7 +562,7 @@ sub helper {
         expects_stdin => $expects_stdin,
         stdin_str     => $stdin_str
     );
-    $fnret or return R('ERR_HELPER_FAILED', msg => "something went wrong in helper script (" . $fnret->msg . ")");
+    $fnret or return R('ERR_HELPER_FAILED', msg => "something went wrong in helper script ($fnret)");
 
     $fnret = OVH::Bastion::result_from_helper($fnret->value->{'stdout'});
     $fnret or return $fnret;

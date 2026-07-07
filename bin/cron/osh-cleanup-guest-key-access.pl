@@ -90,7 +90,7 @@ _log "Looking for group guests that no longer have any access to any server of t
 
 $fnret = OVH::Bastion::get_group_list(groupType => "key");
 if (!$fnret) {
-    _err "Couldn't get group list:" . $fnret->msg;
+    _err "Couldn't get group list: $fnret";
     exit 1;
 }
 my $groups = $fnret->value;

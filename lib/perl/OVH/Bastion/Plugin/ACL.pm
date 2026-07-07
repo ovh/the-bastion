@@ -117,7 +117,7 @@ sub check {
         # validate proxy port
         my $fnret = OVH::Bastion::is_valid_port(port => $proxyPort);
         if (!$fnret) {
-            return R('ERR_INVALID_PARAMETER', msg => "Proxy port '$proxyPort' is invalid: " . $fnret->msg);
+            return R('ERR_INVALID_PARAMETER', msg => "Proxy port '$proxyPort' is invalid: $fnret");
         }
     }
 

@@ -198,11 +198,11 @@ sub begin {
     }
     elsif ($self =~ /^realm_([a-zA-Z0-9_.-]+)/) {
         $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => "$1/" . $ENV{'LC_BASTION'});
-        $fnret or osh_exit('ERR_INVALID_ACCOUNT', "The realm-scoped account is invalid (" . $fnret->msg . ")");
+        $fnret or osh_exit('ERR_INVALID_ACCOUNT', "The realm-scoped account is invalid ($fnret)");
     }
     else {
         $fnret = OVH::Bastion::is_bastion_account_valid_and_existing(account => $self);
-        $fnret or osh_exit('ERR_INVALID_ACCOUNT', "The account is invalid (" . $fnret->msg . ")");
+        $fnret or osh_exit('ERR_INVALID_ACCOUNT', "The account is invalid ($fnret)");
     }
     $sysself    = $fnret->value->{'sysaccount'};
     $self       = $fnret->value->{'account'};

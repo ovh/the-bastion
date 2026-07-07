@@ -160,7 +160,7 @@ osh_info("Creating groups");
 # database enumeration) instead of re-scanning for each group.
 my @groups_to_create = ($group, "$group-aclkeeper", "$group-gatekeeper", "$group-owner");
 $fnret = OVH::Bastion::get_next_available_group_gid(count => scalar @groups_to_create);
-$fnret or HEXIT('ERR_GID_ALLOCATION_FAILED', msg => "Failed to allocate GIDs for group $group: " . $fnret->msg);
+$fnret or HEXIT('ERR_GID_ALLOCATION_FAILED', msg => "Failed to allocate GIDs for group $group: $fnret");
 my @gids = @{$fnret->value};
 
 my $group_main_gid = $gids[0];    # the GID of $group (first one)
@@ -168,8 +168,8 @@ foreach my $tocreate (@groups_to_create) {
     my $gid = shift @gids;
     $fnret = OVH::Bastion::sys_groupadd(group => $tocreate, gid => $gid, noisy_stderr => 1);
     $fnret->err eq 'OK'
-      or HEXIT('ERR_GROUPADD_FAILED',
-        msg => "Error while running groupadd command for $tocreate with GID $gid (" . $fnret->msg . ")");
+      or
+      HEXIT('ERR_GROUPADD_FAILED', msg => "Error while running groupadd command for $tocreate with GID $gid ($fnret)");
     osh_debug("Created group $tocreate with GID $gid");
 }
 
@@ -187,7 +187,7 @@ if (!getpwuid($group_main_gid)) {
 else {
     $fnret = OVH::Bastion::get_next_available_group_uid();
     $fnret
-      or HEXIT('ERR_UID_ALLOCATION_FAILED', msg => "Failed to allocate UID for group user $group: " . $fnret->msg);
+      or HEXIT('ERR_UID_ALLOCATION_FAILED', msg => "Failed to allocate UID for group user $group: $fnret");
     $group_uid = $fnret->value;
 }
 
@@ -208,8 +208,7 @@ $fnret = OVH::Bastion::sys_useradd(
     noisy_stderr => 1
 );
 $fnret->err eq 'OK'
-  or HEXIT('ERR_USERADD_FAILED',
-    msg => "Error while adding corresponding user of group $shortGroup (" . $fnret->msg . ")");
+  or HEXIT('ERR_USERADD_FAILED', msg => "Error while adding corresponding user of group $shortGroup ($fnret)");
 
 # Building /home/$group
 OVH::Bastion::touch_file("/home/$group/allowed.ip");
@@ -225,7 +224,7 @@ foreach my $command (
 {
     $fnret = OVH::Bastion::execute(cmd => $command, noisy_stderr => 1);
     $fnret->err eq 'OK'
-      or HEXIT('ERR_CHMOD_FAILED', msg => "Error while running chmod to adjust permissions (" . $fnret->msg . ")");
+      or HEXIT('ERR_CHMOD_FAILED', msg => "Error while running chmod to adjust permissions ($fnret)");
 }
 chmod 0751, "/home/$group" if !OVH::Bastion::has_acls();
 

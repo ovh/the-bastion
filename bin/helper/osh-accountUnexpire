@@ -90,7 +90,7 @@ if ($remoteaccount) {
 }
 foreach my $file (@filesToTouch) {
     $fnret = OVH::Bastion::touch_file($file);
-    osh_warn("Couldn't touch $file: " . $fnret->msg) if !$fnret;
+    osh_warn("Couldn't touch $file: $fnret") if !$fnret;
 }
 
 HEXIT('OK', value => {account => $account, days => $days});

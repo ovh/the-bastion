@@ -234,8 +234,8 @@ sub act {
                     if (!$fnret) {
                         osh_warn("Failed removing guest access to $machine, proceeding anyway...");
                         warn_syslog(
-                            "Failed removing guest access to $machine in group $shortGroup for $account, before granting this account full membership on behalf of $self: "
-                              . $fnret->msg);
+                            "Failed removing guest access to $machine in group $shortGroup for $account, before granting this account full membership on behalf of $self: $fnret"
+                        );
                     }
                 }
             }

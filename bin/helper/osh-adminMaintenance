@@ -67,7 +67,7 @@ if ($action eq 'set') {
     }
     $fnret = OVH::Bastion::touch_file('/home/allowkeeper/maintenance', 0644);    ## no critic (ProhibitLeadingZeros)
     if (!$fnret) {
-        HEXIT('KO', msg => "Couldn't set the bastion to maintenance mode (" . $fnret->msg . ")");
+        HEXIT('KO', msg => "Couldn't set the bastion to maintenance mode ($fnret)");
     }
     $message = "(no reason given)" if not $message;
     $message .= " [set by $self at " . localtime(time()) . "]";

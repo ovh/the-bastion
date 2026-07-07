@@ -16,7 +16,7 @@ my $fnret = OVH::Bastion::load_configuration_file(
     secure => 1,
 );
 if (not $fnret) {
-    osh_warn "Error loading configuration: " . $fnret->msg;
+    osh_warn "Error loading configuration: $fnret";
     exit 1;
 }
 
@@ -31,7 +31,7 @@ if (not $config->{'enabled'}) {
 
 $fnret = OVH::Bastion::is_valid_port(port => $config->{'port'});
 if (!$fnret) {
-    osh_warn "Bad configuration: " . $fnret->msg;
+    osh_warn "Bad configuration: $fnret";
     exit 1;
 }
 
