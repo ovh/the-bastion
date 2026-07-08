@@ -799,29 +799,46 @@ my $pivEffectivePolicyEnabled = OVH::Bastion::is_effective_piv_account_policy_en
 # if we're coming from a realm, we're receiving a connection from another bastion, keep all the traces:
 my @previous_bastion_details;
 if ($realm && $ENV{'LC_BASTION_DETAILS'}) {
+    my $malformed_reason;    # if defined, we failed decoding LC_BASTION_DETAILS properly
     my $decoded_details;
     eval { $decoded_details = decode_json($ENV{'LC_BASTION_DETAILS'}); };
     if (!$@) {
         @previous_bastion_details = @$decoded_details;
 
-        # if the remote bastion did validate MFA, trust it
-        $ingressRealm{'mfa'}{'validated'} = $decoded_details->[0]{'mfa'}{'validated'}        ? 1 : 0;
-        $ingressRealm{'mfa'}{'password'}  = $decoded_details->[0]{'mfa'}{'type'}{'password'} ? 1 : 0;
-        $ingressRealm{'mfa'}{'totp'}      = $decoded_details->[0]{'mfa'}{'type'}{'totp'}     ? 1 : 0;
+        # use eval{} to avoid crashing on a malformed LC_BASTION_DETAILS struct.
+        # by default, everything is "false" anyway (see %ingressRealm above)
+        eval {
+            # if the remote bastion did validate MFA, trust it.
+            $ingressRealm{'mfa'}{'validated'} = $decoded_details->[0]{'mfa'}{'validated'}        ? 1 : 0;
+            $ingressRealm{'mfa'}{'password'}  = $decoded_details->[0]{'mfa'}{'type'}{'password'} ? 1 : 0;
+            $ingressRealm{'mfa'}{'totp'}      = $decoded_details->[0]{'mfa'}{'type'}{'totp'}     ? 1 : 0;
 
-        # also get the PIV status
-        if (ref $decoded_details->[0]{'piv'} eq 'HASH') {
+            # also get the PIV status
             $ingressRealm{'hasPiv'} = $decoded_details->[0]{'piv'}{'enforced'} ? 1 : 0;
 
             # if remote PIV is not enforced AND we enforce PIV locally (either by global policy or account-scoped policy),
             # we must refuse the connection.
             if ($pivEffectivePolicyEnabled && !$ingressRealm{'hasPiv'}) {
-                my $otherSideName = $decoded_details->[0]{'via'}{'name'} || $decoded_details->[0]{'via'}{'host'};
+                my $otherSideName =
+                  $decoded_details->[0]{'via'}{'name'} || $decoded_details->[0]{'via'}{'host'} || 'unknown';
                 main_exit(OVH::Bastion::EXIT_PIV_REQUIRED, 'piv_required',
                     "Sorry $self, but the $bastionName bastion policy requires that you use a PIV key to connect, please set a PIV key up on your local bastion ($otherSideName)."
                 );
             }
+        };
+        if ($@) {
+            # a crash during the nested derefs means the payload is malformed
+            $malformed_reason = $@;
         }
+    }
+    else {
+        # failed to decode payload as JSON entirely
+        $malformed_reason = $@;
+    }
+
+    if (defined $malformed_reason) {
+        osh_warn("Malformed LC_BASTION_DETAILS from realm $realm, ignoring");
+        warn_syslog("Malformed LC_BASTION_DETAILS from realm $realm: $malformed_reason");
     }
 }
 
