@@ -48,7 +48,7 @@ else
 fi
 
 for i in $(find ${2:-bin contrib docker install lib tests} -type f \
-            ! -name "*.swp" ! -name "*.orig" ! -name "*.rej" ! -name "$(basename "$0")" -print0 \
+            ! -name "*.swp" ! -name "*.orig" ! -name "*.rej" ! -name "*.rst" ! -name "$(basename "$0")" -print0 \
             | xargs -r0 grep -l 'set filetype=sh' | sort)
 do
     run_shellcheck "$i"; ret=$?

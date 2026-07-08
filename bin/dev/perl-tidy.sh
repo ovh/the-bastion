@@ -50,7 +50,7 @@ params="$params \
 # run on all perl files (".") or only the $2 file if specified
 # shellcheck disable=SC2086
 find ${2:-bin contrib docker install lib tests} -type f \
-    ! -name "*.tdy" ! -name "*.ERR" ! -name "*.tidybak" ! -name "*.html" ! -name "$(basename "$0")" -print0 | \
+    ! -name "*.tdy" ! -name "*.ERR" ! -name "*.tidybak" ! -name "*.html" ! -name "*.rst" ! -name "$(basename "$0")" -print0 | \
     xargs -r0 grep -l 'set filetype=perl' -- | \
     xargs -r perltidy $params
 
