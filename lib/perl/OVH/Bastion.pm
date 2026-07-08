@@ -6,7 +6,7 @@ use Fcntl;
 use List::Util qw{ any none };
 use POSIX      qw(strftime);
 
-our $VERSION = '3.24.00';
+our $VERSION = '3.24.01';
 
 BEGIN {
     # only used by the handler below
