@@ -98,6 +98,131 @@ that your account must have access to.
 In the above case, we entered the password correctly, but our account doesn't have access to
 the requested host `monitoring@router12.example.org`. This is what we need to do now.
 
+Query headers
+-------------
+
+The following optional headers can be added by the client to its request, to modify the behavior of the proxy.
+They're only interpreted by the bastion, and are not forwarded to the remote device.
+
+X-Bastion-Timeout
+   Timeout, in seconds, for the connection between the bastion and the remote device.
+   Must be an integer, and defaults to the ``timeout`` option of the
+   :doc:`/administration/configuration/osh-http-proxy_conf`.
+
+X-Bastion-Egress-Protocol
+   Protocol to use for the connection between the bastion and the remote device, either ``https`` or ``http``.
+   Defaults to ``https``. The protocol must be allowed by the ``allowed_egress_protocols`` option of the
+   :doc:`/administration/configuration/osh-http-proxy_conf`.
+
+X-Bastion-Allow-Downgrade
+   Set to ``1`` to allow the bastion to silently retry the request using TLSv1.0, if the remote device doesn't
+   support any more recent TLS version. Defaults to ``0``.
+
+X-Bastion-Enforce-Secure
+   Set to ``1`` to enforce the verification of the remote device's certificate, even if the ``insecure`` option
+   of the :doc:`/administration/configuration/osh-http-proxy_conf` is enabled. Defaults to ``0``.
+
+Only a few standard headers of the client request are forwarded to the remote device, namely ``Accept``,
+``Content-Type``, ``Content-Length`` and ``Content-Encoding``.
+
+Headers sent to the remote device
+---------------------------------
+
+The bastion adds the following headers to the request it sends to the remote device, which can be used
+for traceability purposes on the device side:
+
+X-Bastion-Auth-Mode
+   How the egress credentials have been chosen, see the ``X-Bastion-Auth-Mode`` response header below.
+
+X-Bastion-Ingress-Client-IP
+   IP of the client that sent the request to the bastion.
+
+X-Bastion-Ingress-Client-Port
+   Source port of the client that sent the request to the bastion.
+
+X-Bastion-Ingress-Client-User-Agent
+   User-Agent of the client that sent the request to the bastion.
+
+X-Bastion-Ingress-Account
+   The bastion account of the client that sent the request.
+
+X-Bastion-UniqID
+   The unique ID of the request on the bastion, to correlate with the bastion logs.
+
+X-Bastion-Instance
+   The hostname of the bastion instance that handled the request.
+
+Response headers
+----------------
+
+The bastion adds the following headers to its response to the client.
+Note that the headers sent by the remote device are not forwarded as-is to the client, except ``Content-Type``
+and ``Content-Length``. Some of the below headers are only present when relevant.
+
+Server
+   The Bastion version that handled the request.
+
+X-Bastion-Instance
+   The hostname of the bastion instance that handled the request.
+
+X-Bastion-ReqID
+   The unique ID of the request on the bastion, to correlate with the bastion logs.
+
+X-Bastion-Local-Status
+   Status of the request from the bastion standpoint. When the request has been forwarded to the remote device,
+   this is ``200 OK``, and the HTTP status of the response is the one of the remote device
+   (see ``X-Bastion-Remote-Status`` below). Otherwise, this is the error encountered by the bastion,
+   for example ``403 Access Denied`` or ``504 Device Timeout``, and the HTTP status of the response matches it.
+
+X-Bastion-Remote-Host
+   The remote device host, as specified by the client.
+
+X-Bastion-Remote-IP
+   The IP of the remote device, as resolved by the bastion.
+
+X-Bastion-Auth-Mode
+   How the egress credentials have been chosen: ``self/explicit`` or ``group/explicit`` when the client specified
+   which credentials to use, ``self/default`` or ``group/guessed`` when the bastion chose them from the accesses
+   of the account, or ``legacy``.
+
+X-Bastion-Request-Length
+   Length, in bytes, of the body of the client request.
+
+X-Bastion-Remote-Status
+   Only present when the request has been forwarded to the remote device (i.e. when ``X-Bastion-Local-Status``
+   is ``200 OK``): this is the HTTP status returned by the remote device, and the HTTP status of the response
+   matches it. If the bastion couldn't get an answer from the remote device, for example because the connection
+   or the TLS negotiation failed, this is a ``500`` error describing the issue, such as
+   ``500 Can't connect to 192.0.2.1:443``.
+
+X-Bastion-Remote-Server
+   The ``Server`` header returned by the remote device, if any.
+
+X-Bastion-Remote-Location
+   When the remote device answered with a redirect that the bastion didn't follow, this is the absolute URL of the
+   redirect target, as computed from the ``Location`` header returned by the device. The ``Location`` header itself
+   is not forwarded, as it usually points directly to the remote device and not to the bastion.
+   To follow this redirect, the client can send a new request to the bastion for this target, which will go through
+   the usual access checks. Which redirects are followed by the bastion depends on the ``allow_redirects`` option
+   of the :doc:`/administration/configuration/osh-http-proxy_conf`.
+
+X-Bastion-Remote-Client-SSL-Cert-Subject
+   Subject of the certificate presented by the remote device, when using ``https`` as the egress protocol.
+
+X-Bastion-Remote-Client-SSL-Cipher
+   TLS cipher used for the connection to the remote device, when using ``https`` as the egress protocol.
+
+X-Bastion-Remote-Client-SSL-Warning
+   Warning about the TLS connection to the remote device, if any, for example ``Peer certificate not verified``
+   when the ``insecure`` option is enabled.
+
+X-Bastion-Egress-Timing
+   Time spent, in microseconds, on the request between the bastion and the remote device.
+
+X-Bastion-Downgraded
+   Present and set to ``1`` when the bastion had to downgrade the connection to TLSv1.0,
+   see ``X-Bastion-Allow-Downgrade`` above.
+
 Access declaration
 ------------------
 

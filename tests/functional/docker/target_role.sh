@@ -185,9 +185,13 @@ if [ "$WANT_HTTP_PROXY" = 1 ]; then
     perl -pi -e 's{"enabled":.+}{"enabled":true,}'                                    "$BASTION_ETC_DIR/osh-http-proxy.conf"
     perl -pi -e 's{"insecure":.+}{"insecure":true,}'                                  "$BASTION_ETC_DIR/osh-http-proxy.conf"
     # also build a config with disallowed https egress and allowed http egress
-    perl -pe 's{"allowed_egress_protocols":.+}{"allowed_egress_protocols":["http"]}'  "$BASTION_ETC_DIR/osh-http-proxy.conf" > "$BASTION_ETC_DIR/osh-http-proxy-httponly.conf"
+    # (keep the trailing comma if any, so this works regardless of whether this option is the last one)
+    perl -pe 's{"allowed_egress_protocols":[^,]+(,?)$}{"allowed_egress_protocols":["http"]$1}' "$BASTION_ETC_DIR/osh-http-proxy.conf" > "$BASTION_ETC_DIR/osh-http-proxy-httponly.conf"
     # and another one with more allowed methods
     perl -pe 's{"allowed_methods":.+}{"allowed_methods":["GET","POST","PUT","PATCH","DELETE"],}' "$BASTION_ETC_DIR/osh-http-proxy.conf" > "$BASTION_ETC_DIR/osh-http-proxy-methods.conf"
+    # and two others with non-default redirect policies
+    perl -pe 's{"allow_redirects":[^,]+(,?)$}{"allow_redirects":"any"$1}'  "$BASTION_ETC_DIR/osh-http-proxy.conf" > "$BASTION_ETC_DIR/osh-http-proxy-redirects-any.conf"
+    perl -pe 's{"allow_redirects":[^,]+(,?)$}{"allow_redirects":"none"$1}' "$BASTION_ETC_DIR/osh-http-proxy.conf" > "$BASTION_ETC_DIR/osh-http-proxy-redirects-none.conf"
 
     # ensure the remote daemon is executable
     chmod 0755 "$basedir"/tests/functional/proxy/remote-daemon
