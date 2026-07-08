@@ -21,8 +21,8 @@ some of the below steps will be done by Puppet. Hence, you might want to only co
 
 .. _install-basic_operating-system:
 
-1. Operating system
-===================
+1. Operating system prerequisites
+=================================
 
 .. warning::
 
@@ -63,6 +63,11 @@ and ensuring your hardened host stays hardened over time, through a daily audit 
 Great care has been taken to write secure, tested code, but of course this is worthless if your machine
 is a hacker highway. Ensuring that all the layers below the bastion code (the operating system
 and the hardware it's running on) is your job.
+
+.. note::
+
+   If you want the bastion credentials to be encrypted at rest (warmly advised), please ensure that your partitioning
+   scheme has :file:`/home` as a separate partition.
 
 2. Connect to your server as root
 =================================
