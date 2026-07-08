@@ -31,6 +31,7 @@ sub process_http_request {
     my $hasContentType;
     my $wantedResponseSize = 64;
     my $responseDelay      = 0;
+    my $redirectTo;
 
     # this is to get the unparsed body of the request, portion of code
     # taken from lib/perl/OVH/Bastion/ProxyHTTP.pm, more context available over there
@@ -53,6 +54,21 @@ sub process_http_request {
         elsif (lc $headerTuple->[0] eq 'x-test-response-delay') {
             # hold the response for N seconds, to keep the request in-flight on the proxy side
             ($responseDelay) = $headerTuple->[1] =~ /^(\d+)$/;
+        }
+        elsif (lc $headerTuple->[0] eq 'x-test-redirect-to') {
+            # answer with a redirect to the given URL, unless we're already being called on its path
+            $redirectTo = $headerTuple->[1];
+        }
+    }
+
+    if ($redirectTo) {
+        # extract the path of the redirect target, which can be absolute or host-less
+        my ($redirectPath) = $redirectTo =~ m{^(?:https?://[^/]+)?(/[^?]*)};
+        if (!defined $redirectPath || ($ENV{'PATH_INFO'} // '') ne $redirectPath) {
+            # Location must be printed before Status: older Net::Server::HTTP versions (e.g. 2.009)
+            # unconditionally override the status with "302 bouncing" when they see a Location header
+            print "Location: $redirectTo\n";
+            print "Status: 302 Found\n";
         }
     }
 

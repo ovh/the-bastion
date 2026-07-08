@@ -84,6 +84,12 @@ sub log_and_exit {
     my ($self, $code, $msg, $body, $params) = @_;
     $params->{'returnvalue'} ||= "$code $msg";
 
+    # when the worker has been called, it already set this header, as the status it reports might be the
+    # one of the remote device: otherwise, we're rejecting the request ourselves, hence add it here
+    if (!grep { lc($_->[0]) eq 'x-bastion-local-status' } @{$self->{'_supplementary_headers'} || []}) {
+        push @{$self->{'_supplementary_headers'}}, ['X-Bastion-Local-Status', "$code $msg"];
+    }
+
     my $account              = delete $self->{'_log'}{'account'};
     my $user                 = delete $self->{'_log'}{'user'};
     my $hostto               = delete $self->{'_log'}{'hostto'};

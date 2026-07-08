@@ -34,6 +34,7 @@ These options modify the behavior of the HTTP Proxy, an optional module of The B
 - `log_request_response_max_size`_
 - `allowed_methods`_
 - `allowed_egress_protocols`_
+- `allow_redirects`_
 
 Option Reference
 ================
@@ -242,4 +243,28 @@ allowed_egress_protocols
 This array lists the allowed egress protocols. By default, only https is allowed.
 If required, plain http egress can be enabled here, which is of course strongly discouraged,
 but might be required for your environment if business constraints out of your control force you to.
+
+allow_redirects
+***************
+
+:Type: ``string``
+
+:Default: ``"same-host"``
+
+Policy to apply when a remote device answers with an HTTP redirect (a 3xx answer with a ``Location`` header).
+Possible values are:
+
+- ``same-host``: the redirect is followed by the bastion only if it points to the same host, port and protocol
+  as the original request, which includes host-less redirects (e.g. ``Location: /other/page``).
+  The redirected request is always sent to the IP that has been checked against the access lists,
+  and only ``GET`` and ``HEAD`` requests are redirected.
+- ``none``: redirects are never followed.
+- ``any``: all redirects are followed, regardless of their target. This is **strongly discouraged**:
+  the redirected request, which includes the egress device password, might be sent to another host or port
+  than the one that has been checked against the account's or group's access lists,
+  and against the ``forbiddenNetworks`` configuration option.
+
+When a redirect is not followed, the 3xx answer of the device is returned to the client, with the
+redirect target in the ``X-Bastion-Remote-Location`` header. The client can then do a new request
+to this target through the bastion, which will go through the usual access checks.
 

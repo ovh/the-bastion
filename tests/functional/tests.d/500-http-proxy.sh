@@ -28,6 +28,7 @@ testsuite_proxy_check_response()
     contain 'Server: The Bastion'
     contain 'X-Bastion-Instance: '
     contain 'X-Bastion-ReqID: '
+    contain 'X-Bastion-Local-Status: '
 }
 
 # build osh-http-proxy.conf from osh-http-proxy-methods.conf, with the given egress TLS settings
@@ -170,12 +171,14 @@ testsuite_proxy()
     script monitoring "curl -m $default_timeout -vki https://$remote_ip:$remote_proxy_port/bastion-health-check | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'running nominally'
+    contain 'X-Bastion-Local-Status: 200 OK'
 
     # and let's go
     script noauth "curl -m $default_timeout -vki https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     testsuite_proxy_check_response
     contain 'HTTP/1.0 401 Authorization required (no auth provided)'
+    contain 'X-Bastion-Local-Status: 401 Authorization required (no auth provided)'
     contain 'WWW-Authenticate: Basic realm="bastion"'
     contain 'Content-Type: text/plain'
     contain 'No authentication provided, and authentication is mandatory'
@@ -183,6 +186,7 @@ testsuite_proxy()
     script bad_auth_format "curl -m $default_timeout -vki -u test:test https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 400 Bad Request (bad login format)'
+    contain 'X-Bastion-Local-Status: 400 Bad Request (bad login format)'
     testsuite_proxy_check_response
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
@@ -347,6 +351,45 @@ testsuite_proxy()
     # the 1M upload can be a bit harsh, wait for the daemon to be available again
     wait_for_proxy_up "waiting for daemon availability after the big download"
 
+    # redirects, with the default allow_redirects policy (same-host)
+    # a host-less redirect must be followed
+    script redirect_samehost_hostless "curl -m $default_timeout -ski -H 'X-Test-Redirect-To: /redirected' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 200 OK"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain "X-Bastion-Remote-Status: 200 OK"
+    contain "Content-Length: 64"
+    nocontain 'X-Bastion-Remote-Location: '
+
+    # a redirect to the same host and port must be followed
+    script redirect_samehost_absolute "curl -m $default_timeout -ski -H 'X-Test-Redirect-To: https://127.0.0.1:9443/redirected' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 200 OK"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain "X-Bastion-Remote-Status: 200 OK"
+    contain "Content-Length: 64"
+    nocontain 'X-Bastion-Remote-Location: '
+
+    # a redirect to another port must not be followed, and relayed to the client instead
+    script redirect_samehost_other_port "curl -m $default_timeout -ski -H 'X-Test-Redirect-To: https://127.0.0.1:9080/redirected' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 302 Found"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain "X-Bastion-Remote-Status: 302 Found"
+    contain "X-Bastion-Remote-Location: https://127.0.0.1:9080/redirected"
+
+    # a redirect to another host must not be followed either
+    script redirect_samehost_other_host "curl -m $default_timeout -ski -H 'X-Test-Redirect-To: https://127.0.0.2:9443/redirected' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 302 Found"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain "X-Bastion-Remote-Status: 302 Found"
+    contain "X-Bastion-Remote-Location: https://127.0.0.2:9443/redirected"
+
     # graceful, zero-downtime reload (SIGHUP): an in-flight request must drain to completion
     # (not be killed), and requests issued during/after the reload must still be served because
     # the listening socket is never closed. The daemon re-execs in place, so the watchdog in
@@ -392,11 +435,13 @@ testsuite_proxy()
     script post_reload_health "curl -m $default_timeout -vki https://$remote_ip:$remote_proxy_port/bastion-health-check | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'running nominally'
+    contain 'X-Bastion-Local-Status: 200 OK'
 
     # use a disallowed method
     script forbidden_method "curl -m $default_timeout -vki -X PUT -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 400 Bad Request (method forbidden)'
+    contain 'X-Bastion-Local-Status: 400 Bad Request (method forbidden)'
     contain 'Server: The Bastion'
     contain 'X-Bastion-Instance: '
     contain 'X-Bastion-ReqID: '
@@ -478,10 +523,45 @@ testsuite_proxy()
     contain "X-Bastion-Egress-Timing: "
     contain "Content-Length: 64"
 
+    # redirects, with the allow_redirects policy set to none
+    # use alternate config, no need to restart the daemon as this is handled by the worker
+    success config_swap_redirects_none $r0 "\"cp $opt_remote_etc_bastion/osh-http-proxy-redirects-none.conf $opt_remote_etc_bastion/osh-http-proxy.conf\""
+
+    # even a host-less redirect must not be followed, and the target relayed as an absolute URL
+    script redirect_none_hostless "curl -m $default_timeout -ski -H 'X-Test-Redirect-To: /redirected' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 302 Found"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain "X-Bastion-Remote-Status: 302 Found"
+    contain "X-Bastion-Remote-Location: https://127.0.0.1:9443/redirected"
+
+    # redirects, with the allow_redirects policy set to any
+    # use alternate config, no need to restart the daemon as this is handled by the worker
+    success config_swap_redirects_any $r0 "\"cp $opt_remote_etc_bastion/osh-http-proxy-redirects-any.conf $opt_remote_etc_bastion/osh-http-proxy.conf\""
+
+    # a redirect to another host must be followed
+    script redirect_any_other_host "curl -m $default_timeout -ski -H 'X-Test-Redirect-To: https://127.0.0.2:9443/redirected' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 200 OK"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain "X-Bastion-Remote-Status: 200 OK"
+    contain "Content-Length: 64"
+    nocontain 'X-Bastion-Remote-Location: '
+
+    # but a redirect to a protocol not in allowed_egress_protocols must still be refused
+    script redirect_any_forbidden_protocol "curl -m $default_timeout -ski -H 'X-Test-Redirect-To: http://127.0.0.1:9080/redirected' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 500 Access to 'http' URIs has been disabled"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+
     # use a disallowed egress method
     script forbidden_egress_protocol "curl -m $default_timeout -vki -H 'X-Bastion-Egress-Protocol: http' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 400 Bad Request (forbidden egress protocol)'
+    contain 'X-Bastion-Local-Status: 400 Bad Request (forbidden egress protocol)'
     testsuite_proxy_check_response
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
@@ -529,6 +609,7 @@ testsuite_proxy()
     script forbidden_https_egress "curl -m $default_timeout -vki -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 400 Bad Request (forbidden egress protocol)'
+    contain 'X-Bastion-Local-Status: 400 Bad Request (forbidden egress protocol)'
     testsuite_proxy_check_response
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
