@@ -1,3 +1,11 @@
+## v3.24.01 - 2026/07/08
+- enh: use /dev/urandom instead of rand()
+- fix: setup-encryption: move the banner seal service setup to the install script (#653)
+- fix: cross-realm TOTP MFA check didn't work properly
+- fix: the --bind option was not being applied properly
+- chore: replace grep-as-boolean with List::Util any/none
+- chore: standardize "$fnret->msg" to stringified "$fnret"
+
 ## v3.24.00 - 2026/07/06
 - fix (rc1): install: optional sudoers: visudo validity check was always false
 - enh: perf: account_config: use the already-extracted homedir value
