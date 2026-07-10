@@ -12,6 +12,8 @@ trap_err_nb=0
 trap_err_lines=''
 script_end_reached=0
 
+# note: thorough the script, we'll use the "action_error 'text' && false" construction,
+# which registers an ERR below, in addition to any command returning a non-ok value
 trap '(( ++trap_err_nb )); trap_err_lines="$trap_err_lines $LINENO"' ERR
 
 trap_exit() {
@@ -24,7 +26,7 @@ trap_exit() {
         if [ "$trap_err_nb" != 0 ]; then
             action_error "Some errors have occurred above, please review and advise!"
             for line in $trap_err_lines; do
-                action_detail "... error on script source line $line"
+                action_detail "... error on script source line $line ($(sed -n "${line}"p "$0"))"
             done
             exit 1
         else
@@ -273,38 +275,29 @@ if [ "${opt[install-fake-ttyrec]}" = 1 ]; then
 fi
 
 if [ "${opt[modify-ssh-config]}" = 1 ] || [ "${opt[modify-sshd-config]}" = 1 ] ; then
-    action_doing "Find which ssh/sshd config templates to install on $OS_FAMILY $LINUX_DISTRO $DISTRO_VERSION"
-    short_suffix_name=$(echo "$LINUX_DISTRO$DISTRO_VERSION_MAJOR" | sed -re "s/[^a-z0-9]//")
-    [ "$short_suffix_name" = "rocky8" ] && short_suffix_name=centos8
-    [ "$short_suffix_name" = "rocky9" ] && short_suffix_name=centos9
-    filesuffix=default
-    if [ -e "$basedir/etc/ssh/sshd_config.$short_suffix_name" ] && [ -e "$basedir/etc/ssh/ssh_config.$short_suffix_name" ]; then
-        filesuffix=$short_suffix_name
-    elif [ "$OS_FAMILY" = Linux ]; then
-        if [ "$LINUX_DISTRO" = ubuntu ]; then
-            if [ "$DISTRO_VERSION_MAJOR" -le 20 ]; then
-                filesuffix=debian11
-            else
-                filesuffix=debian12
-            fi
-        elif echo "$DISTRO_LIKE" | grep -q -w suse; then
-            filesuffix=opensuse15
-        fi
-    elif [ "$OS_FAMILY" = FreeBSD ]; then
-        filesuffix=freebsd
-    fi
-
-    action_done "Will use the $filesuffix templates"
+    action_doing "Installing tailored ssh_config/sshd_config files for $OS_FAMILY $LINUX_DISTRO $DISTRO_VERSION"
 
     if [ "${opt[modify-ssh-config]}" = 1 ] ; then
-        action_doing "Install hardened configuration for ssh to $SSH_DIR/ssh_config"
-        install -o "$UID0" -g "$GID0" -m 0644 "$basedir/etc/ssh/ssh_config.$filesuffix"  $SSH_DIR/ssh_config
+        action_doing "Generating and installing hardened configuration for ssh to $SSH_DIR/ssh_config"
+        if "$basedir"/bin/admin/openssh-config-generator.pl --mode ssh --template "$basedir/etc/ssh/ssh_config.tmpl" --check --output $SSH_DIR/ssh_config.new && \
+            install -o "$UID0" -g "$GID0" -m 0644 $SSH_DIR/ssh_config.new $SSH_DIR/ssh_config; then
+            action_done
+        else
+            action_error "The $SSH_DIR/etc/ssh_config file has been left untouched" && false
+        fi
+        rm -f $SSH_DIR/ssh_config.new
     fi
     if [ "${opt[modify-sshd-config]}" = 1 ] ; then
-        action_doing "Install hardened configuration for sshd to $SSH_DIR/sshd_config"
-        install -o "$UID0" -g "$GID0" -m 0644 "$basedir/etc/ssh/sshd_config.$filesuffix" $SSH_DIR/sshd_config
+        action_doing "Generating and installing hardened configuration for sshd to $SSH_DIR/sshd_config"
+        if "$basedir"/bin/admin/openssh-config-generator.pl --mode sshd --template "$basedir/etc/ssh/sshd_config.tmpl" --check --output $SSH_DIR/sshd_config.new && \
+            install -o "$UID0" -g "$GID0" -m 0644 $SSH_DIR/sshd_config.new $SSH_DIR/sshd_config; then
+            action_done
+        else
+            action_error "The $SSH_DIR/etc/sshd_config file has been left untouched" && false
+            "$basedir"/bin/admin/openssh-config-generator.pl --mode sshd --template "$basedir/etc/ssh/sshd_config.tmpl" | sed 's/^/sshd_config: /'
+        fi
+        rm -f $SSH_DIR/sshd_config.new
     fi
-    action_done
 fi
 
 if [ "${opt[modify-banner]}" = 1 ] ; then
@@ -338,17 +331,19 @@ if [ "${opt[regen-hostkeys]}" = 1 ] ; then
     ssh-keygen -q -A >/dev/null || true
     action_done
 
-    action_doing "Restart sshd"
-    ret=-1
-    if [ -e /etc/rc.d/sshd ] ; then
-        /etc/rc.d/sshd restart; ret=$?
-    elif [ -e /etc/init.d/ssh ] ; then
-        /etc/init.d/ssh restart; ret=$?
+    action_doing "Reload sshd"
+    reloaded=0
+    if command -v systemctl >/dev/null && [ -d /var/run/systemd ]; then
+        systemctl reload ssh && reloaded=1
+    else
+        for initfile in /etc/init.d/ssh /etc/rc.d/ssh; do
+            [ -x "$initfile" ] && $initfile reload && reloaded=1
+        done
     fi
-    if [ $ret -eq 0 ]; then
+    if [ $reloaded = 0 ]; then
         action_done
     else
-        action_error "You might want to check if the sshd config is valid!"
+        action_error "You might want to check if the sshd config is valid!" && false
     fi
 fi
 
@@ -358,7 +353,7 @@ if [ "$nothing" = 0 ]; then
         if mkdir /etc/skel/.ssh; then
             action_done
         else
-            action_error "Couldn't create /etc/skel/.ssh, nevermind, proceeding"
+            action_error "Couldn't create /etc/skel/.ssh, nevermind, proceeding" && false
         fi
     else
         action_na
@@ -380,7 +375,7 @@ if [ "$nothing" = 0 ]; then
         if mkdir /var/otp; then
             action_done
         else
-            action_error
+            action_error && false
         fi
     else
         action_na
@@ -477,7 +472,7 @@ if [ "$nothing" = 0 ]; then
     # ensure the includedir is present in global sudoers conf
     action_doing "Add include directory in sudoers if needed"
     if [ ! -e $SUDOERS_FILE ] ; then
-        action_error "$SUDOERS_DIR doesn't exist, is sudo installed?"
+        action_error "$SUDOERS_DIR doesn't exist, is sudo installed?" && false
     else
         if grep -Eq "^[#@]includedir $SUDOERS_DIR$" $SUDOERS_FILE ; then
             action_na "sudoers.d already added in config"
@@ -520,15 +515,15 @@ if [ "$nothing" = 0 ]; then
         # log a bunch of errors because files it has listed from sudoers.d have disappeared
         # use a .tmp file while we're setting the proper perms, files containing '.' are ignored by sudo
         if ! sed -e "s=%BASEPATH%=$basedir=g" "$file" > "$SUDOERS_DIR/$filename.tmp"; then
-            action_error "Failed generating $SUDOERS_DIR/$filename.tmp from $file"
+            action_error "Failed generating $SUDOERS_DIR/$filename.tmp from $file" && false
             continue
         fi
         if ! chown "$UID0":"$GID0" "$SUDOERS_DIR/$filename.tmp"; then
-            action_error "Failed chowing $SUDOERS_DIR/$filename.tmp to $UID0:$GID0"
+            action_error "Failed chowing $SUDOERS_DIR/$filename.tmp to $UID0:$GID0" && false
             # attempt to continue
         fi
         if ! chmod 0440 "$SUDOERS_DIR/$filename.tmp"; then
-            action_error "Failed chmoding $SUDOERS_DIR/$filename.tmp to 0440"
+            action_error "Failed chmoding $SUDOERS_DIR/$filename.tmp to 0440" && false
             # attempt to continue
         fi
         # now that %BASEPATH% is instantiated, ensure sudo can parse the result before publishing it.
@@ -538,14 +533,14 @@ if [ "$nothing" = 0 ]; then
             if echo "$filename" | grep -q optional; then
                 action_detail "... skipping $filename (unsupported but optional, non-fatal)"
             else
-                action_error "Generated $SUDOERS_DIR/$filename.tmp failed visudo validation, not installing it"
+                action_error "Generated $SUDOERS_DIR/$filename.tmp failed visudo validation, not installing it" && false
             fi
             rm -f "$SUDOERS_DIR/$filename.tmp"
             continue
         fi
         # then overwrite in place
         if ! mv -f "$SUDOERS_DIR/$filename.tmp" "$SUDOERS_DIR/$filename"; then
-            action_error "Failed to move $SUDOERS_DIR/$filename.tmp to $SUDOERS_DIR/$filename"
+            action_error "Failed to move $SUDOERS_DIR/$filename.tmp to $SUDOERS_DIR/$filename" && false
         fi
     done
     action_done
@@ -576,9 +571,9 @@ if [ "$nothing" = 0 ]; then
         action_na
     else
         if ! groupadd_compat bastionsync 333; then
-            action_error "Error while adding bastionsync group"
+            action_error "Error while adding bastionsync group" && false
         elif ! useradd_compat bastionsync 333 '' "$basedir/bin/shell/bastion-sync-helper.sh" 333; then
-            action_error "Error while adding bastionsync user"
+            action_error "Error while adding bastionsync user" && false
         else
             action_done
         fi
@@ -648,7 +643,7 @@ if [ "$nothing" = 0 ]; then
             if userdel lastovhuser; then
                 action_done
             else
-                action_error
+                action_error && false
             fi
         else
             # no, ok, rename it
@@ -656,7 +651,7 @@ if [ "$nothing" = 0 ]; then
             if usermod -l lastoshuser lastovhuser; then
                 action_done
             else
-                action_error
+                action_error && false
             fi
         fi
     else
@@ -676,7 +671,7 @@ if [ "$nothing" = 0 ]; then
             if groupdel lastovhuser; then
                 action_done
             else
-                action_error
+                action_error && false
             fi
         else
             # no, ok, rename it
@@ -684,7 +679,7 @@ if [ "$nothing" = 0 ]; then
             if group_rename_compat lastovhuser lastoshuser; then
                 action_done
             else
-                action_error
+                action_error && false
             fi
         fi
     else
@@ -699,7 +694,7 @@ if [ "$nothing" = 0 ]; then
         if usermod_changeuid_compat lastoshuser 10000; then
             action_done
         else
-            action_error "Error while attempting to change lastoshuser UID"
+            action_error "Error while attempting to change lastoshuser UID" && false
         fi
     elif [ -n "$lastoshuseruid" ] && [ "$lastoshuseruid" = "10000" ] ; then
         action_na "user exists with proper UID"
@@ -717,12 +712,12 @@ if [ "$nothing" = 0 ]; then
         if group_change_gid_compat lastoshuser 10000; then
             action_done
         else
-            action_error "Error while attempting to change lastoshuser GID"
+            action_error "Error while attempting to change lastoshuser GID" && false
         fi
     elif [ -n "$lastoshgid" ] && [ "$lastoshgid" = "10000" ] ; then
         action_na "user exists with proper GID"
     else
-        action_error "No group lastoshuser was found (!)"
+        action_error "No group lastoshuser was found (!)" && false
     fi
 
     action_doing "Create /var/log/bastion if needed"
@@ -788,7 +783,7 @@ if [ "$nothing" = 0 ]; then
         fi
     done
     if [ "$at_least_one_error" != 0 ]; then
-        action_error
+        action_error && false
     elif [ "$at_least_one_changed" = 0 ]; then
         action_na
     else
@@ -815,12 +810,12 @@ if [ "$nothing" = 0 ]; then
             ssh-keygen -q -t ecdsa -N '' -f "$UID0HOME/id_healthcheck" || \
             ssh-keygen -q -t rsa -b 4096 -N '' -f "$UID0HOME/id_healthcheck"
         if [ ! -e "$UID0HOME/id_healthcheck.pub" ]; then
-            action_error "Error while generating the SSH key"
+            action_error "Error while generating the SSH key" && false
         else
             chmod 0444 "$UID0HOME/id_healthcheck.pub"
             USER="$UID0" HOME="$UID0HOME" "$basedir"/bin/plugin/restricted/accountCreate '' '' '' '' --account healthcheck --uid-auto --always-active --immutable-key --osh-only --force-key-from "127.0.0.1" < "$UID0HOME/id_healthcheck.pub"
             if ! getent passwd healthcheck >/dev/null 2>&1; then
-                action_error "Couldn't create the healthcheck account"
+                action_error "Couldn't create the healthcheck account" && false
             else
                 mv "$UID0HOME/id_healthcheck"     ~healthcheck/.ssh/id_healthcheck
                 mv "$UID0HOME/id_healthcheck.pub" ~healthcheck/.ssh/id_healthcheck.pub
@@ -845,7 +840,7 @@ if [ "$nothing" = 0 ]; then
         fi
     done
     if [ "$at_least_one_error" != 0 ]; then
-        action_error
+        action_error && false
     elif [ "$at_least_one_changed" = 0 ]; then
         action_na
     else
@@ -861,7 +856,7 @@ if [ "$nothing" = 0 ]; then
             ssh-keygen -q -t ecdsa -N '' -f "$UID0HOME/.ssh/id_master2slave" || \
             ssh-keygen -q -t rsa -b 4096 -N '' -f "$UID0HOME/.ssh/id_master2slave"
         if [ ! -e "$UID0HOME/.ssh/id_master2slave.pub" ]; then
-            action_error "Error while generating the SSH key"
+            action_error "Error while generating the SSH key" && false
         else
             action_done
         fi
@@ -876,7 +871,7 @@ if [ "$nothing" = 0 ]; then
             ssh-keygen -q -t ecdsa -N '' -f "$UID0HOME/.ssh/id_backup" || \
             ssh-keygen -q -t rsa -b 4096 -N '' -f "$UID0HOME/.ssh/id_backup"
         if [ ! -e "$UID0HOME/.ssh/id_backup.pub" ]; then
-            action_error "Error while generating the SSH key"
+            action_error "Error while generating the SSH key" && false
         else
             action_done
         fi
@@ -910,7 +905,7 @@ if [ "$nothing" = 0 ]; then
     if [ "$grant_status" = 0 ]; then
         action_na
     elif [ "$grant_status" = -1 ]; then
-        action_error
+        action_error && false
     else
         action_done
     fi
@@ -928,7 +923,7 @@ if [ "$nothing" = 0 ]; then
         fi
     done
     if [ "$at_least_one_error" != 0 ]; then
-        action_error
+        action_error && false
     elif [ "$at_least_one_changed" = 0 ]; then
         action_na
     else
@@ -959,7 +954,7 @@ if [ "$nothing" = 0 ]; then
         fi
     done < <(find /home/oldkeeper/accounts/ /home/oldkeeper/groups/ -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null)
     if [ "$at_least_one_error" != 0 ]; then
-        action_error
+        action_error && false
     elif [ "$at_least_one_changed" = 0 ]; then
         action_na
     else
@@ -1012,7 +1007,7 @@ if [ "$nothing" = 0 ]; then
         fi
     done < <(find "$basedir"/bin/plugin -type l ! -name "*.*" -print0)
     if [ "$at_least_one_error" != 0 ]; then
-        action_error
+        action_error && false
     elif [ "$at_least_one_changed" = 0 ]; then
         action_na
     else
@@ -1055,7 +1050,7 @@ if [ "$nothing" = 0 ]; then
         fi
     done
     if [ "$at_least_one_error" != 0 ]; then
-        action_error
+        action_error && false
     elif [ "$at_least_one_changed" = 0 ]; then
         action_na
     else
@@ -1072,7 +1067,7 @@ if [ "$nothing" = 0 ]; then
         if . "$installfile"; then
             action_done
         else
-            action_error
+            action_error && false
         fi
     done < <(test -d "$basedir"/install/modules && find "$basedir"/install/modules -mindepth 2 -maxdepth 2 -name install -type f -print0)
     unset STARTED_BY_MAIN_INSTALL
@@ -1115,7 +1110,7 @@ if [ "${opt[init]}" = 1 ]; then
                 action_detail "$servicename updated"
             fi
         else
-            action_error "failed installing $file"
+            action_error "failed installing $file" && false
         fi
     done
     action_done
@@ -1156,7 +1151,7 @@ if [ "${opt[systemd-units]}" = 1 ]; then
                 action_detail "$servicename updated"
             fi
         else
-            action_error "failed installing $file"
+            action_error "failed installing $file" && false
         fi
     done
     systemctl daemon-reload || true
@@ -1180,14 +1175,14 @@ if [ "$newinstall" = 1 ] && [ -f "$luks_config" ] && command -v cryptsetup >/dev
             if systemctl enable osh-seal-banner.service 2>/dev/null; then
                 action_done "enabled"
             else
-                action_error "couldn't enable osh-seal-banner.service, please enable it manually"
+                action_error "couldn't enable osh-seal-banner.service, please enable it manually" && false
             fi
         elif [ "${opt[init]}" = 1 ]; then
             action_doing "Enabling SSH banner seal service (/home encryption detected)"
             if update-rc.d osh-seal-banner defaults >/dev/null 2>&1; then
                 action_done "enabled"
             else
-                action_error "couldn't enable osh-seal-banner service, please enable it manually"
+                action_error "couldn't enable osh-seal-banner service, please enable it manually" && false
             fi
         fi
     fi
@@ -1213,7 +1208,7 @@ if [ "${opt[reload-http-proxy]}" = 1 ]; then
         if [ "$reloaded" = 1 ]; then
             action_done "reloaded"
         else
-            action_error "failed to reload, you might want to do it manually"
+            action_error "failed to reload, you might want to do it manually" && false
         fi
     fi
 fi
@@ -1232,7 +1227,7 @@ fi
 if [ "${opt[install-selinux-module]}" = 1 ]; then
     action_doing "Installing SELinux module"
     if ! command -v semodule >/dev/null; then
-        action_error "Missing \`semodule' tool, please install it (it's usually found in the 'policycoreutils' package)"
+        action_error "Missing \`semodule' tool, please install it (it's usually found in the 'policycoreutils' package)" && false
     else
         if semodule -l | grep -q the-bastion; then
             action_na "module is already installed"
@@ -1240,7 +1235,7 @@ if [ "${opt[install-selinux-module]}" = 1 ]; then
             if semodule -i "$basedir/etc/selinux/the-bastion.pp"; then
                 action_done "module installed"
             else
-                action_error "semodule returned an error"
+                action_error "semodule returned an error" && false
             fi
         fi
     fi
@@ -1288,12 +1283,14 @@ fi
 if [ "${opt[modify-pam-sshd]}" = 1 ]; then
     action_doing "Use our template for pam.d/sshd"
     if grep -Eiq '^[[:space:]]*AuthenticationMethods[[:space:]]+publickey,keyboard-interactive:pam' "$SSH_DIR/sshd_config"; then
-        echo "$DISTRO_LIKE" | grep -q -w debian  && pamsuffix=debian
-        echo "$DISTRO_LIKE" | grep -q -w rhel    && pamsuffix=rhel
-        [ "$OS_FAMILY" = FreeBSD ] && pamsuffix=freebsd
-        if [ "$LINUX_DISTRO" = ubuntu ] && [ "$DISTRO_VERSION_MAJOR" -ge 22 ]; then
-            pamsuffix="ubuntu2204"
-        elif [ -n "$pamsuffix" ] && [ -e "$basedir/etc/pam.d/sshd.$pamsuffix$DISTRO_VERSION" ]; then
+        case "$DISTRO_LIKE" in
+            *debian*) pamsuffix=debian;;
+            *rhel*)   pamsuffix=rhel;;
+            *suse*)   pamsuffix=suse;;
+            *)        [ "$OS_FAMILY" = FreeBSD ] && pamsuffix=freebsd;;
+        esac
+        # if we have a specific file for this specific distro version, use itc
+        if [ -n "$pamsuffix" ] && [ -e "$basedir/etc/pam.d/sshd.$pamsuffix$DISTRO_VERSION" ]; then
             pamsuffix="$pamsuffix$DISTRO_VERSION"
         fi
         if [ -n "$pamsuffix" ] && [ -e "$PAM_SSHD" ] && [ -e "$basedir/etc/pam.d/sshd.$pamsuffix" ]; then
@@ -1301,7 +1298,7 @@ if [ "${opt[modify-pam-sshd]}" = 1 ]; then
             cat "$basedir/etc/pam.d/sshd.$pamsuffix" > "$PAM_SSHD"
             action_done "sshd.$pamsuffix"
         else
-            action_error "couldn't use our pam.d/sshd template (no template for $OS_FAMILY/$DISTRO_LIKE)"
+            action_error "couldn't use our pam.d/sshd template (no template for $OS_FAMILY/$DISTRO_LIKE)" && false
         fi
     else
         action_na "the currently installed sshd_config file doesn't have a forced 'AuthenticationMethods publickey', we can't install our pam.d template safely (it could turn this machine into an allow-all accesses without auth through ssh!)"
@@ -1377,18 +1374,18 @@ fi
 if [ "${opt[check-ttyrec]}" = 1 ] ; then
     action_doing "Checking ttyrec version"
     if ! command -v ttyrec >/dev/null 2>&1; then
-        action_error "ttyrec is not installed, the bastion will not work! Please either install ovh-ttyrec (/opt/bastion/bin/admin/install-ttyrec.sh) or run this script a second time with \`$0 --nothing --install-fake-ttyrec'"
+        action_error "ttyrec is not installed, the bastion will not work! Please either install ovh-ttyrec (/opt/bastion/bin/admin/install-ttyrec.sh) or run this script a second time with \`$0 --nothing --install-fake-ttyrec'" && false
     else
         ttyrec_version=$(ttyrec -V 2>/dev/null | grep -Eo 'ttyrec v[0-9.]+' | cut -c9-)
         if [ -z "$ttyrec_version" ]; then
-            action_error "Incompatible ttyrec version installed, the bastion will not work! Please either install ovh-ttyrec (/opt/bastion/bin/admin/install-ttyrec.sh) or run this script again with \`$0 --nothing --install-fake-ttyrec'"
+            action_error "Incompatible ttyrec version installed, the bastion will not work! Please either install ovh-ttyrec (/opt/bastion/bin/admin/install-ttyrec.sh) or run this script again with \`$0 --nothing --install-fake-ttyrec'" && false
         else
             action_detail "found v$ttyrec_version"
             action_detail "expected v$TTYREC_VERSION_NEEDED"
             if [ "$(printf "%s\\n%s\\n" "$ttyrec_version" "$TTYREC_VERSION_NEEDED" | sort | head -1)" = "$TTYREC_VERSION_NEEDED" ]; then
                 action_done
             else
-                action_error "The installed ttyrec version is too old, the bastion will not work! Please update ovh-ttyrec to at least v$TTYREC_VERSION_NEEDED (/opt/bastion/bin/admin/install-ttyrec.sh can help)"
+                action_error "The installed ttyrec version is too old, the bastion will not work! Please update ovh-ttyrec to at least v$TTYREC_VERSION_NEEDED (/opt/bastion/bin/admin/install-ttyrec.sh can help)" && false
             fi
         fi
     fi

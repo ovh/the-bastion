@@ -5,16 +5,18 @@ auth   requisite                                                pam_nologin.so
 
 
 # --- PASSWORD CHECK SECTION
-# proceed in this section ONLY if the user is in group mfa-password-configd, skip it entirely otherwise (4 lines -> next section)
-auth   [success=ignore ignore=ignore default=4] pam_succeed_if.so quiet user ingroup mfa-password-configd
+# proceed in this section ONLY if the user is in group mfa-password-configd, skip it entirely otherwise (5 lines -> next section)
+auth   [success=ignore ignore=ignore default=5]                 pam_succeed_if.so   quiet user ingroup mfa-password-configd
 # just display a nice message to the user:
-auth   optional                                 pam_echo.so       Your account has Multi-Factor Authentication enabled, an additional authentication factor is required (password).
+auth   optional                                                 pam_echo.so         Your account has Multi-Factor Authentication enabled, an additional authentication factor is required (password).
 # also display how many days remain before expiration of their password:
-auth   optional                                 pam_exec.so       quiet debug stdout /opt/bastion/bin/shell/pam_exec_pwd_info.sh
-# lock account after 6 failures, for 5 minutes
-auth   required                                 pam_tally2.so     onerr=fail deny=6 unlock_time=300
+auth   optional                                                 pam_exec.so         quiet debug stdout /opt/bastion/bin/shell/pam_exec_pwd_info.sh
+# lock account after 6 password failures, for 5 minutes. 'preauth' -> only fail if count is already reached:
+auth   required                                                 pam_faillock.so     preauth deny=6 unlock_time=300
 # now actually ask for the password, and skip the next line if it's correct:
-auth   required                                 pam_unix.so
+auth   [success=1 new_authtok_reqd=1 ignore=ignore default=bad] pam_unix.so
+# this line is only called if password failed. 'authfail' -> we increment the fail counter and abort auth:
+auth   [default=die]                                            pam_faillock.so     authfail deny=6 unlock_time=300
 
 
 # --- TOTP CHECK SECTION
@@ -47,7 +49,7 @@ session    required     pam_env.so user_readenv=1 envfile=/etc/default/locale
 account    required     pam_nologin.so
 
 # Reset counter if auth succeeded
-account    required     pam_tally2.so
+account    required     pam_faillock.so
 
 # Uncomment and edit /etc/security/access.conf if you need to set complex
 # access limits that are hard to express in sshd_config.

@@ -35,7 +35,7 @@ if echo "$DISTRO_LIKE" | grep -q -w debian; then
                 libjson-xs-perl inotify-tools lsof curl libterm-readline-gnu-perl \
                 libwww-perl libdigest-sha-perl libnet-ssleay-perl \
                 libnet-server-perl cryptsetup mosh expect openssh-server locales \
-                coreutils bash libcgi-pm-perl iputils-ping tar \
+                coreutils bash libcgi-pm-perl iputils-ping tar libtext-template-perl \
                 liblinux-prctl-perl libpam-google-authenticator pamtester"
     # workaround for debian/armhf: curl fails to validate some SSL certificates,
     # whereas wget succeeds; this is needed for e.g. install-ttyrec.sh
@@ -63,7 +63,7 @@ if echo "$DISTRO_LIKE" | grep -q -w debian; then
     installed=$(dpkg -l | awk '/^ii/ {print $2}' | cut -d: -f1)
     install_cmd="apt-get install"
 elif echo "$DISTRO_LIKE" | grep -q -w rhel; then
-    wanted_list="perl perl-JSON perl-Net-Netmask perl-Net-IP \
+    wanted_list="perl perl-JSON perl-Net-Netmask perl-Net-IP perl-Text-Template \
             perl-Net-DNS perl-DBD-SQLite perl-TermReadKey procps-ng \
             sudo fping xz sqlite binutils acl gnupg2 rsync perl-DateTime \
             perl-JSON-XS inotify-tools lsof curl perl-Term-ReadLine-Gnu \
@@ -120,7 +120,7 @@ elif echo "$DISTRO_LIKE" | grep -q -w suse; then
     wanted_list="perl-common-sense perl-JSON perl-Net-Netmask perl-Net-IP \
             perl-Net-DNS perl-DBD-SQLite perl-Term-ReadKey perl-DateTime \
             fortune sudo fping perl perl-base gzip procps \
-            xz sqlite3 binutils acl gpg2 rsync \
+            xz sqlite3 binutils acl gpg2 rsync perl-Text-Template \
             perl-JSON-XS inotify-tools lsof curl perl-TermReadLine-Gnu \
             perl-libwww-perl perl-Digest perl-IO-Socket-SSL \
             perl-Net-Server cryptsetup mosh expect openssh \
@@ -141,7 +141,7 @@ elif [ "$OS_FAMILY" = FreeBSD ]; then
     wanted_list="base64 coreutils rsync bash sudo pamtester p5-JSON p5-JSON-XS gnupg \
             p5-common-sense p5-DateTime p5-Net-IP p5-DBD-SQLite p5-Net-Netmask lsof \
             p5-Term-ReadKey expect fping p5-Net-Server p5-CGI p5-LWP-Protocol-https \
-            p5-Test-Deep p5-Term-ReadLine-Gnu"
+            p5-Test-Deep p5-Term-ReadLine-Gnu p5-Text-Template"
     install_cmd="pkg add"
     installed=""
     for i in $wanted_list

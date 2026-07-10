@@ -27,13 +27,13 @@ fi
 
 # modify default ssh/sshd configs
 tmpf=$(mktemp -t bastion.XXXXXXXX)
-grep -Evi '^(stricthostkeychecking) '   /etc/ssh/ssh_config  > "$tmpf" || true
-cat "$tmpf" > /etc/ssh/ssh_config
-grep -Evi '^(port|authorizedkeysfile) ' /etc/ssh/sshd_config > "$tmpf" || true
-cat "$tmpf" > /etc/ssh/sshd_config
+grep -Evi '^(stricthostkeychecking) '   $SSH_DIR/ssh_config  > "$tmpf" || true
+cat "$tmpf" > $SSH_DIR/ssh_config
+grep -Evi '^(port|authorizedkeysfile) ' $SSH_DIR/sshd_config > "$tmpf" || true
+cat "$tmpf" > $SSH_DIR/sshd_config
 rm -f "$tmpf"
-echo "StrictHostKeyChecking no" >> /etc/ssh/ssh_config
-cat >>/etc/ssh/sshd_config <<EOF
+echo "StrictHostKeyChecking no" >> $SSH_DIR/ssh_config
+cat >>$SSH_DIR/sshd_config <<EOF
     Port 22
     Port 226
 EOF
@@ -58,7 +58,10 @@ if [ -z "$sftpserver" ]; then
 fi
 
 echo "sftp-server binary located at $sftpserver"
-echo "Subsystem sftp $sftpserver" >> /etc/ssh/sshd_config
+echo "Subsystem sftp $sftpserver" >> $SSH_DIR/sshd_config
+
+# Disable any ssh .d config folder to ensure our config is not overridden
+[ -e "$SSH_DIR/sshd_config.d" ] && mv -v "$SSH_DIR/sshd_config.d" "$SSH_DIR/sshd_config.disabled"
 
 # put the root pubkey on the root account
 mkdir -p "$UID0HOME/.ssh"

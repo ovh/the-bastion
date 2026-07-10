@@ -41,9 +41,6 @@ auth   [success=ok new_authtok_reqd=ok ignore=ignore default=bad module_unknown=
 # Read environment variables from /etc/environment and
 # /etc/security/pam_env.conf.
 session    required     pam_env.so # [1]
-# In Debian 4.0 (etch), locale-related environment variables were moved to
-# /etc/default/locale, so read that as well.
-session    required     pam_env.so user_readenv=1 envfile=/etc/default/locale
 
 # Disallow non-root logins when /etc/nologin exists.
 account    required     pam_nologin.so
@@ -56,14 +53,14 @@ account    required     pam_faillock.so
 # account  required     pam_access.so
 
 # Standard Un*x authorization.
-@include common-account
+account    include      common-account
 
 # Standard Un*x session setup and teardown.
-@include common-session
+session    include      common-session
 
 
 # Print the message of the day upon successful login.
-session    optional     pam_motd.so noupdate
+session    optional     pam_motd.so
 
 # Print the status of the user's mailbox upon successful login.
 #session    optional     pam_mail.so standard noenv # [1]
@@ -88,4 +85,4 @@ session [success=ok ignore=ignore module_unknown=ignore default=bad]        pam_
 session [success=ok ignore=ignore module_unknown=ignore default=bad]        pam_selinux.so open
 
 # Standard Un*x password updating.
-@include common-password
+password   include     common-password
