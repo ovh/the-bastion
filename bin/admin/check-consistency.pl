@@ -1,16 +1,18 @@
 #! /usr/bin/env perl
 # vim: set filetype=perl ts=4 sw=4 sts=4 et:
 use common::sense;
+
+use Cwd;
 use Data::Dumper;
-use List::Util qw{ none };
-use Term::ANSIColor;
 use Digest::MD5 ();
 use File::Basename;
+use List::Util qw{ none };
+use Term::ANSIColor;
 
 use lib dirname(__FILE__) . '/../../lib/perl';
 use OVH::Bastion;
 
-my $BASEDIR = dirname(__FILE__) . '/../..';
+my $BASEDIR = Cwd::realpath(dirname(__FILE__) . '/../..');
 
 my $MIN_KEYGROUP_GID       = OVH::Bastion::config("groupGidMin")->value;
 my $MAX_KEYGROUP_GID       = $MIN_KEYGROUP_GID + 99999;
@@ -894,16 +896,28 @@ while (my $distfile = glob "$BASEDIR/etc/sudoers.d/*") {
     $prodfile =~ s=^\Q$BASEDIR\E/etc/sudoers.d=$sudoers_dir=;
     if (-e $prodfile) {
         my @md5sums;
-        foreach my $file ($prodfile, $distfile) {
-            if (open(my $fh, '<', $file)) {
-                binmode($fh);
-                push @md5sums, Digest::MD5->new->addfile($fh)->hexdigest;
-                close($fh);
-            }
-            else {
-                push @md5sums, "ERR($file)";
-            }
+        if (open(my $fh, '<', $prodfile)) {
+            binmode($fh);
+            push @md5sums, Digest::MD5->new->addfile($fh)->hexdigest;
+            close($fh);
         }
+        else {
+            push @md5sums, "ERR($prodfile)";
+        }
+
+        # the dist file is a template: bin/admin/install instantiates %BASEPATH% (and normalizes to a
+        # single trailing newline) before installing it to the system, do the same before comparing
+        if (open(my $fh, '<', $distfile)) {
+            binmode($fh);
+            my $contents = do { local $/; <$fh> };
+            close($fh);
+            $contents =~ s/%BASEPATH%/$BASEDIR/g;
+            push @md5sums, Digest::MD5->new->add($contents)->hexdigest;
+        }
+        else {
+            push @md5sums, "ERR($distfile)";
+        }
+
         if ($md5sums[0] ne $md5sums[1]) {
             _err "sudoers file $distfile and $prodfile differ";
         }

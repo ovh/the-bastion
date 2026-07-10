@@ -508,23 +508,19 @@ if [ "$nothing" = 0 ]; then
     nbfiles=$(wc -l < "$oldsudoers")
     action_done "Found $nbfiles sudoers.d files"
 
-    # copy new sudoers files
-    action_doing "Copy sudoers files to $SUDOERS_DIR"
+    # install new sudoers files
+    action_doing "Install sudoers files to $SUDOERS_DIR"
     for file in "$basedir/etc/sudoers.d"/osh-*; do
         filename=$(basename "$file")
         sed_compat "/\/$filename$/d" "$oldsudoers"
-        # for optional sudoers files, first verify if our sudo can parse it
-        if echo "$filename" | grep -q optional && ! visudo -cqf "$file" >/dev/null 2>&1; then
-            action_detail "... skipping $filename (unsupported but optional, non-fatal)"
-            continue
-        fi
-        action_detail "... copying $filename"
+        action_detail "... installing $filename"
+        # the dist sudoers files are templates: instantiate %BASEPATH% to our own basedir.
         # don't use install(1) because it doesn't overwrite in place (it unlinks then copies data)
         # this can lead to a race condition if somebody uses sudo exactly at this moment, where it'll
         # log a bunch of errors because files it has listed from sudoers.d have disappeared
         # use a .tmp file while we're setting the proper perms, files containing '.' are ignored by sudo
-        if ! cp "$file" "$SUDOERS_DIR/$filename.tmp"; then
-            action_error "Failed copying $file to $SUDOERS_DIR/$filename.tmp"
+        if ! sed -e "s=%BASEPATH%=$basedir=g" "$file" > "$SUDOERS_DIR/$filename.tmp"; then
+            action_error "Failed generating $SUDOERS_DIR/$filename.tmp from $file"
             continue
         fi
         if ! chown "$UID0":"$GID0" "$SUDOERS_DIR/$filename.tmp"; then
@@ -534,6 +530,18 @@ if [ "$nothing" = 0 ]; then
         if ! chmod 0440 "$SUDOERS_DIR/$filename.tmp"; then
             action_error "Failed chmoding $SUDOERS_DIR/$filename.tmp to 0440"
             # attempt to continue
+        fi
+        # now that %BASEPATH% is instantiated, ensure sudo can parse the result before publishing it.
+        # optional files are allowed to fail: they use directives unsupported by older sudo versions.
+        # (-q also keeps visudo from failing on aliases defined in other files, e.g. SUPEROWNERS)
+        if command -v visudo >/dev/null 2>&1 && ! visudo -cqf "$SUDOERS_DIR/$filename.tmp" >/dev/null 2>&1; then
+            if echo "$filename" | grep -q optional; then
+                action_detail "... skipping $filename (unsupported but optional, non-fatal)"
+            else
+                action_error "Generated $SUDOERS_DIR/$filename.tmp failed visudo validation, not installing it"
+            fi
+            rm -f "$SUDOERS_DIR/$filename.tmp"
+            continue
         fi
         # then overwrite in place
         if ! mv -f "$SUDOERS_DIR/$filename.tmp" "$SUDOERS_DIR/$filename"; then

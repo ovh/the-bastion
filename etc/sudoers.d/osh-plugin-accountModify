@@ -1,2 +1,2 @@
 # modify parameters/policy of an account
-%osh-accountModify ALL=(root) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountModify *
+%osh-accountModify ALL=(root) NOPASSWD:/usr/bin/env perl -T %BASEPATH%/bin/helper/osh-accountModify *
