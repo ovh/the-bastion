@@ -7,7 +7,7 @@
 
 testsuite_config_options()
 {
-    configchg 's=^\\\\x22dnsSupportLevel\\\\x22.+=\\\\x22dnsSupportLevel\\\\x22:0,='
+    configset dnsSupportLevel 0
 
     run a1_connect_nodns $a0 localhost
     retvalshouldbe 132

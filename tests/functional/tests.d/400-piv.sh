@@ -63,7 +63,7 @@ EOF
     json .command selfAddIngressKey .error_code ERR_NO_PEM_START_MARKER
 
     # set min rsa size to 2048 so we can work
-    configchg 's=^\\\\x22minimumIngressRsaKeySize\\\\x22.+=\\\\x22minimumIngressRsaKeySize\\\\x22:2048,='
+    configset minimumIngressRsaKeySize 2048
 
     # add a key which doesn't match the certs
     script piv_badcert "( cat $account2key1file.pub; echo \"$piv_attestation\"; echo \"$piv_certificate\" ) | $a1 --osh selfAddIngressKey --piv"

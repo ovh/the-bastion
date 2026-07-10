@@ -92,7 +92,7 @@ testsuite_realm()
     # now configure an expiration policy on B and artificially expire *only* the realm user's per-user
     # lastlog; the shared realm-account lastlog is left fresh, so a detected expiry can only come from
     # the per-user file
-    configchg2 's=^\\\\x22accountMaxInactiveDays\\\\x22.+=\\\\x22accountMaxInactiveDays\\\\x22:2,='
+    configset2 accountMaxInactiveDays 2
     success realm_expire_user $r2 "touch -t 201501010101 /home/$realm_sys/lastlog_$account1"
 
     # accountUnexpire detects the expiry (reading the per-user file, not the fresh shared one) and reactivates
@@ -116,7 +116,7 @@ testsuite_realm()
     success realm_ref_cleanup $r2 "rm -f /tmp/bastiontest_lastlog_ref"
 
     # reset the expiration policy on B for the rest of this module
-    configchg2 's=^\\\\x22accountMaxInactiveDays\\\\x22.+=\\\\x22accountMaxInactiveDays\\\\x22:0,='
+    configset2 accountMaxInactiveDays 0
 
     # try forbidden plugins
     for plugin in selfAddPersonalAccess selfAddIngressKey selfDelIngressKey selfGenerateEgressKey selfAddPersonalAccess selfDelPersonalAccess selfPlaySession selfListSessions selfResetIngressKeys

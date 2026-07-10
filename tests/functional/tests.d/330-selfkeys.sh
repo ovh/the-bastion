@@ -58,7 +58,7 @@ testsuite_selfkeys()
     json .error_code OK .command accountCreate .value null
 
     # <accountModify --egress-strict-host-key-checking>
-    configchg 's=^\\\\x22minimumIngressRsaKeySize\\\\x22.+=\\\\x22minimumIngressRsaKeySize\\\\x22:4096,='
+    configset minimumIngressRsaKeySize 4096
 
     success info0 $a0 --osh accountInfo --account $account1
     json .error_code OK .command accountInfo
@@ -553,30 +553,30 @@ EOS
     )
 
     # ingresskeysfrom=0.0.0.0/0,255.255.255.255, allowoverride=1, noFrom
-    configchg 's=^\\\\x22ingressKeysFromAllowOverride\\\\x22.+=\\\\x22ingressKeysFromAllowOverride\\\\x22:1,='
-    configchg 's=^\\\\x22ingressKeysFrom\\\\x22:.+=\\\\x22ingressKeysFrom\\\\x22:\\\\x5B\\\\x220.0.0.0/0\\\\x22,\\\\x22255.255.255.255\\\\x22\\\\x5D,='
+    configset ingressKeysFromAllowOverride 1
+    configsetarray ingressKeysFrom 0.0.0.0/0 255.255.255.255
     _ingress_from_test fromTest1 0.0.0.0/0 255.255.255.255 "$(< $account1key2file.pub)" "$account1key2fp"
 
     # ingresskeysfrom=0.0.0.0/0,255.255.255.255, allowoverride=1, withFrom
     _ingress_from_test fromTest2 1.2.3.4 5.6.7.8 "from=\"1.2.3.4,5.6.7.8\" $(< $account1key2file.pub)" "$account1key2fp"
 
     # ingresskeysfrom=0.0.0.0/0,255.255.255.255, allowoverride=0, noFrom
-    configchg 's=^\\\\x22ingressKeysFromAllowOverride\\\\x22.+=\\\\x22ingressKeysFromAllowOverride\\\\x22:0,='
+    configset ingressKeysFromAllowOverride 0
     _ingress_from_test fromTest3 0.0.0.0/0 255.255.255.255 "$(< $account1key2file.pub)" "$account1key2fp"
 
     # ingresskeysfrom=0.0.0.0/0,255.255.255.255 allowoverride=0, withFrom
     _ingress_from_test fromTest4 0.0.0.0/0 255.255.255.255 "from=\\\"1.2.3.4,5.6.7.8\\\" $(< $account1key2file.pub)" "$account1key2fp"
 
     # ingresskeysfrom=empty, allowoverride=1, noFrom
-    configchg 's=^\\\\x22ingressKeysFromAllowOverride\\\\x22.+=\\\\x22ingressKeysFromAllowOverride\\\\x22:1,='
-    configchg 's=^\\\\x22ingressKeysFrom\\\\x22:.+=\\\\x22ingressKeysFrom\\\\x22:\\\\x5B\\\\x5D,='
+    configset ingressKeysFromAllowOverride 1
+    configsetarray ingressKeysFrom
     _ingress_from_test fromTest5 null null "$(< $account1key2file.pub)" "$account1key2fp"
 
     # ingresskeysfrom=empty, allowoverride=1, withFrom
     _ingress_from_test fromTest6 1.2.3.4 5.6.7.8 "from=\"1.2.3.4,5.6.7.8\" $(< $account1key2file.pub)" "$account1key2fp"
 
     # ingresskeysfrom=empty, allowoverride=0, noFrom
-    configchg 's=^\\\\x22ingressKeysFromAllowOverride\\\\x22.+=\\\\x22ingressKeysFromAllowOverride\\\\x22:0,='
+    configset ingressKeysFromAllowOverride 0
     _ingress_from_test fromTest7 null null "$(< $account1key2file.pub)" "$account1key2fp"
 
     # ingresskeysfrom=empty allowoverride=0, withFrom

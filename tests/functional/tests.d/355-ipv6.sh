@@ -22,7 +22,7 @@ testsuite_ipv6()
     json .error_code KO_IP_VERSION_DISABLED
 
     # now enable IPv6
-    configchg 's=^\\\\x22IPv6Allowed\\\\x22.+=\\\\x22IPv6Allowed\\\\x22:true,='
+    configset IPv6Allowed true
 
     run add_access_ipv6_invalid $a0 --osh selfAddPersonalAccess --host '2001:db8:3:4:5:6:7:8:9' --force --user-any --port-any
     retvalshouldbe 102

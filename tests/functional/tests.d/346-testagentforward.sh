@@ -42,7 +42,7 @@ testsuite_agent_forwarding()
 
     # test if ssh-agent is spawned whilst requesting it,  with the addkeystoagentallowed-config directive set to True
     # Change config
-    configchg 's=^\\\\x22sshAddKeysToAgentAllowed\\\\x22.+=\\\\x22sshAddKeysToAgentAllowed\\\\x22:\\\\x20true='
+    configset sshAddKeysToAgentAllowed true
 
     # Run test with --forward-agent; agent should spawn
     run shellaccount_with_fwd_cfg_longarg $a0 --forward-agent $shellaccount@$remote_ip -- ssh-add -L
