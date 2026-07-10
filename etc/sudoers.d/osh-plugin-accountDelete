@@ -1,2 +1,2 @@
-%osh-accountDelete ALL=(root)  NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountDelete --type normal *
-%osh-realmDelete ALL=(root)  NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountDelete --type realm *
+%osh-accountDelete ALL=(root)  NOPASSWD:/usr/bin/env perl -T %BASEPATH%/bin/helper/osh-accountDelete --type normal *
+%osh-realmDelete ALL=(root)  NOPASSWD:/usr/bin/env perl -T %BASEPATH%/bin/helper/osh-accountDelete --type realm *

@@ -1,1 +1,1 @@
-%osh-accountFreeze ALL=(root) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-accountKillSessions *
+%osh-accountFreeze ALL=(root) NOPASSWD:/usr/bin/env perl -T %BASEPATH%/bin/helper/osh-accountKillSessions *
