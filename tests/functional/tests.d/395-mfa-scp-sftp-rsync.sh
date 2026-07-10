@@ -448,7 +448,7 @@ EOF
         lassign [wait] pid spawnid value value;
         exit \$value' | timeout --foreground $default_timeout expect -f -"
     nocontain 'MFA_TOKEN=notrequired'
-    if [ "${capabilities[mfa]}" = 1 ] || [ "${capabilities[mfa-password]}" = 1 ]; then
+    if [ "${capabilities[pamtester]}" = 1 ]; then
         retvalshouldbe 0
         contain 'MFA_TOKEN=v1,'
     else
@@ -466,7 +466,7 @@ EOF
         lassign [wait] pid spawnid value value;
         exit \$value' | timeout --foreground $default_timeout expect -f -"
     nocontain 'MFA_TOKEN=notrequired'
-    if [ "${capabilities[mfa]}" = 1 ] || [ "${capabilities[mfa-password]}" = 1 ]; then
+    if [ "${capabilities[pamtester]}" = 1 ]; then
         retvalshouldbe 0
         contain 'MFA_TOKEN=v1,'
     else
@@ -502,7 +502,7 @@ EOF
     done
 
     # remove MFA from account
-    if [ "${capabilities[mfa]}" = 1 ] || [ "${capabilities[mfa-password]}" = 1 ]; then
+    if [ "${capabilities[pamtester]}" = 1 ]; then
         script personal_mfa_reset_password "echo 'set timeout $default_timeout;
             spawn $a0 --osh selfMFAResetPassword;
             expect \"additional authentication factor is required (password)\" { sleep 0.1; };

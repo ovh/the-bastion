@@ -388,7 +388,10 @@ testsuite_mfa()
     retvalshouldbe 123
     json .error_code KO_MFA_TOTP_SETUP_REQUIRED
 
-    if [ "${capabilities[mfa]}" = 1 ]; then
+    # this whole block exercises in-session MFA verification (setting up TOTP on an
+    # already-MFA-configured account, then TOTP re-prompts): all of it funnels through
+    # do_pamtester(), so it requires the pamtester binary, not just PAM-through-ssh.
+    if [ "${capabilities[mfa]}" = 1 ] && [ "${capabilities[pamtester]}" = 1 ]; then
         # setup totp
         script a4_setup_totp "echo 'set timeout $default_timeout;
             spawn $a4 --osh selfMFASetupTOTP --no-confirm;

@@ -232,13 +232,15 @@ testsuite_mfa_realm_totp()
 }
 
 # this suite drives a real bastion A -> bastion B realm connection, so it needs the second bastion
-if { [ "${capabilities[mfa]}" = 1 ] || [ "${capabilities[mfa-password]}" = 1 ]; } && [ -n "${target2_ip:-}" ]; then
+# the success path drives an in-session (JIT) MFA check on bastion A via do_pamtester, so it
+# needs the pamtester binary, not just PAM-through-ssh
+if { [ "${capabilities[mfa]}" = 1 ] || [ "${capabilities[mfa-password]}" = 1 ]; } && [ "${capabilities[pamtester]}" = 1 ] && [ -n "${target2_ip:-}" ]; then
     testsuite_mfa_realm
 fi
 unset -f testsuite_mfa_realm
 
 # the cross-realm TOTP suite needs real PAM TOTP and a second bastion instance
-if [ "${capabilities[mfa]}" = 1 ] && [ -n "${target2_ip:-}" ]; then
+if [ "${capabilities[mfa]}" = 1 ] && [ "${capabilities[pamtester]}" = 1 ] && [ -n "${target2_ip:-}" ]; then
     testsuite_mfa_realm_totp
 fi
 unset -f testsuite_mfa_realm_totp
