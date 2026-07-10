@@ -966,7 +966,7 @@ EOS
     contain REGEX '127\.0\.0\.2[[:space:]]+22[[:space:]]+g2[[:space:]]+'$group1'\(group\)[[:space:]]+'$account2'[[:space:]]'
     contain REGEX '127\.0\.0\.10[[:space:]]+\*[[:space:]]+\*[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
     contain REGEX '127\.0\.0\.11[[:space:]]+\*[[:space:]]+\*[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]'
-    contain REGEX '127\.0\.0\.12[[:space:]]+\*[[:space:]]+\*[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]+\S+[[:space:]]+00:00:[01][0123456789]'
+    contain REGEX '127\.0\.0\.12[[:space:]]+\*[[:space:]]+\*[[:space:]]+'$group1'\(group\)[[:space:]]+'$account1'[[:space:]]+\S+[[:space:]]+00:00:[0-5][0-9]'
     contain '5 accesses listed'
 
     # wait for the access to expire

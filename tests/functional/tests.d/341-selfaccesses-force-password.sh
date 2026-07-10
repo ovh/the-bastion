@@ -15,6 +15,9 @@ testsuite_selfaccesses_force_password()
     success a4_setup_passreq $a0 --osh accountModify --account $account4 --mfa-password-required yes
     json .error_code OK .command accountModify .value.mfa_password_required.error_code OK
 
+    # works for Linux and FreeBSD
+    local expect_password_re="[Pp]assword( for [a-zA-Z0-9@_.-]+)?:"
+
     # set a4's ingress password
     a4_password="276r8q76ZF5Y3"
     run a4_setup_pass_1of2 $a4f --osh selfMFASetupPassword --yes
@@ -23,9 +26,9 @@ testsuite_selfaccesses_force_password()
     a4_password_tmp=$(get_stdout | grep -Eo 'enter this: [a-zA-Z0-9_-]+' | sed -e 's/enter this: //')
     script a4_setup_pass_2of2 "echo 'set timeout $default_timeout; \
         spawn $a4 --osh selfMFASetupPassword --yes; \
-        expect \":\" { sleep 0.2; send \"$a4_password_tmp\\n\"; }; \
-        expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
-        expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
+        expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password_tmp\\n\"; };
+        expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
+        expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
         expect eof; \
         lassign [wait] pid spawnid value value; \
         exit \$value' | expect -f -"

@@ -79,9 +79,9 @@ testsuite_mfa_realm()
     local a4_password='Hfv$!OKiG:(xl>Th8Kv!alz4436BFt~'
     script a4_setup_pass_step2of2 "echo 'set timeout $default_timeout; \
         spawn $a4 --osh selfMFASetupPassword --yes; \
-        expect \":\" { sleep 0.2; send \"$a4_password_tmp\\n\"; }; \
-        expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
-        expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
+        expect \"word:\" { sleep 0.2; send \"$a4_password_tmp\\n\"; }; \
+        expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; }; \
+        expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; }; \
         expect eof; \
         lassign [wait] pid spawnid value value; \
         exit \$value' | expect -f -"
