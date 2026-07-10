@@ -31,14 +31,17 @@ testsuite_mfa()
     local a4_password_tmp
     a4_password_tmp=$(get_stdout | grep -Eo 'enter this: [a-zA-Z0-9_-]+' | sed -e 's/enter this: //')
 
+    # works for Linux and FreeBSD
+    local expect_password_re="[Pp]assword( for [a-zA-Z0-9@_.-]+)?:"
+
     # setup our password, step2
     local a4_password
     a4_password=']BkL>3x#T)g~~B#rLv^!T2&N'
     script a4_setup_pass_step2of2 "echo 'set timeout $default_timeout;
         spawn $a4 --osh selfMFASetupPassword --yes;
-        expect \":\" { sleep 0.2; send \"$a4_password_tmp\\n\"; };
-        expect \":\" { sleep 0.2; send \"$a4_password\\n\"; };
-        expect \":\" { sleep 0.2; send \"$a4_password\\n\"; };
+        expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password_tmp\\n\"; };
+        expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
+        expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
         expect eof;
         lassign [wait] pid spawnid value value;
         exit \$value' | expect -f -"
@@ -74,7 +77,7 @@ testsuite_mfa()
         if [ "${capabilities[mfa]}" = 1 ] || [ "${capabilities[mfa-password]}" = 1 ]; then
             script batch_try_mfa "echo 'set timeout $default_timeout;
                 spawn $a4 --osh batch;
-                expect \":\" { sleep 0.2; send \"$a4_password\\n\"; };
+                expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
                 expect \"waiting for input\" { sleep 0.2; send \"info\\n\"; };
                 expect \"failed\" { sleep 0.2; send \"quit\\n\"; };
                 expect eof;
@@ -113,7 +116,7 @@ testsuite_mfa()
         # setup group to force JIT egress MFA
         script a4_modify_g3_egress_mfa "echo 'set timeout $default_timeout;
             spawn $a4 --osh groupModify --group $group3 --mfa-required any;
-            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
             expect eof;
             lassign [wait] pid spawnid value value;
             exit \$value' | expect -f -"
@@ -125,7 +128,7 @@ testsuite_mfa()
         # check that the MFA is set for the group
         script a4_verify_g3_egress_mfa "echo 'set timeout $default_timeout;
             spawn $a4 --osh groupInfo --group $group3;
-            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
             expect eof;
             lassign [wait] pid spawnid value value;
             exit \$value' | expect -f -"
@@ -138,7 +141,7 @@ testsuite_mfa()
         # add 127.7.7.7 to this group
         script a4_add_g3_server "echo 'set timeout $default_timeout;
             spawn $a4 --osh groupAddServer --group $group3 --host 127.7.7.7 --user-any --port-any --force;
-            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
             expect eof;
             lassign [wait] pid spawnid value value;
             exit \$value' | expect -f -"
@@ -150,13 +153,13 @@ testsuite_mfa()
         script a4_connect_g3_server_badpass "echo 'set timeout $((default_timeout * 2)); \
             spawn $a4d root@127.7.7.7; \
             expect \"is required (password)\" { sleep 0.1; }; \
-            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect \"is required (password)\" { sleep 0.1; }; \
-            expect \":\" { sleep 0.2; send \"BADPASSWORD\\n\"; }; \
+            expect -re {$expect_password_re} { sleep 0.2; send \"BADPASSWORD\\n\"; }; \
             expect \"is required (password)\" { sleep 0.1; }; \
-            expect \":\" { sleep 0.2; send \"BADPASSWORD\\n\"; }; \
+            expect -re {$expect_password_re} { sleep 0.2; send \"BADPASSWORD\\n\"; }; \
             expect \"is required (password)\" { sleep 0.1; }; \
-            expect \":\" { sleep 0.2; send \"BADPASSWORD\\n\\n\"; }; \
+            expect -re {$expect_password_re} { sleep 0.2; send \"BADPASSWORD\\n\\n\"; }; \
             expect eof; \
             lassign [wait] pid spawnid value value; \
             exit \$value' | expect -f -"
@@ -169,9 +172,9 @@ testsuite_mfa()
         # connect to 127.7.7.7 with MFA JIT, good password
         script a4_connect_g3_server_goodpass "echo 'set timeout $default_timeout;
             spawn $a4 root@127.7.7.7;
-            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
             expect \"is required (password)\" { sleep 0.1; };
-            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
             expect eof;
             lassign [wait] pid spawnid value value;
             exit \$value' | expect -f -"
@@ -187,13 +190,13 @@ testsuite_mfa()
         script a4_connect_g3_server_selfpass_jitmfa "echo 'set timeout $((default_timeout * 2)); \
             spawn $a4d root@127.7.7.7 -P; \
             expect \"is required (password)\" { sleep 0.1; }; \
-            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; }; \
             expect \"is required (password)\" { sleep 0.1; }; \
-            expect \":\" { sleep 0.2; send \"BADPASSWORD\\n\"; }; \
+            expect -re {$expect_password_re} { sleep 0.2; send \"BADPASSWORD\\n\"; }; \
             expect \"is required (password)\" { sleep 0.1; }; \
-            expect \":\" { sleep 0.2; send \"BADPASSWORD\\n\"; }; \
+            expect -re {$expect_password_re} { sleep 0.2; send \"BADPASSWORD\\n\"; }; \
             expect \"is required (password)\" { sleep 0.1; }; \
-            expect \":\" { sleep 0.2; send \"BADPASSWORD\\n\\n\"; }; \
+            expect -re {$expect_password_re} { sleep 0.2; send \"BADPASSWORD\\n\\n\"; }; \
             expect eof; \
             lassign [wait] pid spawnid value value; \
             exit \$value' | expect -f -"
@@ -208,7 +211,7 @@ testsuite_mfa()
 
         script a4_gen_g3_egress_pass "echo 'set timeout $default_timeout;
             spawn $a4 --osh groupGeneratePassword --group $group3 --do-it;
-            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
             expect eof;
             lassign [wait] pid spawnid value value;
             exit \$value' | expect -f -"
@@ -217,19 +220,19 @@ testsuite_mfa()
         contain REGEX 'Password:|Password for'
         json .command groupGeneratePassword .error_code OK
 
-        script a4_connect_g3_server_grouppass_jitmfa "echo 'set timeout $((default_timeout * 2)); \
-            spawn $a4d root@127.7.7.7 --password $group3; \
-            expect \"is required (password)\" { sleep 0.1; }; \
-            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; }; \
-            expect \"is required (password)\" { sleep 0.1; }; \
-            expect \":\" { sleep 0.2; send \"BADPASSWORD\\n\"; }; \
-            expect \"is required (password)\" { sleep 0.1; }; \
-            expect \":\" { sleep 0.2; send \"BADPASSWORD\\n\"; }; \
-            expect \"is required (password)\" { sleep 0.1; }; \
-            expect \":\" { sleep 0.2; send \"BADPASSWORD\\n\\n\"; }; \
-            expect eof; \
-            lassign [wait] pid spawnid value value; \
-            exit \$value' | expect -f -"
+        script a4_connect_g3_server_grouppass_jitmfa "echo 'set timeout $((default_timeout * 2));
+            spawn $a4d root@127.7.7.7 --password $group3;
+            expect {is required (password)} { sleep 0.1; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
+            expect {is required (password)} { sleep 0.1; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"BADPASSWORD\\n\"; };
+            expect {is required (password)} { sleep 0.1; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"BADPASSWORD\\n\"; };
+            expect {is required (password)} { sleep 0.1; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"BADPASSWORD\\n\\n\"; };
+            expect eof;
+            lassign [wait] pid spawnid value value;
+            exit \$value ; ' | expect -f -"
         retvalshouldbe 125
         contain 'will use SSH with password autologin'
         contain 'entering MFA phase'
@@ -245,12 +248,12 @@ testsuite_mfa()
 
         script a4_mfa_help_jitmfa "echo 'set timeout $default_timeout;
             spawn $a4 --osh help;
-            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; };
-            expect \"is required (password)\" { sleep 0.1; };
-            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; };
-            expect eof; \
-            lassign [wait] pid spawnid value value; \
-            exit \$value' | expect -f -"
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
+            expect {is required (password)} { sleep 0.1; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
+            expect eof;
+            lassign [wait] pid spawnid value value;
+            exit \$value ; ' | expect -f -"
         contain 'pamtester: successfully authenticated'
         retvalshouldbe 0
         contain 'Multi-Factor Authentication enabled, an additional authentication factor is required (password).'
@@ -259,9 +262,9 @@ testsuite_mfa()
 
         script a4_proactive_mfa_help "echo 'set timeout $default_timeout;
             spawn $a4 --osh help --proactive-mfa;
-            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
             expect \"is required (password)\" { sleep 0.1; };
-            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
             expect eof;
             lassign [wait] pid spawnid value value;
             exit \$value' | expect -f -"
@@ -287,7 +290,7 @@ testsuite_mfa()
         # add to JIT MFA group
         script a0_add_a3_as_member "echo 'set timeout $default_timeout;
             spawn $a4 --osh groupAddMember --group $group3 --account $account3;
-            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
             expect eof;
             lassign [wait] pid spawnid value value;
             exit \$value' | expect -f -"
@@ -319,10 +322,10 @@ testsuite_mfa()
     if [ "${capabilities[mfa]}" = 1 ] || [ "${capabilities[mfa-password]}" = 1 ]; then
         script a4_change_pass "echo 'set timeout $default_timeout;
             spawn $a4 --osh selfMFASetupPassword --yes;
-            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; };
-            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; };
-            expect \":\" { sleep 0.2; send \"$a4_password_new\\n\"; };
-            expect \":\" { sleep 0.2; send \"$a4_password_new\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password_new\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password_new\\n\"; };
             expect eof;
             lassign [wait] pid spawnid value value;
             exit \$value' | expect -f -"
@@ -332,9 +335,9 @@ testsuite_mfa()
     else
         script a4_change_pass "echo 'set timeout $default_timeout;
             spawn $a4 --osh selfMFASetupPassword --yes;
-            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; };
-            expect \":\" { sleep 0.2; send \"$a4_password_new\\n\"; };
-            expect \":\" { sleep 0.2; send \"$a4_password_new\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password_new\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password_new\\n\"; };
             expect eof;
             lassign [wait] pid spawnid value value;
             exit \$value' | expect -f -"
@@ -351,7 +354,7 @@ testsuite_mfa()
     if [ "${capabilities[mfa]}" = 1 ] || [ "${capabilities[mfa-password]}" = 1 ]; then
         script a4_connect_with_pass "echo 'set timeout $default_timeout;
             spawn $a4 --osh groupList;
-            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
             expect eof;
             lassign [wait] pid spawnid value value;
             exit \$value' | expect -f -"
@@ -373,7 +376,7 @@ testsuite_mfa()
     if [ "${capabilities[mfa]}" = 1 ] || [ "${capabilities[mfa-password]}" = 1 ]; then
         script a4_connect_with_totpreq "echo 'set timeout $default_timeout;
             spawn $a4 --osh groupList;
-            expect \":\" { sleep 0.2; send \"$a4_password\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
             expect eof;
             lassign [wait] pid spawnid value value;
             exit \$value' | expect -f -"
@@ -387,8 +390,8 @@ testsuite_mfa()
         # setup totp
         script a4_setup_totp "echo 'set timeout $default_timeout;
             spawn $a4 --osh selfMFASetupTOTP --no-confirm;
-            expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; };
-            expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
             expect eof;
             lassign [wait] pid spawnid value value;
             exit \$value' | expect -f -"
@@ -405,7 +408,7 @@ testsuite_mfa()
         # login and fail without totp (timeout)
         script a4_connect_after_totp_fail "echo 'set timeout $default_timeout;
             spawn $a4f --osh groupList;
-            expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
             expect eof;
             lassign [wait] pid spawnid value value;
             exit \$value' | expect -f -"
@@ -421,7 +424,7 @@ testsuite_mfa()
         # success with password + totp
         script a4_connect_after_totp_ok "echo 'set timeout $default_timeout;
             spawn $a4 --osh groupList;
-            expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
             expect \"code:\" { sleep 0.2; send \"$a4_totp_code_1\\n\"; };
             expect eof;
             lassign [wait] pid spawnid value value;
@@ -436,9 +439,9 @@ testsuite_mfa()
         # totp scratch codes don't work twice
         script a4_connect_after_totp_dupe "echo 'set timeout $default_timeout;
             spawn $a4 --osh groupList;
-            expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
             expect \"code:\" { sleep 0.2; send \"$a4_totp_code_1\\n\"; };
-            expect \"word:\" { exit 222; };
+            expect -re {$expect_password_re} { exit 222; };
             expect eof;
             lassign [wait] pid spawnid value value;
             exit \$value' | expect -f -"
@@ -478,7 +481,7 @@ testsuite_mfa()
         # pubkey-auth-optional disabled: success with pubkey and password
         script a4_no_pubkeyauthoptional_login_pubkey_pam "echo 'set timeout $default_timeout;
             spawn $a4 --osh groupList;
-            expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
             expect eof;
             lassign [wait] pid spawnid value value;
             exit \$value' | expect -f -"
@@ -514,7 +517,7 @@ testsuite_mfa()
         # pubkey-auth-optional enabled: success with pubkey and password
         script a4_pubkeyauthoptional_login_pubkey_pam "echo 'set timeout $default_timeout;
             spawn $a4 --osh groupList;
-            expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
             expect eof;
             lassign [wait] pid spawnid value value;
             exit \$value' | expect -f -"
@@ -526,7 +529,7 @@ testsuite_mfa()
         # pubkey-auth-optional enabled: success with password only
         script a4_pubkeyauthoptional_login_nopubkey_pam "echo 'set timeout $default_timeout;
             spawn $a4np --osh groupList;
-            expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
             expect eof;
             lassign [wait] pid spawnid value value;
             exit \$value' | expect -f -"
@@ -556,9 +559,9 @@ testsuite_mfa()
         script a4_reset_password "echo 'set timeout $default_timeout;
             spawn $a4 --osh selfMFAResetPassword;
             expect \"additional authentication factor is required (password)\" { sleep 0.1; };
-            expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
             expect \"additional authentication factor is required (password)\" { sleep 0.1; };
-            expect \"word:\" { sleep 0.2; send \"$a4_password\\n\"; };
+            expect -re {$expect_password_re} { sleep 0.2; send \"$a4_password\\n\"; };
             expect eof;
             lassign [wait] pid spawnid value value;
             exit \$value' | expect -f -"

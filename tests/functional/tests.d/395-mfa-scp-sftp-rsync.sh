@@ -397,9 +397,9 @@ EOF
     local a0_password='ohz8Ciujuboh'
     script personal_mfa_setup_step2of2 "echo 'set timeout $default_timeout;
         spawn $a0 --osh selfMFASetupPassword --yes;
-        expect \":\" { sleep 0.2; send \"$a0_password_tmp\\n\"; };
-        expect \":\" { sleep 0.2; send \"$a0_password\\n\"; };
-        expect \":\" { sleep 0.2; send \"$a0_password\\n\"; };
+        expect \"word:\" { sleep 0.2; send \"$a0_password_tmp\\n\"; };
+        expect \"word:\" { sleep 0.2; send \"$a0_password\\n\"; };
+        expect \"word:\" { sleep 0.2; send \"$a0_password\\n\"; };
         expect eof;
         lassign [wait] pid spawnid value value;
         exit \$value' | timeout --foreground $default_timeout expect -f -"
@@ -415,7 +415,7 @@ EOF
     script group_mfa_scp_upload_mfa_ok "echo 'set timeout $default_timeout;
         spawn /tmp/scpwrapper -i $account0key1file /etc/passwd $shellaccount@127.0.0.2: ;
         expect \"is required (password)\" { sleep 0.1; };
-        expect \":\" { sleep 0.2; send \"$a0_password\\n\"; };
+        expect \"word:\" { sleep 0.2; send \"$a0_password\\n\"; };
         expect eof;
         lassign [wait] pid spawnid value value;
         exit \$value' | timeout --foreground $default_timeout expect -f -"
@@ -433,7 +433,7 @@ EOF
     script group_mfa_sftp_use_mfa_ok "echo 'set timeout $default_timeout;
         spawn /tmp/sftpwrapper -i $account0key1file sftp://$shellaccount@127.0.0.2//etc/passwd ;
         expect \"is required (password)\" { sleep 0.1; };
-        expect \":\" { sleep 0.2; send \"$a0_password\\n\"; };
+        expect \"word:\" { sleep 0.2; send \"$a0_password\\n\"; };
         expect eof;
         lassign [wait] pid spawnid value value;
         exit \$value' | timeout --foreground $default_timeout expect -f -"
