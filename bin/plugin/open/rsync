@@ -132,18 +132,19 @@ push @cmd, "--", $ip, @$remainingOptions;
 print STDERR ">>> Hello $self, running rsync through the bastion on $machine...\n";
 
 $fnret = OVH::Bastion::execute(cmd => \@cmd, expects_stdin => 1, is_binary => 1);
-if ($fnret->err ne 'OK') {
+if (!$fnret) {
+    # we couldn't even start the transfer
     osh_exit 'ERR_TRANSFER_FAILED', "Error launching transfer: $fnret";
 }
-print STDERR sprintf(
-    ">>> Done, %d bytes uploaded, %d bytes downloaded\n",
-    $fnret->value->{'bytesnb'}{'stdin'} + 0,
-    $fnret->value->{'bytesnb'}{'stdout'} + 0
-);
-
-if ($fnret->value->{'sysret'} != 0) {
-    print STDERR ">>> On bastion side, rsync exited with return code " . $fnret->value->{'sysret'} . ".\n";
+if ($fnret->err ne 'OK') {
+    # the transfer did start: report how it actually ended instead of pretending the launch failed
+    my $reason =
+      defined($fnret->value->{'signal'})
+      ? "was killed by signal " . $fnret->value->{'signal'}
+      : "exited with return code " . $fnret->value->{'sysret'};
+    osh_exit 'ERR_TRANSFER_FAILED', "On bastion side, rsync $reason";
 }
+print STDERR ">>> Done, rsync exited successfully.\n";
 
 # don't use osh_exit() to avoid getting a footer
 exit OVH::Bastion::EXIT_OK;
