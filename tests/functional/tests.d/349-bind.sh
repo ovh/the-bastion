@@ -17,7 +17,7 @@ testsuite_bind()
     # config when set, and 'hostname --all-ip-addresses' otherwise: the latter excludes
     # loopback addresses (and doesn't exist on FreeBSD), so declare 127.0.0.2 explicitly.
     # This is reverted by the automatic post-module configuration restore.
-    configchg 's=^\\\\x22egressKeysFrom\\\\x22.+=\\\\x22egressKeysFrom\\\\x22:[\\\\x22127.0.0.2\\\\x22],='
+    configsetarray egressKeysFrom 127.0.0.2
 
     # connectivity must be exercised as an unprivileged account, not as a0 (admin, would
     # bypass access grants); a0 is only used to create/grant/delete a1

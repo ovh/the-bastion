@@ -17,7 +17,7 @@ testsuite_activeness()
     success create_account3 $a0 --osh accountCreate --account $account3 --uid $uid3 --always-active --public-key \""$(cat $account3key1file.pub)"\"
     json .error_code OK .command accountCreate .value null
 
-    configchg 's=^\\\\x22accountExternalValidationProgram\\\\x22.+=\\\\x22accountExternalValidationProgram\\\\x22:\\\\x22/opt/bastion/bin/other/doesnotexist.pl\\\\x22,='
+    configsetquoted accountExternalValidationProgram /opt/bastion/bin/other/doesnotexist.pl
 
     success test_invalid_config_but_always_active $a3 --osh info
 
@@ -25,7 +25,7 @@ testsuite_activeness()
     run test_invalid_config $a1 --osh info
     retvalshouldbe 101
 
-    configchg 's=^\\\\x22accountExternalValidationProgram\\\\x22.+=\\\\x22accountExternalValidationProgram\\\\x22:\\\\x22/opt/bastion/bin/other/check-active-account-fortestsonly.pl\\\\x22,='
+    configsetquoted accountExternalValidationProgram /opt/bastion/bin/other/check-active-account-fortestsonly.pl
 
     run test_account1 $a1 --osh info
     retvalshouldbe 101
@@ -35,7 +35,7 @@ testsuite_activeness()
     success test_account3 $a3 --osh info
 
     # for remaining tests, disable the feature
-    configchg 's=^\\\\x22accountExternalValidationProgram\\\\x22.+=\\\\x22accountExternalValidationProgram\\\\x22:\\\\x22\\\\x22,='
+    configsetquoted accountExternalValidationProgram ''
 
     # SSH-AS
 
@@ -49,7 +49,7 @@ testsuite_activeness()
 
     # set account1 as admin
     success set_a1_as_admin $r0 "\". $opt_remote_basedir/lib/shell/functions.inc; add_user_to_group_compat $account1 osh-admin\""
-    configchg 's=^\\\\x22adminAccounts\\\\x22.+=\\\\x22adminAccounts\\\\x22:[\\\\x22'"$account0"'\\\\x22,\\\\x22'"$account1"'\\\\x22],='
+    configsetarray adminAccounts "$account0" "$account1"
 
     # test ssh-as again
     run ssh_as_allowed $a1 --ssh-as $account2 sshas@127.0.0.1
@@ -60,7 +60,7 @@ testsuite_activeness()
 
     # and finally remove admin grant
     success del_a1_as_admin $r0 "\". $opt_remote_basedir/lib/shell/functions.inc; del_user_from_group_compat $account1 osh-admin\""
-    configchg 's=^\\\\x22adminAccounts\\\\x22.+=\\\\x22adminAccounts\\\\x22:[\\\\x22'"$account0"'\\\\x22],='
+    configsetarray adminAccounts "$account0"
 
     # /SSH-AS
 

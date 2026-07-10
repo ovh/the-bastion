@@ -22,7 +22,7 @@ testsuite_admin_superowner()
 
     # now set account1 as superowner
     success set_a1_as_superowner $r0 "\". $opt_remote_basedir/lib/shell/functions.inc; add_user_to_group_compat $account1 osh-superowner\""
-    configchg 's=^\\\\x22superOwnerAccounts\\\\x22.+=\\\\x22superOwnerAccounts\\\\x22:[\\\\x22'"$account1"'\\\\x22],='
+    configsetarray superOwnerAccounts "$account1"
 
     # account1 now can add/del members
     success a1_add_members_g1_ok $a1 --osh groupAddMember --group $group1 --account $account1
@@ -35,7 +35,7 @@ testsuite_admin_superowner()
 
     # now set account1 as admin
     success set_a1_as_admin $r0 "\". $opt_remote_basedir/lib/shell/functions.inc; add_user_to_group_compat $account1 osh-admin\""
-    configchg 's=^\\\\x22adminAccounts\\\\x22.+=\\\\x22adminAccounts\\\\x22:[\\\\x22'"$account0"'\\\\x22,\\\\x22'"$account1"'\\\\x22],='
+    configsetarray adminAccounts "$account0" "$account1"
 
     # account1 now can add/del aclkeepers
     success a1_add_gk_g1_ok $a1 --osh groupAddAclkeeper --group $group1 --account $account1
@@ -48,7 +48,7 @@ testsuite_admin_superowner()
 
     # now remove superowner grant from a1, the account is still admin so it should inherhit superowner powers
     success del_a1_as_superowner $r0 "\". $opt_remote_basedir/lib/shell/functions.inc; del_user_from_group_compat $account1 osh-superowner\""
-    configchg 's=^\\\\x22superOwnerAccounts\\\\x22.+=\\\\x22superOwnerAccounts\\\\x22:[],='
+    configsetarray superOwnerAccounts
 
     # account1 can add/del gatekeepers
     success a1_add_members_g1_ok2 $a1 --osh groupAddGatekeeper --group $group1 --account $account1
@@ -61,7 +61,7 @@ testsuite_admin_superowner()
 
     # and finally remove admin grant
     success del_a1_as_admin $r0 "\". $opt_remote_basedir/lib/shell/functions.inc; del_user_from_group_compat $account1 osh-admin\""
-    configchg 's=^\\\\x22adminAccounts\\\\x22.+=\\\\x22adminAccounts\\\\x22:[\\\\x22'"$account0"'\\\\x22],='
+    configsetarray adminAccounts "$account0"
 
     # account1 can no longer add members
     run a1_add_members_g1_fail2 $a1 --osh groupAddMember --group $group1 --account $account1

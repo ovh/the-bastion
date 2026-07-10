@@ -25,7 +25,7 @@ testsuite_proxyjump()
     json .error_code ERR_INVALID_PARAMETER
 
     # now enable the proxyjump feature
-    configchg 's=^\\\\x22egressProxyJumpAllowed\\\\x22.+=\\\\x22egressProxyJumpAllowed\\\\x22:true,='
+    configset egressProxyJumpAllowed true
 
     #
     # Test selfAddPersonalAccess with proxy parameters

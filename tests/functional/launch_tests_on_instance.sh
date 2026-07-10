@@ -713,31 +713,61 @@ nocontain()
     fi
 }
 
+# Raw, low-level config editor: runs an arbitrary perl -pe expression against the target
+# bastion's bastion.conf. Note that the config travels through several shell layers (local
+# script(1), ssh, remote shell) before reaching perl, so every double-quote, space and bracket
+# has to be hex-escaped (\\\\x22 => ", \\\\x20 => space, ...) to survive intact. Because of that
+# escape hell, prefer the higher-level configset* helpers below
 configchg()
 {
     success configchange $r0 perl -pe "$*" -i "$opt_remote_etc_bastion/bastion.conf"
-}
-
-configsetquoted()
-{
-    success configset $r0 perl -pe 's=^\\\\x22'"$1"'\\\\x22.+=\\\\x22'"$1"'\\\\x22:\\\\x22'"$2"'\\\\x22,=' -i "$opt_remote_etc_bastion/bastion.conf"
-}
-
-configset()
-{
-    success configset $r0 perl -pe 's=^\\\\x22'"$1"'\\\\x22.+=\\\\x22'"$1"'\\\\x22:'"$2"',=' -i "$opt_remote_etc_bastion/bastion.conf"
-}
-
-# same as configsetquoted, but operates on the second bastion instance (see $r2/$b2)
-configsetquoted2()
-{
-    success configset2 $r2 perl -pe 's=^\\\\x22'"$1"'\\\\x22.+=\\\\x22'"$1"'\\\\x22:\\\\x22'"$2"'\\\\x22,=' -i "$opt_remote_etc_bastion/bastion.conf"
 }
 
 # same as configchg, but operates on the second bastion instance (see $r2)
 configchg2()
 {
     success configchange2 $r2 perl -pe "$*" -i "$opt_remote_etc_bastion/bastion.conf"
+}
+
+# configset key value: set an unquoted value (number, boolean, ...), e.g. `configset dnsSupportLevel 0`
+configset() { _configset "$r0" "$@"; }
+# same as configset, but operates on the second bastion instance (see $r2)
+configset2() { _configset "$r2" "$@"; }
+_configset()
+{
+    local runner=$1 key=$2 value=$3 label=configset
+    [ "$runner" = "${r2:-}" ] && label=configset2
+    success $label $runner perl -pe 's=^\\\\x22'"$key"'\\\\x22[^,]+=\\\\x22'"$key"'\\\\x22:'"$value"'=' -i "$opt_remote_etc_bastion/bastion.conf"
+}
+
+# configsetquoted key value: set a JSON string value, e.g. `configsetquoted accountMFAPolicy enabled`
+configsetquoted() { _configsetquoted "$r0" "$@"; }
+# same as configsetquoted, but operates on the second bastion instance (see $r2/$b2)
+configsetquoted2() { _configsetquoted "$r2" "$@"; }
+_configsetquoted()
+{
+    local runner=$1 key=$2 value=$3 label=configset
+    [ "$runner" = "${r2:-}" ] && label=configset2
+    success $label $runner perl -pe 's=^\\\\x22'"$key"'\\\\x22[^,]+=\\\\x22'"$key"'\\\\x22:\\\\x22'"$value"'\\\\x22=' -i "$opt_remote_etc_bastion/bastion.conf"
+}
+
+# configsetarray key [elem...]: set a JSON array of strings, e.g. `configsetarray adminAccounts a1 a2`
+# or `configsetarray superOwnerAccounts` for an empty array.
+configsetarray() { _configsetarray "$r0" "$@"; }
+# same as configsetarray, but operates on the second bastion instance (see $r2)
+configsetarray2() { _configsetarray "$r2" "$@"; }
+_configsetarray()
+{
+    local runner=$1 key=$2 label=configset
+    shift 2
+    [ "$runner" = "${r2:-}" ] && label=configset2
+    local val='[' sep='' elem
+    for elem in "$@"; do
+        val="$val$sep"'\\\\x22'"$elem"'\\\\x22'
+        sep=','
+    done
+    val="$val]"
+    success $label $runner perl -pe 's=^\\\\x22'"$key"'\\\\x22.+=\\\\x22'"$key"'\\\\x22:'"$val"',=' -i "$opt_remote_etc_bastion/bastion.conf"
 }
 
 # resolve the second bastion's container name to an IP (the bastion stores IPs in its ACLs, so realm

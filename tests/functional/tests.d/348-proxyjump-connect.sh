@@ -50,7 +50,7 @@ testsuite_proxyjump_connect()
     fi
 
     # enable the proxy-jump feature (disabled by default)
-    configchg 's=^\\\\x22egressProxyJumpAllowed\\\\x22.+=\\\\x22egressProxyJumpAllowed\\\\x22:true,='
+    configset egressProxyJumpAllowed true
 
     # a0 (admin) creates the unprivileged account we'll actually connect as
     success a0_create_a1 $a0 --osh accountCreate --always-active --account $account1 --uid $uid1 --public-key "\"$(cat $account1key1file.pub)\""

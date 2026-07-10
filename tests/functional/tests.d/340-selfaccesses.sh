@@ -527,7 +527,7 @@ testsuite_selfaccesses()
     contain PRESENT
 
     # artificially expire account1
-    configchg 's=^\\\\x22accountMaxInactiveDays\\\\x22.+=\\\\x22accountMaxInactiveDays\\\\x22:2,='
+    configset accountMaxInactiveDays 2
     success manuallyExpireAccount1 $r0 "touch -t 201501010101 /home/$account1/lastlog"
 
     run expired $a1 --osh info
@@ -550,7 +550,7 @@ testsuite_selfaccesses()
     json .command accountUnexpire .error_code OK_NOT_EXPIRED .value.account $account1
 
     # reset the expiration policy for the rest of this module
-    configchg 's=^\\\\x22accountMaxInactiveDays\\\\x22.+=\\\\x22accountMaxInactiveDays\\\\x22:0,='
+    configset accountMaxInactiveDays 0
 
     # delete account1
     script cleanup $a0 --osh accountDelete --account $account1 "<<< \"Yes, do as I say and delete $account1, kthxbye\""
