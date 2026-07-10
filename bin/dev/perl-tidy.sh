@@ -8,6 +8,14 @@ basedir=$(readlink -f "$(dirname "$0")"/../..)
 
 cd "$basedir" || exit 254
 
+# perltidy leaves temporary <file>.tdy (test mode) and <file>.ERR (on parse
+# error) artifacts next to the source files. Always remove them on exit.
+cleanup() {
+    # shellcheck disable=SC2317  # invoked indirectly via the EXIT trap
+    find . -type f \( -name "*.tdy" -o -name "*.ERR" \) -delete 2>/dev/null || true
+}
+trap cleanup EXIT
+
 # $1:
 # - tidy, actually tidy the files in place
 # - test, tell whether the files are tidy without modifying them in place
@@ -54,7 +62,7 @@ if [ "$1" = "test" ]; then
     do
         file=${tdy/.tdy/}
         if ! cmp "$file" "$tdy"; then
-            diff -u "$file" "$tdy"
+            diff -u "$file" "$tdy" || true
             bad="$bad $file"
             nbbad=$(( nbbad + 1 ))
             action_error "... $file is not tidy!"
