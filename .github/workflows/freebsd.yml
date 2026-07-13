@@ -5,11 +5,15 @@ on:
   pull_request:
     types: [labeled, synchronize]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   freebsd:
     runs-on: ubuntu-latest
     name: FreeBSD ${{ matrix.version }}
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'tests:freebsd') }}
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'tests:freebsd') || contains(github.event_name, 'workflow_dispatch') }}
     strategy:
       matrix:
         version: ['14.4', '15.0', '15.1']
@@ -18,14 +22,16 @@ jobs:
     - uses: actions/checkout@v6
       with:
         persist-credentials: false
-    - name: Functional tests under FreeBSD
+    - name: Start FreeBSD VM
       uses: cross-platform-actions/action@master
       with:
         operating_system: freebsd
         version: ${{ matrix.version }}
         shell: bash
         sync_files: runner-to-vm
-        run: |
+    - name: Run tests on VM
+      shell: cpa.sh {0} --sync-files none
+      run: |
           # source this to get the $SSH_DIR var properly filled
           source lib/shell/functions.inc
           # a few debug commands
@@ -50,22 +56,77 @@ jobs:
           sudo /opt/bastion/bin/admin/install-ttyrec.sh -s
           sudo /opt/bastion/bin/admin/install-yubico-piv-checker.sh -s
           sudo /opt/bastion/bin/admin/install-mkhash-helper.sh -s
-          sudo /opt/bastion/bin/admin/install --new-install
+          sudo /opt/bastion/bin/admin/install --new-install --no-regen-hostkeys
+          sudo /opt/bastion/bin/dev/perl-use-all.sh
           # by default, this is 0700, but we'll run those as non-root
           sudo chmod 0755 /opt/bastion/tests
           # generate two sets of keys
           ssh-keygen -t ed25519 -f id_user -N ''
           ssh-keygen -t ed25519 -f id_root -N ''
-          # setup the local bastion for tests
-          sudo env WANT_HTTP_PROXY=0 NO_SLEEP=1 user_pubkey="$(cat id_user.pub)" root_pubkey="$(cat id_root.pub)" TARGET_USER=user5000 /opt/bastion/tests/functional/docker/target_role.sh
-          # run the tests, then in post-run, restore saved ssh config and restart sshd
+          # setup the local bastion for tests and leave target_role.sh running in the background,
+          # to mimic the Linux docker setup where it is the bastion containers entrypoint
+          sudo env WANT_HTTP_PROXY=1 user_pubkey="$(cat id_user.pub)" root_pubkey="$(cat id_root.pub)" TARGET_USER=user5000 /opt/bastion/tests/functional/docker/target_role.sh >/tmp/target_role.log 2>&1 &
+          # the proxy supervision loop is the last thing target_role.sh does, so port 8443 accepting
+          # connections means the whole setup (admin account, sshd, ...) is complete
+          ready=0
+          for _ in $(seq 1 120); do
+              if echo test | nc -w 1 127.0.0.1 22 | grep -q ^SSH-2 && nc -z -w 1 127.0.0.1 8443 2>/dev/null; then
+                  ready=1
+                  break
+              fi
+              sleep 1
+          done
+          if [ "$ready" != 1 ]; then
+              echo "target_role.sh did not become ready in time; its log follows:" >&2
+              cat /tmp/target_role.log >&2
+              exit 1
+          fi
+
+          # --- proxy-jump setup ---
+          # On this single-host VM, we run a second, dedicated, forwarding-enabled sshd on port 2222,
+          # bound to a loopback alias (127.0.0.20), as the jumphost, with an unprivileged 'jump_' user. The
+          # final "remoteserver" is simply the bastion's own sshd on another alias (127.0.0.21:22), where
+          # the existing 'test-shell_' user already gets a plain /bin/sh; we only add the /sshhost-role
+          # marker the test greps for. The tester pushes the bastion egress key into jump_/test-shell_ at
+          # test time (see 348-proxyjump-connect.sh). The realm tests, which need a whole second bastion,
+          # stay skipped here as TARGET2_IP is left unset.
+          sudo ifconfig lo0 127.0.0.20 netmask 255.0.0.0 alias
+          sudo ifconfig lo0 127.0.0.21 netmask 255.0.0.0 alias
+          echo "proxyjump-test-landed-on=remoteserver" | sudo tee /sshhost-role >/dev/null
+          sudo chmod 644 /sshhost-role
+          # create the jump_ egress user the same way target_role.sh creates test-shell_
+          sudo bash -c '. /opt/bastion/lib/shell/functions.inc; useradd_compat jump_ "" "" /bin/sh'
+          sudo mkdir -p ~jump_/.ssh
+          sudo touch ~jump_/.ssh/authorized_keys
+          sudo chown -R jump_ ~jump_/.ssh
+          # dedicated forwarding-enabled sshd for the jumphost role (its own host key, config and pidfile,
+          # so it doesn't inherit the bastion's hardened sshd_config)
+          ssh-keygen -q -t ed25519 -f /tmp/jumphost_hostkey -N ''
+          printf '%s\n' \
+            'Port 2222' \
+            'ListenAddress 127.0.0.20' \
+            'PermitRootLogin prohibit-password' \
+            'PubkeyAuthentication yes' \
+            'PasswordAuthentication no' \
+            'StrictModes no' \
+            'AllowTcpForwarding yes' \
+            'UsePAM no' \
+            'AcceptEnv LANG LC_*' \
+            'HostKey /tmp/jumphost_hostkey' \
+            'PidFile /tmp/jumphost_sshd.pid' \
+            'Subsystem sftp internal-sftp' \
+            | sudo tee /tmp/jumphost_sshd_config >/dev/null
+          sudo /usr/sbin/sshd -f /tmp/jumphost_sshd_config
+          # run the tests, JUMPHOST_*/REMOTESERVER_* wire up the proxy-jump boxes set up above.
+          export JUMPHOST_IP=127.0.0.20 JUMPHOST_PORT=2222 REMOTESERVER_IP=127.0.0.21 REMOTESERVER_PORT=22
           /opt/bastion/tests/functional/launch_tests_on_instance.sh \
             --has-mfa=0 \
             --has-mfa-password=1 \
             --has-pamtester=1 \
             --remote-etc-bastion=/usr/local/etc/bastion \
             --slowness-factor=2 \
-            --post-run="sudo tar xzf /opt/bastion/ssh_config.tar.gz -C / ; sudo /etc/rc.d/sshd restart" \
-            127.0.0.1 22 0 user5000 id_user id_root
+            --post-sleep=0.2 \
+            --post-run="echo '--- target_role.log ---' ; sudo cat /tmp/target_role.log ; sudo tar xzf /opt/bastion/ssh_config.tar.gz -C / ; sudo /etc/rc.d/sshd restart" \
+            127.0.0.1 22 8443 user5000 id_user id_root
           # for some reason, any other command below is skipped, so don't try to add anything,
           # augment --post-run in the script above instead, if needed.
