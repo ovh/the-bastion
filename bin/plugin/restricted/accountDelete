@@ -85,17 +85,27 @@ push @command, "--type", "normal", "--account", $account;
 
 # as the helper can take a long time to complete (because of tar), and caller in front
 # of his ssh console might close it's end without waiting, tar would get a SIGHUP and
-# stop. we don't want this: use setsid to be in our own session. we fork() first because
-# if we are a process group leader, setsid() would fail
+# stop. we don't want this: use setsid so the actual work runs in its own session, out of
+# reach of that SIGHUP. we fork() first because if we are a process group leader, setsid()
+# would fail.
+# The parent does NOT exit right away, though: it waits for the child, so that the latter
+# can write its JSON output. If our caller disconnects its SSH, the parent dies but the
+# child proceeds up to its completion.
 my $child = fork();
 if (!defined $child) {
     osh_warn "Couldn't fork(), proceeding without forking...";
 }
-exit if $child;    # parent
-
-# here, I'm the child: call setsid()
-if (POSIX::setsid() == -1) {
-    osh_warn "Couldn't call setsid(), proceeding anyway...";
+elsif ($child) {
+    # parent: wait for the child to deliver its result through our still-open channel,
+    # then exit with its status
+    waitpid($child, 0);
+    exit($? >> 8);
+}
+else {
+    # child: detach into our own session, out of reach of a disconnect's SIGHUP
+    if (POSIX::setsid() == -1) {
+        osh_warn "Couldn't call setsid(), proceeding anyway...";
+    }
 }
 
 osh_exit OVH::Bastion::helper(cmd => \@command);
