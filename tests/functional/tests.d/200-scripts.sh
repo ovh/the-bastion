@@ -191,9 +191,11 @@ testsuite_scripts()
 
     # cleanup account
     success a0_delete_a3 $a0 --osh accountDelete --account $account3 --no-confirm
+    json .command accountDelete
 
     # create a group to try to rename it
     success a0_create_g1 $a0 --osh groupCreate --owner $account0 --algo ed25519 --size 256 --group $group1
+    json .command groupCreate
 
     # rename the group
     script group_rename $r0 /opt/bastion/bin/admin/rename-group.sh $group1 $group2 '</dev/null'
@@ -213,6 +215,7 @@ testsuite_scripts()
 
     # cleanup group
     success a0_delete_g3 $a0 --osh groupDelete --group $group3 --no-confirm
+    json .command groupDelete
 }
 
 testsuite_scripts

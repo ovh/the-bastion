@@ -41,28 +41,36 @@ testsuite_realm()
 
     # create realm-egress group on the ingress bastion A
     success create_support_group $a0 --osh groupCreate --group $realm_egress_group --owner $account0 --algo rsa --size 4096
+    json .command groupCreate
     local realm_group_key
     realm_group_key=$(get_json | $jq '.value.public_key.line')
 
     success a0_delowner_egressgroup $a0 --osh groupDelOwner --group $realm_egress_group --account $account0
+    json .command groupDelOwner
 
     # add account1 to this group on the ingress bastion A
     success add_account1_to_support_group $a0 --osh groupAddMember --group $realm_egress_group --account $account1
+    json .command groupAddMember
 
     # add account1 to this group on the ingress bastion A
     success add_account2_to_support_group $a0 --osh groupAddMember --group $realm_egress_group --account $account2
+    json .command groupAddMember
 
     # fail to create a realm with forbidden name (on B, where the realm lives)
     plgfail realm_forbidden_name $b2 --osh realmCreate --realm realm --from 0.0.0.0/0 --public-key \"$realm_group_key\"
+    json .command realmCreate
 
     # fail to create account with forbidden name
     plgfail account_forbidden_name $a0 --osh accountCreate --account realm_foobar --uid-auto --public-key \""$(cat $account1key1file.pub)"\"
+    json .command accountCreate
 
     # create shared realm-account on the remote bastion B
     success create_shared_account $b2 --osh realmCreate --realm $realm_shared_account --public-key \"$realm_group_key\" --from 0.0.0.0/0
+    json .command realmCreate
 
     # point A's egress group at B's realm account
     success add_remote_bastion_to_group $a0 --osh groupAddServer --host $b2ip --user realm_$realm_shared_account --port $remote_port --group $realm_egress_group --kbd-interactive
+    json .command groupAddServer
 
     # attempt inter-realm connection
     success firstconnect1 $a1 realm_$realm_shared_account@$b2ip --kbd-interactive -- $js --osh info
@@ -156,6 +164,7 @@ testsuite_realm()
 
     # create a group on remote bastion B
     success create_normal_group $b2 --osh groupCreate --group $group1 --owner $account0 --algo rsa --size 4096
+    json .command groupCreate
 
     # can't add a realm user as gk, aclk or owner of group
     for acc in "realm_$realm_shared_account" "$realm_shared_account/$account1"
@@ -172,6 +181,7 @@ testsuite_realm()
     done
     unset role acc
     plgfail add_support_account_as_member $b2 --osh groupAddMember --group $group1 --account realm_$realm_shared_account
+    json .command groupAddMember
 
     # add account1 as member
     success add_account1_as_member $b2 --osh groupAddMember --group $group1 --account $realm_shared_account/$account1
@@ -197,10 +207,14 @@ testsuite_realm()
 
     # add a dummy host to the group, to see it in the accountListAccesses afterwards
     success add_server_to_group1 $b2 --osh groupAddServer --group $group1 --host 172.16.4.4 --user nobody --port 12345 --force
+    json .command groupAddServer
     success add_server_to_group1 $b2 --osh groupAddServer --group $group1 --host 172.16.4.4 --user nobody --port 12346 --force
+    json .command groupAddServer
 
     success removemyselffromaclk $b2 --osh groupDelAclkeeper --group $group1 --account $account0
+    json .command groupDelAclkeeper
     success a0_delowner_group1 $b2 --osh groupDelOwner --group $group1 --account $account0
+    json .command groupDelOwner
 
     # check access list
     success access_list_account1 $b2 --osh accountListAccesses --account $realm_shared_account/$account1
@@ -242,10 +256,13 @@ testsuite_realm()
 
     # add guest access
     success add_guest_account1 $b2 --osh groupAddGuestAccess --account $realm_shared_account/first --group $group1 --host 172.16.4.4 --user nobody --port 12345
+    json .command groupAddGuestAccess
     success add_guest_account1 $b2 --osh groupAddGuestAccess --account $realm_shared_account/first --group $group1 --host 172.16.4.4 --user nobody --port 12346
+    json .command groupAddGuestAccess
 
     # add other guest access
     success add_guest_account2 $b2 --osh groupAddGuestAccess --account $realm_shared_account/second --group $group1 --host 172.16.4.4 --user nobody --port 12345
+    json .command groupAddGuestAccess
 
     # check groupInfo
     success groupinfo $b2 --osh groupInfo --group $group1
@@ -259,6 +276,7 @@ testsuite_realm()
 
     # remove guest access 1
     success del_guest_account1 $b2 --osh groupDelGuestAccess --account $realm_shared_account/first --group $group1 --host 172.16.4.4 --user nobody --port 12345
+    json .command groupDelGuestAccess
     nocontain "removed group key"
 
     # check access list of account
@@ -268,6 +286,7 @@ testsuite_realm()
 
     # remove guest access 1
     success del_guest_account1 $b2 --osh groupDelGuestAccess --account $realm_shared_account/first --group $group1 --host 172.16.4.4 --user nobody --port 12346
+    json .command groupDelGuestAccess
     nocontain "removed group key"
 
     # check groupInfo
@@ -277,6 +296,7 @@ testsuite_realm()
 
     # remove last guest access
     success del_guest_account2 $b2 --osh groupDelGuestAccess --account $realm_shared_account/second --group $group1 --host 172.16.4.4 --user nobody --port 12345
+    json .command groupDelGuestAccess
     contain "removed group key"
 
     # check groupInfo
@@ -286,12 +306,15 @@ testsuite_realm()
 
     # check max account length
     success add_guest_account3 $b2 --osh groupAddGuestAccess --account $realm_shared_account/verylongaccountnam --group $group1 --host 172.16.4.4 --user nobody --port 12345
+    json .command groupAddGuestAccess
 
     # delete account1 on A
     success account1_cleanup $a0 --osh accountDelete --account $account1 --no-confirm
+    json .command accountDelete
 
     # delete account2 on A
     script account2_cleanup "$a0 --osh accountDelete --account $account2 <<< \"Yes, do as I say and delete $account2, kthxbye\""
+    json .command accountDelete
     retvalshouldbe 0
 
     # delete realm-egress group on A
@@ -304,10 +327,12 @@ testsuite_realm()
     json .error_code KO_FORBIDDEN_PREFIX
 
     script cleanup_shared_realm_account "$b2 --osh realmDelete --realm $realm_shared_account <<< \"Yes, do as I say and delete $realm_shared_account, kthxbye\""
+    json .command realmDelete
     retvalshouldbe 0
 
     # delete group1 on B
     script group_cleanup "$b2 --osh groupDelete --group $group1 <<< \"$group1\""
+    json .command groupDelete
     retvalshouldbe 0
 }
 

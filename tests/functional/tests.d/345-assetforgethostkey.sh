@@ -53,7 +53,9 @@ testsuite_assetforgethostkey()
     # delete those accounts
 
     success account1_cleanup $a0 --osh accountDelete --account $account1 --no-confirm
+    json .command accountDelete
     success account2_cleanup $a0 --osh accountDelete --account $account2 --no-confirm
+    json .command accountDelete
 }
 
 testsuite_assetforgethostkey

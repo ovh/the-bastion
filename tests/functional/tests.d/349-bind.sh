@@ -48,6 +48,7 @@ testsuite_bind()
     # cleanup. The key line we appended to the target's authorized_keys is left behind but
     # inert: the matching private key is deleted along with the account
     success a0_delete_a1 $a0 --osh accountDelete --account $account1 --no-confirm
+    json .command accountDelete
 }
 
 testsuite_bind

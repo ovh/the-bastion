@@ -28,14 +28,17 @@ testsuite_mfa_realm()
     # now setup a realm
     # create realm-egress group on local bastion
     success create_support_group $a0 --osh groupCreate --group $realm_egress_group --owner $account4 --algo ed25519
+    json .command groupCreate
     local realm_group_key
     realm_group_key=$(get_json | $jq '.value.public_key.line')
 
     # create shared realm-account on the remote bastion B
     success create_shared_account $b2 --osh realmCreate --realm $realm_shared_account --public-key \"$realm_group_key\" --from 0.0.0.0/0
+    json .command realmCreate
 
     # point A's egress group at B's realm account
     success add_remote_bastion_to_group $a4 --osh groupAddServer --host $b2ip --user realm_$realm_shared_account --port $remote_port --group $realm_egress_group --kbd-interactive
+    json .command groupAddServer
 
     # attempt inter-realm connection
     success firstconnect1 $a4 realm_$realm_shared_account@$b2ip --kbd-interactive -- $js --osh info
@@ -43,8 +46,10 @@ testsuite_mfa_realm()
 
     # create a remote-group on B, on which we'll add the realm user
     success remote_group_create $b2 --osh groupCreate --group remotegrp --owner $account0 --algo ed25519
+    json .command groupCreate
 
     success remote_group_add_server $b2 --osh groupAddServer --group remotegrp --host 127.0.0.5 --port 22 --user nevermind --force
+    json .command groupAddServer
 
     # try to connect, as a realm user, to 127.0.0.5 through the realm: won't work
     run realm_user_fail_connect_not_member $a4 realm_$realm_shared_account@$b2ip --kbd-interactive -- $js nevermind@127.0.0.5
@@ -53,6 +58,7 @@ testsuite_mfa_realm()
 
     # now add the realm user and retry
     success remote_group_add_user $b2 --osh groupAddMember --group remotegrp --account $realm_shared_account/$account4
+    json .command groupAddMember
 
     run realm_user_fail_connect_not_member $a4 realm_$realm_shared_account@$b2ip --kbd-interactive -- $js nevermind@127.0.0.5
     retvalshouldbe 255
@@ -61,6 +67,7 @@ testsuite_mfa_realm()
 
     # now setup mandatory MFA on the remote group (on B)
     success remote_group_set_mfa $b2 --osh groupModify --group remotegrp --mfa-required password
+    json .command groupModify
 
     # try to connect won't work
     run realm_user_fail_connect_no_mfa $a4 realm_$realm_shared_account@$b2ip --kbd-interactive -- $js nevermind@127.0.0.5
@@ -119,12 +126,14 @@ testsuite_mfa_realm()
 
     # cleanup: delete the realm on B, account4 and the egress group on A
     script realmDelete $b2 --osh realmDelete --realm $realm_shared_account "<<< \"Yes, do as I say and delete $realm_shared_account, kthxbye\""
+    json .command realmDelete
 
     script a0_delete_a4 $a0 --osh accountDelete --account $account4 "<<< \"Yes, do as I say and delete $account4, kthxbye\""
     retvalshouldbe 0
     json .command accountDelete .error_code OK
 
     success groupDelete $a0 --osh groupDelete --group $realm_egress_group --no-confirm
+    json .command groupDelete
 }
 
 # This second suite exercises the cross-realm TOTP login-gate fixed in commit 7f72292
@@ -159,6 +168,7 @@ testsuite_mfa_realm_totp()
 
     # create the realm-egress group on A, owned by account4, and grab its egress public key.
     success create_egress_group $a0 --osh groupCreate --group $egress_group --owner $account4 --algo ed25519
+    json .command groupCreate
     local egress_group_key
     egress_group_key=$(get_json | $jq '.value.public_key.line')
 
@@ -168,6 +178,7 @@ testsuite_mfa_realm_totp()
 
     # on A, point the egress group at B's realm account...
     success add_b2_to_egress_group $a4 --osh groupAddServer --host $b2ip --user realm_$realm_name --port $remote_port --group $egress_group --kbd-interactive
+    json .command groupAddServer
 
     # ...and require TOTP on that egress hop. This is what makes account4 validate its TOTP when going
     # through, populating type.totp=1/validated=1 in LC_BASTION_DETAILS for B to trust.
@@ -178,6 +189,7 @@ testsuite_mfa_realm_totp()
     # now set up real TOTP for account4 on A (no factor is required to do the first setup), and grab a
     # couple of emergency scratch codes to use as one-time OTPs
     success a4_setup_totp $a4 --osh selfMFASetupTOTP --no-confirm
+    json .command selfMFASetupTOTP
     nocontain 'Multi-Factor Authentication enabled'
     local a4_totp_code_1 a4_totp_code_2
     a4_totp_code_1=$(get_stdout | grep -A1 'Your emergency scratch codes are:' | tail -n1 | tr -d '[:space:]')
@@ -209,12 +221,14 @@ testsuite_mfa_realm_totp()
     # cleanup: relax B's policy again so its admin can delete the realm, then tear everything down
     configsetquoted2 accountMFAPolicy enabled
     script realmDelete_on_b2 $b2 --osh realmDelete --realm $realm_name "<<< \"Yes, do as I say and delete $realm_name, kthxbye\""
+    json .command realmDelete
 
     script a0_delete_a4 $a0 --osh accountDelete --account $account4 "<<< \"Yes, do as I say and delete $account4, kthxbye\""
     retvalshouldbe 0
     json .command accountDelete .error_code OK
 
     success groupDelete $a0 --osh groupDelete --group $egress_group --no-confirm
+    json .command groupDelete
 }
 
 # this suite drives a real bastion A -> bastion B realm connection, so it needs the second bastion

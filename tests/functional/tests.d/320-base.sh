@@ -50,6 +50,7 @@ testsuite_base()
 
     # delete account1
     success delete_a1 $a0 --osh accountDelete --account $account1 --no-confirm
+    json .command accountDelete
 }
 
 testsuite_base
