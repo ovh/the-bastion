@@ -57,26 +57,18 @@ testsuite_proxyjump_connect()
     json .error_code OK .command accountCreate .value null
 
     # group owned by a1: the owner is granted gatekeeper+aclkeeper, so a1 can add itself as a member,
-    # generate the egress key, and add servers
+    # get the egress key, and add servers
     success a0_create_group1 $a0 --osh groupCreate --group $group1 --owner $account1 --algo ed25519 --size 256
     json .error_code OK .command groupCreate
+    local g1json g1key
+    g1json=$(get_json)
+    g1key="$(echo "$g1json" | $jq '.value.public_key.typecode') $(echo "$g1json" | $jq '.value.public_key.base64')"
 
     # ensure a1 is a member so it can connect to the group's servers. a1 is the group owner, and
     # groupCreate already adds the owner as a member, so this is a no-op (hence OK_NO_CHANGE); we keep
     # it to make the membership explicit and robust against any future change to that behavior.
     success a1_addmember_group1 $a1 --osh groupAddMember --group $group1 --account $account1
     json .command groupAddMember .error_code OK_NO_CHANGE
-
-    # generate the group egress key and grab its public part as a bare "typecode base64" line, i.e.
-    # WITHOUT any from= restriction: the remoteserver sees the connection arriving from the jumphost
-    # (not the bastion), so a from= pinned to the bastion would reject it
-    success a1_genkey_group1 $a1 --osh groupGenerateEgressKey --group $group1 --algo ed25519
-    json .command groupGenerateEgressKey .error_code OK .value.typecode ssh-ed25519
-    # groupGenerateEgressKey returns the key hash directly as .value (osh_ok($key)), so the parts are
-    # at .value.typecode/.value.base64. We deliberately drop the from= prefix and the comment.
-    local g1json g1key
-    g1json=$(get_json)
-    g1key="$(echo "$g1json" | $jq '.value.typecode') $(echo "$g1json" | $jq '.value.base64')"
 
     # authorize the bastion egress key on the jumphost (user jump_) and on the remoteserver
     # (user test-shell_), over the root SSH sessions the runner gave us
