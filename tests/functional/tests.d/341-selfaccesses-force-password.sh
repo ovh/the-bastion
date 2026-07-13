@@ -49,9 +49,10 @@ testsuite_selfaccesses_force_password()
         success sshd_config_backup $r0 "\"cp -a /etc/ssh/sshd_config /etc/ssh/sshd_config.bak\""
         success sshd_config_patch $r0 "\"sed -i 's/^ChallengeResponseAuthentication no/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config\""
         success sshd_config_patch $r0 "\"echo -e 'Match User ${account4}\n  KbdInteractiveAuthentication yes\n  AuthenticationMethods keyboard-interactive' >> /etc/ssh/sshd_config\""
-        success sshd_reload $r0 "\"pkill -SIGHUP -f '^(/usr/sbin/sshd\\\$|sshd.+listener)'\""
+
         # during tests, under some OSes it takes some time for sshd to accept new connections again after the SIGHUP
-        waitfor 1 "waiting for sshd to reload its configuration"
+        sleepafter 2
+        success sshd_reload $r0 "\"pkill -SIGHUP -f '^(/usr/sbin/sshd\\\$|sshd.+listener)'\""
     fi
 
 
@@ -210,6 +211,8 @@ testsuite_selfaccesses_force_password()
     if [ "${capabilities[mfa]}" = 0 ] && [ "${capabilities[mfa-password]}" = 0 ]
     then
         success sshd_config_restore $r0 "\"mv -f /etc/ssh/sshd_config.bak /etc/ssh/sshd_config\""
+        # during tests, under some OSes it takes some time for sshd to accept new connections again after the SIGHUP
+        sleepafter 2
         success sshd_reload $r0 "\"pkill -SIGHUP -f '^(/usr/sbin/sshd\\\$|sshd.+listener)'\""
     fi
 

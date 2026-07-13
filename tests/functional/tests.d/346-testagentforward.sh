@@ -19,10 +19,11 @@ testsuite_agent_forwarding()
     # Patch sshd to allow Agent Forwarding, else all other steps are useless to test
     success sshd_config_backup $r0 "\"cp -a /etc/ssh/sshd_config /etc/ssh/sshd_config.bak\""
     success sshd_config_patch $r0 "\"command -v freebsd-version >/dev/null && sed -I '' 's=^AllowAgentForwarding no=AllowAgentForwarding yes=' /etc/ssh/sshd_config || sed -i 's=^AllowAgentForwarding no=AllowAgentForwarding yes=' /etc/ssh/sshd_config\""
+
+    # during tests, under some OSes it takes some time for sshd to accept new connections again after the SIGHUP
+    sleepafter 2
     # pkill doesn't work well under FreeBSD, so do it ourselves for all OSes
     success sshd_reload $r0 "\"ps -U 0 -o pid,command | grep -E '/usr/sbin/sshd\\\$|sshd:.+liste[n]er' | awk '{print \\\$1}' | xargs -r kill -SIGHUP\""
-    # during tests, under some OSes it takes some time for sshd to accept new connections again after the SIGHUP
-    waitfor 1 "waiting for sshd to reload its configuratnio"
 
     # Test if ssh-agent is spawned without requesting it; it shouldn't
     run shellaccount_noagent $a0 $shellaccount@$remote_ip --kbd-interactive -- ssh-add -L
@@ -62,6 +63,8 @@ testsuite_agent_forwarding()
 
     # Patch sshd to allow Agent Forwarding, else all other steps are useless to test
     success sshd_config_backup $r0 "\"cp -a /etc/ssh/sshd_config.bak /etc/ssh/sshd_config\""
+    # during tests, under some OSes it takes some time for sshd to accept new connections again after the SIGHUP
+    sleepafter 2
     # pkill doesn't work well under FreeBSD, so do it ourselves for all OSes
     success sshd_reload $r0 "\"ps -U 0 -o pid,command | grep -E '/usr/sbin/sshd\\\$|sshd:.+liste[n]er' | awk '{print \\\$1}' | xargs -r kill -SIGHUP\""
 

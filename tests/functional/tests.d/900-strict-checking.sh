@@ -30,6 +30,7 @@ testsuite_strict_checking()
     sshd_pids=$(get_stdout | grep -Eo 'SSHD_PIDS=[0-9 ]+' | cut -d= -f2)
     infomsg "detected sshd PIDs are: $sshd_pids"
 
+    sleepafter 2
     success reload_target_sshd $r0 "\"kill -HUP $sshd_pids\""
 
     # set bastion ssh_client config to StrictHostKeyChecking yes

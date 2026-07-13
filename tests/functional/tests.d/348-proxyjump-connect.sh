@@ -26,6 +26,11 @@ testsuite_proxyjump_connect()
         return 0
     fi
 
+    # ssh ports of the jump/remote boxes (default 22). A single-host runner may put the jumphost on
+    # another port, as the bastion's own sshd already owns port 22 (see launch_tests_on_instance.sh,
+    # which exports $jumphost_port/$remoteserver_port from the JUMPHOST_PORT/REMOTESERVER_PORT env).
+    local jhport="${jumphost_port:-22}" rsport="${remoteserver_port:-22}"
+
     # Resolving the container names to IPs and probing the boxes' ssh port both have side effects
     # (DNS lookups, TCP connections to the boxes' sshd), so they must NOT run during the test-counting
     # pass (COUNTONLY=1). jhip/rsip stay empty there, which is harmless as the test bodies below are
@@ -33,16 +38,19 @@ testsuite_proxyjump_connect()
     local jhip="" rsip=""
     if [ "${COUNTONLY:-}" != 1 ]; then
         # the bastion stores/uses IPs in its ACLs, so resolve the container names to IPs
-        jhip=$(getent hosts "$jumphost_ip"     | awk '{print $1; exit}')
-        rsip=$(getent hosts "$remoteserver_ip" | awk '{print $1; exit}')
+        jhip=$(getent hosts "$jumphost_ip"     2>/dev/null | awk '{print $1; exit}')
+        rsip=$(getent hosts "$remoteserver_ip" 2>/dev/null | awk '{print $1; exit}')
+        # fall back to the value as-is when it's already an IP or getent is unavailable (e.g. FreeBSD)
+        [ -z "$jhip" ] && jhip="$jumphost_ip"
+        [ -z "$rsip" ] && rsip="$remoteserver_ip"
 
         # wait for the ssh port (not just ICMP reachability) to be up on both boxes. We feed nc a
         # well-formed "SSH-2.0-..." identification string rather than arbitrary data, so the remote
         # sshd doesn't log a spurious "banner exchange ... invalid format" line; nc's own stderr is
         # silenced to keep the retry loop quiet while the port isn't open yet.
         for _ in $(seq 1 30); do
-            if echo 'SSH-2.0-bastiontest_healthcheck' | nc -w 1 "$jhip" 22 2>/dev/null | grep -q ^SSH-2 \
-                && echo 'SSH-2.0-bastiontest_healthcheck' | nc -w 1 "$rsip" 22 2>/dev/null | grep -q ^SSH-2; then
+            if echo 'SSH-2.0-bastiontest_healthcheck' | nc -w 1 "$jhip" "$jhport" 2>/dev/null | grep -q ^SSH-2 \
+                && echo 'SSH-2.0-bastiontest_healthcheck' | nc -w 1 "$rsip" "$rsport" 2>/dev/null | grep -q ^SSH-2; then
                 break
             fi
             sleep 1
@@ -79,14 +87,14 @@ testsuite_proxyjump_connect()
     # the bastion runs a *real* proxied connectivity test here (exercising ssh_test_access_way and the
     # ProxyCommand assembly), which must succeed now that the keys are in place
     success a1_add_server_via_proxy $a1 --osh groupAddServer --group $group1 \
-        --host $rsip --user test-shell_ --port 22 \
-        --proxy-host $jhip --proxy-port 22 --proxy-user jump_
-    json .command groupAddServer .error_code OK .value.action add .value.ip $rsip .value.user test-shell_ .value.port 22 .value.proxyIp $jhip .value.proxyPort 22 .value.proxyUser jump_
+        --host $rsip --user test-shell_ --port $rsport \
+        --proxy-host $jhip --proxy-port $jhport --proxy-user jump_
+    json .command groupAddServer .error_code OK .value.action add .value.ip $rsip .value.user test-shell_ .value.port $rsport .value.proxyIp $jhip .value.proxyPort $jhport .value.proxyUser jump_
 
     # the actual end-to-end connection AS A1 (unprivileged), so the proxy ACL is genuinely enforced:
     # tester -> bastion -> jumphost -> remoteserver. We run a command on the remoteserver that returns
     # its role marker, and assert we really landed there.
-    success connect_through_proxy $a1 -J jump_@$jhip:22 test-shell_@$rsip -p 22 -- cat /sshhost-role
+    success connect_through_proxy $a1 -J jump_@$jhip:$jhport test-shell_@$rsip -p $rsport -- cat /sshhost-role
     contain "proxyjump-test-landed-on=remoteserver"
     nocontain "Permission denied"
 
@@ -99,13 +107,13 @@ testsuite_proxyjump_connect()
 
     # negative: connecting through a proxy that is NOT the one granted in the ACL must be denied
     # (here we point -J at the remoteserver's IP, which is not an authorized proxy)
-    run connect_through_unauthorized_proxy $a1 -J jump_@$rsip:22 test-shell_@$rsip -p 22 -- cat /sshhost-role
+    run connect_through_unauthorized_proxy $a1 -J jump_@$rsip:$rsport test-shell_@$rsip -p $rsport -- cat /sshhost-role
     retvalshouldbe 107
     contain "Access denied"
     nocontain "proxyjump-test-landed-on=remoteserver"
 
     # negative: connecting WITHOUT a proxy to a host that requires one must also be denied
-    run connect_without_required_proxy $a1 test-shell_@$rsip -p 22 -- cat /sshhost-role
+    run connect_without_required_proxy $a1 test-shell_@$rsip -p $rsport -- cat /sshhost-role
     retvalshouldbe 107
     contain "Access denied"
 
@@ -118,59 +126,59 @@ testsuite_proxyjump_connect()
     # quoting must resolve identically.
 
     # baseline: a plain echo survives the double hop intact
-    success pj_echo_simple $a1 -J jump_@$jhip:22 test-shell_@$rsip -- echo $randomstr
+    success pj_echo_simple $a1 -J jump_@$jhip:$jhport test-shell_@$rsip -- echo $randomstr
     contain "$randomstr"
     nocontain "Permission denied"
 
     # --always-escape
-    success pj_escapehell1ae $a1 --always-escape -J jump_@$jhip:22 test-shell_@$rsip -- "\"echo 'test1;test1' ; id\""
+    success pj_escapehell1ae $a1 --always-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "\"echo 'test1;test1' ; id\""
     contain "'test1"
     contain 'uid='
     contain REGEX "test1': (command )?not found"
     nocontain 'test1;test1'
 
-    success pj_escapehell2ae $a1 --always-escape -J jump_@$jhip:22 test-shell_@$rsip -- "'echo \"test1;test1\" ; id'"
+    success pj_escapehell2ae $a1 --always-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "'echo \"test1;test1\" ; id'"
     contain "test1;test1"
     contain 'uid='
     nocontain 'not found'
 
-    success pj_escapehell3ae $a1 --always-escape -J jump_@$jhip:22 test-shell_@$rsip -- "'echo \\\"test1;test1\\\" ; id'"
+    success pj_escapehell3ae $a1 --always-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "'echo \\\"test1;test1\\\" ; id'"
     contain '"test1'
     contain 'uid='
     contain REGEX 'test1": (command )?not found'
 
-    success pj_escapehell4ae $a1 --always-escape -J jump_@$jhip:22 test-shell_@$rsip -- "\"echo \\\"test1;test1\\\" ; id\""
+    success pj_escapehell4ae $a1 --always-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "\"echo \\\"test1;test1\\\" ; id\""
     contain 'test1;test1'
     contain 'uid='
     nocontain 'not found'
 
-    success pj_escapehell5ae $a1 --always-escape -J jump_@$jhip:22 test-shell_@$rsip -- "\"echo \\\"test1';'test1\\\" ; id\""
+    success pj_escapehell5ae $a1 --always-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "\"echo \\\"test1';'test1\\\" ; id\""
     contain "test1\\';\\'test1"
     contain 'uid='
     nocontain 'not found'
 
     # --never-escape
-    success pj_escapehell1ne $a1 --never-escape -J jump_@$jhip:22 test-shell_@$rsip -- "\"echo 'test1;test1' ; id\""
+    success pj_escapehell1ne $a1 --never-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "\"echo 'test1;test1' ; id\""
     contain "test1;test1"
     contain 'uid='
     nocontain 'not found'
 
-    success pj_escapehell2ne $a1 --never-escape -J jump_@$jhip:22 test-shell_@$rsip -- "'echo \"test1;test1\" ; id'"
+    success pj_escapehell2ne $a1 --never-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "'echo \"test1;test1\" ; id'"
     contain "test1;test1"
     contain 'uid='
     nocontain 'not found'
 
-    success pj_escapehell3ne $a1 --never-escape -J jump_@$jhip:22 test-shell_@$rsip -- "'echo \\\"test1;test1\\\" ; id'"
+    success pj_escapehell3ne $a1 --never-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "'echo \\\"test1;test1\\\" ; id'"
     contain '"test1'
     contain 'uid='
     contain REGEX 'test1": (command )?not found'
 
-    success pj_escapehell4ne $a1 --never-escape -J jump_@$jhip:22 test-shell_@$rsip -- "\"echo \\\"test1;test1\\\" ; id\""
+    success pj_escapehell4ne $a1 --never-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "\"echo \\\"test1;test1\\\" ; id\""
     contain 'test1;test1'
     contain 'uid='
     nocontain 'not found'
 
-    success pj_escapehell5ne $a1 --never-escape -J jump_@$jhip:22 test-shell_@$rsip -- "\"echo \\\"test1';'test1\\\" ; id\""
+    success pj_escapehell5ne $a1 --never-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "\"echo \\\"test1';'test1\\\" ; id\""
     contain "test1';'test1"
     contain 'uid='
     nocontain 'not found'
@@ -197,24 +205,24 @@ testsuite_proxyjump_connect()
     # granted above), so we must NOT pass --user here. We DO keep the proxy tuple: has_protocol_access()
     # is proxy-aware, so the protocol entry has to carry the same proxy to match at transfer time.
     success a1_add_scpup_via_proxy $a1 --osh groupAddServer --group $group1 \
-        --host $rsip --port 22 --protocol scpupload \
-        --proxy-host $jhip --proxy-port 22 --proxy-user jump_
-    json .command groupAddServer .error_code OK .value.action add .value.ip $rsip .value.user "!scpupload" .value.port 22 .value.proxyIp $jhip .value.proxyPort 22 .value.proxyUser jump_
+        --host $rsip --port $rsport --protocol scpupload \
+        --proxy-host $jhip --proxy-port $jhport --proxy-user jump_
+    json .command groupAddServer .error_code OK .value.action add .value.ip $rsip .value.user "!scpupload" .value.port $rsport .value.proxyIp $jhip .value.proxyPort $jhport .value.proxyUser jump_
     success a1_add_scpdown_via_proxy $a1 --osh groupAddServer --group $group1 \
-        --host $rsip --port 22 --protocol scpdownload \
-        --proxy-host $jhip --proxy-port 22 --proxy-user jump_
-    json .command groupAddServer .error_code OK .value.action add .value.ip $rsip .value.user "!scpdownload" .value.port 22 .value.proxyIp $jhip .value.proxyPort 22 .value.proxyUser jump_
+        --host $rsip --port $rsport --protocol scpdownload \
+        --proxy-host $jhip --proxy-port $jhport --proxy-user jump_
+    json .command groupAddServer .error_code OK .value.action add .value.ip $rsip .value.user "!scpdownload" .value.port $rsport .value.proxyIp $jhip .value.proxyPort $jhport .value.proxyUser jump_
 
     # upload a local file to the remoteserver, through the jumphost (a1's ingress key authenticates to
     # the bastion; the group egress key reaches the target)
-    success scp_upload_via_proxy /tmp/scpwrapper_proxy -J jump_@$jhip:22 -i $account1key1file \
+    success scp_upload_via_proxy /tmp/scpwrapper_proxy -J jump_@$jhip:$jhport -i $account1key1file \
         /tmp/scp_proxy_src test-shell_@$rsip:/tmp/scp_proxy_dst
     # it must really have landed on the remoteserver (not on the jumphost or the bastion)
     success scp_upload_landed $rR "cat /tmp/scp_proxy_dst"
     contain "proxyjump-scp-payload-"
 
     # download it back through the proxy and check the content round-trips to the tester
-    success scp_download_via_proxy /tmp/scpwrapper_proxy -J jump_@$jhip:22 -i $account1key1file \
+    success scp_download_via_proxy /tmp/scpwrapper_proxy -J jump_@$jhip:$jhport -i $account1key1file \
         test-shell_@$rsip:/tmp/scp_proxy_dst /tmp/scp_proxy_back
     success scp_download_content cat /tmp/scp_proxy_back
     contain "proxyjump-scp-payload-"
@@ -222,7 +230,7 @@ testsuite_proxyjump_connect()
     # negative: scp through a proxy that is NOT the one granted in the ACL must be denied. We assert the
     # robust invariant (nothing was written on the remoteserver); the exact denial wording is already
     # covered by the ssh negative tests above, which share the same is_access_granted() check.
-    run scp_via_unauthorized_proxy /tmp/scpwrapper_proxy -J jump_@$rsip:22 -i $account1key1file \
+    run scp_via_unauthorized_proxy /tmp/scpwrapper_proxy -J jump_@$rsip:$rsport -i $account1key1file \
         /tmp/scp_proxy_src test-shell_@$rsip:/tmp/scp_proxy_denied
     retvalshouldbe 1
     run scp_denied_left_no_file $rR "cat /tmp/scp_proxy_denied"
@@ -231,18 +239,18 @@ testsuite_proxyjump_connect()
 
     # cleanup: a1 removes the accesses it added, then a0 removes the group and the account
     success a1_del_scpup_via_proxy $a1 --osh groupDelServer --group $group1 \
-        --host $rsip --port 22 --protocol scpupload \
-        --proxy-host $jhip --proxy-port 22 --proxy-user jump_
-    json .command groupDelServer .error_code OK .value.action del .value.ip $rsip .value.user "!scpupload" .value.port 22 .value.proxyIp $jhip .value.proxyPort 22 .value.proxyUser jump_
+        --host $rsip --port $rsport --protocol scpupload \
+        --proxy-host $jhip --proxy-port $jhport --proxy-user jump_
+    json .command groupDelServer .error_code OK .value.action del .value.ip $rsip .value.user "!scpupload" .value.port $rsport .value.proxyIp $jhip .value.proxyPort $jhport .value.proxyUser jump_
     success a1_del_scpdown_via_proxy $a1 --osh groupDelServer --group $group1 \
-        --host $rsip --port 22 --protocol scpdownload \
-        --proxy-host $jhip --proxy-port 22 --proxy-user jump_
-    json .command groupDelServer .error_code OK .value.action del .value.ip $rsip .value.user "!scpdownload" .value.port 22 .value.proxyIp $jhip .value.proxyPort 22 .value.proxyUser jump_
+        --host $rsip --port $rsport --protocol scpdownload \
+        --proxy-host $jhip --proxy-port $jhport --proxy-user jump_
+    json .command groupDelServer .error_code OK .value.action del .value.ip $rsip .value.user "!scpdownload" .value.port $rsport .value.proxyIp $jhip .value.proxyPort $jhport .value.proxyUser jump_
 
     success a1_del_server $a1 --osh groupDelServer --group $group1 \
-        --host $rsip --user test-shell_ --port 22 \
-        --proxy-host $jhip --proxy-port 22 --proxy-user jump_
-    json .command groupDelServer .error_code OK .value.action del .value.ip $rsip .value.user test-shell_ .value.port 22 .value.proxyIp $jhip .value.proxyPort 22 .value.proxyUser jump_
+        --host $rsip --user test-shell_ --port $rsport \
+        --proxy-host $jhip --proxy-port $jhport --proxy-user jump_
+    json .command groupDelServer .error_code OK .value.action del .value.ip $rsip .value.user test-shell_ .value.port $rsport .value.proxyIp $jhip .value.proxyPort $jhport .value.proxyUser jump_
 
     success a0_del_group1 $a0 --osh groupDelete --group $group1 --no-confirm
     json .error_code OK .command groupDelete

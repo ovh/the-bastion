@@ -147,23 +147,22 @@ elif [ "$OS_FAMILY" = FreeBSD ]; then
     set -e
 fi
 
-if [ -n "$NO_SLEEP" ]; then
-    exit 0
-fi
-
 if [ "$WANT_HTTP_PROXY" = 1 ]; then
     # build a self-signed certificate for the http proxy and adjust the config
     openssl req -x509 -nodes -days 7 -newkey rsa:2048 -keyout /tmp/selfsigned.key -out /tmp/selfsigned.crt -subj "/CN=testcert"
     chgrp proxyhttp /tmp/selfsigned.key
     chmod g+r /tmp/selfsigned.key
-    sed -i -re 's="ssl_certificate":.*="ssl_certificate": "/tmp/selfsigned.crt",=' /etc/bastion/osh-http-proxy.conf
-    sed -i -re 's="ssl_key":.*="ssl_key": "/tmp/selfsigned.key",=' /etc/bastion/osh-http-proxy.conf
-    sed -i -re 's="enabled":.+="enabled":true,=' /etc/bastion/osh-http-proxy.conf
-    sed -i -re 's="insecure":.+="insecure":true,=' /etc/bastion/osh-http-proxy.conf
+    # use perl rather than GNU sed for these in-place edits, so this also works on FreeBSD (BSD sed
+    # has neither `-i` without a suffix nor `-r`); $BASTION_ETC_DIR comes from functions.inc and points
+    # to the right dir on each OS (/etc/bastion on Linux, /usr/local/etc/bastion on FreeBSD)
+    perl -pi -e 's{"ssl_certificate":.*}{"ssl_certificate": "/tmp/selfsigned.crt",}' "$BASTION_ETC_DIR/osh-http-proxy.conf"
+    perl -pi -e 's{"ssl_key":.*}{"ssl_key": "/tmp/selfsigned.key",}'                 "$BASTION_ETC_DIR/osh-http-proxy.conf"
+    perl -pi -e 's{"enabled":.+}{"enabled":true,}'                                    "$BASTION_ETC_DIR/osh-http-proxy.conf"
+    perl -pi -e 's{"insecure":.+}{"insecure":true,}'                                  "$BASTION_ETC_DIR/osh-http-proxy.conf"
     # also build a config with disallowed https egress and allowed http egress
-    sed -re 's="allowed_egress_protocols":.+="allowed_egress_protocols":["http"]=' /etc/bastion/osh-http-proxy.conf > /etc/bastion/osh-http-proxy-httponly.conf
+    perl -pe 's{"allowed_egress_protocols":.+}{"allowed_egress_protocols":["http"]}'  "$BASTION_ETC_DIR/osh-http-proxy.conf" > "$BASTION_ETC_DIR/osh-http-proxy-httponly.conf"
     # and another one with more allowed methods
-    sed -re 's="allowed_methods":.+="allowed_methods":["GET","POST","PUT","PATCH","DELETE"],=' /etc/bastion/osh-http-proxy.conf > /etc/bastion/osh-http-proxy-methods.conf
+    perl -pe 's{"allowed_methods":.+}{"allowed_methods":["GET","POST","PUT","PATCH","DELETE"],}' "$BASTION_ETC_DIR/osh-http-proxy.conf" > "$BASTION_ETC_DIR/osh-http-proxy-methods.conf"
 
     # ensure the remote daemon is executable
     chmod 0755 "$basedir"/tests/functional/proxy/remote-daemon

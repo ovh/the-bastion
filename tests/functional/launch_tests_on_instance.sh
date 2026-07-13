@@ -19,6 +19,7 @@ opt_log_prefix=
 opt_module=
 opt_post_run=
 opt_functional_tests=1
+opt_post_sleep=0
 opt_unit_tests=1
 declare -A capabilities=( [ed25519]=1 [mfa]=1 [mfa-password]=0 [pamtester]=1 [piv]=1 [sk]=0 [ipv6]=1 )
 
@@ -32,6 +33,7 @@ Functional Test Options:
     --slowness-factor=X        If your test environment is slow, set this to 2, 3 or more to use higher timeouts (default: 1)
     --post-run=X               Commands to run after we're done testing
     --skip-functional-tests    Skip functional tests
+    --post-sleep=N             Right before disconnecting from the bastion, on each test, sleep this amount of time (can be fractional)
 
 Unit Test Options:
     --skip-unit-tests          Skip unit tests
@@ -87,6 +89,17 @@ do
         --slowness-factor=*)
             if [[ $optval =~ ^[1-9]$ ]]; then
                 opt_slowness_factor=$optval
+            else
+                echo "Invalid --slowness-factor parameter '$optval', expected a strictly positive integer" >&2
+                exit 1
+            fi
+            ;;
+        --post-sleep=*)
+            if [[ $optval =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+                opt_post_sleep=$optval
+            else
+                echo "Invalid --post-sleep parameter '$optval', expected a positive number, possibly floating point" >&2
+                exit 1
             fi
             ;;
         --log-prefix=*)
@@ -124,7 +137,7 @@ do
             exit 0
             ;;
         -*)
-            echo "Unknown option: $1"
+            echo "Unknown option: $1" >&2
             usage
             exit 1
             ;;
@@ -161,6 +174,14 @@ root_ssh_key_path="$6"
 jumphost_ip="${JUMPHOST_IP:-}"
 # shellcheck disable=SC2034
 remoteserver_ip="${REMOTESERVER_IP:-}"
+
+# the ssh ports of the two boxes (default 22). A single-host runner (e.g. the FreeBSD CI, which has no
+# containers) can't give the jumphost port 22, as the bastion's own sshd already owns 0.0.0.0:22, so it
+# runs the jump box on another port and advertises it here.
+# shellcheck disable=SC2034
+jumphost_port="${JUMPHOST_PORT:-22}"
+# shellcheck disable=SC2034
+remoteserver_port="${REMOTESERVER_PORT:-22}"
 
 # the IP (or container name) of a second bastion instance, used by the inter-realm MFA
 # tests as the "remote" bastion.
@@ -259,8 +280,8 @@ check_sourced_module_output()
     # them), so the proxy-jump tests can push the bastion egress keys into the test users there
     rJ=''
     rR=''
-    [ -n "$jumphost_ip" ]     && rJ="$t ssh -F $mytmpdir/ssh_config -i $rootkeyfile root@$jumphost_ip -p 22 -- "
-    [ -n "$remoteserver_ip" ] && rR="$t ssh -F $mytmpdir/ssh_config -i $rootkeyfile root@$remoteserver_ip -p 22 -- "
+    [ -n "$jumphost_ip" ]     && rJ="$t ssh -F $mytmpdir/ssh_config -i $rootkeyfile root@$jumphost_ip -p $jumphost_port -- "
+    [ -n "$remoteserver_ip" ] && rR="$t ssh -F $mytmpdir/ssh_config -i $rootkeyfile root@$remoteserver_ip -p $remoteserver_port -- "
 
     # SSH handles to the second bastion instance (empty unless the runner started it): 'b2' is the
     # admin account (shares account0's key) and 'r2' is root, used by the inter-realm MFA tests to
@@ -445,6 +466,28 @@ waitfor()
     sleep $1
 }
 
+# actively poll the http proxy health-check endpoint until it answers, instead of
+# blindly sleeping for a fixed amount of time. this makes proxy restart tests robust
+# against slow teardown/relaunch (notably on FreeBSD, where a killed daemon can keep
+# the listen socket bound for several seconds). returns as soon as the proxy serves,
+# or after a bounded timeout.
+wait_for_proxy_up()
+{
+    [ "$COUNTONLY" = 1 ] && return
+    local max=$((10 * opt_slowness_factor)) i=0
+    infomsg "waiting up to ${max}s for the http proxy to answer ${1:-...}"
+    while [ "$i" -lt "$max" ]; do
+        if curl -m 2 -sk "https://$remote_ip:$remote_proxy_port/bastion-health-check" 2>/dev/null | grep -q 'running nominally'; then
+            infomsg "http proxy answered after ${i}s"
+            return 0
+        fi
+        sleep 1
+        i=$((i + 1))
+    done
+    infomsg "http proxy did NOT answer after ${max}s"
+    return 1
+}
+
 run()
 {
     # display verbose output about the previous test if it was bad
@@ -497,8 +540,10 @@ run()
 
     printf '%b %b*** [%04d/%04d] %b::%b %b(%b)%b\n' "$(prefix)" "$BOLD_CYAN" "$testno" "$testcount" "$name" "$case" "$NOC$DARKGRAY" "$*" "$NOC"
 
-    # if not set, set to zero, see sleepafter()
-    : "${sleepafter:=0}"
+    # if not set, set to opt_post_sleep (default: 0), see sleepafter()
+    if [ -z "${sleepafter:-}" ]; then
+        sleepafter=$opt_post_sleep
+    fi
 
     # put an invalid value in this file, should be overwritten. we also use it as a lock file.
     echo -1 > $outdir/$basename.retval
@@ -522,8 +567,6 @@ run()
 
     # now run consistency check on the target, unless configured otherwise
     if [ "$opt_consistency_check" = 1 ]; then
-        # sleep 1s if sshd has been reloaded
-        [ "$case" = "sshd_reload" ] && sleep 1
         if ! $r0 bash -c '/opt/bastion/bin/admin/check-consistency.pl ; echo _RETVAL_CC=$?= ; grep -Fw -e warn -e die -e code-warning /var/log/bastion/bastion.log | sed s/^/_SYSLOG=/ ; : > /var/log/bastion/bastion.log' >"$outdir/$basename.cc" 2>&1; then
             fail "CONSISTENCY CHECK CALL FAILED"
         fi
