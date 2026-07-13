@@ -24,15 +24,23 @@ if [ "$1" = "corelist" ]; then
     done
 else
     action_doing "Checking whether all required modules are installed..."
-    perlcmdline="perl "
-    for module in $modules; do
-        action_detail "$module"
-        perlcmdline="$perlcmdline -M$module"
-    done
-    perlcmdline="$perlcmdline -e 1"
+    # shellcheck disable=SC2086 # we want $modules to be splitted
+    perl -Mstrict -E '
+      chomp(@ARGV);
+      my $missing;
+      for my $mod (@ARGV) {
+          eval {
+              require ($mod =~ s#::#/#gr) . ".pm";
+              say "... $mod " . ($mod->VERSION // "(unknown_version)");
+              1;
+          } or (say ">>> $mod is missing!"), $missing++;
+      }
+      exit $missing;
+    ' $modules
+    missing=$?
 
-    if ! $perlcmdline; then
-        action_error "Some modules are missing!"
+    if [ $missing -gt 0 ]; then
+        action_error "There are $missing missing modules, please install them with packages-check.sh!"
         exit 1
     else
         action_done ""
