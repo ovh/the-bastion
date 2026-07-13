@@ -122,7 +122,9 @@ EOF
     # scp
 
     success personal_scp_add_ssh_access $a0 --osh selfAddPersonalAccess -h 127.0.0.2 -u $shellaccount -p 22 --kbd-interactive
+    json .command selfAddPersonalAccess
     success personal_scp_add_scpup_access $a0 --osh selfAddPersonalAccess --host 127.0.0.2 --protocol scpupload --port 22
+    json .command selfAddPersonalAccess
 
     sleepafter 2
     run personal_scp_download_oldhelper_mustfail scp $scp_options -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file $shellaccount@127.0.0.2:uptest /tmp/downloaded
@@ -134,6 +136,7 @@ EOF
     contain "Sorry, you have ssh access to"
 
     success personal_scp_add_scpdown_access $a0 --osh selfAddPersonalAccess --host 127.0.0.2 --protocol scpdownload --port 22
+    json .command selfAddPersonalAccess
 
     sleepafter 2
     run personal_scp_download_oldhelper_badfile scp $scp_options -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file $shellaccount@127.0.0.2:uptest /tmp/downloaded
@@ -175,7 +178,9 @@ EOF
     contain "Done,"
 
     success personal_scp_del_scpup_access $a0 --osh selfDelPersonalAccess --host 127.0.0.2 --protocol scpupload --port 22
+    json .command selfDelPersonalAccess
     success personal_scp_del_scpdown_access $a0 --osh selfDelPersonalAccess --host 127.0.0.2 --protocol scpdownload --port 22
+    json .command selfDelPersonalAccess
 
     # sftp
 
@@ -192,6 +197,7 @@ EOF
     contain "Sorry, you have ssh access to"
 
     success personal_sftp_add_sftp_access $a0 --osh selfAddPersonalAccess --host 127.0.0.2 --sftp --port 22
+    json .command selfAddPersonalAccess
 
     success personal_sftp_use_oldhelper_ok sftp -F $mytmpdir/ssh_config -b /tmp/sftpcommands -S /tmp/sftphelper -i $account0key1file $shellaccount@127.0.0.2
     contain 'sftp> ls'
@@ -216,6 +222,7 @@ EOF
     contain '>>> Done,'
 
     success personal_sftp_del_sftp_access $a0 --osh selfDelPersonalAccess --host 127.0.0.2 --protocol sftp --port 22
+    json .command selfDelPersonalAccess
 
     # rsync
 
@@ -224,6 +231,7 @@ EOF
     contain "Sorry, you have ssh access to"
 
     success personal_rsync_add_rsync_access $a0 --osh selfAddPersonalAccess --host 127.0.0.2 --protocol rsync --port 22
+    json .command selfAddPersonalAccess
 
     success personal_rsync_upload_ok rsync --rsh \"$a0 --osh rsync --\" /etc/passwd $shellaccount@127.0.0.2:rsync_file
     nocontain "rsync:"
@@ -238,6 +246,7 @@ EOF
     contain ">>> Done,"
 
     success personal_rsync_del_rsync_access $a0 --osh selfDelPersonalAccess --host 127.0.0.2 --protocol rsync --port 22
+    json .command selfDelPersonalAccess
 
     ### test personal ssh access with group protocol access, must fail, and works only if group ssh access is added too
 
@@ -252,6 +261,7 @@ EOF
 
     # add server to group1
     success personalssh_groupprotocol_add_server_to_group $a0 --osh groupAddServer --group $group1 --host 127.0.0.2 --user $shellaccount --port 22
+    json .command groupAddServer
 
     # scp
 
@@ -268,6 +278,7 @@ EOF
     nocontain '>>> Done'
 
     success groupssh_groupprotocol_scp_add_scpup_access $a0 --osh groupAddServer --group $group1 --host 127.0.0.2 --protocol scpupload --port 22
+    json .command groupAddServer
 
     success groupssh_groupprotocol_scp_upload_ok /tmp/scpwrapper -i $account0key1file /etc/passwd $shellaccount@127.0.0.2:
     contain 'MFA_TOKEN=notrequired'
@@ -281,6 +292,7 @@ EOF
     nocontain '>>> Done'
 
     success groupssh_groupprotocol_scp_del_scpup_access $a0 --osh groupDelServer --group $group1 --host 127.0.0.2 --protocol scpupload --port 22
+    json .command groupDelServer
 
     # sftp
 
@@ -291,6 +303,7 @@ EOF
     nocontain '>>> Done'
 
     success groupssh_groupprotocol_sftp_add_sftp_access $a0 --osh groupAddServer --group $group1 --host 127.0.0.2 --protocol sftp --port 22
+    json .command groupAddServer
 
     success groupssh_groupprotocol_sftp_use_ok /tmp/sftpwrapper -i $account0key1file sftp://$shellaccount@127.0.0.2//etc/passwd
     contain 'MFA_TOKEN=notrequired'
@@ -298,6 +311,7 @@ EOF
     contain '>>> Done'
 
     success groupssh_groupprotocol_sftp_del_sftp_access $a0 --osh groupDelServer --group $group1 --host 127.0.0.2 --protocol sftp --port 22
+    json .command groupDelServer
 
     # rsync
 
@@ -307,20 +321,26 @@ EOF
     nocontain '>>> Done'
 
     success groupssh_groupprotocol_rsync_add_rsync_access $a0 --osh groupAddServer --group $group1 --host 127.0.0.2 --protocol rsync --port 22
+    json .command groupAddServer
 
     success groupssh_groupprotocol_rsync_use_ok rsync --rsh \"$a0 --osh rsync --\" $shellaccount@127.0.0.2:/etc/passwd /tmp/
     contain '>>> Hello'
     contain '>>> Done,'
 
     success groupssh_groupprotocol_rsync_del_rsync_access $a0 --osh groupDelServer --group $group1 --host 127.0.0.2 --protocol rsync --port 22
+    json .command groupDelServer
 
     ## set --personal-egress-mfa-required on this account, and add matching ssh/proto personal access: scp/sftp must request MFA, rsync must be denied
 
     success personal_egress_mfa $a0 --osh accountModify --account $account0 --personal-egress-mfa-required password
+    json .command accountModify
 
     success personal_access_add_scpup $a0 --osh selfAddPersonalAccess --host 127.0.0.2 --port 22 --protocol scpupload
+    json .command selfAddPersonalAccess
     success personal_access_add_sftp $a0 --osh selfAddPersonalAccess --host 127.0.0.2 --port 22 --protocol sftp
+    json .command selfAddPersonalAccess
     success personal_access_add_rsync $a0 --osh selfAddPersonalAccess --host 127.0.0.2 --port 22 --protocol rsync
+    json .command selfAddPersonalAccess
 
     # scp
 
@@ -348,17 +368,25 @@ EOF
     # reset --personal-egress-mfa-required on this account and remove protocol personal accesses
 
     success personal_egress_nomfa $a0 --osh accountModify --account $account0 --personal-egress-mfa-required none
+    json .command accountModify
 
     success personal_access_del_scpup $a0 --osh selfDelPersonalAccess --host 127.0.0.2 --port 22 --protocol scpupload
+    json .command selfDelPersonalAccess
     success personal_access_del_sftp $a0 --osh selfDelPersonalAccess --host 127.0.0.2 --port 22 --protocol sftp
+    json .command selfDelPersonalAccess
     success personal_access_del_rsync $a0 --osh selfDelPersonalAccess --host 127.0.0.2 --port 22 --protocol rsync
+    json .command selfDelPersonalAccess
 
     ## set MFA required on group (and add back group protocol access), MFA should be asked by scp/sftp, and rsync should abort
 
     success group_need_mfa $a0 --osh groupModify --group $group1 --mfa-required password
+    json .command groupModify
     success account_mfa_scp_add_scpup_access $a0 --osh groupAddServer --group $group1 --host 127.0.0.2 --protocol scpupload --port 22
+    json .command groupAddServer
     success account_mfa_sftp_add_sftp_access $a0 --osh groupAddServer --group $group1 --host 127.0.0.2 --protocol sftp --port 22
+    json .command groupAddServer
     success account_mfa_rsync_add_rsync_access $a0 --osh groupAddServer --group $group1 --host 127.0.0.2 --protocol rsync --port 22
+    json .command groupAddServer
 
     # scp
 
@@ -486,11 +514,13 @@ EOF
             json .error_code OK .command selfMFAResetPassword
     else
         success personal_mfa_reset_password $a0 --osh accountMFAResetPassword --account $account0
+        json .command accountMFAResetPassword
     fi
 
     ## set account as exempt from MFA, and see whether scp/sftp/rsync (that still require MFA as per the group) do work
 
     success personal_mfa_set_exempt $a0 --osh accountModify --account $account0 --mfa-password-required bypass
+    json .command accountModify
 
     success scp_upload_mfa_exempt_oldhelper_ok /tmp/scpwrapper -i $account0key1file /etc/passwd $shellaccount@127.0.0.2:
     nocontain 'MFA_TOKEN=v1'
@@ -524,9 +554,11 @@ EOF
 
     # reset account setup
     success personal_mfa_reset_policy $a0 --osh accountModify --account $account0 --mfa-password-required no
+    json .command accountModify
 
     # delete group1
     success groupDestroy $a0 --osh groupDestroy --group $group1 --no-confirm
+    json .command groupDestroy
 }
 
 testsuite_mfa_scp_sftp

@@ -156,6 +156,7 @@ EOF
 
     # delete account1
     script cleanup $a0 --osh accountDelete --account $account1 "<<< \"Yes, do as I say and delete $account1, kthxbye\""
+    json .command accountDelete
     retvalshouldbe 0
 
     # restore default config

@@ -112,6 +112,7 @@ testsuite_mfa()
 
     if [ "${capabilities[pamtester]}" = 1 ]; then
         success a0_create_g3 $a0 --osh groupCreate --group $group3 --algo rsa --size 4096 --owner $account4
+        json .command groupCreate
 
         # setup group to force JIT egress MFA
         script a4_modify_g3_egress_mfa "echo 'set timeout $default_timeout;
@@ -311,6 +312,7 @@ testsuite_mfa()
         json .error_code KO_MFA_ANY_SETUP_REQUIRED
 
         script a0_delete_g3 "$a0 --osh groupDelete --group $group3 <<< \"$group3\""
+        json .command groupDelete
 
         script a0_delete_a3 $a0 --osh accountDelete --account $account3 "<<< \"Yes, do as I say and delete $account3, kthxbye\""
         retvalshouldbe 0
@@ -574,6 +576,7 @@ testsuite_mfa()
 
         # setup TOTP and see that we don't require any factor to do it
         success a4_setup_totp_nofa $a4 --osh selfMFASetupTOTP --no-confirm
+        json .command selfMFASetupTOTP
         nocontain 'Multi-Factor Authentication enabled'
         a4_totp_code_1=$(get_stdout | grep -A1 'Your emergency scratch codes are:' | tail -n1 | tr -d '[:space:]')
         a4_totp_code_2=$(get_stdout | grep -A2 'Your emergency scratch codes are:' | tail -n1 | tr -d '[:space:]')

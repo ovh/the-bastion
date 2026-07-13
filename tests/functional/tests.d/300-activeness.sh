@@ -20,6 +20,7 @@ testsuite_activeness()
     configsetquoted accountExternalValidationProgram /opt/bastion/bin/other/doesnotexist.pl
 
     success test_invalid_config_but_always_active $a3 --osh info
+    json .command info
 
     ignorecodewarn 'is not readable+executable'
     run test_invalid_config $a1 --osh info
@@ -31,8 +32,10 @@ testsuite_activeness()
     retvalshouldbe 101
 
     success test_account2 $a2 --osh info
+    json .command info
 
     success test_account3 $a3 --osh info
+    json .command info
 
     # for remaining tests, disable the feature
     configsetquoted accountExternalValidationProgram ''
@@ -41,6 +44,7 @@ testsuite_activeness()
 
     # allow account1 to localhost, just so that ssh-as calls connect.pl (even if the connection doesn't make it through in the end)
     success add_access_to_a1 $a0 --osh accountAddPersonalAccess --account $account2 --host 127.0.0.1 --user sshas --port 22
+    json .command accountAddPersonalAccess
 
     # now, test ssh-as
     run ssh_as_denied $a1 --ssh-as $account2 sshas@127.0.0.1
@@ -66,13 +70,16 @@ testsuite_activeness()
 
     # delete account1
     success account1_cleanup $a0 --osh accountDelete --account $account1 --no-confirm
+    json .command accountDelete
 
     # delete account2
     script account2_cleanup "$a0 --osh accountDelete --account $account2 <<< \"Yes, do as I say and delete $account2, kthxbye\""
+    json .command accountDelete
     retvalshouldbe 0
 
     # delete account3
     success account3_cleanup $a0 --osh accountDelete --account $account3 --no-confirm
+    json .command accountDelete
 }
 
 testsuite_activeness

@@ -126,6 +126,7 @@ testsuite_selfaccesses()
     contain "IPv4 is /30 by policy"
 
     success selfAddPersonalAccess_constraints_ok $a0 --osh selfAddPersonalAccess --host 127.0.0.9 --user $account0 --port '*' --ttl 1 --force
+    json .command selfAddPersonalAccess
 
     success selfAddPersonalAccess_delconfig $r0 "rm -f $opt_remote_etc_bastion/plugin.selfAddPersonalAccess.conf"
 
@@ -141,6 +142,7 @@ testsuite_selfaccesses()
     contain "IPv4 is /30 by policy"
 
     success accountAddPersonalAccess_constaints_ok $a0 --osh accountAddPersonalAccess --host 127.0.0.9 --user $account1 --port '*' --ttl 1 --account $account1
+    json .command accountAddPersonalAccess
 
     success accountAddPersonalAccess_delconfig $r0 "rm -f $opt_remote_etc_bastion/plugin.accountAddPersonalAccess.conf"
 
@@ -162,12 +164,15 @@ testsuite_selfaccesses()
     # forcekey
 
     success for_force_key $a0 --osh selfListEgressKeys
+    json .command selfListEgressKeys
     local account0key1fp
     account0key1fp=$(get_json | $jq '.value|keys[0]')
 
     success forcekey $a0 --osh selfAddPersonalAccess -h 127.7.7.7 -u $shellaccount -p 22 --force --force-key "$account0key1fp"
+    json .command selfAddPersonalAccess
 
     success forcekey $a0 --osh selfListAccesses
+    json .command selfListAccesses
     contain "$account0key1fp"
 
     # try to use the force key
@@ -176,6 +181,7 @@ testsuite_selfaccesses()
     contain 'FORCED IN ACL'
 
     success forcekey $a0 -osh selfDelPersonalAccess -h 127.7.7.7 -u $shellaccount -p 22
+    json .command selfDelPersonalAccess
 
     # /forcekey
 
@@ -554,6 +560,7 @@ testsuite_selfaccesses()
 
     # delete account1
     script cleanup $a0 --osh accountDelete --account $account1 "<<< \"Yes, do as I say and delete $account1, kthxbye\""
+    json .command accountDelete
     retvalshouldbe 0
 }
 

@@ -103,6 +103,7 @@ EOS
 
     # create g3 with a3 as owner to test key generation of a group a3 is not an owner of, without getting the early no-owner deny
     success a0_create_g3_with_a3_as_owner $a0 --osh groupCreate --group $group3 --algo ed25519 --owner $account3
+    json .command groupCreate
 
     # test egress key generation as an owner
     run a2_generate_key_g1_fail $a2 --osh groupGenerateEgressKey --group $group1 --algo ed25519
@@ -151,16 +152,19 @@ EOS
     contain REGEX "Alive after waiting for [0-9] seconds"
 
     success a1_remove_forcekey_acl_g1 $a1 --osh groupDelServer --host 127.0.0.5 --user 'ar@base' --port-any --group $group1
+    json .command groupDelServer
 
     # /force-key
 
     success a1_add_non_routable_ip $a1 --osh groupAddServer --host 192.0.2.0 --user-any --port-any --force --group $group1
+    json .command groupAddServer
 
     run a1_ssh_wait $a1 --wait 192.0.2.0
     retvalshouldbe 124 # timeout
     contain "Waiting for port 22 to be open on 192.0.2.0"
 
     success a1_remove_non_routable_ip $a1 --osh groupDelServer --host 192.0.2.0 --user-any --port-any --group $group1
+    json .command groupDelServer
 
     # test --alive
 
@@ -177,6 +181,7 @@ EOS
     unset key1fp
 
     script a0_delete_g3 $a0 --osh groupDelete --group $group3 '<<<' "$group3"
+    json .command groupDelete
     retvalshouldbe 0
     # /egress key generation
 
@@ -305,7 +310,9 @@ EOS
 
     #success postreq a0_g3_removembr  $a0 --osh groupDelMember --group $group3 --account $account0
     success a0_g3_removeaclk $a0 --osh groupDelAclkeeper --group $group3 --account $account0
+    json .command groupDelAclkeeper
     success a0_g3_removegk   $a0 --osh groupDelGatekeeper --group $group3 --account $account0
+    json .command groupDelGatekeeper
 
     # START egress passwords
 
@@ -495,8 +502,11 @@ EOS
     # ...... ok now resume to just adding a2 to avoid early denies as stated above
 
     success      a3_add_a2_as_g3_owner           $a3 --osh groupAddOwner      --group $group3 --account $account2
+    json .command groupAddOwner
     success a2_add_himself_as_g3_gatekeeper $a2 --osh groupAddGatekeeper --group $group3 --account $account2
+    json .command groupAddGatekeeper
     success  a2_add_himself_as_g3_aclkeeper  $a2 --osh groupAddAclkeeper  --group $group3 --account $account2
+    json .command groupAddAclkeeper
 
     # new state: g1[a1(ow,gk,acl,member)] g3[a0,a2,a3(ow,gk,acl,member)]
     # check with groupInfo that the data is correct
@@ -620,6 +630,7 @@ EOS
     retvalshouldbe 107
 
     success a2_add_a3_as_g1_member $a2 --osh groupAddMember --group $group1 --account $account3
+    json .command groupAddMember
 
     # new state: g1[a1(ow,gk,acl,member) a2(gk) a3(member) acl(g1@127.0.0.1:22,g2@127.0.0.2:22)] g3[a0,a2,a3(ow,gk,acl,member)]
 
@@ -730,6 +741,7 @@ EOS
     # now we want to try selfListAccesses, work with a3 that has a groupguest access to g1: add a server to g3 (he's a member of it), and a personal access
 
     success a3_add_server_to_g3 $a3 --osh groupAddServer --group $group3 --host 10.20.0.0/17 --port-any --user-any
+    json .command groupAddServer
 
     run a0_add_personal_access_to_a3_works_subnet_1 $a0 --osh accountAddPersonalAccess --account $account3 --host 77.66.55.0/24 --user-any --port-any
     json .command accountAddPersonalAccess .error_code OK .value.ip 77.66.55.0/24 .value.port null .value.user null
@@ -741,6 +753,7 @@ EOS
     json .command accountAddPersonalAccess .error_code OK .value.ip 1.2.3.4 .value.port null .value.user null
 
     success a0_add_personal_access_to_a3_works $a0 --osh accountAddPersonalAccess --account $account3 --host 77.66.55.4 --user-any --port-any
+    json .command accountAddPersonalAccess
 
     local todo_inc todo_port todo_ip todo_user
     (( todo_inc=1 ))
@@ -772,8 +785,11 @@ EOS
 
             (( todo_inc++ ))
             success a1g1_add_server_batch $a1 --osh  groupAddServer --group $group1 --host 2.2.$todo_inc.0/24 $todo_port $todo_user --force
+            json .command groupAddServer
             success a2g1a3_add_guestxs_batch $a2 --osh  groupAddGuestAccess --group $group1 --account $account3 --host 2.2.$todo_inc.66 $todo_port $todo_user
+            json .command groupAddGuestAccess
             plgfail a2g1a3_add_guestxs_batch $a2 --osh  groupAddGuestAccess --group $group1 --account $account3 --host 2.3.$todo_inc.1 $todo_port $todo_user
+            json .command groupAddGuestAccess
         done
     done
 
@@ -828,9 +844,12 @@ EOS
 
             (( todo_inc++ ))
             success a1g1_del_server_batch $a1 --osh  groupDelServer --group $group1 --host 2.2.$todo_inc.0/24 $todo_port $todo_user --force
+            json .command groupDelServer
             success a2g1a3_del_guestxs_batch_1 $a2 --osh  groupDelGuestAccess --group $group1 --account $account3 --host 2.2.$todo_inc.66 $todo_port $todo_user
+            json .command groupDelGuestAccess
             # TODO next line should be OK_NO_CHANGE
             success a2g1a3_del_guestxs_batch_2 $a2 --osh  groupDelGuestAccess --group $group1 --account $account3 --host 2.3.$todo_inc.1 $todo_port $todo_user
+            json .command groupDelGuestAccess
         done
     done
 
@@ -923,7 +942,9 @@ EOS
 
     # now just add a2 as aclk/groupk of group3, we won't use but it's just so that for other tests it won't get early-denied for group cmds
     success a0_add_gatekeeper_g3_a2 $a0 --osh groupAddGatekeeper --account $account2 --group $group3
+    json .command groupAddGatekeeper
     success  a0_add_aclkeeper_g3_a2  $a0 --osh groupAddAclkeeper  --account $account2 --group $group3
+    json .command groupAddAclkeeper
 
     # done with group3
 
@@ -1154,6 +1175,7 @@ EOS
     json .command groupTransmitOwnership .error_code KO_GROUP_NOT_FOUND
 
     success create_grp2      $a0  --osh groupCreate --group $group2 --owner $account2 --algo ecdsa --size 521
+    json .command groupCreate
 
     success owner $a2 --osh groupInfo --group $group2
     tmpfp=$(get_json | $jq '.value.keys|keys[0]')

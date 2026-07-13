@@ -41,6 +41,7 @@ testsuite_accountinfo()
 
     # grant accountInfo to a1
     success a0_grant_a1_accountinfo $a0 --osh accountGrantCommand --command accountInfo --account $account1
+    json .command accountGrantCommand
 
     # check that account3 info has the ttl in it and that it's expired
     success a0_info_a3_ttl $a0 --osh accountInfo --account $account3
@@ -104,6 +105,7 @@ EOS
 
     # a0 changes a2 expiration policy
     success a0_accountmodify_a2_expi_15 $a0 --osh accountModify --account $account2 --max-inactive-days 15
+    json .command accountModify
 
     # a0 should see the updated field
     success a0_accountinfo_a2_inactive_days $a0 --osh accountInfo --account $account2
@@ -111,6 +113,7 @@ EOS
 
     # a0 changes a2 expiration policy
     success a0_accountmodify_a2_expi_disabled $a0 --osh accountModify --account $account2 --max-inactive-days 0
+    json .command accountModify
 
     # a0 should see the updated field
     success a0_accountinfo_a2_inactive_days_disabled $a0 --osh accountInfo --account $account2
@@ -118,6 +121,7 @@ EOS
 
     # a0 changes a2 expiration policy
     success a0_accountmodify_a2_expi_default $a0 --osh accountModify --account $account2 --max-inactive-days -1
+    json .command accountModify
 
     # a0 should see the updated field
     success a0_accountinfo_a2_inactive_days_default $a0 --osh accountInfo --account $account2
@@ -125,6 +129,7 @@ EOS
 
     # should work with accountcreate too
     success a0_accountcreate_a4_max_inactive_days $a0 --osh accountCreate --account $account4 --uid $uid4 --max-inactive-days 42 --no-key
+    json .command accountCreate
 
     success a0_accountinfo_a4_max_inactive_days $a0 --osh accountInfo --account $account4
     json .value.max_inactive_days 42
@@ -167,13 +172,18 @@ EOS
 
     # ensure account2 can connect again
     success a2_can_connect_again $a2 --osh info
+    json .command info
     nocontain "is frozen"
 
     # delete account1 & account2
     success a0_delete_a1 $a0 --osh accountDelete --account $account1 --no-confirm
+    json .command accountDelete
     success a0_delete_a2 $a0 --osh accountDelete --account $account2 --no-confirm
+    json .command accountDelete
     success a0_delete_a3 $a0 --osh accountDelete --account $account3 --no-confirm
+    json .command accountDelete
     success a0_delete_a4 $a0 --osh accountDelete --account $account4 --no-confirm
+    json .command accountDelete
 }
 
 testsuite_accountinfo
