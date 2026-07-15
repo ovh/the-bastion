@@ -54,10 +54,11 @@ while ($line = <STDIN>) {
     chomp $line;
     last if (lc($line) eq 'exit' || lc($line) eq 'quit');
 
-    # we remove any json param, because we add --json ourselves so that we can decode
-    # what the osh plugin had to say, and add it to our global @ret json
+    # we remove any json param, because we add --json-greppable ourselves so that we can decode
+    # what the osh plugin had to say, and add it to our global @ret json. This is the one-line
+    # JSON_OUTPUT= format helper() knows how to pick out of the output, and hide from the user.
     $line =~ s/ --json[a-z-]*//g;
-    my @cmd = ($ENV{'SHELL'}, '-c', "--osh $line --json");
+    my @cmd = ($ENV{'SHELL'}, '-c', "--osh $line --json-greppable");
     osh_info "--- launching command: $line";
     do {
         # notify that we're under batch mode, hence if plugin requires MFA,

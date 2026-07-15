@@ -151,9 +151,12 @@ EOS
     local account1key1fp
     account1key1fp=$(get_json | $jq '.value.keys[0].fingerprint')
 
-    ignorecodewarn "possible deadlock"
+    # feeding random garbage: the first line read is rejected as not-a-key, like any invalid key
+    # (cf. the privkey case just below, which also returns 100). Previously this returned 0 because
+    # the old execute() would deadlock on the stdin flood until ttyrec was signal-killed (status=undef
+    # -> exit 0); execute() no longer deadlocks and now propagates the plugin's real exit code.
     script  flood   $a1 -osh selfAddIngressKey '<' /dev/urandom
-    retvalshouldbe 0
+    retvalshouldbe 100
 
     script  privkey $a1 -osh selfAddIngressKey '<<< "-----BEGIN RSA PRIVATE KEY-----
     MIIBugIBAAKBgQCawvohH0r9B4NxdaYHiBT5pLWDe14o3MTE3WwtKF0l7az+zw0P"'

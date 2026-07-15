@@ -151,7 +151,7 @@ my %_autoload_files = (
     configuration => [
         qw{ load_configuration_file main_configuration_directory load_configuration config account_config plugin_config group_config json_load }
     ],
-    execute     => [qw{ sysret2human execute execute_simple result_from_helper helper_decapsulate helper }],
+    execute     => [qw{ sysret2human execute execute_simple result_from_json_output helper_decapsulate helper }],
     interactive => [qw{ interactive }],
     jail        => [qw{ jailify }],
     log         => [
@@ -521,8 +521,12 @@ sub is_account_active {
 }
 
 sub json_output {    ## no critic (ArgUnpacking)
-    my $R             = shift;
-    my %params        = @_;
+    my $R      = shift;
+    my %params = @_;
+
+    # force_default is set by helpers (see HEXIT): whatever JSON mode the user asked osh.pl for, their
+    # result must always use the one-line JSON_OUTPUT= framing, as this is what the execute() of their
+    # calling plugin expects to find (and to hide from the output it tees to the user).
     my $force_default = $params{'force_default'};
     my $no_delimiters = $params{'no_delimiters'};
     my $command       = $params{'command'}    || $ENV{'PLUGIN_NAME'};
@@ -536,17 +540,26 @@ sub json_output {    ## no critic (ArgUnpacking)
     my $encoded_json =
       $JsonObject->encode({error_code => $R->err, error_message => $R->msg, command => $command, value => $R->value});
 
-    # rename forbidden strings
-    $encoded_json =~ s/JSON_(START|OUTPUT|END)/JSON__$1/g;
-
     if ($no_delimiters) {
         print {$filehandle} $encoded_json;
     }
-    elsif ($ENV{'PLUGIN_JSON'} eq 'GREP' and not $force_default) {
+    elsif ($force_default or $ENV{'PLUGIN_JSON'} eq 'GREP') {
+        # One-line framing: our result follows the JSON_OUTPUT= anchor on the same line, and ends with
+        # it (as documented in doc/sphinx/using/api.rst). No need to rename the anchor strings should
+        # they appear within the data: as we're on a single line, nothing in the data can pass for an
+        # anchor, which is only ever recognized at the very start of a line.
+        # A non-pretty JSON encoding IS single-line by construction: JSON forbids raw control chars
+        # within strings (a newline in a value is always escaped to a literal \ + n), and there's no
+        # whitespace between tokens. Squash \r\n anyway, so that the one-line contract is guaranteed
+        # here rather than merely assumed, would a future change ever hand us a prettified encoding.
         $encoded_json =~ tr/\r\n/ /;
         print {$filehandle} "\nJSON_OUTPUT=$encoded_json\n";
     }
     else {
+        # Multi-line framing: our result sits between the JSON_START and JSON_END anchor lines. The
+        # data does get lines of its own here (it may be prettified), so rename these anchor strings
+        # if they appear within it.
+        $encoded_json =~ s/JSON_(START|OUTPUT|END)/JSON__$1/g;
         print {$filehandle} "\nJSON_START\n$encoded_json\nJSON_END\n";
     }
     return;

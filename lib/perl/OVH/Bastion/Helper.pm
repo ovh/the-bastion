@@ -36,6 +36,9 @@ sub HEXIT {    ## no critic (ArgUnpacking)
     else {
         $R = R(@_);
     }
+    # Return our result on a single JSON_OUTPUT= line on stdout, where our caller's execute() picks it
+    # up (and hides it from the live output it tees to the user). force_default as our caller always
+    # expects this framing, regardless of the JSON mode the user asked osh.pl for.
     OVH::Bastion::json_output($R, force_default => 1);
     exit 0;
 }
@@ -62,6 +65,14 @@ $SIG{'PIPE'} = 'IGNORE';    # continue even if osh_info gets a SIGPIPE because t
 
 # Ensure the PATH is not tainted, and has sane values
 $ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/pkg/bin';
+
+# If we're only being syntax-checked (perl -c / perl -Tc, as bin/dev/perl-check.sh does), $^C is true:
+# stop here, as the setup below is runtime-only and assumes a real bastion invocation. Our importer is
+# compiling us from its own `use`, so anything we do here that exits (the sudo check below HEXITs, as
+# there's no SUDO_USER under a manual perl -c) would silently cut its syntax check short, leaving the
+# rest of the helper unchecked. All our subs are compiled by this point, so the module still loads
+# fully for the check.
+return 1 if $^C;
 
 # Build $self from SUDO_USER, as helpers are always run under sudo
 ($self) = $ENV{'SUDO_USER'} =~ m{^([a-zA-Z0-9._-]+)$};

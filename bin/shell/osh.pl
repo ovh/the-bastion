@@ -2279,7 +2279,7 @@ Usage (osh cmd): $bastionName --osh [OSH_COMMAND] [OSH_OPTIONS]
 [OPTIONS (osh cmd)]
     --json              Return data in json format between JSON_START and JSON_END tags
     --json-pretty       Prettify returned json, useful for debug / human reading
-    --json-greppable    Return data in json format squashed on one line starting with JSON_DATA=
+    --json-greppable    Return data in json format squashed on one line starting with JSON_OUTPUT=
 
 [OSH_COMMAND]
     These are used to interact with the bastion configuration, accesses,
