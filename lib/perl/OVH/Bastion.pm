@@ -146,7 +146,7 @@ my %_autoload_files = (
         qw{ get_personal_account_keys get_group_keys is_access_way_granted get_ip ip2host get_user_groups duration2human print_acls is_access_granted build_proxyjump_ssh_options ssh_test_access_way get_acls get_acl_way }
     ],
     allowkeeper => [
-        qw{ is_user_in_group is_group_existing is_valid_uid get_next_available_uid get_next_available_group_uid get_next_available_group_gid is_bastion_account_valid_and_existing is_account_valid is_account_existing access_modify is_valid_group is_valid_group_and_existing add_user_to_group get_group_list get_account_list get_realm_list is_admin is_super_owner is_auditor is_group_aclkeeper is_group_gatekeeper is_group_owner is_group_guest is_group_member get_remote_accounts_from_realm is_valid_ttl build_re_from_wildcards }
+        qw{ is_user_in_group is_group_existing is_valid_uid get_next_available_uid get_next_available_group_uid get_next_available_group_gid is_bastion_account_valid_and_existing is_account_valid is_account_existing access_modify is_valid_group is_valid_group_and_existing add_user_to_group get_group_list get_account_roles_by_group get_account_list get_realm_list is_admin is_super_owner is_auditor is_group_aclkeeper is_group_gatekeeper is_group_owner is_group_guest is_group_member get_remote_accounts_from_realm is_valid_ttl build_re_from_wildcards }
     ],
     configuration => [
         qw{ load_configuration_file main_configuration_directory load_configuration config account_config plugin_config group_config json_load }
@@ -161,7 +161,7 @@ my %_autoload_files = (
         qw{ enable_mocking is_mocking set_mock_data mock_get_account_entry mock_get_account_accesses mock_get_account_personal_accesses mock_get_account_legacy_accesses mock_get_group_accesses mock_get_account_guest_accesses }
     ],
     os => [
-        qw{ sysinfo is_linux is_debian is_debian_trixie is_redhat is_freebsd has_acls sys_useradd sys_groupadd sys_userdel sys_groupdel sys_addmembertogroup sys_delmemberfromgroup sys_changepassword sys_neutralizepassword sys_setpasswordpolicy sys_getpasswordinfo sys_getsudoersfolder sys_setfacl is_in_path sys_getpw_all sys_getpw_all_cached sys_getpw_name sys_getgr_all sys_getgr_all_cached sys_getgr_all_byuser sys_getgr_name sys_invalidate_pw_gr_cache sys_list_processes }
+        qw{ sysinfo is_linux is_debian is_ubuntu has_broken_deluser is_redhat is_freebsd has_acls sys_useradd sys_groupadd sys_userdel sys_groupdel sys_addmembertogroup sys_delmemberfromgroup sys_changepassword sys_neutralizepassword sys_setpasswordpolicy sys_getpasswordinfo sys_getsudoersfolder sys_setfacl is_in_path sys_getpw_all sys_getpw_all_cached sys_getpw_name sys_getgr_all sys_getgr_all_cached sys_getgr_all_byuser sys_invalidate_pw_gr_cache sys_getgr_name sys_list_processes }
     ],
     password => [qw{ get_hashes_from_password get_password_file get_hashes_list is_valid_hash }],
     ssh      => [
