@@ -205,6 +205,8 @@ testsuite_proxy()
     contain "X-Bastion-Remote-Server: Net::Server::HTTP/"
     contain "X-Bastion-Egress-Timing: "
     contain "Content-Length: 1000000"
+    # the 1M upload can be a bit harsh, wait for the daemon to be available again
+    wait_for_proxy_up "waiting for daemon availability after the big download"
 
     # graceful, zero-downtime reload (SIGHUP): an in-flight request must drain to completion
     # (not be killed), and requests issued during/after the reload must still be served because
