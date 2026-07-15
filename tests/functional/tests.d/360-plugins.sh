@@ -92,6 +92,15 @@ EOS
 
     run alive_unreachable $a0f --osh alive 192.0.2.0
     retvalshouldbe 124
+
+    # mtr: the binary needs raw-socket privileges and usually doesn't work well inside docker,
+    # don't attempt to run it for real, just check for input validation
+    plgfail mtr_nohost $a0 --osh mtr
+    json .command mtr .error_code ERR_MISSING_PARAMETER
+
+    # a subnet is not a valid single host for mtr
+    plgfail mtr_subnet $a0 --osh mtr --host 127.0.0.0/8
+    json .command mtr .error_code ERR_INVALID_PARAMETER
 }
 
 testsuite_plugins

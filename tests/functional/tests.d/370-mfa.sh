@@ -592,6 +592,37 @@ testsuite_mfa()
             lassign [wait] pid spawnid value value;
             exit \$value' | expect -f -"
         retvalshouldbe 0
+
+        # --- selfMFAResetTOTP: a user removes their own TOTP ---
+        # start from a clean slate (admin removes the TOTP configured just above), then set it up fresh
+        # so we hold a known-good scratch code to answer the JIT MFA prompt with
+        success a0_reset_a4_totp_clean $a0 --osh accountMFAResetTOTP --account $account4
+        json .command accountMFAResetTOTP .error_code OK
+
+        success a4_setup_totp_for_selfreset $a4 --osh selfMFASetupTOTP --no-confirm
+        json .command selfMFASetupTOTP
+        local a4_selfreset_code1 a4_selfreset_code2
+        a4_selfreset_code1=$(get_stdout | grep -A1 'Your emergency scratch codes are:' | tail -n1 | tr -d '[:space:]')
+        a4_selfreset_code2=$(get_stdout | grep -A2 'Your emergency scratch codes are:' | tail -n1 | tr -d '[:space:]')
+
+        # now TOTP is configured, so connecting AND running the plugin (mfa_required=any) each issue an
+        # OTP challenge (same double-prompt as the setup-again flow above); answer each with a fresh
+        # scratch code, then assert the reset succeeded
+        script a4_selfmfaresettotp "echo 'set timeout $default_timeout;
+            spawn $a4 --osh selfMFAResetTOTP;
+            expect \"additional authentication factor is required (OTP)\" { sleep 0.1; };
+            expect \"code:\" { sleep 0.2; expect *; send \"$a4_selfreset_code1\\n\"; };
+            expect \"additional authentication factor is required (OTP)\" { sleep 0.1; };
+            expect \"code:\" { sleep 0.2; expect *; send \"$a4_selfreset_code2\\n\"; };
+            expect eof;
+            lassign [wait] pid spawnid value value;
+            exit \$value' | expect -f -"
+        retvalshouldbe 0
+        json .command selfMFAResetTOTP .error_code OK
+
+        # prove TOTP is really gone: setting it up again needs no factor at all
+        success a4_verify_totp_removed $a4 --osh selfMFASetupTOTP --no-confirm
+        json .command selfMFASetupTOTP
     fi
 
     # remove account

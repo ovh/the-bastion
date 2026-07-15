@@ -44,6 +44,40 @@ testsuite_grantcommand()
     success a0_grant_grantcommand_ok $a0 --osh accountGrantCommand --command accountGrantCommand --account $account2
     json .error_code OK .command accountGrantCommand
 
+    # --- accountRevokeCommand round-trip (symmetric to the grant above) ---
+    # grant account2 a normal restricted command it can run standalone (accountList)
+    success a0_grant_accountList_to_a2 $a0 --osh accountGrantCommand --command accountList --account $account2
+    json .error_code OK .command accountGrantCommand
+    success a2_can_run_granted_command $a2 --osh accountList --account $account2
+    json .command accountList .error_code OK
+
+    # account1 holds the grant right but NOT the revoke right, so it can't run accountRevokeCommand yet
+    run a1_revoke_denied_no_right $a1 --osh accountRevokeCommand --command accountList --account $account2
+    retvalshouldbe 106
+    json .error_code KO_RESTRICTED_COMMAND .command null
+
+    # give account1 the accountRevokeCommand right (Unix group membership), still no admin/superowner
+    success a0_grant_accountRevokeCommand_to_a1 $a0 --osh accountGrantCommand --command accountRevokeCommand --account $account1
+
+    # missing-parameter paths (reachable now that account1 may run the plugin)
+    plgfail a1_revoke_missing_command $a1 --osh accountRevokeCommand --account $account2
+    json .error_code ERR_MISSING_PARAMETER .command accountRevokeCommand
+    plgfail a1_revoke_missing_account $a1 --osh accountRevokeCommand --command accountList
+    json .error_code ERR_MISSING_PARAMETER .command accountRevokeCommand
+
+    # account1 revokes the command from account2
+    success a1_revoke_ok $a1 --osh accountRevokeCommand --command accountList --account $account2
+    json .error_code OK .command accountRevokeCommand
+
+    # revoking again is a clean no-op (still a success, nothing left to revoke)
+    success a1_revoke_again $a1 --osh accountRevokeCommand --command accountList --account $account2
+    json .command accountRevokeCommand
+
+    # the revoke really took effect: account2 can no longer run the command
+    run a2_can_no_longer_run $a2 --osh accountList --account $account2
+    retvalshouldbe 106
+    json .error_code KO_RESTRICTED_COMMAND .command null
+
     # cleanup
     success a0_delete_a1 $a0 --osh accountDelete --account $account1 --no-confirm
     json .command accountDelete .error_code OK

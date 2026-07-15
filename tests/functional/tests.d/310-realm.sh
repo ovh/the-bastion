@@ -308,6 +308,34 @@ testsuite_realm()
     success add_guest_account3 $b2 --osh groupAddGuestAccess --account $realm_shared_account/verylongaccountnam --group $group1 --host 172.16.4.4 --user nobody --port 12345
     json .command groupAddGuestAccess
 
+    # --- realmList / realmInfo (the realm '$realm_shared_account' lives on bastion B) ---
+    # realmList (unfiltered) must show our realm
+    success realmlist_all $b2 --osh realmList
+    json .command realmList .error_code OK .value.$realm_shared_account.name $realm_shared_account
+
+    # realmList filtered to our realm returns just it (leading 'realm_' prefix is accepted and stripped)
+    success realmlist_filtered $b2 --osh realmList --realm realm_$realm_shared_account
+    json .command realmList .error_code OK .value.$realm_shared_account.name $realm_shared_account
+
+    # realmList filtered to a non-existent realm returns an empty set
+    success realmlist_absent $b2 --osh realmList --realm doesnotexist
+    json .command realmList .error_code OK .value '{}'
+
+    # realmInfo needs a --realm argument
+    plgfail realminfo_missing_realm $b2 --osh realmInfo
+    json .command realmInfo .error_code ERR_MISSING_PARAMETER
+
+    # realmInfo on a non-existent realm fails
+    plgfail realminfo_absent $b2 --osh realmInfo --realm doesnotexist
+    json .command realmInfo
+
+    # realmInfo on our realm reports its name and the known remote accounts. The list is built from
+    # accounts that have accesses/ACLs on B, not merely ones that logged in: account1 holds a personal
+    # access here (added earlier) so it shows up; account2 has no accesses on B and is absent.
+    success realminfo_ok $b2 --osh realmInfo --realm $realm_shared_account
+    json .command realmInfo .error_code OK .value.realm $realm_shared_account
+    json --arg a "$account1" '.value.accounts | index($a) != null' true
+
     # delete account1 on A
     success account1_cleanup $a0 --osh accountDelete --account $account1 --no-confirm
     json .command accountDelete
