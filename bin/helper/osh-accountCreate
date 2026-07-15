@@ -324,7 +324,7 @@ if (ref $config->{'accountCreateDefaultPersonalAccesses'} eq 'ARRAY' && $type eq
     foreach my $defAccess (@{$config->{'accountCreateDefaultPersonalAccesses'}}) {
         my (undef, $user, $ip, undef, $port) = $defAccess =~ m{^(([^@]+)@)?([0-9./]+)(:(\d+))?$};
         next unless $ip;
-        my @command = qw{ sudo -n -u allowkeeper -- };
+        my @command = qw{ sudo -n -u allowkeeper -- /usr/bin/env perl -T };
         push @command, $OVH::Bastion::BASEPATH . '/bin/helper/osh-accountModifyPersonalAccess';
         push @command, '--target',  'any';
         push @command, '--action',  'add';
@@ -335,8 +335,8 @@ if (ref $config->{'accountCreateDefaultPersonalAccesses'} eq 'ARRAY' && $type eq
             push @command, '--user', ($user eq 'ACCOUNT' ? $account : $user);
         }
         $port and push @command, '--port', $port;
-        $fnret = OVH::Bastion::execute(cmd => \@command, noisy_stdout => 1, noisy_stderr => 1, is_helper => 1);
-        $fnret->err eq 'OK' or osh_warn("Couldn't add private access to account to $defAccess ($fnret)");
+        $fnret = OVH::Bastion::helper(cmd => \@command);
+        $fnret->is_ok or osh_warn("Couldn't add private access to account to $defAccess ($fnret)");
     }
 }
 

@@ -4,12 +4,9 @@ package OVH::Bastion;
 use common::sense;
 
 use Config;
-use Fcntl qw{ :DEFAULT :seek };
-use IO::Handle;
-use IO::Select;
+use Fcntl qw{ F_GETFL F_SETFL O_NONBLOCK };
 use IPC::Open3;
 use JSON;
-use POSIX ":sys_wait_h";
 use Symbol 'gensym';
 
 # Get signal names, i.e. signal 9 is SIGKILL, etc.
@@ -43,40 +40,29 @@ sub sysret2human {
     }
 }
 
-# utility function to set a filehandle to non-blocking
-sub _set_non_blocking {
-    my $handle = shift;
-
-    my $flags = fcntl($handle, F_GETFL, 0);
-    if (!$flags) {
-        return R('ERR_SYSCALL_FAILED', msg => "Couldn't set filehandle to non-blocking (F_GETFL failed)");
-    }
-
-    $flags |= O_NONBLOCK;
-    if (!fcntl($handle, F_SETFL, $flags)) {
-        return R('ERR_SYSCALL_FAILED', msg => "Couldn't set filehandle to non-blocking (F_SETFL failed)");
-    }
-    return R('OK');
-}
-
-## no critic(ControlStructures::ProhibitDeepNests)
 sub execute {
-    my %params           = @_;
-    my $cmd              = $params{'cmd'};                 # command to execute, must be an array ref (with possible parameters)
-    my $expects_stdin    = $params{'expects_stdin'};       # the command called expects stdin, pipe caller stdin to it
-    my $noisy_stdout     = $params{'noisy_stdout'};        # capture stdout but print it too
-    my $noisy_stderr     = $params{'noisy_stderr'};        # capture stderr but print it too
-    my $is_helper        = $params{'is_helper'};           # hide JSON returns from stdout even if noisy_stdout
-    my $is_binary        = $params{'is_binary'};           # used for e.g. scp, don't bother mimicking readline(), we lose debug and stdout/stderr are NOT returned to caller
-    my $stdin_str        = $params{'stdin_str'};           # string to push to the STDIN of the command
-    my $must_succeed     = $params{'must_succeed'};        # if the executed command returns a non-zero exit value, turn OK_NON_ZERO_EXIT to ERR_NON_ZERO_EXIT
-    my $max_stdout_bytes = $params{'max_stdout_bytes'};    # if the amount of stored stdout bytes exceeds this, halt the command and return to caller
-    my $system           = $params{'system'};              # if set to 1, will use system() instead of open3(), needed for some plugins
+    my %params            = @_;
+    my $cmd               = $params{'cmd'};                  # command to execute, must be an array ref (with possible parameters)
+    my $expects_stdin     = $params{'expects_stdin'};        # the command called expects stdin, pipe caller stdin to it
+    my $noisy_stdout      = $params{'noisy_stdout'};         # capture stdout but print it too
+    my $noisy_stderr      = $params{'noisy_stderr'};         # capture stderr but print it too
+    my $capture_result_fd = $params{'capture_result_fd'};    # wire fd 3 as the child's result channel (real helpers), capture it into result_fd_output
+    my $hide_json_result  = $params{'hide_json_result'};     # suppress a JSON_START..JSON_END block from the live stdout tee (osh.pl --json, e.g. batch)
+    my $is_binary         = $params{'is_binary'};            # used for e.g. scp, stdout/stderr are NOT returned to caller
+    my $stdin_str         = $params{'stdin_str'};            # string to push to the STDIN of the command
+    my $must_succeed      = $params{'must_succeed'};         # if the executed command returns a non-zero exit value, turn OK_NON_ZERO_EXIT to ERR_NON_ZERO_EXIT
+    my $max_stdout_bytes  = $params{'max_stdout_bytes'};     # if the amount of stored stdout bytes exceeds this, halt the command and return to caller
+    my $system            = $params{'system'};               # if set to 1, will use system() instead, needed for some plugins
 
     $noisy_stderr = $noisy_stdout = 1 if ($ENV{'PLUGIN_DEBUG'} or $is_binary);
     my $fnret;
 
-    # taint check
+    # Normalize the command list: callers may pass undef positional args (e.g. osh.pl passes
+    # undef user/ip/host for plugin commands). open3/system silently stringify undef to '',
+    # but IPC::Run dies ("undef passed") on any undef element, so do it explicitly here.
+    $cmd = [map { defined $_ ? $_ : '' } @$cmd];
+
+    # taint check: refuse to silently exec a tainted command
     require Scalar::Util;
     foreach (@$cmd) {
         if (Scalar::Util::tainted($_) && /(.+)/) {
@@ -86,7 +72,8 @@ sub execute {
         }
     }
 
-    # if caller want us to use system(), just do it here and call it a day
+    # if caller wants us to use system(), just do it here and call it a day: this is a faithful
+    # full-inheritance exec, kept as-is (needed for some plugins, such as scp)
     if ($system) {
         my $child_exit_status = system(@$cmd);
         $fnret = sysret2human($child_exit_status);
@@ -102,331 +89,297 @@ sub execute {
         );
     }
 
-    # otherwise, launch the command under open3()
-    my ($child_stdin, $child_stdout, $child_stderr);
-    $child_stderr = gensym;
-    osh_debug("about to run_cmd ['" . join("','", @$cmd) . "']");
-    my $pid;
-    eval { $pid = open3($child_stdin, $child_stdout, $child_stderr, @$cmd); };
-    if ($@) {
-        chomp $@;
-        return R('ERR_EXEC_FAILED', msg => "Couldn't exec requested command ($@)");
-    }
+    # otherwise, delegate the select loop, backpressure and deadlock avoidance to IPC::Run
+    require IPC::Run;
 
-    # if some filehandles are already closed, binmode may fail, which is why we use eval{} here
-    eval { binmode $child_stdin; };
-    eval { binmode $child_stdout; };
-    eval { binmode $child_stderr; };
+    # IPC::Run resolves a bare command name (one with no '/') by searching $ENV{PATH} in pure Perl,
+    # and unlike the open3()/execvp() path we used before, it does NOT fall back to a system default
+    # path when $ENV{PATH} is empty or unset: it just dies with "Command 'x' not found". Some callers
+    # legitimately run with a cleared environment and relied on that execvp fallback -- notably the
+    # HTTP proxy, where Net::Server::HTTP does `%ENV = ()` on every request. Restore the old behavior
+    # by giving IPC::Run a sane default PATH for its lookup when none is set (scoped to this call).
+    local $ENV{'PATH'} =
+      (defined $ENV{'PATH'} && length $ENV{'PATH'})
+      ? $ENV{'PATH'}
+      : '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin';
+
+    # ensure our own std handles are in raw mode: we tee raw bytes (including binary payloads, e.g.
+    # selfPlaySession) to STDOUT/STDERR and pump STDIN through verbatim, so no PerlIO layer (:utf8,
+    # :crlf, ...) must be allowed to mangle them. Wrap each in eval{} as binmode may fail on an
+    # already-closed handle.
     eval { binmode STDIN; };
     eval { binmode STDOUT; };
     eval { binmode STDERR; };
 
-    # set our child's stdin to non-blocking, so that a syswrite to it is guaranteed to never block,
-    # otherwise we could get in an deadlock, where our child can't accept more data on its stdin
-    # before we read pending data from its stdout/stderr, which we will never do because we're busy
-    # waiting for the syswrite to its stdin to complete.
-    $fnret = _set_non_blocking($child_stdin);
-    $fnret or return $fnret;
+    my %bytesnb = (stdout => 0, stderr => 0);
+    my ($stdout_output, $stderr_output) = ('', '');
 
-    osh_debug("waiting for child PID $pid to complete...");
-
-    # declare vars we'll use below
-    my %output = ();
-    my $stderr_output;
-    my $stdout_output;
-    my $stdout_buffer;
-    my $child_stdin_to_write;
-    my $child_stdin_closing;
-    my $current_fh;
-    my $currently_in_json_block;
-    my %bytesnb;
-
-    # maximum number of code_info() to call, to avoid flooding the logs
-    my $info_limit = 5;
-
-    # maximum intermediate buffer size we want in $child_stdin_to_write, before we stop
-    # reading data from our own STDIN and wait our child to digest the data we send it,
-    # otherwise if we get a possibly infinite amount of data from our STDIN without ever
-    # being able to write it to our child, we'll end up in OOM
-    my $max_stdin_buf_size = 8 * 1024 * 1024;
-
-    # define our own version of syswrite to handle auto-retry if interrupted by a signal,
-    # return the number of bytes actually written
-    my $syswrite_ensure = sub {
-        my ($_bufsiz, $_FH, $_name, $_noisy_ref, $_buffer) = @_;
-        return 0 if (!$_bufsiz || !$_buffer);
-
-        my $offset       = 0;
-        my $totalwritten = 0;
-        while ($offset < $_bufsiz) {
-            my $written = eval { syswrite $_FH, $_buffer, 65535, $offset; };
-            if ($@) {
-                if ($@ =~ m{on closed filehandle}) {
-                    $child_stdin_to_write = '';
-                    return $totalwritten;
-                }
-                # don't ignore other errors
-                die($@);
-            }
-
-            if (not defined $written) {
-                if ($!{'EAGAIN'} && $_name eq 'child_stdin') {
-                    osh_debug("in syswrite_ensure, got EAGAIN on our child stdin, our caller will retry on next loop");
-                    return $totalwritten;
-                }
-                else {
-                    # is the fd still open? (maybe we got a SIGPIPE or a SIGHUP)
-                    # don't use tell() here, we use syseek() for unbuffered i/o,
-                    # note that if we're at the position "0", it's still true (see doc).
-                    my $previousError = $!;
-                    if (!sysseek($_FH, 0, SEEK_CUR)) {
-                        osh_debug("in syswrite_ensure, sysseek failed");
-                        info_syslog("execute(): error while syswriting($previousError/$!) on $_name, "
-                              . "the filehandle is closed, will no longer attempt to write to it")
-                          if $info_limit-- > 0;
-                        $$_noisy_ref = 0 if $_noisy_ref;
-                    }
-                    else {
-                        # oww, abort writing for this cycle. as this might be user-induced, use info instead of warn
-                        info_syslog(
-                            "execute(): error while syswriting($previousError) on $_name, " . "aborting this cycle")
-                          if $info_limit-- > 0;
-                    }
-                }
-                last;
-            }
-            $offset       += $written;
-            $totalwritten += $written;
+    # --- fd-3 result channel guard (capture_result_fd, i.e. every helper()) ---
+    # A helper returns its JSON result over fd 3 (see OVH::Bastion::Helper), which we ask IPC::Run to
+    # wire with '3>' below. To install it, IPC::Run dup2()s its own '3>' pipe end onto the child's fd 3,
+    # but while rearranging the child's fds it first dup()s out of the way whatever it had parked on
+    # fd 3 in the parent. On some libc fd layouts (seen with IPC::Run 20260402 on FreeBSD) that fd is
+    # already closed by the time the dup() runs, so it croaks EBADF ("Bad file descriptor: dup( 3 )")
+    # and the child never execs -- the helper then fails with ERR_HELPER_FAILED.
+    #
+    # We sidestep it by keeping fd 3 occupied in OUR process for the whole lifetime of the harness:
+    # IPC::Run (like anything else) allocates the lowest free fd, so with fd 3 held it never parks any
+    # of its own pipe ends -- nor our stdin pipe below -- there, and never runs that fragile dup(); it
+    # still dup2()s the result write end onto the child's fd 3 as usual. We claim it HERE, before
+    # creating any pipe of our own, so nothing of ours can grab fd 3 first: we dup an always-open
+    # handle (STDERR) rather than opening a path, so the guard has no dependency on any filesystem
+    # object (no /dev/null, no directory-open portability question) -- it just needs *a* fd in slot 3,
+    # and never does any I/O on it. The dup lands on the lowest free fd, which is fd 3 exactly when
+    # it's free (the case that triggers the bug); if fd 3 is already busy we get a higher fd we don't
+    # want and $guardfh is closed as it leaves scope (nothing to guard, and an occupied fd 3 doesn't
+    # trigger the bug anyway). Released after finish(), below.
+    my $fd3_guard;
+    if ($capture_result_fd) {
+        my $guardfh;
+        if (open($guardfh, '<&', \*STDERR) && fileno($guardfh) == 3) {
+            $fd3_guard = $guardfh;
         }
-        return $totalwritten;
-    };
+    }
 
-    # as we'll always monitor our child stdout and stderr, add those to our IO::Select
-    my $select = IO::Select->new($child_stdout, $child_stderr);
-
-    if (length($stdin_str) > 0) {
-        # we have some stdin data to push to our child, so preinit our intermediate buffer with that data
-        $child_stdin_to_write = $stdin_str;
+    # --- stdin source ---
+    my ($in_spec, $stdin_wh);
+    if (defined $stdin_str && length $stdin_str) {
+        # Feed the buffer ourselves through a pipe we own (see the feeding loop below), instead of
+        # handing IPC::Run a scalar ref: its writer pump croaks on EPIPE on all the IPC::Run versions
+        # shipped by our supported OSes (only fixed upstream in 20250715), whereas a child exiting
+        # before consuming its whole stdin is a normal occurrence (e.g. passwd rejecting a password
+        # early): in that case we must keep draining its stdout/stderr and report its real exit
+        # status, as the pre-IPC::Run implementation of execute() did. The read end is passed as a
+        # GLOB: IPC::Run dup()s it straight into the child with no writer pump attached, so there's
+        # nothing left on its side to croak. Perl's default $^F guarantees both ends are
+        # close-on-exec, so the child doesn't inherit a copy of the write end (which would prevent
+        # it from ever seeing EOF on its stdin once we're done writing).
+        # As the lowest free fd, pipe() could put our read end on fd 3, which IPC::Run also wants for
+        # the '3>' result channel of a helper (capture_result_fd) -- but the fd-3 guard set up above
+        # already holds fd 3 for the whole harness, so pipe() lands elsewhere and there's no clash to
+        # resolve here.
+        pipe(my $stdin_rh, $stdin_wh) or return R('ERR_SYSCALL_FAILED', msg => "Couldn't create a pipe ($!)");
+        binmode $stdin_rh;
+        binmode $stdin_wh;
+        $in_spec = $stdin_rh;
     }
     elsif ($expects_stdin) {
-        # monitor our own stdin only if we expect it (we'll pipe it to our child's stdin)
-        $select->add(\*STDIN);
+        $in_spec = \*STDIN;    # dup'ed into the child by IPC::Run: it reads our own stdin directly
     }
     else {
-        # we have nothing to feed to our child's stdin (no stdin_str, and we're not piping our own
-        # stdin to it), so close it right away to give the child an EOF: otherwise a child that reads
-        # its stdin until EOF (such as our http proxy worker) would block waiting for data forever
-        close($child_stdin);
+        $in_spec = \undef;     # child gets /dev/null (immediate EOF)
     }
 
-    # then, while we still have at least two filehandles to monitor OR we have only one which is not our own STDIN:
-    while ($select->count() > 1 || ($select->count() == 1 && !$select->exists(\*STDIN))) {
+    # --- output sinks: count bytes, capture (unless binary), optionally tee to our own fd ---
+    # hide_json_result is for running osh.pl recursively (e.g. the batch plugin): osh.pl is not a
+    # bastion helper, it emits its --json result as a JSON_START..JSON_END block on stdout. When teeing,
+    # hide any such block from the live tee (line by line): both to keep the console clean and so a
+    # caller capturing our stdout doesn't mistake it for our own result. The raw bytes are still
+    # captured in $stdout_output, which execute_osh() parses. (Real helpers don't need this: they
+    # return over fd 3 and emit nothing structured on stdout, see capture_result_fd below.)
+    my ($json_tee_buf, $in_json_block) = ('', 0);
+    my $stdout_sink = sub {
+        my $chunk = shift;
+        $bytesnb{stdout} += length $chunk;
+        $stdout_output .= $chunk if !$is_binary;
 
-        # first, if we have data to push to our child's stdin that comes from our own stdin,
-        # try to do that before checking if we have pending data to read, as to ensure we don't get deadlocked
-        if (length($child_stdin_to_write) > 0) {
-            my $written2child = $syswrite_ensure->(
-                length($child_stdin_to_write),
-                $child_stdin, 'child_stdin', undef, $child_stdin_to_write
-            );
-
-            if ($written2child) {
-                # remove the data we've written from the intermediate buffer
-                $child_stdin_to_write = substr($child_stdin_to_write, $written2child);
-
-                if (length($child_stdin_to_write) == 0) {
-                    if (length($stdin_str) > 0) {
-                        # we pushed all the data we wanted to push to our child stdin, we can close it now:
-                        osh_debug("execute: closing child stdin as we wrote everything we wanted to it (stdin_str)");
-                        close($child_stdin);
-                    }
-                    elsif ($child_stdin_closing) {
-                        # our own STDIN was already closed, and we just finished flushing the data to our child,
-                        # so we can close it as well
-                        osh_debug("execute: closing child stdin as we wrote everything we wanted to it");
-                        close($child_stdin);
-                    }
+        if ($noisy_stdout) {
+            if (!$hide_json_result) {
+                print {*STDOUT} $chunk;
+            }
+            else {
+                # consume complete lines via index()/substr() rather than a `s/^(.*\n)//` that
+                # re-scans a growing buffer from the front (O(n^2) on a long newline-less run, e.g.
+                # osh.pl's single-line encoded JSON result).
+                $json_tee_buf .= $chunk;
+                my $nl;
+                while (($nl = index($json_tee_buf, "\n")) >= 0) {
+                    my $line = substr($json_tee_buf, 0, $nl + 1, '');    # take one line incl. newline
+                    (my $bare = $line) =~ s/\r?\n\z//;
+                    if    ($bare eq 'JSON_START') { $in_json_block = 1; }
+                    elsif ($bare eq 'JSON_END')   { $in_json_block = 0; }
+                    else                          { print {*STDOUT} $line if !$in_json_block; }
                 }
+                # inside a hidden block, the leftover partial line is either the tail of a long
+                # (newline-less) data line we're hiding, or the start of the short JSON_END marker
+                # split across two chunks. Drop it only once it's too long to be a marker: this keeps
+                # the buffer bounded on a huge single-line result (still captured in $stdout_output)
+                # without ever losing a JSON_END that straddles a chunk boundary (which would otherwise
+                # wedge us in-block and hide all subsequent human output).
+                $json_tee_buf = '' if ($in_json_block && length($json_tee_buf) > length('JSON_START'));
             }
         }
 
-        # then, wait until we have something to read.
-        # block only for 10ms, if there's nothing to read anywhere for this amount of time,
-        # it'll be when we want to check if our child is dead
-        my @ready = $select->can_read(0.01);
+        # honor max_stdout_bytes: we have enough, signal the loop to stop
+        die "EXECUTE_MAX_STDOUT_BYTES\n" if ($max_stdout_bytes && $bytesnb{stdout} >= $max_stdout_bytes);
+        return;
+    };
 
-        # yep, we have something to read on at least one fh
-        if (@ready) {
+    my $stderr_sink = sub {
+        my $chunk = shift;
+        $bytesnb{stderr} += length $chunk;
+        $stderr_output .= $chunk if !$is_binary;
+        print {*STDERR} $chunk   if $noisy_stderr;
+        return;
+    };
 
-            # guarantee we're still reading this fh while it has something to say, this helps avoiding
-            # mangling stdout/stderr on the console when noisy_* vars are set
-            $current_fh = $ready[0];
+    # for real helpers (bin/helper/osh-*), capture their JSON result on a dedicated fd (3) instead of
+    # having them frame it on stdout: this keeps stdout clean (human output only) for the live tee. The
+    # helper finds this channel as its (only) open fd 3 at startup and writes its result there (see
+    # OVH::Bastion::Helper). helper() consumes result_fd_output below.
+    my $result_fd_output;
 
-            # ...unless we have piled up a big buffer from our stdin, and child is still blocking on its own stdin,
-            # in which case we'll stop reading from our stdin and prioritize other filehandles
-            # in an attempt to unblock our child
-            if ($current_fh->fileno == STDIN->fileno && length($child_stdin_to_write) > $max_stdin_buf_size) {
-                osh_debug("main loop, changing current fh to avoid deadlocking");
-                if (@ready > 1) {
-                    $current_fh = $ready[1];
-                }
-                else {
-                    warn_syslog("possible deadlock while running ['" . join("','", @$cmd) . "']") if $info_limit-- > 0;
-                    osh_debug("main loop, can't change current fh to avoid deadlock, refusing to read from it");
-                    # we have nothing to read/write from/to, except from our own STDIN but our buffer is already full,
-                    # so let's sleep for a tiny bit to help ensuring our child is not CPU-starved which could make
-                    # it incapable of accepting new data to its STDIN, hence deadlocking us in return
-                    require Time::HiRes;
-                    Time::HiRes::usleep(1000 * 15);
-                    next;
-                }
+    # For binary bulk transfers (e.g. the sftp/rsync data path), keep ourselves out of the child's
+    # I/O entirely: in is_binary mode the sinks above neither capture (skipped) nor filter (no JSON
+    # to hide), they'd only relay bytes to our own std fds -- and IPC::Run pumps CODE sinks through
+    # its select loop in small chunks, a hefty CPU cost at data-transfer rates. Passing our fds as
+    # GLOBs instead makes IPC::Run dup2() them straight into the child, which then writes to them
+    # directly, with no parent-side pumping at all (just like we already do for '<' STDIN above).
+    # We can't do this when max_stdout_bytes is set: the counting sink is what stops the child. No
+    # counting happens in passthrough mode either (bytesnb stays 0, nothing consumes it here).
+    my ($out_spec, $err_spec) = ($stdout_sink, $stderr_sink);
+    ($out_spec, $err_spec) = (\*STDOUT, \*STDERR) if ($is_binary && !$max_stdout_bytes);
+
+    my @harness_args = ([@$cmd], '<', $in_spec, '>', $out_spec, '2>', $err_spec);
+    push @harness_args, '3>', \$result_fd_output if $capture_result_fd;
+
+    osh_debug("about to run_cmd ['" . join("','", @$cmd) . "'] (via IPC::Run)");
+    my $harness = IPC::Run::harness(@harness_args);
+
+    my $hit_max_stdout = 0;
+    my $ok             = eval {
+        $harness->start;
+
+        # feed stdin_str to the child ourselves, with the same graceful semantics the pre-IPC::Run
+        # implementation had: a child no longer reading its stdin is not an error, stop feeding it
+        # and keep going to collect its output and real exit status (see the pipe() creation above)
+        if ($stdin_wh) {
+            # Writing to the pipe of a child that exited raises SIGPIPE: this one is pure execute()
+            # machinery, so shield the caller from it for the duration of the feeding phase -- an
+            # unhandled caller would get killed outright, and a handled one would have its handler
+            # spuriously triggered by what is a benign event (Plugin.pm's handler tears the whole
+            # process group down!). With the signal ignored, our syswrite cleanly gets EPIPE, which
+            # the loop below handles. This is deliberately scoped to the feeding phase and NOT to
+            # finish(): a SIGPIPE raised by the stdout/stderr tee means the CALLER's own output
+            # channel died (e.g. user disconnected), and acting on that (like Plugin.pm killing the
+            # process group to tear the session down) is the caller's policy, not ours to silence.
+            local $SIG{'PIPE'} = 'IGNORE';
+
+            # the child got its own dup of the read end when it was spawned; close ours so that
+            # once the child is gone, our syswrites get a proper EPIPE instead of filling a pipe
+            # that nobody will ever read
+            close($in_spec);
+
+            # set our write end non-blocking: when the pipe is full, we must keep draining the
+            # child's stdout/stderr while it digests, or we'd deadlock each other
+            my $flflags = fcntl($stdin_wh, F_GETFL, 0);
+            if (!defined $flflags || !fcntl($stdin_wh, F_SETFL, $flflags | O_NONBLOCK)) {
+                # left blocking: a child that stops reading its stdin while its own stdout/stderr
+                # pipe fills could now deadlock us (we'd block in syswrite instead of draining it).
+                # Near-impossible on a fresh pipe, but log a breadcrumb for any mysterious hang here.
+                warn_syslog("execute(): couldn't set the child's stdin pipe non-blocking ($!)");
             }
 
-            my $sub_select = IO::Select->new($current_fh);
-
-            # can_read(0) because we don't need a timeout: we KNOW there's something to read on this fh,
-            # otherwise we wouldn't be here
-            while ($sub_select->can_read(0)) {
-                my $buffer;
-                my $nbread = sysread $current_fh, $buffer, 65535;
-
-                # undef==error, we log to syslog and close. as this might be user-induced, use info instead of warn
-                if (not defined $nbread) {
-                    info_syslog("execute(): error while sysreading($!), closing fh!");
+            my $offset = 0;
+            my $len    = length $stdin_str;
+            while ($offset < $len) {
+                my $written = syswrite($stdin_wh, $stdin_str, $len - $offset, $offset);
+                if (defined $written) {
+                    $offset += $written;
                 }
-
-                # if size 0, it means it's an EOF
-                elsif ($nbread == 0) {
-                    # we got an EOF on this fh, remove it from the monitor list
-                    osh_debug("main loop: removing current fh from select list");
-                    $select->remove($current_fh);
-
-                    # if this is an EOF on our own STDIN, we need to close our child's STDIN,
-                    # but do this only if our intermediate buffer is empty, otherwise just mark it
-                    # for close, we'll do it as soon as we empty the buffer
-                    if ($current_fh->fileno == STDIN->fileno) {
-                        close(STDIN);    # we got EOF on it, so close it
-                        if (length($child_stdin_to_write) == 0) {
-                            close($child_stdin);
-                        }
-                        else {
-                            $child_stdin_closing = 1;    # defer close to when our intermediate buffer is empty
-                        }
-                    }
-                    else {
-                        ;                                # EOF on our child's stdout or stderr, nothing to do
-                    }
-                    last;
+                elsif ($!{'EINTR'}) {
+                    next;    # interrupted by a signal, just retry
                 }
-
-                # we got data, is this our child's stderr?
-                elsif ($current_fh->fileno == $child_stderr->fileno) {
-                    $bytesnb{'stderr'} += $nbread;
-                    $stderr_output .= $buffer if !$is_binary;
-
-                    # syswrite on our own STDERR what we received
-                    if ($noisy_stderr) {
-                        $syswrite_ensure->($nbread, *STDERR, 'stderr', \$noisy_stderr, $buffer);
-                    }
+                elsif ($!{'EAGAIN'} || $!{'EWOULDBLOCK'}) {
+                    # pipe full: drain the child's pending output, then wait (10ms max) for room.
+                    # waiting for room alone would deadlock us with a child that blocks writing
+                    # its stdout until we read it, hence the pump_nb (non-blocking pump) each round
+                    $harness->pump_nb if $harness->pumpable;
+                    my $win = '';
+                    vec($win, fileno($stdin_wh), 1) = 1;
+                    select(undef, $win, undef, 0.01);
                 }
-
-                # we got data, is this our child's stdout ?
-                elsif ($current_fh->fileno == $child_stdout->fileno) {
-                    $bytesnb{'stdout'} += $nbread;
-                    $stdout_output .= $buffer if !$is_binary;
-
-                    # syswrite on our own STDOUT what we received, if asked to do so
-                    # is $is_helper, then we need to filter out the HELPER_RESULT before printing,
-                    # so handle that further below
-                    if ($noisy_stdout) {
-                        if (!$is_helper) {
-                            $syswrite_ensure->($nbread, *STDOUT, 'stdout', \$noisy_stdout, $buffer);
-                        }
-                        else {
-                            # if this is a helper, hide the HELPER_RESULT from noisy_stdout
-                            foreach my $char (split //, $buffer) {
-                                if ($char eq $/) {
-                                    # in that case, we didn't noisy print each char, we wait for $/
-                                    # then print it IF this is not the result_from_helper (json)
-                                    if ($stdout_buffer eq 'JSON_START') {
-                                        $currently_in_json_block = 1;
-                                    }
-                                    if (not $currently_in_json_block) {
-                                        $stdout_buffer .= $/;
-                                        $syswrite_ensure->(
-                                            length($stdout_buffer), *STDOUT, 'stdout', \$noisy_stdout, $stdout_buffer
-                                        );
-                                    }
-                                    if ($currently_in_json_block and $stdout_buffer eq 'JSON_END') {
-                                        $currently_in_json_block = 0;
-                                    }
-                                    $stdout_buffer = '';
-                                }
-                                else {
-                                    $stdout_buffer .= $char;
-                                }
-                            }
-                            # if we still have data in our local buffer, flush it
-                            $syswrite_ensure->(
-                                length($stdout_buffer), *STDOUT, 'stdout', \$noisy_stdout, $stdout_buffer
-                            ) if $stdout_buffer;
-                        }
-                    }
-
-                    if ($max_stdout_bytes && $bytesnb{'stdout'} >= $max_stdout_bytes) {
-                        # caller got enough data, close all our child channels
-                        $select->remove($child_stdout);
-                        $select->remove($child_stderr);
-                        close($child_stdin);
-                        close($child_stdout);
-                        close($child_stderr);
-
-                        # and also our own STDIN if we're listening for it
-                        if ($select->exists(\*STDIN)) {
-                            $select->remove(\*STDIN);
-                            close(STDIN);
-                        }
-                    }
-                }
-
-                # we got data, is this our stdin?
-                elsif ($current_fh->fileno == STDIN->fileno) {
-                    $bytesnb{'stdin'} += $nbread;
-                    # save this data for the next loop
-                    $child_stdin_to_write .= $buffer;
-                }
-
-                # wow, we got data from an unknown fh ... it's not possible ... theoretically
                 else {
-                    warn_syslog("Got data from an unknown fh ($current_fh) with $nbread bytes of data");
+                    # EPIPE & friends: the child stopped reading its stdin (most likely it exited,
+                    # or closed it on purpose); not an error, it just doesn't want our data
+                    osh_debug("execute: stopped feeding stdin_str to the child ($!)");
                     last;
                 }
             }
+            close($stdin_wh);    # done writing (or gave up): give the child its EOF
+        }
 
-            # /guarantee
+        $harness->finish;
+        1;
+    };
+
+    # the harness has run (or failed to): release our fd-3 guard. The child already holds its own
+    # dup of the result channel on its fd 3, so this only frees the slot in our own process, notably
+    # for any nested helper we might run next (which will reuse fd 3 for ITS OWN result channel).
+    close($fd3_guard) if $fd3_guard;
+
+    if (!$ok) {
+        my $err = $@ || 'unknown error';
+        # note: IPC::Run prepends context (e.g. "ack ") to exceptions thrown from within a sink
+        # callback, so match our sentinel anywhere in the message, not anchored at the start.
+        if ($err =~ /EXECUTE_MAX_STDOUT_BYTES/) {
+            $hit_max_stdout = 1;              # this is a deliberate stop, not a command failure
+            eval { $harness->kill_kill; };    # we got enough output, stop the child
+            eval { $harness->finish; };       # then reap it
+        }
+        else {
+            # genuine failure: either the exec itself failed, or IPC::Run hit an internal error
+            # (such as EPIPE while pumping the child's stdin), in which case the child HAS been
+            # started: kill and reap it if any, instead of leaving a zombie behind us until we exit
+            eval { $harness->kill_kill; };
+            eval { $harness->finish; };
+            chomp $err;
+            return R('ERR_EXEC_FAILED', msg => "Couldn't exec requested command ($err)");
         }
     }
 
-    # here, all fd went EOF (except maybe STDIN but we don't care)
-    # so we need to waitpid
-    # (might be blocking, but we have nothing to read/write anyway)
-    osh_debug("all fds are EOF, waiting for pid $pid indefinitely");
-    waitpid($pid, 0);
-    my $child_exit_status = $?;
+    # flush any trailing (newline-less) line we held back from the hide_json_result tee, unless it's
+    # part of a JSON result block we're hiding
+    print {*STDOUT} $json_tee_buf
+      if ($noisy_stdout && $hide_json_result && length $json_tee_buf && !$in_json_block);
+
+    # raw wait status ($?) of our single command. Use the plural full_results() and take the first
+    # element rather than full_result(0): in IPC::Run 20180523.0 (shipped on e.g. RockyLinux 8 and
+    # Ubuntu 20.04), full_result($index) does `goto &result if @_ > 1`, so it wrongly returns the
+    # already->>8-shifted exit code instead of the raw $?, and our own >>8 below would then zero out
+    # every sub-256 exit code. full_results() returns the raw RESULT and behaves identically across
+    # versions.
+    my $child_exit_status;
+    eval { ($child_exit_status) = $harness->full_results; 1; }
+      or warn_syslog("execute(): couldn't read the child's exit status ($@); assuming a clean exit");
+    $child_exit_status = 0 if !defined $child_exit_status;
 
     $fnret = sysret2human($child_exit_status);
     osh_debug("cmd returned with $fnret");
+
+    # decide our return code. note: a signal death yields status => undef (not 0), so guard with
+    # defined() before the == 0 test, otherwise `undef == 0` is true and we'd wrongly report OK (and
+    # silently defeat must_succeed) for a killed command. A command we deliberately stopped after
+    # max_stdout_bytes is NOT a failure: keep it OK even under must_succeed (e.g. connect.pl truncating
+    # a ttyrec preview), as we killed it on purpose once we had enough output.
+    my $status = $fnret->value->{'status'};
+    my $code =
+        $hit_max_stdout                   ? 'OK'
+      : (defined $status && $status == 0) ? 'OK'
+      : $must_succeed                     ? 'ERR_NON_ZERO_EXIT'
+      :                                     'OK_NON_ZERO_EXIT';
     return R(
-        $fnret->value->{'status'} == 0 ? 'OK' : ($must_succeed ? 'ERR_NON_ZERO_EXIT' : 'OK_NON_ZERO_EXIT'),
+        $code,
         value => {
-            sysret     => $child_exit_status >> 8,
-            sysret_raw => $child_exit_status,
-            stdout     => [split($/, $stdout_output)],
-            stderr     => [split($/, $stderr_output)],
-            bytesnb    => \%bytesnb,
-            status     => $fnret->value->{'status'},
-            coredump   => $fnret->value->{'coredump'},
-            signal     => $fnret->value->{'signal'},
+            sysret           => $child_exit_status >> 8,
+            sysret_raw       => $child_exit_status,
+            stdout           => [split($/, $stdout_output // '')],
+            stderr           => [split($/, $stderr_output // '')],
+            result_fd_output => $result_fd_output,             # raw JSON from the fd-3 result channel, if any (capture_result_fd)
+            bytesnb          => \%bytesnb,
+            status           => $fnret->value->{'status'},
+            coredump         => $fnret->value->{'coredump'},
+            signal           => $fnret->value->{'signal'},
         },
         msg => "Command exited with " . sysret2human($child_exit_status)->msg,
     );
@@ -486,8 +439,12 @@ sub execute_simple {
 
     $fnret = sysret2human($child_exit_status);
     osh_debug("cmd returned with $fnret");
+
+    # a signal death yields status => undef (not 0); guard with defined() before == 0, otherwise
+    # `undef == 0` is true and we'd wrongly report OK (and silently defeat must_succeed) for a kill.
+    my $status = $fnret->value->{'status'};
     return R(
-        $fnret->value->{'status'} == 0 ? 'OK' : ($must_succeed ? 'ERR_NON_ZERO_EXIT' : 'OK_NON_ZERO_EXIT'),
+        (defined $status && $status == 0) ? 'OK' : ($must_succeed ? 'ERR_NON_ZERO_EXIT' : 'OK_NON_ZERO_EXIT'),
         value => {
             sysret     => $child_exit_status >> 8,
             sysret_raw => $child_exit_status,
@@ -500,7 +457,11 @@ sub execute_simple {
     );
 }
 
-sub result_from_helper {
+# Parse a JSON result framed as a JSON_START..JSON_END block within an array of stdout lines. This is
+# the format osh.pl emits for --json output, consumed by execute_osh() (e.g. the batch plugin, which
+# runs osh.pl recursively). Real helpers (bin/helper/osh-*) don't use this: they return their result
+# over the dedicated fd 3 (see json_output()), which helper() reads directly.
+sub result_from_json_output {
     my $input = shift;
 
     if (ref $input ne 'ARRAY') {
@@ -510,21 +471,18 @@ sub result_from_helper {
     my $state = 1;
     my @json;
     foreach my $line (@$input) {
-        chomp;
+        chomp $line;
         if ($state == 1) {
             if ($line eq 'JSON_START') {
-                # will now capture data
                 @json  = ();
                 $state = 2;
             }
         }
         elsif ($state == 2) {
             if ($line eq 'JSON_END') {
-                # done capturing data, might still see a new JSON_START however
                 $state = 1;
             }
             else {
-                # capturing data
                 push @json, $line;
             }
         }
@@ -548,26 +506,70 @@ sub helper_decapsulate {
     return R($value->{'error_code'}, value => $value->{'value'}, msg => $value->{'error_message'});
 }
 
-sub helper {
-    my %params        = @_;
-    my @command       = @{$params{'cmd'} || []};
-    my $expects_stdin = $params{'expects_stdin'};
-    my $stdin_str     = $params{'stdin_str'};
+# Shared core for helper() and execute_osh(): run a result-bearing child via execute() with the
+# caller-chosen result-transport flag ($result_flag, 'capture_result_fd' for real helpers via fd 3, or
+# 'hide_json_result' for osh.pl framing its result on stdout), tee its human output live, then hand the
+# execute() $fnret to $extract, which pulls out and decapsulates the structured JSON result.
+sub _execute_with_result {
+    my %params      = @_;
+    my $result_flag = $params{'result_flag'};
+    my $extract     = $params{'extract'};
 
     my $fnret = OVH::Bastion::execute(
-        cmd           => \@command,
+        cmd           => [@{$params{'cmd'} || []}],
         noisy_stdout  => 1,
         noisy_stderr  => 1,
-        is_helper     => 1,
-        expects_stdin => $expects_stdin,
-        stdin_str     => $stdin_str
+        $result_flag  => 1,
+        expects_stdin => $params{'expects_stdin'},
+        stdin_str     => $params{'stdin_str'},
     );
-    $fnret or return R('ERR_HELPER_FAILED', msg => "something went wrong in helper script ($fnret)");
+    $fnret or return R('ERR_HELPER_FAILED', msg => "something went wrong while running the command ($fnret)");
 
-    $fnret = OVH::Bastion::result_from_helper($fnret->value->{'stdout'});
-    $fnret or return $fnret;
+    return $extract->($fnret);
+}
 
-    return OVH::Bastion::helper_decapsulate($fnret->value);
+# Run a bastion helper (bin/helper/osh-*) under sudo via execute(), and return its decapsulated
+# result. The helper returns its JSON result over the dedicated fd 3 (see json_output()/HEXIT and
+# OVH::Bastion::Helper), which keeps its stdout clean for the live tee. To run osh.pl recursively
+# instead (which is not a helper and frames its result on stdout), use execute_osh().
+sub helper {
+    my %params = @_;
+    return _execute_with_result(
+        %params,
+        result_flag => 'capture_result_fd',
+        extract     => sub {
+            my $fnret  = shift;
+            my $result = $fnret->value->{'result_fd_output'};
+            if (!defined $result || !length $result) {
+                return R('ERR_HELPER_RETURN_EMPTY',
+                    msg => "The helper didn't return any data, maybe it crashed, please report to your sysadmin!");
+            }
+            my $decoded;
+            eval { $decoded = decode_json($result); };
+            if ($@) {
+                return R('ERR_HELPER_RETURN_INVALID', msg => $@);
+            }
+            return OVH::Bastion::helper_decapsulate($decoded);
+        },
+    );
+}
+
+# Run osh.pl recursively (the login shell) with --json, and return its decapsulated result. Unlike a
+# bastion helper, osh.pl is not run under sudo and doesn't use the fd-3 result channel: it frames its
+# result as a JSON_START..JSON_END block on stdout. We hide that block from the live tee (so the user
+# only sees human output) but still capture it, then parse it. Currently used by the batch plugin.
+sub execute_osh {
+    my %params = @_;
+    return _execute_with_result(
+        %params,
+        result_flag => 'hide_json_result',
+        extract     => sub {
+            my $fnret = shift;
+            $fnret = OVH::Bastion::result_from_json_output($fnret->value->{'stdout'});
+            $fnret or return $fnret;
+            return OVH::Bastion::helper_decapsulate($fnret->value);
+        },
+    );
 }
 
 1;

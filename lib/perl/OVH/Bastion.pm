@@ -151,7 +151,8 @@ my %_autoload_files = (
     configuration => [
         qw{ load_configuration_file main_configuration_directory load_configuration config account_config plugin_config group_config json_load }
     ],
-    execute     => [qw{ sysret2human execute execute_simple result_from_helper helper_decapsulate helper }],
+    execute =>
+      [qw{ sysret2human execute execute_simple execute_osh result_from_json_output helper_decapsulate helper }],
     interactive => [qw{ interactive }],
     jail        => [qw{ jailify }],
     log         => [
@@ -523,26 +524,50 @@ sub is_account_active {
 sub json_output {    ## no critic (ArgUnpacking)
     my $R             = shift;
     my %params        = @_;
-    my $force_default = $params{'force_default'};
     my $no_delimiters = $params{'no_delimiters'};
     my $command       = $params{'command'}    || $ENV{'PLUGIN_NAME'};
     my $filehandle    = $params{'filehandle'} || *STDOUT;
 
+    # a defined result_fh means a helper is returning its result over the dedicated fd-3 result channel
+    # that OVH::Bastion::Helper set up and HEXIT hands us. It's the only thing that ever passes this;
+    # see the branch below. Its mere presence is what routes us to the result channel.
+    my $result_fh = $params{'result_fh'};
+
     ## no critic(ValuesAndExpressions::ProhibitLongChainsOfMethodCalls)
     my $JsonObject = JSON->new->utf8->convert_blessed->ascii;
-    if ($ENV{'PLUGIN_JSON'} eq 'PRETTY' and not $force_default) {
+    if ($ENV{'PLUGIN_JSON'} eq 'PRETTY' and not defined $result_fh) {
         $JsonObject->pretty;
     }
     my $encoded_json =
       $JsonObject->encode({error_code => $R->err, error_message => $R->msg, command => $command, value => $R->value});
 
-    # rename forbidden strings
+    # result_fh is only ever passed by HEXIT, i.e. this is a helper returning its result to its caller
+    # (a plugin running execute() with capture_result_fd). It's the dedicated result channel that
+    # OVH::Bastion::Helper set up at startup from its fd 3 (relocated off fd 3 to leave it free for
+    # nested helpers). We return the result there, never over stdout: this keeps the helper's stdout
+    # clean (human output only) so the caller can tee it live without any filtering.
+    if (defined $result_fh) {
+        # a failed write must not masquerade as success (HEXIT exits 0 right after us): losing a
+        # privileged helper's result silently would leave the caller believing the action failed
+        # (or worse, kept waiting), while it has actually been performed.
+        my $print_ok = print {$result_fh} $encoded_json;
+        my $close_ok = close($result_fh);
+        if (!$print_ok || !$close_ok) {
+            warn_syslog("failed writing the helper result to the result channel ($!)");
+            die "FATAL: failed writing the helper result to the result channel\n";
+        }
+        return;
+    }
+
+    # User-facing output below (--json and friends): the JSON is framed in-band on stdout between
+    # JSON_START/JSON_END anchor lines (or after a JSON_OUTPUT= anchor in GREP mode), as documented
+    # in doc/sphinx/using/api.rst. Rename these anchor strings if they appear within the data itself.
     $encoded_json =~ s/JSON_(START|OUTPUT|END)/JSON__$1/g;
 
     if ($no_delimiters) {
         print {$filehandle} $encoded_json;
     }
-    elsif ($ENV{'PLUGIN_JSON'} eq 'GREP' and not $force_default) {
+    elsif ($ENV{'PLUGIN_JSON'} eq 'GREP') {
         $encoded_json =~ tr/\r\n/ /;
         print {$filehandle} "\nJSON_OUTPUT=$encoded_json\n";
     }

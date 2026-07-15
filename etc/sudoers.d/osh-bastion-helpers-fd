@@ -1,0 +1,5 @@
+# The bastion's privileged helpers receive their JSON result from the calling plugin over a
+# dedicated file descriptor (fd 3), but sudo closes fd>=3 by default (closefrom=3).
+# We raise that to 4 (for the helper commands ONLY), so fd 3 survives into the helper.
+Cmnd_Alias OSH_HELPERS_FD = /usr/bin/env perl -T %BASEPATH%/bin/helper/osh-*
+Defaults!OSH_HELPERS_FD closefrom=4

@@ -163,19 +163,19 @@ EOF
 
     success personal_scp_upload_oldhelper_ok scp $scp_options -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file /etc/passwd $shellaccount@127.0.0.2:uptest
     contain "through the bastion to"
-    contain "Done,"
+    contain "Done, scp exited successfully"
 
     success personal_scp_upload_newwrapper_ok /tmp/scpwrapper -i $account0key1file /etc/passwd $shellaccount@127.0.0.2:uptest
     contain "through the bastion to"
-    contain "Done,"
+    contain "Done, scp exited successfully"
 
     success personal_scp_download_oldhelper_ok scp $scp_options -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file $shellaccount@127.0.0.2:uptest /tmp/downloaded
     contain "through the bastion from"
-    contain "Done,"
+    contain "Done, scp exited successfully"
 
     success personal_scp_download_newwrapper_ok /tmp/scpwrapper -i $account0key1file $shellaccount@127.0.0.2:uptest /tmp/downloaded
     contain "through the bastion from"
-    contain "Done,"
+    contain "Done, scp exited successfully"
 
     success personal_scp_del_scpup_access $a0 --osh selfDelPersonalAccess --host 127.0.0.2 --protocol scpupload --port 22
     json .command selfDelPersonalAccess
@@ -203,7 +203,7 @@ EOF
     contain 'sftp> ls'
     contain 'uptest'
     contain 'sftp> exit'
-    contain '>>> Done,'
+    contain "Done, sftp exited successfully"
 
     run personal_sftp_use_newwrapper_badport /tmp/sftpwrapper -b /tmp/sftpcommands -i $account0key1file -P 9999 $shellaccount@127.0.0.2
     retvalshouldbe 1
@@ -219,7 +219,7 @@ EOF
     contain 'sftp> ls'
     contain 'uptest'
     contain 'sftp> exit'
-    contain '>>> Done,'
+    contain "Done, sftp exited successfully"
 
     success personal_sftp_del_sftp_access $a0 --osh selfDelPersonalAccess --host 127.0.0.2 --protocol sftp --port 22
     json .command selfDelPersonalAccess
@@ -237,13 +237,13 @@ EOF
     nocontain "rsync:"
     nocontain "rsync error:"
     contain ">>> Hello"
-    contain ">>> Done,"
+    contain "Done, rsync exited successfully"
 
     success personal_rsync_download_ok rsync --rsh \"$a0 --osh rsync --\" $shellaccount@127.0.0.2:rsync_file /tmp/downloaded
     nocontain "rsync:"
     nocontain "rsync error:"
     contain ">>> Hello"
-    contain ">>> Done,"
+    contain "Done, rsync exited successfully"
 
     success personal_rsync_del_rsync_access $a0 --osh selfDelPersonalAccess --host 127.0.0.2 --protocol rsync --port 22
     json .command selfDelPersonalAccess
@@ -283,7 +283,7 @@ EOF
     success groupssh_groupprotocol_scp_upload_ok /tmp/scpwrapper -i $account0key1file /etc/passwd $shellaccount@127.0.0.2:
     contain 'MFA_TOKEN=notrequired'
     contain 'transferring your file through the bastion'
-    contain '>>> Done'
+    contain "Done, scp exited successfully"
 
     run personalssh_groupprotocol_scp_download_mustfail /tmp/scpwrapper -i $account0key1file $shellaccount@127.0.0.2:passwd /tmp/
     retvalshouldbe 1
@@ -308,7 +308,7 @@ EOF
     success groupssh_groupprotocol_sftp_use_ok /tmp/sftpwrapper -i $account0key1file sftp://$shellaccount@127.0.0.2//etc/passwd
     contain 'MFA_TOKEN=notrequired'
     contain 'Fetching /etc/passwd'
-    contain '>>> Done'
+    contain "Done, sftp exited successfully"
 
     success groupssh_groupprotocol_sftp_del_sftp_access $a0 --osh groupDelServer --group $group1 --host 127.0.0.2 --protocol sftp --port 22
     json .command groupDelServer
@@ -325,7 +325,7 @@ EOF
 
     success groupssh_groupprotocol_rsync_use_ok rsync --rsh \"$a0 --osh rsync --\" $shellaccount@127.0.0.2:/etc/passwd /tmp/
     contain '>>> Hello'
-    contain '>>> Done,'
+    contain "Done, rsync exited successfully"
 
     success groupssh_groupprotocol_rsync_del_rsync_access $a0 --osh groupDelServer --group $group1 --host 127.0.0.2 --protocol rsync --port 22
     json .command groupDelServer
@@ -536,21 +536,21 @@ EOF
     success scp_upload_mfa_exempt_oldwrapper_ok scp $scp_options -F $mytmpdir/ssh_config -S /tmp/scphelper -i $account0key1file /etc/passwd $shellaccount@127.0.0.2:uptest
     contain 'skipping as your account is exempt from MFA'
     contain "through the bastion to"
-    contain "Done,"
+    contain "Done, scp exited successfully"
 
     success sftp_use_mfa_exempt_oldwrapper_ok sftp -F $mytmpdir/ssh_config -b /tmp/sftpcommands -S /tmp/sftphelper -i $account0key1file $shellaccount@127.0.0.2
     contain 'skipping as your account is exempt from MFA'
     contain 'sftp> ls'
     contain 'uptest'
     contain 'sftp> exit'
-    contain '>>> Done,'
+    contain "Done, sftp exited successfully"
 
     run rsync_use_mfa_exempt_ok rsync --rsh \"$a0 --osh rsync --\" $shellaccount@127.0.0.2:/etc/passwd /tmp/
     nocontain "rsync:"
     nocontain "rsync error:"
     contain "requires password MFA but your account has password MFA bypass, allowing"
     contain ">>> Hello"
-    contain ">>> Done,"
+    contain "Done, rsync exited successfully"
 
     # reset account setup
     success personal_mfa_reset_policy $a0 --osh accountModify --account $account0 --mfa-password-required no

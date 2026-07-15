@@ -3,7 +3,8 @@ package OVH::Bastion::Helper;
 # vim: set filetype=perl ts=4 sw=4 sts=4 et:
 use common::sense;
 
-use Fcntl       qw{ :flock :mode };
+use Fcntl       qw{ :flock :mode F_GETFD F_SETFD F_GETFL FD_CLOEXEC F_DUPFD O_ACCMODE O_RDONLY };
+use POSIX       ();
 use Time::HiRes qw{ usleep };
 
 use File::Basename;
@@ -15,6 +16,10 @@ use OVH::Result;
 use Exporter 'import';
 our $self;                          ## no critic (ProhibitPackageVars)
 our @EXPORT = qw( $self HEXIT );    ## no critic (ProhibitAutomaticExportation)
+
+# Our fd-3 result channel handle, set up at load time (see below) and handed to json_output() by
+# HEXIT() at exit. Declared here, before HEXIT(), so HEXIT() closes over this single file lexical.
+my $result_fh;
 
 # HEXIT aka "helper exit", used by helper scripts found in helpers/
 # Can be used in several ways:
@@ -36,7 +41,10 @@ sub HEXIT {    ## no critic (ArgUnpacking)
     else {
         $R = R(@_);
     }
-    OVH::Bastion::json_output($R, force_default => 1);
+    # Return our result over the dedicated fd-3 result channel, never on stdout. The load-time code
+    # below guarantees the channel is set up and usable, and dies before the helper gets to do any
+    # work otherwise, so $result_fh is always defined here.
+    OVH::Bastion::json_output($R, result_fh => $result_fh);
     exit 0;
 }
 
@@ -63,7 +71,68 @@ $SIG{'PIPE'} = 'IGNORE';    # continue even if osh_info gets a SIGPIPE because t
 # Ensure the PATH is not tainted, and has sane values
 $ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/pkg/bin';
 
-# Build $self from SUDO_USER, as helpers are always run under sudo
+# If we're only being syntax-checked (perl -c / perl -Tc, as bin/dev/perl-check.sh does), $^C is true
+# and none of the helper's runtime code will run. Stop here: the setup below assumes a real bastion
+# invocation (sudo context, fd-3 result channel) and would otherwise die -- there's no fd-3 channel
+# under perl -c -- aborting the compilation check. All subs are already compiled by this point, so
+# the module still loads fully for the check.
+return 1 if $^C;
+
+# A helper run through the bastion receives its result channel as fd 3: execute() wires it with
+# IPC::Run's '3>' and sudo preserves it (closefrom=4). We return our JSON result over it (see
+# json_output()) instead of framing it on stdout, which keeps our stdout clean for the live tee.
+# We relocate it to a high fd and free fd 3, so that any nested helper we run via execute() can reuse
+# fd 3 for ITS OWN result channel without colliding with ours (which would otherwise lose both
+# results). We also mark it close-on-exec, so the external commands we exec don't inherit it (a chatty
+# or backgrounding child could otherwise write to it or hold it open, delaying our caller's EOF). We
+# keep $result_fh open for our own lifetime so the fd stays valid until we write the result at exit.
+# ($result_fh is declared at the top of this file.)
+#
+# Only adopt fd 3 if it looks like our result channel, i.e. the write end of a pipe, which is what
+# IPC::Run's '3>' always wires. This is NOT paranoia: when a helper is run by hand instead of through
+# the bastion, perl itself usually has the source file of the module it's loading -- this very file --
+# open on fd 3 while its top-level code (this very code) runs. Blindly adopting it would defeat the
+# fail-fast check below: the helper would do its privileged work, then silently lose its result at
+# HEXIT time (written to a read-only fd), exit 0, and close perl's own source filehandle on the way.
+# We probe with fstat() on the raw fd BEFORE wrapping it in a perl filehandle, as a filehandle opened
+# with '>&=' would close the foreign fd when going out of scope.
+my @fd3stat = POSIX::fstat(3);
+if (@fd3stat && S_ISFIFO($fd3stat[2]) && open(my $inherited, '>&=', 3)) {
+    my $flflags = fcntl($inherited, F_GETFL, 0);
+    if (defined $flflags && ($flflags & O_ACCMODE) != O_RDONLY) {
+        my $highfd = fcntl($inherited, F_DUPFD, 100);
+        if ($highfd && open($result_fh, '>&=', $highfd)) {
+            my $fdflags = fcntl($result_fh, F_GETFD, 0);
+            fcntl($result_fh, F_SETFD, ($fdflags // 0) | FD_CLOEXEC);
+        }
+        else {
+            # We couldn't relocate off fd 3. Rather than keep the channel on fd 3 without
+            # close-on-exec (a child could then inherit and hold it open, delaying our caller's EOF,
+            # and a nested helper would collide with it), fail loudly: leave $result_fh undef, the
+            # check right below dies. This should never happen in practice (F_DUPFD to a free high fd).
+            warn_syslog("couldn't relocate the fd-3 result channel to a high fd ($!); result channel unusable");
+        }
+    }
+    else {
+        # the read end of a pipe on our fd 3: whatever wired it, it's not our result channel
+        warn_syslog("fd 3 is not the write end of a pipe; not adopting it as the result channel");
+    }
+    close($inherited);    # free fd 3 for nested helpers (or drop it if it wasn't usable)
+}
+
+# Fail fast if the result channel is unavailable (e.g. a helper run by hand for debugging, not via
+# the bastion, or a stale sudoers missing the closefrom=4 Defaults): dying here, before the helper
+# had a chance to perform any privileged work, beats dying at HEXIT time with the work already done
+# and the caller left believing it failed.
+if (!defined $result_fh) {
+    warn_syslog(
+        "helper result channel (fd 3) is unavailable; " . "helpers must be run via the bastion (execute()/sudo)");
+    die "FATAL: helper result channel (fd 3) is unavailable; helpers must be run via the bastion\n";
+}
+
+# Build $self from SUDO_USER, as helpers are always run under sudo.
+# This check runs after the result-channel setup on purpose: this way, ERR_SUDO_NEEDED is returned
+# to our caller over the channel as a proper structured result, like any other helper error.
 ($self) = $ENV{'SUDO_USER'} =~ m{^([a-zA-Z0-9._-]+)$};
 if (not defined $self) {
     if ($< == 0) {

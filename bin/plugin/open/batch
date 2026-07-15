@@ -63,7 +63,7 @@ while ($line = <STDIN>) {
         # notify that we're under batch mode, hence if plugin requires MFA,
         # we'll require --proactive-mfa, see comment in lib/perl/OVH/Bastion.pm
         local $ENV{'OSH_BATCH'} = 1;
-        $fnret = OVH::Bastion::helper(cmd => \@cmd);
+        $fnret = OVH::Bastion::execute_osh(cmd => \@cmd);
     };
     if (!$fnret) {
         osh_warn "--- command failed!";
