@@ -8,6 +8,9 @@ basedir=$(readlink -f "$(dirname "$0")"/../../..)
 # shellcheck source=lib/shell/functions.inc
 . "$basedir"/lib/shell/functions.inc
 
+# dump the vars set by functions.inc
+dump_shell_vars
+
 # do we have a key?
 if [ -n "$USER_PUBKEY_B64" ]; then
     user_pubkey=$(base64 -d <<< "$USER_PUBKEY_B64")
@@ -37,6 +40,25 @@ cat >>$SSH_DIR/sshd_config <<EOF
     Port 22
     Port 226
 EOF
+# on systems with /etc/ssh/sshd_config.d (notably RockyLinux 10.x),
+# move it out of the way to ensure these will not override our settings
+if [ -d /etc/ssh/sshd_config.d ]; then
+    mv /etc/ssh/sshd_config.d /etc/ssh/sshd_config.d.disabled
+fi
+
+# OpenSSH >= 9.8 enables PerSourcePenalties by default, which throttles (and eventually
+# drops at the kex stage) the high connection rate our test client generates from a single
+# IP (many MFA/PIV/bad-password attempts), causing spurious "Connection reset by peer" and
+# mass test failures. Disable it FOR TESTS ONLY (never do this in prod). The keyword only
+# exists in OpenSSH >= 9.8, so guard on the version to avoid older sshd refusing to start.
+ssh_ver=$(ssh -V 2>&1 | sed -nE 's/^OpenSSH_([0-9]+)\.([0-9]+).*/\1 \2/p')
+if [ -n "$ssh_ver" ]; then
+    # shellcheck disable=SC2086
+    set -- $ssh_ver
+    if [ "$(( $1 * 100 + $2 ))" -ge 908 ]; then
+        echo "    PerSourcePenalties no" >> /etc/ssh/sshd_config
+    fi
+fi
 
 sftpserver=''
 for dir in /usr/lib /usr/lib/ssh /usr/lib/openssh /usr/libexec; do

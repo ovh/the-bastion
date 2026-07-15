@@ -540,8 +540,12 @@ sub generate_ssh_key {
     $passphrase = '' if not $passphrase;
     $size       = '' if $algo eq 'ed25519';
     $name ||= $prefix;
-    my $sshKeyName = $folder . '/id_' . $algo . $size . '_' . $prefix . '.' . time();
-
+    my $baseKeyName = $folder . '/id_' . $algo . $size . '_' . $prefix . '.' . time();
+    my $sshKeyName  = $baseKeyName;
+    for my $suffix (1 .. 100) {
+        last unless -e $sshKeyName;
+        $sshKeyName = $baseKeyName . '_' . $suffix;
+    }
     if (-e $sshKeyName) {
         return R('ERR_KEY_ALREADY_EXISTS', msg => "Can't forge key, generated name already exists");
     }

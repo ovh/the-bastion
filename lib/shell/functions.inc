@@ -70,18 +70,28 @@ if [ ! -e "$SSH_DIR" ]; then
     SSH_DIR=/etc/ssh
 fi
 
-# set PAM_DIR
-PAM_DIR=$ETC_DIR/pam.d
-if [ ! -e "$PAM_DIR" ]; then
+# look for PAM_DIR and PAM_SSHD
+PAM_SSHD=''
+PAM_DIR=''
+for dir in /usr/lib/pam.d /etc/pam.d $ETC_DIR/pam.d /usr/local/etc/pam.d; do
+    # probe the sshd file to find the proper directory
+    if test -e "$dir/sshd"; then
+        # found it, set both vars, but keep looking as folders
+        # further in the list have a higher priority
+        PAM_SSHD="$dir/sshd"
+        PAM_DIR="$dir"
+    elif test -d "$dir" && [ -z "$PAM_SSHD" ]; then
+        # at least, the folder exists, save it
+        PAM_DIR="$dir"
+    fi
+done
+if [ -z "$PAM_DIR" ]; then
+    # not found? set to a sane default
     PAM_DIR=/etc/pam.d
 fi
-
-# set PAM_SSHD
-# under FreeBSD, both /usr/local/etc/pam.d and /etc/pam.d can exist
-PAM_SSHD="/etc/pam.d/sshd"
-if [ -e "/usr/local/etc/pam.d/sshd" ]; then
-    # shellcheck disable=SC2034
-    PAM_SSHD="/usr/local/etc/pam.d/sshd"
+if [ -z "$PAM_SSHD" ]; then
+    # couldn't find an existing sshd file, just use $PAM_DIR then
+    PAM_SSHD="$PAM_DIR"
 fi
 
 # set CRON_DIR
@@ -99,6 +109,16 @@ else
     FIND_EGREP_POSITIONAL_BEFORE=''
     FIND_EGREP_POSITIONAL_AFTER='-regextype egrep'
 fi
+
+dump_shell_vars()
+{
+    printf "Shell vars: "
+    for i in LINUX_DISTRO DISTRO_VERSION DISTRO_LIKE DISTRO_VERSION_MAJOR ETC_DIR BASTION_ETC_DIR UID0 GID0 UID0HOME \
+        SUDOERS_FILE SUDOERS_DIR SSH_DIR PAM_DIR PAM_SSHD CRON_DIR; do
+        printf "%s=%s " "$i" "$(eval echo "\$$i")"
+    done
+    echo
+}
 
 action_doing()
 {

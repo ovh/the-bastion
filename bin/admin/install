@@ -28,6 +28,7 @@ trap_exit() {
             for line in $trap_err_lines; do
                 action_detail "... error on script source line $line ($(sed -n "${line}"p "$0"))"
             done
+            action_detail "$(dump_shell_vars)"
             exit 1
         else
             action_done
@@ -469,18 +470,23 @@ if [ "$nothing" = 0 ]; then
         rm -f "$CRON_DIR/osh-compress-old-logs"
     fi
 
-    # ensure the includedir is present in global sudoers conf
+    # ensure the includedir is present in global sudoers conf.
+    # note: some distros (e.g. openSUSE Leap >= 16) ship the vendor sudoers in
+    # /usr/etc/sudoers instead of /etc/sudoers; sudo reads whichever it finds
+    # first, so we look for the includedir in both before deciding to add it.
     action_doing "Add include directory in sudoers if needed"
-    if [ ! -e $SUDOERS_FILE ] ; then
-        action_error "$SUDOERS_DIR doesn't exist, is sudo installed?" && false
+    sudoers_file=''
+    for f in "$SUDOERS_FILE" /usr/etc/sudoers ; do
+        [ -e "$f" ] && { sudoers_file="$f"; break; }
+    done
+    if [ -z "$sudoers_file" ] ; then
+        action_error "$SUDOERS_FILE doesn't exist, is sudo installed?" && false
+    elif grep -Eq "^[#@]includedir[[:space:]]+$SUDOERS_DIR$" "$sudoers_file" ; then
+        action_na "sudoers.d already added in config"
     else
-        if grep -Eq "^[#@]includedir $SUDOERS_DIR$" $SUDOERS_FILE ; then
-            action_na "sudoers.d already added in config"
-        else
-            echo '# added by the-bastion:'  >> $SUDOERS_FILE
-            echo "#includedir $SUDOERS_DIR" >> $SUDOERS_FILE
-            action_done
-        fi
+        echo '# added by the-bastion:'  >> "$SUDOERS_FILE"
+        echo "#includedir $SUDOERS_DIR" >> "$SUDOERS_FILE"
+        action_done
     fi
 
     action_doing "Create sudoers.d if needed"
@@ -1081,7 +1087,7 @@ fi
 
 if [ "$autodetect_startup_system" = 1 ]; then
     action_doing "Autodetecting startup system..."
-    if command -v systemctl >/dev/null && [ -d "/var/run/systemd" ]; then
+    if command -v systemctl >/dev/null 2>&1; then
         action_done "found systemd"
         opt[systemd-units]=1
         opt[init]=0
@@ -1265,12 +1271,12 @@ if [ "${opt[modify-umask]}" = 1 ]; then
     fi
 
     action_doing "Adjust umask in $PAM_DIR/common-session if applicable"
-    if [ -e $PAM_DIR/common-session ]; then
+    if [ -e "$PAM_DIR/common-session" ]; then
         if ! grep -Eq '^\s*session\s+optional\s+pam_umask.so\s+umask=0?027' \
-                $PAM_DIR/common-session ; then
+                "$PAM_DIR/common-session" ; then
             action_detail "missing umask config in file, adjusting"
-            echo "# bastion config: umask needs to be at 0027" >> $PAM_DIR/common-session
-            echo "session optional pam_umask.so umask=0027"    >> $PAM_DIR/common-session
+            echo "# bastion config: umask needs to be at 0027" >> "$PAM_DIR/common-session"
+            echo "session optional pam_umask.so umask=0027"    >> "$PAM_DIR/common-session"
             action_done
         else
             action_na "umask was already OK"
@@ -1298,7 +1304,13 @@ if [ "${opt[modify-pam-sshd]}" = 1 ]; then
             cat "$basedir/etc/pam.d/sshd.$pamsuffix" > "$PAM_SSHD"
             action_done "sshd.$pamsuffix"
         else
-            action_error "couldn't use our pam.d/sshd template (no template for $OS_FAMILY/$DISTRO_LIKE)" && false
+            if [ -z "$pamsuffix" ]; then
+                action_error "couldn't determine a template name for $OS_FAMILY/$DISTRO_LIKE" && false
+            elif ! [ -e "$PAM_SSHD" ]; then
+                action_error "no preexisting sshd template found in $PAM_SSHD" && false
+            else
+                action_error "no sshd.$pamsuffix template found" && false
+            fi
         fi
     else
         action_na "the currently installed sshd_config file doesn't have a forced 'AuthenticationMethods publickey', we can't install our pam.d template safely (it could turn this machine into an allow-all accesses without auth through ssh!)"

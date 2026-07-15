@@ -24,10 +24,17 @@ echo "GO!"
 tempdir=$(mktemp -d)
 # shellcheck disable=SC2317
 cleanup() {
-    docker ps | grep -Eo 'bastion_.*_(target|tester)$' | xargs -r docker kill
+    docker ps | grep -Eo 'bastion_.*_(target|tester|jumphost|remoteserver)$' | xargs -r docker kill
     printf '\n%b%b%b\n\n' "$WHITE_ON_BLUE" "Individual logs are under $tempdir/, when you're done, you can \`rm -rf $tempdir'" "$NOC"
 }
 trap 'cleanup' EXIT
+
+# shellcheck disable=SC2317
+cleanup_int() {
+    printf "%b%b%b\\n" "$WHITE_ON_RED" '>>> CLEANING UP, DO NOT CTRL+C AGAIN! <<<' "$NOC"
+    cleanup
+}
+trap "cleanup_int" INT HUP
 
 for t in $targets
 do

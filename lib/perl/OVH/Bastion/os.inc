@@ -42,9 +42,21 @@ sub _is_distro {
     }
     return R('KO');
 }
-sub is_debian        { return _is_distro('debian'); }
-sub is_debian_trixie { return R(_is_distro('debian') && sysinfo()->value->{'version_id'} eq "13" ? 'OK' : 'KO'); }
-sub is_redhat        { return _is_distro('rhel'); }
+sub is_debian { return _is_distro('debian'); }
+sub is_ubuntu { return _is_distro('ubuntu'); }
+
+# the rewritten adduser/deluser shipped by Debian >= 13 ("Trixie") and Ubuntu >= 26.04 rejects
+# account/group names containing chars such as '.', '-' or uppercase through its sanitize_string(),
+# which breaks `deluser <user> <group>` for our naming scheme; such systems must instead use the
+# generic usermod-based path to remove a user from a group. Note that is_debian() is also true on
+# Ubuntu (ID_LIKE=debian), hence the explicit is_ubuntu() distinction below.
+# This can be dropped once https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1109329 is fixed.
+sub has_broken_deluser {
+    return R('OK') if is_debian() && !is_ubuntu() && sysinfo()->value->{'version_id'} >= 13;
+    return R('OK') if is_ubuntu() && sysinfo()->value->{'version_id'} >= 26.04;
+    return R('KO');
+}
+sub is_redhat { return _is_distro('rhel'); }
 
 sub is_freebsd { return R($^O eq 'freebsd' ? 'OK' : 'KO'); }
 
@@ -250,8 +262,8 @@ sub sys_delmemberfromgroup {
     if (is_freebsd()) {
         @cmd = ('pw', 'groupmod', '-n', $group, '-d', $user);
     }
-    # remove the Trixie if when this is fixed https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1109329
-    elsif (is_debian() && !is_debian_trixie()) {
+    # on Debian (but see has_broken_deluser() for distros/versions that must use the generic path)
+    elsif (is_debian() && !has_broken_deluser()) {
         @cmd = ('deluser', $user, $group);
     }
     else {
