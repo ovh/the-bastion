@@ -12,6 +12,23 @@ if [ -z "$2" ] || [ -n "$3" ]; then
     exit 1
 fi
 
+# Pre-check: the system groups that account creation relies on are created by
+# the 'bin/admin/install' script. If the bastion code was deployed but the
+# install script never ran, we'll be missing groups.
+missing_groups=
+for group in bastion-users \
+  mfa-password-reqd mfa-password-bypass mfa-password-configd \
+  mfa-totp-reqd mfa-totp-bypass mfa-totp-configd bastion-nopam osh-pubkey-auth-optional
+do
+    if ! getent group "$group" >/dev/null 2>&1; then
+        missing_groups="$missing_groups $group"
+    fi
+done
+if [ -n "$missing_groups" ]; then
+    _err "Required system group(s) missing:$missing_groups"
+    exit_fail "The bastion doesn't seem to be fully installed. Please run '$basedir/bin/admin/install' first, then retry."
+fi
+
 if [ "$2" = AUTO ] || [ "$2" = auto ]; then
     USER=root HOME=/root "$basedir/bin/plugin/restricted/accountCreate" '' '' '' '' --uid-auto --account "$1"
 else
