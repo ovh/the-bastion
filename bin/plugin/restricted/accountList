@@ -58,7 +58,7 @@ sub tristate2str {
 }
 
 if ($realmOnly) {
-    osh_exit(R('ERR_INVALID_PARAMETER'), "Option --realm-only is no longer supported, use realmList instead");
+    osh_exit('ERR_INVALID_PARAMETER', "Option --realm-only is no longer supported, use realmList instead");
 }
 
 my $fnret;
