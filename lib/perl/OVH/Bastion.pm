@@ -151,7 +151,7 @@ my %_autoload_files = (
     configuration => [
         qw{ load_configuration_file main_configuration_directory load_configuration config account_config plugin_config group_config json_load }
     ],
-    execute     => [qw{ sysret2human execute execute_simple result_from_json_output helper_decapsulate helper }],
+    execute     => [qw{ sysret2human execute result_from_json_output helper_decapsulate helper }],
     interactive => [qw{ interactive }],
     jail        => [qw{ jailify }],
     log         => [

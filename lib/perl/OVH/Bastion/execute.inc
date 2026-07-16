@@ -5,9 +5,7 @@ use common::sense;
 
 use Config;
 use Fcntl qw{ F_GETFL F_SETFL O_NONBLOCK };
-use IPC::Open3;
 use JSON;
-use Symbol 'gensym';
 
 # Get signal names, i.e. signal 9 is SIGKILL, etc.
 my %signum2string;
@@ -366,78 +364,6 @@ sub execute {
             stdout     => [split($/, $stdout_output // '')],
             stderr     => [split($/, $stderr_output // '')],
             bytesnb    => \%bytesnb,
-            status     => $fnret->value->{'status'},
-            coredump   => $fnret->value->{'coredump'},
-            signal     => $fnret->value->{'signal'},
-        },
-        msg => "Command exited with " . sysret2human($child_exit_status)->msg,
-    );
-}
-
-# This is a simplified version of execute(), only supporting to launch a command,
-# closing STDIN immediately, and merging STDERR/STDOUT into a global output that can
-# then be returned to the caller. It removes a lot of complicated locking problems
-# execute() has to work with at the expense of efficiency.
-# Most notably, execute() reads STDOUT and STDERR one byte at a time in some cases,
-# while execute_simple() uses a buffer of 16K instead, which is several orders of
-# magnitude faster for commands outputting large amounts of data (several megabytes) for example.
-sub execute_simple {
-    my %params       = @_;
-    my $cmd          = $params{'cmd'};             # command to execute, must be an array ref (with possible parameters)
-    my $must_succeed = $params{'must_succeed'};    # if the executed command returns a non-zero exit value, turn OK_NON_ZERO_EXIT to ERR_NON_ZERO_EXIT
-    my $fnret;
-
-    require Scalar::Util;
-    foreach (@$cmd) {
-        if (Scalar::Util::tainted($_) && /(.+)/) {
-            # to be able to warn under -T; untaint it. we're going to crash right after anyway.
-            require Carp;
-            warn(Carp::longmess("would exec <" . join('^', @$cmd) . "> but param '$1' is tainted!"));
-        }
-    }
-
-    my $child_in;
-    my $child_out = gensym;
-    osh_debug("about to run_cmd_simple ['" . join("','", @$cmd) . "']");
-    my $pid;
-    eval { $pid = open3($child_in, $child_out, undef, @$cmd); };
-    if ($@) {
-        chomp $@;
-        return R('ERR_EXEC_FAILED', msg => "Couldn't exec requested command ($@)");
-    }
-    close($child_in);
-    osh_debug("waiting for child PID $pid to complete...");
-
-    my $output;
-    while (1) {
-        my $buffer;
-        my $nbread = read $child_out, $buffer, 65535;
-        if (not defined $nbread) {
-            # oww, abort reading
-            warn("execute_simple(): error while reading from command ($!), aborting");
-            last;
-        }
-        last if ($nbread == 0);    # EOF
-        $output .= $buffer;
-    }
-    close($child_out);
-
-    osh_debug("all fds are EOF, waiting for pid $pid indefinitely");
-    waitpid($pid, 0);
-    my $child_exit_status = $?;
-
-    $fnret = sysret2human($child_exit_status);
-    osh_debug("cmd returned with $fnret");
-
-    # a signal death yields status => undef (not 0); guard with defined() before == 0, otherwise
-    # `undef == 0` is true and we'd wrongly report OK (and silently defeat must_succeed) for a kill.
-    my $status = $fnret->value->{'status'};
-    return R(
-        (defined $status && $status == 0) ? 'OK' : ($must_succeed ? 'ERR_NON_ZERO_EXIT' : 'OK_NON_ZERO_EXIT'),
-        value => {
-            sysret     => $child_exit_status >> 8,
-            sysret_raw => $child_exit_status,
-            output     => $output,
             status     => $fnret->value->{'status'},
             coredump   => $fnret->value->{'coredump'},
             signal     => $fnret->value->{'signal'},

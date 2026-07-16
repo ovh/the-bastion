@@ -38,7 +38,7 @@ sub kill_sessions {
     }
 
     foreach my $pid (@pids) {
-        $fnret = OVH::Bastion::execute_simple(cmd => ['kill', $pid], must_succeed => 1);
+        $fnret = OVH::Bastion::execute(cmd => ['kill', $pid], must_succeed => 1);
         $problems++ if !$fnret;
     }
 

@@ -158,20 +158,21 @@ my $nbErrors = 0;
 
 # File::Copy::move() sometimes craps itself when it gets -EXDEV from the OS, and doesn't
 # compensate for it, while /bin/mv does...
-$fnret = OVH::Bastion::execute_simple(cmd => ['mv', "/home/$account", "$fulldir/$account-home"], must_succeed => 1);
+$fnret = OVH::Bastion::execute(cmd => ['mv', "/home/$account", "$fulldir/$account-home"], must_succeed => 1);
 if (!$fnret) {
-    my $msg = substr($fnret->value->{'output'}, 0, 128);
+    # mv says what went wrong on its stderr, except on ERR_EXEC_FAILED where we have no value at all
+    my $msg = substr(($fnret->value ? join(" ", @{$fnret->value->{'stderr'}}) : $fnret->msg), 0, 128);
     $msg =~ s=[^a-zA-Z0-9./_-]=_=g;
     warn_syslog("Error while backing up to-be-deleted '/home/$account' to '$fulldir/$account-home' ($msg)"
           . ", continuing anyway...");
     $nbErrors++;
 }
-$fnret = OVH::Bastion::execute_simple(
+$fnret = OVH::Bastion::execute(
     cmd          => ['mv', "/home/allowkeeper/$account", "$fulldir/$account-allowkeeper"],
     must_succeed => 1
 );
 if (!$fnret) {
-    my $msg = substr($fnret->value->{'output'}, 0, 128);
+    my $msg = substr(($fnret->value ? join(" ", @{$fnret->value->{'stderr'}}) : $fnret->msg), 0, 128);
     $msg =~ s=[^a-zA-Z0-9./_-]=_=g;
     warn_syslog("Error while backing up to-be-deleted '/home/allowkeeper/$account' to "
           . "'$fulldir/$account-allowkeeper' ($msg), continuing anyway...");

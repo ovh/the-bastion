@@ -808,14 +808,13 @@ sub sys_list_processes {
     }
 
     # works for Linux and FreeBSD
-    my $fnret = OVH::Bastion::execute_simple(cmd => ['ps', '-U', $user, '-o', 'pid']);
+    my $fnret = OVH::Bastion::execute(cmd => ['ps', '-U', $user, '-o', 'pid']);
 
     # ps can return 1 if no process found, so don't test $fnret, just read the output if any
     my @pids;
     if ($fnret->value) {
-        osh_debug("ps output: " . $fnret->value->{'output'}) if $fnret->value->{'output'};
-        foreach my $line (split(/\n/, $fnret->value->{'output'} // '')) {
-            chomp $line;
+        # execute() returns stdout already split on $/, and the pids we're after are on it alone
+        foreach my $line (@{$fnret->value->{'stdout'} || []}) {
             push @pids, $1 if ($line =~ /^\s*([0-9]+)\s*$/);
         }
     }
