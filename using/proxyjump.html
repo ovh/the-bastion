@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Egress proxy jump &mdash; The Bastion 3.24.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="../_static/jquery.js?v=8dae8fb0"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=972744fa"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Realms" href="realms.html" />
+    <link rel="prev" title="HTTPS Proxy" href="http_proxy.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.24.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Egress proxy jump</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-it-works">How it works</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#enabling-the-feature">Enabling the feature</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#granting-access-through-a-jump-host">Granting access through a jump host</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#connecting-through-the-jump-host">Connecting through the jump host</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#file-transfers">File transfers</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="realms.html">Realms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../administration/configuration/index.html">Configuration files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/open/index.html">open plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Egress proxy jump</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/using/proxyjump.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="egress-proxy-jump">
+<h1><a class="toc-backref" href="#id1" role="doc-backlink">Egress proxy jump</a><a class="headerlink" href="#egress-proxy-jump" title="Link to this heading"></a></h1>
+<nav class="contents" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#egress-proxy-jump" id="id1">Egress proxy jump</a></p>
+<ul>
+<li><p><a class="reference internal" href="#introduction" id="id2">Introduction</a></p></li>
+<li><p><a class="reference internal" href="#how-it-works" id="id3">How it works</a></p></li>
+<li><p><a class="reference internal" href="#enabling-the-feature" id="id4">Enabling the feature</a></p></li>
+<li><p><a class="reference internal" href="#granting-access-through-a-jump-host" id="id5">Granting access through a jump host</a></p></li>
+<li><p><a class="reference internal" href="#connecting-through-the-jump-host" id="id6">Connecting through the jump host</a></p>
+<ul>
+<li><p><a class="reference internal" href="#file-transfers" id="id7">File transfers</a></p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+<section id="introduction">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">Introduction</a><a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>Sometimes the server you need to reach can't be accessed directly from the bastion, network-wise,
+but only through an intermediate SSH <em>jump host</em>. The Bastion can hop through such a jump host to
+reach the final server, while keeping all its usual guarantees: authentication, authorization,
+traceability and session recording still apply, exactly as they would for a direct egress connection.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is <strong>not</strong> the same as using The Bastion itself as an <code class="docutils literal notranslate"><span class="pre">ssh</span> <span class="pre">-J</span></code> / <code class="docutils literal notranslate"><span class="pre">ProxyCommand</span></code> jump host
+from your local client: that doesn't work, by design (see <a class="reference internal" href="../faq.html#faq-jumphost"><span class="std std-ref">How to use The Bastion with the SSH ProxyCommand option?</span></a>).
+Here it's the other way around: it's the <em>bastion</em> that uses a jump host, on its <strong>egress</strong> side,
+to reach a server it couldn't reach directly.</p>
+</div>
+</section>
+<section id="how-it-works">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">How it works</a><a class="headerlink" href="#how-it-works" title="Link to this heading"></a></h2>
+<p>When connecting through a jump host, the bastion keeps its usual <em>ingress/egress</em> protocol break, and
+simply adds an intermediate network relay on the egress side:</p>
+<ul class="simple">
+<li><p>the <strong>ingress</strong> connection (you → bastion) is unchanged, and authenticated with your personal ingress key;</p></li>
+<li><p>the <strong>egress</strong> connection (bastion → target server) is established <em>through</em> the jump host, using a pure
+TCP forward (<code class="docutils literal notranslate"><span class="pre">ssh</span> <span class="pre">-W</span></code>) on the jump host. The bastion authenticates to <strong>both</strong> the jump host and the
+target server, using the same egress key (your personal egress key, or a group egress key you're a member of).</p></li>
+</ul>
+<p>A few consequences worth keeping in mind:</p>
+<ul class="simple">
+<li><p>the egress public key (personal or group) must be installed <strong>on both</strong> the jump host (for the <em>proxy user</em>)
+and the target server (for the <em>remote user</em>);</p></li>
+<li><p>the jump host is only a network relay: it doesn't need to be another bastion, and it never sees the cleartext
+of your session: it merely forwards the encrypted bastion-to-target egress connection;</p></li>
+<li><p>both hops are subject to the bastion's egress network policy: if you've configured <code class="docutils literal notranslate"><span class="pre">forbiddenNetworks</span></code>,
+<code class="docutils literal notranslate"><span class="pre">allowedNetworks</span></code> or <code class="docutils literal notranslate"><span class="pre">ingressToEgressRules</span></code>, the jump host must satisfy them too, not just the final target.</p></li>
+</ul>
+</section>
+<section id="enabling-the-feature">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">Enabling the feature</a><a class="headerlink" href="#enabling-the-feature" title="Link to this heading"></a></h2>
+<p>For safety, egress proxy jump is disabled by default. A bastion admin must set <code class="docutils literal notranslate"><span class="pre">egressProxyJumpAllowed</span></code> to
+<code class="docutils literal notranslate"><span class="pre">true</span></code> in the <a class="reference internal" href="../administration/configuration/bastion_conf.html"><span class="doc">bastion.conf</span></a>.</p>
+</section>
+<section id="granting-access-through-a-jump-host">
+<h2><a class="toc-backref" href="#id5" role="doc-backlink">Granting access through a jump host</a><a class="headerlink" href="#granting-access-through-a-jump-host" title="Link to this heading"></a></h2>
+<p>The jump host is part of the access itself: an access <em>to a server, through a given jump host</em> is distinct
+from a direct access to the same server. You declare it by adding three options to the usual access-granting
+commands:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--proxy-host</span> <span class="pre">HOST|IP</span></code>: the jump host to reach the server through;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--proxy-port</span> <span class="pre">PORT</span></code>: the jump host's SSH port (becomes mandatory once <code class="docutils literal notranslate"><span class="pre">--proxy-host</span></code> is specified);</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--proxy-user</span> <span class="pre">USER</span></code>: the user to connect as on the jump host (also mandatory with <code class="docutils literal notranslate"><span class="pre">--proxy-host</span></code>).</p></li>
+</ul>
+<p>This works just like declaring a regular access, either as a
+<a class="reference internal" href="basics/access_management.html#accessmanagementpersonalaccesses"><span class="std std-ref">personal access</span></a> (with <a class="reference internal" href="../plugins/restricted/selfAddPersonalAccess.html"><span class="doc">selfAddPersonalAccess</span></a>
+or <a class="reference internal" href="../plugins/restricted/accountAddPersonalAccess.html"><span class="doc">accountAddPersonalAccess</span></a>) or as a
+<a class="reference internal" href="basics/access_management.html#accessmanagementgroupaccesses"><span class="std std-ref">group access</span></a> (with <a class="reference internal" href="../plugins/group-aclkeeper/groupAddServer.html"><span class="doc">groupAddServer</span></a>, or
+<a class="reference internal" href="../plugins/group-gatekeeper/groupAddGuestAccess.html"><span class="doc">groupAddGuestAccess</span></a> for a guest access). The matching <code class="docutils literal notranslate"><span class="pre">Del</span></code> commands accept
+the same options to remove such an access.</p>
+<p>For example, to grant a group access to <code class="docutils literal notranslate"><span class="pre">server.example.org</span></code> reachable through the jump host
+<code class="docutils literal notranslate"><span class="pre">jump.example.org</span></code>, connecting there as the <code class="docutils literal notranslate"><span class="pre">relay</span></code> user:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh --osh groupAddServer --group mygroup --host server.example.org --port 22 --user admin \
+</span><span class="hll">     --proxy-host jump.example.org --proxy-port 22 --proxy-user relay
+</span></pre></div>
+</div>
+<p>Unless you pass <code class="docutils literal notranslate"><span class="pre">--force</span></code>, the bastion runs a real connectivity test <em>through the jump host</em> before adding
+the access, so the egress key must already be installed on both hops at that point.</p>
+</section>
+<section id="connecting-through-the-jump-host">
+<h2><a class="toc-backref" href="#id6" role="doc-backlink">Connecting through the jump host</a><a class="headerlink" href="#connecting-through-the-jump-host" title="Link to this heading"></a></h2>
+<p>Once the access is granted, specify the jump host at connection time with the <code class="docutils literal notranslate"><span class="pre">-J</span></code> option, using the familiar
+<code class="docutils literal notranslate"><span class="pre">[user&#64;]host[:port]</span></code> syntax (the <code class="docutils literal notranslate"><span class="pre">user</span></code> and <code class="docutils literal notranslate"><span class="pre">port</span></code> parts are optional, and default to your remote user and
+port <code class="docutils literal notranslate"><span class="pre">22</span></code> respectively):</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh -J relay@jump.example.org admin@server.example.org
+</span></pre></div>
+</div>
+<p>The jump host you provide must match the one granted in the access: connecting through a different jump host, or
+without a jump host when one is required, is denied just like any other unauthorized access.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Password autologin (reaching a target with a stored egress password rather than an egress key) is not
+currently supported through a jump host, this might change in the future.</p>
+</div>
+<section id="file-transfers">
+<h3><a class="toc-backref" href="#id7" role="doc-backlink">File transfers</a><a class="headerlink" href="#file-transfers" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">scp</span></code> transfers can go through a jump host too: pass the same <code class="docutils literal notranslate"><span class="pre">-J</span></code> option to the <code class="docutils literal notranslate"><span class="pre">scp</span></code> wrapper described in
+<a class="reference internal" href="sftp_scp_rsync.html"><span class="doc">SFTP, SCP &amp; RSYNC support</span></a>. Egress proxy jump is not currently supported for <code class="docutils literal notranslate"><span class="pre">sftp</span></code> or <code class="docutils literal notranslate"><span class="pre">rsync</span></code>.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="http_proxy.html" class="btn btn-neutral float-left" title="HTTPS Proxy" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="realms.html" class="btn btn-neutral float-right" title="Realms" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
