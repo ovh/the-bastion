@@ -125,7 +125,7 @@ jobs:
             --has-pamtester=1 \
             --remote-etc-bastion=/usr/local/etc/bastion \
             --slowness-factor=2 \
-            --post-sleep=0.2 \
+            --post-sleep=0.3 \
             --post-run="echo '--- target_role.log ---' ; sudo cat /tmp/target_role.log ; sudo tar xzf /opt/bastion/ssh_config.tar.gz -C / ; sudo /etc/rc.d/sshd restart" \
             127.0.0.1 22 8443 user5000 id_user id_root
           # for some reason, any other command below is skipped, so don't try to add anything,
