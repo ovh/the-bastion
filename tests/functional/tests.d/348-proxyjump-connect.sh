@@ -125,63 +125,85 @@ testsuite_proxyjump_connect()
     # The far end (test-shell_ on the remoteserver) runs /bin/sh, just like 340's shellaccount, so the
     # quoting must resolve identically.
 
-    # baseline: a plain echo survives the double hop intact
+    # baseline: a plain echo survives the double hop intact.
+    # NB: every live jump case below sets the retry_until variable before it: the egress -W ProxyCommand
+    # hop rarely truncates the tail of the output (OpenSSH teardown race; run() in
+    # launch_tests_on_instance.sh re-runs the case until this marker is captured, bounded). The marker is
+    # the last thing each command emits: $randomstr for the echo, 'uid=' (from the trailing `id`) for
+    # every escapehell case. It's a plain variable, not a function call, so an older runner that predates
+    # the retry loop simply ignores it instead of aborting the module. We clear it after the block below.
+    retry_until="$randomstr"
     success pj_echo_simple $a1 -J jump_@$jhip:$jhport test-shell_@$rsip -- echo $randomstr
     contain "$randomstr"
     nocontain "Permission denied"
 
     # --always-escape
+    retry_until='uid='
     success pj_escapehell1ae $a1 --always-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "\"echo 'test1;test1' ; id\""
     contain "'test1"
     contain 'uid='
     contain REGEX "test1': (command )?not found"
     nocontain 'test1;test1'
 
+    retry_until='uid='
     success pj_escapehell2ae $a1 --always-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "'echo \"test1;test1\" ; id'"
     contain "test1;test1"
     contain 'uid='
     nocontain 'not found'
 
+    retry_until='uid='
     success pj_escapehell3ae $a1 --always-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "'echo \\\"test1;test1\\\" ; id'"
     contain '"test1'
     contain 'uid='
     contain REGEX 'test1": (command )?not found'
 
+    retry_until='uid='
     success pj_escapehell4ae $a1 --always-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "\"echo \\\"test1;test1\\\" ; id\""
     contain 'test1;test1'
     contain 'uid='
     nocontain 'not found'
 
+    retry_until='uid='
     success pj_escapehell5ae $a1 --always-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "\"echo \\\"test1';'test1\\\" ; id\""
     contain "test1\\';\\'test1"
     contain 'uid='
     nocontain 'not found'
 
     # --never-escape
+    retry_until='uid='
     success pj_escapehell1ne $a1 --never-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "\"echo 'test1;test1' ; id\""
     contain "test1;test1"
     contain 'uid='
     nocontain 'not found'
 
+    retry_until='uid='
     success pj_escapehell2ne $a1 --never-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "'echo \"test1;test1\" ; id'"
     contain "test1;test1"
     contain 'uid='
     nocontain 'not found'
 
+    retry_until='uid='
     success pj_escapehell3ne $a1 --never-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "'echo \\\"test1;test1\\\" ; id'"
     contain '"test1'
     contain 'uid='
     contain REGEX 'test1": (command )?not found'
 
+    retry_until='uid='
     success pj_escapehell4ne $a1 --never-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "\"echo \\\"test1;test1\\\" ; id\""
     contain 'test1;test1'
     contain 'uid='
     nocontain 'not found'
 
+    retry_until='uid='
     success pj_escapehell5ne $a1 --never-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "\"echo \\\"test1';'test1\\\" ; id\""
     contain "test1';'test1"
     contain 'uid='
     nocontain 'not found'
+
+    # A current runner clears retry_until in run() after each case; clear it here too so that against an
+    # older runner (which ignores and thus never clears it) it can't leak past this module and trip the
+    # per-module env-diff check (module_postrun_check_env).
+    unset retry_until
 
     # ---- scp through the proxy (still as a1) ----
     # to ensure proxy-jump also works through the scp plugin, do a *real* proxied scp transfer here,

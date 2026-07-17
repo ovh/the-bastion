@@ -500,6 +500,28 @@ run()
         fi
         printf "%b%b%b\\n" "$WHITE_ON_BLUE" "[INFO] output of the command follows" "$NOC"
         cat "$outdir/$basename.log"
+        # ttyrec-vs-log diagnostic: when a connection test fails, the bastion has recorded the whole
+        # session to a ttyrec file whose path it printed as "log on(...)" in the output above. Decode
+        # that recording (as root on the bastion) and dump it right next to the captured command
+        # output: this tells apart the two ends of the transient stdout-truncation failures. If the
+        # recording contains bytes that the captured output above is missing, the loss is on the tester
+        # side (script(1) not draining its pty before the child exits); if the recording is ALSO
+        # missing them, the loss is bastion-side (ttyrec / pipe teardown relaying the egress session).
+        # Recordings can be zstd-compressed, so handle both like connect.pl does. Best-effort only:
+        # guarded on having a root-on-bastion shell ($r0) and never allowed to fail the run.
+        if [ -n "${r0:-}" ]; then
+            local recpaths
+            recpaths=$(grep -a 'log on(' "$outdir/$basename.log" 2>/dev/null | sed -nE 's/.*log on\(([^)]+)\).*/\1/p' | tr -d '\r')
+            if [ -n "$recpaths" ]; then
+                printf "%b%b%b\\n" "$WHITE_ON_BLUE" "[INFO] bastion-side ttyrec recording(s) follow (compare with the command output above)" "$NOC"
+                printf '%s\n' "$recpaths" | while IFS= read -r recpath; do
+                    [ -z "$recpath" ] && continue
+                    printf -- '--- recording: %s\n' "$recpath"
+                    $r0 "f='$recpath'; if [ -f \"\$f.zst\" ]; then zstd -dc -- \"\$f.zst\"; elif [ -f \"\$f\" ]; then cat -- \"\$f\"; else echo '(recording not found on bastion)'; fi | cat -v | tail -c 20000" 2>&1 || true
+                    echo
+                done
+            fi
+        fi
         printf "%b%b%b\\n" "$WHITE_ON_BLUE" "[INFO] returned json follows" "$NOC"
         grep "^JSON_OUTPUT=" -- $outdir/$basename.log | cut -d= -f2- | jq --sort-keys .
         if [ "$opt_consistency_check" = 1 ]; then
@@ -515,7 +537,9 @@ run()
 
     # now prepare for the current test
     testno=$(( testno + 1 ))
-    [ "$COUNTONLY" = 1 ] && return
+    # during the counting pass we return before the run/consume below, so clear any per-case retry_until
+    # the module armed, otherwise it would leak from the counting pass into the first real-pass case
+    [ "$COUNTONLY" = 1 ] && { unset retry_until; return; }
     name="$modulename"
     if [ -z "$name" ]; then
         name="main"
@@ -545,16 +569,40 @@ run()
         sleepafter=$opt_post_sleep
     fi
 
-    # put an invalid value in this file, should be overwritten. we also use it as a lock file.
-    echo -1 > $outdir/$basename.retval
-    # run the test
-    if [ "$OS_FAMILY" = FreeBSD ]; then
-        command script -q "$outdir/$basename.log" bash -c "set -f; $*; echo \$? > $outdir/$basename.retval ; sleep $sleepafter" >/dev/null 2>&1 || true
-    else
-        command script -q -c "set -f; $* ; echo \$? > $outdir/$basename.retval ; sleep $sleepafter" "$outdir/$basename.log" >/dev/null 2>&1 || true
-        grep -Eva '^Script (started|done) on ' "$outdir/$basename.log" | sponge "$outdir/$basename.log" || true
-    fi
-    unset sleepafter
+    # Optional retry (opt-in per case by assigning the `retry_until=<extended-regex>` variable right
+    # before the case; see 348-proxyjump-connect.sh). Some live connection tests hit a rare, transient
+    # truncation of the tail of their output on the egress -W ProxyCommand jump hop -- an OpenSSH
+    # teardown timing race, isolated in that module (direct connections never truncate, only jumped
+    # ones; the command still exits 0, only the last output window is dropped). A plain re-run of the
+    # exact same command reliably gets a complete capture. When the case set a completion marker, we
+    # re-run until the captured output matches it, up to a small bound. This never hides a real failure:
+    # after the bound the normal assertions still run against the final capture, so a genuinely-missing
+    # marker is still reported. Default (no retry_until) = a single run, identical behavior to before.
+    # It's a plain variable, NOT a helper function, on purpose: a module setting it against an older
+    # runner that predates this loop just sets a variable the old run() ignores (degrades to no retry),
+    # rather than aborting the module with a "command not found".
+    local _attempt=1 _maxattempts=1
+    [ -n "${retry_until:-}" ] && _maxattempts=3
+    while :; do
+        # put an invalid value in this file, should be overwritten. we also use it as a lock file.
+        echo -1 > $outdir/$basename.retval
+        # run the test
+        if [ "$OS_FAMILY" = FreeBSD ]; then
+            command script -q "$outdir/$basename.log" bash -c "set -f; $*; echo \$? > $outdir/$basename.retval ; sleep $sleepafter" >/dev/null 2>&1 || true
+        else
+            command script -q -c "set -f; $* ; echo \$? > $outdir/$basename.retval ; sleep $sleepafter" "$outdir/$basename.log" >/dev/null 2>&1 || true
+            grep -Eva '^Script (started|done) on ' "$outdir/$basename.log" | sponge "$outdir/$basename.log" || true
+        fi
+        # stop unless the caller asked for a completion marker that the capture is still missing
+        { [ -z "${retry_until:-}" ] || grep -Eaq -- "$retry_until" "$outdir/$basename.log"; } && break
+        if [ "$_attempt" -ge "$_maxattempts" ]; then
+            infomsg "retry_until '$retry_until' still not matched after $_attempt attempt(s), giving up (the assertions below will report it)"
+            break
+        fi
+        infomsg "retry_until '$retry_until' not matched (attempt $_attempt/$_maxattempts), re-running the command"
+        _attempt=$(( _attempt + 1 ))
+    done
+    unset sleepafter retry_until
 
     # look for generally bad strings in the output
     _bad='at /usr/share/perl|compilation error|compilation aborted|BEGIN failed|gonna crash|/opt/bastion/|sudo:|ontinuing anyway|MAKETESTFAIL'
