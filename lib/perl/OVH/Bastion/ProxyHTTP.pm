@@ -70,6 +70,16 @@ sub send_status {
     return 1;
 }
 
+# Class of the die() sentinel thrown by log_and_exit() and caught by process_http_request().
+# Using a blessed object ensures that die() doesn't modify it so we can match it exactly in the caller.
+# We need it to ensure Net::Server doesn't call its own send_500() when we already sent out
+# headers, see below.
+my $REQUEST_DONE = 'OVH::Bastion::ProxyHTTP::RequestDone';
+
+# Logs the request, sends $code/$msg/$body to the client, then terminates the handling of the
+# current request. This function does not return, but we can't use exit() here: we're a Net::Server
+# child, and Net::Server still has to write the access log and close the client socket
+# after process_http_request() returns.
 sub log_and_exit {
     my ($self, $code, $msg, $body, $params) = @_;
     $params->{'returnvalue'} ||= "$code $msg";
@@ -168,7 +178,10 @@ sub log_and_exit {
     }
 
     # and send status (will also fill access_log)
-    return $self->send_status($code, $msg, $body . "\n");
+    $self->send_status($code, $msg, $body . "\n");
+
+    # the response is sent, tell it to process_http_request()
+    die bless({}, $REQUEST_DONE);
 }
 
 # called by Net::Server when initializing, we set its log_function here to handle error logs, such as timeouts.
@@ -196,12 +209,15 @@ sub _exec_worker_and_get_result {
     my @cmd = @$cmdref;
     my $fnret;
 
+    # on any error below we call log_and_exit(), which never returns: it unwinds all the way up to
+    # process_http_request(). So if we do return, we always return a valid OVH::Result.
+    #
     # execute() natively pipes stdin_str to the worker (interleaving the write with reading the worker's
     # stdout, so a large request body can't deadlock us), and gives us back the worker's stdout. With an
     # empty/undef body it closes the worker's stdin right away, giving it the EOF it waits for.
     $fnret = OVH::Bastion::execute(cmd => \@cmd, stdin_str => $stdin_str // '');
     $fnret
-      or return $self->log_and_exit(
+      or $self->log_and_exit(
         500,
         "Internal Error (couldn't exec worker)",
         "Couldn't exec worker ($fnret)",
@@ -209,7 +225,7 @@ sub _exec_worker_and_get_result {
       );
 
     if ($fnret->value->{'sysret'} != 0) {
-        return $self->log_and_exit(
+        $self->log_and_exit(
             500,
             "Internal Error (worker returned a non-zero exit value)",
             "Worker returned a non-zero exit value (" . $fnret->value->{'sysret'} . ")",
@@ -221,7 +237,7 @@ sub _exec_worker_and_get_result {
     my $output = join($/, @{$fnret->value->{'stdout'} || []});
 
     if (!$output) {
-        return $self->log_and_exit(
+        $self->log_and_exit(
             500,
             "Internal Error (worker returned no data)",
             "Worker returned no data",
@@ -232,7 +248,7 @@ sub _exec_worker_and_get_result {
     my $json_decoded;
     eval { $json_decoded = decode_json($output); };
     if ($@) {
-        return $self->log_and_exit(
+        $self->log_and_exit(
             500,
             "Internal Error (worker returned invalid JSON)",
             "Worker returned "
@@ -245,7 +261,7 @@ sub _exec_worker_and_get_result {
 
     $fnret = OVH::Bastion::helper_decapsulate($json_decoded);
     $fnret
-      or return $self->log_and_exit(
+      or $self->log_and_exit(
         500,
         "Internal Error (worker returned an error)",
         "Worker returned an error ($fnret)",
@@ -254,7 +270,7 @@ sub _exec_worker_and_get_result {
 
     my $value_object = eval { thaw(decode_base64($fnret->value)); };
     if ($@) {
-        return $self->log_and_exit(
+        $self->log_and_exit(
             500,
             "Internal Error (can't decode worker data)",
             "Error while decoding worker data ($@)\n",
@@ -265,8 +281,23 @@ sub _exec_worker_and_get_result {
     return R($fnret->err, msg => $fnret->msg, value => $value_object);
 }
 
-# overrides parent func
+# overrides parent func.
 sub process_http_request {
+    my ($self, $client) = @_;
+
+    # Net::Server ignores our return value, and turns any exception we let escape into its own
+    # send_500() call, which would append a second response to a socket that already has one. So we
+    # catch log_and_exit()'s special die($REQUEST_DONE) here, and only let genuine errors through to Net::Server.
+    my $ok  = eval { $self->_handle_http_request($client); 1 };
+    my $err = $@;
+
+    return 1 if $ok;
+    return 1 if (ref $err eq $REQUEST_DONE);
+    die $err;
+}
+
+# always ends by calling log_and_exit(), which never returns
+sub _handle_http_request {    ## no critic (RequireFinalReturn)
     my ($self, $client) = @_;
     my $fnret;
 
@@ -279,7 +310,7 @@ sub process_http_request {
 
     # consistency check
     if ($self->{'request_info'}{'peerport'} ne $ENV{'REMOTE_PORT'}) {
-        return $self->log_and_exit(
+        $self->log_and_exit(
             500,
             "Internal Server Error (consistency)",
             "Internal consistency error: remote_port doesn't match peerport, this shouldn't happen",
@@ -292,7 +323,7 @@ sub process_http_request {
     # only some methods are allowed
     if (not grep { uc($self->{'request_info'}{'request_method'}) eq $_ } @{$self->{'proxy_config'}{'allowed_methods'}})
     {
-        return $self->log_and_exit(
+        $self->log_and_exit(
             400,
             "Bad Request (method forbidden)",
             "The " . uc($self->{'request_info'}{'request_method'}) . " method is forbidden by policy",
@@ -302,7 +333,7 @@ sub process_http_request {
 
     # if we don't have the request_headers, we really have a big problem
     if (ref $self->{'request_info'} ne 'HASH' or ref $self->{'request_info'}{'request_headers'} ne 'ARRAY') {
-        return $self->log_and_exit(
+        $self->log_and_exit(
             500,
             "Internal Server Error (headers not found)",
             "The headers of the request can't be found",
@@ -313,7 +344,7 @@ sub process_http_request {
     # convert headers into a hash
     my $req_headers = _flatten_headers($self->{'request_info'}{'request_headers'});
     if (ref $req_headers ne 'HASH') {
-        return $self->log_and_exit(
+        $self->log_and_exit(
             500,
             "Internal Server Error (headers are not a hash)",
             "Request headers couldn't be parsed properly",
@@ -336,10 +367,10 @@ sub process_http_request {
         my $workerversion = $fnret->value->{'body'};
 
         if ($workerversion eq $OVH::Bastion::VERSION) {
-            return $self->log_and_exit(200, "OK", "Bastion HTTPS proxy version " . $OVH::Bastion::VERSION . " is running nominally.", {comment => "monitoring"});
+            $self->log_and_exit(200, "OK", "Bastion HTTPS proxy version " . $OVH::Bastion::VERSION . " is running nominally.", {comment => "monitoring"});
         }
         else {
-            return $self->log_and_exit(
+            $self->log_and_exit(
                 202,
                 "Semi-OK",
                 "A discrepancy was found between the Bastion HTTPS proxy daemon version ("
@@ -352,7 +383,7 @@ sub process_http_request {
 
     # this header is mandatory, and must be a Basic scheme auth
     if (not $req_headers->{'authorization'}) {
-        return $self->log_and_exit(
+        $self->log_and_exit(
             401,
             "Authorization required (no auth provided)",
             "No authentication provided, and authentication is mandatory",
@@ -361,7 +392,7 @@ sub process_http_request {
     }
     my $basic_auth_header_value;
     if (not $req_headers->{'authorization'} =~ m{^Basic (\S+)$}i) {
-        return $self->log_and_exit(
+        $self->log_and_exit(
             401,
             "Authorization required (basic auth scheme needed)",
             "Basic authorization scheme required",
@@ -372,7 +403,7 @@ sub process_http_request {
         $basic_auth_header_value = $1;
     }
     if ($req_headers->{'authorization'} ne $ENV{'HTTP_AUTHORIZATION'}) {
-        return $self->log_and_exit(
+        $self->log_and_exit(
             500,
             "Internal Server Error (consistency)",
             "Internal consistency error: authorization header doesn't match envvar",
@@ -389,7 +420,7 @@ sub process_http_request {
 
     # the decoded header should be of the form LOGIN:PASSWORD
     if (not $decoded or $decoded !~ /^(.+):([^:]+)$/) {
-        return $self->log_and_exit(
+        $self->log_and_exit(
             401,
             "Authorization required (malformed basic auth)",
             "Malformed Basic authorization '$decoded'",
@@ -411,7 +442,7 @@ sub process_http_request {
         $}x
       )
     {
-        return $self->log_and_exit(
+        $self->log_and_exit(
             400,
             "Bad Request (bad login format)",
             "Expected an Authorization line with credentials of the form 'BASTIONACCOUNT\@USEREXPR\@HOSTEXPR:PASSWORD' where\n"
@@ -450,19 +481,15 @@ sub process_http_request {
     undef $user_expression;    # no longer needed
 
     if (not OVH::Bastion::is_account_valid(account => $account)) {
-        return $self->log_and_exit(
-            400,
-            "Bad Request (bad account)",
-            "Account name is invalid",
-            {comment => "invalid_account"}
-        );
+        $self->log_and_exit(400, "Bad Request (bad account)", "Account name is invalid",
+            {comment => "invalid_account"});
     }
     my $escaped_account = $account;
     $escaped_account =~ s/%/%%/g;
     $self->{'server'}{'access_log_format'} =
       qq#%h $escaped_account %u %t "%r" %>s %b "$remotemachine" "$ENV{'UNIQID'}" "%{User-Agent}i" %D -#;
     if (not OVH::Bastion::is_valid_port(port => $remoteport)) {
-        return $self->log_and_exit(
+        $self->log_and_exit(
             400,
             "Bad Request (bad port number)",
             "Port number is out of range",
@@ -474,7 +501,7 @@ sub process_http_request {
     if (not $fnret) {
 
         # don't be too specific on the error message to avoid account name guessing
-        return $self->log_and_exit(
+        $self->log_and_exit(
             403,
             "Access Denied",
             "Incorrect username ($account) or password (#REDACTED#, length=" . length($pass) . ")",
@@ -485,7 +512,7 @@ sub process_http_request {
     $self->{'_log'}{'account'} = $account;
 
     if (!OVH::Bastion::is_valid_remote_user(user => $user, stricter => 1)) {
-        return $self->log_and_exit(
+        $self->log_and_exit(
             400,
             "Bad Request (bad user name)",
             "User name '$user' has forbidden characters",
@@ -507,7 +534,7 @@ sub process_http_request {
             $timeout = $req_headers->{'x-bastion-timeout'};
         }
         else {
-            return $self->log_and_exit(
+            $self->log_and_exit(
                 400,
                 "Bad Request (invalid timeout value)",
                 "Expected an integer timeout value expressed in seconds",
@@ -523,7 +550,7 @@ sub process_http_request {
     my $egress_protocol = $req_headers->{'x-bastion-egress-protocol'} || 'https';
     # protocol must be explicitly allowed per Bastion policy, by default only https is allowed
     if (!grep { $egress_protocol eq $_ } @{$self->{'proxy_config'}{'allowed_egress_protocols'} || []}) {
-        return $self->log_and_exit(
+        $self->log_and_exit(
             400,
             "Bad Request (forbidden egress protocol)",
             "The egress protocol '$egress_protocol' is not allowed by policy",
@@ -538,7 +565,7 @@ sub process_http_request {
             $allow_downgrade = $req_headers->{'x-bastion-allow-downgrade'} + 0;
         }
         else {
-            return $self->log_and_exit(
+            $self->log_and_exit(
                 400,
                 "Bad Request (invalid allow-downgrade value)",
                 "Expected value '0', '1' or no header",
@@ -554,7 +581,7 @@ sub process_http_request {
             $enforce_secure = $req_headers->{'x-bastion-enforce-secure'} + 0;
         }
         else {
-            return $self->log_and_exit(
+            $self->log_and_exit(
                 400,
                 "Bad Request (invalid enforce-secure value)",
                 "Expected value '0', '1' or no header",
@@ -607,14 +634,17 @@ sub process_http_request {
     }
     $ENV{'CONTENT_TYPE'} = $real_content_type;
 
-    $ENV{'PROXY_ACCOUNT_PASSWORD'} = $pass;
-    undef $pass;
     $self->{'_log'}{'request_body_length'} = length($content // '');
 
-    # the body goes to the worker through STDIN
-    $fnret = $self->_exec_worker_and_get_result(\@cmd, $content);
+    # the worker gets the egress password through its environment. Scope it with local() so that it's
+    # unset on our way out even if _exec_worker_and_get_result() unwinds through us (see log_and_exit).
+    {
+        local $ENV{'PROXY_ACCOUNT_PASSWORD'} = $pass;
+        undef $pass;
 
-    delete $ENV{'PROXY_ACCOUNT_PASSWORD'};
+        # the body goes to the worker through STDIN
+        $fnret = $self->_exec_worker_and_get_result(\@cmd, $content);
+    }
 
     if (ref $fnret->value->{'headers'} eq 'ARRAY') {
         push @{$self->{'_supplementary_headers'}}, @{$fnret->value->{'headers'}};
@@ -639,8 +669,6 @@ sub process_http_request {
         $fnret->value->{'body'},
         {comment => "worker_returned"}
     );
-
-    return 1;
 }
 
 # overrides parent func

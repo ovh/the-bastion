@@ -5,7 +5,7 @@
 # shellcheck source=tests/functional/launch_tests_on_instance.sh
 . "$(dirname "${BASH_SOURCE[0]}")"/dummy
 
-testsuite_proxy_check_headers()
+testsuite_proxy_check_response()
 {
     [ "$COUNTONLY" = 1 ] && return 0
     # ensure there's no header duplicates
@@ -15,6 +15,14 @@ testsuite_proxy_check_headers()
         fail "HEADER DUPES" "$dupes"
     else
         ok "HEADER DUPES" "(no duplicate headers)"
+    fi
+    # a single request must get a single response.
+    local nbstatus
+    nbstatus="$(get_stdout | grep -c '^HTTP/' || true)"
+    if [ "$nbstatus" != 1 ]; then
+        fail "SINGLE RESPONSE" "(expected exactly 1 HTTP status line in the body, got $nbstatus)"
+    else
+        ok "SINGLE RESPONSE" "(exactly one HTTP response)"
     fi
     # headers that should always be there
     contain 'Server: The Bastion'
@@ -35,7 +43,7 @@ testsuite_proxy()
     # and let's go
     script noauth "curl -m $default_timeout -vki https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
-    testsuite_proxy_check_headers
+    testsuite_proxy_check_response
     contain 'HTTP/1.0 401 Authorization required (no auth provided)'
     contain 'WWW-Authenticate: Basic realm="bastion"'
     contain 'Content-Type: text/plain'
@@ -44,7 +52,7 @@ testsuite_proxy()
     script bad_auth_format "curl -m $default_timeout -vki -u test:test https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 400 Bad Request (bad login format)'
-    testsuite_proxy_check_headers
+    testsuite_proxy_check_response
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
     contain 'Expected an Authorization line with credentials of the form'
@@ -69,7 +77,7 @@ testsuite_proxy()
     script good_auth_bad_host "curl -m $default_timeout -vki -u '$account0@test@test.invalid:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 400 Bad Request (ERR_HOST_NOT_FOUND)'
-    testsuite_proxy_check_headers
+    testsuite_proxy_check_response
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
     contain 'X-Bastion-Remote-Host: test.invalid'
@@ -88,7 +96,7 @@ testsuite_proxy()
     # attempt to use the previous credentials (and fail)
     script bad_auth2 "curl -m $default_timeout -vki -u test@test@test:test https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
-    testsuite_proxy_check_headers
+    testsuite_proxy_check_response
     contain 'HTTP/1.0 403 Access Denied'
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
@@ -102,7 +110,7 @@ testsuite_proxy()
     script bad_user_name "curl -m $default_timeout -vki -u '$account0@te!st@127.0.0.1:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 400 Bad Request (bad user name)'
-    testsuite_proxy_check_headers
+    testsuite_proxy_check_response
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
     contain "User name 'te!st' has forbidden characters"
@@ -110,7 +118,7 @@ testsuite_proxy()
     script good_auth_no_access "curl -m $default_timeout -vki -u '$account0@test@127.0.0.1:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 403 Access Denied (access denied to remote)'
-    testsuite_proxy_check_headers
+    testsuite_proxy_check_response
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
     contain 'X-Bastion-Remote-IP: 127.0.0.1'
@@ -123,7 +131,7 @@ testsuite_proxy()
     script good_auth_no_access_other_port "curl -m $default_timeout -vki -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 403 Access Denied (access denied to remote)'
-    testsuite_proxy_check_headers
+    testsuite_proxy_check_response
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
     contain 'X-Bastion-Remote-IP: 127.0.0.1'
@@ -140,7 +148,7 @@ testsuite_proxy()
     script missing_egress_pwd "curl -m $default_timeout -vki -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 412 Precondition Failed (egress password missing)'
-    testsuite_proxy_check_headers
+    testsuite_proxy_check_response
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
     contain 'X-Bastion-Remote-IP: 127.0.0.1'
@@ -159,7 +167,7 @@ testsuite_proxy()
     retvalshouldbe 0
     # not all versions of LWP add "(certificate verify failed)" at the end of the below error message, so omit it
     contain "HTTP/1.0 500 Can't connect to 127.0.0.1:9443"
-    testsuite_proxy_check_headers
+    testsuite_proxy_check_response
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
     contain 'X-Bastion-Remote-IP: 127.0.0.1'
@@ -172,7 +180,7 @@ testsuite_proxy()
     script insecure "curl -m $default_timeout -vki -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain "HTTP/1.0 200 OK"
-    testsuite_proxy_check_headers
+    testsuite_proxy_check_response
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
     contain 'X-Bastion-Remote-IP: 127.0.0.1'
@@ -191,7 +199,7 @@ testsuite_proxy()
     script one_megabyte "curl -m $default_timeout -vki -H 'X-Test-Add-Response-Header-Content-Type: application/json' -H 'X-Test-Wanted-Response-Size: 1000000' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain "HTTP/1.0 200 OK"
-    testsuite_proxy_check_headers
+    testsuite_proxy_check_response
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: application/json'
     contain 'X-Bastion-Remote-IP: 127.0.0.1'
@@ -284,7 +292,7 @@ testsuite_proxy()
     script post_data "curl -m $default_timeout -vki -X POST -d somedata -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain "HTTP/1.0 200 OK"
-    testsuite_proxy_check_headers
+    testsuite_proxy_check_response
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
     contain 'X-Bastion-Remote-IP: 127.0.0.1'
@@ -304,7 +312,7 @@ testsuite_proxy()
     script patch_data "curl -m $default_timeout -vki -X PUT -d somedata -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain "HTTP/1.0 200 OK"
-    testsuite_proxy_check_headers
+    testsuite_proxy_check_response
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
     contain 'X-Bastion-Remote-IP: 127.0.0.1'
@@ -324,7 +332,7 @@ testsuite_proxy()
     script patch_data_no_body "curl -m $default_timeout -vki -X PUT -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain "HTTP/1.0 200 OK"
-    testsuite_proxy_check_headers
+    testsuite_proxy_check_response
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
     contain 'X-Bastion-Remote-IP: 127.0.0.1'
@@ -343,7 +351,7 @@ testsuite_proxy()
     script forbidden_egress_protocol "curl -m $default_timeout -vki -H 'X-Bastion-Egress-Protocol: http' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 400 Bad Request (forbidden egress protocol)'
-    testsuite_proxy_check_headers
+    testsuite_proxy_check_response
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
     contain 'not allowed by policy'
@@ -364,7 +372,7 @@ testsuite_proxy()
     script allowed_http_egress "curl -m $default_timeout -vki -H 'X-Bastion-Egress-Protocol: http' -u '$account0@test@127.0.0.1%22:$proxy_password' https://$remote_ip:$remote_proxy_port/test 2>&1 | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 200'
-    testsuite_proxy_check_headers
+    testsuite_proxy_check_response
     contain 'X-Bastion-Remote-Host: 127.0.0.1'
     contain 'X-Bastion-Remote-IP: 127.0.0.1'
     contain 'X-Bastion-Local-Status: 200 OK'
@@ -376,7 +384,7 @@ testsuite_proxy()
     script allowed_http_egress_test_host "curl -m $default_timeout -vki -H 'X-Bastion-Egress-Protocol: http' -u '$account0@test@localhost%22:$proxy_password' https://$remote_ip:$remote_proxy_port/test 2>&1 | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 200'
-    testsuite_proxy_check_headers
+    testsuite_proxy_check_response
     contain 'X-Bastion-Remote-Host: localhost'
     contain 'X-Bastion-Remote-IP: 127.0.0.1'
     contain 'X-Bastion-Local-Status: 200 OK'
@@ -388,7 +396,7 @@ testsuite_proxy()
     script forbidden_https_egress "curl -m $default_timeout -vki -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 400 Bad Request (forbidden egress protocol)'
-    testsuite_proxy_check_headers
+    testsuite_proxy_check_response
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
     contain 'not allowed by policy'
@@ -397,8 +405,28 @@ testsuite_proxy()
     script ipv6 "curl -m $default_timeout -vki -H 'X-Bastion-Egress-Protocol: http' -u '$account0@test@[::1]%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'ERR_IP_VERSION_DISABLED'
+
+    # A failure *inside* _exec_worker_and_get_result() must still yield exactly one HTTP response.
+    ignorecodewarn 'osh-http-proxy-daemon'
+    script worker_failure "
+        $r0 chmod 0000 /opt/bastion/bin/proxy/osh-http-proxy-worker
+        curl -m $default_timeout -vki https://$remote_ip:$remote_proxy_port/bastion-health-check | cat
+        # restore unconditionally, whatever happened above (FILEMODE 0755, see the worker's header)
+        $r0 chmod 0755 /opt/bastion/bin/proxy/osh-http-proxy-worker
+    "
+    retvalshouldbe 0
+    contain 'HTTP/1.0 500 Internal Error (worker returned a non-zero exit value)'
+    contain 'Worker returned a non-zero exit value'
+    testsuite_proxy_check_response
+    nocontain 'WWW-Authenticate: '
+
+    # the worker is restored, so the proxy must be healthy again
+    script post_worker_failure_health "curl -m $default_timeout -vki https://$remote_ip:$remote_proxy_port/bastion-health-check | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain 'running nominally'
+    testsuite_proxy_check_response
 }
 
 [ "${remote_proxy_port:-0}" != 0 ] && testsuite_proxy
 unset -f testsuite_proxy
-unset -f testsuite_proxy_check_headers
+unset -f testsuite_proxy_check_response
