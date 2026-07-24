@@ -52,6 +52,12 @@ $fnret or osh_exit $fnret;
 $group = $fnret->value->{'group'};
 my $shortGroup = $fnret->value->{'shortGroup'};
 
+$fnret = OVH::Bastion::is_group_gatekeeper(account => $self, group => $shortGroup, superowner => 1);
+if (!$fnret) {
+    osh_debug("user $self not a gk of $shortGroup");
+    osh_exit('ERR_NOT_GROUP_GATEKEEPER', "Sorry $self, you're not a gatekeeper of group $shortGroup");
+}
+
 $fnret = OVH::Bastion::get_acl_way(way => 'groupguest', group => $shortGroup, account => $account);
 $fnret or osh_exit $fnret;
 
