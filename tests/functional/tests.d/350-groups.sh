@@ -694,6 +694,11 @@ EOS
     success a2_list_a3_guest_access_g1_empty $a2 --osh groupListGuestAccesses --group $group1 --account $account3
     json .command groupListGuestAccesses .error_code OK_EMPTY .value null
 
+    # a3 is a gatekeeper of g3, so it can execute the plugin, but it's not a gatekeeper of g1:
+    # it must not be able to list the guest accesses of g1
+    plgfail a3_fail_list_g1_guest_accesses_not_gk $a3 --osh groupListGuestAccesses --group $group1 --account $account3
+    json .command groupListGuestAccesses .error_code ERR_NOT_GROUP_GATEKEEPER .value null
+
     # new state: g1[a1(ow,gk,acl,member) a2(gk) acl(g1@127.0.0.1:22,g2@127.0.0.2:22)] g3[a0,a2,a3(ow,gk,acl,member)]
 
     # check that a3 can no longer access the ips
@@ -729,6 +734,11 @@ EOS
 
     success a2_add_a3_as_g1_guest_and_dupe $a2 --osh groupAddGuestAccess --group $group1 --account $account3 --host 127.0.0.1 --user g1 --port 22
     json .error_code OK_NO_CHANGE
+
+    # a3 is now a guest of g1, but still not a gatekeeper of it:
+    # it must not be able to list the guest accesses of g1, not even its own
+    plgfail a3_fail_list_g1_guest_accesses_as_guest $a3 --osh groupListGuestAccesses --group $group1 --account $account3
+    json .command groupListGuestAccesses .error_code ERR_NOT_GROUP_GATEKEEPER .value null
 
     run a3_noaccess_guest_but_not_to_this_g1_tuple $a3 g2@127.0.0.2
     retvalshouldbe 107
