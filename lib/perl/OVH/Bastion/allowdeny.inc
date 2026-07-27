@@ -1175,10 +1175,17 @@ sub build_proxyjump_ssh_options {
     push @proxyCommand, '-p', $proxyPort if $proxyPort && $proxyPort != 22;
     push @proxyCommand, '-l', $proxyUser, '-W', '[%h]:%p', $proxyIp;
 
-    my $proxyCommandStr = join(' ', map { _shell_quote_arg($_) } @proxyCommand);
+    my $proxyCommandStr = shell_quote(@proxyCommand);
     osh_debug("Built ProxyCommand: $proxyCommandStr");
 
     return R('OK', value => {sshArgs => ['-o', "ProxyCommand=$proxyCommandStr"]});
+}
+
+# Quote arguments for safe inclusion in a /bin/sh command line.
+# Note that an empty (or undef) argument is quoted to '', so that it survives as an actual argument
+# instead of silently vanishing from the command line.
+sub shell_quote {
+    return join(' ', map { _shell_quote_arg($_) } @_);
 }
 
 # Quote a single argument for safe inclusion in a /bin/sh command line, by wrapping it in

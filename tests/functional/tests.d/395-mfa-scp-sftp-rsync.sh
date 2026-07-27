@@ -556,6 +556,10 @@ EOF
     success personal_mfa_reset_policy $a0 --osh accountModify --account $account0 --mfa-password-required no
     json .command accountModify
 
+    # drop the personal ssh access added at the top of this module
+    success personal_scp_del_ssh_access $a0 --osh selfDelPersonalAccess -h 127.0.0.2 -u $shellaccount -p 22
+    json .command selfDelPersonalAccess .error_code OK
+
     # delete group1
     success groupDestroy $a0 --osh groupDestroy --group $group1 --no-confirm
     json .command groupDestroy

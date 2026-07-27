@@ -127,7 +127,9 @@ foreach my $key (@keys) {
     push @cmd, ('-i', $key);
 }
 
-push @cmd, "--", $ip, @$remainingOptions;
+# Shell-quote every forwarded token before it reaches the remote shell.
+# This way, each token arrives as literal data and is handed back to rsync exactly as-is.
+push @cmd, "--", $ip, map { OVH::Bastion::shell_quote($_) } @$remainingOptions;
 
 print STDERR ">>> Hello $self, running rsync through the bastion on $machine...\n";
 

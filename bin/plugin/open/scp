@@ -338,20 +338,40 @@ if (not $ip) {
 my $decoded = $scpCmd;
 $decoded =~ s/(?<!#)#(?!#)/ /g;
 $decoded =~ s/##/#/g;
-if ($decoded !~ /^(?:scp )(?:.*)-([tf]) (?:.+)$/) {
+
+# The remote scp-server command is always generated as:
+#   scp [server-options...] -t|-f [--] <path>
+# We can't shell-quote it blindly, as scp's legacy protocol delegates path handling to the remote
+# shell, e.g. '*', '{a,b,c}', '~', etc. So we split the command in two and validate each part accordingly:
+#  - the option segment is machine-generated and never needs metacharacters => strict allowlist
+#  - the path segment must keep glob/brace/tilde characters => use a denylist
+if ($decoded !~ m{^scp((?: -[a-zA-Z])*) -([tf])(?: --)? (.+)$}) {
     # security
     osh_exit 'ERR_SECURITY_VIOLATION', "scp command format unrecognized";
 }
+my ($scpOptions, $scpMode, $scpPath) = ($1, $2, $3);    ## no critic (CaptureWithoutTest) ## false positive
 
-my $protocol = $1 eq 't' ? 'scpupload' : 'scpdownload';    ## no critic (CaptureWithoutTest) ## false positive
+my $protocol = $scpMode eq 't' ? 'scpupload' : 'scpdownload';
 
-# basic mitigation for CVE-2020-15778
-if ($decoded =~ m{[\`\$\;><\|\&]}) {
+# strict allowlist of the scp server-mode options. OpenSSH may only use -v/-r/-p/-d; these are always
+# machine-generated and never carry metacharacters, so anything outside this set is rejected.
+foreach my $scpOption (split ' ', $scpOptions) {
+    if ($scpOption !~ /^-[vrpd]$/) {
+        osh_exit 'ERR_SECURITY_VIOLATION', "Unrecognized scp server option '$scpOption', bailing out";
+    }
+}
+
+# mitigation for CVE-2020-15778, scoped to the path segment: block the shell metacharacters while
+# still allowing the glob/brace/tilde characters that legitimate remote path expansion relies on.
+if ($scpPath =~ m{[\`\$\;><\|\&\r\n]}) {
     osh_exit('ERR_SECURITY_VIOLATION', "Invalid characters detected, bailing out");
 }
 
-$port ||= 22;                                              # scp uses 22 if not specified, so we need to test access to that port and not any port (aka undef)
-$user ||= $self;                                           # same for user
+# Rebuild the command from the validated parts, and always insert the '--' separator.
+my $remoteCmd = "scp$scpOptions -$scpMode -- $scpPath";
+
+$port ||= 22;       # scp uses 22 if not specified, so we need to test access to that port and not any port (aka undef)
+$user ||= $self;    # same for user
 if ($proxyIp) {
     $proxyUser ||= $user;
 }
@@ -372,7 +392,12 @@ my $machine = $fnret->value->{'machine'};
 my @keys    = @{$fnret->value->{'keys'} || []};
 
 # now build the command
-my @cmd = qw{ ssh -x -oForwardAgent=no -oPermitLocalCommand=no -oClearAllForwardings=yes };
+
+# always use these options first (taken from OpenSSH 10.4)
+my @defaultOptions =
+  qw{ -oPermitLocalCommand=no -oClearAllForwardings=yes -oRemoteCommand=none -oRequestTTY=no -oControlMaster=no };
+
+my @cmd = (qw{ ssh -x }, @defaultOptions);
 push @cmd, ('-p', $port) if $port;
 push @cmd, ('-l', $user) if $user;
 
@@ -382,7 +407,7 @@ foreach my $key (@keys) {
 
 # Add ProxyCommand if proxy is specified (also checks whether egressProxyJumpAllowed)
 if ($proxyIp) {
-    my @proxySshOptions = ('-o', 'ForwardAgent=no', '-o', 'PermitLocalCommand=no', '-o', 'ClearAllForwardings=yes');
+    my @proxySshOptions = @defaultOptions;
     push @proxySshOptions, map { ('-i', $_) } @keys;
     $fnret = OVH::Bastion::build_proxyjump_ssh_options(
         proxyIp    => $proxyIp,
@@ -394,7 +419,7 @@ if ($proxyIp) {
     push @cmd, @{$fnret->value->{'sshArgs'}};
 }
 
-push @cmd, "--", $ip, $decoded;
+push @cmd, "--", $ip, $remoteCmd;
 
 print STDERR ">>> Hello $self, transferring your file through the bastion "
   . ($protocol eq 'scpupload' ? 'to' : 'from')
