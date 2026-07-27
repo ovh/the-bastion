@@ -14,12 +14,13 @@ use File::Basename;
 use lib dirname(__FILE__) . '/../../lib/perl';
 use OVH::Bastion;
 use OVH::Bastion::Plugin::groupSetRole;
+use OVH::Bastion::Plugin::groupModify;
 use OVH::Bastion::Helper;
 
 # Fetch command options
 my $fnret;
 my ($result, @optwarns);
-my ($group, $owner, $algo, $size, $encrypted, $no_key, $comment);
+my ($group, $owner, $algo, $size, $encrypted, $no_key, $comment, %opt);
 eval {
     local $SIG{__WARN__} = sub { push @optwarns, shift };
     $result = GetOptions(
@@ -30,6 +31,7 @@ eval {
         "encrypted" => sub { $encrypted //= $_[1] },
         "no-key"    => sub { $no_key    //= $_[1] },
         "comment=s" => sub { $comment   //= $_[1] },
+        OVH::Bastion::Plugin::groupModify::options(opt => \%opt, seconds => 1),
     );
 };
 if ($@) { die $@ }
@@ -280,6 +282,30 @@ foreach my $todo (@todoList) {
     $fnret or HEXIT($fnret);
 }
 
+# now that the group exists, apply the configuration options we've been given, if any:
+# this is the exact same code that is used by the osh-groupModify helper, so that a group
+# can be created and configured atomically, which is handy for accounts that are granted
+# groupCreate but won't be an owner of the groups they create (hence can't use groupModify)
+$fnret = OVH::Bastion::Plugin::groupModify::apply(group => $group, opt => \%opt);
+$fnret or HEXIT($fnret);
+my $configErr    = $fnret->err;
+my %configResult = %{$fnret->value};
+
+# apply() doesn't consider a failed option as fatal, as the group itself has been created just fine,
+# but it returns OK_WITH_ERRORS in that case, which we relay as our own error code (see the final
+# HEXIT below): the account that created the group is not necessarily an owner of it, hence might
+# have no way to fix the configuration afterwards using groupModify. Also report the partial
+# failure to the user and to the audit trail.
+my @configErrors = sort grep { !$configResult{$_} } keys %configResult;
+if (@configErrors) {
+    osh_warn("The group has been created, but the following configuration options could NOT be applied: "
+          . join(", ", @configErrors));
+    osh_warn("Please ask an owner of this group to set them with the groupModify command");
+    warn_syslog("groupCreate: group $shortGroup has been created, but these configuration options "
+          . "failed to apply: "
+          . join(", ", map { "$_ ($configResult{$_})" } @configErrors));
+}
+
 my $keykeeper_uid = (getpwnam('keykeeper'))[2];
 my $group_gid     = (getgrnam($group))[2];
 chown $keykeeper_uid, $group_gid, "/home/keykeeper/$group";
@@ -318,8 +344,15 @@ OVH::Bastion::syslogFormatted(
         ['egress_ssh_key_algorithm', $algo],
         ['egress_ssh_key_size',      $size],
         ['egress_ssh_key_encrypted', ($encrypted ? 'true' : 'false')],
+        # only log the config options that have actually been applied: an option that has been
+        # asked for but whose application failed must not appear as effective in the audit trail
+        ['mfa_required',      ($configResult{'mfa_required'}      ? $opt{'mfaRequired'}      : undef)],
+        ['guest_ttl_limit',   ($configResult{'guest_ttl_limit'}   ? $opt{'ttl'}              : undef)],
+        ['idle_lock_timeout', ($configResult{'idle_lock_timeout'} ? $opt{'idleLockTimeout'}  : undef)],
+        ['idle_kill_timeout', ($configResult{'idle_kill_timeout'} ? $opt{'idleKillTimeout'}  : undef)],
+        ['config_errors',     (@configErrors                      ? join(",", @configErrors) : undef)],
     ]
 );
 
 # done at last!
-HEXIT('OK', value => {group => $shortGroup, owner => $owner});
+HEXIT($configErr, value => {group => $shortGroup, owner => $owner, %configResult});

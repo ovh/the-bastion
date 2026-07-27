@@ -10,7 +10,9 @@ use lib dirname(__FILE__) . '/../../../lib/perl';
 use OVH::Result;
 use OVH::Bastion;
 use OVH::Bastion::Plugin qw( :DEFAULT );
+use OVH::Bastion::Plugin::groupModify;
 
+my %opt;
 my $remainingOptions = OVH::Bastion::Plugin::begin(
     argv    => \@ARGV,
     header  => "create a new group",
@@ -21,6 +23,7 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
         "size=i"    => \my $size,
         "encrypted" => \my $encrypted,
         "no-key"    => \my $no_key,
+        OVH::Bastion::Plugin::groupModify::options(opt => \%opt),
     },
     help => \&help,
 );
@@ -29,7 +32,7 @@ sub help {
     osh_info <<"EOF";
 Create a group
 
-Usage: --osh $scriptName --group GROUP --owner ACCOUNT <--algo ALGO --size SIZE [--encrypted]|--no-key>
+Usage: --osh $scriptName --group GROUP --owner ACCOUNT <--algo ALGO --size SIZE [--encrypted]|--no-key> [OPTIONS]
 
   --group       Group name to create
 
@@ -46,7 +49,11 @@ Usage: --osh $scriptName --group GROUP --owner ACCOUNT <--algo ALGO --size SIZE 
 
   --no-key      Don't generate an egress SSH key at all for this group
 
+The following options set the configuration of the newly created group, they're optional and have
+the exact same meaning as their counterparts of the `groupModify` command, which can be used to
+modify them afterwards (if you're an owner of the group):
 EOF
+    osh_info OVH::Bastion::Plugin::groupModify::helptext();
     OVH::Bastion::print_accepted_key_algorithms(way => "egress", generate => 0);
     return 0;
 }
@@ -82,6 +89,12 @@ if (!$no_key && (!$algo || !$size)) {
     osh_exit 'ERR_MISSING_PARAMETER', "Group algorithm or size is missing";
 }
 
+$fnret = OVH::Bastion::Plugin::groupModify::validate_options(opt => \%opt);
+if (!$fnret) {
+    help();
+    osh_exit $fnret;
+}
+
 $fnret = OVH::Bastion::is_valid_group(group => $group, groupType => "key");
 $fnret or osh_exit($fnret);
 
@@ -107,12 +120,17 @@ push @command, "--algo",  $algo if $algo;
 push @command, "--size",  $size if $size;
 push @command, "--encrypted" if $encrypted;
 push @command, "--no-key"    if $no_key;
+push @command, OVH::Bastion::Plugin::groupModify::helper_args(opt => \%opt);
 
 ReadMode('noecho');
 $fnret = OVH::Bastion::helper(cmd => \@command, expects_stdin => 1);
 ReadMode('restore');
 $fnret or osh_exit $fnret;
 
+# the helper returns OK_WITH_ERRORS instead of OK when the group has been created but some of
+# the requested configuration options couldn't be applied: save its error code so that we relay
+# it in the final osh_exit below ($fnret gets reused in-between), instead of reporting a plain OK
+my $helper_err  = $fnret->err;
 my $result_hash = $fnret->value;
 
 if ($no_key) {
@@ -138,4 +156,4 @@ else {
     }
 }
 
-osh_ok $result_hash;
+osh_exit R($helper_err, value => $result_hash);

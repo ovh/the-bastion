@@ -911,6 +911,12 @@ sub group_config {
 
     if ($delete) {
         return R('OK') if (unlink($filename));
+
+        # deleting a config key that is not set is not an error: the caller's intent, i.e. having no
+        # such config key for this group, is fulfilled. This notably happens when a group is created
+        # and configured in one go, as the config files don't exist yet at that point. Any other
+        # unlink error means the config key might still be in place, so it must be reported.
+        return R('OK') if $!{ENOENT};
         return R('ERR_UNLINK_FAILED', msg => "Couldn't delete group $shortGroup config $key ($!)");
     }
     elsif (defined $value) {

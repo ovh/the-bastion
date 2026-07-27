@@ -1115,6 +1115,121 @@ EOS
     success guest_ttl_limit $a1 --osh groupModify --group $group1 --guest-ttl-limit 0
     json .command groupModify .error_code OK
 
+    # the same configuration options can be set at group creation time: this is the only way
+    # for an account that is granted groupCreate but is not an owner of the groups it creates
+    # (hence can't use groupModify afterwards) to configure them
+    local groupconf="${group3}conf"
+
+    plgfail create_group_bad_mfa $a0 --osh groupCreate --group $groupconf --owner $account1 --no-key --mfa-required bogus
+    json .command groupCreate .error_code ERR_INVALID_PARAMETER
+
+    plgfail create_group_bad_ttl $a0 --osh groupCreate --group $groupconf --owner $account1 --no-key --guest-ttl-limit -1
+    json .command groupCreate .error_code ERR_INVALID_PARAMETER
+
+    # the group must not have been created by the two failed attempts above
+    plgfail create_group_bad_config_not_created $a0 --osh groupInfo --group $groupconf
+    json .command groupInfo .error_code KO_GROUP_NOT_FOUND
+
+    success create_group_with_config $a0 --osh groupCreate --group $groupconf --owner $account1 --no-key --mfa-required password --guest-ttl-limit 1d --idle-lock-timeout 5m --idle-kill-timeout 10m
+    json $(cat <<EOS
+    .command groupCreate
+    .error_code OK
+    .value.group $groupconf
+    .value.owner $account1
+    .value.mfa_required.error_code OK
+    .value.guest_ttl_limit.error_code OK
+    .value.idle_lock_timeout.error_code OK
+    .value.idle_kill_timeout.error_code OK
+EOS
+    )
+
+    success create_group_with_config_check $a1 --osh groupInfo --group $groupconf
+    json $(cat <<EOS
+    .command groupInfo
+    .error_code OK
+    .value.group $groupconf
+    .value.mfa_required password
+    .value.guest_ttl_limit 86400
+    .value.idle_lock_timeout 300
+    .value.idle_kill_timeout 600
+EOS
+    )
+
+    success create_group_with_config_destroy $a1 --osh groupDestroy --group $groupconf --no-confirm
+    json .command groupDestroy .error_code OK
+
+    # the "unset the group override" values (-1 for the idle timeouts, 0 for the guest TTL limit) must
+    # also work at creation time, even though the corresponding config files don't exist yet: they must
+    # not be reported as errors (which would also emit a code-warning in the logs)
+    success create_group_with_unset_config $a0 --osh groupCreate --group $groupconf --owner $account1 --no-key --guest-ttl-limit 0 --idle-lock-timeout -1 --idle-kill-timeout -1
+    json $(cat <<EOS
+    .command groupCreate
+    .error_code OK
+    .value.group $groupconf
+    .value.guest_ttl_limit.error_code OK
+    .value.idle_lock_timeout.error_code OK
+    .value.idle_kill_timeout.error_code OK
+EOS
+    )
+
+    # ... and the group must indeed have no such override set
+    success create_group_with_unset_config_check $a1 --osh groupInfo --group $groupconf
+    json $(cat <<EOS
+    .command groupInfo
+    .error_code OK
+    .value.group $groupconf
+    .value.guest_ttl_limit null
+    .value.idle_lock_timeout null
+    .value.idle_kill_timeout null
+EOS
+    )
+
+    success create_group_with_unset_config_destroy $a1 --osh groupDestroy --group $groupconf --no-confirm
+    json .command groupDestroy .error_code OK
+
+    # partial-failure case: when the group has been created just fine but some of the configuration
+    # options couldn't be applied, the reported error_code must be OK_WITH_ERRORS and not a plain OK,
+    # as the creator is not necessarily an owner of the new group, hence might have no way to fix the
+    # configuration afterwards. To trigger it deterministically, plant a directory where group_config()
+    # expects to write its file: the write fails (even for root), while the rest of the group creation
+    # is left unaffected
+    success create_group_partial_failure_prepare $r0 "mkdir -p /home/key$groupconf/config.mfa_required"
+
+    success create_group_partial_failure $a0 --osh groupCreate --group $groupconf --owner $account1 --no-key --mfa-required password --guest-ttl-limit 1d
+    json $(cat <<EOS
+    .command groupCreate
+    .error_code OK_WITH_ERRORS
+    .value.group $groupconf
+    .value.owner $account1
+    .value.mfa_required.error_code ERR_CANNOT_OPEN_FILE
+    .value.guest_ttl_limit.error_code OK
+EOS
+    )
+
+    # the option that failed to apply must not be effective, while the other one must be
+    success create_group_partial_failure_check $a1 --osh groupInfo --group $groupconf
+    json .command groupInfo .error_code OK .value.mfa_required null .value.guest_ttl_limit 86400
+
+    # same partial-failure case through groupModify, which must also report OK_WITH_ERRORS
+    # (the rogue directory planted above is still in the way)
+    success modify_group_partial_failure $a1 --osh groupModify --group $groupconf --mfa-required totp --guest-ttl-limit 2d
+    json $(cat <<EOS
+    .command groupModify
+    .error_code OK_WITH_ERRORS
+    .value.mfa_required.error_code ERR_CANNOT_OPEN_FILE
+    .value.guest_ttl_limit.error_code OK
+EOS
+    )
+
+    success modify_group_partial_failure_check $a1 --osh groupInfo --group $groupconf
+    json .command groupInfo .error_code OK .value.mfa_required null .value.guest_ttl_limit 172800
+
+    success create_group_partial_failure_cleanup $r0 "rmdir /home/key$groupconf/config.mfa_required"
+
+    success create_group_partial_failure_destroy $a1 --osh groupDestroy --group $groupconf --no-confirm
+    json .command groupDestroy .error_code OK
+    unset groupconf
+
     # wait for the 1s-ttl guest access added above to expire, so that the re-add below is an actual change (and not OK_NO_CHANGE)
     waitfor 2 "waiting for the 1s-ttl guest access to expire"
 

@@ -8,8 +8,13 @@
         "groupCreate +--group +\\S+ +--owner +\\S+ +--algo"               , {"ac" : ["rsa", "ecdsa", "ed25519"]},
         "groupCreate +--group +\\S+ +--owner +\\S+ +--algo +\\S+"         , {"ac" : ["--size"]},
         "groupCreate +--group +\\S+ +--owner +\\S+ +--algo +\\S+ +--size" , {"pr" : ["<SIZE>"]},
-        "groupCreate +--group +\\S+ +--owner +\\S+ +--algo +\\S+ +--size +\\d+"              , {"ac" : ["<enter>", "--encrypted"]},
-        "groupCreate +--group +\\S+ +--owner +\\S+ +--algo +\\S+ +--size +\\d+ +--encrypted" , {"pr" : ["<enter>"]}
+        "groupCreate +--group +\\S+ +--owner +\\S+ +.+--mfa-required"      , {"ac" : ["password","totp","any","none"]},
+        "groupCreate +--group +\\S+ +--owner +\\S+ +.+--guest-ttl-limit"   , {"pr" : ["<DURATION>"]},
+        "groupCreate +--group +\\S+ +--owner +\\S+ +.+--idle-lock-timeout" , {"pr" : ["<DURATION>","0 (disable)","-1 (use bastion default)"]},
+        "groupCreate +--group +\\S+ +--owner +\\S+ +.+--idle-kill-timeout" , {"pr" : ["<DURATION>","0 (disable)","-1 (use bastion default)"]},
+        "groupCreate +--group +\\S+ +--owner +\\S+ +--algo +\\S+ +--size +\\d+"              , {"ac" : ["<enter>", "--encrypted", "--mfa-required", "--guest-ttl-limit", "--idle-lock-timeout", "--idle-kill-timeout"]},
+        "groupCreate +--group +\\S+ +--owner +\\S+ +--algo +\\S+ +--size +\\d+ +--encrypted" , {"ac" : ["<enter>", "--mfa-required", "--guest-ttl-limit", "--idle-lock-timeout", "--idle-kill-timeout"]},
+        "groupCreate +--group +\\S+ +--owner +\\S+ +.+"                    , {"ac" : ["<enter>", "--mfa-required", "--guest-ttl-limit", "--idle-lock-timeout", "--idle-kill-timeout"]}
     ],
     "master_only": true,
     "terminal_mode": "raw"
