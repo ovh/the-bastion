@@ -31,6 +31,10 @@ $SIG{$_} = \&exit_sig for qw{ INT TERM HUP PIPE };
 # safe umask
 umask(0027);
 
+# reference point of the sessionSetupTimeout option: not much time must pass between here and the
+# moment we actually launch the requested plugin or connection, see check_setup_deadline_or_exit() below.
+my $setupStartedAt = OVH::Bastion::monotonic_time();
+
 # sanitize user for taint mode
 my $self = OVH::Bastion::get_user_from_env()->value;
 my $home = OVH::Bastion::get_home_from_env()->value;
@@ -489,8 +493,13 @@ if ($tty && $notty) {
 # handling interactive session, plugins/osh commands, or a connection request
 if ($proactiveMfa) {
     osh_print("As proactive MFA has been requested, entering MFA phase for $self.") unless $quiet;
-    $fnret = OVH::Bastion::do_pamtester(self => $self, sysself => $sysself);
-    $fnret or main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', $fnret->msg);
+    $fnret = OVH::Bastion::do_pamtester(self => $self, sysself => $sysself, timeout => setup_time_remaining());
+    if (!$fnret) {
+        # the user didn't complete the challenge in time: this is a setup timeout, not an MFA failure
+        main_exit(OVH::Bastion::EXIT_SETUP_TIMEOUT, 'setup_timeout', $fnret->msg)
+          if $fnret->err eq 'KO_MFA_TIMEOUT';
+        main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', $fnret->msg);
+    }
 
     # if we're still here, it succeeded
     $ENV{'OSH_PROACTIVE_MFA'} = 1;
@@ -1188,6 +1197,9 @@ if ($osh_command) {
 
         @cmd = (@{$fnret->value->{'cmd'}}, '--', @cmd);
 
+        # we're about to launch the plugin: ensure our checks are still fresh enough (may exit)
+        check_setup_deadline_or_exit();
+
         $fnret = OVH::Bastion::execute(
             cmd           => \@cmd,
             noisy_stdout  => 1,
@@ -1806,6 +1818,9 @@ mkdir "$home/tmp", 0700;
 # heavily used bastion. we exec() another script that is way lighter, see
 # comments in the connect.pl file for more information.
 
+# we're about to connect: ensure our checks are still fresh enough (may exit).
+check_setup_deadline_or_exit();
+
 if (!$quiet) {
     osh_print("Connecting...");
 }
@@ -1825,6 +1840,33 @@ exit OVH::Bastion::EXIT_OK;
 #
 # FUNCTIONS follow
 #
+
+# returns the number of seconds remaining before the sessionSetupTimeout deadline is reached,
+# to be passed as a timeout to the funcs that may wait for the user. Returns 0 if the
+# feature is disabled by configuration, as this is also how a disabled timeout is expressed there.
+# never returns a value < 1: being already past the deadline is handled by check_setup_deadline_or_exit().
+sub setup_time_remaining {
+    return 0 if !$config->{'sessionSetupTimeout'};
+    my $remaining = int($setupStartedAt + $config->{'sessionSetupTimeout'} - OVH::Bastion::monotonic_time());
+    return ($remaining >= 1 ? $remaining : 1);
+}
+
+# ensures that not too much time has passed since the beginning of the session (see the
+# sessionSetupTimeout option), so that the account and access verifications we did are still
+# reasonably fresh at the time we're about to launch the requested plugin or connection.
+# this func may exit.
+sub check_setup_deadline_or_exit {
+    my $timeout = $config->{'sessionSetupTimeout'};
+    return if !$timeout;
+
+    my $elapsed = int(OVH::Bastion::monotonic_time() - $setupStartedAt);
+    return if $elapsed <= $timeout;
+
+    OVH::Bastion::info_syslog(
+        "Session setup of account $self took ${elapsed} seconds (max $timeout), refusing to proceed");
+    main_exit(OVH::Bastion::EXIT_SETUP_TIMEOUT,
+        'setup_timeout', "Too much time has passed since the beginning of this session, please retry");
+}
 
 #
 #   On SIG, still try to log in db
@@ -2017,9 +2059,18 @@ sub do_jit_mfa {
         return $localfnret;
     }
 
+    # we're about to wait for the user, so ensure we still have time to do so, as it would
+    # be quite unfriendly to have them complete a challenge just to deny them afterwards (may exit)
+    check_setup_deadline_or_exit();
+
     # otherwise, do mfa
-    $localfnret = OVH::Bastion::do_pamtester(self => $self, sysself => $sysself);
-    main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', $localfnret->msg) if !$localfnret;
+    $localfnret = OVH::Bastion::do_pamtester(self => $self, sysself => $sysself, timeout => setup_time_remaining());
+    if (!$localfnret) {
+        # the user didn't complete the challenge in time: this is a setup timeout, not an MFA failure
+        main_exit(OVH::Bastion::EXIT_SETUP_TIMEOUT, 'setup_timeout', $localfnret->msg)
+          if $localfnret->err eq 'KO_MFA_TIMEOUT';
+        main_exit(OVH::Bastion::EXIT_MFA_FAILED, 'mfa_failed', $localfnret->msg);
+    }
 
     # craft this so that the remote server, which can be a bastion in case we're chaining,
     # can enforce its own policy. This should be serialized in LC_BASTION_DETAILS on egress side

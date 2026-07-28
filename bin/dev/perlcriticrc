@@ -14,7 +14,7 @@ allow = %ENV %SIG $|
 min_value = 100000
 
 [Subroutines::RequireFinalReturn]
-terminal_funcs = HEXIT osh_exit osh_ok
+terminal_funcs = HEXIT osh_exit osh_ok main_exit
 
 [ControlStructures::ProhibitDeepNests]
 max_nests = 6
