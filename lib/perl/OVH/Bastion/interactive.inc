@@ -137,7 +137,7 @@ EOM
         my $realmList            = OVH::Bastion::get_realm_list(cache => 1)->value;
         my $pluginListRestricted = OVH::Bastion::get_plugin_list(restrictedOnly => 1)->value;
         my $i                    = 0;
-        while ($i + 1 < $#rules) {
+        while ($i + 1 <= $#rules) {
             my $re   = $rules[$i++];
             my $item = $rules[$i++];
 
