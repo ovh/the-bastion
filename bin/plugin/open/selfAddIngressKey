@@ -14,6 +14,7 @@ my $remainingOptions = OVH::Bastion::Plugin::begin(
     header  => "add a new public key to your account",
     options => {
         "pubKey|public-key=s" => \my $pubKey,        # 'pubKey' is a deprecated name, keep it to not break scripts or people
+        "certificate=s"       => \my $certificate,
         "piv"                 => \my $pivExplicit,
     },
     helptext => <<'EOF',
@@ -25,7 +26,10 @@ Usage: --osh SCRIPT_NAME [--public-key '"ssh key text"'] [--piv]
                       If this option is not specified, you'll be prompted interactively for your public SSH key. Note that you
                       can also pass it through STDIN directly. If the policy of this bastion allows it, you may prefix the key
                       with a 'from="IP1,IP2,..."' snippet, a la authorized_keys. However the policy might force a configured
-                      'from' prefix that will override yours, or be used if you don't specify it yourself.
+                      'from' prefix that will override yours, or be used if you don't specify it yourself. If the PIV validation
+                      requires validation against a CA, this parameter will be ignored.
+  --certificate KEY Your certificate in PEM format, if the PIV validation requires validation against a CA. If this
+                      parameter is not specified, you'll be prompted interactively for your certificate in PEM format. 
   --piv             Add a public SSH key from a PIV-compatible hardware token, along with its attestation certificate and key
                       certificate, both in PEM format. If you specified --public-key, then the attestation and key certificate are
                       expected on STDIN only, otherwise the public SSH key, the attestation and key certificate are expected on STDIN.
@@ -60,58 +64,190 @@ if (!OVH::Bastion::has_piv_helper()) {
     }
 }
 
-if (not defined $pubKey) {
-    osh_info "Please paste the SSH key you want to add.";
-    OVH::Bastion::print_accepted_key_algorithms(way => "ingress");
-    osh_info "\nPlease ensure your private key is encrypted using a proper passphrase.";
+my $pivValidationCAPath = OVH::Bastion::config('pivValidationCA')->value;
+my $allowedKeyFile      = $HOME . '/' . OVH::Bastion::AK_FILE;
 
-    if (OVH::Bastion::config('ingressKeysFromAllowOverride')->value) {
+if (($pivExplicit || $pivEffectivePolicyEnabled) && $pivValidationCAPath ne "") {
+    handle_piv_with_ca();
+}
+else {
+    handle_without_ca();
+}
+
+sub handle_without_ca {
+    if (not defined $pubKey) {
+        osh_info "Please paste the SSH key you want to add.";
+        OVH::Bastion::print_accepted_key_algorithms(way => "ingress");
+        osh_info "\nPlease ensure your private key is encrypted using a proper passphrase.";
+
+        if (OVH::Bastion::config('ingressKeysFromAllowOverride')->value) {
+            osh_info
+              'You can prepend your key with a from="IP1,IP2,..." as this bastion policy allows ingress keys "from" override by users';
+        }
+        else {
+            osh_info
+              'Any from="IP1,IP2,..." you include will be ignored, as this bastion policy refuses ingress keys "from" override by users';
+        }
+
+        $pubKey = <STDIN>;
+
+        # trim spaces
+        $pubKey =~ s{^\s+|\s+$}{}g;
+    }
+
+    $fnret = OVH::Bastion::is_valid_public_key(pubKey => $pubKey, way => 'ingress');
+    if (!$fnret) {
+
+        # maybe we decoded the key but for some reason we don't want/can't add it
+        # in that case, return the data of the key in the same format as when this
+        # call works (see last line with osh_ok)
+        $fnret->{'value'} = {key => $fnret->value} if $fnret->value;
+        osh_exit $fnret;
+    }
+    my $key = $fnret->value;
+
+    if (checkExistKey($key->{'base64'})) {
+        osh_exit R(
+            'KO_DUPLICATE_KEY',
+            msg   => "This public key already exists on your account!",
+            value => {key => $key}
+        );
+    }
+
+    if ($pivEffectivePolicyEnabled) {
+        osh_info "Your are required to add only SSH keys from PIV-compatible hardware tokens, by policy.";
+    }
+    elsif ($pivExplicit) {
+        osh_info "You have requested to add a PIV-enabled SSH key.";
+    }
+
+    # we have a valid key, now handle PIV if needed
+    if ($pivExplicit || $pivEffectivePolicyEnabled) {
+        ($key->{'pivAttestationCertificate'}, $key->{'pivKeyCertificate'}) = get_attestation_material();
+
+        $fnret = OVH::Bastion::verify_piv(
+            key                    => $key->{'line'},
+            attestationCertificate => $key->{'pivAttestationCertificate'},
+            keyCertificate         => $key->{'pivKeyCertificate'}
+        );
+        $key->{'isPiv'}   = ($fnret ? 1 : 0);
+        $key->{'pivInfo'} = $fnret->value if $fnret;
+
+        if (!$key->{'isPiv'}) {
+            osh_exit R('ERR_PIV_VALIDATION_FAILED',
+                msg => "Those certificates didn't successfully validate the provided PIV key, aborting!");
+        }
+    }
+
+    add_pubkey($key);
+    return;
+}
+
+sub handle_piv_with_ca {
+    my $pivUserCertificate;
+    if (not defined $certificate) {
+        osh_info "Please paste the certificate in PEM format to validate your PIV key against the CA.";
         osh_info
-          'You can prepend your key with a from="IP1,IP2,..." as this bastion policy allows ingress keys "from" override by users';
+          "This snippet should start with '-----BEGIN CERTIFICATE-----' and end with '-----END CERTIFICATE-----':";
+        osh_info " ";
+        $fnret = readPEMFromSTDIN();
+        $fnret or osh_exit $fnret;
+        $pivUserCertificate = $fnret->value;
+        osh_info " ";
     }
     else {
-        osh_info
-          'Any from="IP1,IP2,..." you include will be ignored, as this bastion policy refuses ingress keys "from" override by users';
+        $pivUserCertificate = $certificate;
     }
 
-    $pubKey = <STDIN>;
+    # this option will only be used if PIV is required, so we don't check any policies here.
+    my ($pivAttestationCertificate, $pivKeyCertificate) = get_attestation_material();
 
-    # trim spaces
-    $pubKey =~ s{^\s+|\s+$}{}g;
+    $fnret = OVH::Bastion::verify_piv(
+        userCertificate        => $pivUserCertificate,
+        attestationCertificate => $pivAttestationCertificate,
+        keyCertificate         => $pivKeyCertificate,
+        caCertificatePath      => $pivValidationCAPath
+    );
+    if (!$fnret) {
+        osh_exit R('ERR_PIV_VALIDATION_FAILED',
+            msg => "Those certificates didn't successfully validate the provided PIV key against the CA, aborting!");
+    }
+    my $pivInfo = $fnret->value;
+    my $pubKey  = $pivInfo->{'SSHKey'}->{'PublicKey'};
+
+    $fnret = OVH::Bastion::is_valid_public_key(pubKey => $pubKey, way => 'ingress');
+    if (!$fnret) {
+
+        # maybe we decoded the key but for some reason we don't want/can't add it
+        # in that case, return the data of the key in the same format as when this
+        # call works (see last line with osh_ok)
+        $fnret->{'value'} = {key => $fnret->value} if $fnret->value;
+        osh_exit $fnret;
+    }
+    my $key = $fnret->value;
+
+    if (checkExistKey($key->{'base64'})) {
+        osh_exit R(
+            'KO_DUPLICATE_KEY',
+            msg   => "This public key already exists on your account!",
+            value => {key => $key}
+        );
+    }
+
+    $key->{'isPiv'}                     = 1;
+    $key->{'pivAttestationCertificate'} = $pivAttestationCertificate;
+    $key->{'pivKeyCertificate'}         = $pivKeyCertificate;
+    $key->{'pivInfo'}                   = $pivInfo;
+
+    # since the ssh pubkey is generated from the PIV cert, we can't read the FROM list from the pubkey.
+    # instead we ask the user to provide it, if the policy allows it.
+    if (OVH::Bastion::config('ingressKeysFromAllowOverride')->value) {
+        osh_info
+          'You can specify a comma-separated list of IPs or CIDRs you will be allowed to connect from (empty means any).';
+        osh_info 'Example: 192.168.0.0/24,192.168.1.0/24';
+
+        # reading fromList from stdin
+        my $fromList = <STDIN>;
+        $fromList =~ s{^\s+|\s+$}{}g;
+        $key->{'fromList'} = [split(/\s*,\s*/, $fromList)] if $fromList ne '';
+    }
+
+    add_pubkey($key);
+    return;
 }
 
-$fnret = OVH::Bastion::is_valid_public_key(pubKey => $pubKey, way => 'ingress');
-if (!$fnret) {
+sub add_pubkey() {
+    my $key = shift;
 
-    # maybe we decoded the key but for some reason we don't want/can't add it
-    # in that case, return the data of the key in the same format as when this
-    # call works (see last line with osh_ok)
-    $fnret->{'value'} = {key => $fnret->value} if $fnret->value;
-    osh_exit $fnret;
+    $fnret = OVH::Bastion::get_from_for_user_key(userProvidedIpList => $key->{'fromList'}, key => $key);
+    $fnret or osh_exit $fnret;
+
+    $key->{'info'} = sprintf("ADDED_BY=%s USING=%s UNIQID=%s TIMESTAMP=%s DATETIME=%s VERSION=%s",
+        $self, $scriptName, $ENV{'UNIQID'}, time(), DateTime->now(), $OVH::Bastion::VERSION);
+
+    $fnret = OVH::Bastion::add_key_to_authorized_keys_file(file => $allowedKeyFile, key => $key);
+    $fnret or osh_exit $fnret;
+
+    osh_info " ";
+    osh_info "Public key successfully added:";
+    OVH::Bastion::print_public_key(key => $key, nokeyline => 1);
+
+    if (ref $key->{'fromList'} eq 'ARRAY' && @{$key->{'fromList'}}) {
+        osh_info "You will only be able to connect from: " . join(', ', @{$key->{'fromList'}});
+    }
+
+    $key->{'from_list'} = delete $key->{'fromList'};    # for json display
+    osh_ok {connect_only_from => $key->{'from_list'}, key => $key};
+
 }
-my $key = $fnret->value;
 
-my $allowedKeyFile = $HOME . '/' . OVH::Bastion::AK_FILE;
-if (checkExistKey($key->{'base64'})) {
-    osh_exit R('KO_DUPLICATE_KEY', msg => "This public key already exists on your account!", value => {key => $key});
-}
-
-# we have a valid key, now handle PIV if needed
-
-if ($pivEffectivePolicyEnabled) {
-    osh_info "Your are required to add only SSH keys from PIV-compatible hardware tokens, by policy.";
-}
-elsif ($pivExplicit) {
-    osh_info "You have requested to add a PIV-enabled SSH key.";
-}
-
-if ($pivExplicit || $pivEffectivePolicyEnabled) {
+sub get_attestation_material {
     osh_info "Please paste the PIV attestation certificate of your hardware key in PEM format.";
     osh_info "This snippet should start with '-----BEGIN CERTIFICATE-----' and end with '-----END CERTIFICATE-----':";
     osh_info " ";
     $fnret = readPEMFromSTDIN();
     $fnret or osh_exit $fnret;
-    $key->{'pivAttestationCertificate'} = $fnret->value;
+    my $pivAttestationCertificate = $fnret->value;
 
     osh_info " ";
     osh_info "Thanks, now please paste the PIV key certificate of your generated key in PEM format.";
@@ -120,47 +256,15 @@ if ($pivExplicit || $pivEffectivePolicyEnabled) {
     osh_info " ";
     $fnret = readPEMFromSTDIN();
     $fnret or osh_exit $fnret;
-    $key->{'pivKeyCertificate'} = $fnret->value;
+    my $pivKeyCertificate = $fnret->value;
     osh_info " ";
 
-    $fnret = OVH::Bastion::verify_piv(
-        key                    => $key->{'line'},
-        attestationCertificate => $key->{'pivAttestationCertificate'},
-        keyCertificate         => $key->{'pivKeyCertificate'}
-    );
-    $key->{'isPiv'}   = ($fnret ? 1 : 0);
-    $key->{'pivInfo'} = $fnret->value if $fnret;
-
-    if (!$key->{'isPiv'}) {
-        osh_exit R('ERR_PIV_VALIDATION_FAILED',
-            msg => "Those certificates didn't successfully validate the provided PIV key, aborting!");
-    }
-}
-
-# end of PIV handling
-
-$fnret = OVH::Bastion::get_from_for_user_key(userProvidedIpList => $key->{'fromList'}, key => $key);
-$fnret or osh_exit $fnret;
-
-$key->{'info'} = sprintf("ADDED_BY=%s USING=%s UNIQID=%s TIMESTAMP=%s DATETIME=%s VERSION=%s",
-    $self, $scriptName, $ENV{'UNIQID'}, time(), DateTime->now(), $OVH::Bastion::VERSION);
-
-$fnret = OVH::Bastion::add_key_to_authorized_keys_file(file => $allowedKeyFile, key => $key);
-$fnret or osh_exit $fnret;
-
-osh_info " ";
-osh_info "Public key successfully added:";
-OVH::Bastion::print_public_key(key => $key, nokeyline => 1);
-
-if (ref $key->{'fromList'} eq 'ARRAY' && @{$key->{'fromList'}}) {
-    osh_info "You will only be able to connect from: " . join(', ', @{$key->{'fromList'}});
+    return ($pivAttestationCertificate, $pivKeyCertificate);
 }
 
 sub checkExistKey {
-
     # only pass the base64 part of the key here (returned by get_ssh_pub_key_info->{'base64'})
-    my $pubKeyB64 = shift;
-
+    my $pubKeyB64      = shift;
     open(my $fh_keys, '<', $allowedKeyFile) || die("can't read the $allowedKeyFile file!\n");
     while (my $currentLine = <$fh_keys>) {
         chomp $currentLine;
@@ -218,6 +322,3 @@ sub readPEMFromSTDIN {
     }
     return R('ERR_INTERNAL');    # unreachable
 }
-
-$key->{'from_list'} = delete $key->{'fromList'};    # for json display
-osh_ok {connect_only_from => $key->{'from_list'}, key => $key};

@@ -27,11 +27,33 @@ sub verify_piv {
     my $key                    = $params{'key'};
     my $keyCertificate         = $params{'keyCertificate'};
     my $attestationCertificate = $params{'attestationCertificate'};
+    my $userCertificate        = $params{'userCertificate'};
+    my $caCertificatePath      = $params{'caCertificatePath'};
 
     my $fnret;
+    my @cmd;
+
+    # Determine which verification mode to use based on provided parameters
+    if ($userCertificate && $caCertificatePath) {
+        # CA validation mode - use user certificate and CA
+        @cmd = (
+            'yubico-piv-checker',    '-cert',     $userCertificate, '-attestation',
+            $attestationCertificate, '-key-cert', $keyCertificate,  '-ca',
+            $caCertificatePath
+        );
+    }
+    elsif ($key) {
+        # Standard PIV mode - use SSH key directly
+        @cmd = ('yubico-piv-checker', $key, $attestationCertificate, $keyCertificate);
+    }
+    else {
+        return R('ERR_MISSING_PARAMETER',
+            msg => "Either 'key' or both 'userCertificate' and 'caCertificate' must be provided");
+    }
+
     $fnret = OVH::Bastion::execute(
         must_succeed => 1,
-        cmd          => ['yubico-piv-checker', $key, $attestationCertificate, $keyCertificate]
+        cmd          => \@cmd
     );
     if (!$fnret || $fnret->value->{'sysret'} != 0) {
         return R('KO_INVALID_PIV', "This SSH key failed PIV verification");
@@ -41,7 +63,7 @@ sub verify_piv {
         require JSON;
         $keyPivInfo = JSON::decode_json($fnret->value->{'stdout'}->[0]);
     };
-    return R('OK', value => $keyPivInfo);    # keyPivInfo can be undef if JSON decode failed, but the key is still a valid one
+    return R('OK', value => $keyPivInfo);
 }
 
 sub get_authorized_keys_from_file {
