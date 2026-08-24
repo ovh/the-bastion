@@ -137,6 +137,7 @@ Policies applying to the bastion accounts themselves
 - `MFAPasswordInactiveDays`_
 - `MFAPostCommand`_
 - `TOTPProvider`_
+- `pluginRestrictions`_
 
 Other options options
 ---------------------
@@ -1022,6 +1023,49 @@ Defines which is the provider of the TOTP MFA, that will be used for the ``(self
 - none: no TOTP providers are defined, the corresponding setup commands won't be available.
 - google-authenticator: the pam_google_authenticator.so module will be used, along with its corresponding setup binary. This is the default, for backward compatibility reasons. This is also what is configured in the provided pam templates.
 - duo: enable the use of the Duo PAM module (pam_duo.so), of course you need to set it up correctly in your `/etc/pam.d/sshd` file.
+
+.. _pluginRestrictions:
+
+pluginRestrictions
+******************
+
+:Type: ``array of rules, a rule being a hash of [array, array, hash of regexes]``
+
+:Default: ``[]``
+
+:Example: ``[{"accounts":["johndoe"],"plugins":["groupCreate","groupModify","groupDelete","groupDestroy"],"resources":{"group":"^test$"}}]``
+
+Restricts, for the listed accounts only, the resources a group of ``--osh`` commands is allowed to work on. This complements ``accountGrantCommand``, which says *whether* an account may use a command, by saying *what* it may use it on. Accounts that appear in no rule are not restricted in any way, and neither are the commands that appear in no rule.
+A rule is a hash with three mandatory keys:
+
+- ``accounts``: the list of bastion accounts this rule applies to
+- ``plugins``: the list of ``--osh`` command names this rule applies to
+- ``resources``: a hash of ``resource type`` => ``regex``, the value of each listed resource must match its regex for the command to be allowed
+
+The supported resource types are ``account``, ``command``, ``group``, ``host``, ``realm`` and ``user``. They map to the corresponding parameter of the command being called: for example ``group`` is what was passed to ``--group``, and ``host`` and ``user`` are the remote host and remote user of the connection. Group names are matched without their internal ``key`` prefix, as the users type them.
+Note that ``host`` is matched against the value as it was typed on the command line, which can be a hostname or an IP: to restrict the networks that can be reached, use ``ingressToEgressRules``, ``allowedNetworks`` or ``forbiddenNetworks`` instead, as those are enforced on the resolved IP at connection time.
+A rule only constrains the values a resource may take, it never makes a resource mandatory: if the command was called without that parameter, the rule doesn't apply and the command will complain about the missing parameter on its own.
+All the rules matching a given account and command are enforced, so if two rules constrain the same resource, both regexes must match.
+If a rule names a resource that the command it targets doesn't have, the rule can't be enforced: the command is then denied outright for the listed accounts, and a warning is emitted to syslog.
+
+For example, take the following configuration:
+
+::
+
+   [
+      {
+         "accounts":  ["johndoe", "janedoe"],
+         "plugins":   ["groupCreate", "groupModify", "groupDelete", "groupDestroy"],
+         "resources": { "group": "^test$" }
+      }
+   ]
+
+- *johndoe* and *janedoe* can only create, modify and delete the group named ``test``, and no other group
+- they're not restricted in any way for any other command, such as ``groupAddMember``
+- all the other accounts can use these four commands on any group
+- ``groupDestroy`` is listed alongside ``groupDelete`` because both delete a group, the former being the one group owners can use on their own groups: when restricting a resource, list every command that can reach it, not just the most obvious one
+
+In any case, the accounts still need to be granted these commands in the first place, this option only narrows down what an already granted command can be used on.
 
 Other options
 -------------

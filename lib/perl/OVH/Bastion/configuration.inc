@@ -642,6 +642,82 @@ sub load_configuration {
     }
     delete $unknownkeys{'ingressToEgressRules'};
 
+    # ... an array of rules, a rule being a hash of: accounts (array), plugins (array), resources (hash of regexes)
+    if (not defined $C->{'pluginRestrictions'}) {
+        $C->{'pluginRestrictions'} = [];
+        push @errors, "Configuration error: missing option 'pluginRestrictions', defaulting to []" if $test;
+    }
+    elsif (ref $C->{'pluginRestrictions'} ne 'ARRAY') {
+        $C->{'pluginRestrictions'} = [];
+        push @errors,
+          "Configuration error: option 'pluginRestrictions' is invalid, expected an array, defaulting to []";
+    }
+    else {
+        # an invalid rule is dropped instead of invalidating the whole option, to limit the blast radius
+        # of a typo: the other rules keep being enforced
+        my @validRules;
+      RULE: foreach my $rule (@{$C->{'pluginRestrictions'}}) {
+            if (ref $rule ne 'HASH') {
+                push @errors,
+                  "Configuration error: option 'pluginRestrictions' has an invalid rule (expected a hash), ignoring it";
+                next;
+            }
+
+            my %validRule;
+            foreach my $key (qw{ accounts plugins }) {
+                if (ref $rule->{$key} ne 'ARRAY' || !@{$rule->{$key}}) {
+                    push @errors,
+                      "Configuration error: option 'pluginRestrictions' has a rule whose '$key' is not a non-empty array, ignoring it";
+                    next RULE;
+                }
+                foreach my $item (@{$rule->{$key}}) {
+                    if (!ref $item && $item =~ m{^([a-zA-Z0-9_./-]+)$}) {
+                        push @{$validRule{$key}}, $1;    # untainted
+                    }
+                    else {
+                        push @errors,
+                          "Configuration error: option 'pluginRestrictions' has a rule with an invalid '$key' item, ignoring it";
+                        next RULE;
+                    }
+                }
+            }
+
+            if (ref $rule->{'resources'} ne 'HASH' || !%{$rule->{'resources'}}) {
+                push @errors,
+                  "Configuration error: option 'pluginRestrictions' has a rule whose 'resources' is not a non-empty hash, ignoring it";
+                next;
+            }
+            foreach my $type (sort keys %{$rule->{'resources'}}) {
+                if (none { $type eq $_ } OVH::Bastion::PLUGIN_RESOURCE_TYPES()) {
+                    push @errors,
+                        "Configuration error: option 'pluginRestrictions' has a rule with an unknown resource type '"
+                      . $type
+                      . "', ignoring the rule";
+                    next RULE;
+                }
+                my $regex = $rule->{'resources'}{$type};
+                if (ref $regex || !defined $regex || $regex eq '') {
+                    push @errors,
+                      "Configuration error: option 'pluginRestrictions' has a rule whose '$type' resource is not a non-empty string, ignoring it";
+                    next RULE;
+                }
+                # a regex from the config is only ever used as a matcher, never as code
+                if (!eval { qr/$regex/; 1 }) {
+                    push @errors,
+                      "Configuration error: option 'pluginRestrictions' has a rule whose '$type' resource is not a valid regex ('"
+                      . $regex
+                      . "'), ignoring the rule";
+                    next RULE;
+                }
+                ($validRule{'resources'}{$type}) = $regex =~ m{^(.+)$}s;    # untainted
+            }
+
+            push @validRules, \%validRule;
+        }
+        $C->{'pluginRestrictions'} = \@validRules;
+    }
+    delete $unknownkeys{'pluginRestrictions'};
+
     # ... normalize fanciness
     $C->{'fanciness'} = 'none'  if $C->{'fanciness'} eq 'boomer';
     $C->{'fanciness'} = 'basic' if $C->{'fanciness'} eq 'millenial';
