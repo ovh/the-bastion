@@ -137,6 +137,9 @@ use constant {
     OPT_GROUP_IDLE_KILL_TIMEOUT => {key => 'idle_kill_timeout'},
 };
 
+# resource types a pluginRestrictions rule can constrain, see the bastion.conf documentation
+use constant PLUGIN_RESOURCE_TYPES => qw{ account command group host realm user };
+
 ###########
 # FUNCTIONS
 
@@ -1167,6 +1170,57 @@ sub can_account_execute_plugin {
 
     # still here ? sorry.
     return R('KO_UNKNOWN_PLUGIN', value => {type => 'open'}, msg => "Unknown command");
+}
+
+sub check_plugin_restrictions {
+    my %params    = @_;
+    my $account   = $params{'account'};
+    my $plugin    = $params{'plugin'};
+    my $resources = $params{'resources'};    # hashref of resource type => value, only for the types the plugin has
+
+    if (!$account || !$plugin) {
+        return R('ERR_MISSING_PARAMETER', msg => "Missing mandatory param account or plugin");
+    }
+    if (ref $resources ne 'HASH') {
+        return R('ERR_MISSING_PARAMETER', msg => "Missing mandatory param resources");
+    }
+
+    my $fnret = OVH::Bastion::config('pluginRestrictions');
+    $fnret or return $fnret;
+
+    foreach my $rule (@{$fnret->value}) {
+        next if none { $_ eq $account } @{$rule->{'accounts'}};
+        next if none { $_ eq $plugin } @{$rule->{'plugins'}};
+
+        foreach my $type (sort keys %{$rule->{'resources'}}) {
+            my $regex = $rule->{'resources'}{$type};
+
+            # a rule we can't enforce is a configuration mistake, deny rather than silently allow
+            if (!exists $resources->{$type}) {
+                warn_syslog("pluginRestrictions: plugin '$plugin' has no '$type' resource, "
+                      . "denying its use to account '$account' as the rule can't be enforced");
+                return R(
+                    'KO_RESTRICTED_RESOURCE',
+                    value => {plugin => $plugin, resource => $type},
+                    msg   => "This command is restricted by policy, but the restriction can't be enforced, "
+                      . "please report this to your sysadmin"
+                );
+            }
+
+            # the rule only constrains the values this resource can take, not whether it must be specified
+            next if !defined $resources->{$type};
+
+            if ($resources->{$type} !~ /$regex/) {
+                return R(
+                    'KO_RESTRICTED_RESOURCE',
+                    value => {plugin => $plugin, resource => $type, regex => $regex},
+                    msg   => "By policy, the $type you use this command on must match /$regex/"
+                );
+            }
+        }
+    }
+
+    return R('OK');
 }
 
 sub is_plugin_readonly_proof {
