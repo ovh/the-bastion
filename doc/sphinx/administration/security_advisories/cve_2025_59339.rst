@@ -34,6 +34,6 @@ Timeline
 - 2025-04-29: security bug report filed on GitHub
 - 2025-06-24: fix proposed
 - 2025-09-12: bug report accepted and confirmed as having a security impact
-- 2023-09-16: CVE ID requested
-- 2023-09-16: CVE ID assigned
-- 2023-09-17: v3.22.00 released with the fix
+- 2025-09-16: CVE ID requested
+- 2025-09-16: CVE ID assigned
+- 2025-09-17: v3.22.00 released with the fix
