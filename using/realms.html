@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Realms &mdash; The Bastion 3.24.01 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/thebastion.css?v=a3915d4d" />
+
+  
+  
+        <script src="../_static/jquery.js?v=8dae8fb0"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=972744fa"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="JSON API" href="api.html" />
+    <link rel="prev" title="Egress proxy jump" href="proxyjump.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            The Bastion
+          </a>
+              <div class="version">
+                3.24.01
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Presentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../presentation/security.html">Security</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation/basic.html">Basic Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/advanced.html">Advanced Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/upgrading.html">Upgrading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/docker.html">Sandbox using Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation/restoring_from_backup.html">Restoring from backup</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="basics/index.html">The basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="piv.html">PIV keys support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sftp_scp_rsync.html">SFTP, SCP &amp; RSYNC support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="http_proxy.html">HTTPS Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="proxyjump.html">Egress proxy jump</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Realms</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-it-works">How it works</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#setting-up-a-realm">Setting up a realm</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#on-the-remote-bastion-acme-s-side">On the remote bastion (ACME's side)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#on-the-local-bastion-your-side">On the local bastion (your side)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#granting-accesses-to-realm-accounts">Granting accesses to realm accounts</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#connecting-through-a-realm">Connecting through a realm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#inspecting-realms">Inspecting realms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mfa-and-realms">MFA and realms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#removing-a-realm">Removing a realm</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">JSON API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="specific_ssh_clients_tutorials/index.html">Specific SSH clients tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Administration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../administration/configuration/index.html">Configuration files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/logs.html">Logs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/mfa.html">Multi-Factor Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../administration/security_advisories.html">Security Advisories</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../development/setup.html">Environment setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/tests.html">Writing tests</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugins</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/admin/index.html">admin plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-aclkeeper/index.html">group-aclkeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-gatekeeper/index.html">group-gatekeeper plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/group-owner/index.html">group-owner plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/open/index.html">open plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plugins/restricted/index.html">restricted plugins</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">The Bastion</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Realms</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/using/realms.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="realms">
+<h1><a class="toc-backref" href="#id1" role="doc-backlink">Realms</a><a class="headerlink" href="#realms" title="Link to this heading"></a></h1>
+<nav class="contents" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#realms" id="id1">Realms</a></p>
+<ul>
+<li><p><a class="reference internal" href="#introduction" id="id2">Introduction</a></p></li>
+<li><p><a class="reference internal" href="#how-it-works" id="id3">How it works</a></p></li>
+<li><p><a class="reference internal" href="#setting-up-a-realm" id="id4">Setting up a realm</a></p>
+<ul>
+<li><p><a class="reference internal" href="#on-the-remote-bastion-acme-s-side" id="id5">On the remote bastion (ACME's side)</a></p></li>
+<li><p><a class="reference internal" href="#on-the-local-bastion-your-side" id="id6">On the local bastion (your side)</a></p></li>
+<li><p><a class="reference internal" href="#granting-accesses-to-realm-accounts" id="id7">Granting accesses to realm accounts</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#connecting-through-a-realm" id="id8">Connecting through a realm</a></p></li>
+<li><p><a class="reference internal" href="#inspecting-realms" id="id9">Inspecting realms</a></p></li>
+<li><p><a class="reference internal" href="#mfa-and-realms" id="id10">MFA and realms</a></p></li>
+<li><p><a class="reference internal" href="#removing-a-realm" id="id11">Removing a realm</a></p></li>
+</ul>
+</li>
+</ul>
+</nav>
+<section id="introduction">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">Introduction</a><a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>A <strong>realm</strong> is a trust relationship established between two bastions, possibly operated by two
+different teams or even two different companies. It allows the accounts of a <em>remote</em> bastion to be
+granted accesses on your <em>local</em> bastion, without having to create a local account for each of them,
+and without your local bastion ever seeing their ingress keys, passwords or second factors.</p>
+<p>The key idea is that realms <strong>split the authentication and the authorization phases</strong> between the two
+bastions:</p>
+<ul class="simple">
+<li><p>The <strong>remote</strong> bastion handles <strong>authentication</strong>: it knows who the user is, because the user owns
+a real account there, with their ingress key, their MFA, their PIV policy, and so on. This is where
+the user actually logs in.</p></li>
+<li><p>Your <strong>local</strong> bastion handles <strong>authorization</strong>: it decides what a given remote account is allowed
+to access, using the exact same group- and access-management mechanisms you already use for your
+local accounts.</p></li>
+</ul>
+<p>This is especially useful when you need to give a partner, a supplier, or another team controlled
+access to a subset of your infrastructure: you delegate the burden of authenticating their people and
+managing the lifecycle of each of their accounts to <em>their</em> bastion, while keeping full control
+over <em>what</em> they can reach, and full traceability of <em>what</em> they did, on yours.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The two perspectives are easy to mix up, so we fix the vocabulary once here and use it consistently
+throughout the page:</p>
+<ul class="simple">
+<li><p>The <strong>local</strong> bastion is <em>yours</em>: the one that <strong>declares</strong> the realm, hosts the <code class="docutils literal notranslate"><span class="pre">realm_&lt;name&gt;</span></code>
+shared account and the target infrastructure, and decides <em>what</em> remote accounts may reach
+(<strong>authorization</strong>).</p></li>
+<li><p>The <strong>remote</strong> bastion is the <em>other</em> one (<code class="docutils literal notranslate"><span class="pre">ACME</span></code> in the examples below): the one whose users
+have real accounts, and which vouches for <em>who</em> they are (<strong>authentication</strong>).</p></li>
+<li><p>A remote user, once seen through the realm on your local bastion, is called a <em>citizen of the
+realm</em> and is referred to everywhere as <code class="docutils literal notranslate"><span class="pre">&lt;realm&gt;/&lt;account&gt;</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">acme/jdoe</span></code>).</p></li>
+</ul>
+<p>In the shell examples, the command prefix tells you which bastion the command runs against:
+<code class="docutils literal notranslate"><span class="pre">bssh</span></code> is <em>your</em> (local) bastion, and <code class="docutils literal notranslate"><span class="pre">acmebssh</span></code> is ACME's (remote) bastion.</p>
+</div>
+</section>
+<section id="how-it-works">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">How it works</a><a class="headerlink" href="#how-it-works" title="Link to this heading"></a></h2>
+<p>On the local bastion, a realm is materialized by a single special <strong>shared account</strong>, named
+<code class="docutils literal notranslate"><span class="pre">realm_&lt;name&gt;</span></code>. It is created with <a class="reference internal" href="../plugins/restricted/realmCreate.html"><span class="doc">realmCreate</span></a> and is not a regular
+account: it can't connect anywhere by itself, and it only exists to receive incoming connections from
+the remote bastion.</p>
+<p>When a user (say <code class="docutils literal notranslate"><span class="pre">jdoe</span></code>) of the remote bastion connects through it to your <code class="docutils literal notranslate"><span class="pre">realm_&lt;name&gt;</span></code> account,
+the following happens:</p>
+<ul class="simple">
+<li><p>The remote bastion authenticates <code class="docutils literal notranslate"><span class="pre">jdoe</span></code> locally, the usual way (ingress key, MFA, ...).</p></li>
+<li><p>It then opens an egress connection to your local bastion, logging in as the <code class="docutils literal notranslate"><span class="pre">realm_&lt;name&gt;</span></code> account,
+using the <strong>egress group key</strong> registered when the realm was created.</p></li>
+<li><p>It transparently passes along the real account name (<code class="docutils literal notranslate"><span class="pre">jdoe</span></code>) and authentication details (such as
+which MFA factors were validated) using the SSH environment, which your local bastion reads.</p></li>
+<li><p>Your local bastion therefore knows it's dealing with <code class="docutils literal notranslate"><span class="pre">jdoe</span></code>, <em>as seen from</em> the <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code> realm,
+and refers to this account as <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;/jdoe</span></code> everywhere: in the access checks, in the logs, and in
+the ttyrec session recordings.</p></li>
+</ul>
+<p>The whole point is that the connection is <em>split in two halves</em> across the trust boundary: the remote
+bastion answers &quot;<strong>who</strong> is this user?&quot; (authentication), and your local bastion answers &quot;<strong>what</strong> may
+this user reach?&quot; (authorization). The two bastions communicate the user's identity and whether they
+already passed MFA, over the SSH environment of the realm connection:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>  REMOTE bastion (ACME&#39;s)          |  LOCAL bastion (yours)
+  &quot;who is the user?&quot; (AuthN)       |  &quot;what may they reach?&quot; (AuthZ)
+                                   |
+jdoe                               |
+ &#39;--&gt; (1) authenticate jdoe        |
+      |   (key; + MFA/PIV if       |
+      |    ACME requires it)       |
+      |                            |
+     (2) jdoe must be in the       |
+      |   group backing the realm  |
+      |                            |
+     (3) egress SSH as realm_acme, |
+      |   handing over the SSH env:|
+      |     LC_BASTION = jdoe      |
+      |     LC_BASTION_DETAILS=... |
+      |                            |
+      &#39;==== SSH: trust boundary ===+=&gt; (4) arrives as realm_acme;
+                                   |      LC_BASTION -&gt; &quot;acme/jdoe&quot;
+                                   |      (a citizen of the realm)
+                                   |
+                                   |  (5) authorize acme/jdoe with
+                                   |      your own groups &amp; accesses
+                                   |
+                                   |  (6) MFA needed here? if already
+                                   |      validated on ACME&#39;s side,
+                                   |      don&#39;t ask again
+                                   |
+                                   |  (7) egress to target --&gt; server
+</pre></div>
+</div>
+<p>From there on, <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;/jdoe</span></code> is treated almost exactly like a local account would be: it can only
+reach the servers it has been explicitly granted access to, and every action is logged and recorded.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">realm_</span></code> account name prefix is reserved: you can't create a regular account or a group whose
+name starts with <code class="docutils literal notranslate"><span class="pre">realm_</span></code>.</p>
+</div>
+</section>
+<section id="setting-up-a-realm">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">Setting up a realm</a><a class="headerlink" href="#setting-up-a-realm" title="Link to this heading"></a></h2>
+<p>Setting up a realm requires a few steps on each side. In the following example, the people from a
+partner company we'll call <strong>ACME</strong> need access to some of your servers; your own bastion is reachable
+at <code class="docutils literal notranslate"><span class="pre">bastion.example.org</span></code>. We'll create a realm named <code class="docutils literal notranslate"><span class="pre">acme</span></code> on your local bastion, named after
+<em>them</em>, the incoming side, so that ACME's accounts can be granted accesses just like your own.</p>
+<section id="on-the-remote-bastion-acme-s-side">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">On the remote bastion (ACME's side)</a><a class="headerlink" href="#on-the-remote-bastion-acme-s-side" title="Link to this heading"></a></h3>
+<p>The remote bastion connects to yours using the egress key of one of its <strong>regular groups</strong>. ACME
+therefore dedicates a group to this purpose (or creates a new one): the egress key of that group is
+what your bastion will trust.</p>
+<p>This is an ordinary group on ACME's bastion, and its name is entirely ACME's choice: it has nothing to
+do with the <code class="docutils literal notranslate"><span class="pre">acme</span></code> realm name <em>you</em> picked on your side. A useful convention is to name it after the
+<em>destination</em>, mirroring how you named the realm after the <em>source</em>. Here ACME calls it
+<code class="docutils literal notranslate"><span class="pre">example-partner</span></code>, since its members are the ACME people allowed to reach your <code class="docutils literal notranslate"><span class="pre">example.org</span></code>
+bastion:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">acmebssh<span class="w"> </span>--osh<span class="w"> </span>groupCreate<span class="w"> </span>--group<span class="w"> </span>example-partner<span class="w"> </span>--algo<span class="w"> </span>ed25519<span class="w"> </span>--owner<span class="w"> </span>alice
+</span></pre></div>
+</div>
+<p>The members of this group on ACME's bastion are the people who'll be able to reach your local bastion
+through the realm. ACME's gatekeepers add them as usual:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">acmebssh<span class="w"> </span>--osh<span class="w"> </span>groupAddMember<span class="w"> </span>--group<span class="w"> </span>example-partner<span class="w"> </span>--account<span class="w"> </span>jdoe
+</span></pre></div>
+</div>
+<p>ACME then needs to retrieve the <strong>public</strong> part of this group's egress key, and the egress <strong>IPs</strong> of
+their bastion (the addresses your bastion will see incoming connections from). The public key can be
+obtained with <a class="reference internal" href="../plugins/open/groupInfo.html"><span class="doc">groupInfo</span></a>:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">acmebssh<span class="w"> </span>--osh<span class="w"> </span>groupInfo<span class="w"> </span>--group<span class="w"> </span>example-partner
+</span></pre></div>
+</div>
+<p>ACME communicates both the egress public key and their egress IP(s) to you. They'll also need to
+declare your local bastion as a server of that group, so that their members can connect to it (see
+<a class="reference internal" href="#realms-connecting"><span class="std std-ref">below</span></a>).</p>
+</section>
+<section id="on-the-local-bastion-your-side">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">On the local bastion (your side)</a><a class="headerlink" href="#on-the-local-bastion-your-side" title="Link to this heading"></a></h3>
+<p>As a bastion admin with access to the restricted <a class="reference internal" href="../plugins/restricted/realmCreate.html"><span class="doc">realmCreate</span></a> command, you
+declare the realm, registering ACME's egress group public key and the IPs their bastion connects from:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh<span class="w"> </span>--osh<span class="w"> </span>realmCreate<span class="w"> </span>--realm<span class="w"> </span>acme<span class="w"> </span>--from<span class="w"> </span><span class="m">203</span>.0.113.0/24<span class="w"> </span>--public-key<span class="w"> </span><span class="s2">&quot;ssh-ed25519 AAAAC3Nza... acme_egress_key&quot;</span>
+</span></pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--realm</span></code> is the local name you give to this realm (here, <code class="docutils literal notranslate"><span class="pre">acme</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--from</span></code> is the comma-separated list of egress IPs (or CIDR blocks) used by ACME's bastion; it uses
+the same syntax as the <code class="docutils literal notranslate"><span class="pre">from=</span></code> directive of SSH keys, and ensures the realm key can only be used
+from ACME's bastion.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--public-key</span></code> is the egress <strong>group</strong> public key ACME gave you. If you omit it, you'll be prompted
+to paste it interactively.</p></li>
+</ul>
+<p>That's it: the <code class="docutils literal notranslate"><span class="pre">realm_acme</span></code> shared account now exists on your bastion.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>There is no <code class="docutils literal notranslate"><span class="pre">realmModify</span></code> command. If you need to change the trusted key or the <code class="docutils literal notranslate"><span class="pre">--from</span></code> IPs of
+an existing realm, delete it with <a class="reference internal" href="../plugins/restricted/realmDelete.html"><span class="doc">realmDelete</span></a> and recreate it.</p>
+</div>
+</section>
+<section id="granting-accesses-to-realm-accounts">
+<h3><a class="toc-backref" href="#id7" role="doc-backlink">Granting accesses to realm accounts</a><a class="headerlink" href="#granting-accesses-to-realm-accounts" title="Link to this heading"></a></h3>
+<p>A realm by itself grants nothing: ACME's accounts can land on your bastion, but won't be able to reach
+any server until you explicitly authorize them, exactly as you would for a local account. The only
+difference is that you refer to a remote account using its realm-qualified name <code class="docutils literal notranslate"><span class="pre">acme/jdoe</span></code> instead
+of a plain account name.</p>
+<p>For example, to add <code class="docutils literal notranslate"><span class="pre">jdoe</span></code> from the <code class="docutils literal notranslate"><span class="pre">acme</span></code> realm as a member of one of your groups, your
+gatekeeper would run:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh<span class="w"> </span>--osh<span class="w"> </span>groupAddMember<span class="w"> </span>--group<span class="w"> </span>prod_routers<span class="w"> </span>--account<span class="w"> </span>acme/jdoe
+</span></pre></div>
+</div>
+<p>The same realm-qualified name works for guest accesses
+(<a class="reference internal" href="../plugins/group-gatekeeper/groupAddGuestAccess.html"><span class="doc">groupAddGuestAccess</span></a>) and, where relevant, for personal accesses.
+You can review what a given realm account is allowed to reach with the usual command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh<span class="w"> </span>--osh<span class="w"> </span>accountListAccesses<span class="w"> </span>--account<span class="w"> </span>acme/jdoe
+</span></pre></div>
+</div>
+</section>
+</section>
+<section id="connecting-through-a-realm">
+<span id="realms-connecting"></span><h2><a class="toc-backref" href="#id8" role="doc-backlink">Connecting through a realm</a><a class="headerlink" href="#connecting-through-a-realm" title="Link to this heading"></a></h2>
+<p>From ACME's point of view, your local bastion is simply a server reachable through their dedicated
+group. Their aclkeeper adds it to the group, specifying the <code class="docutils literal notranslate"><span class="pre">realm_acme</span></code> account as the remote user:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">acmebssh<span class="w"> </span>--osh<span class="w"> </span>groupAddServer<span class="w"> </span>--host<span class="w"> </span>bastion.example.org<span class="w"> </span>--port<span class="w"> </span><span class="m">22</span><span class="w"> </span>--user<span class="w"> </span>realm_acme<span class="w"> </span>--group<span class="w"> </span>example-partner
+</span></pre></div>
+</div>
+<p>ACME's members can now connect to your bastion through theirs, and end up in your bastion's shell as a
+citizen of the realm. They can run osh commands, or bounce to the servers you granted them:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">acmebssh<span class="w"> </span>realm_acme@bastion.example.org<span class="w"> </span>--osh<span class="w"> </span>info
+</span>---------------------------------------------------------------------------------------
+You<span class="w"> </span>are<span class="w"> </span>now<span class="w"> </span>connected<span class="w"> </span>to<span class="w"> </span>bastion.example.org.<span class="w"> </span>Welcome,<span class="w"> </span>jdoe,<span class="w"> </span>citizen<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>acme<span class="w"> </span>realm!
+---------------------------------------------------------------------------------------
+</pre></div>
+</div>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">jdoe</span></code> never gets a local account, an ingress key, or a password on your bastion: their
+authentication happened entirely on ACME's bastion.</p>
+</section>
+<section id="inspecting-realms">
+<h2><a class="toc-backref" href="#id9" role="doc-backlink">Inspecting realms</a><a class="headerlink" href="#inspecting-realms" title="Link to this heading"></a></h2>
+<p>You can list the realms declared on your bastion with <a class="reference internal" href="../plugins/restricted/realmList.html"><span class="doc">realmList</span></a>:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh<span class="w"> </span>--osh<span class="w"> </span>realmList
+</span></pre></div>
+</div>
+<p>To see which remote accounts of a given realm are known (i.e. have been granted at least one access),
+use <a class="reference internal" href="../plugins/restricted/realmInfo.html"><span class="doc">realmInfo</span></a>:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh<span class="w"> </span>--osh<span class="w"> </span>realmInfo<span class="w"> </span>--realm<span class="w"> </span><span class="nv">acme</span>
+</span><span class="o">=</span>&gt;<span class="w"> </span>realm<span class="w"> </span>information
+--------------------------------------------------------------------------------
+~<span class="w"> </span>The<span class="w"> </span>following<span class="w"> </span>accounts<span class="w"> </span>from<span class="w"> </span>realm<span class="w"> </span>acme<span class="w"> </span>are<span class="w"> </span>known:
+~<span class="w"> </span>-<span class="w"> </span>jdoe<span class="w">               </span><span class="o">[</span><span class="m">2</span><span class="w"> </span>accesses<span class="o">]</span>
+~<span class="w"> </span>-<span class="w"> </span>asmith<span class="w">             </span><span class="o">[</span><span class="m">1</span><span class="w"> </span>accesses<span class="o">]</span>
+~
+~<span class="w"> </span>To<span class="w"> </span>get<span class="w"> </span>their<span class="w"> </span>access<span class="w"> </span>list,<span class="w"> </span>use<span class="w"> </span>--osh<span class="w"> </span>accountListAccesses<span class="w"> </span>--account<span class="w"> </span>acme/account_name_here
+</pre></div>
+</div>
+<p>The <a class="reference internal" href="../plugins/restricted/whoHasAccessTo.html"><span class="doc">whoHasAccessTo</span></a> command is also realm-aware: when checking who can reach
+a given server, the realm accounts that have access to it are listed using their <code class="docutils literal notranslate"><span class="pre">realm/account</span></code>
+name.</p>
+</section>
+<section id="mfa-and-realms">
+<h2><a class="toc-backref" href="#id10" role="doc-backlink">MFA and realms</a><a class="headerlink" href="#mfa-and-realms" title="Link to this heading"></a></h2>
+<p>Realms cooperate with <a class="reference internal" href="../administration/mfa.html"><span class="doc">Multi-Factor Authentication</span></a>. When a remote account
+validates MFA on its own (remote) bastion, that fact is securely transmitted to your local bastion as
+part of the realm connection. This means that:</p>
+<ul class="simple">
+<li><p>If your local policy (or a group/access policy) requires MFA, and the user already validated a
+matching factor on the remote bastion, they won't be asked to do it again. The bastion will inform
+them with a message such as <code class="docutils literal notranslate"><span class="pre">...</span> <span class="pre">you</span> <span class="pre">already</span> <span class="pre">validated</span> <span class="pre">MFA</span> <span class="pre">on</span> <span class="pre">the</span> <span class="pre">bastion</span> <span class="pre">you're</span> <span class="pre">coming</span> <span class="pre">from.</span></code></p></li>
+<li><p>The remote account is never required to set up MFA <em>on your bastion</em>: it has no real account there to
+attach a second factor to. The trust is delegated to the remote bastion, which is responsible for
+enforcing its own MFA policy.</p></li>
+</ul>
+<p>If you require a strong guarantee that incoming realm users have validated a second factor, make sure
+the remote bastion enforces MFA on its side, for instance by requiring it on the group whose egress key
+backs the realm.</p>
+</section>
+<section id="removing-a-realm">
+<h2><a class="toc-backref" href="#id11" role="doc-backlink">Removing a realm</a><a class="headerlink" href="#removing-a-realm" title="Link to this heading"></a></h2>
+<p>To revoke the trust relationship entirely, delete the realm with
+<a class="reference internal" href="../plugins/restricted/realmDelete.html"><span class="doc">realmDelete</span></a>:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="hll">bssh<span class="w"> </span>--osh<span class="w"> </span>realmDelete<span class="w"> </span>--realm<span class="w"> </span>acme
+</span></pre></div>
+</div>
+<p>This removes the <code class="docutils literal notranslate"><span class="pre">realm_acme</span></code> shared account, so the remote bastion can no longer connect. As with
+any account deletion, this also revokes all the accesses that were granted to that realm's accounts.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="proxyjump.html" class="btn btn-neutral float-left" title="Egress proxy jump" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api.html" class="btn btn-neutral float-right" title="JSON API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OVHcloud.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
