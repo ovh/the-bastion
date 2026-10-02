@@ -112,6 +112,7 @@ Options to customize the established sessions behaviour
 - `interactiveModeByDefault`_
 - `interactiveModeProactiveMFAenabled`_
 - `interactiveModeProactiveMFAexpiration`_
+- `sessionSetupTimeout`_
 - `idleLockTimeout`_
 - `idleKillTimeout`_
 - `warnBeforeLockSeconds`_
@@ -785,6 +786,21 @@ interactiveModeProactiveMFAexpiration
 :Default: ``900``
 
 If the above ``interactiveModeProactiveMFAenabled`` option is ``true``, then this is the amount of seconds after which the proactive MFA mode is automatically disengaged.
+
+.. _sessionSetupTimeout:
+
+sessionSetupTimeout
+*******************
+
+:Type: ``int >= 0 (seconds)``
+
+:Default: ``180``
+
+The maximum number of seconds that may pass between the moment a session starts and the moment the requested action (either a connection to a remote host, or an ``--osh`` command) is actually launched. This delay includes the time taken by the account and access verifications, and, when applicable, the time taken by the user to complete a Just-In-Time MFA challenge. When this delay is exceeded, the session is terminated instead of proceeding with the requested action, and the user is invited to retry.
+
+This ensures that the security verifications that have been done at the beginning of the session (such as whether the account is active, frozen, or restricted to ``--osh`` commands only) are still reasonably fresh when the action is launched, hence limiting the time window during which a change of these parameters by an administrator would not be taken into account. It also ensures that an MFA challenge can't be left dangling for an arbitrary amount of time.
+
+This is not related to the lifetime of the session itself: once the connection or the command is launched, this option no longer applies, see ``idleLockTimeout`` and ``idleKillTimeout`` for those cases. Interactive mode is not impacted either, as each command typed under it starts a new session. A value of 0 disables this feature entirely, which is not advised.
 
 .. _idleLockTimeout:
 
