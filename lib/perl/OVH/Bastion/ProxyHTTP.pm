@@ -675,7 +675,7 @@ sub _handle_http_request {    ## no critic (RequireFinalReturn)
 sub http_base_headers {
     my $self    = shift;
     my @headers = (
-        [Date                 => gmtime() . " GMT"],
+        [Date                 => OVH::Bastion::http_imf_fixdate()],
         [Connection           => 'close'],
         [Server               => "The Bastion " . $OVH::Bastion::VERSION],
         ['X-Bastion-Instance' => hostname()],
