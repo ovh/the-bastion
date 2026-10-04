@@ -708,6 +708,20 @@ sub duration2human {
     );
 }
 
+# RFC 9110 IMF-fixdate (always English, independent of LC_TIME).
+# scalar gmtime() is ctime ("Thu Jan  1 00:00:00 1970") and is not a valid HTTP Date.
+sub http_imf_fixdate {
+    my %params = @_;
+    my $epoch = defined $params{'epoch'} ? $params{'epoch'} : time();
+    my @wday = qw{ Sun Mon Tue Wed Thu Fri Sat };
+    my @mon  = qw{ Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec };
+    my ($sec, $min, $hour, $mday, $mon, $year, $wday) = gmtime($epoch);
+    return sprintf(
+        "%s, %02d %s %04d %02d:%02d:%02d GMT",
+        $wday[$wday], $mday, $mon[$mon], $year + 1900, $hour, $min, $sec
+    );
+}
+
 sub print_acls {
     my %params     = @_;
     my $acls       = $params{'acls'} || [];
