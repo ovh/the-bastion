@@ -442,11 +442,12 @@ if ($childpid == 0) {
     $res = $ua->request($req);
 
     # if we get a HTTP/1.0 500 Can't connect to A.B.C.D:443 (SSL connect attempt failed error:1425F102:SSL routines:ssl_choose_client_version:unsupported protocol)
+    # if we get a HTTP/1.0 500 Can't connect to A.B.C.D:443 (SSL connect attempt failed error:0A000102:SSL routines::unsupported protocol)
     # ... then the device might be old and support TLS v1.0 maximum only. let's retry that silently if our caller allows
     if (   $allow_downgrade
         && $res
         && $res->code == 500
-        && $res->message =~ /ssl_choose_client_version:unsupported protocol/)
+        && $res->message =~ /unsupported protocol/)
     {
         $downgraded = 1;
         $ua->ssl_opts('SSL_version' => 'TLSv1');
