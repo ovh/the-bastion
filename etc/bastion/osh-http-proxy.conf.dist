@@ -84,23 +84,23 @@
 #  DEFAULT: false
 "insecure": false,
 #
-# min_servers (int, 1 to 512)
+# min_servers (int, 1 to 8192)
 #     DESC: Number of child processes to start at launch
 #  DEFAULT: 8
 "min_servers": 8,
 #
-# max_servers (int, 1 to 512)
+# max_servers (int, 1 to 8192)
 #     DESC: Hard maximum number of child processes that can be active at any given time no matter what
 #  DEFAULT: 32
 "max_servers": 32,
 #
-# min_spare_servers (int, 1 to 512)
+# min_spare_servers (int, 1 to 8192)
 #     DESC: The daemon will ensure that there is at least this number of children idle & ready to accept
 #           new connections (as long as max_servers is not reached)
 #  DEFAULT: 8
 "min_spare_servers": 8,
 #
-# max_spare_servers (int, 1 to 512)
+# max_spare_servers (int, 1 to 8192)
 #     DESC: The daemon will kill *idle* children to keep their number below this maximum when traffic is low
 #  DEFAULT: 16
 "max_spare_servers": 16,
