@@ -150,7 +150,7 @@ Whether to ignore SSL certificate verification for the connection between the ba
 min_servers
 ***********
 
-:Type: ``int, 1 to 512``
+:Type: ``int, 1 to 8192``
 
 :Default: ``8``
 
@@ -159,7 +159,7 @@ Number of child processes to start at launch
 max_servers
 ***********
 
-:Type: ``int, 1 to 512``
+:Type: ``int, 1 to 8192``
 
 :Default: ``32``
 
@@ -168,7 +168,7 @@ Hard maximum number of child processes that can be active at any given time no m
 min_spare_servers
 *****************
 
-:Type: ``int, 1 to 512``
+:Type: ``int, 1 to 8192``
 
 :Default: ``8``
 
@@ -178,7 +178,7 @@ new connections (as long as max_servers is not reached)
 max_spare_servers
 *****************
 
-:Type: ``int, 1 to 512``
+:Type: ``int, 1 to 8192``
 
 :Default: ``16``
 

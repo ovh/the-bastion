@@ -52,10 +52,10 @@ my $_normalize_config_integer = sub {
     }
 };
 $_normalize_config_integer->('timeout',                       1, 3600,               120);
-$_normalize_config_integer->('min_servers',                   1, 512,                8);
-$_normalize_config_integer->('max_servers',                   1, 512,                32);
-$_normalize_config_integer->('min_spare_servers',             1, 512,                8);
-$_normalize_config_integer->('max_spare_servers',             1, 512,                16);
+$_normalize_config_integer->('min_servers',                   1, 8192,               8);
+$_normalize_config_integer->('max_servers',                   1, 8192,               32);
+$_normalize_config_integer->('min_spare_servers',             1, 8192,               8);
+$_normalize_config_integer->('max_spare_servers',             1, 8192,               16);
 $_normalize_config_integer->('log_request_response_max_size', 0, 1024 * 1024 * 1024, 65536);
 
 foreach my $file ($config->{'ssl_key'}, $config->{'ssl_certificate'}) {
