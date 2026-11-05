@@ -1,6 +1,12 @@
 FROM debian:bullseye
 LABEL maintainer="stephane.lesimple+bastion@ovhcloud.com"
 
+# Debian 11 is EOL: its packages have moved from deb.debian.org / security.debian.org to archive.debian.org
+# (the CDN now returns 404). Repoint apt there, and don't choke on Release files past their Valid-Until.
+RUN sed -i -re 's=https?://(deb|security)\.debian\.org/=http://archive.debian.org/=' /etc/apt/sources.list && \
+    echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99archive && \
+    cat /etc/apt/sources.list
+
 # cache builds efficiently: just copy the scripts to install packages first
 COPY bin/admin/install-ttyrec.sh \
     bin/admin/install-yubico-piv-checker.sh \
