@@ -30,6 +30,137 @@ testsuite_proxy_check_response()
     contain 'X-Bastion-ReqID: '
 }
 
+# build osh-http-proxy.conf from osh-http-proxy-methods.conf, with the given egress TLS settings
+# usage: testsuite_proxy_set_egress_tls <test_name> <egress_ciphers> <allow_downgrade:true|false|absent> <downgraded_egress_ciphers>
+# Those settings are read by the worker on each request, so no daemon restart is needed.
+testsuite_proxy_set_egress_tls()
+{
+    local name="$1" egress_ciphers="$2" allow_downgrade="$3" downgraded_egress_ciphers="$4"
+    # the perl code is base64-encoded to avoid any quoting nightmare through ssh,
+    # and uses q{} so that perl doesn't interpolate e.g. "@SECLEVEL" in the cipher strings
+    local code
+    code=$(cat <<EOF
+s{^"egress_ciphers":.*}{q{"egress_ciphers": "$egress_ciphers",}}e;
+s{^"downgraded_egress_ciphers":.*}{q{"downgraded_egress_ciphers": "$downgraded_egress_ciphers",}}e;
+s{^"allow_downgrade":.*}{q{"allow_downgrade": $allow_downgrade,}}e;
+\$_ = "" if "$allow_downgrade" eq "absent" && /^"allow_downgrade":/;
+EOF
+)
+    local codeb64
+    codeb64=$(echo "$code" | base64 -w0)
+    success "$name" $r0 "\"echo $codeb64 | base64 -d > /tmp/proxyconf.pl && perl -p /tmp/proxyconf.pl $opt_remote_etc_bastion/osh-http-proxy-methods.conf > $opt_remote_etc_bastion/osh-http-proxy.conf && rm -f /tmp/proxyconf.pl && grep -E '^.(egress_ciphers|allow_downgrade|downgraded_egress_ciphers).:' $opt_remote_etc_bastion/osh-http-proxy.conf; true\""
+}
+
+# test the egress TLS settings of the proxy: egress_ciphers, allow_downgrade and downgraded_egress_ciphers
+testsuite_proxy_egress_tls()
+{
+    local proxy_password="$1"
+
+    # The fake remote server (tests/functional/proxy/remote-daemon) exposes:
+    # - 9444: TLSv1.2-only, honoring the client's cipher order
+    # - 9445: TLSv1.0-only "old device", preferring AES256-SHA (RSA kx), also accepting ECDHE-RSA-AES256-SHA
+    #
+    # To get a deterministic "unsupported protocol" error from the TLSv1.0 device regardless of the distro's
+    # openssl.cnf, we restrict egress_ciphers to two ECDHE ciphers with @SECLEVEL=3, which forbids TLS < 1.2
+    # on the client side: the device only shares ECDHE-RSA-AES256-SHA with us, answers with TLSv1.0,
+    # and our client rejects it with "unsupported protocol". Without this restriction, the error depends on
+    # the system's openssl.cnf (e.g. "legacy sigalg disallowed" on stock Debian 12, which doesn't trigger
+    # the downgrade).
+    # The ECDHE-RSA-AES128-SHA256 cipher is a TLSv1.2-only cipher that is not in the default preference
+    # order, so seeing it negotiated on 9444 proves that egress_ciphers is applied.
+    local egress_ciphers='ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA:@SECLEVEL=3'
+    # when downgrading, allow AES256-SHA (no MD5-SHA1 signature needed in the handshake, contrary to ECDHE)
+    local downgraded_egress_ciphers='AES256-SHA:@SECLEVEL=0'
+    local curl_base="curl -m $default_timeout -ski"
+
+    # 1) egress_ciphers is applied
+    testsuite_proxy_set_egress_tls egress_tls_config_full "$egress_ciphers" true "$downgraded_egress_ciphers"
+    contain "\"egress_ciphers\": \"$egress_ciphers\","
+
+    script egress_ciphers_applied "$curl_base -u '$account0@test@127.0.0.1%9444:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 200 OK"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain "X-Bastion-Remote-Client-SSL-Cipher: ECDHE-RSA-AES128-SHA256"
+    nocontain 'X-Bastion-Downgraded'
+
+    # a modern TLS1.3 device must still work fine (TLS1.3 ciphersuites are not affected by egress_ciphers)
+    script egress_ciphers_tls13 "$curl_base -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 200 OK"
+    testsuite_proxy_check_response
+    contain "X-Bastion-Remote-Status: 200"
+    nocontain 'X-Bastion-Downgraded'
+
+    # 2) old device, the client doesn't ask for a downgrade: we must get the TLS error
+    script egress_old_device_no_downgrade "$curl_base -u '$account0@test@127.0.0.1%9445:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 500 Can't connect to 127.0.0.1:9445"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain 'unsupported protocol'
+    nocontain 'X-Bastion-Downgraded'
+
+    # 3) old device, the client asks for a downgrade and the config allows it: it must work
+    script egress_old_device_downgrade "$curl_base -H 'X-Bastion-Allow-Downgrade: 1' -u '$account0@test@127.0.0.1%9445:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 200 OK"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain 'X-Bastion-Downgraded: 1'
+    contain "X-Bastion-Remote-Status: 200"
+    contain "X-Bastion-Remote-Client-SSL-Cipher: AES256-SHA"
+    contain "Content-Length: 64"
+
+    # 4) the remote device itself returns a 500 whose message looks like an SSL error: this is NOT
+    # an LWP-internal error (no "Client-Warning: Internal response"), so we must not downgrade
+    script egress_remote_500_no_downgrade "$curl_base -H 'X-Bastion-Allow-Downgrade: 1' -H 'X-Test-Add-Response-Header-Status: 500 fake error:0A000102:SSL routines::unsupported protocol' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 500 fake error"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain 'X-Bastion-Remote-Status: 500 fake error'
+    nocontain 'X-Bastion-Downgraded'
+
+    # 5) the client asks for a downgrade but the config forbids it: we must get the TLS error
+    testsuite_proxy_set_egress_tls egress_tls_config_nodowngrade "$egress_ciphers" false "$downgraded_egress_ciphers"
+    contain '"allow_downgrade": false,'
+
+    script egress_old_device_downgrade_forbidden "$curl_base -H 'X-Bastion-Allow-Downgrade: 1' -u '$account0@test@127.0.0.1%9445:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 500 Can't connect to 127.0.0.1:9445"
+    testsuite_proxy_check_response
+    contain 'unsupported protocol'
+    nocontain 'X-Bastion-Downgraded'
+
+    # 6) allow_downgrade is absent from the config (e.g. config from a previous version): defaults to true
+    testsuite_proxy_set_egress_tls egress_tls_config_absent "$egress_ciphers" absent "$downgraded_egress_ciphers"
+    nocontain '"allow_downgrade"'
+
+    script egress_old_device_downgrade_default "$curl_base -H 'X-Bastion-Allow-Downgrade: 1' -u '$account0@test@127.0.0.1%9445:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 200 OK"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Downgraded: 1'
+    contain "X-Bastion-Remote-Client-SSL-Cipher: AES256-SHA"
+
+    # 7) no downgraded_egress_ciphers: the downgrade is attempted, but with our (too strict) egress_ciphers
+    # still applied, so it can't succeed. This proves downgraded_egress_ciphers is what made 3) work.
+    testsuite_proxy_set_egress_tls egress_tls_config_nodowngradedciphers "$egress_ciphers" true ""
+    contain '"downgraded_egress_ciphers": "",'
+
+    script egress_old_device_downgrade_no_ciphers "$curl_base -H 'X-Bastion-Allow-Downgrade: 1' -u '$account0@test@127.0.0.1%9445:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 500 Can't connect to 127.0.0.1:9445"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Downgraded: 1'
+    nocontain 'X-Bastion-Remote-Client-SSL-Cipher'
+
+    # restore the config the subsequent tests expect
+    success egress_tls_config_restore $r0 "\"cp $opt_remote_etc_bastion/osh-http-proxy-methods.conf $opt_remote_etc_bastion/osh-http-proxy.conf\""
+}
+
 testsuite_proxy()
 {
     # note: we use "curl | cat" to force curl to disable color output, to be grep friendly,
@@ -356,6 +487,8 @@ testsuite_proxy()
     contain 'Content-Type: text/plain'
     contain 'not allowed by policy'
 
+    testsuite_proxy_egress_tls "$proxy_password"
+
     # use alternate config to only allow http egress
     success config_swap $r0 "\"cp $opt_remote_etc_bastion/osh-http-proxy-httponly.conf $opt_remote_etc_bastion/osh-http-proxy.conf\""
 
@@ -430,3 +563,5 @@ testsuite_proxy()
 [ "${remote_proxy_port:-0}" != 0 ] && testsuite_proxy
 unset -f testsuite_proxy
 unset -f testsuite_proxy_check_response
+unset -f testsuite_proxy_set_egress_tls
+unset -f testsuite_proxy_egress_tls

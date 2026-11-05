@@ -51,12 +51,33 @@
 "ssl_key": "/etc/ssl/private/ssl-cert-snakeoil.key",
 #
 # ciphers (string)
-#     DESC: The ordered list the TLS server ciphers, in ``openssl`` classic format. Use ``openssl ciphers``
+#     DESC: The ordered list the TLS server ciphers (ingress side), in ``openssl`` classic format. Use ``openssl ciphers``
 #           to see what your system supports, an empty list leaves the choice to your openssl libraries default
 #           values (system-dependent)
 #  EXAMPLE: "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256"
 #  DEFAULT: ""
 "ciphers": "",
+#
+# egress_ciphers (string)
+#     DESC: The ordered list the TLS client ciphers (egress side), in ``openssl`` classic format. Use ``openssl ciphers``
+#           to see what your system supports, an empty list leaves the choice to your openssl libraries default
+#           values (system-dependent). Note that this only applies to TLS versions up to 1.2, TLS 1.3 ciphersuites
+#           are configured separately by OpenSSL and are not affected by this setting
+#  EXAMPLE: "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256"
+#  DEFAULT: ""
+"egress_ciphers": "",
+#
+# allow_downgrade (bool)
+#     DESC: Allow the client to request egress SSL negociation downgrade to TLSv1 if the default negociation fails,
+#           through the ``X-Bastion-Allow-Downgrade`` header. Set to false to ignore this header
+#  DEFAULT: true
+"allow_downgrade": true,
+#
+# downgraded_egress_ciphers (string)
+#     DESC: When the client allows egress SSL negociation downgrade to TLSv1, additionally set this list of ciphers
+#  EXAMPLE: "DEFAULT:@SECLEVEL=0"
+#  DEFAULT: ""
+"downgraded_egress_ciphers": "",
 #
 # insecure (bool)
 #     DESC: Whether to ignore SSL certificate verification for the connection between the bastion and the devices
