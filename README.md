@@ -126,7 +126,7 @@ Any other so-called "modern" Linux version are not tested with each release, but
 
 The following OS are also tested with each release:
 
-- FreeBSD 15.1, 15.0, 14.4
+- FreeBSD 15.1, 14.4
 
 FreeBSD has partial MFA support, due to its reduced set of available `pam` plugins. Support for either an additional password or TOTP factor can be configured, but not both at the same time.
 
