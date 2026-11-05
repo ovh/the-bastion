@@ -16,7 +16,7 @@ jobs:
     if: ${{ contains(github.event.pull_request.labels.*.name, 'tests:freebsd') || contains(github.event_name, 'workflow_dispatch') }}
     strategy:
       matrix:
-        version: ['14.4', '15.0', '15.1']
+        version: ['14.4', '15.1']
     timeout-minutes: 45
     steps:
     - uses: actions/checkout@v7.0.1

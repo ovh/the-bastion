@@ -42,7 +42,7 @@ but should work with no or minor adjustments.
 
 The following OS are also tested with each release:
 
-- FreeBSD 15.1, 15.0, 4.4
+- FreeBSD 15.1, 14.4
 
 Note that FreeBSD has partial MFA support, due to its reduced set of available ``pam`` plugins.
 Support for either an additional password or TOTP factor can be configured, but not both at the same time.
