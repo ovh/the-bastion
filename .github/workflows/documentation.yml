@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
       - name: Install sphinx and prerequisites
@@ -26,7 +26,7 @@ jobs:
         run: cd doc/sphinx/ && make all
       - name: Deploy to GitHub Pages
         if: success()
-        uses: crazy-max/ghaction-github-pages@v2
+        uses: crazy-max/ghaction-github-pages@v5.0.0
         with:
           target_branch: gh-pages
           build_dir: docs
