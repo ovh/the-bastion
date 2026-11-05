@@ -21,6 +21,9 @@ These options modify the behavior of the HTTP Proxy, an optional module of The B
 - `ssl_certificate`_
 - `ssl_key`_
 - `ciphers`_
+- `egress_ciphers`_
+- `allow_downgrade`_
+- `downgraded_egress_ciphers`_
 - `insecure`_
 - `min_servers`_
 - `max_servers`_
@@ -96,9 +99,44 @@ ciphers
 
 :Example: ``"ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256"``
 
-The ordered list the TLS server ciphers, in ``openssl`` classic format. Use ``openssl ciphers``
+The ordered list the TLS server ciphers (ingress side), in ``openssl`` classic format. Use ``openssl ciphers``
 to see what your system supports, an empty list leaves the choice to your openssl libraries default
 values (system-dependent)
+
+egress_ciphers
+**************
+
+:Type: ``string``
+
+:Default: ``""``
+
+:Example: ``"ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256"``
+
+The ordered list the TLS client ciphers (egress side), in ``openssl`` classic format. Use ``openssl ciphers``
+to see what your system supports, an empty list leaves the choice to your openssl libraries default
+values (system-dependent). Note that this only applies to TLS versions up to 1.2, TLS 1.3 ciphersuites
+are configured separately by OpenSSL and are not affected by this setting
+
+allow_downgrade
+***************
+
+:Type: ``bool``
+
+:Default: ``true``
+
+Allow the client to request egress SSL negociation downgrade to TLSv1 if the default negociation fails,
+through the ``X-Bastion-Allow-Downgrade`` header. Set to false to ignore this header
+
+downgraded_egress_ciphers
+*************************
+
+:Type: ``string``
+
+:Default: ``""``
+
+:Example: ``"DEFAULT:@SECLEVEL=0"``
+
+When the client allows egress SSL negociation downgrade to TLSv1, additionally set this list of ciphers
 
 insecure
 ********

@@ -390,6 +390,9 @@ if ($insecure) {
     $ua->ssl_opts('verify_hostname' => 0);
     $ua->ssl_opts('SSL_verify_mode' => IO::Socket::SSL::SSL_VERIFY_NONE);
 }
+if ($config->{'egress_ciphers'}) {
+    $ua->ssl_opts('SSL_cipher_list' => $config->{'egress_ciphers'});
+}
 
 # set the remote URL
 my $req = HTTP::Request->new($method => $egress_protocol . "://" . $remotemachine_uri . ':' . $remoteport . $path);
@@ -442,14 +445,23 @@ if ($childpid == 0) {
     $res = $ua->request($req);
 
     # if we get a HTTP/1.0 500 Can't connect to A.B.C.D:443 (SSL connect attempt failed error:1425F102:SSL routines:ssl_choose_client_version:unsupported protocol)
-    # ... then the device might be old and support TLS v1.0 maximum only. let's retry that silently if our caller allows
+    # or SSL connect attempt failed error:0A000102:SSL routines::unsupported protocol
+    # or SSL connect attempt failed error:0A00014D:SSL routines::legacy sigalg disallowed or unsupported
+    # (the latter happens on OpenSSL 3+ when the system policy doesn't forbid TLS < 1.2 but the device uses a SHA1-based signature)
+    # then the device might be old and support TLS v1.0 maximum only. let's retry that silently if our caller allows.
+    # on recent OpenSSL versions, some old ciphers might also need to be added-back, this is configurable through downgraded_egress_ciphers
     if (   $allow_downgrade
+        && ($config->{'allow_downgrade'} // 1)
         && $res
         && $res->code == 500
-        && $res->message =~ /ssl_choose_client_version:unsupported protocol/)
+        && ($res->header("Client-Warning") // "") eq "Internal response"
+        && $res->message =~ /:(?:unsupported protocol|legacy sigalg disallowed or unsupported)/)
     {
         $downgraded = 1;
         $ua->ssl_opts('SSL_version' => 'TLSv1');
+        if ($config->{'downgraded_egress_ciphers'}) {
+            $ua->ssl_opts('SSL_cipher_list' => $config->{'downgraded_egress_ciphers'});
+        }
         $res = $ua->request($req);
     }
     # we can use freeze() instead of nfreeze() because the thaw() will be made by our parent,
