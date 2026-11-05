@@ -19,11 +19,11 @@ jobs:
         version: ['14.4', '15.0', '15.1']
     timeout-minutes: 45
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7.0.1
       with:
         persist-credentials: false
     - name: Start FreeBSD VM
-      uses: cross-platform-actions/action@master
+      uses: cross-platform-actions/action@v1.7.0
       with:
         operating_system: freebsd
         version: ${{ matrix.version }}
