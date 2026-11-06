@@ -16,6 +16,7 @@ use HTTP::Message;
 use IO::Pipe;
 use IO::Select;
 use IO::Socket::SSL;
+use Net::SSLeay;
 use LWP::UserAgent;
 use MIME::Base64;
 use POSIX    ();
@@ -177,6 +178,29 @@ if (not grep { $config->{'allow_redirects'} eq $_ } qw{ none same-host any }) {
         "Configuration is invalid, please contact the bastion admin\n",
         {comment => "invalid_configuration"}
     );
+}
+
+# if specified, egress_ca_file must be an absolute path to a readable file:
+# never silently fall back to the default CA store if it's not
+my $egress_ca_file;
+if (defined $config->{'egress_ca_file'} && $config->{'egress_ca_file'} ne '') {
+    # untaint: this comes from our root-owned config file, loaded in secure mode
+    if ($config->{'egress_ca_file'} =~ m{^(/[^\0]+)$} && -f $1 && -r $1) {
+        $egress_ca_file = $1;
+    }
+    else {
+        # this must reach the system logs, so that an admin can see it
+        # the worker runs under the identity of the bastion account, so the file must be readable by all of them
+        warn_syslog("osh-http-proxy-worker: invalid egress_ca_file config value, not an absolute path "
+              . "to a file readable by the bastion accounts (checked as '$account'): "
+              . $config->{'egress_ca_file'});
+        log_and_exit(
+            500,
+            "Internal Error",
+            "Configuration is invalid, please contact the bastion admin\n",
+            {comment => "invalid_configuration"}
+        );
+    }
 }
 
 if (not grep { $egress_protocol eq $_ } @{$config->{'allowed_egress_protocols'}}) {
@@ -394,6 +418,11 @@ else {
     );
 }
 
+# when insecure, the reason why LWP wouldn't have accepted the connection if insecure was false, if any (see below):
+# either because it wouldn't have found a usable CA store, or because the certificate chain is invalid
+my $ca_store_error;
+my $cert_chain_error;
+
 # The Client-SSL-* headers we send back to our client (as X-Bastion-Remote-Client-SSL-*) must come from LWP, never
 # from the device. Stripping the device's own Client-* headers from the response is not enough, as LWP can add
 # headers coming from the device afterwards (HTTP trailers, HTML <meta http-equiv> tags, etc.). So we wrap
@@ -414,6 +443,15 @@ sub is_lwp_internal_response {
     return ($response->header('Client-Warning') // '') eq 'Internal response';
 }
 
+# returns the name the given request is meant for, which is the one the certificate must be validated against
+# (and sent through SNI). Our requests always connect to the IP we've checked, but carry the Host header with the
+# name the client used. The redirects followed by LWP itself (allow_redirects=any) have no Host header, as LWP
+# removes it: they connect to the host of their URI, and this is their name
+sub egress_name_of {
+    my $request = shift;
+    return $request->header('Host') // $request->uri->host;
+}
+
 ## no critic (TestingAndDebugging::ProhibitNoWarnings, Variables::ProtectPrivateVars)
 {
     no warnings 'redefine';
@@ -431,6 +469,27 @@ sub is_lwp_internal_response {
         # as LWP sets them there, after having called us
         my %conn = (headers => {});
         $response->{$EGRESS_CONN_KEY} = \%conn;
+
+        # when insecure, record whether the connection would have been accepted if insecure was false
+        # (see where $cert_chain_error is set for details). We do it here because this is called
+        # for the socket of each response, which also covers the downgrade retry and the followed redirects.
+        # The certificate is checked against the name the request was meant for, which can differ between
+        # the requests of a redirect chain.
+        if ($insecure && $sock->can('verify_hostname')) {
+            my $name = egress_name_of($response->request);
+            my $reason;
+            if (defined $ca_store_error) {
+                $reason = "no usable CA store: $ca_store_error";
+            }
+            elsif (defined $cert_chain_error) {
+                $reason = $cert_chain_error;
+            }
+            elsif (!$sock->verify_hostname($name, 'www')) {
+                $reason = "certificate doesn't match $name";
+            }
+            $conn{'headers'}{'Client-SSL-Cert-Verify'} = defined $reason ? "FAILED ($reason)" : "OK";
+        }
+        undef $cert_chain_error;    # consumed, the next handshake (if any) will set it again if needed
         return @ret;
     };
 
@@ -540,9 +599,70 @@ if ($allow_redirects ne 'any') {
     );
 }
 
+# we connect to the IP we've checked against the access lists, but the certificate must be validated against
+# the name the client used to reach the device (and this name must be sent through SNI), as this is what
+# a client would expect when connecting directly to the device. Without this, a device reached by hostname
+# would have its certificate checked against its IP, which would fail for any regular certificate.
+# When the client used an IP, we don't set SSL_hostname, as it would otherwise be sent through SNI, which is
+# forbidden for IPs by RFC 6066: IO::Socket::SSL then validates the certificate against the IP we connect to.
+# This is done before each request LWP sends, as the followed redirects might be for another name.
+$ua->add_handler(
+    request_prepare => sub {
+        my ($request) = @_;
+        my $name = egress_name_of($request);
+        $ua->ssl_opts('SSL_hostname' => OVH::Bastion::is_valid_ip(ip => $name, fast => 1) ? undef : $name);
+        return;
+    }
+);
+
+# if specified, the egress certificates are verified against this CA file instead of the system's default CA store.
+# This is set before the insecure handling below, so that the diagnostic of the insecure mode uses it too.
+$ua->ssl_opts('SSL_ca_file' => $egress_ca_file) if $egress_ca_file;
+
+# when insecure, we don't enforce the remote certificate validity, but we still check it, and report the result
+# to our client through the X-Bastion-Remote-Client-SSL-Cert-Verify header. This is a diagnostic information,
+# meant to ease the migration of an infrastructure to insecure=false, by detecting beforehand the devices
+# that would be refused. We check the very same things LWP would have checked if insecure was false:
+# the certificate chain against the same CA store (verified by OpenSSL during the handshake, even with
+# SSL_VERIFY_NONE, we just record its verdict through a callback that never fails the handshake),
+# and the certificate name against the name the client used, with the same 'www' scheme.
 if ($insecure) {
+    # ask LWP which CA store it would have used if verification was enabled (this differs between
+    # distros: some LWP versions use Mozilla::CA, some are patched to use the system's bundle, etc.)
+    # we use a throwaway UA with the same ssl_opts as ours, but verification enabled, to ask its https
+    # implementation which socket options it would use. There's no public API for this, hence _extra_sock_opts()
+    my %secure_opts;
+    {
+        my %ssl_opts  = map { $_ => $ua->ssl_opts($_) } $ua->ssl_opts;
+        my $secure_ua = LWP::UserAgent->new(ssl_opts => {%ssl_opts, verify_hostname => 1});
+        my $proto     = LWP::Protocol::https->new('https', $secure_ua);
+        %secure_opts = eval { $proto->_extra_sock_opts($remoteip, $remoteport) };
+        if ($@) {
+            # LWP would have refused to even try to connect (e.g. no CA store found)
+            chomp($ca_store_error = $@);
+        }
+    }
+    foreach my $opt (qw{ SSL_ca_file SSL_ca_path SSL_ca }) {
+        $ua->ssl_opts($opt => $secure_opts{$opt}) if defined $secure_opts{$opt};
+    }
+
     $ua->ssl_opts('verify_hostname' => 0);
     $ua->ssl_opts('SSL_verify_mode' => IO::Socket::SSL::SSL_VERIFY_NONE);
+    # OpenSSL calls this during the handshake, once per certificate of the chain and once more per error
+    # encountered. We keep the first error, which is consumed (and reset) by our _get_sock_info() wrapper above
+    # once the handshake is done, as a same worker can do several handshakes (downgrade retry, followed redirects).
+    $ua->ssl_opts(
+        'SSL_verify_callback' => sub {
+            my ($ok, $ctx_store) = @_;
+            if (!$ok && !defined $cert_chain_error) {
+                # get a human-readable reason, such as "self-signed certificate"
+                my $code = $ctx_store ? Net::SSLeay::X509_STORE_CTX_get_error($ctx_store) : 0;
+                $cert_chain_error = ($code && Net::SSLeay::X509_verify_cert_error_string($code))
+                  || "certificate verification failed";
+            }
+            return 1;    # never fail the handshake, we're insecure: only record the verdict
+        }
+    );
 }
 if ($config->{'egress_ciphers'}) {
     $ua->ssl_opts('SSL_cipher_list' => $config->{'egress_ciphers'});
@@ -596,6 +716,7 @@ if ($childpid == 0) {
     my $downgraded = 0;
 
     # do the req a first time with defaults
+    undef $cert_chain_error;
     $res = $ua->request($req);
 
     # if we get a HTTP/1.0 500 Can't connect to A.B.C.D:443 (SSL connect attempt failed error:1425F102:SSL routines:ssl_choose_client_version:unsupported protocol)
@@ -616,6 +737,7 @@ if ($childpid == 0) {
         if ($config->{'downgraded_egress_ciphers'}) {
             $ua->ssl_opts('SSL_cipher_list' => $config->{'downgraded_egress_ciphers'});
         }
+        undef $cert_chain_error;    # don't let a failed handshake of the first attempt leak into this one
         $res = $ua->request($req);
     }
     # we can use freeze() instead of nfreeze() because the thaw() will be made by our parent,
@@ -776,7 +898,7 @@ if ($res) {
         push @headers, [$name => $value] if defined $value;
     }
     my $conn_headers = $res->{$EGRESS_CONN_KEY} ? $res->{$EGRESS_CONN_KEY}{'headers'} : {};
-    foreach my $name (@CLIENT_SSL_HEADERS) {
+    foreach my $name (@CLIENT_SSL_HEADERS, 'Client-SSL-Cert-Verify') {
         push @headers, [$name => $conn_headers->{$name}] if defined $conn_headers->{$name};
     }
 }
