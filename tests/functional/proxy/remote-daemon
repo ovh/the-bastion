@@ -18,6 +18,9 @@ __PACKAGE__->run(
         # deterministic "unsupported protocol" error (see the http-proxy tests for details).
         # Specifying SSL_version explicitly overrides the system's openssl.cnf MinProtocol, if any.
         {port => 9445, proto => 'ssl', SSL_version => 'TLSv1', SSL_cipher_list => 'AES256-SHA:ECDHE-RSA-AES256-SHA:@SECLEVEL=0', SSL_honor_cipher_order => 1},
+        # a "properly configured" device, with a certificate for localhost (only) signed by a test CA,
+        # used to test the egress_ca_file option and the X-Bastion-Remote-Client-SSL-Cert-Verify header
+        {port => 9446, proto => 'ssl', SSL_key_file => '/tmp/testleaf.key', SSL_cert_file => '/tmp/testleaf.crt'},
     ],
     ipv => 4,
     SSL_key_file => "/tmp/selfsigned.key",
@@ -31,6 +34,11 @@ sub process_http_request {
     my $hasContentType;
     my $wantedResponseSize = 64;
     my $responseDelay      = 0;
+    my $redirectTo;
+    my $htmlMetaSpoof;
+    my $duplicateContentType;
+    my $requireAuth;
+    my $hasAuth;
 
     # this is to get the unparsed body of the request, portion of code
     # taken from lib/perl/OVH/Bastion/ProxyHTTP.pm, more context available over there
@@ -54,12 +62,61 @@ sub process_http_request {
             # hold the response for N seconds, to keep the request in-flight on the proxy side
             ($responseDelay) = $headerTuple->[1] =~ /^(\d+)$/;
         }
+        elsif (lc $headerTuple->[0] eq 'x-test-html-meta-spoof') {
+            # answer with an HTML page whose <head> tries to inject Client-* headers through <meta http-equiv>
+            $htmlMetaSpoof = 1;
+        }
+        elsif (lc $headerTuple->[0] eq 'x-test-duplicate-content-type') {
+            # send the Content-Type header twice
+            $duplicateContentType = 1;
+        }
+        elsif (lc $headerTuple->[0] eq 'x-test-redirect-to') {
+            # answer with a redirect to the given URL, unless we're already being called on its path
+            $redirectTo = $headerTuple->[1];
+        }
+        elsif (lc $headerTuple->[0] eq 'x-test-require-auth') {
+            # answer 401 if we didn't get any Authorization header (used to check whether the proxy
+            # forwarded the device password along a followed redirect)
+            $requireAuth = 1;
+        }
+        elsif (lc $headerTuple->[0] eq 'authorization') {
+            $hasAuth = 1;
+        }
+    }
+
+    if ($requireAuth && !$hasAuth) {
+        print "Status: 401 Unauthorized\n";
+    }
+    elsif ($redirectTo) {
+        # extract the path of the redirect target, which can be absolute or host-less
+        my ($redirectPath) = $redirectTo =~ m{^(?:https?://[^/]+)?(/[^?]*)};
+        if (!defined $redirectPath || ($ENV{'PATH_INFO'} // '') ne $redirectPath) {
+            # Location must be printed before Status: older Net::Server::HTTP versions (e.g. 2.009)
+            # unconditionally override the status with "302 bouncing" when they see a Location header
+            print "Location: $redirectTo\n";
+            print "Status: 302 Found\n";
+        }
     }
 
     # delay the whole response if asked to (used by the graceful-reload test)
     sleep $responseDelay if $responseDelay;
 
+    if ($htmlMetaSpoof) {
+        my $html = '<html><head>'
+          . '<meta http-equiv="Client-SSL-Cert-Verify" content="OK SPOOFED">'
+          . '<meta http-equiv="Client-SSL-Cipher" content="SPOOFED">'
+          . '<meta http-equiv="Client-SSL-Warning" content="SPOOFED">'
+          . '<meta http-equiv="Client-Warning" content="Internal response">'
+          . '</head><body>meta spoof</body></html>' . "\n";
+        print "Content-type: text/html\n" if !$hasContentType;
+        print "Content-Length: ".length($html)."\n\n";
+        print $html;
+        close(STDOUT);
+        return;
+    }
+
     print "Content-type: text/plain\n" if !$hasContentType;
+    print "Content-type: text/plain\n" if $duplicateContentType;
 
     # if the request had a body, include it verbatim in our answer
     if ($content) {

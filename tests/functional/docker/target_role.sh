@@ -162,6 +162,13 @@ elif [ "$OS_FAMILY" = FreeBSD ]; then
     echo "Added a few local IP aliases"
     ifconfig "$nic"
 
+    if [ -x /usr/local/etc/rc.d/syslog-ng ] && [ -e /usr/local/etc/syslog-ng/conf.d/20-bastion.conf ]; then
+        # the default source of the FreeBSD syslog-ng config is named src, not s_src
+        sed_compat 's/s_src/src/' /usr/local/etc/syslog-ng/conf.d/20-bastion.conf
+        # syslog-ng replaces the base syslogd, which would otherwise keep /dev/klog and /var/run/log
+        /etc/rc.d/syslogd onestop || true
+    fi
+
     set +e
     for st in restart onestart
     do
@@ -177,6 +184,20 @@ if [ "$WANT_HTTP_PROXY" = 1 ]; then
     openssl req -x509 -nodes -days 7 -newkey rsa:2048 -keyout /tmp/selfsigned.key -out /tmp/selfsigned.crt -subj "/CN=testcert"
     chgrp proxyhttp /tmp/selfsigned.key
     chmod g+r /tmp/selfsigned.key
+    # also build a test CA, and a certificate signed by it for the "localhost" name only, used by the remote daemon
+    # on a dedicated port to test the egress_ca_file option: the device is valid when reached through "localhost",
+    # and the 127.0.0.1 IP, deliberately not in the certificate, is used to test a name mismatch
+    printf "basicConstraints=critical,CA:TRUE\nkeyUsage=critical,keyCertSign,cRLSign\n" > /tmp/testca.ext
+    openssl req -nodes -newkey rsa:2048 -keyout /tmp/testca.key -out /tmp/testca.csr -subj "/CN=Bastion Test CA"
+    openssl x509 -req -days 7 -in /tmp/testca.csr -signkey /tmp/testca.key -extfile /tmp/testca.ext -out /tmp/testca.crt
+    printf "subjectAltName=DNS:localhost\nbasicConstraints=CA:FALSE\nextendedKeyUsage=serverAuth\n" > /tmp/testleaf.ext
+    openssl req -nodes -newkey rsa:2048 -keyout /tmp/testleaf.key -out /tmp/testleaf.csr -subj "/CN=localhost"
+    openssl x509 -req -days 7 -in /tmp/testleaf.csr -CA /tmp/testca.crt -CAkey /tmp/testca.key -set_serial 1 \
+        -extfile /tmp/testleaf.ext -out /tmp/testleaf.crt
+    chgrp proxyhttp /tmp/testleaf.key
+    chmod g+r /tmp/testleaf.key
+    chmod 0644 /tmp/testca.crt
+    rm -f /tmp/testca.csr /tmp/testleaf.csr /tmp/testca.ext /tmp/testleaf.ext
     # use perl rather than GNU sed for these in-place edits, so this also works on FreeBSD (BSD sed
     # has neither `-i` without a suffix nor `-r`); $BASTION_ETC_DIR comes from functions.inc and points
     # to the right dir on each OS (/etc/bastion on Linux, /usr/local/etc/bastion on FreeBSD)
@@ -185,9 +206,15 @@ if [ "$WANT_HTTP_PROXY" = 1 ]; then
     perl -pi -e 's{"enabled":.+}{"enabled":true,}'                                    "$BASTION_ETC_DIR/osh-http-proxy.conf"
     perl -pi -e 's{"insecure":.+}{"insecure":true,}'                                  "$BASTION_ETC_DIR/osh-http-proxy.conf"
     # also build a config with disallowed https egress and allowed http egress
-    perl -pe 's{"allowed_egress_protocols":.+}{"allowed_egress_protocols":["http"]}'  "$BASTION_ETC_DIR/osh-http-proxy.conf" > "$BASTION_ETC_DIR/osh-http-proxy-httponly.conf"
+    # (keep the trailing comma if any, so this works regardless of whether this option is the last one)
+    perl -pe 's{"allowed_egress_protocols":[^,]+(,?)$}{"allowed_egress_protocols":["http"]$1}' "$BASTION_ETC_DIR/osh-http-proxy.conf" > "$BASTION_ETC_DIR/osh-http-proxy-httponly.conf"
     # and another one with more allowed methods
     perl -pe 's{"allowed_methods":.+}{"allowed_methods":["GET","POST","PUT","PATCH","DELETE"],}' "$BASTION_ETC_DIR/osh-http-proxy.conf" > "$BASTION_ETC_DIR/osh-http-proxy-methods.conf"
+    # and two others with non-default redirect policies
+    perl -pe 's{"allow_redirects":[^,]+(,?)$}{"allow_redirects":"any"$1}'  "$BASTION_ETC_DIR/osh-http-proxy.conf" > "$BASTION_ETC_DIR/osh-http-proxy-redirects-any.conf"
+    perl -pe 's{"allow_redirects":[^,]+(,?)$}{"allow_redirects":"none"$1}' "$BASTION_ETC_DIR/osh-http-proxy.conf" > "$BASTION_ETC_DIR/osh-http-proxy-redirects-none.conf"
+    # and one with allow_redirects=any and both http and https allowed, to check that https => http is still refused
+    perl -pe 's{"allowed_egress_protocols":[^,]+(,?)$}{"allowed_egress_protocols":["http","https"]$1}' "$BASTION_ETC_DIR/osh-http-proxy-redirects-any.conf" > "$BASTION_ETC_DIR/osh-http-proxy-redirects-any-http.conf"
 
     # ensure the remote daemon is executable
     chmod 0755 "$basedir"/tests/functional/proxy/remote-daemon

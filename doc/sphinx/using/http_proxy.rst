@@ -98,6 +98,195 @@ that your account must have access to.
 In the above case, we entered the password correctly, but our account doesn't have access to
 the requested host `monitoring@router12.example.org`. This is what we need to do now.
 
+Query headers
+-------------
+
+The following optional headers can be added by the client to its request, to modify the behavior of the proxy.
+They're only interpreted by the bastion, and are not forwarded to the remote device.
+
+X-Bastion-Timeout
+   Timeout, in seconds, for the connection between the bastion and the remote device.
+   Must be an integer, and defaults to the ``timeout`` option of the
+   :doc:`/administration/configuration/osh-http-proxy_conf`.
+
+X-Bastion-Egress-Protocol
+   Protocol to use for the connection between the bastion and the remote device, either ``https`` or ``http``.
+   Defaults to ``https``. The protocol must be allowed by the ``allowed_egress_protocols`` option of the
+   :doc:`/administration/configuration/osh-http-proxy_conf`.
+
+X-Bastion-Allow-Downgrade
+   Set to ``1`` to allow the bastion to silently retry the request using TLSv1.0, if the remote device doesn't
+   support any more recent TLS version. Defaults to ``0``.
+
+X-Bastion-Enforce-Secure
+   Set to ``1`` to enforce the verification of the remote device's certificate, even if the ``insecure`` option
+   of the :doc:`/administration/configuration/osh-http-proxy_conf` is enabled. Defaults to ``0``.
+
+Only a few standard headers of the client request are forwarded to the remote device, namely ``Accept``,
+``Content-Type``, ``Content-Length`` and ``Content-Encoding``.
+
+Headers sent to the remote device
+---------------------------------
+
+The bastion adds the following headers to the request it sends to the remote device, which can be used
+for traceability purposes on the device side:
+
+X-Bastion-Auth-Mode
+   How the egress credentials have been chosen, see the ``X-Bastion-Auth-Mode`` response header below.
+
+X-Bastion-Ingress-Client-IP
+   IP of the client that sent the request to the bastion.
+
+X-Bastion-Ingress-Client-Port
+   Source port of the client that sent the request to the bastion.
+
+X-Bastion-Ingress-Client-User-Agent
+   User-Agent of the client that sent the request to the bastion.
+
+X-Bastion-Ingress-Account
+   The bastion account of the client that sent the request.
+
+X-Bastion-UniqID
+   The unique ID of the request on the bastion, to correlate with the bastion logs.
+
+X-Bastion-Instance
+   The hostname of the bastion instance that handled the request.
+
+Response headers
+----------------
+
+The bastion adds the following headers to its response to the client.
+Note that the headers sent by the remote device are not forwarded as-is to the client, except ``Content-Type``
+and ``Content-Length``. Some of the below headers are only present when relevant.
+
+Server
+   The Bastion version that handled the request.
+
+X-Bastion-Instance
+   The hostname of the bastion instance that handled the request.
+
+X-Bastion-ReqID
+   The unique ID of the request on the bastion, to correlate with the bastion logs.
+
+X-Bastion-Local-Status
+   Status of the request from the bastion standpoint. When the request has been forwarded to the remote device,
+   this is ``200 OK``, and the HTTP status of the response is the one of the remote device
+   (see ``X-Bastion-Remote-Status`` below). Otherwise, this is the error encountered by the bastion,
+   for example ``403 Access Denied`` or ``504 Device Timeout``, and the HTTP status of the response matches it.
+
+X-Bastion-Remote-Host
+   The remote device host, as specified by the client.
+
+X-Bastion-Remote-IP
+   The IP of the remote device, as resolved by the bastion.
+
+X-Bastion-Auth-Mode
+   How the egress credentials have been chosen: ``self/explicit`` or ``group/explicit`` when the client specified
+   which credentials to use, ``self/default`` or ``group/guessed`` when the bastion chose them from the accesses
+   of the account, or ``legacy``.
+
+X-Bastion-Request-Length
+   Length, in bytes, of the body of the client request.
+
+X-Bastion-Remote-Status
+   Only present when the request has been forwarded to the remote device (i.e. when ``X-Bastion-Local-Status``
+   is ``200 OK``): this is the HTTP status returned by the remote device, and the HTTP status of the response
+   matches it. If the bastion couldn't get an answer from the remote device, for example because the connection
+   or the TLS negotiation failed, this is a ``500`` error describing the issue, such as
+   ``500 Can't connect to 192.0.2.1:443``.
+
+X-Bastion-Remote-Server
+   The ``Server`` header returned by the remote device, if any.
+
+X-Bastion-Remote-Location
+   When the remote device answered with a redirect that the bastion didn't follow, this is the absolute URL of the
+   redirect target, as computed from the ``Location`` header returned by the device. The ``Location`` header itself
+   is not forwarded, as it usually points directly to the remote device and not to the bastion.
+   To follow this redirect, the client can send a new request to the bastion for this target, which will go through
+   the usual access checks. Which redirects are followed by the bastion depends on the ``allow_redirects`` option
+   of the :doc:`/administration/configuration/osh-http-proxy_conf`.
+
+X-Bastion-Remote-Client-SSL-Version
+   TLS version used for the connection to the remote device, for example ``TLSv1_3``,
+   when using ``https`` as the egress protocol.
+
+X-Bastion-Remote-Client-SSL-Cipher
+   TLS cipher used for the connection to the remote device, when using ``https`` as the egress protocol.
+
+X-Bastion-Remote-Client-SSL-Cert-Subject
+   Subject of the certificate presented by the remote device, when using ``https`` as the egress protocol.
+
+X-Bastion-Remote-Client-SSL-Cert-Issuer
+   Issuer of the certificate presented by the remote device, when using ``https`` as the egress protocol.
+
+X-Bastion-Remote-Client-SSL-Warning
+   Warning about the TLS connection to the remote device, if any, for example ``Peer certificate not verified``
+   when the ``insecure`` option is enabled.
+
+X-Bastion-Remote-Client-SSL-Cert-Verify
+   Only present when the ``insecure`` option of the :doc:`/administration/configuration/osh-http-proxy_conf`
+   is enabled (and ``X-Bastion-Enforce-Secure`` is not set), when using ``https`` as the egress protocol.
+   Even if the certificate of the remote device is not enforced in this case, the bastion still verifies it,
+   exactly as it would have if ``insecure`` was disabled, and reports the result here: ``OK`` if the connection
+   would have been accepted, or ``FAILED`` followed by the reason between parentheses, for example
+   ``FAILED (self-signed certificate)`` or ``FAILED (certificate doesn't match myhost.example)``.
+   This is a diagnostic information, to ease the migration of an infrastructure to ``insecure: false``,
+   by detecting beforehand which devices would then be refused, for example by monitoring this header,
+   or by looking for it in the HTTP Proxy request logs. The same information is also logged to syslog,
+   see :ref:`http_proxy_tls_compliance` below.
+
+All the ``X-Bastion-Remote-Client-SSL-*`` headers are generated by the bastion itself:
+if the remote device sends such headers (including through HTML ``<meta http-equiv>`` tags), they're ignored.
+If the bastion followed redirects, they describe the TLS connection that returned the final answer.
+
+X-Bastion-Egress-Timing
+   Time spent, in microseconds, on the request between the bastion and the remote device.
+
+X-Bastion-Downgraded
+   Present and set to ``1`` when the bastion had to downgrade the connection to TLSv1.0,
+   see ``X-Bastion-Allow-Downgrade`` above.
+
+.. _http_proxy_tls_compliance:
+
+TLS compliance logs
+-------------------
+
+The bastion logs to syslog, with the ``info`` level, one line of type ``http-proxy-tls`` per TLS connection made
+to a remote device, regardless of the ``insecure`` option of the :doc:`/administration/configuration/osh-http-proxy_conf`.
+It tells whether this connection has been accepted or refused because of the remote device's certificate.
+When ``insecure`` is enabled, the certificate is not enforced, so the line tells instead whether the connection
+would have been accepted if ``insecure`` was disabled (the same verification as for the
+``X-Bastion-Remote-Client-SSL-Cert-Verify`` header described above). These lines also include the TLS version
+and cipher used, which can be used for compliance statistics.
+Note that there can be more than one such line per request, if the bastion had to downgrade the connection,
+or followed a redirect. Connections that failed for another reason than the certificate validity
+(e.g. connection refused, or no common TLS version or cipher) are not logged here.
+
+Each line contains the following fields, in addition to the usual ones (such as ``uniqid``, which can be used
+to find the corresponding request in the access logs):
+
+- ``account``, ``auth_mode``, ``user``: the account that did the request, how the egress credentials were chosen,
+  and the remote user
+- ``host``, ``ip``, ``port``: the remote device, as specified by the client, its resolved IP, and its port.
+  For a redirect followed by the bastion, these are the ones of the redirect target, so that each line describes
+  the device whose certificate has been verified (with ``allow_redirects`` set to ``any``, this can be another
+  device than the one the client asked for)
+- ``enforced``: ``1`` if the certificate validity was enforced (``insecure`` disabled, or ``X-Bastion-Enforce-Secure``
+  set by the client), ``0`` otherwise
+- ``verdict``: ``ok`` if the connection has been accepted (or, when ``enforced`` is ``0``, would have been accepted
+  if ``insecure`` was disabled), ``failed`` otherwise
+- ``reason``: why it has been (or would have been) refused, empty if ``verdict`` is ``ok``
+- ``ssl_version``, ``ssl_cipher``: the TLS version and cipher used for the connection, empty if it has been refused
+- ``cert_subject``, ``cert_issuer``: the subject and issuer of the certificate presented by the remote device,
+  empty if the connection has been refused
+- ``downgraded``: ``1`` if the bastion had to downgrade the connection to TLSv1.0, ``0`` otherwise
+
+For example, to list the remote devices that are (or would be, once ``insecure`` is disabled) refused:
+
+.. code-block:: shell
+
+   grep 'http-proxy-tls' /var/log/bastion/bastion.log | grep 'verdict="failed"' | grep -Eo 'host="[^"]*" ip="[^"]*" port="[^"]*"' | sort | uniq -c
+
 Access declaration
 ------------------
 
