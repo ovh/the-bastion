@@ -32,6 +32,8 @@ sub process_http_request {
     my $wantedResponseSize = 64;
     my $responseDelay      = 0;
     my $redirectTo;
+    my $htmlMetaSpoof;
+    my $duplicateContentType;
 
     # this is to get the unparsed body of the request, portion of code
     # taken from lib/perl/OVH/Bastion/ProxyHTTP.pm, more context available over there
@@ -55,6 +57,14 @@ sub process_http_request {
             # hold the response for N seconds, to keep the request in-flight on the proxy side
             ($responseDelay) = $headerTuple->[1] =~ /^(\d+)$/;
         }
+        elsif (lc $headerTuple->[0] eq 'x-test-html-meta-spoof') {
+            # answer with an HTML page whose <head> tries to inject Client-* headers through <meta http-equiv>
+            $htmlMetaSpoof = 1;
+        }
+        elsif (lc $headerTuple->[0] eq 'x-test-duplicate-content-type') {
+            # send the Content-Type header twice
+            $duplicateContentType = 1;
+        }
         elsif (lc $headerTuple->[0] eq 'x-test-redirect-to') {
             # answer with a redirect to the given URL, unless we're already being called on its path
             $redirectTo = $headerTuple->[1];
@@ -75,7 +85,22 @@ sub process_http_request {
     # delay the whole response if asked to (used by the graceful-reload test)
     sleep $responseDelay if $responseDelay;
 
+    if ($htmlMetaSpoof) {
+        my $html = '<html><head>'
+          . '<meta http-equiv="Client-SSL-Cert-Verify" content="OK SPOOFED">'
+          . '<meta http-equiv="Client-SSL-Cipher" content="SPOOFED">'
+          . '<meta http-equiv="Client-SSL-Warning" content="SPOOFED">'
+          . '<meta http-equiv="Client-Warning" content="Internal response">'
+          . '</head><body>meta spoof</body></html>' . "\n";
+        print "Content-type: text/html\n" if !$hasContentType;
+        print "Content-Length: ".length($html)."\n\n";
+        print $html;
+        close(STDOUT);
+        return;
+    }
+
     print "Content-type: text/plain\n" if !$hasContentType;
+    print "Content-type: text/plain\n" if $duplicateContentType;
 
     # if the request had a body, include it verbatim in our answer
     if ($content) {

@@ -322,13 +322,60 @@ testsuite_proxy()
     contain 'X-Bastion-Request-Length: 0'
     contain 'X-Bastion-Auth-Mode: self/default'
     contain 'X-Bastion-Local-Status: 200 OK'
-    contain "X-Bastion-Remote-Client-SSL-Cert-Subject: "
+    contain "X-Bastion-Remote-Client-SSL-Cert-Subject: /CN=testcert"
+    contain "X-Bastion-Remote-Client-SSL-Cert-Issuer: /CN=testcert"
     contain "X-Bastion-Remote-Client-SSL-Cipher: "
+    contain REGEX "X-Bastion-Remote-Client-SSL-Version: TLSv1_[23]"
     contain "X-Bastion-Remote-Client-SSL-Warning: Peer certificate not verified"
+    nocontain "X-Bastion-Remote-Client-SSL-Socket-Class"
     contain "X-Bastion-Remote-Status: 200"
     contain "X-Bastion-Remote-Server: Net::Server::HTTP/"
     contain "X-Bastion-Egress-Timing: "
     contain "Content-Length: 64"
+
+    # the device must not be able to spoof the Client-SSL-* headers LWP generates (https egress):
+    # the ones LWP sets must have their real value, and the device's Client-SSL-Warning must not be appended
+    script client_ssl_spoof_https "curl -m $default_timeout -ski -H 'X-Test-Add-Response-Header-Client-SSL-Cipher: SPOOFED' -H 'X-Test-Add-Response-Header-Client-SSL-Cert-Subject: /CN=SPOOFED' -H 'X-Test-Add-Response-Header-Client-SSL-Cert-Issuer: /CN=SPOOFED' -H 'X-Test-Add-Response-Header-Client-SSL-Version: SPOOFED' -H 'X-Test-Add-Response-Header-Client-SSL-Warning: SPOOFED' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 200 OK"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain "X-Bastion-Remote-Client-SSL-Cert-Subject: /CN=testcert"
+    contain "X-Bastion-Remote-Client-SSL-Cert-Issuer: /CN=testcert"
+    contain REGEX "X-Bastion-Remote-Client-SSL-Version: TLSv1_[23]"
+    contain "X-Bastion-Remote-Client-SSL-Warning: Peer certificate not verified"
+    nocontain "SPOOFED"
+
+    # the device must not be able to fake an LWP-internal response either (Client-Warning is used by our
+    # downgrade logic): with a fake TLS-like error and a spoofed Client-Warning, we must not downgrade
+    script client_warning_spoof "curl -m $default_timeout -ski -H 'X-Bastion-Allow-Downgrade: 1' -H 'X-Test-Add-Response-Header-Status: 500 fake error:0A000102:SSL routines::unsupported protocol' -H 'X-Test-Add-Response-Header-Client-Warning: Internal response' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 500 fake error"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain 'X-Bastion-Remote-Status: 500 fake error'
+    nocontain 'X-Bastion-Downgraded'
+
+    # same, with the Client-Warning injected through a <meta http-equiv> tag of an HTML answer
+    script client_warning_meta_spoof "curl -m $default_timeout -ski -H 'X-Bastion-Allow-Downgrade: 1' -H 'X-Test-Html-Meta-Spoof: 1' -H 'X-Test-Add-Response-Header-Status: 500 fake error:0A000102:SSL routines::unsupported protocol' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 500 fake error"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain 'X-Bastion-Remote-Status: 500 fake error'
+    contain "X-Bastion-Remote-Client-SSL-Warning: Peer certificate not verified"
+    nocontain 'X-Bastion-Downgraded'
+    # the SPOOFED values are in the body of the device's answer, but must not appear in any header
+    nocontain '^X-Bastion-Remote-Client-SSL-[^:]+: .*SPOOFED'
+
+    # a header sent twice by the device must not break our answer
+    script duplicate_content_type "curl -m $default_timeout -ski -H 'X-Test-Duplicate-Content-Type: 1' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 200 OK"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain 'X-Bastion-Remote-Status: 200'
+    contain 'Content-Type: text/plain, text/plain'
 
     # generate 1MB of data
     script one_megabyte "curl -m $default_timeout -vki -H 'X-Test-Add-Response-Header-Content-Type: application/json' -H 'X-Test-Wanted-Response-Size: 1000000' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
@@ -592,6 +639,25 @@ testsuite_proxy()
     nocontain 'WWW-Authenticate: '
     nocontain "X-Bastion-Remote-Client-SSL"
     contain 'SSH-2.0'
+
+    # with plain http egress, LWP sets no Client-SSL-* header, so the device must not be able to make it
+    # look like the connection was encrypted by sending its own
+    script client_ssl_spoof_http "curl -m $default_timeout -ski -H 'X-Bastion-Egress-Protocol: http' -H 'X-Test-Add-Response-Header-Client-SSL-Cipher: SPOOFED' -H 'X-Test-Add-Response-Header-Client-SSL-Cert-Subject: /CN=SPOOFED' -H 'X-Test-Add-Response-Header-Client-SSL-Version: SPOOFED' -H 'X-Test-Add-Response-Header-Client-SSL-Warning: SPOOFED' -u '$account0@test@127.0.0.1%9080:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain 'HTTP/1.0 200 OK'
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    nocontain "X-Bastion-Remote-Client-SSL"
+    nocontain "SPOOFED"
+
+    # same, through <meta http-equiv> tags of an HTML answer
+    script client_ssl_meta_spoof_http "curl -m $default_timeout -ski -H 'X-Bastion-Egress-Protocol: http' -H 'X-Test-Html-Meta-Spoof: 1' -u '$account0@test@127.0.0.1%9080:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain 'HTTP/1.0 200'
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain 'meta spoof'
+    nocontain "X-Bastion-Remote-Client-SSL"
 
     # take this opportunity to test the remote-host header (otherwise, call is the same as above)
     script allowed_http_egress_test_host "curl -m $default_timeout -vki -H 'X-Bastion-Egress-Protocol: http' -u '$account0@test@localhost%22:$proxy_password' https://$remote_ip:$remote_proxy_port/test 2>&1 | cat; exit \${PIPESTATUS[0]}"
