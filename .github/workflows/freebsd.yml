@@ -52,7 +52,11 @@ jobs:
           # try to do over ssh won't complete due to our modified ssh config
           sudo tar czf /opt/bastion/ssh_config.tar.gz $SSH_DIR/
           # setup bastion
-          sudo /opt/bastion/bin/admin/packages-check.sh -i
+          sudo /opt/bastion/bin/admin/packages-check.sh -i -s
+          # the FreeBSD syslog-ng package has no conf.d include directory: create it before the
+          # bastion install, so that it drops its syslog-ng config there, as it does on Linux
+          sudo mkdir -p /usr/local/etc/syslog-ng/conf.d
+          echo '@include "/usr/local/etc/syslog-ng/conf.d/*.conf"' | sudo tee -a /usr/local/etc/syslog-ng.conf
           sudo /opt/bastion/bin/admin/install-ttyrec.sh -s
           sudo /opt/bastion/bin/admin/install-yubico-piv-checker.sh -s
           sudo /opt/bastion/bin/admin/install-mkhash-helper.sh -s
