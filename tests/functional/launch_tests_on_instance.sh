@@ -550,6 +550,12 @@ run()
     # run the test
     if [ "$OS_FAMILY" = FreeBSD ]; then
         command script -q "$outdir/$basename.log" bash -c "set -f; $*; echo \$? > $outdir/$basename.retval ; sleep $sleepafter" >/dev/null 2>&1 || true
+        # When its stdin reaches EOF (which is immediate here, as our stdin is not a tty), FreeBSD's script(1)
+        # writes the pty's VEOF char (^D) to the pty, which echoes it back as "^D" followed by 2 backspaces
+        # (ECHOCTL is on by default), right before the first output of the command. As there's no option to
+        # prevent that, remove this echo from the log, otherwise e.g. a line that should start with "HTTP/"
+        # would start with "^D\b\bHTTP/".
+        perl -pi -e 's/^\^D\x08\x08//' "$outdir/$basename.log" || true
     else
         command script -q -c "set -f; $* ; echo \$? > $outdir/$basename.retval ; sleep $sleepafter" "$outdir/$basename.log" >/dev/null 2>&1 || true
         grep -Eva '^Script (started|done) on ' "$outdir/$basename.log" | sponge "$outdir/$basename.log" || true
