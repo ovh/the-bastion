@@ -452,6 +452,43 @@ sub egress_name_of {
     return $request->header('Host') // $request->uri->host;
 }
 
+# one entry per egress TLS connection attempted by our child (there can be several: downgrade retry, followed
+# redirects), describing whether it was (or, when insecure, would have been) accepted with a certificate verification
+# enforced, and which TLS version and cipher it used. This is sent back to our parent, which logs it to syslog
+# (type http-proxy-tls), to ease the migration to insecure=false, and for TLS compliance statistics.
+my @tls_compliance;
+
+# when secure, a connection refused because of an invalid certificate never reaches our _get_sock_info() wrapper,
+# as there's no established connection: LWP generates an internal error response instead. We record it from here.
+sub record_refused_tls_connection {
+    my $response = shift;
+    return if ($insecure || !$response || $response->code != 500 || !is_lwp_internal_response($response));
+    my $uri = $response->request ? $response->request->uri : undef;
+    return if (!$uri || $uri->scheme ne 'https');
+    # only record certificate verification failures: other errors (connection refused, timeouts, protocol
+    # or cipher mismatches, etc.) are not about the certificate validity. Not all LWP versions include the
+    # reason in the message, so also look at the last error of IO::Socket::SSL, which is set by the
+    # handshake that just failed in this very process
+    my $re       = qr/\b(certificate verify failed|hostname verification failed)\b/;
+    my ($reason) = $response->message =~ $re;
+    ($reason) = ($IO::Socket::SSL::SSL_ERROR // '') =~ $re if !$reason;
+    return if !$reason;
+    my $uri_host = $uri->host;
+    push @tls_compliance,
+      {
+        host         => egress_name_of($response->request),
+        ip           => (OVH::Bastion::is_valid_ip(ip => $uri_host, fast => 1) ? $uri_host : ''),
+        port         => $uri->port,
+        verdict      => 'failed',
+        reason       => $reason,
+        ssl_version  => '',
+        ssl_cipher   => '',
+        cert_subject => '',
+        cert_issuer  => '',
+      };
+    return;
+}
+
 ## no critic (TestingAndDebugging::ProhibitNoWarnings, Variables::ProtectPrivateVars)
 {
     no warnings 'redefine';
@@ -470,24 +507,40 @@ sub egress_name_of {
         my %conn = (headers => {});
         $response->{$EGRESS_CONN_KEY} = \%conn;
 
-        # when insecure, record whether the connection would have been accepted if insecure was false
-        # (see where $cert_chain_error is set for details). We do it here because this is called
-        # for the socket of each response, which also covers the downgrade retry and the followed redirects.
-        # The certificate is checked against the name the request was meant for, which can differ between
-        # the requests of a redirect chain.
-        if ($insecure && $sock->can('verify_hostname')) {
-            my $name = egress_name_of($response->request);
+        # record the TLS details of each egress TLS connection, for our compliance logs. We do it here because this
+        # is called for the socket of each response, which also covers the downgrade retry and the followed redirects.
+        # When insecure, we also compute whether the connection would have been accepted if insecure was false
+        # (see where $cert_chain_error is set for details), and report it to our client. When secure, the connection
+        # wouldn't have been established if the certificate was invalid, so it's always OK here: the refused ones
+        # are recorded after the request, see record_refused_tls_connection().
+        if ($sock->can('verify_hostname')) {
             my $reason;
-            if (defined $ca_store_error) {
-                $reason = "no usable CA store: $ca_store_error";
+            my $name = egress_name_of($response->request);
+            if ($insecure) {
+                if (defined $ca_store_error) {
+                    $reason = "no usable CA store: $ca_store_error";
+                }
+                elsif (defined $cert_chain_error) {
+                    $reason = $cert_chain_error;
+                }
+                elsif (!$sock->verify_hostname($name, 'www')) {
+                    $reason = "certificate doesn't match $name";
+                }
+                $conn{'headers'}{'Client-SSL-Cert-Verify'} = defined $reason ? "FAILED ($reason)" : "OK";
             }
-            elsif (defined $cert_chain_error) {
-                $reason = $cert_chain_error;
-            }
-            elsif (!$sock->verify_hostname($name, 'www')) {
-                $reason = "certificate doesn't match $name";
-            }
-            $conn{'headers'}{'Client-SSL-Cert-Verify'} = defined $reason ? "FAILED ($reason)" : "OK";
+
+            push @tls_compliance,
+              {
+                host         => $name,
+                ip           => $sock->peerhost // '',
+                port         => $sock->peerport // '',
+                verdict      => defined $reason ? 'failed' : 'ok',
+                reason       => $reason                            // '',
+                ssl_version  => $sock->get_sslversion              // '',
+                ssl_cipher   => $sock->get_cipher                  // '',
+                cert_subject => $sock->peer_certificate('subject') // '',
+                cert_issuer  => $sock->peer_certificate('issuer')  // '',
+              };
         }
         undef $cert_chain_error;    # consumed, the next handshake (if any) will set it again if needed
         return @ret;
@@ -718,6 +771,7 @@ if ($childpid == 0) {
     # do the req a first time with defaults
     undef $cert_chain_error;
     $res = $ua->request($req);
+    record_refused_tls_connection($res);
 
     # if we get a HTTP/1.0 500 Can't connect to A.B.C.D:443 (SSL connect attempt failed error:1425F102:SSL routines:ssl_choose_client_version:unsupported protocol)
     # or SSL connect attempt failed error:0A000102:SSL routines::unsupported protocol
@@ -739,10 +793,20 @@ if ($childpid == 0) {
         }
         undef $cert_chain_error;    # don't let a failed handshake of the first attempt leak into this one
         $res = $ua->request($req);
+        record_refused_tls_connection($res);
     }
     # we can use freeze() instead of nfreeze() because the thaw() will be made by our parent,
     # which guarantees that we're using the same endianness, obviously
-    $pipe->print(freeze({res => $res, downgraded => $downgraded, denied_redirects => \@denied_redirects}));
+    $pipe->print(
+        freeze(
+            {
+                res              => $res,
+                downgraded       => $downgraded,
+                denied_redirects => \@denied_redirects,
+                tls_compliance   => \@tls_compliance,
+            }
+        )
+    );
     exit;
 }
 
@@ -796,6 +860,7 @@ if (!$timed_out) {
         $res              = $childresult->{'res'};
         $downgraded       = $childresult->{'downgraded'};
         @denied_redirects = @{$childresult->{'denied_redirects'} || []};
+        @tls_compliance   = @{$childresult->{'tls_compliance'}   || []};
     }
 
 }
@@ -906,6 +971,34 @@ push @headers, ["X-Bastion-Remote-Status" => $res->status_line]      if $res;
 push @headers, ["X-Bastion-Remote-Server" => $res->header('server')] if ($res && $res->header('server'));
 push @headers, ["X-Bastion-Egress-Timing" => sprintf("%d", $delay * 1_000_000)];
 push @headers, ["X-Bastion-Downgraded"    => 1] if $downgraded;
+
+# log one line per egress TLS connection, telling whether it was accepted (or, when insecure, would have been
+# accepted if insecure was false), along with the TLS version and cipher used. This way, an admin can easily find
+# the non-compliant devices before switching to insecure=false, e.g. with: grep 'http-proxy-tls' | grep
+# 'verdict="failed"', and get compliance stats on the TLS versions and ciphers used by the devices. The request
+# path is not logged here as it's not relevant for compliance: it can be found in the access log, through uniqid.
+foreach my $conn (@tls_compliance) {
+    OVH::Bastion::syslogFormatted(
+        criticity => 'info',
+        type      => 'http-proxy-tls',
+        fields    => [
+            ['account',      $account],
+            ['auth_mode',    $authmode],
+            ['user',         $user],
+            ['host',         $conn->{'host'}],
+            ['ip',           $conn->{'ip'}],
+            ['port',         $conn->{'port'}],
+            ['enforced',     $insecure ? 0 : 1],
+            ['verdict',      $conn->{'verdict'}],
+            ['reason',       $conn->{'reason'}],
+            ['ssl_version',  $conn->{'ssl_version'}],
+            ['ssl_cipher',   $conn->{'ssl_cipher'}],
+            ['cert_subject', $conn->{'cert_subject'}],
+            ['cert_issuer',  $conn->{'cert_issuer'}],
+            ['downgraded',   $downgraded ? 1 : 0],
+        ]
+    );
+}
 
 if ($res) {
     push @headers, ["X-Bastion-Local-Status" => "200 OK"];

@@ -162,6 +162,22 @@ testsuite_proxy_egress_tls()
     success egress_tls_config_restore $r0 "\"cp $opt_remote_etc_bastion/osh-http-proxy-methods.conf $opt_remote_etc_bastion/osh-http-proxy.conf\""
 }
 
+# get the http-proxy-tls syslog line(s) logged by the worker for the request of the previous test,
+# found through its X-Bastion-ReqID (which is the uniqid of the syslog lines), then use contain/nocontain on them.
+# With --consistency-check, the syslog file is truncated after each test, its previous content is kept in .prev
+testsuite_proxy_get_tls_syslog()
+{
+    local name="$1"
+    local reqid
+    reqid=$(get_stdout | grep -Eo 'X-Bastion-ReqID: [a-zA-Z0-9]+' | head -n1 | cut -d' ' -f2)
+    # if we didn't find any ReqID, use a value that can't match anything, so that the checks fail properly
+    [ -n "$reqid" ] || reqid=NO_REQID_FOUND
+    # base64-encode the remote command to avoid any quoting nightmare through ssh
+    local codeb64
+    codeb64=$(printf '%s' "grep -F http-proxy-tls /var/log/bastion/bastion.log | grep -E 'uniqid=.$reqid.'; true" | base64 -w0)
+    success "$name" $r0 "\"echo $codeb64 | base64 -d | sh\""
+}
+
 # set (or clear, if empty) the egress_ca_file option, starting from osh-http-proxy-methods.conf (or the given config)
 testsuite_proxy_set_egress_ca_file()
 {
@@ -195,6 +211,18 @@ testsuite_proxy_egress_ca_file()
     contain "X-Bastion-Remote-Client-SSL-Cert-Subject: /CN=localhost"
     contain "X-Bastion-Remote-Client-SSL-Cert-Issuer: /CN=Bastion Test CA"
     contain "X-Bastion-Remote-Client-SSL-Cert-Verify: FAILED (unable to get local issuer certificate)"
+    # the same verdict must have been logged to syslog, with the TLS version and cipher, for compliance stats
+    testsuite_proxy_get_tls_syslog egress_ca_unknown_syslog
+    contain 'enforced="0"'
+    contain 'verdict="failed"'
+    contain 'reason="unable to get local issuer certificate"'
+    contain 'host="localhost"'
+    contain 'ip="127.0.0.1"'
+    contain 'port="9446"'
+    contain REGEX 'ssl_version="TLSv1_[23]"'
+    contain REGEX 'ssl_cipher="[A-Z0-9_-]+"'
+    contain 'cert_subject="/CN=localhost"'
+    contain 'cert_issuer="/CN=Bastion Test CA"'
 
     # 2) now trust our test CA through egress_ca_file
     testsuite_proxy_set_egress_ca_file egress_ca_file_set /tmp/testca.crt
@@ -208,6 +236,10 @@ testsuite_proxy_egress_ca_file()
     contain 'X-Bastion-Local-Status: 200 OK'
     contain 'X-Bastion-Remote-Host: localhost'
     contain "X-Bastion-Remote-Client-SSL-Cert-Verify: OK"
+    testsuite_proxy_get_tls_syslog egress_ca_valid_by_name_syslog
+    contain 'verdict="ok"'
+    contain 'reason=""'
+    contain 'host="localhost"'
 
     # insecure, valid chain, but reached by a name not in the certificate: we would have refused it if secure
     script egress_ca_name_mismatch "$curl_base -u '$account0@test@127.0.0.1%9446:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
@@ -215,6 +247,9 @@ testsuite_proxy_egress_ca_file()
     contain "HTTP/1.0 200 OK"
     testsuite_proxy_check_response
     contain "X-Bastion-Remote-Client-SSL-Cert-Verify: FAILED (certificate doesn't match 127.0.0.1)"
+    testsuite_proxy_get_tls_syslog egress_ca_name_mismatch_syslog
+    contain 'verdict="failed"'
+    contain "reason=\"certificate doesn't match 127.0.0.1\""
 
     # the self-signed device is still reported as invalid, even with our test CA trusted
     script egress_ca_selfsigned "$curl_base -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
@@ -234,6 +269,13 @@ testsuite_proxy_egress_ca_file()
     contain "X-Bastion-Remote-Status: 200"
     nocontain "X-Bastion-Remote-Client-SSL-Cert-Verify"
     nocontain "X-Bastion-Remote-Client-SSL-Warning"
+    # TLS connections are logged regardless of the insecure option: here, enforced and accepted
+    testsuite_proxy_get_tls_syslog egress_ca_secure_valid_syslog
+    contain 'enforced="1"'
+    contain 'verdict="ok"'
+    contain 'reason=""'
+    contain REGEX 'ssl_version="TLSv1_[23]"'
+    contain 'cert_issuer="/CN=Bastion Test CA"'
 
     # when secure, LWP doesn't set Client-SSL-Cert-Verify nor Client-SSL-Warning: the device must not be able
     # to inject them (nor any other Client-* header) through <meta http-equiv> tags in its HTML answer
@@ -256,6 +298,13 @@ testsuite_proxy_egress_ca_file()
     testsuite_proxy_check_response
     contain 'X-Bastion-Local-Status: 200 OK'
 
+    # the refused connection must also be logged, as it's precisely what an admin wants to know about
+    testsuite_proxy_get_tls_syslog egress_ca_secure_name_mismatch_syslog
+    contain 'enforced="1"'
+    contain 'verdict="failed"'
+    contain 'reason="hostname verification failed"'
+    contain 'ssl_version=""'
+
     # 4) an unreadable egress_ca_file must be refused (never silently fall back to the system CA store),
     # and must be logged to syslog for the admin
     testsuite_proxy_set_egress_ca_file egress_ca_file_missing /nonexistent/ca.crt
@@ -277,8 +326,8 @@ testsuite_proxy_egress_ca_file()
     contain '/nonexistent/ca.crt'
     contain "readable by the bastion accounts (checked as '$account0')"
 
-    # 5) with allow_redirects=any, a followed redirect to another name must be checked against this new name:
-    # start from 127.0.0.1 (name mismatch), then get redirected to localhost (valid)
+    # 5) with allow_redirects=any, a followed redirect to another name must be checked against this new name,
+    # and logged with it: start from 127.0.0.1 (name mismatch), then get redirected to localhost (valid)
     testsuite_proxy_set_egress_ca_file egress_ca_file_set_redirects_any /tmp/testca.crt osh-http-proxy-redirects-any.conf
     contain '"egress_ca_file": "/tmp/testca.crt",'
 
@@ -288,6 +337,9 @@ testsuite_proxy_egress_ca_file()
     testsuite_proxy_check_response
     contain "X-Bastion-Remote-Status: 200 OK"
     contain "X-Bastion-Remote-Client-SSL-Cert-Verify: OK"
+    testsuite_proxy_get_tls_syslog egress_ca_redirect_other_name_syslog
+    contain REGEX 'host="127\.0\.0\.1".*verdict="failed" reason="certificate doesn.t match 127\.0\.0\.1"'
+    contain REGEX 'host="localhost" ip="127\.0\.0\.1" port="9446" enforced="0" verdict="ok"'
 
     # same in secure mode: the first hop is refused, as its name doesn't match. The other way around, the
     # second hop must be refused, as it doesn't match 127.0.0.1, even if the first one (localhost) was valid
@@ -295,6 +347,9 @@ testsuite_proxy_egress_ca_file()
     retvalshouldbe 0
     contain "HTTP/1.0 500 Can't connect to 127.0.0.1:9446"
     testsuite_proxy_check_response
+    testsuite_proxy_get_tls_syslog egress_ca_secure_redirect_other_name_syslog
+    contain REGEX 'host="localhost" ip="127\.0\.0\.1" port="9446" enforced="1" verdict="ok"'
+    contain REGEX 'host="127\.0\.0\.1" ip="127\.0\.0\.1" port="9446" enforced="1" verdict="failed" reason="hostname verification failed"'
 
     # restore the config the subsequent tests expect
     success egress_ca_config_restore $r0 "\"cp $opt_remote_etc_bastion/osh-http-proxy-methods.conf $opt_remote_etc_bastion/osh-http-proxy.conf\""
@@ -450,6 +505,14 @@ testsuite_proxy()
     contain 'Content-Type: text/plain'
     contain "Can't connect to 127.0.0.1:9443"
     nocontain "X-Bastion-Remote-Client-SSL-Cert-Verify"
+
+    # the refused connection must be logged to syslog
+    testsuite_proxy_get_tls_syslog bad_certificate_syslog
+    contain 'enforced="1"'
+    contain 'verdict="failed"'
+    contain 'reason="certificate verify failed"'
+    contain 'host="127.0.0.1"'
+    contain 'port="9443"'
 
     script insecure "curl -m $default_timeout -vki -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
@@ -869,3 +932,4 @@ unset -f testsuite_proxy_set_egress_tls
 unset -f testsuite_proxy_egress_tls
 unset -f testsuite_proxy_set_egress_ca_file
 unset -f testsuite_proxy_egress_ca_file
+unset -f testsuite_proxy_get_tls_syslog
