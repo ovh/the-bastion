@@ -183,6 +183,7 @@ elif [ "$OS_FAMILY" = FreeBSD ]; then
             p5-common-sense p5-DateTime p5-Net-IP p5-DBD-SQLite p5-Net-Netmask lsof \
             p5-Term-ReadKey expect fping p5-Net-Server p5-CGI p5-LWP-Protocol-https \
             p5-Test-Deep p5-Term-ReadLine-Gnu p5-Text-Template"
+    [ "$opt_syslogng" = 1 ] && wanted_list="$wanted_list syslog-ng"
     install_cmd="pkg add"
     installed=""
     for i in $wanted_list

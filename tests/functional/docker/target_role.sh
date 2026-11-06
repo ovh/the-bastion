@@ -162,6 +162,13 @@ elif [ "$OS_FAMILY" = FreeBSD ]; then
     echo "Added a few local IP aliases"
     ifconfig "$nic"
 
+    if [ -x /usr/local/etc/rc.d/syslog-ng ] && [ -e /usr/local/etc/syslog-ng/conf.d/20-bastion.conf ]; then
+        # the default source of the FreeBSD syslog-ng config is named src, not s_src
+        sed_compat 's/s_src/src/' /usr/local/etc/syslog-ng/conf.d/20-bastion.conf
+        # syslog-ng replaces the base syslogd, which would otherwise keep /dev/klog and /var/run/log
+        /etc/rc.d/syslogd onestop || true
+    fi
+
     set +e
     for st in restart onestart
     do
