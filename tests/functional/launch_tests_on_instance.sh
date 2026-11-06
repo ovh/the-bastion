@@ -571,9 +571,11 @@ run()
         fail "BAD STRING" "(generic known-bad string found in output)"
     fi
 
-    # now run consistency check on the target, unless configured otherwise
+    # now run consistency check on the target, unless configured otherwise.
+    # it truncates the syslog file after each test, so we keep a copy of its previous content in bastion.log.prev,
+    # for the tests that need to look at what the test just before them has logged
     if [ "$opt_consistency_check" = 1 ]; then
-        if ! $r0 bash -c '/opt/bastion/bin/admin/check-consistency.pl ; echo _RETVAL_CC=$?= ; grep -Fw -e warn -e die -e code-warning /var/log/bastion/bastion.log | sed s/^/_SYSLOG=/ ; : > /var/log/bastion/bastion.log' >"$outdir/$basename.cc" 2>&1; then
+        if ! $r0 bash -c '/opt/bastion/bin/admin/check-consistency.pl ; echo _RETVAL_CC=$?= ; grep -Fw -e warn -e die -e code-warning /var/log/bastion/bastion.log | sed s/^/_SYSLOG=/ ; cp -f /var/log/bastion/bastion.log /var/log/bastion/bastion.log.prev ; : > /var/log/bastion/bastion.log' >"$outdir/$basename.cc" 2>&1; then
             fail "CONSISTENCY CHECK CALL FAILED"
         fi
         ccret=$(     grep _RETVAL_CC= "$outdir/$basename.cc" | cut -d= -f2 || true)

@@ -174,7 +174,7 @@ testsuite_proxy_get_tls_syslog()
     [ -n "$reqid" ] || reqid=NO_REQID_FOUND
     # base64-encode the remote command to avoid any quoting nightmare through ssh
     local codeb64
-    codeb64=$(printf '%s' "grep -F http-proxy-tls /var/log/bastion/bastion.log | grep -E 'uniqid=.$reqid.'; true" | base64 -w0)
+    codeb64=$(printf '%s' "cat /var/log/bastion/bastion.log.prev /var/log/bastion/bastion.log 2>/dev/null | grep -F http-proxy-tls | grep -E 'uniqid=.$reqid.'; true" | base64 -w0)
     success "$name" $r0 "\"echo $codeb64 | base64 -d | sh\""
 }
 
@@ -322,7 +322,7 @@ testsuite_proxy_egress_ca_file()
     nocontain 'X-Bastion-Remote-Status'
 
     # the warning must have reached the system logs
-    success egress_ca_missing_syslog $r0 "\"grep -F 'invalid egress_ca_file config value' /var/log/bastion/bastion.log | tail -n1\""
+    success egress_ca_missing_syslog $r0 "\"cat /var/log/bastion/bastion.log.prev /var/log/bastion/bastion.log 2>/dev/null | grep -F 'invalid egress_ca_file config value' | tail -n1\""
     contain '/nonexistent/ca.crt'
     contain "readable by the bastion accounts (checked as '$account0')"
 
