@@ -445,8 +445,8 @@ sub is_lwp_internal_response {
 
 # returns the name the given request is meant for, which is the one the certificate must be validated against
 # (and sent through SNI). Our requests always connect to the IP we've checked, but carry the Host header with the
-# name the client used. The redirects followed by LWP itself (allow_redirects=any) have no Host header, as LWP
-# removes it: they connect to the host of their URI, and this is their name
+# name the client used. The cross-origin redirects we follow (only with allow_redirects=any) have no Host header,
+# as we remove it: they connect to the host of their URI, and this is their name
 sub egress_name_of {
     my $request = shift;
     return $request->header('Host') // $request->uri->host;
@@ -580,12 +580,16 @@ $ua->timeout($timeout);
 $ua->protocols_allowed($config->{'allowed_egress_protocols'});
 
 # Redirects sent by the remote device: following them blindly would prevent us to check the new location
-# against the account's or group's ACLs. Depending on the allow_redirects policy:
-# - 'any': let our egress HTTP client follow them (GET/HEAD only)
-# - 'same-host': follow them ourselves, but only if they point to the same scheme, host and port
-#   (host-less redirects included), and always to the IP we've already checked. Otherwise, the 3xx answer
-#   is relayed to the client, with the target in X-Bastion-Remote-Location
-# - 'none': never follow them, the 3xx answer is relayed to the client as above
+# against the account's or group's ACLs. We always follow them ourselves (never through LWP's own redirect
+# handling, whose behavior changes between LWP versions), only for the methods LWP would redirect (GET/HEAD).
+# Depending on the allow_redirects policy:
+# - 'any': follow them, but only to a protocol listed in allowed_egress_protocols, and never from https to http.
+#   When the target is cross-origin (different scheme, host or port), the device password is not sent along
+# - 'same-host': follow them only if they point to the same scheme, host and port (host-less redirects included),
+#   and always to the IP we've already checked
+# - 'none': never follow them
+# When a redirect is not followed, the 3xx answer is relayed to the client, with the target in
+# X-Bastion-Remote-Location.
 my $allow_redirects = $config->{'allow_redirects'};
 my @denied_redirects;
 
@@ -617,40 +621,50 @@ my $not_same_host_reason = sub {
     return;
 };
 
-if ($allow_redirects ne 'any') {
+# disable LWP's own redirect handling, as it wouldn't check the target
+my $redirectable = $ua->requests_redirectable;
+$ua->requests_redirectable([]);
 
-    # disable LWP's own redirect handling, as it wouldn't check the target
-    my $redirectable = $ua->requests_redirectable;
-    $ua->requests_redirectable([]);
+$ua->add_handler(
+    response_redirect => sub {
+        my ($response) = @_;
+        my $to         = $redirect_target->($response) or return;
+        my $from       = $response->request->uri;
 
-    $ua->add_handler(
-        response_redirect => sub {
-            my ($response) = @_;
-            my $to         = $redirect_target->($response) or return;
-            my $from       = $response->request->uri;
+        my $deny = sub {
+            push @denied_redirects, {code => $response->code, from => "$from", to => "$to", reason => shift};
+            return;
+        };
 
-            my $deny = sub {
-                push @denied_redirects, {code => $response->code, from => "$from", to => "$to", reason => shift};
-                return;
-            };
+        return $deny->("allow_redirects is set to none") if $allow_redirects eq 'none';
 
-            return $deny->("allow_redirects is set to none") if $allow_redirects eq 'none';
+        my $reason = $not_same_host_reason->($from, $to);
+        return $deny->("not same-host: $reason") if ($reason && $allow_redirects ne 'any');
 
-            my $reason = $not_same_host_reason->($from, $to);
-            return $deny->("not same-host: $reason") if $reason;
+        my $to_scheme = lc($to->scheme // '');
+        return $deny->("protocol $to_scheme is not in allowed_egress_protocols")
+          if (not grep { $to_scheme eq lc } @{$config->{'allowed_egress_protocols'}});
+        return $deny->("https to http downgrade") if (lc($from->scheme) eq 'https' && $to_scheme eq 'http');
 
-            return $deny->("method " . $response->request->method . " is not redirectable")
-              if (not grep { $response->request->method eq $_ } @{$redirectable || []});
+        return $deny->("method " . $response->request->method . " is not redirectable")
+          if (not grep { $response->request->method eq $_ } @{$redirectable || []});
 
-            # build the new request, always to the IP we've checked (no new DNS resolution),
+        my $referral = $response->request->clone;
+        if (!$reason) {
+
+            # same-host: always to the IP we've checked (no new DNS resolution),
             # keeping the same headers (including the Host header, and the Authorization one)
-            my $referral = $response->request->clone;
             $to->host($remoteip);
-            $referral->uri($to);
-            return $referral;
         }
-    );
-}
+        else {
+            # cross-origin, only possible with allow_redirects=any: never send the device password
+            # to another scheme, host or port, and let LWP compute the Host header of the new target
+            $referral->remove_header('Authorization', 'Proxy-Authorization', 'Host');
+        }
+        $referral->uri($to);
+        return $referral;
+    }
+);
 
 # we connect to the IP we've checked against the access lists, but the certificate must be validated against
 # the name the client used to reach the device (and this name must be sent through SNI), as this is what

@@ -167,10 +167,13 @@
 #             The redirected request is always sent to the IP that has been checked against the access lists,
 #             and only ``GET`` and ``HEAD`` requests are redirected.
 #           - ``none``: redirects are never followed.
-#           - ``any``: all redirects are followed, regardless of their target. This is **strongly discouraged**:
-#             the redirected request, which includes the egress device password, might be sent to another host or port
+#           - ``any``: redirects are followed regardless of their target host and port, as long as their protocol
+#             is listed in ``allowed_egress_protocols``, and except ``https`` to ``http`` redirects, which are never
+#             followed. This is **strongly discouraged**: the redirected request might be sent to another host or port
 #             than the one that has been checked against the account's or group's access lists,
-#             and against the ``forbiddenNetworks`` configuration option.
+#             and against the ``forbiddenNetworks`` configuration option. The egress device password is only sent
+#             along when the redirect points to the same protocol, host and port as the original request.
+#             Only ``GET`` and ``HEAD`` requests are redirected.
 #
 #           When a redirect is not followed, the 3xx answer of the device is returned to the client, with the
 #           redirect target in the ``X-Bastion-Remote-Location`` header. The client can then do a new request

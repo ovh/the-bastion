@@ -37,6 +37,8 @@ sub process_http_request {
     my $redirectTo;
     my $htmlMetaSpoof;
     my $duplicateContentType;
+    my $requireAuth;
+    my $hasAuth;
 
     # this is to get the unparsed body of the request, portion of code
     # taken from lib/perl/OVH/Bastion/ProxyHTTP.pm, more context available over there
@@ -72,9 +74,20 @@ sub process_http_request {
             # answer with a redirect to the given URL, unless we're already being called on its path
             $redirectTo = $headerTuple->[1];
         }
+        elsif (lc $headerTuple->[0] eq 'x-test-require-auth') {
+            # answer 401 if we didn't get any Authorization header (used to check whether the proxy
+            # forwarded the device password along a followed redirect)
+            $requireAuth = 1;
+        }
+        elsif (lc $headerTuple->[0] eq 'authorization') {
+            $hasAuth = 1;
+        }
     }
 
-    if ($redirectTo) {
+    if ($requireAuth && !$hasAuth) {
+        print "Status: 401 Unauthorized\n";
+    }
+    elsif ($redirectTo) {
         # extract the path of the redirect target, which can be absolute or host-less
         my ($redirectPath) = $redirectTo =~ m{^(?:https?://[^/]+)?(/[^?]*)};
         if (!defined $redirectPath || ($ENV{'PATH_INFO'} // '') ne $redirectPath) {
