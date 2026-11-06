@@ -213,6 +213,8 @@ if [ "$WANT_HTTP_PROXY" = 1 ]; then
     # and two others with non-default redirect policies
     perl -pe 's{"allow_redirects":[^,]+(,?)$}{"allow_redirects":"any"$1}'  "$BASTION_ETC_DIR/osh-http-proxy.conf" > "$BASTION_ETC_DIR/osh-http-proxy-redirects-any.conf"
     perl -pe 's{"allow_redirects":[^,]+(,?)$}{"allow_redirects":"none"$1}' "$BASTION_ETC_DIR/osh-http-proxy.conf" > "$BASTION_ETC_DIR/osh-http-proxy-redirects-none.conf"
+    # and one with allow_redirects=any and both http and https allowed, to check that https => http is still refused
+    perl -pe 's{"allowed_egress_protocols":[^,]+(,?)$}{"allowed_egress_protocols":["http","https"]$1}' "$BASTION_ETC_DIR/osh-http-proxy-redirects-any.conf" > "$BASTION_ETC_DIR/osh-http-proxy-redirects-any-http.conf"
 
     # ensure the remote daemon is executable
     chmod 0755 "$basedir"/tests/functional/proxy/remote-daemon

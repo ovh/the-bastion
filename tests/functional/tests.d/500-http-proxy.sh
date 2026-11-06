@@ -341,15 +341,16 @@ testsuite_proxy_egress_ca_file()
     contain REGEX 'host="127\.0\.0\.1".*verdict="failed" reason="certificate doesn.t match 127\.0\.0\.1"'
     contain REGEX 'host="localhost" ip="127\.0\.0\.1" port="9446" enforced="0" verdict="ok"'
 
-    # same in secure mode: the first hop is refused, as its name doesn't match. The other way around, the
-    # second hop must be refused, as it doesn't match 127.0.0.1, even if the first one (localhost) was valid
-    script egress_ca_secure_redirect_other_name "$curl_base -H 'X-Bastion-Enforce-Secure: 1' -H 'X-Test-Redirect-To: https://127.0.0.1:9446/redirected' -u '$account0@test@localhost%9446:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    # same in secure mode, the other way around: the first hop (localhost) is valid, but the second hop must be
+    # refused, as its certificate doesn't match 127.0.0.2. Note that a redirect to 127.0.0.1 wouldn't do here: as it's
+    # the IP we've checked, it's same-host, so the request keeps the name used by the client (localhost)
+    script egress_ca_secure_redirect_other_name "$curl_base -H 'X-Bastion-Enforce-Secure: 1' -H 'X-Test-Redirect-To: https://127.0.0.2:9446/redirected' -u '$account0@test@localhost%9446:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
-    contain "HTTP/1.0 500 Can't connect to 127.0.0.1:9446"
+    contain "HTTP/1.0 500 Can't connect to 127.0.0.2:9446"
     testsuite_proxy_check_response
     testsuite_proxy_get_tls_syslog egress_ca_secure_redirect_other_name_syslog
     contain REGEX 'host="localhost" ip="127\.0\.0\.1" port="9446" enforced="1" verdict="ok"'
-    contain REGEX 'host="127\.0\.0\.1" ip="127\.0\.0\.1" port="9446" enforced="1" verdict="failed" reason="hostname verification failed"'
+    contain REGEX 'host="127\.0\.0\.2" ip="127\.0\.0\.2" port="9446" enforced="1" verdict="failed" reason="hostname verification failed"'
 
     # restore the config the subsequent tests expect
     success egress_ca_config_restore $r0 "\"cp $opt_remote_etc_bastion/osh-http-proxy-methods.conf $opt_remote_etc_bastion/osh-http-proxy.conf\""
@@ -814,12 +815,46 @@ testsuite_proxy()
     contain "Content-Length: 64"
     nocontain 'X-Bastion-Remote-Location: '
 
-    # but a redirect to a protocol not in allowed_egress_protocols must still be refused
-    script redirect_any_forbidden_protocol "curl -m $default_timeout -ski -H 'X-Test-Redirect-To: http://127.0.0.1:9080/redirected' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    # the device password must follow a same-origin redirect (the target requires it)...
+    script redirect_any_same_origin_auth "curl -m $default_timeout -ski -H 'X-Test-Require-Auth: 1' -H 'X-Test-Redirect-To: /redirected' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
-    contain "HTTP/1.0 500 Access to 'http' URIs has been disabled"
+    contain "HTTP/1.0 200 OK"
     testsuite_proxy_check_response
     contain 'X-Bastion-Local-Status: 200 OK'
+    contain "X-Bastion-Remote-Status: 200 OK"
+    nocontain 'X-Bastion-Remote-Location: '
+
+    # ... but must not be sent along a cross-origin one: the redirect is followed, and the target answers 401
+    script redirect_any_cross_origin_noauth "curl -m $default_timeout -ski -H 'X-Test-Require-Auth: 1' -H 'X-Test-Redirect-To: https://127.0.0.2:9443/redirected' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 401 Unauthorized"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain "X-Bastion-Remote-Status: 401 Unauthorized"
+    nocontain 'X-Bastion-Remote-Location: '
+
+    # but a redirect to a protocol not in allowed_egress_protocols must still be refused:
+    # it is not followed, and relayed to the client as is (whatever the LWP version)
+    script redirect_any_forbidden_protocol "curl -m $default_timeout -ski -H 'X-Test-Redirect-To: http://127.0.0.1:9080/redirected' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 302 Found"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain "X-Bastion-Remote-Status: 302 Found"
+    contain "X-Bastion-Remote-Location: http://127.0.0.1:9080/redirected"
+
+    # and so must a https => http redirect, even when http is in allowed_egress_protocols
+    success config_swap_redirects_any_http $r0 "\"cp $opt_remote_etc_bastion/osh-http-proxy-redirects-any-http.conf $opt_remote_etc_bastion/osh-http-proxy.conf\""
+
+    script redirect_any_https_to_http "curl -m $default_timeout -ski -H 'X-Test-Redirect-To: http://127.0.0.1:9080/redirected' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 302 Found"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain "X-Bastion-Remote-Status: 302 Found"
+    contain "X-Bastion-Remote-Location: http://127.0.0.1:9080/redirected"
+
+    success config_swap_redirects_any_back $r0 "\"cp $opt_remote_etc_bastion/osh-http-proxy-redirects-any.conf $opt_remote_etc_bastion/osh-http-proxy.conf\""
 
     # use a disallowed egress method
     script forbidden_egress_protocol "curl -m $default_timeout -vki -H 'X-Bastion-Egress-Protocol: http' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
