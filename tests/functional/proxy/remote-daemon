@@ -18,6 +18,9 @@ __PACKAGE__->run(
         # deterministic "unsupported protocol" error (see the http-proxy tests for details).
         # Specifying SSL_version explicitly overrides the system's openssl.cnf MinProtocol, if any.
         {port => 9445, proto => 'ssl', SSL_version => 'TLSv1', SSL_cipher_list => 'AES256-SHA:ECDHE-RSA-AES256-SHA:@SECLEVEL=0', SSL_honor_cipher_order => 1},
+        # a "properly configured" device, with a certificate for localhost (only) signed by a test CA,
+        # used to test the egress_ca_file option and the X-Bastion-Remote-Client-SSL-Cert-Verify header
+        {port => 9446, proto => 'ssl', SSL_key_file => '/tmp/testleaf.key', SSL_cert_file => '/tmp/testleaf.crt'},
     ],
     ipv => 4,
     SSL_key_file => "/tmp/selfsigned.key",

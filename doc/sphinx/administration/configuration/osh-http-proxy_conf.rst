@@ -22,6 +22,7 @@ These options modify the behavior of the HTTP Proxy, an optional module of The B
 - `ssl_key`_
 - `ciphers`_
 - `egress_ciphers`_
+- `egress_ca_file`_
 - `allow_downgrade`_
 - `downgraded_egress_ciphers`_
 - `insecure`_
@@ -118,6 +119,24 @@ to see what your system supports, an empty list leaves the choice to your openss
 values (system-dependent). Note that this only applies to TLS versions up to 1.2, TLS 1.3 ciphersuites
 are configured separately by OpenSSL and are not affected by this setting
 
+egress_ca_file
+**************
+
+:Type: ``string``
+
+:Default: ``""``
+
+:Example: ``"/etc/ssl/certs/my-internal-ca.pem"``
+
+Path to a file containing the CA certificates (PEM format) to verify the remote devices' certificates against
+(egress side). If empty, the system's default CA store is used. When specified, it's used instead of the
+system's default CA store, not in addition to it. As the egress requests are made under the identity
+of the bastion account doing the request, this file must be readable by all the bastion accounts
+(e.g. root:root with 0644 permissions). If this file is not readable, all the egress
+requests are refused (and a warning is logged to syslog), as we never silently fall back to the
+default CA store. Note that this is also used to compute the ``X-Bastion-Remote-Client-SSL-Cert-Verify``
+diagnostic header when ``insecure`` is enabled
+
 allow_downgrade
 ***************
 
@@ -146,7 +165,10 @@ insecure
 
 :Default: ``false``
 
-Whether to ignore SSL certificate verification for the connection between the bastion and the devices
+Whether to ignore SSL certificate verification for the connection between the bastion and the devices.
+Note that even when enabled, the certificate is still verified, but not enforced: the result of
+this verification is returned to the client through the ``X-Bastion-Remote-Client-SSL-Cert-Verify``
+header, which can help migrating to ``false`` by detecting beforehand which devices would be refused
 
 min_servers
 ***********

@@ -162,6 +162,144 @@ testsuite_proxy_egress_tls()
     success egress_tls_config_restore $r0 "\"cp $opt_remote_etc_bastion/osh-http-proxy-methods.conf $opt_remote_etc_bastion/osh-http-proxy.conf\""
 }
 
+# set (or clear, if empty) the egress_ca_file option, starting from osh-http-proxy-methods.conf (or the given config)
+testsuite_proxy_set_egress_ca_file()
+{
+    local name="$1" ca_file="$2" base_conf="${3:-osh-http-proxy-methods.conf}"
+    # same base64 trick as testsuite_proxy_set_egress_tls, to avoid any quoting nightmare through ssh
+    local code
+    code=$(cat <<EOF
+s{^"egress_ca_file":.*}{q{"egress_ca_file": "$ca_file",}}e;
+EOF
+)
+    local codeb64
+    codeb64=$(echo "$code" | base64 -w0)
+    success "$name" $r0 "\"echo $codeb64 | base64 -d > /tmp/proxyconf.pl && perl -p /tmp/proxyconf.pl $opt_remote_etc_bastion/$base_conf > $opt_remote_etc_bastion/osh-http-proxy.conf && rm -f /tmp/proxyconf.pl && grep -E '^.egress_ca_file.:' $opt_remote_etc_bastion/osh-http-proxy.conf; true\""
+}
+
+testsuite_proxy_egress_ca_file()
+{
+    local proxy_password="$1"
+    local curl_base="curl -m $default_timeout -ski"
+
+    # The fake remote server (tests/functional/proxy/remote-daemon) exposes, on 9446, a certificate for
+    # localhost only (not 127.0.0.1) signed by our test CA (/tmp/testca.crt), see tests/functional/docker/target_role.sh.
+    # Both names reach the same device, and are allowed for our account (which has access to 127.0.0.1)
+
+    # 1) insecure (the default of the tests), no egress_ca_file: the system CA store doesn't know our test CA
+    script egress_ca_unknown "$curl_base -u '$account0@test@localhost%9446:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 200 OK"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain "X-Bastion-Remote-Client-SSL-Cert-Subject: /CN=localhost"
+    contain "X-Bastion-Remote-Client-SSL-Cert-Issuer: /CN=Bastion Test CA"
+    contain "X-Bastion-Remote-Client-SSL-Cert-Verify: FAILED (unable to get local issuer certificate)"
+
+    # 2) now trust our test CA through egress_ca_file
+    testsuite_proxy_set_egress_ca_file egress_ca_file_set /tmp/testca.crt
+    contain '"egress_ca_file": "/tmp/testca.crt",'
+
+    # insecure, valid certificate, reached by the name it's been issued for: we would have accepted it if secure
+    script egress_ca_valid_by_name "$curl_base -u '$account0@test@localhost%9446:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 200 OK"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain 'X-Bastion-Remote-Host: localhost'
+    contain "X-Bastion-Remote-Client-SSL-Cert-Verify: OK"
+
+    # insecure, valid chain, but reached by a name not in the certificate: we would have refused it if secure
+    script egress_ca_name_mismatch "$curl_base -u '$account0@test@127.0.0.1%9446:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 200 OK"
+    testsuite_proxy_check_response
+    contain "X-Bastion-Remote-Client-SSL-Cert-Verify: FAILED (certificate doesn't match 127.0.0.1)"
+
+    # the self-signed device is still reported as invalid, even with our test CA trusted
+    script egress_ca_selfsigned "$curl_base -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 200 OK"
+    testsuite_proxy_check_response
+    contain REGEX "X-Bastion-Remote-Client-SSL-Cert-Verify: FAILED \(self[- ]signed certificate\)"
+
+    # 3) secure mode (enforced by the client): the diagnostic must match reality.
+    # The valid device must be accepted, which also proves that the certificate is checked against the name
+    # the client used (and that this name is sent through SNI), not against the IP we connect to
+    script egress_ca_secure_valid "$curl_base -H 'X-Bastion-Enforce-Secure: 1' -u '$account0@test@localhost%9446:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 200 OK"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain "X-Bastion-Remote-Status: 200"
+    nocontain "X-Bastion-Remote-Client-SSL-Cert-Verify"
+    nocontain "X-Bastion-Remote-Client-SSL-Warning"
+
+    # when secure, LWP doesn't set Client-SSL-Cert-Verify nor Client-SSL-Warning: the device must not be able
+    # to inject them (nor any other Client-* header) through <meta http-equiv> tags in its HTML answer
+    script egress_ca_secure_meta_spoof "$curl_base -H 'X-Bastion-Enforce-Secure: 1' -H 'X-Test-Html-Meta-Spoof: 1' -u '$account0@test@localhost%9446:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 200 OK"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain 'meta spoof'
+    contain "X-Bastion-Remote-Client-SSL-Cert-Issuer: /CN=Bastion Test CA"
+    contain REGEX "X-Bastion-Remote-Client-SSL-Cipher: [A-Z0-9_-]+"
+    nocontain "X-Bastion-Remote-Client-SSL-Cert-Verify"
+    nocontain "X-Bastion-Remote-Client-SSL-Warning"
+    nocontain "X-Bastion-Remote-Client-SSL-Cipher: SPOOFED"
+
+    # and the name mismatch must be refused, as the diagnostic above predicted
+    script egress_ca_secure_name_mismatch "$curl_base -H 'X-Bastion-Enforce-Secure: 1' -u '$account0@test@127.0.0.1%9446:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 500 Can't connect to 127.0.0.1:9446"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+
+    # 4) an unreadable egress_ca_file must be refused (never silently fall back to the system CA store),
+    # and must be logged to syslog for the admin
+    testsuite_proxy_set_egress_ca_file egress_ca_file_missing /nonexistent/ca.crt
+    contain '"egress_ca_file": "/nonexistent/ca.crt",'
+
+    success egress_ca_missing_syslog_mark $r0 "\"logger -t bastion-test MARK-egress-ca-missing\""
+    ignorecodewarn 'invalid egress_ca_file config value'
+    script egress_ca_missing "$curl_base -u '$account0@test@localhost%9446:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 500 Internal Error"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 500 Internal Error'
+    contain 'Configuration is invalid, please contact the bastion admin'
+    nocontain '/nonexistent/ca.crt'
+    nocontain 'X-Bastion-Remote-Status'
+
+    # the warning must have reached the system logs
+    success egress_ca_missing_syslog $r0 "\"grep -F 'invalid egress_ca_file config value' /var/log/bastion/bastion.log | tail -n1\""
+    contain '/nonexistent/ca.crt'
+    contain "readable by the bastion accounts (checked as '$account0')"
+
+    # 5) with allow_redirects=any, a followed redirect to another name must be checked against this new name:
+    # start from 127.0.0.1 (name mismatch), then get redirected to localhost (valid)
+    testsuite_proxy_set_egress_ca_file egress_ca_file_set_redirects_any /tmp/testca.crt osh-http-proxy-redirects-any.conf
+    contain '"egress_ca_file": "/tmp/testca.crt",'
+
+    script egress_ca_redirect_other_name "$curl_base -H 'X-Test-Redirect-To: https://localhost:9446/redirected' -u '$account0@test@127.0.0.1%9446:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 200 OK"
+    testsuite_proxy_check_response
+    contain "X-Bastion-Remote-Status: 200 OK"
+    contain "X-Bastion-Remote-Client-SSL-Cert-Verify: OK"
+
+    # same in secure mode: the first hop is refused, as its name doesn't match. The other way around, the
+    # second hop must be refused, as it doesn't match 127.0.0.1, even if the first one (localhost) was valid
+    script egress_ca_secure_redirect_other_name "$curl_base -H 'X-Bastion-Enforce-Secure: 1' -H 'X-Test-Redirect-To: https://127.0.0.1:9446/redirected' -u '$account0@test@localhost%9446:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 500 Can't connect to 127.0.0.1:9446"
+    testsuite_proxy_check_response
+
+    # restore the config the subsequent tests expect
+    success egress_ca_config_restore $r0 "\"cp $opt_remote_etc_bastion/osh-http-proxy-methods.conf $opt_remote_etc_bastion/osh-http-proxy.conf\""
+}
+
 testsuite_proxy()
 {
     # note: we use "curl | cat" to force curl to disable color output, to be grep friendly,
@@ -311,6 +449,7 @@ testsuite_proxy()
     contain 'X-Bastion-Local-Status: 200 OK'
     contain 'Content-Type: text/plain'
     contain "Can't connect to 127.0.0.1:9443"
+    nocontain "X-Bastion-Remote-Client-SSL-Cert-Verify"
 
     script insecure "curl -m $default_timeout -vki -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
@@ -328,6 +467,9 @@ testsuite_proxy()
     contain REGEX "X-Bastion-Remote-Client-SSL-Version: TLSv1_[23]"
     contain "X-Bastion-Remote-Client-SSL-Warning: Peer certificate not verified"
     nocontain "X-Bastion-Remote-Client-SSL-Socket-Class"
+    # insecure is enabled, but the remote certificate is self-signed: this would have been refused if it wasn't
+    # (OpenSSL 3 says "self-signed", older versions say "self signed")
+    contain REGEX "X-Bastion-Remote-Client-SSL-Cert-Verify: FAILED \(self[- ]signed certificate\)"
     contain "X-Bastion-Remote-Status: 200"
     contain "X-Bastion-Remote-Server: Net::Server::HTTP/"
     contain "X-Bastion-Egress-Timing: "
@@ -335,11 +477,12 @@ testsuite_proxy()
 
     # the device must not be able to spoof the Client-SSL-* headers LWP generates (https egress):
     # the ones LWP sets must have their real value, and the device's Client-SSL-Warning must not be appended
-    script client_ssl_spoof_https "curl -m $default_timeout -ski -H 'X-Test-Add-Response-Header-Client-SSL-Cipher: SPOOFED' -H 'X-Test-Add-Response-Header-Client-SSL-Cert-Subject: /CN=SPOOFED' -H 'X-Test-Add-Response-Header-Client-SSL-Cert-Issuer: /CN=SPOOFED' -H 'X-Test-Add-Response-Header-Client-SSL-Version: SPOOFED' -H 'X-Test-Add-Response-Header-Client-SSL-Warning: SPOOFED' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    script client_ssl_spoof_https "curl -m $default_timeout -ski -H 'X-Test-Add-Response-Header-Client-SSL-Cipher: SPOOFED' -H 'X-Test-Add-Response-Header-Client-SSL-Cert-Subject: /CN=SPOOFED' -H 'X-Test-Add-Response-Header-Client-SSL-Cert-Issuer: /CN=SPOOFED' -H 'X-Test-Add-Response-Header-Client-SSL-Version: SPOOFED' -H 'X-Test-Add-Response-Header-Client-SSL-Warning: SPOOFED' -H 'X-Test-Add-Response-Header-Client-SSL-Cert-Verify: OK SPOOFED' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain "HTTP/1.0 200 OK"
     testsuite_proxy_check_response
     contain 'X-Bastion-Local-Status: 200 OK'
+    contain REGEX "X-Bastion-Remote-Client-SSL-Cert-Verify: FAILED \(self[- ]signed certificate\)"
     contain "X-Bastion-Remote-Client-SSL-Cert-Subject: /CN=testcert"
     contain "X-Bastion-Remote-Client-SSL-Cert-Issuer: /CN=testcert"
     contain REGEX "X-Bastion-Remote-Client-SSL-Version: TLSv1_[23]"
@@ -363,6 +506,7 @@ testsuite_proxy()
     testsuite_proxy_check_response
     contain 'X-Bastion-Local-Status: 200 OK'
     contain 'X-Bastion-Remote-Status: 500 fake error'
+    contain REGEX "X-Bastion-Remote-Client-SSL-Cert-Verify: FAILED \(self[- ]signed certificate\)"
     contain "X-Bastion-Remote-Client-SSL-Warning: Peer certificate not verified"
     nocontain 'X-Bastion-Downgraded'
     # the SPOOFED values are in the body of the device's answer, but must not appear in any header
@@ -376,6 +520,16 @@ testsuite_proxy()
     contain 'X-Bastion-Local-Status: 200 OK'
     contain 'X-Bastion-Remote-Status: 200'
     contain 'Content-Type: text/plain, text/plain'
+
+    # the device is reached by name: SNI and the certificate check must use this name, not the resolved IP.
+    # The chain error is reported first, as it's what LWP would have failed on first.
+    script insecure_by_name "curl -m $default_timeout -ski -u '$account0@test@localhost%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 200 OK"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Remote-Host: localhost'
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain REGEX "X-Bastion-Remote-Client-SSL-Cert-Verify: FAILED \(self[- ]signed certificate\)"
 
     # generate 1MB of data
     script one_megabyte "curl -m $default_timeout -vki -H 'X-Test-Add-Response-Header-Content-Type: application/json' -H 'X-Test-Wanted-Response-Size: 1000000' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
@@ -615,6 +769,7 @@ testsuite_proxy()
     contain 'not allowed by policy'
 
     testsuite_proxy_egress_tls "$proxy_password"
+    testsuite_proxy_egress_ca_file "$proxy_password"
 
     # use alternate config to only allow http egress
     success config_swap $r0 "\"cp $opt_remote_etc_bastion/osh-http-proxy-httponly.conf $opt_remote_etc_bastion/osh-http-proxy.conf\""
@@ -642,7 +797,7 @@ testsuite_proxy()
 
     # with plain http egress, LWP sets no Client-SSL-* header, so the device must not be able to make it
     # look like the connection was encrypted by sending its own
-    script client_ssl_spoof_http "curl -m $default_timeout -ski -H 'X-Bastion-Egress-Protocol: http' -H 'X-Test-Add-Response-Header-Client-SSL-Cipher: SPOOFED' -H 'X-Test-Add-Response-Header-Client-SSL-Cert-Subject: /CN=SPOOFED' -H 'X-Test-Add-Response-Header-Client-SSL-Version: SPOOFED' -H 'X-Test-Add-Response-Header-Client-SSL-Warning: SPOOFED' -u '$account0@test@127.0.0.1%9080:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    script client_ssl_spoof_http "curl -m $default_timeout -ski -H 'X-Bastion-Egress-Protocol: http' -H 'X-Test-Add-Response-Header-Client-SSL-Cipher: SPOOFED' -H 'X-Test-Add-Response-Header-Client-SSL-Cert-Subject: /CN=SPOOFED' -H 'X-Test-Add-Response-Header-Client-SSL-Version: SPOOFED' -H 'X-Test-Add-Response-Header-Client-SSL-Warning: SPOOFED' -H 'X-Test-Add-Response-Header-Client-SSL-Cert-Verify: OK SPOOFED' -u '$account0@test@127.0.0.1%9080:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain 'HTTP/1.0 200 OK'
     testsuite_proxy_check_response
@@ -712,3 +867,5 @@ unset -f testsuite_proxy
 unset -f testsuite_proxy_check_response
 unset -f testsuite_proxy_set_egress_tls
 unset -f testsuite_proxy_egress_tls
+unset -f testsuite_proxy_set_egress_ca_file
+unset -f testsuite_proxy_egress_ca_file
