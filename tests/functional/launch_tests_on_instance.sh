@@ -794,6 +794,21 @@ _configsetquoted()
     success $label $runner perl -pe 's=^\\\\x22'"$key"'\\\\x22[^,]+=\\\\x22'"$key"'\\\\x22:\\\\x22'"$value"'\\\\x22=' -i "$opt_remote_etc_bastion/bastion.conf"
 }
 
+# configsetjson key json: set a raw JSON value, e.g.
+# `configsetjson pluginRestrictions '[{"accounts":["johndoe"],"plugins":["groupCreate"],"resources":{"group":"^test$"}}]'`
+configsetjson() { _configsetjson "$r0" "$@"; }
+# same as configsetjson, but operates on the second bastion instance (see $r2)
+configsetjson2() { _configsetjson "$r2" "$@"; }
+_configsetjson()
+{
+    local runner=$1 key=$2 json=$3 label=configset val
+    [ "$runner" = "${r2:-}" ] && label=configset2
+    # hex-escape everything that isn't alphanumeric, so that none of the shell layers the JSON
+    # goes through before reaching perl can interpret it (see configchg above)
+    val=$(perl -e '$_ = shift; s{([^A-Za-z0-9_-])}{sprintf("\\\\\\\\x%02x", ord($1))}ge; print' "$json")
+    success $label $runner perl -pe 's=^\\\\x22'"$key"'\\\\x22.+=\\\\x22'"$key"'\\\\x22:'"$val"',=' -i "$opt_remote_etc_bastion/bastion.conf"
+}
+
 # configsetarray key [elem...]: set a JSON array of strings, e.g. `configsetarray adminAccounts a1 a2`
 # or `configsetarray superOwnerAccounts` for an empty array.
 configsetarray() { _configsetarray "$r0" "$@"; }
