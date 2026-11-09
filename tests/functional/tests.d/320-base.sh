@@ -41,6 +41,14 @@ testsuite_base()
     nocontain "My super owners are: "
     json .error_code OK .command info .value.account $account1
 
+    # check the detected+allowed key algorithms, sk ones must never be listed for egress
+    local algos="rsa ecdsa"
+    [ "${capabilities[ed25519]}" = 1 ] && algos="$algos ed25519"
+    json --splitsort .value.egress_ssh_key_algorithms "$algos"
+    if [ "${capabilities[sk]}" = 1 ]; then
+        json --splitsort .value.ingress_ssh_key_algorithms "$algos ecdsa-sk ed25519-sk"
+    fi
+
     # now check that an admin can see the admins/superowners
     success   info $a0 -osh info
     contain "Your alias to connect"
