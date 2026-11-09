@@ -27,6 +27,47 @@ See the ``--help`` for a more fine-grained upgrade path if needed.
 Version-specific upgrade instructions
 =====================================
 
+v3.25.00 - 2026/11/09
+*********************
+
+The ``Text::Template`` perl module is now required. Install it with :file:`bin/admin/packages-check.sh -i`
+before running the install script. If you install the dependencies through other means, the package is named
+``libtext-template-perl`` on Debian and Ubuntu, ``perl-Text-Template`` on RHEL-like and SUSE-like distros,
+and ``p5-Text-Template`` on FreeBSD.
+
+Ubuntu 20.04 and OpenSUSE Leap 15.x are no longer supported, as they're EOL.
+Rocky Linux 10, Ubuntu 26.04 and OpenSUSE Leap 16.0 are now supported.
+
+All the remaining notes below are about the HTTP Proxy, you can ignore them if you're not using it.
+
+With the HTTP Proxy, on the egress side, the remote devices' redirects are no longer followed by default. The new
+``allow_redirects`` option of :file:`/etc/bastion/osh-http-proxy.conf` defaults to ``same-host``. With this setting, a
+redirect is followed only if it points to the same scheme, host and port as the original request. Otherwise, the 3xx
+answer is relayed to the client, with the redirect target in the ``X-Bastion-Remote-Location`` header.
+You can also set ``any`` to follow redirects regardless of their target host and port, this is discouraged.
+The new ``egress_ciphers``, ``allow_downgrade`` and ``downgraded_egress_ciphers`` options have also been added;
+their defaults keep the previous behavior.
+
+Still on the HTTP Proxy, when the client reaches a device by its hostname (and not its IP), the device's certificate
+is now verified against this hostname, which is also sent through SNI. Previously, it was verified against the IP
+the hostname resolved to, without SNI, so with ``insecure: false``, devices with a certificate valid for their
+hostname (but not listing their IP) were refused: they're now accepted, which is what clients expect.
+Conversely, a device reached by its hostname whose certificate only lists its IP would now be refused,
+which should be quite uncommon. Devices reached by their IP are not affected.
+
+If you're using ``insecure: true``, consider monitoring the new ``X-Bastion-Remote-Client-SSL-Cert-Verify`` header
+returned to your clients: it tells, for each request, whether the device's certificate would have been accepted with
+``insecure: false``. The same information is logged to syslog, as ``http-proxy-tls`` lines with the ``info`` level,
+for each egress TLS connection (regardless of the ``insecure`` option): you can for example list the non-compliant
+devices with ``grep http-proxy-tls /var/log/bastion/bastion.log | grep 'verdict="failed"'``, see
+:ref:`http_proxy_tls_compliance` for details. Note that this adds one syslog line per egress TLS connection, which you
+might want to take into account if you have a high volume of HTTPS Proxy requests.
+Once no request reports ``FAILED`` anymore, you can switch to ``insecure: false`` without fear of disruption.
+If your devices use certificates issued by an internal CA, use the new ``egress_ca_file`` option
+to point to this CA: note that it replaces the system's default CA store (it's not added to it), that it must be
+readable by all the bastion accounts (as the egress requests are made under their identity), and that if this
+file can't be read, all egress requests are refused and a warning is logged to syslog.
+
 v3.24.01 - 2026/07/08
 *********************
 

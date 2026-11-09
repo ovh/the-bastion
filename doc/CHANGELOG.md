@@ -1,3 +1,32 @@
+## v3.25.00 - 2026/11/09
+- chg: support: add Rocky Linux 10, Ubuntu 26.04 and OpenSUSE Leap 16.0, remove Ubuntu 20.04 and OpenSUSE Leap 15.x
+- enh: http proxy: deny non-same-host redirects by default (configurable with the ``allow_redirects`` option)
+- enh: http proxy: support specifying an egress cipher list and disabling downgrade
+- enh: http proxy: also return the egress TLS version and certificate issuer to the client
+- enh: http proxy: verify the egress certificate even when insecure, and report the result to the client
+- enh: http proxy: add the ``egress_ca_file`` option
+- enh: http proxy: log the TLS compliance of each egress connection to syslog
+- enh: make scp and rsync more robust and add tests
+- enh: realm: more robust parsing of ``LC_BASTION_DETAILS`` for cross-realm connections
+- enh: realm: deny non-PIV connections on ``LC_BASTION_DETAILS`` unmarshal failure
+- enh: install: tailored ``ssh(d)_config`` files at runtime, update ``pam.d`` templates
+- enh: sudoers: add basepath templating to account for non-``/opt/bastion`` installs
+- enh: ``setup-first-admin-account.sh``: check that the install script has run before (#346)
+- fix: groupListGuestAccesses: check caller gatekeepership
+- fix: http proxy: ignore ``Client-*`` headers sent by the remote device
+- fix: http proxy: verify the egress certificate against the name used by the client, and send it through SNI
+- fix: http proxy: duplicate response sometimes sent on error
+- fix: http proxy: a response header sent twice by the remote device made the request fail
+- fix: http proxy: up max number of workers from 512 to 8192
+- fix: ``accountDelete``: race condition where JSON output could be swallowed
+- fix: ``accountList``: bad JSON return code when the no-longer supported option ``--realm-only`` was specified
+- fix: interactive: last autocompletion rule was never applied
+- fix: perl-tidy: don't leave .tdy/.ERR files behind
+- doc: add a note about ``/home`` being a separate partition
+- doc: fix the ``CVE-2025-59339`` timeline dates
+- chore: tests: add missing functional tests for some plugins, systematically validate that tests return JSON
+- chore: tests: enable FreeBSD tests for HTTP Proxy and jumphost, drop FreeBSD 15.0
+
 ## v3.24.01 - 2026/07/08
 - enh: use /dev/urandom instead of rand()
 - fix: setup-encryption: move the banner seal service setup to the install script (#653)
