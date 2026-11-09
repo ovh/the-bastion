@@ -637,9 +637,11 @@ sub get_supported_ssh_algorithms_list {
         $fnret = OVH::Bastion::execute(cmd => [qw{ ssh -Q key }]);
         if ($fnret) {
             my @algos = @{$fnret->value->{'stdout'} || []};
-            push @supportedList, 'rsa'     if first { $_ eq 'ssh-rsa' } @algos;
-            push @supportedList, 'ecdsa'   if first { /^ecdsa-sha2-nistp/ } @algos;
-            push @supportedList, 'ed25519' if first { $_ eq 'ssh-ed25519' } @algos;
+            push @supportedList, 'rsa'        if first { $_ eq 'ssh-rsa' } @algos;
+            push @supportedList, 'ecdsa'      if first { /^ecdsa-sha2-nistp/ } @algos;
+            push @supportedList, 'ed25519'    if first { $_ eq 'ssh-ed25519' } @algos;
+            push @supportedList, 'ecdsa-sk'   if first { $_ eq 'sk-ecdsa-sha2-nistp256@openssh.com' } @algos;
+            push @supportedList, 'ed25519-sk' if first { $_ eq 'sk-ssh-ed25519@openssh.com' } @algos;
             @cached_runtime_list = @supportedList;
         }
         else {
