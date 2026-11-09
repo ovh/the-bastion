@@ -124,61 +124,68 @@ testsuite_proxyjump_connect()
     # passed to the bastion, even with interleaved quoting" contract specifically for the proxy-jump path.
     # The far end (test-shell_ on the remoteserver) runs /bin/sh, just like 340's shellaccount, so the
     # quoting must resolve identically.
+    # On FreeBSD, use the bastion's -T to record these noninteractive commands through pipes. FreeBSD
+    # revokes the controlling terminal when the egress ssh exits, which can flush command output before
+    # ttyrec reads it. The connection test above still exercises the default ttyrec terminal mode.
+    local escape_tty_option=""
+    if [ "$OS_FAMILY" = FreeBSD ]; then
+        escape_tty_option="-T"
+    fi
 
     # baseline: a plain echo survives the double hop intact
-    success pj_echo_simple $a1 -J jump_@$jhip:$jhport test-shell_@$rsip -- echo $randomstr
+    success pj_echo_simple $a1 $escape_tty_option -J jump_@$jhip:$jhport test-shell_@$rsip -- echo $randomstr
     contain "$randomstr"
     nocontain "Permission denied"
 
     # --always-escape
-    success pj_escapehell1ae $a1 --always-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "\"echo 'test1;test1' ; id\""
+    success pj_escapehell1ae $a1 $escape_tty_option --always-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "\"echo 'test1;test1' ; id\""
     contain "'test1"
     contain 'uid='
     contain REGEX "test1': (command )?not found"
     nocontain 'test1;test1'
 
-    success pj_escapehell2ae $a1 --always-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "'echo \"test1;test1\" ; id'"
+    success pj_escapehell2ae $a1 $escape_tty_option --always-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "'echo \"test1;test1\" ; id'"
     contain "test1;test1"
     contain 'uid='
     nocontain 'not found'
 
-    success pj_escapehell3ae $a1 --always-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "'echo \\\"test1;test1\\\" ; id'"
+    success pj_escapehell3ae $a1 $escape_tty_option --always-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "'echo \\\"test1;test1\\\" ; id'"
     contain '"test1'
     contain 'uid='
     contain REGEX 'test1": (command )?not found'
 
-    success pj_escapehell4ae $a1 --always-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "\"echo \\\"test1;test1\\\" ; id\""
+    success pj_escapehell4ae $a1 $escape_tty_option --always-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "\"echo \\\"test1;test1\\\" ; id\""
     contain 'test1;test1'
     contain 'uid='
     nocontain 'not found'
 
-    success pj_escapehell5ae $a1 --always-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "\"echo \\\"test1';'test1\\\" ; id\""
+    success pj_escapehell5ae $a1 $escape_tty_option --always-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "\"echo \\\"test1';'test1\\\" ; id\""
     contain "test1\\';\\'test1"
     contain 'uid='
     nocontain 'not found'
 
     # --never-escape
-    success pj_escapehell1ne $a1 --never-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "\"echo 'test1;test1' ; id\""
+    success pj_escapehell1ne $a1 $escape_tty_option --never-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "\"echo 'test1;test1' ; id\""
     contain "test1;test1"
     contain 'uid='
     nocontain 'not found'
 
-    success pj_escapehell2ne $a1 --never-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "'echo \"test1;test1\" ; id'"
+    success pj_escapehell2ne $a1 $escape_tty_option --never-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "'echo \"test1;test1\" ; id'"
     contain "test1;test1"
     contain 'uid='
     nocontain 'not found'
 
-    success pj_escapehell3ne $a1 --never-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "'echo \\\"test1;test1\\\" ; id'"
+    success pj_escapehell3ne $a1 $escape_tty_option --never-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "'echo \\\"test1;test1\\\" ; id'"
     contain '"test1'
     contain 'uid='
     contain REGEX 'test1": (command )?not found'
 
-    success pj_escapehell4ne $a1 --never-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "\"echo \\\"test1;test1\\\" ; id\""
+    success pj_escapehell4ne $a1 $escape_tty_option --never-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "\"echo \\\"test1;test1\\\" ; id\""
     contain 'test1;test1'
     contain 'uid='
     nocontain 'not found'
 
-    success pj_escapehell5ne $a1 --never-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "\"echo \\\"test1';'test1\\\" ; id\""
+    success pj_escapehell5ne $a1 $escape_tty_option --never-escape -J jump_@$jhip:$jhport test-shell_@$rsip -- "\"echo \\\"test1';'test1\\\" ; id\""
     contain "test1';'test1"
     contain 'uid='
     nocontain 'not found'
