@@ -373,7 +373,6 @@ testsuite_proxy_egress_ca_file()
     testsuite_proxy_set_egress_ca_file egress_ca_file_missing /nonexistent/ca.crt
     contain '"egress_ca_file": "/nonexistent/ca.crt",'
 
-    success egress_ca_missing_syslog_mark $r0 "\"logger -t bastion-test MARK-egress-ca-missing\""
     ignorecodewarn 'invalid egress_ca_file config value'
     script egress_ca_missing "$curl_base -u '$account0@test@localhost%9446:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
