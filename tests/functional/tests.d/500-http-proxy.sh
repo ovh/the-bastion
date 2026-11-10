@@ -60,6 +60,9 @@ testsuite_proxy_egress_tls()
     # The fake remote server (tests/functional/proxy/remote-daemon) exposes:
     # - 9444: TLSv1.2-only, honoring the client's cipher order
     # - 9445: TLSv1.0-only "old device", preferring AES256-SHA (RSA kx), also accepting ECDHE-RSA-AES256-SHA
+    # - 9447: TLSv1.2-only, only accepting AES256-SHA, which is not in our egress_ciphers below
+    # - 9448: TLSv1.0-only "old device", only accepting ECDHE-RSA-AES256-SHA, which is in our egress_ciphers
+    #         but not in our downgraded_egress_ciphers below
     #
     # To get a deterministic "unsupported protocol" error from the TLSv1.0 device regardless of the distro's
     # openssl.cnf, we restrict egress_ciphers to two ECDHE ciphers with @SECLEVEL=3, which forbids TLS < 1.2
@@ -123,6 +126,66 @@ testsuite_proxy_egress_tls()
     contain 'X-Bastion-Local-Status: 200 OK'
     contain 'X-Bastion-Remote-Status: 500 fake error'
     nocontain 'X-Bastion-Downgraded'
+
+    # 4b) TLSv1.2 device sharing no cipher with our egress_ciphers: the handshake fails, but not because of the
+    # protocol version, so a downgrade can't help and must not be attempted, even if the client asks for it
+    script egress_no_shared_cipher "$curl_base -u '$account0@test@127.0.0.1%9447:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 500 Can't connect to 127.0.0.1:9447"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain 'handshake failure'
+    nocontain 'X-Bastion-Downgraded'
+    nocontain 'X-Bastion-Remote-Client-SSL'
+
+    script egress_no_shared_cipher_downgrade "$curl_base -H 'X-Bastion-Allow-Downgrade: 1' -u '$account0@test@127.0.0.1%9447:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 500 Can't connect to 127.0.0.1:9447"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain 'handshake failure'
+    nocontain 'unsupported protocol'
+    nocontain 'X-Bastion-Downgraded'
+    nocontain 'X-Bastion-Remote-Client-SSL'
+    # no TLS connection has been established, so there's nothing to log about its compliance
+    testsuite_proxy_get_tls_syslog egress_no_shared_cipher_downgrade_syslog
+    nocontain 'http-proxy-tls'
+
+    # 4c) old TLSv1.0 device sharing no cipher with our downgraded_egress_ciphers: the downgrade is attempted,
+    # but fails too. We must cleanly report the error of the downgraded attempt (once), and tell that we tried
+    script egress_old_device_downgrade_no_shared_cipher "$curl_base -H 'X-Bastion-Allow-Downgrade: 1' -u '$account0@test@127.0.0.1%9448:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 500 Can't connect to 127.0.0.1:9448"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain 'X-Bastion-Downgraded: 1'
+    contain 'handshake failure'
+    nocontain 'unsupported protocol'
+    nocontain 'X-Bastion-Remote-Client-SSL'
+    nocontain 'X-Bastion-Remote-Status: 200'
+    testsuite_proxy_get_tls_syslog egress_old_device_downgrade_no_shared_cipher_syslog
+    nocontain 'http-proxy-tls'
+
+    # without the downgrade, we get the error of the first attempt, as for the other old device
+    script egress_old_device_no_shared_cipher_no_downgrade "$curl_base -u '$account0@test@127.0.0.1%9448:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 500 Can't connect to 127.0.0.1:9448"
+    testsuite_proxy_check_response
+    contain 'unsupported protocol'
+    nocontain 'X-Bastion-Downgraded'
+
+    # same in secure mode: neither of the two failed handshakes is about the certificate (which was never
+    # verified), so they must not be logged as certificate verification failures
+    script egress_old_device_downgrade_no_shared_cipher_secure "$curl_base -H 'X-Bastion-Enforce-Secure: 1' -H 'X-Bastion-Allow-Downgrade: 1' -u '$account0@test@127.0.0.1%9448:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 500 Can't connect to 127.0.0.1:9448"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain 'X-Bastion-Downgraded: 1'
+    contain 'handshake failure'
+    nocontain 'X-Bastion-Remote-Client-SSL'
+    testsuite_proxy_get_tls_syslog egress_old_device_downgrade_no_shared_cipher_secure_syslog
+    nocontain 'http-proxy-tls'
 
     # 5) the client asks for a downgrade but the config forbids it: we must get the TLS error
     testsuite_proxy_set_egress_tls egress_tls_config_nodowngrade "$egress_ciphers" false "$downgraded_egress_ciphers"

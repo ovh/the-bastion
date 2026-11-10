@@ -21,6 +21,13 @@ __PACKAGE__->run(
         # a "properly configured" device, with a certificate for localhost (only) signed by a test CA,
         # used to test the egress_ca_file option and the X-Bastion-Remote-Client-SSL-Cert-Verify header
         {port => 9446, proto => 'ssl', SSL_key_file => '/tmp/testleaf.key', SSL_cert_file => '/tmp/testleaf.crt'},
+        # TLSv1.2-only device sharing no cipher with the egress_ciphers the http-proxy tests configure (ECDHE-only):
+        # the handshake fails for a reason a downgrade can't fix, so the proxy must not even attempt it
+        {port => 9447, proto => 'ssl', SSL_version => 'TLSv1_2', SSL_cipher_list => 'AES256-SHA:@SECLEVEL=0'},
+        # TLSv1.0-only "old device" sharing no cipher with the downgraded_egress_ciphers the http-proxy tests
+        # configure (AES256-SHA): the downgrade is attempted (same "unsupported protocol" error than 9445 on the
+        # first attempt, as we share ECDHE-RSA-AES256-SHA with it), but the downgraded handshake fails too
+        {port => 9448, proto => 'ssl', SSL_version => 'TLSv1', SSL_cipher_list => 'ECDHE-RSA-AES256-SHA:@SECLEVEL=0'},
     ],
     ipv => 4,
     SSL_key_file => "/tmp/selfsigned.key",
