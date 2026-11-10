@@ -21,6 +21,9 @@ __PACKAGE__->run(
         # a "properly configured" device, with a certificate for localhost (only) signed by a test CA,
         # used to test the egress_ca_file option and the X-Bastion-Remote-Client-SSL-Cert-Verify header
         {port => 9446, proto => 'ssl', SSL_key_file => '/tmp/testleaf.key', SSL_cert_file => '/tmp/testleaf.crt'},
+        # same as above, but with an expired certificate (valid name and chain), used to test that the expiration
+        # is reported by the X-Bastion-Remote-Client-SSL-Cert-Verify header when insecure, and refused when secure
+        {port => 9449, proto => 'ssl', SSL_key_file => '/tmp/testleaf.key', SSL_cert_file => '/tmp/testexpired.crt'},
         # TLSv1.2-only device sharing no cipher with the egress_ciphers the http-proxy tests configure (ECDHE-only):
         # the handshake fails for a reason a downgrade can't fix, so the proxy must not even attempt it
         {port => 9447, proto => 'ssl', SSL_version => 'TLSv1_2', SSL_cipher_list => 'AES256-SHA:@SECLEVEL=0'},
