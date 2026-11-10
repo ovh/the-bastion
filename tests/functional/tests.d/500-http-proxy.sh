@@ -88,6 +88,21 @@ testsuite_proxy_egress_tls()
     contain 'X-Bastion-Local-Status: 200 OK'
     contain "X-Bastion-Remote-Client-SSL-Cipher: ECDHE-RSA-AES128-SHA256"
     nocontain 'X-Bastion-Downgraded'
+    contain 'X-Bastion-Remote-Client-SSL-Version: TLSv1_2'
+    # the TLS version and cipher we've negotiated must also be logged to syslog, for compliance stats
+    testsuite_proxy_get_tls_syslog egress_ciphers_applied_syslog
+    contain 'host="127.0.0.1"'
+    contain 'port="9444"'
+    contain 'enforced="0"'
+    contain 'verdict="failed"'
+    # the @SECLEVEL=3 of our egress_ciphers also applies to the certificate verification, and the 2048 bits RSA key
+    # of the device is too weak for it, which is reported before the self-signed error (seen with OpenSSL 3.0, we
+    # accept both in case another OpenSSL version reports them the other way around)
+    contain REGEX 'reason="(EE certificate key too weak|self[- ]signed certificate)"'
+    contain 'ssl_version="TLSv1_2"'
+    contain 'ssl_cipher="ECDHE-RSA-AES128-SHA256"'
+    contain 'cert_subject="/CN=testcert"'
+    contain 'downgraded="0"'
 
     # a modern TLS1.3 device must still work fine (TLS1.3 ciphersuites are not affected by egress_ciphers)
     script egress_ciphers_tls13 "$curl_base -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
@@ -96,6 +111,11 @@ testsuite_proxy_egress_tls()
     testsuite_proxy_check_response
     contain "X-Bastion-Remote-Status: 200"
     nocontain 'X-Bastion-Downgraded'
+    testsuite_proxy_get_tls_syslog egress_ciphers_tls13_syslog
+    contain 'port="9443"'
+    contain REGEX 'ssl_version="TLSv1_[23]"'
+    contain REGEX 'ssl_cipher="[A-Z0-9_-]+"'
+    contain 'downgraded="0"'
 
     # 2) old device, the client doesn't ask for a downgrade: we must get the TLS error
     script egress_old_device_no_downgrade "$curl_base -u '$account0@test@127.0.0.1%9445:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
@@ -105,6 +125,8 @@ testsuite_proxy_egress_tls()
     contain 'X-Bastion-Local-Status: 200 OK'
     contain 'unsupported protocol'
     nocontain 'X-Bastion-Downgraded'
+    # the TLS handshake failed, and not because of the certificate: there's no TLS connection to log
+    testsuite_proxy_get_tls_syslog egress_old_device_no_downgrade_syslog 0
 
     # 3) old device, the client asks for a downgrade and the config allows it: it must work
     script egress_old_device_downgrade "$curl_base -H 'X-Bastion-Allow-Downgrade: 1' -u '$account0@test@127.0.0.1%9445:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
@@ -116,6 +138,17 @@ testsuite_proxy_egress_tls()
     contain "X-Bastion-Remote-Status: 200"
     contain "X-Bastion-Remote-Client-SSL-Cipher: AES256-SHA"
     contain "Content-Length: 64"
+    contain 'X-Bastion-Remote-Client-SSL-Version: TLSv1'
+    nocontain 'X-Bastion-Remote-Client-SSL-Version: TLSv1_'
+    # only the downgraded connection is logged (the first attempt didn't establish any), and flagged as such
+    testsuite_proxy_get_tls_syslog egress_old_device_downgrade_syslog
+    contain 'port="9445"'
+    contain 'enforced="0"'
+    contain 'verdict="failed"'
+    contain REGEX 'reason="self[- ]signed certificate"'
+    contain 'ssl_version="TLSv1"'
+    contain 'ssl_cipher="AES256-SHA"'
+    contain 'downgraded="1"'
 
     # 4) the remote device itself returns a 500 whose message looks like an SSL error: this is NOT
     # an LWP-internal error (no "Client-Warning: Internal response"), so we must not downgrade
@@ -126,6 +159,10 @@ testsuite_proxy_egress_tls()
     contain 'X-Bastion-Local-Status: 200 OK'
     contain 'X-Bastion-Remote-Status: 500 fake error'
     nocontain 'X-Bastion-Downgraded'
+    testsuite_proxy_get_tls_syslog egress_remote_500_no_downgrade_syslog
+    contain 'port="9443"'
+    contain REGEX 'ssl_version="TLSv1_[23]"'
+    contain 'downgraded="0"'
 
     # 4b) TLSv1.2 device sharing no cipher with our egress_ciphers: the handshake fails, but not because of the
     # protocol version, so a downgrade can't help and must not be attempted, even if the client asks for it
@@ -137,6 +174,7 @@ testsuite_proxy_egress_tls()
     contain 'handshake failure'
     nocontain 'X-Bastion-Downgraded'
     nocontain 'X-Bastion-Remote-Client-SSL'
+    testsuite_proxy_get_tls_syslog egress_no_shared_cipher_syslog 0
 
     script egress_no_shared_cipher_downgrade "$curl_base -H 'X-Bastion-Allow-Downgrade: 1' -u '$account0@test@127.0.0.1%9447:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
@@ -148,8 +186,7 @@ testsuite_proxy_egress_tls()
     nocontain 'X-Bastion-Downgraded'
     nocontain 'X-Bastion-Remote-Client-SSL'
     # no TLS connection has been established, so there's nothing to log about its compliance
-    testsuite_proxy_get_tls_syslog egress_no_shared_cipher_downgrade_syslog
-    nocontain 'http-proxy-tls'
+    testsuite_proxy_get_tls_syslog egress_no_shared_cipher_downgrade_syslog 0
 
     # 4c) old TLSv1.0 device sharing no cipher with our downgraded_egress_ciphers: the downgrade is attempted,
     # but fails too. We must cleanly report the error of the downgraded attempt (once), and tell that we tried
@@ -163,8 +200,7 @@ testsuite_proxy_egress_tls()
     nocontain 'unsupported protocol'
     nocontain 'X-Bastion-Remote-Client-SSL'
     nocontain 'X-Bastion-Remote-Status: 200'
-    testsuite_proxy_get_tls_syslog egress_old_device_downgrade_no_shared_cipher_syslog
-    nocontain 'http-proxy-tls'
+    testsuite_proxy_get_tls_syslog egress_old_device_downgrade_no_shared_cipher_syslog 0
 
     # without the downgrade, we get the error of the first attempt, as for the other old device
     script egress_old_device_no_shared_cipher_no_downgrade "$curl_base -u '$account0@test@127.0.0.1%9448:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
@@ -173,6 +209,7 @@ testsuite_proxy_egress_tls()
     testsuite_proxy_check_response
     contain 'unsupported protocol'
     nocontain 'X-Bastion-Downgraded'
+    testsuite_proxy_get_tls_syslog egress_old_device_no_shared_cipher_no_downgrade_syslog 0
 
     # same in secure mode: neither of the two failed handshakes is about the certificate (which was never
     # verified), so they must not be logged as certificate verification failures
@@ -184,8 +221,7 @@ testsuite_proxy_egress_tls()
     contain 'X-Bastion-Downgraded: 1'
     contain 'handshake failure'
     nocontain 'X-Bastion-Remote-Client-SSL'
-    testsuite_proxy_get_tls_syslog egress_old_device_downgrade_no_shared_cipher_secure_syslog
-    nocontain 'http-proxy-tls'
+    testsuite_proxy_get_tls_syslog egress_old_device_downgrade_no_shared_cipher_secure_syslog 0
 
     # 5) the client asks for a downgrade but the config forbids it: we must get the TLS error
     testsuite_proxy_set_egress_tls egress_tls_config_nodowngrade "$egress_ciphers" false "$downgraded_egress_ciphers"
@@ -197,6 +233,7 @@ testsuite_proxy_egress_tls()
     testsuite_proxy_check_response
     contain 'unsupported protocol'
     nocontain 'X-Bastion-Downgraded'
+    testsuite_proxy_get_tls_syslog egress_old_device_downgrade_forbidden_syslog 0
 
     # 6) allow_downgrade is absent from the config (e.g. config from a previous version): defaults to true
     testsuite_proxy_set_egress_tls egress_tls_config_absent "$egress_ciphers" absent "$downgraded_egress_ciphers"
@@ -208,6 +245,12 @@ testsuite_proxy_egress_tls()
     testsuite_proxy_check_response
     contain 'X-Bastion-Downgraded: 1'
     contain "X-Bastion-Remote-Client-SSL-Cipher: AES256-SHA"
+    contain 'X-Bastion-Remote-Client-SSL-Version: TLSv1'
+    testsuite_proxy_get_tls_syslog egress_old_device_downgrade_default_syslog
+    contain 'port="9445"'
+    contain 'ssl_version="TLSv1"'
+    contain 'ssl_cipher="AES256-SHA"'
+    contain 'downgraded="1"'
 
     # 7) no downgraded_egress_ciphers: the downgrade is attempted, but with our (too strict) egress_ciphers
     # still applied, so it can't succeed. This proves downgraded_egress_ciphers is what made 3) work.
@@ -220,6 +263,8 @@ testsuite_proxy_egress_tls()
     testsuite_proxy_check_response
     contain 'X-Bastion-Downgraded: 1'
     nocontain 'X-Bastion-Remote-Client-SSL-Cipher'
+    # the downgrade has been attempted, but no TLS connection has been established
+    testsuite_proxy_get_tls_syslog egress_old_device_downgrade_no_ciphers_syslog 0
 
     # restore the config the subsequent tests expect
     success egress_tls_config_restore $r0 "\"cp $opt_remote_etc_bastion/osh-http-proxy-methods.conf $opt_remote_etc_bastion/osh-http-proxy.conf\""
@@ -227,10 +272,14 @@ testsuite_proxy_egress_tls()
 
 # get the http-proxy-tls syslog line(s) logged by the worker for the request of the previous test,
 # found through its X-Bastion-ReqID (which is the uniqid of the syslog lines), then use contain/nocontain on them.
+# usage: testsuite_proxy_get_tls_syslog <test_name> [expected_number_of_lines, defaults to 1]
+# There is one line per egress TLS connection established (or refused because of its certificate), so 0 is
+# expected for plain http egress or when the TLS handshake failed for another reason, and 2 or more when
+# a redirect is followed. The fields common to all our requests are checked here.
 # With --consistency-check, the syslog file is truncated after each test, its previous content is kept in .prev
 testsuite_proxy_get_tls_syslog()
 {
-    local name="$1"
+    local name="$1" expected="${2:-1}"
     local reqid
     reqid=$(get_stdout | grep -Eo 'X-Bastion-ReqID: [a-zA-Z0-9]+' | head -n1 | cut -d' ' -f2)
     # if we didn't find any ReqID, use a value that can't match anything, so that the checks fail properly
@@ -239,6 +288,23 @@ testsuite_proxy_get_tls_syslog()
     local codeb64
     codeb64=$(printf '%s' "cat /var/log/bastion/bastion.log.prev /var/log/bastion/bastion.log 2>/dev/null | grep -F http-proxy-tls | grep -E 'uniqid=.$reqid.'; true" | base64 -w0)
     success "$name" $r0 "\"echo $codeb64 | base64 -d | sh\""
+    [ "$COUNTONLY" = 1 ] && return 0
+    # without a ReqID, we would find no line at all, don't let the tests expecting none pass by accident
+    if [ "$reqid" = NO_REQID_FOUND ]; then
+        fail "TLS SYSLOG REQID" "(no X-Bastion-ReqID found in the output of the previous test)"
+    fi
+    local nblines
+    nblines="$(get_stdout | grep -c 'http-proxy-tls' || true)"
+    if [ "$nblines" != "$expected" ]; then
+        fail "TLS SYSLOG LINES" "(expected $expected http-proxy-tls line(s) for this request, got $nblines)"
+    else
+        ok "TLS SYSLOG LINES" "($nblines http-proxy-tls line(s) for this request)"
+    fi
+    if [ "$expected" != 0 ]; then
+        contain "account=\"$account0\""
+        contain 'auth_mode="self/default"'
+        contain 'user="test"'
+    fi
 }
 
 # set (or clear, if empty) the egress_ca_file option, starting from osh-http-proxy-methods.conf (or the given config)
@@ -320,6 +386,12 @@ testsuite_proxy_egress_ca_file()
     contain "HTTP/1.0 200 OK"
     testsuite_proxy_check_response
     contain REGEX "X-Bastion-Remote-Client-SSL-Cert-Verify: FAILED \(self[- ]signed certificate\)"
+    testsuite_proxy_get_tls_syslog egress_ca_selfsigned_syslog
+    contain 'port="9443"'
+    contain 'enforced="0"'
+    contain 'verdict="failed"'
+    contain REGEX 'reason="self[- ]signed certificate"'
+    contain 'cert_issuer="/CN=testcert"'
 
     # 3) secure mode (enforced by the client): the diagnostic must match reality.
     # The valid device must be accepted, which also proves that the certificate is checked against the name
@@ -353,6 +425,13 @@ testsuite_proxy_egress_ca_file()
     nocontain "X-Bastion-Remote-Client-SSL-Cert-Verify"
     nocontain "X-Bastion-Remote-Client-SSL-Warning"
     nocontain "X-Bastion-Remote-Client-SSL-Cipher: SPOOFED"
+    # and neither must our syslog line be influenced by the device
+    testsuite_proxy_get_tls_syslog egress_ca_secure_meta_spoof_syslog
+    contain 'enforced="1"'
+    contain 'verdict="ok"'
+    contain 'reason=""'
+    contain 'cert_subject="/CN=localhost"'
+    nocontain 'SPOOFED'
 
     # and the name mismatch must be refused, as the diagnostic above predicted
     script egress_ca_secure_name_mismatch "$curl_base -H 'X-Bastion-Enforce-Secure: 1' -u '$account0@test@127.0.0.1%9446:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
@@ -399,7 +478,7 @@ testsuite_proxy_egress_ca_file()
     testsuite_proxy_check_response
     contain "X-Bastion-Remote-Status: 200 OK"
     contain "X-Bastion-Remote-Client-SSL-Cert-Verify: OK"
-    testsuite_proxy_get_tls_syslog egress_ca_redirect_other_name_syslog
+    testsuite_proxy_get_tls_syslog egress_ca_redirect_other_name_syslog 2
     contain REGEX 'host="127\.0\.0\.1".*verdict="failed" reason="certificate doesn.t match 127\.0\.0\.1"'
     contain REGEX 'host="localhost" ip="127\.0\.0\.1" port="9446" enforced="0" verdict="ok"'
 
@@ -410,7 +489,7 @@ testsuite_proxy_egress_ca_file()
     retvalshouldbe 0
     contain "HTTP/1.0 500 Can't connect to 127.0.0.2:9446"
     testsuite_proxy_check_response
-    testsuite_proxy_get_tls_syslog egress_ca_secure_redirect_other_name_syslog
+    testsuite_proxy_get_tls_syslog egress_ca_secure_redirect_other_name_syslog 2
     contain REGEX 'host="localhost" ip="127\.0\.0\.1" port="9446" enforced="1" verdict="ok"'
     contain REGEX 'host="127\.0\.0\.2" ip="127\.0\.0\.2" port="9446" enforced="1" verdict="failed" reason="hostname verification failed"'
 
@@ -576,6 +655,9 @@ testsuite_proxy()
     contain 'reason="certificate verify failed"'
     contain 'host="127.0.0.1"'
     contain 'port="9443"'
+    contain 'ssl_version=""'
+    contain 'ssl_cipher=""'
+    contain 'downgraded="0"'
 
     script insecure "curl -m $default_timeout -vki -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
@@ -600,6 +682,19 @@ testsuite_proxy()
     contain "X-Bastion-Remote-Server: Net::Server::HTTP/"
     contain "X-Bastion-Egress-Timing: "
     contain "Content-Length: 64"
+    # and this must be logged to syslog, with the same values as the headers above
+    testsuite_proxy_get_tls_syslog insecure_syslog
+    contain 'host="127.0.0.1"'
+    contain 'ip="127.0.0.1"'
+    contain 'port="9443"'
+    contain 'enforced="0"'
+    contain 'verdict="failed"'
+    contain REGEX 'reason="self[- ]signed certificate"'
+    contain REGEX 'ssl_version="TLSv1_[23]"'
+    contain REGEX 'ssl_cipher="[A-Z0-9_-]+"'
+    contain 'cert_subject="/CN=testcert"'
+    contain 'cert_issuer="/CN=testcert"'
+    contain 'downgraded="0"'
 
     # the device must not be able to spoof the Client-SSL-* headers LWP generates (https egress):
     # the ones LWP sets must have their real value, and the device's Client-SSL-Warning must not be appended
@@ -614,6 +709,14 @@ testsuite_proxy()
     contain REGEX "X-Bastion-Remote-Client-SSL-Version: TLSv1_[23]"
     contain "X-Bastion-Remote-Client-SSL-Warning: Peer certificate not verified"
     nocontain "SPOOFED"
+    # the syslog line must have the real values too
+    testsuite_proxy_get_tls_syslog client_ssl_spoof_https_syslog
+    contain 'verdict="failed"'
+    contain REGEX 'reason="self[- ]signed certificate"'
+    contain REGEX 'ssl_version="TLSv1_[23]"'
+    contain 'cert_subject="/CN=testcert"'
+    contain 'cert_issuer="/CN=testcert"'
+    nocontain 'SPOOFED'
 
     # the device must not be able to fake an LWP-internal response either (Client-Warning is used by our
     # downgrade logic): with a fake TLS-like error and a spoofed Client-Warning, we must not downgrade
@@ -624,6 +727,11 @@ testsuite_proxy()
     contain 'X-Bastion-Local-Status: 200 OK'
     contain 'X-Bastion-Remote-Status: 500 fake error'
     nocontain 'X-Bastion-Downgraded'
+    testsuite_proxy_get_tls_syslog client_warning_spoof_syslog
+    contain 'port="9443"'
+    contain REGEX 'ssl_version="TLSv1_[23]"'
+    contain 'downgraded="0"'
+    nocontain 'SPOOFED'
 
     # same, with the Client-Warning injected through a <meta http-equiv> tag of an HTML answer
     script client_warning_meta_spoof "curl -m $default_timeout -ski -H 'X-Bastion-Allow-Downgrade: 1' -H 'X-Test-Html-Meta-Spoof: 1' -H 'X-Test-Add-Response-Header-Status: 500 fake error:0A000102:SSL routines::unsupported protocol' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
@@ -637,6 +745,12 @@ testsuite_proxy()
     nocontain 'X-Bastion-Downgraded'
     # the SPOOFED values are in the body of the device's answer, but must not appear in any header
     nocontain '^X-Bastion-Remote-Client-SSL-[^:]+: .*SPOOFED'
+    testsuite_proxy_get_tls_syslog client_warning_meta_spoof_syslog
+    contain 'verdict="failed"'
+    contain REGEX 'reason="self[- ]signed certificate"'
+    contain REGEX 'ssl_version="TLSv1_[23]"'
+    contain 'downgraded="0"'
+    nocontain 'SPOOFED'
 
     # a header sent twice by the device must not break our answer
     script duplicate_content_type "curl -m $default_timeout -ski -H 'X-Test-Duplicate-Content-Type: 1' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
@@ -656,6 +770,12 @@ testsuite_proxy()
     contain 'X-Bastion-Remote-Host: localhost'
     contain 'X-Bastion-Local-Status: 200 OK'
     contain REGEX "X-Bastion-Remote-Client-SSL-Cert-Verify: FAILED \(self[- ]signed certificate\)"
+    testsuite_proxy_get_tls_syslog insecure_by_name_syslog
+    contain 'host="localhost"'
+    contain 'ip="127.0.0.1"'
+    contain 'port="9443"'
+    contain 'verdict="failed"'
+    contain REGEX 'reason="self[- ]signed certificate"'
 
     # generate 1MB of data
     script one_megabyte "curl -m $default_timeout -vki -H 'X-Test-Add-Response-Header-Content-Type: application/json' -H 'X-Test-Wanted-Response-Size: 1000000' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
@@ -688,6 +808,10 @@ testsuite_proxy()
     contain "X-Bastion-Remote-Status: 200 OK"
     contain "Content-Length: 64"
     nocontain 'X-Bastion-Remote-Location: '
+    # one TLS connection per hop, hence one syslog line per hop
+    testsuite_proxy_get_tls_syslog redirect_samehost_hostless_syslog 2
+    nocontain 'host="127\.0\.0\.2"'
+    nocontain 'port="9080"'
 
     # a redirect to the same host and port must be followed
     script redirect_samehost_absolute "curl -m $default_timeout -ski -H 'X-Test-Redirect-To: https://127.0.0.1:9443/redirected' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
@@ -707,6 +831,9 @@ testsuite_proxy()
     contain 'X-Bastion-Local-Status: 200 OK'
     contain "X-Bastion-Remote-Status: 302 Found"
     contain "X-Bastion-Remote-Location: https://127.0.0.1:9080/redirected"
+    # the redirect is not followed: only our connection to the device is logged
+    testsuite_proxy_get_tls_syslog redirect_samehost_other_port_syslog
+    contain 'port="9443"'
 
     # a redirect to another host must not be followed either
     script redirect_samehost_other_host "curl -m $default_timeout -ski -H 'X-Test-Redirect-To: https://127.0.0.2:9443/redirected' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
@@ -716,6 +843,9 @@ testsuite_proxy()
     contain 'X-Bastion-Local-Status: 200 OK'
     contain "X-Bastion-Remote-Status: 302 Found"
     contain "X-Bastion-Remote-Location: https://127.0.0.2:9443/redirected"
+    testsuite_proxy_get_tls_syslog redirect_samehost_other_host_syslog
+    contain 'host="127.0.0.1"'
+    nocontain 'host="127\.0\.0\.2"'
 
     # graceful, zero-downtime reload (SIGHUP): an in-flight request must drain to completion
     # (not be killed), and requests issued during/after the reload must still be served because
@@ -876,6 +1006,10 @@ testsuite_proxy()
     contain "X-Bastion-Remote-Status: 200 OK"
     contain "Content-Length: 64"
     nocontain 'X-Bastion-Remote-Location: '
+    # both hops are logged, each with its own name and IP
+    testsuite_proxy_get_tls_syslog redirect_any_other_host_syslog 2
+    contain REGEX 'host="127\.0\.0\.1" ip="127\.0\.0\.1" port="9443" enforced="0" verdict="failed"'
+    contain REGEX 'host="127\.0\.0\.2" ip="127\.0\.0\.2" port="9443" enforced="0" verdict="failed"'
 
     # the device password must follow a same-origin redirect (the target requires it)...
     script redirect_any_same_origin_auth "curl -m $default_timeout -ski -H 'X-Test-Require-Auth: 1' -H 'X-Test-Redirect-To: /redirected' -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
@@ -904,6 +1038,9 @@ testsuite_proxy()
     contain 'X-Bastion-Local-Status: 200 OK'
     contain "X-Bastion-Remote-Status: 302 Found"
     contain "X-Bastion-Remote-Location: http://127.0.0.1:9080/redirected"
+    testsuite_proxy_get_tls_syslog redirect_any_forbidden_protocol_syslog
+    contain 'port="9443"'
+    nocontain 'port="9080"'
 
     # and so must a https => http redirect, even when http is in allowed_egress_protocols
     success config_swap_redirects_any_http $r0 "\"cp $opt_remote_etc_bastion/osh-http-proxy-redirects-any-http.conf $opt_remote_etc_bastion/osh-http-proxy.conf\""
@@ -927,6 +1064,7 @@ testsuite_proxy()
     nocontain 'WWW-Authenticate: '
     contain 'Content-Type: text/plain'
     contain 'not allowed by policy'
+    testsuite_proxy_get_tls_syslog forbidden_egress_protocol_syslog 0
 
     testsuite_proxy_egress_tls "$proxy_password"
     testsuite_proxy_egress_ca_file "$proxy_password"
@@ -954,6 +1092,8 @@ testsuite_proxy()
     nocontain 'WWW-Authenticate: '
     nocontain "X-Bastion-Remote-Client-SSL"
     contain 'SSH-2.0'
+    # plain http egress: there's no TLS connection to log
+    testsuite_proxy_get_tls_syslog allowed_http_egress_syslog 0
 
     # with plain http egress, LWP sets no Client-SSL-* header, so the device must not be able to make it
     # look like the connection was encrypted by sending its own
@@ -964,6 +1104,7 @@ testsuite_proxy()
     contain 'X-Bastion-Local-Status: 200 OK'
     nocontain "X-Bastion-Remote-Client-SSL"
     nocontain "SPOOFED"
+    testsuite_proxy_get_tls_syslog client_ssl_spoof_http_syslog 0
 
     # same, through <meta http-equiv> tags of an HTML answer
     script client_ssl_meta_spoof_http "curl -m $default_timeout -ski -H 'X-Bastion-Egress-Protocol: http' -H 'X-Test-Html-Meta-Spoof: 1' -u '$account0@test@127.0.0.1%9080:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
@@ -973,6 +1114,7 @@ testsuite_proxy()
     contain 'X-Bastion-Local-Status: 200 OK'
     contain 'meta spoof'
     nocontain "X-Bastion-Remote-Client-SSL"
+    testsuite_proxy_get_tls_syslog client_ssl_meta_spoof_http_syslog 0
 
     # take this opportunity to test the remote-host header (otherwise, call is the same as above)
     script allowed_http_egress_test_host "curl -m $default_timeout -vki -H 'X-Bastion-Egress-Protocol: http' -u '$account0@test@localhost%22:$proxy_password' https://$remote_ip:$remote_proxy_port/test 2>&1 | cat; exit \${PIPESTATUS[0]}"
