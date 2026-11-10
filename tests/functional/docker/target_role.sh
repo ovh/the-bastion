@@ -196,6 +196,20 @@ if [ "$WANT_HTTP_PROXY" = 1 ]; then
         -extfile /tmp/testleaf.ext -out /tmp/testleaf.crt
     chgrp proxyhttp /tmp/testleaf.key
     chmod g+r /tmp/testleaf.key
+    # and an expired certificate for the same name and key, signed by the same CA (thus only invalid because of its
+    # validity dates). We use "openssl ca" for this, as "openssl x509 -req" can't set a start date in the past
+    # on all the OpenSSL versions we support
+    mkdir -p /tmp/testca.d
+    : > /tmp/testca.d/index
+    echo 02 > /tmp/testca.d/serial
+    printf '%s\n' '[ca]' 'default_ca = testca' '[testca]' 'database = /tmp/testca.d/index' \
+        'new_certs_dir = /tmp/testca.d' 'serial = /tmp/testca.d/serial' 'default_md = sha256' 'policy = policy_any' \
+        'unique_subject = no' '[policy_any]' 'commonName = supplied' '[ext]' 'subjectAltName = DNS:localhost' \
+        'basicConstraints = CA:FALSE' 'extendedKeyUsage = serverAuth' > /tmp/testca.cnf
+    openssl req -new -key /tmp/testleaf.key -out /tmp/testexpired.csr -subj "/CN=localhost"
+    openssl ca -batch -notext -config /tmp/testca.cnf -cert /tmp/testca.crt -keyfile /tmp/testca.key -extensions ext \
+        -startdate 20200101000000Z -enddate 20200102000000Z -in /tmp/testexpired.csr -out /tmp/testexpired.crt
+    rm -rf /tmp/testexpired.csr /tmp/testca.cnf /tmp/testca.d
     chmod 0644 /tmp/testca.crt
     rm -f /tmp/testca.csr /tmp/testleaf.csr /tmp/testca.ext /tmp/testleaf.ext
     # use perl rather than GNU sed for these in-place edits, so this also works on FreeBSD (BSD sed

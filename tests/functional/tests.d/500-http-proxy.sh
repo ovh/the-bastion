@@ -329,6 +329,7 @@ testsuite_proxy_egress_ca_file()
 
     # The fake remote server (tests/functional/proxy/remote-daemon) exposes, on 9446, a certificate for
     # localhost only (not 127.0.0.1) signed by our test CA (/tmp/testca.crt), see tests/functional/docker/target_role.sh.
+    # On 9449, it exposes an expired certificate, for the same name and signed by the same CA.
     # Both names reach the same device, and are allowed for our account (which has access to 127.0.0.1)
 
     # 1) insecure (the default of the tests), no egress_ca_file: the system CA store doesn't know our test CA
@@ -379,6 +380,26 @@ testsuite_proxy_egress_ca_file()
     testsuite_proxy_get_tls_syslog egress_ca_name_mismatch_syslog
     contain 'verdict="failed"'
     contain "reason=\"certificate doesn't match 127.0.0.1\""
+
+    # insecure, valid chain and name, but expired certificate: we would have refused it if secure
+    script egress_ca_expired "$curl_base -u '$account0@test@localhost%9449:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    contain "HTTP/1.0 200 OK"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    contain "X-Bastion-Remote-Status: 200"
+    contain "X-Bastion-Remote-Client-SSL-Cert-Subject: /CN=localhost"
+    contain "X-Bastion-Remote-Client-SSL-Cert-Issuer: /CN=Bastion Test CA"
+    contain "X-Bastion-Remote-Client-SSL-Cert-Verify: FAILED (certificate has expired)"
+    testsuite_proxy_get_tls_syslog egress_ca_expired_syslog
+    contain 'host="localhost"'
+    contain 'port="9449"'
+    contain 'enforced="0"'
+    contain 'verdict="failed"'
+    contain 'reason="certificate has expired"'
+    contain REGEX 'ssl_version="TLSv1_[23]"'
+    contain 'cert_subject="/CN=localhost"'
+    contain 'cert_issuer="/CN=Bastion Test CA"'
 
     # the self-signed device is still reported as invalid, even with our test CA trusted
     script egress_ca_selfsigned "$curl_base -u '$account0@test@127.0.0.1%9443:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
@@ -433,7 +454,23 @@ testsuite_proxy_egress_ca_file()
     contain 'cert_subject="/CN=localhost"'
     nocontain 'SPOOFED'
 
-    # and the name mismatch must be refused, as the diagnostic above predicted
+    # the expired certificate must be refused, as the diagnostic above predicted
+    script egress_ca_secure_expired "$curl_base -H 'X-Bastion-Enforce-Secure: 1' -u '$account0@test@localhost%9449:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
+    retvalshouldbe 0
+    # we connect to the IP we've checked, hence the IP in the LWP error message, even if the client used a name
+    contain "HTTP/1.0 500 Can't connect to 127.0.0.1:9449"
+    testsuite_proxy_check_response
+    contain 'X-Bastion-Local-Status: 200 OK'
+    nocontain 'X-Bastion-Remote-Client-SSL'
+    testsuite_proxy_get_tls_syslog egress_ca_secure_expired_syslog
+    contain 'host="localhost"'
+    contain 'port="9449"'
+    contain 'enforced="1"'
+    contain 'verdict="failed"'
+    contain 'reason="certificate verify failed"'
+    contain 'ssl_version=""'
+
+    # the name mismatch must be refused, as the diagnostic above predicted
     script egress_ca_secure_name_mismatch "$curl_base -H 'X-Bastion-Enforce-Secure: 1' -u '$account0@test@127.0.0.1%9446:$proxy_password' https://$remote_ip:$remote_proxy_port/test | cat; exit \${PIPESTATUS[0]}"
     retvalshouldbe 0
     contain "HTTP/1.0 500 Can't connect to 127.0.0.1:9446"
