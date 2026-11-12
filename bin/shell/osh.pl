@@ -1471,8 +1471,8 @@ if ($telnet) {
         osh_print(" will use TELNET with interactive password login\n") unless $quiet;
         push @command, '/usr/bin/telnet', '-l', $user;
         # bind option must come before the host, as telnet stops parsing options there
-        push @command, '-b',  $bind if $bind;
-        push @command, $host, $port;
+        push @command, '-b', $bind if $bind;
+        push @command, $ip,  $port;
     }
 }
 
