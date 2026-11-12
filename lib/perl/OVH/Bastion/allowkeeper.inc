@@ -302,7 +302,7 @@ sub is_account_valid {
     elsif (any { $account eq $_ } qw{ root proxyhttp keykeeper passkeeper logkeeper realm realm_realm }) {
         return R('KO_FORBIDDEN_NAME', msg => "$whatis name is reserved");
     }
-    elsif ($account =~ m{^([a-zA-Z0-9-]+)/([a-zA-Z0-9._-]+)$} && $accountType eq 'normal') {
+    elsif ($account =~ m{\A([a-zA-Z0-9-]+)/([a-zA-Z0-9._-]+)\z} && $accountType eq 'normal') {
 
         # 32 is the max Linux user length
         if (length("realm_$1") > 32) {
@@ -321,7 +321,7 @@ sub is_account_valid {
         }
         return R('OK', value => {sysaccount => "realm_$1", realm => $1, remoteaccount => $2, account => "$1/$2"});    # untainted
     }
-    elsif ($account =~ m/^([a-zA-Z0-9._-]+)$/) {
+    elsif ($account =~ m/\A([a-zA-Z0-9._-]+)\z/) {
         if (length($1) < 2) {
             return R('KO_TOO_SMALL', msg => "$whatis name is too small, length($1) < 2");
         }

@@ -73,7 +73,7 @@ if (!defined $uid && !$uidAuto) {
 }
 
 # quickly ensure these params are not pure bullshit (real check is done by helper script)
-if ($account !~ /^[a-z0-9._-]+$/i) {
+if ($account !~ /\A[a-z0-9._-]+\z/i) {
     osh_exit 'ERR_INVALID_PARAMETER', "Parameter 'account' seems invalid";
 }
 

@@ -257,6 +257,29 @@ for my $suffix (qw{ tty aclkeeper gatekeeper owner }) {
 
 is(OVH::Bastion::is_account_valid(account => "root")->err, "KO_FORBIDDEN_NAME", "is_account_valid('root')");
 
+# A trailing newline must not turn a reserved or malformed name into a valid account
+for my $account (qw{ root proxyhttp keykeeper passkeeper logkeeper realm realm_realm }) {
+    ok(!OVH::Bastion::is_account_valid(account => $account),     "reserved account $account is rejected");
+    ok(!OVH::Bastion::is_account_valid(account => "$account\n"), "reserved account $account with newline is rejected");
+}
+
+for my $case (
+    ['normal', 'valid_user'],
+    ['normal', 'example/remote.user'],
+    ['group',  'keyexample'],
+    ['realm',  'realm_example'],
+  )
+{
+    my ($accountType, $account) = @$case;
+    my $valid = OVH::Bastion::is_account_valid(account => $account, accountType => $accountType);
+    ok($valid, "$accountType account $account is valid");
+    is($valid->value->{'account'}, $account, 'validated account is returned unchanged');
+    for my $control ("\n", "\r", "\r\n", "\0", "\t", "\n\n") {
+        my $invalid = OVH::Bastion::is_account_valid(account => $account . $control, accountType => $accountType);
+        is($invalid->err, 'KO_FORBIDDEN_CHARS', "$accountType account with trailing control characters is rejected");
+    }
+}
+
 ok(OVH::Bastion::is_bastion_account_valid_and_existing(account => "me")->is_ok,
     "is_bastion_account_valid_and_existing('me')");
 
