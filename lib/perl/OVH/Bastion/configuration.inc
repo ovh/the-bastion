@@ -223,6 +223,7 @@ sub load_configuration {
         {name => 'interactiveModeTimeout',                min => 0,     max => 86400 * 365, default => 15},
         {name => 'interactiveModeProactiveMFAexpiration', min => 0,     max => 86400,       default => 900},
         {name => 'dnsSupportLevel',                       min => 0,     max => 2,           default => 2},
+        {name => 'sessionSetupTimeout',                   min => 0,     max => 86400,       default => 180},
       )
     {
         if (not defined $C->{$o->{'name'}}) {
