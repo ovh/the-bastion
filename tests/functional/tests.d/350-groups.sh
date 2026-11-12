@@ -24,6 +24,17 @@ testsuite_groups()
     nocontain "Your alias to connect"
     contain "Permission denied"
 
+    # account creation must fail if the home path already exists
+    success a2_home_create $r0 mkdir -m 0711 /home/$account2
+    plgfail a0_create_a2_existing_home $a0 --osh accountCreate --account $account2 --uid $uid2 --no-key
+    json .command accountCreate .error_code KO_HOME_EXISTS
+    success a2_home_remove $r0 rmdir /home/$account2
+
+    success a2_home_symlink $r0 ln -s /home/bastiontest-missing-$now /home/$account2
+    plgfail a0_create_a2_dangling_home $a0 --osh accountCreate --account $account2 --uid $uid2 --no-key
+    json .command accountCreate .error_code KO_HOME_EXISTS
+    success a2_symlink_remove $r0 rm /home/$account2
+
     # account with no key
     success a0_create_a2_nokey $a0 --osh accountCreate --always-active --account $account2 --uid $uid2 --no-key
     contain "info"
