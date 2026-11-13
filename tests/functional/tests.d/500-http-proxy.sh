@@ -897,9 +897,13 @@ testsuite_proxy()
         slowpid=\$!
         # 2) give it time to be accepted and connected to the slow remote
         sleep 3
-        # 3) gracefully reload the daemon while that request is still in-flight (single-word remote
-        #    command, so no shell-quoting headaches; -f matches the daemon, not the worker)
-        $r0 pkill -HUP -f osh-http-proxy-daemon
+        # 3) gracefully reload the daemon while that request is still in-flight (no quoted arguments in
+        #    the remote command, so no shell-quoting headaches; -f matches the daemon, not the worker).
+        #    Only signal the master: -U proxyhttp excludes the root-owned sudo that launched it, as sudo
+        #    would relay a second HUP to the master, which could land after its re-exec but before
+        #    Net::Server reinstalls its HUP handler, killing it. -o picks the oldest match, i.e. the
+        #    master and not its children: Net::Server relays the HUP to them itself.
+        $r0 pkill -HUP -o -U proxyhttp -f osh-http-proxy-daemon
         # 4) a brand new request right after the reload must succeed (socket stayed bound)
         sleep 1
         echo BEGIN_NEW_REQUEST
