@@ -200,6 +200,57 @@ sub configure_hook {    ## no critic (RequireFinalReturn)
     }
 }
 
+# PreFork calls this after each child status notification, and periodically while idle.
+# Check before housekeeping so that reaping a finished child cannot hide a brief peak,
+# and afterwards so that abnormal child exits and capacity changes also end saturation.
+sub coordinate_children {
+    my $self = shift;
+    $self->_log_worker_saturation();
+    $self->SUPER::coordinate_children(@_);
+    $self->_log_worker_saturation();
+    return;
+}
+
+sub _log_worker_saturation {
+    my $self   = shift;
+    my $server = $self->{'server'};
+    my $limit  = $server->{'max_servers'};
+    return if !$limit;    # Net::Server sets the limit to zero during graceful shutdown.
+
+    # On SIGHUP, Net::Server re-execs us and marks inherited, draining children with 'hup'.
+    # Start monitoring afresh: only count workers started by this instance, without altering
+    # Net::Server's own tally (which must still account for the draining children).
+    my @children = grep { !$_->{'hup'} } values %{$server->{'children'}};
+    my $busy     = grep { $_->{'status'} eq 'processing' } @children;
+    my $idle     = grep { $_->{'status'} eq 'waiting' } @children;
+    my $now      = Time::HiRes::clock_gettime(Time::HiRes::CLOCK_MONOTONIC());
+
+    if ($busy >= $limit && !$idle) {
+        $self->{'_saturation_started'} //= $now;
+        return if $self->{'_saturation_logged'};
+
+        # A busy pool may repeatedly cross the limit as workers finish and are replaced.
+        # Limit warnings to one per minute, but report an ongoing episode once this expires.
+        return
+          if defined $self->{'_saturation_last_warning'}
+          && $now - $self->{'_saturation_last_warning'} < 60;
+
+        $self->log(1,
+            "HTTP proxy reached full capacity: $busy/$limit workers occupied; new connections may have to wait");
+        $self->{'_saturation_last_warning'} = $now;
+        $self->{'_saturation_logged'}       = 1;
+    }
+    elsif (defined $self->{'_saturation_started'}) {
+        my $duration = $now - delete $self->{'_saturation_started'};
+        if (delete $self->{'_saturation_logged'}) {
+            $self->log(1,
+                "HTTP proxy below full capacity: $busy/$limit workers occupied; saturation lasted %.3f seconds",
+                $duration);
+        }
+    }
+    return;
+}
+
 # overrides parent func
 sub run {
     my ($self, %params) = @_;

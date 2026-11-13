@@ -187,6 +187,10 @@ max_servers
 :Default: ``32``
 
 Hard maximum number of child processes that can be active at any given time no matter what
+When all workers are occupied, the daemon logs a warning through syslog (at most once per
+minute), followed by a recovery message with the saturation duration for reported episodes.
+This indicates exhausted capacity, not that connections have necessarily waited.
+Monitoring starts afresh on SIGHUP, excluding old workers still draining requests.
 
 min_spare_servers
 *****************
