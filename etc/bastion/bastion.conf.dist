@@ -506,6 +506,11 @@
 #  DEFAULT: 50
 "portForwardingMaxPerGroup": 50,
 #
+# sshdReloadCommand (string)
+#     DESC: Command used to reload sshd after a port forwarding configuration has been (re)generated for an account. It is run as root, without a shell: the string is split on whitespace, so quoting, pipes and redirections are not supported. Adjust it if your system doesn't use systemd or if the sshd unit has another name (e.g. ``systemctl reload ssh``, or ``service sshd reload``).
+#  DEFAULT: "systemctl reload sshd"
+"sshdReloadCommand": "systemctl reload sshd",
+#
 #################
 # > Other options
 # >> These options are either discouraged (in which case this is explained in the description) or rarely need to be modified.

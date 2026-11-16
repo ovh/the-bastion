@@ -148,6 +148,7 @@ Options to customize the port forwarding feature
 - `portForwardingLocalPortMax`_
 - `portForwardingMaxPerUser`_
 - `portForwardingMaxPerGroup`_
+- `sshdReloadCommand`_
 
 Other options options
 ---------------------
@@ -1093,6 +1094,17 @@ portForwardingMaxPerGroup
 :Default: ``50``
 
 Maximum number of allowed port forwardings per group. A value of 0 means unlimited.
+
+.. _sshdReloadCommand:
+
+sshdReloadCommand
+*****************
+
+:Type: ``string``
+
+:Default: ``"systemctl reload sshd"``
+
+Command used to reload sshd after a port forwarding configuration has been (re)generated for an account. It is run as root, without a shell: the string is split on whitespace, so quoting, pipes and redirections are not supported. Adjust it if your system doesn't use systemd or if the sshd unit has another name (e.g. ``systemctl reload ssh``, or ``service sshd reload``).
 
 Other options
 -------------
