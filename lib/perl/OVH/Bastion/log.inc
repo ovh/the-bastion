@@ -371,8 +371,8 @@ sub _sql_log_insert_file {
         }
         elsif ($sqltype eq 'global') {
             @execute = (
-                $uniqid,  $timestamp, $account,     $cmdtype, $allowed,   $ipfrom,
-                $ipto,    $portto,    $user,        $plugin,  $proxyuser, $proxyip,
+                $uniqid,    $timestamp, $account,     $cmdtype, $allowed,   $ipfrom,
+                $ipto,      $portto,    $user,        $plugin,  $proxyuser, $proxyip,
                 $proxyhost, $proxyport, $remoteports, $localports
             );
             $prepare =

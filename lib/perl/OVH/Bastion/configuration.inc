@@ -224,10 +224,10 @@ sub load_configuration {
         {name => 'interactiveModeTimeout',                min => 0,     max => 86400 * 365, default => 15},
         {name => 'interactiveModeProactiveMFAexpiration', min => 0,     max => 86400,       default => 900},
         {name => 'dnsSupportLevel',                       min => 0,     max => 2,           default => 2},
-        {name => 'portForwardingLocalPortMin',            min => 1024, max => 65535,       default => 20000},
-        {name => 'portForwardingLocalPortMax',            min => 1024, max => 65535,       default => 30000},
-        {name => 'portForwardingMaxPerUser',              min => 0,    max => 1000,        default => 10},
-        {name => 'portForwardingMaxPerGroup',             min => 0,    max => 1000,        default => 50},
+        {name => 'portForwardingLocalPortMin',            min => 1024,  max => 65535,       default => 20000},
+        {name => 'portForwardingLocalPortMax',            min => 1024,  max => 65535,       default => 30000},
+        {name => 'portForwardingMaxPerUser',              min => 0,     max => 1000,        default => 10},
+        {name => 'portForwardingMaxPerGroup',             min => 0,     max => 1000,        default => 50},
       )
     {
         if (not defined $C->{$o->{'name'}}) {
