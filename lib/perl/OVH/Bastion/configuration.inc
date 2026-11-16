@@ -226,7 +226,7 @@ sub load_configuration {
         {name => 'dnsSupportLevel',                       min => 0,     max => 2,           default => 2},
         {name => 'portForwardingLocalPortMin',            min => 1024,  max => 65535,       default => 20000},
         {name => 'portForwardingLocalPortMax',            min => 1024,  max => 65535,       default => 30000},
-        {name => 'portForwardingMaxPerUser',              min => 0,     max => 1000,        default => 10},
+        {name => 'portForwardingMaxPerUser',              min => 0,     max => 1000,        default => 20},
         {name => 'portForwardingMaxPerGroup',             min => 0,     max => 1000,        default => 50},
       )
     {

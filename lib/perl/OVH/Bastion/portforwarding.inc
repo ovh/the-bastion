@@ -157,7 +157,7 @@ sub is_valid_portforwarding {
                 $count++;
             }
         }
-        if ($count >= $accountMaxForwards) {
+        if ($accountMaxForwards && $count >= $accountMaxForwards) {    # 0 means unlimited
             return R('ERR_PORTFORWARDING_LIMIT_EXCEEDED',
                 msg =>
                   "Account $account has reached the maximum number of allowed port forwardings ($accountMaxForwards)");
@@ -171,7 +171,7 @@ sub is_valid_portforwarding {
                 $count++;
             }
         }
-        if ($count >= $groupMaxForwards) {
+        if ($groupMaxForwards && $count >= $groupMaxForwards) {    # 0 means unlimited
             return R('ERR_PORTFORWARDING_LIMIT_EXCEEDED',
                 msg => "Group $group has reached the maximum number of allowed port forwardings ($groupMaxForwards)");
         }
