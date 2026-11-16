@@ -81,6 +81,7 @@ $fnret or HEXIT($fnret);
 my @success;
 my @errors;
 my @skipped;
+my $removed = 0;
 
 foreach my $account (@accounts) {
     osh_info("Processing account: $account");
@@ -106,6 +107,7 @@ foreach my $account (@accounts) {
                 osh_warn("  Failed to remove config file: $!");
                 next;
             }
+            $removed++;
             osh_info("  Removed port forwarding config file (slave mode)");
         }
         else {
@@ -126,6 +128,12 @@ foreach my $account (@accounts) {
             osh_warn("  Failed: " . $fnret->msg);
         }
     }
+}
+
+# in slave mode we've removed the files ourselves: sshd must be reloaded to stop honoring them
+if ($removed) {
+    $fnret = OVH::Bastion::test_and_reload_sshd();
+    $fnret or HEXIT($fnret);
 }
 
 HEXIT(
