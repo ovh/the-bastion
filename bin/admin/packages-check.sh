@@ -36,7 +36,7 @@ if echo "$DISTRO_LIKE" | grep -q -w debian; then
                 libwww-perl libdigest-sha-perl libnet-ssleay-perl \
                 libnet-server-perl cryptsetup mosh expect openssh-server locales \
                 coreutils bash libcgi-pm-perl iputils-ping tar libtext-template-perl \
-                liblinux-prctl-perl libpam-google-authenticator pamtester"
+                liblinux-prctl-perl libpam-google-authenticator pamtester iproute2"
     # workaround for debian/armhf: curl fails to validate some SSL certificates,
     # whereas wget succeeds; this is needed for e.g. install-ttyrec.sh
     if [ "$(uname -m)" = armv7l ]; then
@@ -71,7 +71,7 @@ elif echo "$DISTRO_LIKE" | grep -q -w rhel; then
             expect openssh-server bash perl-CGI perl-Test-Simple passwd \
             cracklib-dicts perl-Time-Piece perl-Time-HiRes diffutils \
             perl-Sys-Syslog pamtester qrencode-libs util-linux-user \
-            perl-LWP-Protocol-https perl-Test-Deep findutils tar iputils"
+            perl-LWP-Protocol-https perl-Test-Deep findutils tar iputils iproute"
     [ "$opt_syslogng" = 1 ] && wanted_list="$wanted_list syslog-ng"
 
 
@@ -127,7 +127,7 @@ elif echo "$DISTRO_LIKE" | grep -q -w rhel; then
 elif echo "$DISTRO_LIKE" | grep -q -w suse; then
     wanted_list="perl-common-sense perl-JSON perl-Net-Netmask perl-Net-IP \
             perl-Net-DNS perl-DBD-SQLite perl-Term-ReadKey perl-DateTime \
-            fortune sudo fping perl perl-base gzip procps \
+            fortune sudo fping perl perl-base gzip procps iproute2 \
             xz sqlite3 binutils acl gpg2 rsync perl-Text-Template \
             perl-JSON-XS inotify-tools lsof curl perl-TermReadLine-Gnu \
             perl-libwww-perl perl-Digest perl-IO-Socket-SSL \
