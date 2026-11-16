@@ -1,7 +1,6 @@
 #! /usr/bin/perl -T
 # vim: set filetype=perl ts=4 sw=4 sts=4 et:
 # SUDOERS %osh-admin ALL=(root) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-adminGenerateAllSshdConfigs
-# SUDOERS %osh-admin ALL=(root) NOPASSWD:/usr/bin/env perl -T /opt/bastion/bin/helper/osh-adminGenerateAllSshdConfigs --slave-mode
 # FILEMODE 0700
 # FILEOWN 0 0
 
