@@ -76,6 +76,15 @@ if (not -e "/home/$group/allowed.ip" or not -e "/home/keykeeper/$group") {
     HEXIT('ERR_INVALID_GROUP', msg => "Sorry, but $shortGroup doesn't seem to be a legit bastion group");
 }
 
+# before the group ACL goes away, remember the local ports of its port forwardings, as we'll have
+# to revoke them from the sshd config of its members and guests
+my @pfLocalPorts;
+$fnret = OVH::Bastion::get_acl_way(way => 'group', group => $shortGroup);
+if ($fnret) {
+    @pfLocalPorts = map { $_->{'localPort'} } grep { defined $_->{'localPort'} } @{$fnret->value || []};
+}
+my @pfAccounts;
+
 # do the stuff
 osh_info("Backing up group directory...");
 
@@ -177,8 +186,11 @@ if (opendir($dh, "/home/allowkeeper")) {
     while (my $dir = readdir($dh)) {
         $dir =~ /^\./                 and next;
         $dir !~ /^([a-zA-Z0-9._-]+)$/ and next;
+        my $dirAccount = $1;
         $dir = "/home/allowkeeper/$1";    # and untaint
         -d $dir or next;
+        push @pfAccounts, $dirAccount
+          if grep { -e $_ || -l $_ } "$dir/allowed.ip.$shortGroup", "$dir/allowed.partial.$shortGroup";
         foreach my $file ("$dir/allowed.ip.$shortGroup", "$dir/allowed.partial.$shortGroup") {
             if (-e $file || -l $file) {
                 osh_info "Removing $file...";
@@ -241,6 +253,33 @@ foreach my $todelete ("$group-owner", "$group-aclkeeper", "$group-gatekeeper", $
     }
     else {
         osh_info "Group $todelete not found, ignoring...";
+    }
+}
+
+# the group had port forwardings: its former members and guests must no longer be allowed to use the
+# corresponding local ports, which are quarantined so that they're not reallocated while still in use
+if (@pfLocalPorts) {
+    $fnret = OVH::Bastion::Helper::get_lock_fh(category => 'portforwarding');
+    $fnret or HEXIT($fnret);
+    my $pfLock_fh = $fnret->value;
+    $fnret = OVH::Bastion::Helper::acquire_lock($pfLock_fh);
+    $fnret or HEXIT($fnret);
+
+    foreach my $account (@pfAccounts) {
+        $fnret = OVH::Bastion::generate_account_sshd_forwarding_config(account => $account);
+        if (!$fnret) {
+            warn_syslog("Error during group deletion of '$group', couldn't regenerate sshd config of '$account': "
+                  . $fnret->msg);
+            $nbErrors++;
+        }
+    }
+    foreach my $port (@pfLocalPorts) {
+        $fnret = OVH::Bastion::mark_port_unavailable(port => $port);
+        if (!$fnret) {
+            warn_syslog(
+                "Error during group deletion of '$group', couldn't quarantine local port $port: " . $fnret->msg);
+            $nbErrors++;
+        }
     }
 }
 
