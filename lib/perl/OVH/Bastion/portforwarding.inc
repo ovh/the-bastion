@@ -69,7 +69,7 @@ sub _is_port_in_use {
 sub allocate_local_port {
     my $fnret = _get_allocated_local_ports();
     $fnret or return $fnret;
-    my %allocated_ports = keys %{$fnret->value};
+    my %allocated_ports = %{$fnret->value};
 
     # Get the port range configuration
     $fnret = _get_local_port_range();
@@ -246,6 +246,15 @@ sub generate_account_sshd_forwarding_config {
     $fnret or return $fnret;
 
     if (not @{$fnret->value}) {
+        # no access left at all: ensure we don't leave a config behind that still allows the previous forwardings
+        $fnret = _write_sshd_forwarding_config(account => $account, ports => []);
+        $fnret or return $fnret;
+
+        if (defined $deletedLocalPort) {
+            $fnret = mark_port_unavailable(port => $deletedLocalPort);
+            $fnret or return $fnret;
+        }
+
         return R('OK_EMPTY', msg => "$account has no accesses, no port forwarding config to generate");
     }
 
