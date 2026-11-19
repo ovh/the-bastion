@@ -98,6 +98,36 @@ sub validate_tuple {
     return R('OK');
 }
 
+# map the plugin options, along with the tuple osh.pl passes positionally, to the resource types
+# a pluginRestrictions rule can constrain. See OVH::Bastion::check_plugin_restrictions().
+sub resources_from_options {
+    my %params  = @_;
+    my $options = $params{'options'};
+
+    my %resources = (user => $params{'user'}, host => $params{'host'});
+
+    foreach my $spec (keys %$options) {
+        next if (ref $options->{$spec} ne 'SCALAR' && ref $options->{$spec} ne 'REF');
+
+        # a spec looks like 'pubKey|public-key=s', we only want the option names
+        my ($aliases) = $spec =~ /^([^=:!+]+)/;
+        foreach my $name (split(/\|/, $aliases)) {
+            next if !grep { $name eq $_ } OVH::Bastion::PLUGIN_RESOURCE_TYPES();
+            $resources{$name} = ${$options->{$spec}};
+        }
+    }
+
+    # an option that wasn't specified must be undef, so that no rule constrains it
+    foreach my $type (keys %resources) {
+        undef $resources{$type} if (defined $resources{$type} && $resources{$type} eq '');
+    }
+
+    # the 'key' prefix is internal to the group system, users always name their groups without it
+    $resources{'group'} =~ s/^key// if defined $resources{'group'};
+
+    return \%resources;
+}
+
 sub begin {
     my %params = @_;
 
@@ -215,6 +245,20 @@ sub begin {
     if ($sysself ne $ENV{'USER'}) {
         osh_exit 'ERR_INVALID_USER',
           "Error with your USER (\"$sysself\" vs \"$ENV{'USER'}\"), please report to your sysadmin.";
+    }
+
+    # root isn't a bastion account: the install scripts and some helpers call plugins directly
+    if ($< != 0) {
+        $fnret = OVH::Bastion::check_plugin_restrictions(
+            account   => $self,
+            plugin    => $scriptName,
+            resources => resources_from_options(
+                options => $options,
+                user    => $user,
+                host    => (defined $host && $host ne '') ? $host : $ip
+            )
+        );
+        $fnret or osh_exit($fnret);
     }
 
     if ($loadConfig) {
