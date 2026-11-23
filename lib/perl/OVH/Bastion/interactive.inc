@@ -310,17 +310,20 @@ EOM
 
         my (%before, %after);
         $fnret = OVH::Bastion::execute(cmd => [qw{ id -G -n }]);
-        if ($fnret->err eq 'OK' and $fnret->value and $fnret->value->{'stdout'}) {
+        # when a group this account was in has been deleted, `id` can exit 1 and print to stderr:
+        # "id: cannot find name for group ID 12345", while still outputting the data we need.
+        # So we don't check for its return status, but for group names on its stdout only.
+        if ($fnret->is_ok and $fnret->value and @{$fnret->value->{'stdout'} || []}) {
             chomp $fnret->value->{'stdout'}->[0];
             %before = map { $_ => 1 } split(/ /, $fnret->value->{'stdout'}->[0]);
         }
         $fnret = OVH::Bastion::execute(cmd => ['id', '-G', '-n', $BASTION_USER]);
-        if ($fnret->err eq 'OK' and $fnret->value and $fnret->value->{'stdout'}) {
+        if ($fnret->is_ok and $fnret->value and @{$fnret->value->{'stdout'} || []}) {
             chomp $fnret->value->{'stdout'}->[0];
             %after = map { $_ => 1 } split(/ /, $fnret->value->{'stdout'}->[0]);
         }
-        my @newgroups = grep { !exists $before{$_} && !/^mfa-/ } keys %after;
-        if (@newgroups) {
+        my $hasNewGroups = any { !exists $before{$_} && !/^mfa-/ } keys %after;
+        if (%before && %after && $hasNewGroups) {
             osh_warn("IMPORTANT: You have been added to new groups since the session started.");
             osh_warn("You'll need to logout/login again from this interactive session to have");
             osh_warn("your new rights applied, or you'll get sudo errors if you try to use them.");
