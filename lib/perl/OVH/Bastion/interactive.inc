@@ -267,6 +267,13 @@ EOM
                         $proactiveMFAenabledTime = time();
                         $ENV{'OSH_PROACTIVE_MFA'} = 1;
                     }
+                    elsif ($fnret->err eq 'KO_MFA_TIMEOUT') {
+                        # the MFA prompt has been left dangling: as we disabled the idle timeout
+                        # for the duration of the challenge, treat this as an idle timeout
+                        print "\n\n" . $fnret->msg . ", goodbye!\n\n";
+                        &$timeoutHandler('TIMEOUT') if ref $timeoutHandler eq 'CODE';
+                        exit 1;    # normally not reached
+                    }
                     else {
                         print "MFA validation failed, as a consequence proactive MFA mode is NOT active.\n";
                         $proactiveMFAenabledTime = 0;

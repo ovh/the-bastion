@@ -107,6 +107,7 @@ use constant {
     EXIT_IP_VERSION_DISABLED         => 133,
     EXIT_INVALID_PORT                => 134,
     EXIT_INVALID_PROXYJUMP           => 135,
+    EXIT_SETUP_TIMEOUT               => 136,
 };
 
 use constant {
@@ -1559,10 +1560,33 @@ sub build_ttyrec_cmdline_part2of2 {
     return R('OK', value => $input);
 }
 
+# returns a monotonic timestamp in seconds (with sub-second precision), i.e. a value that is
+# not impacted by any wall-clock adjustment (NTP, manual change by an admin, ...). As its zero
+# point is arbitrary, it's only usable to compute the duration between two of those timestamps.
+# if the platform doesn't provide a monotonic clock, gracefully fall back to the wall-clock time.
+sub monotonic_time {
+    require Time::HiRes;
+    state $_hasMonotonicClock;    # undef: not tested yet, 0: unavailable, 1: available
+
+    if (!defined $_hasMonotonicClock) {
+        # Time::HiRes declares its constants through AUTOLOAD, so the only way to know
+        # whether this platform has a monotonic clock is to actually try to use it
+        $_hasMonotonicClock =
+          (defined eval { Time::HiRes::clock_gettime(Time::HiRes::CLOCK_MONOTONIC()) } ? 1 : 0);
+    }
+
+    return Time::HiRes::time() if !$_hasMonotonicClock;
+    return Time::HiRes::clock_gettime(Time::HiRes::CLOCK_MONOTONIC());
+}
+
 sub do_pamtester {
     my %params  = @_;
     my $sysself = $params{'sysself'};
     my $self    = $params{'self'};
+
+    # max number of seconds the whole MFA challenge (all the retries included) may take,
+    # 0 to disable. If undef, defaults to the value of the sessionSetupTimeout option.
+    my $timeout = $params{'timeout'} // OVH::Bastion::config('sessionSetupTimeout')->value;
     my $fnret;
 
     if (!$sysself || !$self) {
@@ -1578,18 +1602,89 @@ sub do_pamtester {
             msg => "MFA is required for this action, but we're running under batch mode, please use --proactive-mfa");
     }
 
-    # use system() instead of OVH::Bastion::execute() because we need it to grab the term
+    # if we have to kill pamtester because of a timeout, pam will have no chance to restore the
+    # terminal it has put in noecho mode, so take a snapshot of its current state to restore it ourselves
+    my $termios;
+    if (-t STDIN) {    ## no critic (ProhibitInteractiveTest)
+        $termios = POSIX::Termios->new();
+        undef $termios if !eval { $termios->getattr(fileno(STDIN)); 1 };
+    }
+
+    my @cmd = ('pamtester', 'sshd', $sysself, 'authenticate');
+
+    # under FreeBSD, only root is allowed to use pam to authenticate an account
+    unshift @cmd, qw{ sudo -n -u root -- /usr/bin/env } if OVH::Bastion::is_freebsd();
+
+    # we don't use OVH::Bastion::execute() because pamtester needs to grab the term,
+    # and we need to be able to kill it if it takes too long, so handle the fork ourselves
+    my $deadline = OVH::Bastion::monotonic_time() + $timeout;
     my $pamtries = 3;
     while (1) {
-        my $pamsysret;
-        if (OVH::Bastion::is_freebsd()) {
-            $pamsysret =
-              system('sudo', '-n', '-u', 'root', '--', '/usr/bin/env', 'pamtester', 'sshd', $sysself, 'authenticate');
+        if ($timeout && OVH::Bastion::monotonic_time() >= $deadline) {
+            return _mfa_timed_out(self => $self, timeout => $timeout);
         }
-        else {
-            $pamsysret = system('pamtester', 'sshd', $sysself, 'authenticate');
+
+        my $pid = fork();
+        if (!defined $pid) {
+            return R('KO_MFA_FAILED',
+                msg => "MFA is required for this action, but we couldn't start the challenge, aborting");
         }
-        if ($pamsysret < 0) {
+        if (!$pid) {
+            # child: keep our stdin/stdout/stderr as-is, pamtester needs the terminal.
+            # if exec() fails, use 127 to tell our parent that the command is missing.
+            # We use _exit() to avoid triggering our parent's END blocks.
+            exec(@cmd) or POSIX::_exit(127);
+        }
+
+        # wait for the challenge to complete, killing it if our deadline is reached
+        my ($pamsysret, $timedout);
+        {
+            # while our child has the term, ^C and ^\ must reach it and not us,
+            # this mimics what system() does.
+            local $SIG{'INT'}  = 'IGNORE';
+            local $SIG{'QUIT'} = 'IGNORE';
+
+            require Time::HiRes;
+            while (1) {
+                my $reaped = waitpid($pid, POSIX::WNOHANG());
+                if ($reaped == $pid) {
+                    $pamsysret = $?;
+                    last;
+                }
+                last if $reaped < 0;    # our child vanished, this shouldn't happen
+
+                if ($timeout && OVH::Bastion::monotonic_time() >= $deadline) {
+                    $timedout = 1;
+                    kill('TERM', $pid);
+
+                    # give it a 1 second to exit on its own, or we do it ourselves
+                    my $reaped_after_kill = 0;
+                    for (1 .. 10) {
+                        $reaped_after_kill = (waitpid($pid, POSIX::WNOHANG()) == $pid);
+                        last if $reaped_after_kill;
+                        Time::HiRes::sleep(0.1);
+                    }
+                    if (!$reaped_after_kill) {
+                        kill('KILL', $pid);
+                        waitpid($pid, 0);
+                    }
+                    last;
+                }
+                Time::HiRes::sleep(0.1);
+            }
+        }
+
+        # pam might have left the terminal in noecho mode, restore its previous saved state
+        $termios->setattr(fileno(STDIN), POSIX::TCSANOW()) if $termios;
+
+        if ($timedout) {
+            return _mfa_timed_out(self => $self, timeout => $timeout);
+        }
+        elsif (!defined $pamsysret) {
+            return R('KO_MFA_FAILED',
+                msg => "MFA is required for this action, but the challenge didn't complete properly, aborting");
+        }
+        elsif ($pamsysret >> 8 == 127) {
             return R('KO_MFA_FAILED',
                 msg => "MFA is required for this action, but this bastion is missing the `pamtester' tool, aborting");
         }
@@ -1614,6 +1709,22 @@ sub do_pamtester {
         last;
     }
     return R('OK_MFA_SUCCESS');
+}
+
+# called by do_pamtester() when the user didn't complete the MFA challenge in time
+sub _mfa_timed_out {
+    my %params  = @_;
+    my $self    = $params{'self'};
+    my $timeout = $params{'timeout'};
+
+    info_syslog("MFA challenge of account $self didn't complete within $timeout seconds, aborting");
+
+    # we killed pamtester while it was prompting, so ensure we're on a fresh line.
+    # use STDERR because STDOUT might be used by a protocol (scp, sftp, ...)
+    print STDERR "\n";
+
+    return R('KO_MFA_TIMEOUT',
+        msg => "Sorry, you took more than $timeout seconds to complete the Multi-Factor Authentication challenge");
 }
 
 sub can_use_utf8 {
