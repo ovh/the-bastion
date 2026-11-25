@@ -207,6 +207,10 @@ my $from    = $fnret->value->{'from'};
 my $ipList  = $fnret->value->{'ipList'};
 my $homedir = "/home/$account";
 
+if (-e $homedir || -l $homedir) {
+    HEXIT('KO_HOME_EXISTS', msg => "The home path $homedir already exists");
+}
+
 osh_info "Creating group $account with GID $uid...";
 $fnret = OVH::Bastion::sys_groupadd(noisy_stderr => 1, gid => $uid, group => $account);
 $fnret->err eq 'OK'
