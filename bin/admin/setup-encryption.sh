@@ -161,8 +161,18 @@ else
 fi
 
 action_doing "Setting up /etc/bastion/luks-config.sh with encrypted block device"
-if sed -i -re "s;^DEV_ENCRYPTED=.*;DEV_ENCRYPTED=$home_block_device;" /etc/bastion/luks-config.sh; then
-    action_done
+luks_device=$home_block_device
+luks_uuid=$(cryptsetup luksUUID "$home_block_device" 2>/dev/null || true)
+if [ -n "$luks_uuid" ]; then
+    if command -v udevadm >/dev/null 2>&1; then
+        udevadm settle 2>/dev/null || true
+    fi
+    if [ -b "/dev/disk/by-uuid/$luks_uuid" ]; then
+        luks_device="/dev/disk/by-uuid/$luks_uuid"
+    fi
+fi
+if sed -i -re "s;^DEV_ENCRYPTED=.*;DEV_ENCRYPTED=$luks_device;" /etc/bastion/luks-config.sh; then
+    action_done "$luks_device"
 else
     action_error "Couldn't modify /etc/bastion/luks-config.sh, please do it manually, continuing"
 fi
